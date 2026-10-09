@@ -1,11 +1,11 @@
 <template>
   <section class="card">
-    <h2 class="text-md font-medium mb-5 pb-3 border-b border-border-subtle">Saved Conversations</h2>
+    <h2 class="text-md font-medium mb-5 pb-3 border-b border-border-subtle">{{ t('settings.conversations.title') }}</h2>
     <p class="text-sm text-text-muted mb-4">
-      Your saved AI coin search conversations. Open one to continue the search or review results.
+      {{ t('settings.conversations.intro') }}
     </p>
 
-    <div v-if="loading" class="text-text-muted italic py-2">Loading...</div>
+    <div v-if="loading" class="text-text-muted italic py-2">{{ t('common.loading') }}</div>
 
     <div v-else-if="conversations.length" class="flex flex-col gap-2 mt-4">
       <div
@@ -18,19 +18,20 @@
           <span class="text-sm text-text-muted">{{ formatDate(conv.updatedAt) }}</span>
         </div>
         <div class="flex gap-2 shrink-0">
-          <button class="btn btn-secondary btn-sm" @click="$emit('open', conv.id)">Open</button>
-          <button class="btn btn-danger btn-sm" @click="$emit('delete', conv.id)">Delete</button>
+          <button class="btn btn-secondary btn-sm" @click="$emit('open', conv.id)">{{ t('common.open') }}</button>
+          <button class="btn btn-danger btn-sm" @click="$emit('delete', conv.id)">{{ t('common.delete') }}</button>
         </div>
       </div>
     </div>
     <p v-else class="text-sm text-text-muted mt-2">
-      No saved conversations yet. Use the Save button in the coin search chat to save a conversation.
+      {{ t('settings.conversations.empty') }}
     </p>
   </section>
 </template>
 
 <script setup lang="ts">
 import type { ConversationSummary } from '@/api/client'
+import { intlLocale, t } from '@/i18n'
 
 defineProps<{
   conversations: ConversationSummary[]
@@ -43,7 +44,7 @@ defineEmits<{
 }>()
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(undefined, {
+  return new Date(dateStr).toLocaleDateString(intlLocale(), {
     year: 'numeric', month: 'short', day: 'numeric',
   })
 }

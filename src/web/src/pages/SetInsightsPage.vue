@@ -1,13 +1,13 @@
 <template>
   <div class="container pb-4 md:pb-6">
     <div v-if="loading" class="py-12 text-center text-text-secondary">
-      Loading set insights...
+      {{ t('sets.insights.loading') }}
     </div>
 
     <div v-else-if="set" class="space-y-6">
       <DesktopPageContext :title="set.name">
         <template #actions>
-          <AppIconButton title="Back to Set" @click="router.push({ name: 'set-detail', params: { id: setId } })">
+          <AppIconButton :title="t('sets.insights.backToSet')" @click="router.push({ name: 'set-detail', params: { id: setId } })">
             <ArrowLeft :size="20" />
           </AppIconButton>
         </template>
@@ -18,34 +18,34 @@
               <h1>{{ set.name }}</h1>
               <p class="section-label mb-0 mt-1 inline-flex items-center gap-1.5">
                 <Info :size="13" />
-                Set information
+                {{ t('sets.insights.info') }}
               </p>
             </div>
           </div>
           <div class="header-actions">
             <button class="btn btn-ghost" @click="router.push({ name: 'set-detail', params: { id: setId } })">
-              <ArrowLeft :size="16" /> Back to Set
+              <ArrowLeft :size="16" /> {{ t('sets.insights.backToSet') }}
             </button>
           </div>
         </div>
         <template #desktop>
           <p class="section-label mb-0 inline-flex items-center gap-1.5">
             <Info :size="13" />
-            Set information
+            {{ t('sets.insights.info') }}
           </p>
         </template>
       </DesktopPageContext>
 
       <section v-if="analytics" class="card p-6">
-        <h2 class="mt-0">Analytics</h2>
+        <h2 class="mt-0">{{ t('sets.insights.analytics') }}</h2>
         <div class="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
           <div class="flex flex-col gap-1.5">
-            <span class="text-body text-text-secondary">ROI</span>
-            <strong class="text-lg text-gold">{{ analytics.roiPercent == null ? 'N/A' : `${analytics.roiPercent.toFixed(1)}%` }}</strong>
+            <span class="text-body text-text-secondary">{{ t('stats.value.roi') }}</span>
+            <strong class="text-lg text-gold">{{ analytics.roiPercent == null ? t('common.na') : `${analytics.roiPercent.toFixed(1)}%` }}</strong>
           </div>
           <div class="flex flex-col gap-1.5">
-            <span class="text-body text-text-secondary">Acquisition Rate</span>
-            <strong class="text-lg text-gold">{{ analytics.acquisitionRatePerMonth == null ? 'N/A' : `${analytics.acquisitionRatePerMonth.toFixed(1)}/mo` }}</strong>
+            <span class="text-body text-text-secondary">{{ t('sets.insights.acquisitionRate') }}</span>
+            <strong class="text-lg text-gold">{{ analytics.acquisitionRatePerMonth == null ? t('common.na') : t('sets.insights.perMonth', { value: analytics.acquisitionRatePerMonth.toFixed(1) }) }}</strong>
           </div>
         </div>
       </section>
@@ -56,7 +56,7 @@
         @update:range="changeTrendRange"
       >
         <template #actions>
-          <button class="btn btn-secondary" @click="captureSnapshot">Capture Snapshot</button>
+          <button class="btn btn-secondary" @click="captureSnapshot">{{ t('sets.insights.captureSnapshot') }}</button>
         </template>
       </SetTrendChart>
     </div>
@@ -72,6 +72,7 @@ import type { CoinSetAnalytics, CoinSetDetail, CoinSetSnapshot } from '@/types'
 import SetTrendChart from '@/components/sets/SetTrendChart.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t } from '@/i18n'
 
 const router = useRouter()
 const route = useRoute()
@@ -119,7 +120,7 @@ async function captureSnapshot() {
     analytics.value = analyticsRes.data
   } catch (error) {
     console.error('Failed to capture snapshot:', error)
-    alert('Failed to capture snapshot')
+    alert(t('sets.insights.captureFailed'))
   }
 }
 </script>

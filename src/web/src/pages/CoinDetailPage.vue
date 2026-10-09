@@ -31,32 +31,32 @@
               <AuthenticatedImage
                 v-if="obverseImage"
                 :media-path="obverseImage.filePath"
-                alt="Obverse"
+                :alt="t('common.obverse')"
                 class="h-full w-full cursor-pointer object-contain scale-[1.28] transition-[opacity,transform] duration-200 hover:scale-[1.32] hover:opacity-[0.85]"
                 @click="openLightbox(obverseImage)"
               />
               <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2">
-                <span class="text-body font-medium text-text-secondary">Obverse</span>
-                <span class="text-sm italic text-text-muted">No image</span>
+                <span class="text-body font-medium text-text-secondary">{{ t('common.obverse') }}</span>
+                <span class="text-sm italic text-text-muted">{{ t('common.noImage') }}</span>
               </div>
             </div>
             <div class="relative aspect-square w-full overflow-hidden rounded-md border border-border-subtle bg-card">
               <AuthenticatedImage
                 v-if="reverseImage"
                 :media-path="reverseImage.filePath"
-                alt="Reverse"
+                :alt="t('common.reverse')"
                 class="h-full w-full cursor-pointer object-contain scale-[1.28] transition-[opacity,transform] duration-200 hover:scale-[1.32] hover:opacity-[0.85]"
                 @click="openLightbox(reverseImage)"
               />
               <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2">
-                <span class="text-body font-medium text-text-secondary">Reverse</span>
-                <span class="text-sm italic text-text-muted">No image</span>
+                <span class="text-body font-medium text-text-secondary">{{ t('common.reverse') }}</span>
+                <span class="text-sm italic text-text-muted">{{ t('common.noImage') }}</span>
               </div>
             </div>
           </div>
           <div v-if="coin.isWishlist" class="mt-3">
             <button class="btn btn-primary w-full justify-center" @click="showPurchaseModal = true">
-              Mark as Purchased
+              {{ t('coinDetail.markPurchased') }}
             </button>
           </div>
         </div>
@@ -75,28 +75,28 @@
                   color: colorForLabel(coin.category),
                   border: `1px solid ${colorForLabelBackground(coin.category, 30)}`,
                 }"
-              >{{ coin.category }}</span>
-              <span v-if="coin.isWishlist" class="chip-sm">Wishlist</span>
-              <span v-if="coin.isSold" class="chip-sm">Sold</span>
+              >{{ categoryLabel(coin.category) }}</span>
+              <span v-if="coin.isWishlist" class="chip-sm">{{ t('nav.wishlist') }}</span>
+              <span v-if="coin.isSold" class="chip-sm">{{ t('coinDetail.badges.sold') }}</span>
             </div>
           </div>
 
           <div v-if="coin.obverseInscription || coin.reverseInscription || coin.obverseDescription || coin.reverseDescription" class="mb-6">
-            <h3 class="mb-3 font-display text-base font-medium text-heading">Inscription</h3>
+            <h3 class="mb-3 font-display text-base font-medium text-heading">{{ t('coinFields.inscription') }}</h3>
             <div class="rounded-sm border border-border-subtle bg-card p-4">
               <div class="grid gap-6 md:grid-cols-2">
                 <div v-if="coin.obverseInscription || coin.obverseDescription" class="flex flex-col gap-3">
-                  <h4 class="m-0 text-base font-medium text-heading">Obverse</h4>
+                  <h4 class="m-0 text-base font-medium text-heading">{{ t('common.obverse') }}</h4>
                   <div v-if="coin.obverseInscription" class="flex flex-col gap-1">
-                    <span class="section-label">Inscription:</span>
+                    <span class="section-label">{{ t('coinFields.inscriptionLabel') }}</span>
                     <span class="text-base italic text-text-secondary">{{ coin.obverseInscription }}</span>
                   </div>
                   <p v-if="coin.obverseDescription" class="m-0 text-base leading-6 text-text-secondary">{{ coin.obverseDescription }}</p>
                 </div>
                 <div v-if="coin.reverseInscription || coin.reverseDescription" class="flex flex-col gap-3">
-                  <h4 class="m-0 text-base font-medium text-heading">Reverse</h4>
+                  <h4 class="m-0 text-base font-medium text-heading">{{ t('common.reverse') }}</h4>
                   <div v-if="coin.reverseInscription" class="flex flex-col gap-1">
-                    <span class="section-label">Inscription:</span>
+                    <span class="section-label">{{ t('coinFields.inscriptionLabel') }}</span>
                     <span class="text-base italic text-text-secondary">{{ coin.reverseInscription }}</span>
                   </div>
                   <p v-if="coin.reverseDescription" class="m-0 text-base leading-6 text-text-secondary">{{ coin.reverseDescription }}</p>
@@ -107,7 +107,7 @@
 
           <!-- T014-T016: Metadata table -->
           <div v-if="metadataRows.length" class="mb-6">
-            <h3 class="mb-3 font-display text-base font-medium text-heading">Details</h3>
+            <h3 class="mb-3 font-display text-base font-medium text-heading">{{ t('common.details') }}</h3>
             <CoinDetailMetadataTable :rows="displayRows" @edit="handleMetadataEdit" />
           </div>
 
@@ -191,6 +191,8 @@ import { usePurchaseReminder, formatReminderDateValue } from '@/composables/useP
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import { useCoinDetailSwipeNav } from '@/composables/useCoinDetailSwipeNav'
 import type { CoinDetailMetadataRow, CoinImage, ShipmentUpsertInput } from '@/types'
+import { t } from '@/i18n'
+import { categoryLabel } from '@/i18n/coinVocabulary'
 
 const { showConfirm, showAlert } = useDialog()
 const route = useRoute()
@@ -240,9 +242,9 @@ const displayRows = computed<CoinDetailMetadataRow[]>(() => {
   if (!coin.value?.isWishlist || !reminder.value) return base
   const reminderRow: CoinDetailMetadataRow = {
     key: 'purchaseReminder',
-    label: 'Purchase Reminder Date',
+    label: t('coinDetail.reminderRow'),
     value: formatReminderDateValue(reminder.value.remindDate),
-    editLabel: 'Edit',
+    editLabel: t('common.edit'),
   }
   const purchasePriceIdx = base.findIndex(r => r.key === 'purchasePrice')
   const insertAfter = purchasePriceIdx >= 0 ? purchasePriceIdx + 1 : 0
@@ -306,7 +308,7 @@ async function confirmPurchase(data: { purchasePrice?: number; purchaseDate?: st
 }
 
 async function handleDelete() {
-  if (!coin.value || !await showConfirm('Delete this coin from your collection?', { title: 'Delete Coin', variant: 'danger' })) return
+  if (!coin.value || !await showConfirm(t('coinDetail.confirmDelete'), { title: t('coinDetail.deleteTitle'), variant: 'danger' })) return
   const coinId = coin.value.id
   await deleteCoin(coinId)
   forgetQuickAccess('coin', coinId)
@@ -320,7 +322,7 @@ async function handleDuplicate() {
     const res = await duplicateCoin(coin.value.id)
     router.push(`/coin/${res.data.id}`)
   } catch {
-    await showAlert('Failed to duplicate coin', { title: 'Error' })
+    await showAlert(t('coinDetail.duplicateFailed'), { title: t('common.error') })
   } finally {
     duplicating.value = false
   }
@@ -339,7 +341,7 @@ async function confirmSell(soldPrice: number | null, soldTo: string) {
     showSellModal.value = false
     router.push('/sold')
   } catch {
-    await showAlert('Failed to mark as sold', { title: 'Error' })
+    await showAlert(t('coinDetail.sellFailed'), { title: t('common.error') })
     showSellModal.value = false
   }
 }

@@ -7,7 +7,7 @@
   >
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <span class="chip-sm border-gold text-gold">Beta</span>
+        <span class="chip-sm border-gold text-gold">{{ t('copilot.beta') }}</span>
         <span class="section-label mb-0">Coin Copilot</span>
       </div>
       <span class="text-sm text-text-secondary">{{ statusLabel }}</span>
@@ -32,45 +32,44 @@
           <span>
             <strong class="font-medium text-text-primary">{{ toolLabel(tool.toolName) }}</strong>
             <span v-if="tool.resultSummary"> — {{ tool.resultSummary }}</span>
-            <span v-if="tool.truncated" class="text-text-muted"> Result details were shortened.</span>
+            <span v-if="tool.truncated" class="text-text-muted"> {{ t('copilot.shortened') }}</span>
           </span>
         </div>
 
         <section
           v-if="tool.specialistResult"
           class="ml-6 flex flex-col gap-2 rounded-sm border border-border-subtle bg-input p-3"
-          :aria-label="`${toolLabel(tool.toolName)} evidence`"
+          :aria-label="t('copilot.evidenceLabel', { tool: toolLabel(tool.toolName) })"
           data-testid="copilot-specialist-result"
         >
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="section-label mb-0">Source evidence</span>
+            <span class="section-label mb-0">{{ t('copilot.sourceEvidence') }}</span>
             <span class="chip-sm">{{ outcomeLabel(tool.specialistResult.outcome) }}</span>
           </div>
 
           <section
             v-if="tool.specialistResult.trend"
             class="flex flex-col gap-2 border-t border-border-subtle pt-2"
-            aria-label="Price trend summary"
+            :aria-label="t('copilot.trendSummary')"
             data-testid="copilot-price-trend"
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
               <strong class="font-medium text-text-primary">
-                {{ titleCase(tool.specialistResult.trend.state) }}
+                {{ trendStateLabel(tool.specialistResult.trend.state) }}
               </strong>
               <span class="text-xs text-text-muted">
-                {{ tool.specialistResult.trend.sampleSize }} verified sales
+                {{ t('copilot.verifiedSales', { count: tool.specialistResult.trend.sampleSize }) }}
               </span>
             </div>
             <p class="mb-0 text-xs text-text-secondary">
               <template v-if="tool.specialistResult.trend.dateFrom && tool.specialistResult.trend.dateTo">
-                {{ formatDate(tool.specialistResult.trend.dateFrom) }} to
-                {{ formatDate(tool.specialistResult.trend.dateTo) }} ·
+                {{ t('copilot.dateRange', { from: formatDate(tool.specialistResult.trend.dateFrom), to: formatDate(tool.specialistResult.trend.dateTo) }) }}
               </template>
               <template v-if="tool.specialistResult.trend.currency">
                 {{ tool.specialistResult.trend.currency }} ·
               </template>
               <template v-if="tool.specialistResult.trend.priceBasis">
-                {{ titleCase(tool.specialistResult.trend.priceBasis) }}
+                {{ priceBasisLabel(tool.specialistResult.trend.priceBasis) }}
               </template>
             </p>
             <p
@@ -79,9 +78,11 @@
                 tool.specialistResult.trend.high !== null"
               class="mb-0 text-xs text-text-secondary"
             >
-              Range {{ formatAmount(tool.specialistResult.trend.low, tool.specialistResult.trend.currency) }}
-              to {{ formatAmount(tool.specialistResult.trend.high, tool.specialistResult.trend.currency) }};
-              median {{ formatAmount(tool.specialistResult.trend.median, tool.specialistResult.trend.currency) }}
+              {{ t('copilot.range', {
+                low: formatAmount(tool.specialistResult.trend.low, tool.specialistResult.trend.currency),
+                high: formatAmount(tool.specialistResult.trend.high, tool.specialistResult.trend.currency),
+                median: formatAmount(tool.specialistResult.trend.median, tool.specialistResult.trend.currency),
+              }) }}
             </p>
             <ul
               v-if="tool.specialistResult.trend.limitations.length"
@@ -135,9 +136,9 @@
               </a>
             </div>
             <p class="mb-0 text-xs text-text-muted">
-              Observed {{ formatObservedAt(item.observedAt) }} ·
-              {{ titleCase(item.confidence) }} confidence ·
-              {{ titleCase(item.verificationState) }}
+              {{ t('copilot.observed', { date: formatObservedAt(item.observedAt) }) }}
+              {{ evidenceConfidenceLabel(item.confidence) }} ·
+              {{ item.verificationState === 'verified' ? t('copilot.verification.verified') : t('copilot.verification.partial') }}
             </p>
             <ul v-if="itemFacts(item).length" class="mb-0 flex list-none flex-col gap-1 p-0 text-xs">
               <li v-for="fact in itemFacts(item)" :key="fact">{{ fact }}</li>
@@ -164,18 +165,18 @@
               )"
             >
               {{ addedSet.has(dealerListingKey(tool.toolCallId, item.sourceUrl))
-                ? 'Added to Wishlist'
+                ? t('chat.suggestions.addedToWishlist')
                 : addingIdx === dealerListingKey(tool.toolCallId, item.sourceUrl)
-                  ? 'Adding...'
-                  : 'Add to Wishlist' }}
+                  ? t('common.adding')
+                  : t('chat.suggestions.addToWishlist') }}
             </button>
           </article>
 
           <p v-if="tool.specialistResult.outcome === 'no_match'" class="mb-0 text-text-secondary">
-            No matching evidence was found in the checked sources.
+            {{ t('copilot.noMatch') }}
           </p>
           <p v-else-if="tool.specialistResult.outcome === 'unavailable'" class="mb-0 text-text-secondary">
-            Sources unavailable. Try again later.
+            {{ t('copilot.sourcesUnavailable') }}
           </p>
           <ul v-if="tool.specialistResult.warnings.length" class="mb-0 flex list-none flex-col gap-1 p-0 text-xs text-text-muted">
             <li v-for="warning in tool.specialistResult.warnings" :key="warning">{{ warning }}</li>
@@ -185,11 +186,11 @@
         <section
           v-if="tool.deepAnalysisHandoffResult"
           class="ml-6 flex flex-col gap-2 rounded-sm border border-border-subtle bg-input p-3"
-          aria-label="Deep Analysis handoff"
+          :aria-label="t('copilot.deepHandoff')"
           data-testid="copilot-deep-analysis-result"
         >
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="section-label mb-0">Deep Analysis</span>
+            <span class="section-label mb-0">{{ t('deepAnalysis.title') }}</span>
             <span class="chip-sm">{{ deepOutcomeLabel(tool.deepAnalysisHandoffResult.outcome) }}</span>
           </div>
 
@@ -208,7 +209,7 @@
               v-if="tool.deepAnalysisHandoffResult.result?.disagreements.length"
               class="border-t border-border-subtle pt-2"
             >
-              <span class="section-label mb-0">Conflicts</span>
+              <span class="section-label mb-0">{{ t('copilot.conflicts') }}</span>
               <ul class="mb-0 mt-2 flex list-none flex-col gap-1 p-0 text-xs text-text-secondary">
                 <li
                   v-for="conflict in tool.deepAnalysisHandoffResult.result.disagreements"
@@ -224,14 +225,14 @@
               v-if="tool.deepAnalysisHandoffResult.result?.coverage.length"
               class="border-t border-border-subtle pt-2"
             >
-              <span class="section-label mb-0">Provider coverage</span>
+              <span class="section-label mb-0">{{ t('deepAnalysis.coverage.title') }}</span>
               <ul class="mb-0 mt-2 flex list-none flex-wrap gap-1 p-0 text-xs text-text-secondary">
                 <li
                   v-for="coverage in tool.deepAnalysisHandoffResult.result.coverage"
                   :key="coverage.provider"
                   class="chip-sm"
                 >
-                  {{ titleCase(coverage.provider) }}: {{ titleCase(coverage.status) }}
+                  {{ titleCase(coverage.provider) }}: {{ coverageStatusLabel(coverage.status) }}
                 </li>
               </ul>
             </section>
@@ -241,8 +242,8 @@
               class="mb-0 border-t border-border-subtle pt-2 text-xs text-text-muted"
               data-testid="copilot-deep-analysis-omissions"
             >
-              Result shortened:
-              {{ omittedCount(tool.deepAnalysisHandoffResult.truncation) }} items omitted.
+              {{ t('copilot.resultShortened') }}
+              {{ t('copilot.itemsOmitted', { count: omittedCount(tool.deepAnalysisHandoffResult.truncation) }) }}
             </p>
 
             <ul
@@ -259,7 +260,7 @@
               :to="validatedReviewUrl(tool.deepAnalysisHandoffResult) ?? ''"
               class="btn btn-xs btn-primary min-h-[44px] self-start"
             >
-              Open Deep Analysis
+              {{ t('copilot.openDeep') }}
             </RouterLink>
           </template>
         </section>
@@ -267,7 +268,7 @@
     </div>
 
     <p v-if="truncated" class="mb-0 mt-3 text-sm text-text-muted">
-      Earlier progress expired, so this view resumed from the retained event history.
+      {{ t('copilot.resumed') }}
     </p>
 
     <div v-if="canCancel" class="mt-3 flex justify-end">
@@ -278,7 +279,7 @@
         @click="$emit('cancel')"
       >
         <Square :size="15" />
-        {{ cancelling ? 'Cancelling...' : 'Cancel run' }}
+        {{ cancelling ? t('copilot.cancellingDots') : t('copilot.cancelRun') }}
       </button>
     </div>
   </section>
@@ -304,6 +305,9 @@ import {
 } from '@/utils/copilotWishlist'
 import { copilotToolLabel } from '@/utils/copilotToolLabels'
 import CoinSuggestionGrid from '@/components/chat/CoinSuggestionGrid.vue'
+import { t, intlLocale, type MessageKey } from '@/i18n'
+import { eraLabel } from '@/i18n/coinVocabulary'
+import { deepJobStatusLabel } from '@/utils/format'
 
 const props = defineProps<{
   run: CoinCopilotRun | null
@@ -374,13 +378,13 @@ function emitGridWishlist(tool: CoinCopilotToolProgress, key: string) {
 
 const statusLabel = computed(() => {
   switch (props.run?.status) {
-    case 'queued': return 'Queued'
-    case 'running': return 'Working'
-    case 'paused': return 'Waiting for your answer'
-    case 'cancel_requested': return 'Cancelling'
-    case 'completed': return 'Complete'
-    case 'failed': return 'Stopped'
-    case 'cancelled': return 'Cancelled'
+    case 'queued': return t('copilot.status.queued')
+    case 'running': return t('copilot.status.running')
+    case 'paused': return t('copilot.status.paused')
+    case 'cancel_requested': return t('copilot.status.cancelRequested')
+    case 'completed': return t('copilot.status.completed')
+    case 'failed': return t('copilot.status.failed')
+    case 'cancelled': return t('copilot.status.cancelled')
     default: return ''
   }
 })
@@ -395,21 +399,21 @@ function itemFacts(item: CoinCopilotSpecialistEvidence): string[] {
   const money = (amount?: number) =>
     amount == null ? '' : `${item.currency ? `${item.currency} ` : ''}${amount}`
   const lines: [string, string | number | undefined][] = [
-    ['Dealer', item.dealerName],
-    ['Price', money(item.listedPrice)],
-    ['Availability', item.availability],
-    ['Auction house', item.auctionHouse],
-    ['Sale', item.saleName],
-    ['Lot', item.lotNumber],
-    ['Sale date', item.saleDate],
-    ['Estimate', money(item.estimate)],
-    ['Current bid', money(item.currentBid)],
-    ['Amount', money(item.amount)],
-    ['Price basis', item.priceBasis],
-    ['Ruler', item.ruler],
-    ['Denomination', item.denomination],
-    ['Era', item.era],
-    ['Material', item.material],
+    [t('copilot.facts.dealer'), item.dealerName],
+    [t('copilot.facts.price'), money(item.listedPrice)],
+    [t('copilot.facts.availability'), item.availability],
+    [t('copilot.facts.auctionHouse'), item.auctionHouse],
+    [t('copilot.facts.sale'), item.saleName],
+    [t('copilot.facts.lot'), item.lotNumber],
+    [t('copilot.facts.saleDate'), item.saleDate],
+    [t('copilot.facts.estimate'), money(item.estimate)],
+    [t('copilot.facts.currentBid'), money(item.currentBid)],
+    [t('copilot.facts.amount'), money(item.amount)],
+    [t('copilot.facts.priceBasis'), item.priceBasis],
+    [t('coinFields.ruler'), item.ruler],
+    [t('coinFields.denomination'), item.denomination],
+    [t('coinFields.era'), eraLabel(item.era)],
+    [t('coinFields.material'), item.material],
   ]
   return lines
     .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
@@ -423,31 +427,71 @@ function titleCase(value: string) {
 
 function outcomeLabel(outcome: 'complete' | 'partial' | 'no_match' | 'unavailable') {
   switch (outcome) {
-    case 'complete': return 'Complete'
-    case 'partial': return 'Partial'
-    case 'no_match': return 'No matching evidence'
-    case 'unavailable': return 'Sources unavailable'
+    case 'complete': return t('copilot.outcomes.complete')
+    case 'partial': return t('copilot.outcomes.partial')
+    case 'no_match': return t('copilot.outcomes.noMatch')
+    case 'unavailable': return t('copilot.outcomes.unavailable')
   }
+}
+
+function trendStateLabel(state: string) {
+  switch (state) {
+    case 'rising': return t('copilot.trend.rising')
+    case 'stable': return t('copilot.trend.stable')
+    case 'declining': return t('copilot.trend.declining')
+    case 'unknown': return t('copilot.trend.unknown')
+    default: return titleCase(state)
+  }
+}
+
+function priceBasisLabel(basis: string) {
+  if (basis === 'hammer') return t('copilot.priceBasis.hammer')
+  if (basis === 'realized_including_premium') return t('copilot.priceBasis.premium')
+  return titleCase(basis)
+}
+
+function evidenceConfidenceLabel(confidence: string) {
+  if (confidence === 'high') return t('copilot.confidence.high')
+  if (confidence === 'medium') return t('copilot.confidence.medium')
+  if (confidence === 'low') return t('copilot.confidence.low')
+  return titleCase(confidence)
+}
+
+const coverageStatusKeys: Record<string, MessageKey> = {
+  pending: 'deepAnalysis.coverageStatus.pending',
+  running: 'deepAnalysis.coverageStatus.running',
+  contributed: 'deepAnalysis.coverageStatus.contributed',
+  no_match: 'deepAnalysis.coverageStatus.noMatch',
+  failed: 'deepAnalysis.coverageStatus.failed',
+  timed_out: 'deepAnalysis.coverageStatus.timedOut',
+  skipped: 'deepAnalysis.coverageStatus.skipped',
+  not_automated: 'deepAnalysis.coverageStatus.notAutomated',
+  unavailable: 'deepAnalysis.coverageStatus.unavailable',
+}
+
+function coverageStatusLabel(status: string) {
+  const key = coverageStatusKeys[status]
+  return key ? t(key) : titleCase(status)
 }
 
 function deepOutcomeLabel(outcome: DeepAnalysisHandoffResult['outcome']) {
   const labels: Record<DeepAnalysisHandoffResult['outcome'], string> = {
-    accepted: 'Accepted',
-    reused_active: 'In progress',
-    reused_result: 'Result available',
-    status: 'Status',
-    retry_available: 'Retry available',
-    missing_images: 'Images required',
-    target_unavailable: 'Target unavailable',
-    not_eligible: 'Not eligible',
-    unavailable: 'Unavailable',
-    cancelled: 'Cancelled',
+    accepted: t('copilot.deepOutcomes.accepted'),
+    reused_active: t('copilot.deepOutcomes.reusedActive'),
+    reused_result: t('copilot.deepOutcomes.reusedResult'),
+    status: t('copilot.deepOutcomes.status'),
+    retry_available: t('copilot.deepOutcomes.retryAvailable'),
+    missing_images: t('copilot.deepOutcomes.missingImages'),
+    target_unavailable: t('copilot.deepOutcomes.targetUnavailable'),
+    not_eligible: t('copilot.deepOutcomes.notEligible'),
+    unavailable: t('copilot.deepOutcomes.unavailable'),
+    cancelled: t('copilot.deepOutcomes.cancelled'),
   }
   return labels[outcome]
 }
 
 function deepStatusLabel(status: NonNullable<Extract<DeepAnalysisHandoffResult, { schema_version: 1 }>['job']>['status']) {
-  return `Job status: ${titleCase(status)}`
+  return t('copilot.jobStatus', { status: titleCase(deepJobStatusLabel(status)) })
 }
 
 function validatedReviewUrl(result: DeepAnalysisHandoffResult): string | null {
@@ -478,7 +522,7 @@ function formatObservedAt(value: string) {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(intlLocale(), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -488,7 +532,7 @@ function formatDate(value: string) {
 
 function formatAmount(value: number, currency: string | null) {
   if (!currency) return String(value)
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(intlLocale(), {
     style: 'currency',
     currency,
     maximumFractionDigits: 2,

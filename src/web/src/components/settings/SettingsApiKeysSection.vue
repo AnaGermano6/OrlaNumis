@@ -1,8 +1,10 @@
 <template>
   <section class="card">
-    <h2 class="text-xl font-medium mb-5 pb-3 border-b border-border-subtle">Keys</h2>
+    <h2 class="text-xl font-medium mb-5 pb-3 border-b border-border-subtle">{{ t('settings.tabs.apikeys') }}</h2>
     <p class="text-sm text-text-muted mb-4">
-      Generate API keys to access your collection from external tools and scripts. Use the <code>X-API-Key</code> header to authenticate.
+      <I18nT keypath="settings.apiKeys.intro">
+        <template #header><code>X-API-Key</code></template>
+      </I18nT>
     </p>
 
     <!-- Generate form -->
@@ -11,7 +13,7 @@
         v-model="apiKeyName"
         type="text"
         class="form-input flex-1 min-w-[200px]"
-        placeholder="Key name (e.g. My Script)"
+        :placeholder="t('settings.apiKeys.namePlaceholder')"
         :disabled="generatingKey"
       />
       <div class="flex items-center gap-[0.35rem]">
@@ -22,7 +24,7 @@
           :disabled="generatingKey"
           @click="apiKeyScope = 'read'"
         >
-          Read
+          {{ t('settings.apiKeys.scopes.read') }}
         </button>
         <button
           type="button"
@@ -31,7 +33,7 @@
           :disabled="generatingKey"
           @click="apiKeyScope = 'read,copilot'"
         >
-          Read/Copilot
+          {{ t('settings.apiKeys.scopes.readCopilot') }}
         </button>
         <button
           type="button"
@@ -40,7 +42,7 @@
           :disabled="generatingKey"
           @click="apiKeyScope = 'read,write'"
         >
-          Read/Write
+          {{ t('settings.apiKeys.scopes.readWrite') }}
         </button>
       </div>
       <button
@@ -49,7 +51,7 @@
         @click="handleGenerateKey"
       >
         <KeyRound :size="14" />
-        {{ generatingKey ? 'Generating...' : 'Generate Key' }}
+        {{ generatingKey ? t('settings.apiKeys.generating') : t('settings.apiKeys.generate') }}
       </button>
     </div>
 
@@ -59,7 +61,7 @@
       class="bg-surface border border-gold-dim rounded-sm px-4 py-3 mb-3"
     >
       <p class="text-chip text-gold font-medium mb-2">
-        Copy this key now — it will not be shown again.
+        {{ t('settings.apiKeys.copyNow') }}
       </p>
       <div class="flex items-center gap-2">
         <code class="flex-1 text-chip bg-card px-[0.6rem] py-[0.4rem] rounded-sm break-all select-all">
@@ -71,7 +73,7 @@
         >
           <Check v-if="keyCopied" :size="14" />
           <Clipboard v-else :size="14" />
-          {{ keyCopied ? 'Copied' : 'Copy' }}
+          {{ keyCopied ? t('common.copied') : t('common.copy') }}
         </button>
       </div>
     </div>
@@ -106,24 +108,24 @@
           </div>
           <span class="text-sm text-text-muted">
             ...{{ key.keyPrefix }}
-            · Created {{ formatDate(key.createdAt) }}
-            <template v-if="key.lastUsedAt"> · Last used {{ formatDate(key.lastUsedAt) }}</template>
+            · {{ t('settings.apiKeys.created', { date: formatDate(key.createdAt) }) }}
+            <template v-if="key.lastUsedAt"> · {{ t('settings.apiKeys.lastUsed', { date: formatDate(key.lastUsedAt) }) }}</template>
           </span>
         </div>
         <span
           v-if="key.revokedAt"
           class="chip-sm shrink-0 bg-surface text-text-muted"
-        >Revoked</span>
+        >{{ t('settings.apiKeys.revoked') }}</span>
         <button
           v-else
           class="btn btn-danger btn-sm"
           @click="handleRevokeKey(key.id)"
         >
-          Revoke
+          {{ t('settings.apiKeys.revoke') }}
         </button>
       </div>
     </div>
-    <p v-else-if="!generatingKey" class="text-sm text-text-muted mt-2">No API keys yet.</p>
+    <p v-else-if="!generatingKey" class="text-sm text-text-muted mt-2">{{ t('settings.apiKeys.empty') }}</p>
   </section>
 </template>
 
@@ -132,6 +134,8 @@ import { ref, onMounted } from 'vue'
 import { Check, Clipboard, KeyRound } from 'lucide-vue-next'
 import { generateApiKey, listApiKeys, revokeApiKey } from '@/api/client'
 import type { ApiKey, ApiKeyCapability } from '@/types'
+import I18nT from '@/components/I18nT.vue'
+import { t, intlLocale } from '@/i18n'
 
 const apiKeys = ref<ApiKey[]>([])
 const apiKeyName = ref('')
@@ -167,7 +171,7 @@ async function handleGenerateKey() {
     apiKeyScope.value = 'read'
     await loadApiKeys()
   } catch {
-    apiKeyMsg.value = 'Failed to generate API key'
+    apiKeyMsg.value = t('settings.apiKeys.generateFailed')
     apiKeyError.value = true
   } finally {
     generatingKey.value = false
@@ -199,7 +203,7 @@ async function handleRevokeKey(id: number) {
     await loadApiKeys()
     newlyGeneratedKey.value = ''
   } catch {
-    apiKeyMsg.value = 'Failed to revoke key'
+    apiKeyMsg.value = t('settings.apiKeys.revokeFailed')
     apiKeyError.value = true
   }
 }
@@ -207,18 +211,18 @@ async function handleRevokeKey(id: number) {
 function capabilityLabel(capabilities: string): string {
   switch (capabilities) {
     case 'read,copilot':
-      return 'Read/Copilot'
+      return t('settings.apiKeys.scopes.readCopilot')
     case 'read,write':
-      return 'Read/Write'
+      return t('settings.apiKeys.scopes.readWrite')
     case 'read,write,copilot':
-      return 'Read/Write/Copilot'
+      return t('settings.apiKeys.scopes.readWriteCopilot')
     default:
-      return 'Read'
+      return t('settings.apiKeys.scopes.read')
   }
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(undefined, {
+  return new Date(dateStr).toLocaleDateString(intlLocale(), {
     year: 'numeric', month: 'short', day: 'numeric',
   })
 }

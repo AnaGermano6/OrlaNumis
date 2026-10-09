@@ -4,6 +4,7 @@ import { useDialog } from '@/composables/useDialog'
 import { useNotifications } from '@/composables/useNotifications'
 import { useToast } from '@/composables/useToast'
 import type { AIJob, AIJobStartResponse, ValueEstimate } from '@/types'
+import { t } from '@/i18n'
 
 const POLL_INTERVAL_MS = 3_000
 
@@ -35,7 +36,7 @@ export function useCoinValueEstimate(
   const estimateStatusMessage = computed(() => {
     const status = activeEstimateJob.value?.status
     if (!status) return ''
-    return `Value estimate ${formatStatus(status)}. This will continue in the background; you can leave this page.`
+    return t('estimate.status', { status: formatStatus(status) })
   })
 
   onMounted(() => {
@@ -57,10 +58,10 @@ export function useCoinValueEstimate(
       const res = await estimateCoinValue(toValue(coinId))
       const job = normalizeStartedJob(res.data)
       rememberEstimateJob(job.id)
-      showToast('Value estimate queued. You can leave this page; we will notify you when it is done.', 'info')
+      showToast(t('estimate.queued'), 'info')
       await pollEstimateJob(job.id, job)
     } catch (err: unknown) {
-      estimateError.value = err instanceof Error ? err.message : 'Failed to estimate value'
+      estimateError.value = err instanceof Error ? err.message : t('estimate.failed')
       if (typeof err === 'object' && err !== null && 'response' in err) {
         const axiosErr = err as { response?: { data?: { error?: string } } }
         estimateError.value = axiosErr.response?.data?.error || estimateError.value
@@ -76,7 +77,7 @@ export function useCoinValueEstimate(
       valueEstimate.value = null
       options.onApplied?.()
     } catch {
-      await showAlert('Failed to update coin value', { title: 'Error' })
+      await showAlert(t('estimate.updateFailed'), { title: t('common.error') })
     }
   }
 
@@ -145,19 +146,19 @@ export function useCoinValueEstimate(
     activeEstimateJob.value = job
     estimating.value = false
     if (isFailedStatus(job.status)) {
-      estimateError.value = job.errorMessage || 'Value estimate failed. Please retry.'
+      estimateError.value = job.errorMessage || t('estimate.failedRetry')
       showToast(estimateError.value, 'error')
       return
     }
 
     const parsed = parseValueEstimate(job.result)
     if (!parsed) {
-      estimateError.value = 'No estimate returned from AI'
+      estimateError.value = t('estimate.noResult')
       return
     }
     valueEstimate.value = parsed
     activeEstimateJob.value = null
-    showToast('Value estimate ready.', 'success')
+    showToast(t('estimate.ready'), 'success')
     await refreshNotifications()
   }
 
@@ -235,7 +236,7 @@ function normalizeComparable(item: unknown): ValueEstimate['comparables'][number
   if (!item || typeof item !== 'object') return null
   const data = item as Record<string, unknown>
   return {
-    source: String(data.source ?? data.title ?? 'Comparable'),
+    source: String(data.source ?? data.title ?? t('estimate.comparable')),
     price: String(data.price ?? data.value ?? ''),
     url: String(data.url ?? ''),
   }
@@ -274,8 +275,8 @@ function isFailedStatus(status: string) {
 
 function formatStatus(status: string) {
   const normalized = status.toLowerCase()
-  if (normalized === 'queued' || normalized === 'pending') return 'queued'
-  if (normalized === 'running' || normalized === 'processing') return 'in progress'
+  if (normalized === 'queued' || normalized === 'pending') return t('jobs.status.queued')
+  if (normalized === 'running' || normalized === 'processing') return t('jobs.status.inProgress')
   return normalized
 }
 

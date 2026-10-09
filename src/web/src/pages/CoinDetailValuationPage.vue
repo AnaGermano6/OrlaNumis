@@ -1,8 +1,8 @@
 <template>
-  <CoinDetailSectionPageShell section-title="Value Trend">
+  <CoinDetailSectionPageShell :section-title="t('coinDetail.sections.valuation.title')">
     <template #default="{ coin: coinData }">
       <div v-if="coinData.isWishlist || coinData.isSold" class="card p-6 text-center text-text-secondary text-base">
-        <p>Value tracking is only available for active coins in your collection.</p>
+        <p>{{ t('coinDetail.valuation.activeOnly') }}</p>
       </div>
       <div v-else class="flex flex-col gap-5">
         <!-- Chart: requires >= 2 data points (oldest-first, left-to-right) -->
@@ -38,16 +38,16 @@
 
         <!-- Value history table: renders at >= 1 entry regardless of chart gate -->
         <div v-if="valueHistoryTableRows.length > 0" class="flex flex-col gap-2">
-          <p class="section-label">Value History</p>
+          <p class="section-label">{{ t('coinDetail.valuation.history') }}</p>
           <div class="rounded-sm border border-border-subtle overflow-hidden">
             <div data-swipe-ignore :class="['overflow-y-auto overflow-x-auto', { 'max-h-[16.5rem]': valueHistoryTableRows.length > 4 }]">
               <table class="data-table text-sm [&_th]:px-3 [&_th]:py-2">
                 <thead class="sticky top-0 z-10 bg-card">
                   <tr>
-                    <th>Date</th>
-                    <th class="text-right">Value</th>
-                    <th class="text-right">Change</th>
-                    <th class="text-right">Source</th>
+                    <th>{{ t('common.date') }}</th>
+                    <th class="text-right">{{ t('common.value') }}</th>
+                    <th class="text-right">{{ t('common.change') }}</th>
+                    <th class="text-right">{{ t('common.source') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -81,7 +81,7 @@
 
         <!-- No data: neither chart nor table -->
         <div v-if="coinChartData.length < 2 && valueHistoryTableRows.length === 0" class="card p-6 text-center text-text-secondary text-base">
-          <p>Not enough data points to chart. Run an AI estimate to start tracking.</p>
+          <p>{{ t('coinDetail.valuation.notEnoughData') }}</p>
         </div>
       </div>
     </template>
@@ -96,6 +96,7 @@ import { getCoinValueHistory } from '@/api/client'
 import type { CoinValueHistory } from '@/types'
 import { formatCurrency } from '@/utils/format'
 import { useCoinDetailContext } from '@/composables/useCoinDetailContext'
+import { intlLocale, t } from '@/i18n'
 
 const route = useRoute()
 const { coin } = useCoinDetailContext()
@@ -164,15 +165,15 @@ onMounted(async () => {
 })
 
 function formatShortDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })
+  return new Date(dateStr).toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric', year: '2-digit' })
 }
 
 // Resolve human-readable source label. `source` is additive; fall back to
 // confidence for legacy rows that predate the column (D2 inference rule).
 function formatEntrySource(entry: CoinValueHistory): string {
   const src = entry.source ?? (entry.confidence === 'manual' || !entry.confidence ? 'manual' : 'ai_scheduled')
-  if (src === 'ai_scheduled') return 'AI Scheduled'
-  if (src === 'ai_estimate') return 'AI Estimate'
-  return 'Manual'
+  if (src === 'ai_scheduled') return t('coinDetail.valuation.sources.aiScheduled')
+  if (src === 'ai_estimate') return t('coinDetail.valuation.sources.aiEstimate')
+  return t('coinDetail.valuation.sources.manual')
 }
 </script>

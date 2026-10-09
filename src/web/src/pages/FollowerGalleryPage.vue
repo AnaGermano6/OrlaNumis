@@ -1,8 +1,8 @@
 <template>
   <div class="container py-6">
-    <DesktopPageContext :title="profile?.username ?? 'Follower Collection'">
+    <DesktopPageContext :title="profile?.username ?? t('social.gallery.fallbackTitle')">
       <template #actions>
-        <AppIconButton title="Back" @click="router.back()"><ArrowLeft :size="20" /></AppIconButton>
+        <AppIconButton :title="t('common.back')" @click="router.back()"><ArrowLeft :size="20" /></AppIconButton>
       </template>
       <div class="page-header !mb-8 !justify-start gap-4">
         <button class="btn btn-ghost !h-10 !w-10 !shrink-0 !justify-center !p-0" @click="router.back()">
@@ -11,7 +11,7 @@
         <div v-if="profile" class="flex min-w-0 items-center gap-3">
           <AuthenticatedImage
             :media-path="profile.avatarPath ? profile.avatarPath : '/coin-logo.jpg'"
-            alt="Avatar"
+            :alt="t('settings.account.avatar')"
             class="h-12 w-12 rounded-full border-2 border-border-accent object-cover"
           />
           <div class="min-w-0">
@@ -27,7 +27,7 @@
 
     <div v-if="loading" class="loading-overlay">
       <div class="spinner"></div>
-      <p class="text-text-secondary">Loading collection...</p>
+      <p class="text-text-secondary">{{ t('social.gallery.loading') }}</p>
     </div>
 
     <div v-else-if="coins.length" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -52,14 +52,14 @@
           <h3 class="truncate text-base leading-[1.3] text-text-primary">{{ coin.name }}</h3>
           <div class="flex flex-wrap gap-x-2 gap-y-1">
             <span v-if="coin.ruler" class="text-chip text-text-secondary">{{ coin.ruler }}</span>
-            <span v-if="coin.era" class="text-chip text-text-secondary">{{ coin.era }}</span>
+            <span v-if="coin.era" class="text-chip text-text-secondary">{{ eraLabel(coin.era) }}</span>
           </div>
           <div v-if="coin.category">
             <span
               class="inline-flex w-fit rounded-full px-2 py-[0.15rem] text-label font-semibold tracking-[0.02em] text-white"
               :style="{ backgroundColor: CATEGORY_COLORS[coin.category] }"
             >
-              {{ coin.category }}
+              {{ categoryLabel(coin.category) }}
             </span>
           </div>
           <div v-if="coin.grade" class="text-sm font-semibold text-gold">{{ coin.grade }}</div>
@@ -69,8 +69,8 @@
 
     <div v-else class="empty-state">
       <Coins :size="48" :stroke-width="1" />
-      <h3 class="text-text-primary">No coins to show</h3>
-      <p class="text-text-secondary">This user hasn't added any coins yet.</p>
+      <h3 class="text-text-primary">{{ t('social.gallery.empty') }}</h3>
+      <p class="text-text-secondary">{{ t('social.gallery.emptyHint') }}</p>
     </div>
   </div>
 </template>
@@ -85,6 +85,8 @@ import { CATEGORY_COLORS } from '@/types'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 const route = useRoute()
 const router = useRouter()

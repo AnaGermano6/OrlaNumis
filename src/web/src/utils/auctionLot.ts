@@ -1,4 +1,5 @@
 import type { AuctionLot } from '@/types'
+import { t } from '@/i18n'
 
 /**
  * True when a lot's real-world auction has already closed but its tracked status is still
@@ -39,7 +40,7 @@ export function auctionLotStatusSourceLabel(
 ): AuctionLotStatusSourceLabel | null {
   if (lot.status !== 'won' && lot.status !== 'lost') return null
   if (lot.statusSource === 'sync') {
-    return { text: 'Auto-detected', title: 'This outcome was detected automatically from the provider — no action needed.' }
+    return { text: t('auctions.source.autoDetected'), title: t('auctions.source.autoDetectedTitle') }
   }
-  return { text: 'Manually set', title: 'This outcome was set by a manual status override.' }
+  return { text: t('auctions.source.manual'), title: t('auctions.source.manualTitle') }
 }

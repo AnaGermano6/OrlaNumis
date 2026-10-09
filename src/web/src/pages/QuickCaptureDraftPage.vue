@@ -1,68 +1,68 @@
 <template>
   <div class="container">
     <div class="form-wrapper grid min-w-0 gap-4">
-      <DesktopPageContext title="Draft">
+      <DesktopPageContext :title="t('quickCapture.draft')">
         <template #actions>
-          <AppIconButton to="/quick-capture/drafts" title="All drafts">
+          <AppIconButton to="/quick-capture/drafts" :title="t('quickCapture.allDrafts')">
             <List :size="20" />
           </AppIconButton>
         </template>
         <div class="page-header">
-          <h1>Draft</h1>
+          <h1>{{ t('quickCapture.draft') }}</h1>
           <div class="pwa-actions">
-            <RouterLink class="pwa-icon-btn" to="/quick-capture/drafts" title="All drafts" aria-label="All drafts">
+            <RouterLink class="pwa-icon-btn" to="/quick-capture/drafts" :title="t('quickCapture.allDrafts')" :aria-label="t('quickCapture.allDrafts')">
               <List :size="22" />
             </RouterLink>
           </div>
         </div>
       </DesktopPageContext>
 
-      <p v-if="loading" class="m-0 text-chip text-text-secondary">Loading draft...</p>
+      <p v-if="loading" class="m-0 text-chip text-text-secondary">{{ t('quickCapture.loadingDraft') }}</p>
       <p v-else-if="loadError" class="m-0 text-chip text-warning">{{ loadError }}</p>
 
       <template v-else-if="draft">
         <!-- Promoted state -->
         <section v-if="draft.status === 'promoted'" class="card grid gap-4">
-          <p class="m-0 text-chip text-text-secondary">This draft was promoted to a coin.</p>
+          <p class="m-0 text-chip text-text-secondary">{{ t('quickCapture.promotedNotice') }}</p>
           <SafeExternalLink
             v-if="draft.selectedNumistaReference"
             :href="draft.selectedNumistaReference.uri"
             class="text-body text-gold"
           >
-            Promoted with Numista #{{ draft.selectedNumistaReference.number }}
+            {{ t('quickCapture.promotedWith', { number: draft.selectedNumistaReference.number }) }}
           </SafeExternalLink>
-          <RouterLink v-if="draft.promotedCoinId" class="btn btn-primary w-fit" :to="`/coin/${draft.promotedCoinId}`">View Coin</RouterLink>
+          <RouterLink v-if="draft.promotedCoinId" class="btn btn-primary w-fit" :to="`/coin/${draft.promotedCoinId}`">{{ t('common.viewCoin') }}</RouterLink>
         </section>
 
         <!-- Discarded state -->
         <section v-else-if="draft.status === 'discarded'" class="card grid gap-4">
-          <p class="m-0 text-chip text-warning">This draft has been discarded.</p>
+          <p class="m-0 text-chip text-warning">{{ t('quickCapture.discardedNotice') }}</p>
         </section>
 
         <!-- Active editing state -->
         <template v-else>
           <form class="card grid min-w-0 gap-5 overflow-hidden" @submit.prevent="saveDraft">
-            <h2 class="m-0">Edit Draft</h2>
+            <h2 class="m-0">{{ t('quickCapture.editDraft') }}</h2>
             <section
               v-if="draft.source === 'find_coin_ai' || draft.ngcCertNumber || draft.labelText"
               class="rounded-sm border border-border-subtle bg-input p-4"
             >
-              <h3 class="m-0">Find Coin / AI Capture</h3>
+              <h3 class="m-0">{{ t('quickCapture.aiCapture') }}</h3>
               <div class="mt-3 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
                 <div v-if="draft.source === 'find_coin_ai'" class="flex flex-col gap-1">
-                  <span class="section-label">Source</span>
-                  <strong>Quick AI Draft</strong>
+                  <span class="section-label">{{ t('common.source') }}</span>
+                  <strong>{{ t('quickCapture.quickAiDraft') }}</strong>
                 </div>
                 <div v-if="draft.aiConfidence" class="flex flex-col gap-1">
-                  <span class="section-label">Confidence</span>
-                  <strong>{{ draft.aiConfidence }}</strong>
+                  <span class="section-label">{{ t('quickCapture.confidence') }}</span>
+                  <strong>{{ confidenceLabel(draft.aiConfidence) }}</strong>
                 </div>
                 <div v-if="draft.ngcCertNumber" class="flex flex-col gap-1">
-                  <span class="section-label">NGC Coin Number</span>
+                  <span class="section-label">{{ t('quickCapture.ngcNumber') }}</span>
                   <strong>{{ draft.ngcCertNumber }}</strong>
                 </div>
                 <div v-if="draft.ngcGrade" class="flex flex-col gap-1">
-                  <span class="section-label">NGC Grade</span>
+                  <span class="section-label">{{ t('quickCapture.ngcGrade') }}</span>
                   <strong>{{ draft.ngcGrade }}</strong>
                 </div>
               </div>
@@ -70,23 +70,23 @@
             </section>
             <!-- Existing images -->
             <section v-if="draft.images.length" class="grid gap-3">
-              <h3 class="m-0">Current images</h3>
+              <h3 class="m-0">{{ t('quickCapture.currentImages') }}</h3>
               <div class="flex flex-wrap gap-4">
                 <div v-for="img in draft.images" :key="img.id" class="flex flex-col items-center gap-1.5">
                   <AuthenticatedImage
                     :media-path="img.filePath"
-                    :alt="img.imageType"
+                    :alt="imageTypeLabel(img.imageType)"
                     class="h-20 w-20 rounded-sm bg-input object-cover"
                   />
-                  <span class="chip-sm">{{ img.imageType }}</span>
+                  <span class="chip-sm">{{ imageTypeLabel(img.imageType) }}</span>
                   <button
                     type="button"
                     class="cursor-pointer border-0 bg-transparent p-0 disabled:cursor-not-allowed disabled:opacity-50"
                     :disabled="saving"
                     @click="toggleRemoveImage(img.id)"
                   >
-                    <span v-if="removeImageIds.has(img.id)" class="text-chip text-text-secondary">Undo remove</span>
-                    <span v-else class="text-chip text-warning">Remove</span>
+                    <span v-if="removeImageIds.has(img.id)" class="text-chip text-text-secondary">{{ t('quickCapture.undoRemove') }}</span>
+                    <span v-else class="text-chip text-warning">{{ t('common.remove') }}</span>
                   </button>
                 </div>
               </div>
@@ -101,36 +101,36 @@
 
             <div class="grid gap-4 max-[600px]:grid-cols-1 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
               <label class="form-group">
-                <span class="section-label">Working title</span>
-                <input v-model="workingTitle" class="form-input" type="text" maxlength="200" placeholder="Unattributed denarius">
+                <span class="section-label">{{ t('quickCapture.fields.workingTitle') }}</span>
+                <input v-model="workingTitle" class="form-input" type="text" maxlength="200" :placeholder="t('quickCapture.fields.workingTitlePlaceholder')">
               </label>
               <label class="form-group">
-                <span class="section-label">Date range</span>
+                <span class="section-label">{{ t('quickCapture.fields.dateRange') }}</span>
                 <input v-model="dateRange" class="form-input" type="text" placeholder="c. 330-335">
               </label>
               <label class="form-group">
-                <span class="section-label">Era</span>
+                <span class="section-label">{{ t('quickCapture.fields.era') }}</span>
                 <input v-model="era" class="form-input" type="text" placeholder="ancient">
               </label>
               <label class="form-group">
-                <span class="section-label">Acquisition source</span>
-                <input v-model="acquisitionSource" class="form-input" type="text" placeholder="Show table">
+                <span class="section-label">{{ t('quickCapture.fields.acquisitionSource') }}</span>
+                <input v-model="acquisitionSource" class="form-input" type="text" :placeholder="t('quickCapture.fields.acquisitionPlaceholder')">
               </label>
               <label class="form-group">
-                <span class="section-label">Purchase price</span>
+                <span class="section-label">{{ t('quickCapture.fields.purchasePrice') }}</span>
                 <input v-model.number="purchasePrice" class="form-input" type="number" min="0" step="0.01">
               </label>
               <label class="form-group col-[1/-1]">
-                <span class="section-label">Notes</span>
-                <textarea v-model="notes" class="form-textarea min-h-28 leading-6" rows="4" placeholder="Quick notes for later attribution"></textarea>
+                <span class="section-label">{{ t('quickCapture.fields.notes') }}</span>
+                <textarea v-model="notes" class="form-textarea min-h-28 leading-6" rows="4" :placeholder="t('quickCapture.fields.notesPlaceholder')"></textarea>
               </label>
             </div>
 
             <section class="grid min-w-0 gap-3">
               <div>
-                <span class="section-label">Optional catalog reference</span>
+                <span class="section-label">{{ t('quickCapture.optionalReference') }}</span>
                 <p class="mt-1 mb-0 text-body text-text-secondary">
-                  Search, replace, or remove the Numista reference saved with this draft.
+                  {{ t('quickCapture.referenceHint') }}
                 </p>
               </div>
               <NumistaLookupPanel
@@ -143,19 +143,19 @@
                 @selection-changed="handleNumistaSelectionChanged"
               />
               <p v-if="selectionMutation === 'replace'" class="m-0 text-sm text-text-secondary" role="status">
-                The selected reference will be saved with the draft.
+                {{ t('quickCapture.referenceWillSave') }}
               </p>
               <p v-else-if="selectionMutation === 'clear'" class="m-0 text-sm text-text-secondary" role="status">
-                The saved reference will be removed when changes are saved.
+                {{ t('quickCapture.referenceWillClear') }}
               </p>
             </section>
 
             <p v-if="saveError" class="m-0 text-chip text-warning">{{ saveError }}</p>
-            <p v-if="saveSuccess" class="m-0 text-chip text-text-secondary">Draft saved.</p>
+            <p v-if="saveSuccess" class="m-0 text-chip text-text-secondary">{{ t('quickCapture.draftSaved') }}</p>
 
             <div class="flex flex-wrap items-center gap-3 max-[600px]:[&>.btn]:w-full max-[600px]:[&>.btn]:justify-center">
               <button type="submit" class="btn btn-primary" :disabled="saving">
-                {{ saving ? 'Saving...' : 'Save Changes' }}
+                {{ saving ? t('common.saving') : t('common.saveChanges') }}
               </button>
               <button
                 v-if="!confirmingDiscard"
@@ -164,14 +164,14 @@
                 :disabled="saving"
                 @click="confirmingDiscard = true"
               >
-                Discard Draft
+                {{ t('quickCapture.discardDraft') }}
               </button>
               <template v-else>
-                <span class="text-chip text-warning">Discard this draft?</span>
+                <span class="text-chip text-warning">{{ t('quickCapture.confirmDiscard') }}</span>
                 <button type="button" class="btn btn-secondary" :disabled="discarding" @click="doDiscard">
-                  {{ discarding ? 'Discarding...' : 'Yes, discard' }}
+                  {{ discarding ? t('quickCapture.discarding') : t('quickCapture.yesDiscard') }}
                 </button>
-                <button type="button" class="btn btn-secondary" @click="confirmingDiscard = false">Cancel</button>
+                <button type="button" class="btn btn-secondary" @click="confirmingDiscard = false">{{ t('common.cancel') }}</button>
               </template>
             </div>
           </form>
@@ -214,6 +214,8 @@ import type { NumistaCandidate, NumistaEvidence } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { confidenceLabel, imageTypeLabel } from '@/utils/format'
+import { t } from '@/i18n'
 
 const route = useRoute()
 const router = useRouter()
@@ -309,7 +311,7 @@ onMounted(async () => {
     draft.value = res.data
     populateForm(res.data)
   } catch (err) {
-    loadError.value = getApiErrorMessage(err) || 'Unable to load quick capture draft.'
+    loadError.value = getApiErrorMessage(err) || t('quickCapture.loadDraftFailed')
   } finally {
     loading.value = false
   }
@@ -342,7 +344,7 @@ async function saveDraft() {
     populateForm(res.data)
     saveSuccess.value = true
   } catch (err) {
-    saveError.value = getApiErrorMessage(err) || 'Failed to save draft. Please try again.'
+    saveError.value = getApiErrorMessage(err) || t('quickCapture.saveDraftFailed')
   } finally {
     saving.value = false
   }
@@ -355,7 +357,7 @@ async function doDiscard() {
     draft.value = res.data
     confirmingDiscard.value = false
   } catch (err) {
-    saveError.value = getApiErrorMessage(err) || 'Failed to discard draft.'
+    saveError.value = getApiErrorMessage(err) || t('quickCapture.discardFailed')
     confirmingDiscard.value = false
   } finally {
     discarding.value = false

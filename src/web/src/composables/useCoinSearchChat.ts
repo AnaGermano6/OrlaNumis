@@ -6,6 +6,7 @@ import { useDialog } from '@/composables/useDialog'
 import { useCoinOptions } from '@/composables/useCoinOptions'
 import { useCoinCopilot } from '@/composables/useCoinCopilot'
 import { renderSafeChatMarkdown } from '@/composables/useMarkdown'
+import { t } from '@/i18n'
 
 type ChatSuggestion = CoinSuggestion | CoinShow
 
@@ -185,7 +186,7 @@ export function buildWishlistCoinPayload(
     }))
 
   const payload: CoinMutationPayload = {
-    name: limitText(coin.name, FIELD_LIMITS.name) || 'Agent coin suggestion',
+    name: limitText(coin.name, FIELD_LIMITS.name) || t('chat.agentSuggestion'),
     category,
     material,
     denomination: limitText(coin.denomination, FIELD_LIMITS.denomination),
@@ -218,7 +219,15 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
   const conversationId = ref<number | null>(null)
   const saving = ref(false)
   const scrapedImages = ref<Map<string, string>>(new Map())
-  const saveLabel = ref('Save')
+  const saveState = ref<'idle' | 'saving' | 'saved' | 'failed'>('idle')
+  const saveLabel = computed(() => {
+    switch (saveState.value) {
+      case 'saving': return t('common.saving')
+      case 'saved': return t('chat.saved')
+      case 'failed': return t('chat.saveFailed')
+      default: return t('chat.save')
+    }
+  })
   const providerConfigured = ref(true)
   const categoryEraConfirmRequest = ref<CategoryEraConfirmRequest | null>(null)
   const copilotCancelling = ref(false)
@@ -246,7 +255,7 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
           role: 'assistant',
           content: '',
           streaming: currentRun.status !== 'paused',
-          statusText: currentRun.status === 'paused' ? 'Waiting for your answer' : 'Reconnecting to Coin Copilot...',
+          statusText: currentRun.status === 'paused' ? t('chat.waitingAnswer') : t('chat.reconnecting'),
         })
       }
       scrollToBottom()
@@ -262,8 +271,8 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
     resetting.value = true
     try {
       if (loading.value || copilot.canCancel.value || copilot.run.value?.status === 'cancel_requested') {
-        if (!await showConfirm('Cancel the current request and start a new chat?', {
-          title: 'New Chat', confirmLabel: 'Cancel and start new', cancelLabel: 'Keep chat',
+        if (!await showConfirm(t('chat.newChatConfirm'), {
+          title: t('chat.newChat'), confirmLabel: t('chat.cancelAndNew'), cancelLabel: t('chat.keepChat'),
         })) return false
         if (copilot.canCancel.value && !await copilot.cancel()) return false
       }
@@ -279,7 +288,7 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
       input.value = ''
       loading.value = false
       conversationId.value = null
-      saveLabel.value = 'Save'
+      saveState.value = 'idle'
       addedSet.value = new Set()
       savedShows.value = new Set()
       scrapedImages.value = new Map()
@@ -356,7 +365,7 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
       (error: string) => {
         if (currentGeneration !== generation) return
         const msg = messages.value[assistantIdx]!
-        msg.content = error || 'Failed to get a response. Please try again.'
+        msg.content = error || t('chat.noResponse')
         msg.streaming = false
         msg.statusText = ''
         loading.value = false
@@ -382,14 +391,14 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
     if (!msg) return
 
     if (result.status === 'completed') {
-      msg.content = result.answer || copilot.run.value?.finalAnswer || 'Coin Copilot completed without a response.'
+      msg.content = result.answer || copilot.run.value?.finalAnswer || t('chat.copilotEmpty')
     } else if (result.status === 'failed') {
-      msg.content = result.error || copilot.run.value?.failureMessage || 'Coin Copilot could not complete this request.'
+      msg.content = result.error || copilot.run.value?.failureMessage || t('chat.copilotFailed')
     } else if (result.status === 'cancelled') {
-      msg.content = 'Coin Copilot run cancelled.'
+      msg.content = t('chat.copilotCancelled')
     }
     msg.streaming = result.status === 'queued' || result.status === 'running' || result.status === 'cancel_requested'
-    msg.statusText = result.status === 'paused' ? 'Waiting for your answer' : ''
+    msg.statusText = result.status === 'paused' ? t('chat.waitingAnswer') : ''
     loading.value = Boolean(msg.streaming)
     scrollToBottom()
   }
@@ -458,7 +467,7 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
     const assistantIdx = copilotAssistantIdx
     if (assistantIdx !== null && messages.value[assistantIdx]) {
       messages.value[assistantIdx]!.streaming = true
-      messages.value[assistantIdx]!.statusText = 'Resuming Coin Copilot...'
+      messages.value[assistantIdx]!.statusText = t('chat.resuming')
     }
     try {
       const resumed = await copilot.resume(answer)
@@ -473,7 +482,7 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
         loading.value = false
         if (assistantIdx !== null && messages.value[assistantIdx]) {
           messages.value[assistantIdx]!.streaming = false
-          messages.value[assistantIdx]!.statusText = 'Waiting for your answer'
+          messages.value[assistantIdx]!.statusText = t('chat.waitingAnswer')
         }
       }
     } finally {
@@ -493,22 +502,23 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
       if (currentGeneration !== generation) return
       const summary = res.data
       const missingProperties = Object.entries(summary.missingFields ?? {})
-      const context = `Analyze my coin collection portfolio. Here is my collection summary:\n\n` +
-        `Total Coins: ${summary.totalCoins ?? 0}\n` +
-        `Total Value: $${summary.totalValue?.toFixed(2) ?? '0'}\n` +
-        `Total Invested: $${summary.totalInvested?.toFixed(2) ?? '0'}\n` +
-        `Categories: ${summary.categories?.map((c) => `${c.category} (${c.count})`).join(', ') || 'none'}\n` +
-        `Materials: ${summary.materials?.map((m) => `${m.material} (${m.count})`).join(', ') || 'none'}\n` +
-        `Eras: ${summary.eras?.map((e) => `${e.era} (${e.count})`).join(', ') || 'none'}\n` +
-        `Top Rulers: ${summary.rulers?.map((r) => `${r.ruler} (${r.count})`).join(', ') || 'none'}\n` +
-        `Missing Properties: ${missingProperties.length ? missingProperties.map(([field, count]) => `${field} (${count})`).join(', ') : 'none'}\n` +
-        `Top Coins by Value: ${summary.topCoins?.map((c) => `${c.name} ($${c.currentValue?.toFixed(2) ?? '?'})`).join(', ') || 'none'}\n\n` +
-        `Please analyze my collection, identify gaps, and suggest what I should consider adding.`
+      const none = t('chat.portfolio.none')
+      const context = `${t('chat.portfolio.intro')}\n\n` +
+        `${t('chat.portfolio.totalCoins')}: ${summary.totalCoins ?? 0}\n` +
+        `${t('chat.portfolio.totalValue')}: $${summary.totalValue?.toFixed(2) ?? '0'}\n` +
+        `${t('chat.portfolio.totalInvested')}: $${summary.totalInvested?.toFixed(2) ?? '0'}\n` +
+        `${t('chat.portfolio.categories')}: ${summary.categories?.map((c) => `${c.category} (${c.count})`).join(', ') || none}\n` +
+        `${t('chat.portfolio.materials')}: ${summary.materials?.map((m) => `${m.material} (${m.count})`).join(', ') || none}\n` +
+        `${t('chat.portfolio.eras')}: ${summary.eras?.map((e) => `${e.era} (${e.count})`).join(', ') || none}\n` +
+        `${t('chat.portfolio.topRulers')}: ${summary.rulers?.map((r) => `${r.ruler} (${r.count})`).join(', ') || none}\n` +
+        `${t('chat.portfolio.missing')}: ${missingProperties.length ? missingProperties.map(([field, count]) => `${field} (${count})`).join(', ') : none}\n` +
+        `${t('chat.portfolio.topCoins')}: ${summary.topCoins?.map((c) => `${c.name} ($${c.currentValue?.toFixed(2) ?? '?'})`).join(', ') || none}\n\n` +
+        t('chat.portfolio.closing')
       input.value = context
       sendMessage()
     } catch {
       if (currentGeneration !== generation) return
-      input.value = 'Analyze my coin collection portfolio and suggest areas for improvement.'
+      input.value = t('chat.portfolio.fallback')
       sendMessage()
     }
   }
@@ -516,11 +526,11 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
   async function handleSave() {
     if (messages.value.length === 0 || saving.value) return
     saving.value = true
-    saveLabel.value = 'Saving...'
+    saveState.value = 'saving'
 
     try {
       const firstUserMsg = messages.value.find(m => m.role === 'user')
-      const title = firstUserMsg?.content.substring(0, 100) || 'Untitled conversation'
+      const title = firstUserMsg?.content.substring(0, 100) || t('chat.untitled')
 
       const res = await saveConversation({
         id: conversationId.value || undefined,
@@ -528,13 +538,13 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
         messages: JSON.stringify(messages.value),
       })
       conversationId.value = res.data.id
-      saveLabel.value = 'Saved!'
+      saveState.value = 'saved'
       if (saveLabelTimer) clearTimeout(saveLabelTimer)
-      saveLabelTimer = setTimeout(() => { saveLabel.value = 'Save' }, 2000)
+      saveLabelTimer = setTimeout(() => { saveState.value = 'idle' }, 2000)
     } catch {
-      saveLabel.value = 'Failed'
+      saveState.value = 'failed'
       if (saveLabelTimer) clearTimeout(saveLabelTimer)
-      saveLabelTimer = setTimeout(() => { saveLabel.value = 'Save' }, 2000)
+      saveLabelTimer = setTimeout(() => { saveState.value = 'idle' }, 2000)
     } finally {
       saving.value = false
     }
@@ -607,7 +617,7 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
       options.onAdded()
     } catch (err) {
       const detail = getApiErrorMessage(err)
-      await showAlert(detail ? `Failed to add coin to wishlist: ${detail}` : 'Failed to add coin to wishlist', { title: 'Error' })
+      await showAlert(detail ? t('chat.wishlistFailedDetail', { detail }) : t('chat.wishlistFailed'), { title: t('common.error') })
     } finally {
       addingIdx.value = null
     }
@@ -688,11 +698,11 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
         startDate: start,
         endDate: end,
         url: show.url || undefined,
-        notes: [location, show.entryFee ? `Entry: ${show.entryFee}` : '', show.description].filter(Boolean).join('\n'),
+        notes: [location, show.entryFee ? t('chat.entry', { fee: show.entryFee }) : '', show.description].filter(Boolean).join('\n'),
       })
       savedShows.value.add(key)
     } catch {
-      await showAlert('Failed to save event to calendar')
+      await showAlert(t('chat.calendarFailed'))
     } finally {
       savingShow.value = null
     }
@@ -708,16 +718,16 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
       if (currentGeneration !== generation) return
       messages.value.push({
         role: 'assistant',
-        content: res.data?.message || 'Update committed.',
+        content: res.data?.message || t('chat.updateCommitted'),
       })
       msg.collection = {
         kind: 'read_result',
-        message: 'Proposal committed.',
+        message: t('chat.proposalCommitted'),
       }
       scrollToBottom()
     } catch {
       if (currentGeneration !== generation) return
-      await showAlert('Failed to commit collection update proposal.', { title: 'Error' })
+      await showAlert(t('chat.commitFailed'), { title: t('common.error') })
     }
   }
 
@@ -731,22 +741,22 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
       if (currentGeneration !== generation) return
       messages.value.push({
         role: 'assistant',
-        content: res.data?.message || 'Proposal cancelled.',
+        content: res.data?.message || t('chat.proposalCancelled'),
       })
       msg.collection = {
         kind: 'read_result',
-        message: 'Proposal cancelled.',
+        message: t('chat.proposalCancelled'),
       }
       scrollToBottom()
     } catch {
       if (currentGeneration !== generation) return
-      await showAlert('Failed to cancel collection update proposal.', { title: 'Error' })
+      await showAlert(t('chat.cancelProposalFailed'), { title: t('common.error') })
     }
   }
 
   function pickDisambiguationCandidate(coinId: number) {
     if (loading.value) return
-    input.value = `Use coin #${coinId} for that update.`
+    input.value = t('chat.useCoin', { id: coinId })
     sendMessage()
   }
 

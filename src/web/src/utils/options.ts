@@ -33,3 +33,33 @@ export function parseOptionList(value: string | null | undefined, defaults: stri
 export function formatOptionList(options: string[]): string {
   return options.join('\n')
 }
+
+/**
+ * Parse a newline-delimited "Value=Label" list (the shape of the
+ * CoinCategoryLabelsPtPT / CoinEraLabelsPtPT settings) into a map keyed by
+ * the stored value. Mirrors the API's ParseSettingLabelMap: only the first
+ * "=" separates value from label, blank or malformed lines are skipped, and a
+ * later line for the same value wins.
+ */
+export function parseOptionLabelMap(value: string | null | undefined): Record<string, string> {
+  const labels: Record<string, string> = {}
+  for (const line of (value ?? '').split('\n')) {
+    const separator = line.indexOf('=')
+    if (separator < 0) continue
+    const key = line.slice(0, separator).trim()
+    const label = line.slice(separator + 1).trim()
+    if (key && label) labels[key] = label
+  }
+  return labels
+}
+
+/**
+ * Convert per-option labels back to "Value=Label" lines, keeping only options
+ * that are still configured and have a non-blank label.
+ */
+export function formatOptionLabelMap(options: string[], labels: Record<string, string>): string {
+  return options
+    .filter(option => (labels[option] ?? '').trim() !== '')
+    .map(option => `${option}=${(labels[option] ?? '').trim()}`)
+    .join('\n')
+}

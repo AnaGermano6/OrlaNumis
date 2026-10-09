@@ -2,23 +2,23 @@
   <div class="container">
     <div class="mx-auto min-w-0 max-w-[900px]">
       <fieldset :disabled="formDisabled" class="min-w-0 border-0 p-0">
-        <DesktopPageContext title="Add Coin">
+        <DesktopPageContext :title="t('nav.addCoin')">
           <template #actions>
-            <AppIconButton :active="entryMode === 'manual'" :disabled="formDisabled" title="Manual Mode" @click="entryMode = 'manual'">
+            <AppIconButton :active="entryMode === 'manual'" :disabled="formDisabled" :title="t('addCoin.manualMode')" @click="entryMode = 'manual'">
               <PencilLine :size="20" />
             </AppIconButton>
-            <AppIconButton :active="entryMode === 'agentic'" :disabled="formDisabled" title="AI Assist Mode" @click="entryMode = 'agentic'">
+            <AppIconButton :active="entryMode === 'agentic'" :disabled="formDisabled" :title="t('addCoin.aiMode')" @click="entryMode = 'agentic'">
               <Sparkles :size="20" />
             </AppIconButton>
           </template>
           <header class="page-header">
-            <h1>Add Coin</h1>
+            <h1>{{ t('nav.addCoin') }}</h1>
             <div v-if="!isPwa" class="ml-auto flex shrink-0 gap-[0.35rem]">
               <button type="button" class="chip border border-border-subtle" :class="{ 'border-gold': entryMode === 'manual' }" @click="entryMode = 'manual'">
-                Manual Mode
+                {{ t('addCoin.manualMode') }}
               </button>
               <button type="button" class="chip border border-border-subtle" :class="{ 'border-gold': entryMode === 'agentic' }" @click="entryMode = 'agentic'">
-                AI Assist Mode
+                {{ t('addCoin.aiMode') }}
               </button>
             </div>
           </header>
@@ -31,7 +31,7 @@
               <div class="flex h-12 w-12 items-center justify-center">
                 <div class="h-10 w-10 animate-spin rounded-full border-[3px] border-border-subtle border-t-gold"></div>
               </div>
-              <p class="m-0 text-center text-base text-text-primary">Analyzing your coin…</p>
+              <p class="m-0 text-center text-base text-text-primary">{{ t('addCoin.analyzing') }}</p>
             </div>
           </div>
 
@@ -55,103 +55,103 @@
           <form v-if="draft" class="rounded-md border border-border-subtle bg-card p-4 pb-5" @submit.prevent="confirmDraft">
             <p v-if="intakeWarning" role="status" class="mb-3 text-sm text-warning">{{ intakeWarning }}</p>
             <div class="mb-3 flex items-center justify-between gap-3">
-              <h2 class="font-display text-xl font-medium text-heading">Review Draft</h2>
+              <h2 class="font-display text-xl font-medium text-heading">{{ t('addCoin.reviewDraft') }}</h2>
               <span
                 class="chip-sm border border-border-subtle capitalize"
                 :class="confidenceClass === 'confidence-high' ? 'border-confidence-high text-confidence-high' : confidenceClass === 'confidence-medium' ? 'border-confidence-medium text-confidence-medium' : 'border-confidence-low text-confidence-low'"
               >
-                {{ draft.confidenceSummary.overall }} confidence
+                {{ t('common.confidenceLabel', { level: confidenceLabel(draft.confidenceSummary.overall) }) }}
               </span>
             </div>
 
             <div class="grid gap-3 md:grid-cols-2">
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Name</span>
+                <span class="section-label">{{ t('coinFields.name') }}</span>
                 <input v-model="reviewForm.name" class="form-input" type="text">
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Category</span>
+                <span class="section-label">{{ t('collection.menu.category') }}</span>
                 <select v-model="reviewForm.category" class="form-select">
-                  <option v-for="category in categoryOptions" :key="category" :value="category">{{ category }}</option>
+                  <option v-for="category in categoryOptions" :key="category" :value="category">{{ categoryLabel(category) }}</option>
                 </select>
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Material</span>
+                <span class="section-label">{{ t('coinFields.material') }}</span>
                 <select v-model="reviewForm.material" class="form-select">
-                  <option v-for="material in materialOptions" :key="material" :value="material">{{ material }}</option>
+                  <option v-for="material in materialOptions" :key="material" :value="material">{{ materialLabel(material) }}</option>
                 </select>
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Era</span>
+                <span class="section-label">{{ t('coinFields.era') }}</span>
                 <select v-model="reviewForm.era" class="form-select">
-                  <option value="">Unknown</option>
-                  <option v-for="era in eraOptions" :key="era" :value="era">{{ era }}</option>
+                  <option value="">{{ t('addCoin.eraUnknown') }}</option>
+                  <option v-for="era in eraOptions" :key="era" :value="era">{{ eraLabel(era) }}</option>
                 </select>
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Denomination</span>
+                <span class="section-label">{{ t('coinFields.denomination') }}</span>
                 <input v-model="reviewForm.denomination" class="form-input" type="text">
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Ruler</span>
+                <span class="section-label">{{ t('coinFields.ruler') }}</span>
                 <input v-model="reviewForm.ruler" class="form-input" type="text">
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Mint</span>
+                <span class="section-label">{{ t('coinFields.mint') }}</span>
                 <input v-model="reviewForm.mint" class="form-input" type="text">
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Grade</span>
+                <span class="section-label">{{ t('coinFields.grade') }}</span>
                 <input v-model="reviewForm.grade" class="form-input" type="text">
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Weight (g)</span>
+                <span class="section-label">{{ t('coinFields.weightG') }}</span>
                 <input v-model.number="reviewForm.weightGrams" class="form-input" type="number" step="0.01" min="0">
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Diameter (mm)</span>
+                <span class="section-label">{{ t('coinForm.diameterMm') }}</span>
                 <input v-model.number="reviewForm.diameterMm" class="form-input" type="number" step="0.1" min="0">
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Purchase Price</span>
+                <span class="section-label">{{ t('coinFields.purchasePrice') }}</span>
                 <input v-model.number="reviewForm.purchasePrice" class="form-input" type="number" step="0.01" min="0">
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Current Value</span>
+                <span class="section-label">{{ t('coinFields.currentValue') }}</span>
                 <input v-model.number="reviewForm.currentValue" class="form-input" type="number" step="0.01" min="0">
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Purchase Date</span>
+                <span class="section-label">{{ t('coinFields.purchaseDate') }}</span>
                 <input v-model="reviewForm.purchaseDate" class="form-input" type="date">
               </label>
               <label class="grid gap-[0.35rem]">
-                <span class="section-label">Purchase Location</span>
+                <span class="section-label">{{ t('coinFields.purchaseLocation') }}</span>
                 <input v-model="reviewForm.purchaseLocation" class="form-input" type="text">
               </label>
               <label class="grid gap-[0.35rem] md:col-span-2">
-                <span class="section-label">Obverse Description</span>
+                <span class="section-label">{{ t('coinForm.obverseDescription') }}</span>
                 <textarea v-model="reviewForm.obverseDescription" class="form-input min-h-20 resize-y" rows="2"></textarea>
               </label>
               <label class="grid gap-[0.35rem] md:col-span-2">
-                <span class="section-label">Reverse Description</span>
+                <span class="section-label">{{ t('coinForm.reverseDescription') }}</span>
                 <textarea v-model="reviewForm.reverseDescription" class="form-input min-h-20 resize-y" rows="2"></textarea>
               </label>
               <label class="grid gap-[0.35rem] md:col-span-2">
-                <span class="section-label">Notes</span>
+                <span class="section-label">{{ t('coinFields.notes') }}</span>
                 <textarea v-model="reviewForm.notes" class="form-input min-h-20 resize-y" rows="3"></textarea>
               </label>
             </div>
 
             <p v-if="draft.unresolvedFields.length > 0" class="mt-[0.6rem] text-chip text-text-secondary">
-              Needs review: {{ draft.unresolvedFields.join(', ') }}
+              {{ t('addCoin.needsReview', { fields: draft.unresolvedFields.join(', ') }) }}
             </p>
 
             <div class="mt-4 flex flex-col-reverse gap-3 md:flex-row md:justify-end">
               <button type="button" class="btn btn-secondary" @click="switchToManualMode">
-                Use Manual Mode
+                {{ t('addCoin.useManual') }}
               </button>
               <button type="submit" class="btn btn-primary" :disabled="committingDraft">
-                {{ committingDraft ? 'Saving...' : 'Confirm and Save Coin' }}
+                {{ committingDraft ? t('common.saving') : t('addCoin.confirmSave') }}
               </button>
             </div>
           </form>
@@ -161,18 +161,18 @@
           v-else
           ref="coinFormRef"
           :form="form"
-          submit-label="Add to Collection"
+          :submit-label="t('addCoin.addToCollection')"
           :loading="saving"
           @submit="handleManualSubmit"
         />
       </fieldset>
       <div v-if="savedCoinId && saveCompletionError" role="alert" class="mt-4 grid gap-3 rounded-md border border-border-subtle bg-card p-4">
-        <p>Coin saved. {{ saveCompletionError }}</p>
+        <p>{{ t('addCoin.coinSaved', { error: saveCompletionError }) }}</p>
         <div class="flex flex-wrap gap-3">
           <button class="btn btn-primary" :disabled="saving" @click="retrySavedCoin">
-            {{ saving ? 'Uploading...' : 'Retry remaining uploads' }}
+            {{ saving ? t('upload.uploading') : t('addCoin.retryUploads') }}
           </button>
-          <RouterLink class="btn btn-secondary" :to="`/coin/${savedCoinId}`">Open saved coin</RouterLink>
+          <RouterLink class="btn btn-secondary" :to="`/coin/${savedCoinId}`">{{ t('addCoin.openSaved') }}</RouterLink>
         </div>
       </div>
     </div>
@@ -200,6 +200,9 @@ import { normalizeGalleryImage } from '@/utils/galleryImage'
 import { PencilLine, Sparkles } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { confidenceLabel, materialLabel } from '@/utils/format'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 type EntryMode = 'manual' | 'agentic'
 
@@ -470,7 +473,7 @@ async function handleGallerySelection(role: CoinLookupImageRole, file: File) {
     const normalized = await normalizeGalleryImage(file)
     if (generation === imageGeneration) setCapturedImage(role, normalized)
   } catch (error) {
-    if (generation === imageGeneration) intakeError.value = apiErrorMessage(error, 'Unable to prepare this image. Try a JPEG or PNG.')
+    if (generation === imageGeneration) intakeError.value = apiErrorMessage(error, t('addCoin.prepareFailed'))
   } finally {
     if (generation === imageGeneration) preparingImage.value = false
   }
@@ -492,7 +495,7 @@ function switchToManualMode() {
 async function generateDraft() {
   if (intakeLoading.value || preparingImage.value) return
   if (!obverseFile.value) {
-    intakeError.value = 'Add an obverse image to continue.'
+    intakeError.value = t('addCoin.needObverse')
     return
   }
   intakeLoading.value = true
@@ -503,7 +506,7 @@ async function generateDraft() {
     draft.value = response.data
     applyCoinToTarget(reviewForm, normalizeDraftCoin(response.data.coin))
   } catch (error) {
-    intakeError.value = apiErrorMessage(error, 'Failed to generate draft.')
+    intakeError.value = apiErrorMessage(error, t('addCoin.draftFailed'))
   } finally {
     intakeLoading.value = false
   }
@@ -528,9 +531,9 @@ async function confirmDraft() {
     await completeSavedCoin()
   } catch (error) {
     if (savedCoinId.value !== null) {
-      saveCompletionError.value = apiErrorMessage(error, 'Image upload failed. Retry the remaining uploads or open the saved coin.')
+      saveCompletionError.value = apiErrorMessage(error, t('addCoin.imageUploadFailed'))
     } else {
-      await showAlert(apiErrorMessage(error, 'Failed to save coin from draft.'), { title: 'Error' })
+      await showAlert(apiErrorMessage(error, t('addCoin.draftSaveFailed')), { title: t('common.error') })
     }
   } finally {
     committingDraft.value = false
@@ -558,12 +561,12 @@ async function handleManualSubmit() {
   } catch (error: unknown) {
     const code = (error as { response?: { data?: { code?: string } } })?.response?.data?.code
     if (savedCoinId.value !== null) {
-      saveCompletionError.value = apiErrorMessage(error, 'Image or card upload failed. Retry the remaining uploads or open the saved coin.')
+      saveCompletionError.value = apiErrorMessage(error, t('addCoin.imageOrCardFailed'))
     } else if (code === 'slot_occupied') {
       await coinFormRef.value?.refreshStorageOccupancy()
-      await showAlert('That tray slot was just taken. Choose another available slot; your form has been preserved.', { title: 'Slot unavailable' })
+      await showAlert(t('addCoin.slotTaken'), { title: t('addCoin.slotUnavailable') })
     } else {
-      await showAlert(apiErrorMessage(error, 'Failed to add coin'), { title: 'Error' })
+      await showAlert(apiErrorMessage(error, t('addCoin.addFailed')), { title: t('common.error') })
     }
   } finally {
     saving.value = false
@@ -595,7 +598,7 @@ async function retrySavedCoin() {
   try {
     await completeSavedCoin()
   } catch (error) {
-    saveCompletionError.value = apiErrorMessage(error, 'Upload failed. Your coin is already saved; retry the remaining uploads.')
+    saveCompletionError.value = apiErrorMessage(error, t('addCoin.retryFailed'))
   } finally {
     saving.value = false
   }

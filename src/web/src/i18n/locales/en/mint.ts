@@ -1,0 +1,15 @@
+export default {
+  createTitle: 'Create new mint',
+  name: 'Mint name',
+  namePlaceholder: 'e.g. Sirmium',
+  searching: 'Searching…',
+  search: 'Search',
+  noMatches: 'No matches found for "{name}" — click the map below to place a pin manually.',
+  pinSet: 'Pin set at {lat}, {lng} — drag to adjust.',
+  clickMap: 'Click the map to place a pin.',
+  region: 'Region (optional)',
+  regionPlaceholder: 'e.g. Pannonia',
+  saving: 'Saving…',
+  save: 'Save mint',
+  saveFailed: 'Failed to save mint',
+}

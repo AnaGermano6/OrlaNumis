@@ -1,5 +1,8 @@
 import type { Coin, CoinImage } from '@/types'
 import { isPrivateUploadPath, privateMediaObjectUrl } from '@/utils/media'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
+import { materialLabel } from '@/utils/format'
 
 const CARD_WIDTH = 1080
 const CARD_HEIGHT = 1350
@@ -72,16 +75,16 @@ function addField(fields: CoinShareCardField[], label: string, value: string | n
 
 export function getShareCardMetadata(coin: Coin): CoinShareCardMetadata {
   const fields: CoinShareCardField[] = []
-  addField(fields, 'Ruler', coin.ruler)
-  addField(fields, 'Denomination', coin.denomination)
-  addField(fields, 'Era', coin.era)
-  addField(fields, 'Mint', coin.mint)
-  addField(fields, 'Material', coin.material)
-  addField(fields, 'Grade', coin.grade)
+  addField(fields, t('shareCard.ruler'), coin.ruler)
+  addField(fields, t('coinFields.denomination'), coin.denomination)
+  addField(fields, t('coinFields.era'), eraLabel(coin.era))
+  addField(fields, t('coinFields.mint'), coin.mint)
+  addField(fields, t('coinFields.material'), materialLabel(coin.material))
+  addField(fields, t('coinFields.grade'), coin.grade)
 
   return {
-    title: cleanText(coin.name) || 'Untitled Coin',
-    category: cleanText(coin.category),
+    title: cleanText(coin.name) || t('shareCard.untitled'),
+    category: cleanText(categoryLabel(coin.category)),
     fields,
   }
 }
@@ -131,7 +134,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image()
     image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('Unable to load coin image for share card.'))
+    image.onerror = () => reject(new Error(t('shareCard.imageLoadFailed')))
     image.src = src
   })
 }
@@ -269,7 +272,7 @@ function drawImagePanel(
     ctx.font = '600 36px Inter, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('No coin image', x + width / 2, y + height / 2)
+    ctx.fillText(t('shareCard.noImage'), x + width / 2, y + height / 2)
   }
 
   ctx.restore()
@@ -421,7 +424,7 @@ function canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
       if (blob) {
         resolve(blob)
       } else {
-        reject(new Error('Unable to generate share card image.'))
+        reject(new Error(t('shareCard.imageFailed')))
       }
     }, 'image/png')
   })

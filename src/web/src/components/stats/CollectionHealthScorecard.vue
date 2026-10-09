@@ -1,7 +1,7 @@
 <template>
   <div class="card">
     <div>
-      <h3 class="mb-5 text-lg text-heading">Collection Health</h3>
+      <h3 class="mb-5 text-lg text-heading">{{ t('stats.health.title') }}</h3>
     </div>
     <div class="flex flex-col gap-6">
       <div class="flex flex-col items-center gap-2 rounded-sm bg-input p-4">
@@ -18,7 +18,7 @@
                   ? 'border-[rgba(230,126,34,0.3)] bg-[rgba(230,126,34,0.15)] text-orange-400'
                   : 'border-[rgba(231,76,60,0.3)] bg-[rgba(231,76,60,0.15)] text-red-400'"
         >
-          Grade {{ summary.grade }}
+          {{ t('stats.health.grade', { grade: summary.grade }) }}
         </div>
       </div>
 
@@ -47,7 +47,7 @@
       </div>
 
       <div class="border-t border-border-subtle pt-3">
-        <div class="section-label mb-2">Scoring Weights</div>
+        <div class="section-label mb-2">{{ t('stats.health.weights') }}</div>
         <div class="flex flex-wrap gap-[0.35rem]">
           <span
             v-for="(value, key) in summary.weights"
@@ -64,6 +64,7 @@
 
 <script setup lang="ts">
 import type { CollectionHealthSummary } from '@/types'
+import { t } from '@/i18n'
 
 defineProps<{
   summary: CollectionHealthSummary
@@ -71,10 +72,10 @@ defineProps<{
 
 function formatDimensionLabel(key: string): string {
   const labels: Record<string, string> = {
-    metadata: 'Metadata',
-    imageCoverage: 'Image Coverage',
-    valuationFreshness: 'Valuation Freshness',
-    aiCoverage: 'AI Coverage',
+    metadata: t('health.dimensions.metadata'),
+    imageCoverage: t('stats.health.dimensions.imageCoverage'),
+    valuationFreshness: t('stats.health.dimensions.valuationFreshness'),
+    aiCoverage: t('stats.health.dimensions.aiCoverage'),
   }
   return labels[key] || key
 }

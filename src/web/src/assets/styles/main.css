@@ -381,7 +381,7 @@
  * remains a per-table decision.
  *
  * The class goes on the `<table>` itself, or — where the table is rendered
- * from markdown and cannot carry a class, as in `HelpSection.vue` — on the
+ * from markdown and cannot carry a class, as in the help guide (`components/help/`) — on the
  * container that wraps it.
  */
 @layer components {

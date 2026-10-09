@@ -1,51 +1,51 @@
 <template>
   <div class="smart-builder">
     <div class="builder-header">
-      <span class="section-label">Smart rules</span>
+      <span class="section-label">{{ t('sets.smart.title') }}</span>
       <div class="operator-toggle">
-        <span class="operator-label">Match</span>
+        <span class="operator-label">{{ t('sets.smart.match') }}</span>
         <button
           type="button"
           :class="['btn btn-xs', operator === 'and' ? 'btn-primary' : 'btn-ghost']"
           @click="operator = 'and'"
         >
-          All
+          {{ t('sets.smart.all') }}
         </button>
         <button
           type="button"
           :class="['btn btn-xs', operator === 'or' ? 'btn-primary' : 'btn-ghost']"
           @click="operator = 'or'"
         >
-          Any
+          {{ t('sets.smart.any') }}
         </button>
-        <span class="operator-label">of these rules</span>
+        <span class="operator-label">{{ t('sets.smart.ofTheseRules') }}</span>
       </div>
     </div>
 
     <div v-for="(rule, idx) in rules" :key="idx" class="rule-row">
       <select v-model="rule.field" class="rule-input" @change="onFieldChange(rule)">
-        <optgroup label="Coin Properties">
-          <option value="material">Material</option>
-          <option value="category">Category</option>
-          <option value="denomination">Denomination</option>
-          <option value="ruler">Ruler / Issuer</option>
-          <option value="era">Era</option>
-          <option value="mint">Mint</option>
-          <option value="grade">Grade</option>
+        <optgroup :label="t('sets.smart.groups.coin')">
+          <option value="material">{{ t('coinFields.material') }}</option>
+          <option value="category">{{ t('collection.menu.category') }}</option>
+          <option value="denomination">{{ t('coinFields.denomination') }}</option>
+          <option value="ruler">{{ t('sets.smart.fields.rulerIssuer') }}</option>
+          <option value="era">{{ t('coinFields.era') }}</option>
+          <option value="mint">{{ t('coinFields.mint') }}</option>
+          <option value="grade">{{ t('coinFields.grade') }}</option>
         </optgroup>
-        <optgroup label="Storage">
-          <option value="storageLocationId">Storage location</option>
+        <optgroup :label="t('sets.smart.groups.storage')">
+          <option value="storageLocationId">{{ t('sets.smart.fields.storageLocation') }}</option>
         </optgroup>
-        <optgroup label="Value & Dates">
-          <option value="currentValue">Current value ($)</option>
-          <option value="purchasePrice">Purchase price ($)</option>
-          <option value="purchaseDate">Purchase date</option>
-          <option value="createdAt">Date added</option>
+        <optgroup :label="t('sets.smart.groups.valueDates')">
+          <option value="currentValue">{{ t('sets.smart.fields.currentValue') }}</option>
+          <option value="purchasePrice">{{ t('sets.smart.fields.purchasePrice') }}</option>
+          <option value="purchaseDate">{{ t('sets.smart.fields.purchaseDate') }}</option>
+          <option value="createdAt">{{ t('sets.smart.fields.dateAdded') }}</option>
         </optgroup>
-        <optgroup label="Status">
-          <option value="isWishlist">Wishlist</option>
-          <option value="isSold">Sold</option>
-          <option value="isPrivate">Private</option>
+        <optgroup :label="t('sets.smart.groups.status')">
+          <option value="isWishlist">{{ t('sets.smart.fields.wishlist') }}</option>
+          <option value="isSold">{{ t('sets.smart.fields.sold') }}</option>
+          <option value="isPrivate">{{ t('sets.smart.fields.private') }}</option>
         </optgroup>
       </select>
 
@@ -67,12 +67,12 @@
           class="rule-input"
           @change="emitCriteria"
         >
-          <option value="Silver">Silver</option>
-          <option value="Gold">Gold</option>
-          <option value="Bronze">Bronze</option>
-          <option value="Copper">Copper</option>
-          <option value="Electrum">Electrum</option>
-          <option value="Other">Other</option>
+          <option value="Silver">{{ materialLabel('Silver') }}</option>
+          <option value="Gold">{{ materialLabel('Gold') }}</option>
+          <option value="Bronze">{{ materialLabel('Bronze') }}</option>
+          <option value="Copper">{{ materialLabel('Copper') }}</option>
+          <option value="Electrum">{{ materialLabel('Electrum') }}</option>
+          <option value="Other">{{ materialLabel('Other') }}</option>
         </select>
         <select
           v-else-if="rule.field === 'category'"
@@ -80,7 +80,7 @@
           class="rule-input"
           @change="emitCriteria"
         >
-          <option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ cat }}</option>
+          <option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ categoryLabel(cat) }}</option>
         </select>
         <select
           v-else-if="rule.field === 'era'"
@@ -88,7 +88,7 @@
           class="rule-input"
           @change="emitCriteria"
         >
-          <option v-for="era in eraOptions" :key="era" :value="era">{{ era }}</option>
+          <option v-for="era in eraOptions" :key="era" :value="era">{{ eraLabel(era) }}</option>
         </select>
         <select
           v-else-if="rule.field === 'mint' && (rule.op === 'eq' || rule.op === 'neq')"
@@ -96,13 +96,13 @@
           class="rule-input"
           @change="emitCriteria"
         >
-          <option value="">Unknown</option>
-          <optgroup v-if="myMintLocations.length" label="My Mints">
+          <option value="">{{ t('coinForm.mintUnknown') }}</option>
+          <optgroup v-if="myMintLocations.length" :label="t('coinForm.myMints')">
             <option v-for="location in myMintLocations" :key="location.id" :value="location.displayName">
               {{ location.displayName }}
             </option>
           </optgroup>
-          <optgroup v-if="globalMintLocations.length" label="Mints">
+          <optgroup v-if="globalMintLocations.length" :label="t('coinForm.mints')">
             <option v-for="location in globalMintLocations" :key="location.id" :value="location.displayName">
               {{ location.displayName }}
             </option>
@@ -114,7 +114,7 @@
           class="rule-input"
           @change="emitCriteria"
         >
-          <option disabled value="">Select location</option>
+          <option disabled value="">{{ t('sets.smart.selectLocation') }}</option>
           <option v-for="location in storageLocations" :key="location.id" :value="location.id">
             {{ location.name }}
           </option>
@@ -124,7 +124,7 @@
           v-model="rule.value"
           type="number"
           class="rule-input rule-input--value"
-          :placeholder="rule.op === 'between' ? 'min,max' : 'Amount'"
+          :placeholder="rule.op === 'between' ? 'min,max' : t('sets.smart.amount')"
           @input="emitCriteria"
         />
         <input
@@ -138,7 +138,7 @@
           v-else
           v-model="rule.value"
           class="rule-input rule-input--value"
-          placeholder="Value"
+          :placeholder="t('sets.smart.value')"
           @input="emitCriteria"
         />
       </template>
@@ -149,7 +149,7 @@
         v-if="rules.length > 1"
         type="button"
         class="btn btn-ghost btn-xs remove-btn"
-        title="Remove rule"
+        :title="t('sets.smart.removeRule')"
         @click="removeRule(idx)"
       >
         ✕
@@ -157,21 +157,23 @@
     </div>
 
     <div class="rule-actions">
-      <button type="button" class="btn btn-ghost btn-sm" @click="addRule">+ Add rule</button>
+      <button type="button" class="btn btn-ghost btn-sm" @click="addRule">{{ t('sets.smart.addRule') }}</button>
       <button type="button" class="btn btn-secondary btn-sm" @click="preview" :disabled="previewLoading">
-        {{ previewLoading ? 'Checking…' : 'Preview' }}
+        {{ previewLoading ? t('sets.smart.checking') : t('sets.smart.preview') }}
       </button>
     </div>
 
     <p v-if="previewResult !== null" class="preview-result">
-      <span class="preview-count">{{ previewResult.coinCount }}</span> matching coin{{ previewResult.coinCount !== 1 ? 's' : '' }},
-      <span class="preview-value">${{ previewResult.totalValue.toFixed(2) }}</span> total value
+      <I18nT keypath="sets.smart.previewResult" :params="{ count: previewResult.coinCount }">
+        <template #num><span class="preview-count">{{ previewResult.coinCount }}</span></template>
+        <template #value><span class="preview-value">${{ previewResult.totalValue.toFixed(2) }}</span></template>
+      </I18nT>
     </p>
     <p v-if="previewError" class="preview-error">{{ previewError }}</p>
 
     <!-- Suggestions -->
     <div v-if="suggestions.length" class="section-block">
-      <span class="section-label">Suggested starters</span>
+      <span class="section-label">{{ t('sets.smart.suggested') }}</span>
       <div class="suggestion-chips">
         <button
           v-for="s in suggestions"
@@ -188,15 +190,15 @@
 
     <!-- Saved templates -->
     <div v-if="savedTemplates.length || canSave" class="section-block">
-      <span class="section-label">Saved templates</span>
+      <span class="section-label">{{ t('sets.smart.savedTemplates') }}</span>
       <div class="template-row">
         <select
           v-if="savedTemplates.length"
           class="rule-input template-select"
           @change="onTemplateSelect"
         >
-          <option value="">Apply a saved template…</option>
-          <option v-for="t in savedTemplates" :key="t.id" :value="t.id">{{ t.name }}</option>
+          <option value="">{{ t('sets.smart.applyTemplate') }}</option>
+          <option v-for="tmpl in savedTemplates" :key="tmpl.id" :value="tmpl.id">{{ tmpl.name }}</option>
         </select>
         <button
           v-if="canSave"
@@ -204,20 +206,20 @@
           class="btn btn-ghost btn-sm"
           @click="showSaveForm = !showSaveForm"
         >
-          Save as template
+          {{ t('sets.smart.saveAsTemplate') }}
         </button>
       </div>
       <div v-if="showSaveForm" class="save-form">
         <input
           v-model="saveTemplateName"
           class="rule-input rule-input--value"
-          placeholder="Template name"
+          :placeholder="t('sets.smart.templateName')"
           maxlength="80"
         />
         <button type="button" class="btn btn-primary btn-sm" :disabled="!saveTemplateName.trim() || saving" @click="saveTemplate">
-          {{ saving ? 'Saving…' : 'Save' }}
+          {{ saving ? t('sets.smart.saving') : t('common.save') }}
         </button>
-        <button type="button" class="btn btn-ghost btn-sm" @click="showSaveForm = false">Cancel</button>
+        <button type="button" class="btn btn-ghost btn-sm" @click="showSaveForm = false">{{ t('common.cancel') }}</button>
       </div>
     </div>
   </div>
@@ -235,6 +237,8 @@ import {
   type MintLocationsResponse,
 } from '@/api/client'
 import { useCoinOptions } from '@/composables/useCoinOptions'
+import { materialLabel } from '@/utils/format'
+import I18nT from '@/components/I18nT.vue'
 import type {
   SmartCriteriaGroup,
   SmartCriteriaRule,
@@ -245,6 +249,8 @@ import type {
   MintLocation,
   StorageLocation,
 } from '@/types'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 function unwrapMintLocations(data: MintLocationsResponse): MintLocation[] {
   return Array.isArray(data) ? data : data.mintLocations ?? []
@@ -332,47 +338,47 @@ interface OpOption { value: SmartCriteriaRuleOp; label: string }
 function opsForField(field: string): OpOption[] {
   if (field === STORAGE_LOCATION_FIELD) {
     return [
-      { value: 'eq', label: 'Equals' },
-      { value: 'neq', label: 'Not equals' },
-      { value: 'isNull', label: 'Is empty' },
-      { value: 'isNotNull', label: 'Is not empty' },
+      { value: 'eq', label: t('sets.smart.ops.equals') },
+      { value: 'neq', label: t('sets.smart.ops.notEquals') },
+      { value: 'isNull', label: t('sets.smart.ops.isEmpty') },
+      { value: 'isNotNull', label: t('sets.smart.ops.isNotEmpty') },
     ]
   }
   if (BOOL_FIELDS.has(field)) {
     return [
-      { value: 'eq', label: 'Is true' },
-      { value: 'neq', label: 'Is false' },
+      { value: 'eq', label: t('sets.smart.ops.isTrue') },
+      { value: 'neq', label: t('sets.smart.ops.isFalse') },
     ]
   }
   if (NUMERIC_FIELDS.has(field)) {
     return [
-      { value: 'eq', label: 'Equals' },
-      { value: 'neq', label: 'Not equals' },
-      { value: 'gte', label: 'At least' },
-      { value: 'lte', label: 'At most' },
-      { value: 'between', label: 'Between (min,max)' },
-      { value: 'isNull', label: 'Has no value' },
-      { value: 'isNotNull', label: 'Has a value' },
+      { value: 'eq', label: t('sets.smart.ops.equals') },
+      { value: 'neq', label: t('sets.smart.ops.notEquals') },
+      { value: 'gte', label: t('sets.smart.ops.atLeast') },
+      { value: 'lte', label: t('sets.smart.ops.atMost') },
+      { value: 'between', label: t('sets.smart.ops.betweenMinMax') },
+      { value: 'isNull', label: t('sets.smart.ops.hasNoValue') },
+      { value: 'isNotNull', label: t('sets.smart.ops.hasValue') },
     ]
   }
   if (DATE_FIELDS.has(field)) {
     return [
-      { value: 'eq', label: 'On' },
-      { value: 'gte', label: 'On or after' },
-      { value: 'lte', label: 'On or before' },
-      { value: 'between', label: 'Between (start,end)' },
-      { value: 'isNull', label: 'Not set' },
-      { value: 'isNotNull', label: 'Is set' },
+      { value: 'eq', label: t('sets.smart.ops.on') },
+      { value: 'gte', label: t('sets.smart.ops.onOrAfter') },
+      { value: 'lte', label: t('sets.smart.ops.onOrBefore') },
+      { value: 'between', label: t('sets.smart.ops.betweenStartEnd') },
+      { value: 'isNull', label: t('sets.smart.ops.notSet') },
+      { value: 'isNotNull', label: t('sets.smart.ops.isSet') },
     ]
   }
   return [
-    { value: 'eq', label: 'Equals' },
-    { value: 'neq', label: 'Not equals' },
-    { value: 'contains', label: 'Contains' },
-    { value: 'startsWith', label: 'Starts with' },
-    { value: 'in', label: 'One of (comma-separated)' },
-    { value: 'isNull', label: 'Is empty' },
-    { value: 'isNotNull', label: 'Is not empty' },
+    { value: 'eq', label: t('sets.smart.ops.equals') },
+    { value: 'neq', label: t('sets.smart.ops.notEquals') },
+    { value: 'contains', label: t('sets.smart.ops.contains') },
+    { value: 'startsWith', label: t('sets.smart.ops.startsWith') },
+    { value: 'in', label: t('sets.smart.ops.oneOf') },
+    { value: 'isNull', label: t('sets.smart.ops.isEmpty') },
+    { value: 'isNotNull', label: t('sets.smart.ops.isNotEmpty') },
   ]
 }
 
@@ -426,7 +432,7 @@ function validateRules(): boolean {
     if (r.op === 'isNull' || r.op === 'isNotNull') return ''
     if (BOOL_FIELDS.has(r.field)) return ''
     const val = r.value
-    if (val === '' || val === null || val === undefined) return 'Value is required'
+    if (val === '' || val === null || val === undefined) return t('sets.smart.valueRequired')
     return ''
   })
   validationErrors.value = errors
@@ -448,7 +454,7 @@ async function preview() {
     previewResult.value = res.data
   } catch (e: unknown) {
     const err = e as { response?: { data?: { error?: string } } }
-    previewError.value = err?.response?.data?.error ?? 'Preview failed'
+    previewError.value = err?.response?.data?.error ?? t('sets.smart.previewFailed')
     previewResult.value = null
   } finally {
     previewLoading.value = false
@@ -475,7 +481,7 @@ function applyCriteriaGroup(criteria: SmartCriteriaGroup) {
 function onTemplateSelect(e: Event) {
   const id = Number((e.target as HTMLSelectElement).value)
   if (!id) return
-  const tmpl = savedTemplates.value.find(t => t.id === id)
+  const tmpl = savedTemplates.value.find(template => template.id === id)
   if (tmpl) applyCriteriaGroup(tmpl.criteria)
   ;(e.target as HTMLSelectElement).value = ''
 }

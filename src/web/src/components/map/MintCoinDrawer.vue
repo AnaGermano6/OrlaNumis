@@ -9,12 +9,12 @@
     >
       <header class="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p class="section-label">Selected Mint</p>
+          <p class="section-label">{{ t('map.selectedMint') }}</p>
           <h2 :id="titleId" class="mt-1">{{ group.mint.displayName }}</h2>
-          <p class="m-0 text-body text-text-secondary">{{ group.count }} {{ group.count === 1 ? 'coin' : 'coins' }} in this view</p>
+          <p class="m-0 text-body text-text-secondary">{{ t('map.inThisView', { count: group.count }) }}</p>
           <NomismaAttribution :uri="group.mint.nomismaUri" class="mt-1" />
         </div>
-        <button class="btn btn-sm btn-ghost" type="button" aria-label="Close mint drawer" @click="$emit('close')">
+        <button class="btn btn-sm btn-ghost" type="button" :aria-label="t('map.closeDrawer')" @click="$emit('close')">
           <X :size="16" />
         </button>
       </header>
@@ -23,7 +23,7 @@
         <li v-for="coin in group.coins" :key="coin.id" class="rounded-sm border border-border-subtle bg-input">
           <router-link :to="`/coin/${coin.id}`" class="flex flex-col gap-1 rounded-sm p-3 text-text-primary transition-colors hover:text-gold focus-visible:text-gold">
             <span class="font-semibold">{{ coin.name }}</span>
-            <span class="text-chip text-text-secondary">{{ coin.ruler || 'Unknown ruler' }} · {{ coin.denomination || 'Unknown denomination' }}</span>
+            <span class="text-chip text-text-secondary">{{ coin.ruler || t('map.unknownRuler') }} · {{ coin.denomination || t('map.unknownDenomination') }}</span>
           </router-link>
         </li>
       </ul>
@@ -36,6 +36,7 @@ import { computed, onBeforeUnmount, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import type { MintGroup } from '@/utils/mintMap'
 import NomismaAttribution from '@/components/mint/NomismaAttribution.vue'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   group: MintGroup | null

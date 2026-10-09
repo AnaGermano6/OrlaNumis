@@ -2,29 +2,29 @@
   <section class="card mt-6 min-w-0 overflow-hidden [overflow-wrap:anywhere]">
     <div class="mb-4 flex items-start justify-between gap-4">
       <div>
-        <span class="section-label">Ready for cataloging</span>
-        <h2 class="mt-1">Promote Draft</h2>
+        <span class="section-label">{{ t('quickCapture.promote.eyebrow') }}</span>
+        <h2 class="mt-1">{{ t('quickCapture.promote.title') }}</h2>
       </div>
     </div>
 
     <!-- Already promoted -->
     <template v-if="alreadyPromoted">
-      <p class="text-base text-text-secondary">This draft was already promoted.</p>
-      <RouterLink class="btn btn-primary" :to="`/coin/${promotedCoinId}`">View Coin</RouterLink>
+      <p class="text-base text-text-secondary">{{ t('quickCapture.promote.alreadyPromoted') }}</p>
+      <RouterLink class="btn btn-primary" :to="`/coin/${promotedCoinId}`">{{ t('common.viewCoin') }}</RouterLink>
     </template>
 
     <!-- Success -->
     <template v-else-if="successCoinId">
-      <p class="text-base text-text-secondary">Draft promoted successfully.</p>
-      <RouterLink class="btn btn-primary" :to="`/coin/${successCoinId}`">View Coin</RouterLink>
+      <p class="text-base text-text-secondary">{{ t('quickCapture.promote.success') }}</p>
+      <RouterLink class="btn btn-primary" :to="`/coin/${successCoinId}`">{{ t('common.viewCoin') }}</RouterLink>
     </template>
 
     <!-- Promotion form -->
     <template v-else>
-      <p class="mb-4 text-body text-text-secondary">Choose where this coin should land, review readiness, then promote it. Repeated promotion is safe.</p>
+      <p class="mb-4 text-body text-text-secondary">{{ t('quickCapture.promote.intro') }}</p>
 
       <fieldset class="m-0 grid min-w-0 gap-3 border-0 p-0 [grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))]">
-        <legend class="section-label col-span-full mb-1">Promote to</legend>
+        <legend class="section-label col-span-full mb-1">{{ t('quickCapture.promote.promoteTo') }}</legend>
         <label
           class="flex cursor-pointer items-start gap-3 rounded-sm border border-border-subtle bg-input p-3 text-text-primary transition-[border-color,background,box-shadow] duration-200"
           :class="target === 'collection' ? 'border-gold bg-gold-glow shadow-glow' : ''"
@@ -32,8 +32,8 @@
           <input v-model="target" type="radio" value="collection" class="mt-[0.2rem] shrink-0 accent-gold">
           <Coins :size="20" class="shrink-0 text-gold" />
           <span class="grid gap-1">
-            <strong class="text-base font-semibold text-text-primary">Collection</strong>
-            <small class="text-sm text-text-secondary">Counts as an owned collection coin.</small>
+            <strong class="text-base font-semibold text-text-primary">{{ t('quickCapture.promote.collection') }}</strong>
+            <small class="text-sm text-text-secondary">{{ t('quickCapture.promote.collectionHint') }}</small>
           </span>
         </label>
         <label
@@ -43,8 +43,8 @@
           <input v-model="target" type="radio" value="wishlist" class="mt-[0.2rem] shrink-0 accent-gold">
           <Bookmark :size="20" class="shrink-0 text-gold" />
           <span class="grid gap-1">
-            <strong class="text-base font-semibold text-text-primary">Wishlist</strong>
-            <small class="text-sm text-text-secondary">Tracks as a wanted coin instead.</small>
+            <strong class="text-base font-semibold text-text-primary">{{ t('quickCapture.promote.wishlist') }}</strong>
+            <small class="text-sm text-text-secondary">{{ t('quickCapture.promote.wishlistHint') }}</small>
           </span>
         </label>
         <span v-if="fieldErrors.target" class="col-span-full text-body text-warning">{{ fieldErrors.target }}</span>
@@ -55,15 +55,15 @@
           <CheckCircle v-if="hasRequiredName" :size="18" class="mt-[0.15rem] shrink-0 text-gold" />
           <AlertCircle v-else :size="18" class="mt-[0.15rem] shrink-0 text-warning" />
           <span class="grid gap-1">
-            <strong class="text-base font-semibold text-text-primary">{{ hasRequiredName ? 'Required title is ready' : 'Working title is required' }}</strong>
-            <small class="text-sm text-text-secondary">{{ hasRequiredName ? 'Promotion uses the current draft title above.' : 'Add a working title in the draft form before promoting.' }}</small>
+            <strong class="text-base font-semibold text-text-primary">{{ hasRequiredName ? t('quickCapture.promote.titleReady') : t('quickCapture.promote.titleRequired') }}</strong>
+            <small class="text-sm text-text-secondary">{{ hasRequiredName ? t('quickCapture.promote.titleReadyHint') : t('quickCapture.promote.titleRequiredHint') }}</small>
           </span>
         </div>
         <div class="flex items-start gap-3 text-text-primary">
           <ImageIcon :size="18" class="mt-[0.15rem] shrink-0 text-gold" />
           <span class="grid gap-1">
             <strong class="text-base font-semibold text-text-primary">{{ imageCountLabel }}</strong>
-            <small class="text-sm text-text-secondary">Saved draft images will move with the promoted coin.</small>
+            <small class="text-sm text-text-secondary">{{ t('quickCapture.promote.imagesHint') }}</small>
           </span>
         </div>
         <div class="flex items-start gap-3 text-text-primary">
@@ -73,7 +73,7 @@
             <small class="text-sm text-text-secondary">{{ referenceReadinessMessage }}</small>
           </span>
         </div>
-        <p class="m-0 text-sm text-text-secondary">Draft fields stay editable in the form above. This panel only chooses the destination and confirms the final action.</p>
+        <p class="m-0 text-sm text-text-secondary">{{ t('quickCapture.promote.fieldsHint') }}</p>
         <span v-if="fieldErrors.name" class="text-body text-warning">{{ fieldErrors.name }}</span>
         <div v-if="readinessFieldErrors.length" class="grid text-body text-warning">
           <span v-for="[field, message] in readinessFieldErrors" :key="field">{{ message }}</span>
@@ -82,7 +82,7 @@
 
       <label class="my-4 flex cursor-pointer items-start gap-[0.6rem] text-base text-text-secondary">
         <input v-model="confirmed" type="checkbox" class="mt-[0.15rem] shrink-0 accent-gold">
-        <span>I confirm promotion to {{ destinationLabel }}. This creates a permanent coin record.</span>
+        <span>{{ t('quickCapture.promote.confirm', { destination: destinationLabel }) }}</span>
       </label>
 
       <p v-if="promoteError" class="mb-4 text-base text-warning">{{ promoteError }}</p>
@@ -94,7 +94,7 @@
           :disabled="!confirmed || promoting || !hasRequiredName || selectionChangesPending"
           @click="doPromote"
         >
-          {{ promoting ? 'Promoting...' : `Promote to ${destinationLabel}` }}
+          {{ promoting ? t('quickCapture.promote.promoting') : t('quickCapture.promote.promoteToDestination', { destination: destinationLabel }) }}
         </button>
       </div>
     </template>
@@ -107,6 +107,7 @@ import { RouterLink } from 'vue-router'
 import { getApiErrorMessage, promoteQuickCaptureDraft } from '@/api/client'
 import type { QuickCaptureDraft, QuickCapturePromoteOverrides } from '@/types'
 import { AlertCircle, Bookmark, CheckCircle, Coins, Image as ImageIcon, Link as LinkIcon } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 const props = withDefaults(
   defineProps<{
@@ -134,19 +135,19 @@ const promoting = ref(false)
 const promoteError = ref('')
 const fieldErrors = ref<Record<string, string>>({})
 const successCoinId = ref<number | null>(null)
-const destinationLabel = computed(() => target.value === 'wishlist' ? 'Wishlist' : 'Collection')
+const destinationLabel = computed(() => target.value === 'wishlist' ? t('quickCapture.promote.wishlist') : t('quickCapture.promote.collection'))
 const hasRequiredName = computed(() => (props.promotionOverrides.name ?? props.draft.workingTitle ?? '').trim().length > 0)
 const imageCount = computed(() => props.draft.images?.length ?? 0)
-const imageCountLabel = computed(() => `${imageCount.value} saved ${imageCount.value === 1 ? 'image' : 'images'}`)
+const imageCountLabel = computed(() => t('quickCapture.promote.savedImages', { count: imageCount.value }))
 const referenceReadinessLabel = computed(() => {
-  if (props.selectionChangesPending) return 'Save the reference change before promotion'
+  if (props.selectionChangesPending) return t('quickCapture.promote.saveReferenceFirst')
   return props.draft.selectedNumistaReference
-    ? `Numista #${props.draft.selectedNumistaReference.number} selected`
-    : 'No Numista reference selected'
+    ? t('quickCapture.promote.numistaSelected', { number: props.draft.selectedNumistaReference.number })
+    : t('quickCapture.promote.noReference')
 })
 const referenceReadinessMessage = computed(() => props.selectionChangesPending
-  ? 'Promotion uses the saved draft reference. Save Changes first so the intended selection is copied.'
-  : 'A Numista reference is optional and only the explicitly saved selection is promoted.')
+  ? t('quickCapture.promote.pendingHint')
+  : t('quickCapture.promote.optionalHint'))
 const readinessFieldErrors = computed(() => Object.entries(fieldErrors.value)
   .filter(([field]) => !['target', 'name', 'confirm'].includes(field)))
 
@@ -154,12 +155,12 @@ async function doPromote() {
   promoteError.value = ''
   fieldErrors.value = {}
   if (props.selectionChangesPending) {
-    promoteError.value = 'Save the Numista reference change before promotion.'
+    promoteError.value = t('quickCapture.promote.saveNumistaFirst')
     return
   }
   if (!hasRequiredName.value) {
-    fieldErrors.value = { name: 'Name is required' }
-    promoteError.value = 'Complete required fields before promotion.'
+    fieldErrors.value = { name: t('quickCapture.promote.nameRequired') }
+    promoteError.value = t('quickCapture.promote.completeFields')
     return
   }
   promoting.value = true
@@ -181,9 +182,9 @@ async function doPromote() {
       ?.response?.data
     if (errData?.fields) {
       fieldErrors.value = errData.fields
-      promoteError.value = errData.error ?? 'Complete required fields before promotion.'
+      promoteError.value = errData.error ?? t('quickCapture.promote.completeFields')
     } else {
-      promoteError.value = getApiErrorMessage(err) || 'Promotion failed. Please try again.'
+      promoteError.value = getApiErrorMessage(err) || t('quickCapture.promote.failed')
     }
   } finally {
     promoting.value = false

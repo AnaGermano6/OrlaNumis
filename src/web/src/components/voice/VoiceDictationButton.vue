@@ -15,7 +15,7 @@
       {{ visibleLabel }}
     </BaseButton>
     <p class="m-0 text-sm text-text-muted">
-      Voice recognition may send audio to your browser or device provider. Aurearia does not store audio.
+      {{ t('voice.privacy') }}
     </p>
     <p v-if="error" class="m-0 text-sm text-loss" role="alert">{{ error }}</p>
   </div>
@@ -26,6 +26,7 @@ import { computed, toRef } from 'vue'
 import { Mic, Square } from 'lucide-vue-next'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { useVoiceDictation } from '@/composables/useVoiceDictation'
+import { t } from '@/i18n'
 
 const props = withDefaults(defineProps<{
   disabled?: boolean
@@ -49,12 +50,12 @@ const {
 })
 
 const buttonLabel = computed(() =>
-  status.value === 'idle' ? 'Start voice dictation' : 'Stop voice dictation')
+  status.value === 'idle' ? t('voice.start') : t('voice.stop'))
 const visibleLabel = computed(() => {
-  if (status.value === 'requesting') return 'Requesting microphone'
-  if (status.value === 'listening') return 'Listening'
-  if (status.value === 'stopping') return 'Stopping'
-  return 'Dictate notes'
+  if (status.value === 'requesting') return t('voice.requesting')
+  if (status.value === 'listening') return t('voice.listening')
+  if (status.value === 'stopping') return t('voice.stopping')
+  return t('voice.dictate')
 })
 
 function toggle() {

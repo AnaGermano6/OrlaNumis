@@ -26,8 +26,8 @@ describe('DesktopCollectionHeader', () => {
     // The desktop bar still hosts the obverse/reverse face toggle (formerly a
     // dedicated `.face-toggle` class), now rendered as an inline Tailwind
     // toggle group wired to the gridSide prop instead.
-    expect(source).toContain('Obverse')
-    expect(source).toContain('Reverse')
+    expect(source).toContain("t('common.obverse')")
+    expect(source).toContain("t('common.reverse')")
     expect(source).toContain("$emit('update:gridSide'")
   })
 

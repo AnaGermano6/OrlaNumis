@@ -1,5 +1,5 @@
 <template>
-  <CoinDetailSectionPageShell section-title="Activity Journal">
+  <CoinDetailSectionPageShell :section-title="t('coinDetail.sections.journal.title')">
     <template #default="{ coin }">
       <CoinActivityJournal
         :entries="journalEntries"
@@ -19,6 +19,7 @@ import CoinActivityJournal from '@/components/coin/CoinActivityJournal.vue'
 import { getJournalEntries, addJournalEntry, deleteJournalEntry } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
 import type { CoinJournal } from '@/types'
+import { t } from '@/i18n'
 
 const { showAlert } = useDialog()
 const route = useRoute()
@@ -46,7 +47,7 @@ async function handleAddJournalEntry(entry: string) {
     await addJournalEntry(coinId, entry)
     loadJournal()
   } catch {
-    await showAlert('Failed to add journal entry', { title: 'Error' })
+    await showAlert(t('coinDetail.journal.addFailed'), { title: t('common.error') })
   }
 }
 
@@ -56,7 +57,7 @@ async function handleDeleteJournalEntry(entryId: number) {
     await deleteJournalEntry(coinId, entryId)
     loadJournal()
   } catch {
-    await showAlert('Failed to delete journal entry', { title: 'Error' })
+    await showAlert(t('coinDetail.journal.deleteFailed'), { title: t('common.error') })
   }
 }
 </script>

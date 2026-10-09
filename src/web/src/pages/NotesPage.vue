@@ -1,30 +1,30 @@
 <template>
   <div class="container pb-6">
-    <DesktopPageContext :title="`Notes (${notes.length})`">
+    <DesktopPageContext :title="t('notes.titleCount', { count: notes.length })">
       <template #actions>
-        <AppIconButton v-if="pwaMode !== 'list'" title="Back to Notes" @click="showPwaList">
+        <AppIconButton v-if="pwaMode !== 'list'" :title="t('notes.back')" @click="showPwaList">
           <ArrowLeft :size="20" />
         </AppIconButton>
-        <AppIconButton title="New Note" @click="startNewNote">
+        <AppIconButton :title="t('notes.new')" @click="startNewNote">
           <CirclePlus :size="20" />
         </AppIconButton>
       </template>
       <div class="page-header">
         <h1 class="inline-flex items-center gap-2">
-          Notes
+          {{ t('nav.notes') }}
           <span class="text-base font-medium text-text-secondary">({{ notes.length }})</span>
         </h1>
         <div v-if="isPwa" class="pwa-actions">
-          <button v-if="pwaMode !== 'list'" class="pwa-icon-btn" title="Back to Notes" aria-label="Back to Notes" @click="showPwaList">
+          <button v-if="pwaMode !== 'list'" class="pwa-icon-btn" :title="t('notes.back')" :aria-label="t('notes.back')" @click="showPwaList">
             <ArrowLeft :size="22" />
           </button>
-          <button class="pwa-icon-btn" title="New Note" @click="startNewNote">
+          <button class="pwa-icon-btn" :title="t('notes.new')" @click="startNewNote">
             <CirclePlus :size="22" />
           </button>
         </div>
         <div v-else class="header-actions">
           <button class="btn btn-primary" @click="startNewNote">
-            <Plus :size="16" /> New Note
+            <Plus :size="16" /> {{ t('notes.new') }}
           </button>
         </div>
       </div>
@@ -32,14 +32,14 @@
 
     <div v-if="loading" class="loading-overlay">
       <div class="spinner" />
-      <p>Loading notes...</p>
+      <p>{{ t('notes.loading') }}</p>
     </div>
 
     <div v-else-if="loadError" class="empty-state flex flex-col items-center gap-3 rounded-md border border-border-subtle bg-card text-text-secondary shadow-[var(--shadow-card)]">
       <AlertCircle :size="42" />
-      <h3>Unable to load notes</h3>
+      <h3>{{ t('notes.loadErrorTitle') }}</h3>
       <p>{{ loadError }}</p>
-      <button class="btn btn-secondary btn-sm" @click="loadNotes">Try Again</button>
+      <button class="btn btn-secondary btn-sm" @click="loadNotes">{{ t('common.tryAgain') }}</button>
     </div>
 
     <div v-else class="grid items-start gap-4" :class="isPwa ? 'grid-cols-1' : 'md:grid-cols-[minmax(240px,0.85fr)_minmax(0,2fr)]'">
@@ -47,17 +47,17 @@
         v-if="!isPwa || pwaMode === 'list'"
         class="flex flex-col gap-2"
         :class="isPwa ? 'min-h-[calc(100vh-15rem)]' : 'max-h-[280px] overflow-y-auto md:max-h-none md:min-h-[460px]'"
-        aria-label="Notes list"
+        :aria-label="t('notes.list')"
       >
         <div class="card px-4 py-3">
-          <span class="section-label m-0">All notes</span>
+          <span class="section-label m-0">{{ t('notes.all') }}</span>
         </div>
 
         <div v-if="notes.length === 0 && !editMode" class="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center text-text-muted">
           <StickyNote :size="36" />
-          <h3 class="m-0 text-lg text-text-primary">No notes yet</h3>
-          <p class="max-w-[34rem] text-text-secondary">Capture ideas, links, and research threads that do not belong to a coin.</p>
-          <button class="btn btn-primary btn-sm" @click="startNewNote">Create Note</button>
+          <h3 class="m-0 text-lg text-text-primary">{{ t('notes.empty') }}</h3>
+          <p class="max-w-[34rem] text-text-secondary">{{ t('notes.emptyHint') }}</p>
+          <button class="btn btn-primary btn-sm" @click="startNewNote">{{ t('chat.note.create') }}</button>
         </div>
 
         <button
@@ -72,11 +72,11 @@
           </div>
           <div class="min-w-0 flex-1">
             <div class="mb-[0.2rem] flex items-start justify-between gap-2">
-              <span class="truncate text-base font-semibold text-text-primary">{{ note.title || 'Untitled Note' }}</span>
-              <span v-if="note.body" class="chip-sm shrink-0">Markdown</span>
+              <span class="truncate text-base font-semibold text-text-primary">{{ note.title || t('notes.untitled') }}</span>
+              <span v-if="note.body" class="chip-sm shrink-0">{{ t('chat.note.markdown') }}</span>
             </div>
             <div class="truncate text-body leading-[1.4] text-text-secondary">{{ previewText(note.body) }}</div>
-            <div class="mt-[0.35rem] text-sm text-text-muted">Updated {{ formatDate(note.updatedAt) }}</div>
+            <div class="mt-[0.35rem] text-sm text-text-muted">{{ t('notes.updated', { date: formatDate(note.updatedAt) }) }}</div>
           </div>
         </button>
       </aside>
@@ -84,23 +84,23 @@
       <section v-if="!isPwa || pwaMode !== 'list'" class="rounded-md border border-border-subtle bg-card p-6 shadow-[var(--shadow-card)] md:min-h-[460px]">
         <div v-if="!editMode && !selectedNote" class="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center text-text-muted">
           <BookOpen :size="44" />
-          <h2 class="m-0 text-xl text-text-primary">Select or create a note</h2>
-          <p class="max-w-[34rem] text-text-secondary">Use notes for research leads, dealer links, show ideas, and collection thoughts.</p>
-          <button class="btn btn-primary" @click="startNewNote">New Note</button>
+          <h2 class="m-0 text-xl text-text-primary">{{ t('notes.selectOrCreate') }}</h2>
+          <p class="max-w-[34rem] text-text-secondary">{{ t('notes.selectHint') }}</p>
+          <button class="btn btn-primary" @click="startNewNote">{{ t('notes.new') }}</button>
         </div>
 
         <form v-else-if="editMode" @submit.prevent="saveNote">
           <div class="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
-              <p class="section-label">{{ selectedId === null ? 'New note' : 'Editing note' }}</p>
-              <h2 class="m-0 text-xl text-text-primary">{{ selectedId === null ? 'Draft Note' : draftTitle || 'Untitled Note' }}</h2>
-              <p class="text-chip text-text-muted">Write Markdown here; links and formatting render after save.</p>
+              <p class="section-label">{{ selectedId === null ? t('notes.newNote') : t('notes.editing') }}</p>
+              <h2 class="m-0 text-xl text-text-primary">{{ selectedId === null ? t('notes.draft') : draftTitle || t('notes.untitled') }}</h2>
+              <p class="text-chip text-text-muted">{{ t('notes.writeHint') }}</p>
             </div>
             <div class="flex flex-wrap gap-2 md:justify-end">
-              <button type="button" class="btn btn-ghost btn-sm" @click="cancelEdit">Cancel</button>
+              <button type="button" class="btn btn-ghost btn-sm" @click="cancelEdit">{{ t('common.cancel') }}</button>
               <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">
                 <Save :size="16" />
-                {{ saving ? 'Saving...' : 'Save' }}
+                {{ saving ? t('common.saving') : t('common.save') }}
               </button>
             </div>
           </div>
@@ -108,18 +108,18 @@
           <p v-if="formError" class="mb-4 rounded-sm border border-error-bg bg-overlay p-3 text-base text-text-primary">{{ formError }}</p>
 
           <label class="form-group">
-            <span class="form-label">Title</span>
-            <input v-model="draftTitle" class="form-input" type="text" maxlength="200" placeholder="Idea, link, or research thread" />
+            <span class="form-label">{{ t('common.title') }}</span>
+            <input v-model="draftTitle" class="form-input" type="text" maxlength="200" :placeholder="t('notes.titlePlaceholder')" />
           </label>
 
           <label class="form-group mb-0 block">
-            <span class="form-label">Markdown</span>
+            <span class="form-label">{{ t('chat.note.markdown') }}</span>
             <textarea
               v-model="draftBody"
               class="form-textarea min-h-[300px] leading-[1.6] md:min-h-[360px]"
               maxlength="20000"
               rows="16"
-              placeholder="Write plain Markdown here. Use links, lists, headings, and emphasis."
+              :placeholder="t('notes.bodyPlaceholder')"
             ></textarea>
           </label>
         </form>
@@ -127,18 +127,18 @@
         <article v-else-if="selectedNote">
           <div class="mb-4">
             <div>
-              <h2 class="m-0 text-xl text-text-primary">{{ selectedNote.title || 'Untitled Note' }}</h2>
+              <h2 class="m-0 text-xl text-text-primary">{{ selectedNote.title || t('notes.untitled') }}</h2>
               <div class="mt-3 flex flex-wrap gap-2">
                 <button class="btn btn-secondary btn-sm" @click="editSelected">
                   <Pencil :size="16" />
-                  Edit
+                  {{ t('common.edit') }}
                 </button>
                 <button class="btn btn-danger btn-sm" :disabled="deleting" @click="deleteSelected">
                   <Trash2 :size="16" />
-                  {{ deleting ? 'Deleting...' : 'Delete' }}
+                  {{ deleting ? t('common.deleting') : t('common.delete') }}
                 </button>
               </div>
-              <p class="text-chip text-text-muted">Updated {{ formatDate(selectedNote.updatedAt) }}</p>
+              <p class="text-chip text-text-muted">{{ t('notes.updated', { date: formatDate(selectedNote.updatedAt) }) }}</p>
             </div>
           </div>
 
@@ -148,8 +148,8 @@
             v-html="renderedSelectedBody"
           ></div>
           <div v-else class="empty-state flex min-h-[320px] flex-col items-center justify-center gap-3 text-center text-text-muted">
-            <p>This note has no body yet.</p>
-            <button class="btn btn-secondary btn-sm" @click="editSelected">Add Markdown</button>
+            <p>{{ t('notes.noBody') }}</p>
+            <button class="btn btn-secondary btn-sm" @click="editSelected">{{ t('notes.addMarkdown') }}</button>
           </div>
         </article>
       </section>
@@ -167,6 +167,7 @@ import { renderSafeMarkdown } from '@/composables/useMarkdown'
 import { usePwa } from '@/composables/usePwa'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t, intlLocale } from '@/i18n'
 
 const { showConfirm, showAlert } = useDialog()
 const { isPwa } = usePwa()
@@ -196,7 +197,7 @@ async function loadNotes() {
     notes.value = [...(res.data.notes ?? [])].sort(sortByUpdatedDesc)
     selectedId.value = notes.value[0]?.id ?? null
   } catch {
-    loadError.value = 'Notes are not available right now. Check your connection and try again.'
+    loadError.value = t('notes.loadFailed')
   } finally {
     loading.value = false
   }
@@ -247,7 +248,7 @@ async function saveNote() {
   const body = draftBody.value
   const title = deriveTitle(draftTitle.value, body)
   if (!title && !body.trim()) {
-    formError.value = 'Add a title or note body before saving.'
+    formError.value = t('notes.titleOrBody')
     return
   }
 
@@ -255,18 +256,18 @@ async function saveNote() {
   formError.value = ''
   try {
     if (selectedId.value === null) {
-      const res = await createNote({ title: title || 'Untitled Note', body })
+      const res = await createNote({ title: title || t('notes.untitled'), body })
       notes.value = [res.data, ...notes.value].sort(sortByUpdatedDesc)
       selectedId.value = res.data.id
     } else {
-      const res = await updateNote(selectedId.value, { title: title || 'Untitled Note', body })
+      const res = await updateNote(selectedId.value, { title: title || t('notes.untitled'), body })
       notes.value = notes.value.map(note => note.id === res.data.id ? res.data : note).sort(sortByUpdatedDesc)
       selectedId.value = res.data.id
     }
     editMode.value = false
     if (isPwa) pwaMode.value = 'detail'
   } catch {
-    formError.value = 'Unable to save this note. Try again before leaving the page.'
+    formError.value = t('notes.saveFailed')
   } finally {
     saving.value = false
   }
@@ -281,9 +282,9 @@ function deriveTitle(rawTitle: string, body: string): string {
 
 async function deleteSelected() {
   if (!selectedNote.value) return
-  const confirmed = await showConfirm('Delete this note? This cannot be undone.', {
-    title: 'Delete Note',
-    confirmLabel: 'Delete',
+  const confirmed = await showConfirm(t('notes.confirmDelete'), {
+    title: t('notes.deleteTitle'),
+    confirmLabel: t('common.delete'),
     variant: 'danger',
   })
   if (!confirmed) return
@@ -297,7 +298,7 @@ async function deleteSelected() {
     editMode.value = false
     if (isPwa) pwaMode.value = 'list'
   } catch {
-    await showAlert('Unable to delete this note. Try again.', { title: 'Delete Failed' })
+    await showAlert(t('notes.deleteFailed'), { title: t('admin.catalogs.deleteFailedTitle') })
   } finally {
     deleting.value = false
   }
@@ -312,13 +313,13 @@ function showPwaList() {
 
 function previewText(body: string): string {
   const compact = body.replace(/[#*_`>\-[\]()]/g, ' ').replace(/\s+/g, ' ').trim()
-  return compact || 'No body yet'
+  return compact || t('notes.noBodyPreview')
 }
 
 function formatDate(value: string): string {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Unknown date'
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  if (Number.isNaN(date.getTime())) return t('notes.unknownDate')
+  return date.toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric', year: 'numeric' })
 }
 </script>
 

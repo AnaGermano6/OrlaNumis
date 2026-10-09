@@ -95,7 +95,7 @@ describe('AdminAvailabilitySchedule', () => {
     const wrapper = await mountComponent()
 
     expect(mocks.getAvailabilityCycles).toHaveBeenCalledWith(1, 5)
-    expect(wrapper.text()).toContain('partial_failure')
+    expect(wrapper.text()).toContain('partial failure')
     // totalChildren, completedChildren, failedChildren all render in the row.
     expect(wrapper.find('tbody tr').text()).toContain('3')
     expect(wrapper.find('tbody tr').text()).toContain('2')

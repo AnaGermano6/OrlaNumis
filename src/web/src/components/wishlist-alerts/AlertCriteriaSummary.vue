@@ -8,7 +8,7 @@
           : 'border-border-subtle text-text-muted',
       ]"
     >
-      {{ alert.isActive ? 'Active' : 'Disabled' }}
+      {{ alert.isActive ? t('wishlistAlerts.summary.active') : t('wishlistAlerts.summary.disabled') }}
     </span>
     <span class="inline-flex rounded-full border border-border-subtle px-2 py-0.5 text-chip text-gold">{{ cadenceLabel }}</span>
     <span
@@ -18,17 +18,19 @@
     >
       {{ item }}
     </span>
-    <span v-if="!criteriaItems.length" class="text-chip text-text-muted">No criteria</span>
+    <span v-if="!criteriaItems.length" class="text-chip text-text-muted">{{ t('wishlistAlerts.summary.noCriteria') }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { WishlistSearchAlert } from '@/types'
+import { alertCadenceLabel } from '@/utils/format'
+import { t } from '@/i18n'
 
 const props = defineProps<{ alert: WishlistSearchAlert }>()
 
-const cadenceLabel = computed(() => `Cadence: ${props.alert.cadence}`)
+const cadenceLabel = computed(() => t('wishlistAlerts.summary.cadence', { cadence: alertCadenceLabel(props.alert.cadence).toLowerCase() }))
 const criteriaItems = computed(() => {
   const a = props.alert
   const items = [
@@ -40,8 +42,9 @@ const criteriaItems = computed(() => {
     a.keywords,
     ...a.sourceFilters,
   ].filter(Boolean)
-  if (a.priceMin != null || a.priceMax != null) items.push(`Price ${a.priceMin ?? 0}–${a.priceMax ?? 'any'} ${a.currency}`)
-  if (a.dateFrom != null || a.dateTo != null) items.push(`Date ${a.dateFrom ?? 'any'}–${a.dateTo ?? 'any'}`)
+  const any = t('wishlistAlerts.summary.any')
+  if (a.priceMin != null || a.priceMax != null) items.push(t('wishlistAlerts.summary.price', { min: a.priceMin ?? 0, max: a.priceMax ?? any, currency: a.currency }))
+  if (a.dateFrom != null || a.dateTo != null) items.push(t('wishlistAlerts.summary.date', { from: a.dateFrom ?? any, to: a.dateTo ?? any }))
   return items
 })
 </script>

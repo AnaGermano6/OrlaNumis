@@ -1,5 +1,7 @@
 // T001: Coin detail section constants for #219
-// These constants define the standard section links shown on the coin detail overview page
+// These constants define the standard section links shown on the coin detail overview page.
+// title/description are getters so they follow the current UI locale wherever they are read.
+import { t } from '@/i18n'
 
 export interface CoinDetailSection {
   id: 'shipment' | 'journal' | 'notes' | 'actions' | 'analysis' | 'health' | 'valuation'
@@ -11,44 +13,44 @@ export interface CoinDetailSection {
 export const COIN_DETAIL_SECTIONS: Record<string, CoinDetailSection> = {
   shipment: {
     id: 'shipment',
-    title: 'Shipment Tracker',
-    description: 'Manual shipment status and tracking updates',
+    get title() { return t('coinDetail.sections.shipment.title') },
+    get description() { return t('coinDetail.sections.shipment.description') },
     route: (coinId: number) => `/coin/${coinId}/shipment`,
   },
   journal: {
     id: 'journal',
-    title: 'Activity Journal',
-    description: 'Timeline of events and actions',
+    get title() { return t('coinDetail.sections.journal.title') },
+    get description() { return t('coinDetail.sections.journal.description') },
     route: (coinId: number) => `/coin/${coinId}/journal`,
   },
   health: {
     id: 'health',
-    title: 'Metadata Health',
-    description: 'Completeness score and quality checklist',
+    get title() { return t('coinDetail.sections.health.title') },
+    get description() { return t('coinDetail.sections.health.description') },
     route: (coinId: number) => `/coin/${coinId}/health`,
   },
   notes: {
     id: 'notes',
-    title: 'Notes',
-    description: 'Personal notes and observations',
+    get title() { return t('coinDetail.sections.notes.title') },
+    get description() { return t('coinDetail.sections.notes.description') },
     route: (coinId: number) => `/coin/${coinId}/notes`,
   },
   actions: {
     id: 'actions',
-    title: 'Actions',
-    description: 'Upload images, estimate value, and more',
+    get title() { return t('coinDetail.sections.actions.title') },
+    get description() { return t('coinDetail.sections.actions.description') },
     route: (coinId: number) => `/coin/${coinId}/actions`,
   },
   analysis: {
     id: 'analysis',
-    title: 'AI Analysis',
-    description: 'Computer vision analysis and insights',
+    get title() { return t('coinDetail.sections.analysis.title') },
+    get description() { return t('coinDetail.sections.analysis.description') },
     route: (coinId: number) => `/coin/${coinId}/analysis`,
   },
   valuation: {
     id: 'valuation',
-    title: 'Value Trend',
-    description: 'Estimated value over time',
+    get title() { return t('coinDetail.sections.valuation.title') },
+    get description() { return t('coinDetail.sections.valuation.description') },
     route: (coinId: number) => `/coin/${coinId}/valuation`,
   },
 }

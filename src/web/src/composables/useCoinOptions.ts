@@ -1,8 +1,9 @@
 import { ref } from 'vue'
-import { getAppSettings } from '@/api/client'
 import { CATEGORIES, MATERIALS, COIN_ERAS } from '@/types'
-import { parseOptionList } from '@/utils/options'
+import { coinVocabulary, loadCoinVocabulary } from '@/i18n/coinVocabulary'
 
+// Option lists hold the stored values; render option text with
+// categoryLabel()/eraLabel() so the choices read in the current locale.
 export function useCoinOptions() {
   const settingsLoaded = ref(false)
   const categoryOptions = ref<string[]>([...CATEGORIES])
@@ -10,22 +11,12 @@ export function useCoinOptions() {
   const materialOptions = ref<string[]>([...MATERIALS])
 
   async function loadOptions() {
-    try {
-      const res = await getAppSettings()
-      const settings = res.data
-
-      categoryOptions.value = parseOptionList(settings.CoinCategories, CATEGORIES)
-      eraOptions.value = parseOptionList(settings.CoinEras, COIN_ERAS)
-      materialOptions.value = [...MATERIALS]
-
-      settingsLoaded.value = true
-    } catch {
-      // Use defaults on error
-      categoryOptions.value = [...CATEGORIES]
-      eraOptions.value = [...COIN_ERAS]
-      materialOptions.value = [...MATERIALS]
-      settingsLoaded.value = true
-    }
+    // Never rejects: on error the vocabulary keeps the defaults.
+    await loadCoinVocabulary()
+    categoryOptions.value = [...coinVocabulary.categories]
+    eraOptions.value = [...coinVocabulary.eras]
+    materialOptions.value = [...MATERIALS]
+    settingsLoaded.value = true
   }
 
   return {

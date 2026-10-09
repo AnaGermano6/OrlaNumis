@@ -1,11 +1,11 @@
 <template>
   <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-overlay p-4" @click.self="$emit('close')">
     <div class="card w-full max-w-[420px] !p-8">
-      <h3 class="mb-1 text-lg font-medium text-heading">Move to Collection</h3>
+      <h3 class="mb-1 text-lg font-medium text-heading">{{ t('featured.moveToCollection') }}</h3>
       <p class="mb-5 truncate text-base text-gold">{{ coin.name }}</p>
 
       <div class="form-group">
-        <label class="form-label">Purchase Price</label>
+        <label class="form-label">{{ t('coinFields.purchasePrice') }}</label>
         <div class="relative flex items-center">
           <span class="pointer-events-none absolute left-3 text-base text-text-secondary">$</span>
           <input
@@ -21,7 +21,7 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Purchase Date</label>
+        <label class="form-label">{{ t('coinFields.purchaseDate') }}</label>
         <input
           v-model="purchaseDate"
           type="date"
@@ -30,35 +30,35 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Purchased From</label>
+        <label class="form-label">{{ t('purchase.purchasedFrom') }}</label>
         <input
           v-model="purchaseLocation"
           type="text"
           class="form-input"
-          placeholder="e.g. VCoins, Heritage Auctions"
+          :placeholder="t('purchase.purchasedFromPlaceholder')"
         />
       </div>
 
-      <p class="mb-3 text-chip text-text-secondary">All fields are optional. You can update these later.</p>
+      <p class="mb-3 text-chip text-text-secondary">{{ t('purchase.allOptional') }}</p>
 
       <div class="mb-3 rounded-sm border border-border-subtle bg-card-hover p-3">
         <label class="mb-2 inline-flex items-center gap-2 text-body text-text-secondary">
           <input v-model="addShipment" type="checkbox" />
-          Add shipment tracking now
+          {{ t('purchase.addShipment') }}
         </label>
         <div v-if="addShipment" class="grid gap-2">
-          <p class="m-0 text-chip text-text-muted">Enter only the tracking number. ParcelApp will use the coin title as the delivery description.</p>
-          <input v-model="shipmentTrackingNumber" class="form-input" placeholder="Tracking number" />
-          <input v-model="shipmentNotes" class="form-input" placeholder="Shipment notes (optional)" />
+          <p class="m-0 text-chip text-text-muted">{{ t('purchase.shipmentHint') }}</p>
+          <input v-model="shipmentTrackingNumber" class="form-input" :placeholder="t('shipment.trackingNumber')" />
+          <input v-model="shipmentNotes" class="form-input" :placeholder="t('purchase.shipmentNotes')" />
         </div>
       </div>
 
       <div v-if="error" class="mb-3 text-chip text-loss">{{ error }}</div>
 
       <div class="mt-6 flex justify-end gap-3">
-        <button class="btn btn-secondary" @click="$emit('close')">Cancel</button>
+        <button class="btn btn-secondary" @click="$emit('close')">{{ t('common.cancel') }}</button>
         <button class="btn btn-primary" :disabled="submitting" @click="handleSubmit">
-          {{ submitting ? 'Saving...' : 'Add to Collection' }}
+          {{ submitting ? t('common.saving') : t('addCoin.addToCollection') }}
         </button>
       </div>
     </div>
@@ -68,6 +68,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { Coin, ShipmentUpsertInput } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   coin: Coin
@@ -116,7 +117,7 @@ function handleSubmit() {
   if (priceStr.value) {
     const price = parseFloat(priceStr.value)
     if (isNaN(price) || price < 0) {
-      error.value = 'Please enter a valid price'
+      error.value = t('common.validPrice')
       return
     }
     data.purchasePrice = price
@@ -132,7 +133,7 @@ function handleSubmit() {
 
   if (addShipment.value) {
     if (!shipmentTrackingNumber.value.trim()) {
-      error.value = 'Tracking number is required when shipment tracking is enabled'
+      error.value = t('purchase.trackingRequired')
       return
     }
     data.shipment = {

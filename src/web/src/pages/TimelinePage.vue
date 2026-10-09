@@ -1,26 +1,26 @@
 <template>
   <PullToRefresh :on-refresh="loadCoins">
     <div class="container">
-      <DesktopPageContext title="Collection Timeline">
+      <DesktopPageContext :title="t('timeline.title')">
         <div class="page-header max-sm:flex-wrap">
           <h1 class="flex items-center gap-2 text-lg text-heading sm:text-xl">
             <Clock :size="24" />
-            Collection Timeline
+            {{ t('timeline.title') }}
           </h1>
           <div class="flex gap-2 max-sm:w-full sm:justify-end">
             <select v-model="filterType" class="form-input form-select min-w-[150px] max-sm:w-full sm:w-auto">
-              <option value="all">All Coins</option>
-              <option value="collection">Collection Only</option>
-              <option value="sold">Sold Only</option>
+              <option value="all">{{ t('timeline.allCoins') }}</option>
+              <option value="collection">{{ t('timeline.collectionOnly') }}</option>
+              <option value="sold">{{ t('timeline.soldOnly') }}</option>
             </select>
           </div>
         </div>
         <template #desktop>
           <div class="mb-6 flex justify-end">
             <select v-model="filterType" class="form-input form-select min-w-[150px]">
-              <option value="all">All Coins</option>
-              <option value="collection">Collection Only</option>
-              <option value="sold">Sold Only</option>
+              <option value="all">{{ t('timeline.allCoins') }}</option>
+              <option value="collection">{{ t('timeline.collectionOnly') }}</option>
+              <option value="sold">{{ t('timeline.soldOnly') }}</option>
             </select>
           </div>
         </template>
@@ -28,32 +28,32 @@
 
       <div v-if="loading" class="loading-overlay">
         <div class="spinner" />
-        <p>Loading timeline...</p>
+        <p>{{ t('timeline.loading') }}</p>
       </div>
 
       <div v-else-if="timelineGroups.length === 0" class="empty-state">
         <Clock :size="48" />
-        <h3>No timeline data</h3>
-        <p>Add purchase dates to your coins to see them on the timeline.</p>
+        <h3>{{ t('timeline.empty.title') }}</h3>
+        <p>{{ t('timeline.empty.body') }}</p>
       </div>
 
       <div v-else>
         <div class="mb-8 flex flex-wrap justify-around gap-4 rounded-md border border-border-subtle bg-card p-4 shadow-[var(--shadow-card)]">
           <div class="flex flex-col items-center gap-1">
             <span class="font-display text-lg font-bold text-gold">{{ totalCoins }}</span>
-            <span class="section-label">Coins</span>
+            <span class="section-label">{{ t('timeline.coins') }}</span>
           </div>
           <div class="flex flex-col items-center gap-1">
             <span class="font-display text-lg font-bold text-gold">{{ yearSpan }}</span>
-            <span class="section-label">Year Span</span>
+            <span class="section-label">{{ t('timeline.yearSpan') }}</span>
           </div>
           <div class="flex flex-col items-center gap-1">
-            <span class="font-display text-lg font-bold text-gold">${{ totalInvested.toLocaleString() }}</span>
-            <span class="section-label">Invested</span>
+            <span class="font-display text-lg font-bold text-gold">${{ totalInvested.toLocaleString(intlLocale()) }}</span>
+            <span class="section-label">{{ t('stats.timeMachine.invested') }}</span>
           </div>
           <div class="flex flex-col items-center gap-1">
-            <span class="font-display text-lg font-bold text-gold">${{ totalValue.toLocaleString() }}</span>
-            <span class="section-label">Current Value</span>
+            <span class="font-display text-lg font-bold text-gold">${{ totalValue.toLocaleString(intlLocale()) }}</span>
+            <span class="section-label">{{ t('coinFields.currentValue') }}</span>
           </div>
         </div>
 
@@ -64,7 +64,7 @@
               <div class="absolute -left-6 z-10 h-3 w-3 rounded-full border-2 border-surface bg-gold shadow-[0_0_0_2px_var(--accent-gold-dim)] max-sm:-left-[0.95rem] max-sm:h-2.5 max-sm:w-2.5" />
               <div class="font-display text-base font-semibold text-text-primary max-sm:text-base">{{ group.label }}</div>
               <div class="rounded-full bg-surface-secondary px-2 py-0.5 text-sm text-text-muted">
-                {{ group.coins.length }} {{ group.coins.length === 1 ? 'coin' : 'coins' }}
+                {{ t('common.coinCount', { count: group.coins.length }) }}
               </div>
             </div>
             <div class="grid grid-cols-1 gap-3 sm:[grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
@@ -86,16 +86,16 @@
                 <div class="min-w-0 flex flex-1 flex-col gap-1">
                   <span class="truncate text-base font-semibold text-text-primary">{{ coin.name }}</span>
                   <span class="flex min-w-0 gap-2 text-sm">
-                    <span class="font-medium" :style="{ color: categoryColor(coin.category) }">{{ coin.category }}</span>
+                    <span class="font-medium" :style="{ color: categoryColor(coin.category) }">{{ categoryLabel(coin.category) }}</span>
                     <span v-if="coin.ruler" class="truncate text-text-secondary">{{ coin.ruler }}</span>
                   </span>
                   <span v-if="coin.purchaseDate" class="text-sm text-text-muted">{{ formatDate(coin.purchaseDate) }}</span>
                   <div class="mt-0.5 flex items-center gap-2">
                     <span v-if="coin.purchasePrice" class="text-chip font-semibold text-gold">
-                      ${{ coin.purchasePrice.toLocaleString() }}
+                      ${{ coin.purchasePrice.toLocaleString(intlLocale()) }}
                     </span>
                     <span v-if="coin.isSold" class="rounded-full border border-border-subtle bg-surface-secondary px-2 py-0.5 text-sm font-medium text-warning">
-                      Sold
+                      {{ t('coinDetail.badges.sold') }}
                     </span>
                     <span v-if="coin.grade" class="rounded-full bg-surface-secondary px-2 py-0.5 text-sm font-medium text-gold">
                       {{ coin.grade }}
@@ -114,6 +114,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Clock, Image as ImageIcon } from 'lucide-vue-next'
+import { t, intlLocale } from '@/i18n'
+import { categoryLabel } from '@/i18n/coinVocabulary'
 import { getCoins } from '@/api/client'
 import type { Coin } from '@/types'
 import { CATEGORY_COLORS } from '@/types'
@@ -138,12 +140,12 @@ function getPrimaryImage(coin: Coin): string | null {
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return d.toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function formatMonthYear(dateStr: string): string {
   const d = new Date(dateStr)
-  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  return d.toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' })
 }
 
 function monthYearKey(dateStr: string): string {

@@ -1,40 +1,40 @@
 <template>
   <PullToRefresh :on-refresh="handleRefresh">
     <div class="container">
-      <DesktopPageContext title="Auctions">
+      <DesktopPageContext :title="t('nav.auctions')">
         <template #actions>
-          <AppIconButton :disabled="syncing" title="Sync Watchlist" @click="syncWatchlist">
+          <AppIconButton :disabled="syncing" :title="t('auctions.page.syncWatchlist')" @click="syncWatchlist">
             <RefreshCw :size="20" :class="syncing ? 'animate-spin' : ''" />
           </AppIconButton>
-          <AppIconButton :active="selectMode" :title="selectMode ? 'Cancel Select' : 'Select'" @click="toggleSelectMode">
+          <AppIconButton :active="selectMode" :title="selectMode ? t('common.cancelSelect') : t('common.select')" @click="toggleSelectMode">
             <CheckSquare :size="20" />
           </AppIconButton>
-          <AppIconButton title="Add Lot" @click="showImport = true">
+          <AppIconButton :title="t('auctions.importLot.add')" @click="showImport = true">
             <CirclePlus :size="20" />
           </AppIconButton>
         </template>
         <div class="page-header">
-          <h1>Auctions</h1>
+          <h1>{{ t('nav.auctions') }}</h1>
           <div v-if="isPwa" class="pwa-actions">
-            <AppIconButton :disabled="syncing" title="Sync Watchlist" aria-label="Sync Watchlist" @click="syncWatchlist">
+            <AppIconButton :disabled="syncing" :title="t('auctions.page.syncWatchlist')" :aria-label="t('auctions.page.syncWatchlist')" @click="syncWatchlist">
               <RefreshCw :size="22" :class="syncing ? 'animate-spin' : ''" />
             </AppIconButton>
-            <AppIconButton :active="selectMode" :title="selectMode ? 'Cancel Select' : 'Select'" aria-label="Select" @click="toggleSelectMode">
+            <AppIconButton :active="selectMode" :title="selectMode ? t('common.cancelSelect') : t('common.select')" :aria-label="t('common.select')" @click="toggleSelectMode">
               <CheckSquare :size="22" />
             </AppIconButton>
-            <AppIconButton title="Add Lot" aria-label="Add Lot" @click="showImport = true">
+            <AppIconButton :title="t('auctions.importLot.add')" :aria-label="t('auctions.importLot.add')" @click="showImport = true">
               <CirclePlus :size="22" />
             </AppIconButton>
           </div>
           <div v-else class="header-actions gap-3">
             <button class="btn btn-secondary" :disabled="syncing" @click="syncWatchlist">
               <RefreshCw :size="16" :class="syncing ? 'animate-spin' : ''" />
-              {{ syncing ? 'Syncing...' : 'Sync Watchlists' }}
+              {{ syncing ? t('auctions.page.syncing') : t('auctions.page.syncWatchlists') }}
             </button>
             <button class="btn" :class="selectMode ? 'btn-primary' : 'btn-secondary'" @click="toggleSelectMode">
-              <CheckSquare :size="16" /> {{ selectMode ? 'Cancel' : 'Select' }}
+              <CheckSquare :size="16" /> {{ selectMode ? t('common.cancel') : t('common.select') }}
             </button>
-            <button class="btn btn-primary" @click="showImport = true"><Plus :size="16" /> Add Lot</button>
+            <button class="btn btn-primary" @click="showImport = true"><Plus :size="16" /> {{ t('auctions.importLot.add') }}</button>
           </div>
         </div>
       </DesktopPageContext>
@@ -47,7 +47,7 @@
       </div>
 
       <div data-testid="auction-filter-row" class="mb-4 flex flex-wrap items-center gap-3">
-        <div class="flex min-w-0 flex-1 flex-wrap gap-[0.35rem]" aria-label="Auction source filter">
+        <div class="flex min-w-0 flex-1 flex-wrap gap-[0.35rem]" :aria-label="t('auctions.page.sourceFilter')">
           <button
             v-for="source in sourceOptions"
             :key="source.value"
@@ -60,21 +60,21 @@
           <button
             class="chip flex items-center gap-1"
             :class="{ active: attentionOnly }"
-            :title="`Lots whose auction has closed but status hasn't been confirmed`"
+            :title="t('auctions.page.attentionTitle')"
             @click="attentionOnly = !attentionOnly"
           >
-            <AlertTriangle :size="13" /> Attention
+            <AlertTriangle :size="13" /> {{ t('auctions.page.attention') }}
           </button>
           <template v-if="groupingAvailable">
             <span class="mx-1 h-6 w-px self-center bg-border-subtle" aria-hidden="true"></span>
-            <div class="flex" aria-label="Auction grouping">
+            <div class="flex" :aria-label="t('auctions.page.grouping')">
               <button
                 class="chip"
                 :class="{ active: groupingEnabled }"
                 :aria-pressed="groupingEnabled"
                 @click="groupingEnabled = !groupingEnabled"
               >
-                Group by Auction
+                {{ t('auctions.page.groupByAuction') }}
               </button>
             </div>
           </template>
@@ -83,9 +83,9 @@
       </div>
 
       <div v-if="selectMode" class="mb-4 flex flex-wrap items-center gap-[0.6rem]">
-        <button class="btn btn-sm btn-secondary" @click="selectAllLots">Select All</button>
-        <button class="btn btn-sm btn-secondary" @click="deselectAllLots">Deselect All</button>
-        <span class="text-body font-medium text-text-secondary">{{ selectedLotIds.size }} selected</span>
+        <button class="btn btn-sm btn-secondary" @click="selectAllLots">{{ t('collection.selectAll') }}</button>
+        <button class="btn btn-sm btn-secondary" @click="deselectAllLots">{{ t('collection.deselectAll') }}</button>
+        <span class="text-body font-medium text-text-secondary">{{ t('auctions.page.selectedCount', { count: selectedLotIds.size }) }}</span>
       </div>
 
       <div v-if="loading" class="loading-overlay">
@@ -129,16 +129,16 @@
       </div>
 
       <div v-else class="empty-state">
-        <h3>No auction lots{{ emptyStateSuffix }}</h3>
-        <p>Import lots from NumisBids or CNG Auctions to start tracking auctions. CNG can sync hosted outcomes where available; NumisBids outcomes are updated manually.</p>
+        <h3>{{ t('auctions.empty.title', { suffix: emptyStateSuffix }) }}</h3>
+        <p>{{ t('auctions.empty.body') }}</p>
         <button class="btn btn-primary mt-3" @click="showImport = true">
-          <Plus :size="16" /> Import Your First Lot
+          <Plus :size="16" /> {{ t('auctions.empty.importFirst') }}
         </button>
         <SafeExternalLink href="https://www.numisbids.com/" class="btn btn-secondary mt-3 inline-flex items-center gap-1.5 no-underline">
-          <ExternalLink :size="16" /> Visit NumisBids
+          <ExternalLink :size="16" /> {{ t('auctions.empty.visitNumisBids') }}
         </SafeExternalLink>
         <SafeExternalLink href="https://auctions.cngcoins.com/" class="btn btn-secondary mt-3 inline-flex items-center gap-1.5 no-underline">
-          <ExternalLink :size="16" /> Visit CNG Auctions
+          <ExternalLink :size="16" /> {{ t('auctions.empty.visitCng') }}
         </SafeExternalLink>
       </div>
 
@@ -158,7 +158,7 @@
 
       <div v-if="bulkLinkMessage" class="card mb-4" role="status">
         <p>{{ bulkLinkMessage }}</p>
-        <p v-for="failure in bulkLinkFailures" :key="failure.lotId">Lot {{ failure.lotId }}: {{ failure.error }}</p>
+        <p v-for="failure in bulkLinkFailures" :key="failure.lotId">{{ t('auctions.bulk.lotFailure', { id: failure.lotId, error: failure.error }) }}</p>
       </div>
       <AuctionBulkActionBar
         v-if="selectMode"
@@ -190,6 +190,8 @@ import { usePwa } from '@/composables/usePwa'
 import { useAuthStore } from '@/stores/auth'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import { auctionLotNeedsAttention } from '@/utils/auctionLot'
+import { auctionStatusLabel } from '@/utils/format'
+import { t } from '@/i18n'
 
 const { isPwa } = usePwa()
 const auth = useAuthStore()
@@ -216,11 +218,11 @@ const selectedLotIds = ref(new Set<number>())
 const bulkLinkMessage = ref('')
 const bulkLinkFailures = ref<{ lotId: number; error: string }[]>([])
 const linkingEvent = ref(false)
-const sourceOptions = [
-  { value: '', label: 'All' },
+const sourceOptions = computed(() => [
+  { value: '', label: t('common.all') },
   { value: 'numisbids', label: 'Numis' },
   { value: 'cng', label: 'CNG' },
-]
+])
 const alertsByLot = computed(() => groupByLot(priceAlerts.value))
 const remindersByLot = computed(() => groupByLot(bidReminders.value))
 
@@ -267,17 +269,17 @@ async function handleBulkLinkEvent(eventIdRaw: number | string) {
   if (linkingEvent.value) return
   const eventId = eventIdRaw === '' ? null : Number(eventIdRaw)
   linkingEvent.value = true
-  bulkLinkMessage.value = 'Linking selected lots...'
+  bulkLinkMessage.value = t('auctions.bulk.linking')
   bulkLinkFailures.value = []
   try {
     const { data } = await bulkLinkAuctionLotEvent([...selectedLotIds.value], eventId)
     bulkLinkFailures.value = data.failures
-    bulkLinkMessage.value = `${data.updated} lots updated. ${data.failures.length} failed.`
+    bulkLinkMessage.value = t('auctions.bulk.result', { updated: data.updated, failed: data.failures.length })
     selectedLotIds.value = new Set(data.failures.map(failure => failure.lotId))
     selectMode.value = data.failures.length > 0
     await fetchLots()
   } catch {
-    bulkLinkMessage.value = 'Unable to link selected lots. Please try again.'
+    bulkLinkMessage.value = t('auctions.bulk.linkFailed')
   } finally {
     linkingEvent.value = false
   }
@@ -379,7 +381,7 @@ async function syncWatchlist() {
   try {
     const providers = configuredAuctionProviders()
     if (!providers.length) {
-      syncMessage.value = 'Configure auction provider credentials in Settings before syncing watchlists'
+      syncMessage.value = t('auctions.sync.configureFirst')
       setTimeout(() => { syncMessage.value = '' }, 5000)
       return
     }
@@ -387,15 +389,16 @@ async function syncWatchlist() {
     await refreshQuickAccess()
     const synced = results.reduce((total, result) => total + (result.status === 'fulfilled' ? result.value.data?.synced ?? 0 : 0), 0)
     const failed = results.filter((result) => result.status === 'rejected')
-    const providerLabel = providers.length > 1 ? 'watchlists' : providerName(providers[0] ?? 'numisbids')
+    const providerLabel = providers.length > 1 ? t('auctions.sync.watchlists') : providerName(providers[0] ?? 'numisbids')
+    const syncedLots = t('auctions.sync.lots', { count: synced })
     syncMessage.value = failed.length
-      ? `Synced ${synced} lot${synced !== 1 ? 's' : ''}; ${failed.length} provider${failed.length !== 1 ? 's' : ''} failed`
-      : `Synced ${synced} lot${synced !== 1 ? 's' : ''} from ${providerLabel}${providerCapabilityNote(providers)}`
+      ? t('auctions.sync.partial', { lots: syncedLots, providers: t('auctions.sync.providersFailed', { count: failed.length }) })
+      : t('auctions.sync.done', { lots: syncedLots, source: providerLabel, note: providerCapabilityNote(providers) })
     fetchLots()
     fetchAllCounts()
     setTimeout(() => { syncMessage.value = '' }, 4000)
   } catch (err: unknown) {
-    const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Sync failed'
+    const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('auctions.sync.failed')
     syncMessage.value = msg
     setTimeout(() => { syncMessage.value = '' }, 5000)
   } finally {
@@ -417,16 +420,16 @@ function providerName(source: string): string {
 function providerCapabilityNote(providers: string[]): string {
   if (providers.length !== 1) return ''
   return providers[0] === 'cng'
-    ? ' with hosted outcome detection where available'
-    : '; final outcomes remain manual'
+    ? t('auctions.sync.cngNote')
+    : t('auctions.sync.numisNote')
 }
 
 const emptyStateSuffix = computed(() => {
   const parts: string[] = []
-  if (activeStatus.value) parts.push(`status "${activeStatus.value}"`)
+  if (activeStatus.value) parts.push(t('auctions.empty.status', { status: auctionStatusLabel(activeStatus.value).toLowerCase() }))
   if (activeSource.value) parts.push(providerName(activeSource.value))
-  if (attentionOnly.value) parts.push('needing attention')
-  return parts.length ? ` matching ${parts.join(' and ')}` : ''
+  if (attentionOnly.value) parts.push(t('auctions.empty.needingAttention'))
+  return parts.length ? t('auctions.empty.matching', { parts: parts.join(t('auctions.empty.and')) }) : ''
 })
 
 const attentionOnly = ref(false)
@@ -452,8 +455,8 @@ interface AuctionLotHouseGroup {
 const groupedLots = computed<AuctionLotHouseGroup[]>(() => {
   const byHouse = new Map<string, Map<string, AuctionLot[]>>()
   for (const lot of visibleLots.value) {
-    const house = lot.auctionHouse || 'Unknown Auction House'
-    const sale = lot.saleName || 'Unknown Sale'
+    const house = lot.auctionHouse || t('auctions.unknownHouse')
+    const sale = lot.saleName || t('auctions.unknownSale')
     if (!byHouse.has(house)) byHouse.set(house, new Map())
     const sales = byHouse.get(house)!
     if (!sales.has(sale)) sales.set(sale, [])

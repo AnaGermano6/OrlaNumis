@@ -1,11 +1,11 @@
 <template>
   <div class="zoomable-surface">
-    <div v-if="interactive" class="zoomable-toolbar" aria-label="Chart zoom controls">
+    <div v-if="interactive" class="zoomable-toolbar" :aria-label="t('zoom.controls')">
       <span class="zoomable-status" aria-live="polite">{{ Math.round(scale * 100) }}%</span>
       <button
         type="button"
         class="btn btn-xs btn-ghost zoom-control"
-        aria-label="Zoom out"
+        :aria-label="t('zoom.out')"
         @click="zoomOut"
       >
         <ZoomOut aria-hidden="true" :size="14" />
@@ -13,7 +13,7 @@
       <button
         type="button"
         class="btn btn-xs btn-ghost zoom-control"
-        aria-label="Reset chart zoom"
+        :aria-label="t('zoom.reset')"
         @click="reset"
       >
         <RotateCcw aria-hidden="true" :size="14" />
@@ -21,7 +21,7 @@
       <button
         type="button"
         class="btn btn-xs btn-ghost zoom-control"
-        aria-label="Zoom in"
+        :aria-label="t('zoom.in')"
         @click="zoomIn"
       >
         <ZoomIn aria-hidden="true" :size="14" />
@@ -53,6 +53,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 interface Point {
   x: number
@@ -87,7 +88,7 @@ const isPanning = ref(false)
 const lastPointer = ref<Point | null>(null)
 const pinchDistance = ref<number | null>(null)
 const activePointers = new Map<number, Point>()
-const resolvedAriaLabel = computed(() => props.ariaLabel ?? 'Zoomable chart')
+const resolvedAriaLabel = computed(() => props.ariaLabel ?? t('zoom.chart'))
 const interactive = computed(() => props.interactive)
 
 const contentStyle = computed(() => ({

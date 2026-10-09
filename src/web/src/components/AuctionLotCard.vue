@@ -37,8 +37,8 @@
       </div>
     </div>
     <div class="flex flex-1 flex-col gap-[0.35rem] p-4">
-      <div v-if="needsAttention" class="flex items-center gap-1 text-sm font-semibold text-warning" title="This lot's auction has closed but its status hasn't been confirmed yet">
-        <AlertTriangle :size="13" /> Needs attention
+      <div v-if="needsAttention" class="flex items-center gap-1 text-sm font-semibold text-warning" :title="t('auctions.card.closedUnconfirmed')">
+        <AlertTriangle :size="13" /> {{ t('auctions.card.needsAttention') }}
       </div>
       <h3 class="overflow-hidden text-base leading-[1.3] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">{{ lot.title }}</h3>
       <div class="flex flex-wrap gap-2">
@@ -52,7 +52,7 @@
           class="rounded-full bg-surface px-[0.45rem] py-[0.12rem] text-label"
           :style="{ color: colorForLabel(lot.category) }"
         >
-          {{ lot.category }}
+          {{ categoryLabel(lot.category) }}
         </span>
         <span v-if="lot.currency && lot.currency !== 'USD'" class="rounded-full bg-surface px-[0.45rem] py-[0.12rem] text-label text-text-secondary">{{ lot.currency }}</span>
       </div>
@@ -61,33 +61,33 @@
       </div>
       <div v-if="hasLotSummaryRows" class="mt-auto overflow-hidden rounded-sm border border-border-subtle bg-surface/40 text-chip">
         <div v-if="lot.lotNumber" class="flex items-center justify-between gap-3 border-b border-border-subtle px-3 py-[0.45rem]">
-          <span class="text-text-secondary">Lot</span>
+          <span class="text-text-secondary">{{ t('auctions.card.lot') }}</span>
           <span class="font-semibold text-text-primary">{{ lot.lotNumber }}</span>
         </div>
         <div v-if="lot.estimate" class="flex items-center justify-between gap-3 border-b border-border-subtle px-3 py-[0.45rem]">
-          <span class="text-text-secondary">Estimate Value</span>
+          <span class="text-text-secondary">{{ t('auctions.card.estimateValue') }}</span>
           <span class="font-semibold text-text-primary">{{ formatCurrency(lot.estimate, lot.currency) }}</span>
         </div>
         <div v-if="lot.initialBid && !lot.winningBid" class="flex items-center justify-between gap-3 border-b border-border-subtle px-3 py-[0.45rem]">
-          <span class="text-text-secondary">Starting Bid</span>
+          <span class="text-text-secondary">{{ t('auctions.card.startingBid') }}</span>
           <span class="font-semibold text-text-primary">{{ formatCurrency(lot.initialBid, lot.currency) }}</span>
         </div>
         <div v-if="lot.currentBid" class="flex items-center justify-between gap-3 border-b border-border-subtle px-3 py-[0.45rem]">
-          <span class="text-text-secondary">Bid</span>
+          <span class="text-text-secondary">{{ t('auctions.card.bid') }}</span>
           <span class="font-semibold text-gold">{{ formatCurrency(lot.currentBid, lot.currency) }}</span>
         </div>
         <div v-if="lot.maxBid && lot.status !== 'won'" class="flex items-center justify-between gap-3 px-3 py-[0.45rem]" :class="{ 'border-b border-border-subtle': lot.winningBid }">
-          <span class="text-text-secondary">Max Bid</span>
+          <span class="text-text-secondary">{{ t('auctions.card.maxBid') }}</span>
           <span class="font-semibold text-text-primary">{{ formatCurrency(lot.maxBid, lot.currency) }}</span>
         </div>
         <div v-if="lot.winningBid" class="flex items-center justify-between gap-3 px-3 py-[0.45rem]">
-          <span class="text-text-secondary">{{ lot.status === 'lost' ? 'Sold For' : 'Won' }}</span>
+          <span class="text-text-secondary">{{ lot.status === 'lost' ? t('auctions.card.soldFor') : t('auctions.statuses.won') }}</span>
           <span class="font-semibold" :class="lot.status === 'lost' ? 'text-text-primary' : 'text-gain'">{{ formatCurrency(lot.winningBid, lot.currency) }}</span>
         </div>
       </div>
-      <div v-if="priceAlerts.length || bidReminders.length" class="flex flex-wrap gap-[0.35rem]" aria-label="Auction alerts">
-        <span v-if="priceAlerts.length" class="chip-sm">{{ priceAlerts.length }} price {{ priceAlerts.length === 1 ? 'alert' : 'alerts' }}</span>
-        <span v-if="bidReminders.length" class="chip-sm">{{ bidReminders.length }} {{ bidReminders.length === 1 ? 'reminder' : 'reminders' }}</span>
+      <div v-if="priceAlerts.length || bidReminders.length" class="flex flex-wrap gap-[0.35rem]" :aria-label="t('auctions.card.alerts')">
+        <span v-if="priceAlerts.length" class="chip-sm">{{ t('auctions.card.priceAlerts', { count: priceAlerts.length }) }}</span>
+        <span v-if="bidReminders.length" class="chip-sm">{{ t('auctions.card.reminders', { count: bidReminders.length }) }}</span>
       </div>
       <div v-if="statusSourceLabel" class="text-chip text-text-muted" :title="statusSourceLabel.title">{{ statusSourceLabel.text }}</div>
       <SafeExternalLink
@@ -98,7 +98,7 @@
         rel="noopener noreferrer"
         @click.stop
       >
-        View on {{ providerLabel }}
+        {{ t('auctions.card.viewOn', { provider: providerLabel }) }}
       </SafeExternalLink>
     </div>
   </div>
@@ -108,12 +108,14 @@
 import type { AuctionLot, BidReminder, PriceAlert } from '@/types'
 import { computed } from 'vue'
 import { Gavel, Check, AlertTriangle, Timer } from 'lucide-vue-next'
-import { formatCurrency } from '@/utils/format'
+import { auctionStatusLabel, formatCurrency } from '@/utils/format'
 import { auctionLotNeedsAttention, auctionLotStatusSourceLabel } from '@/utils/auctionLot'
 import { useProxiedImage } from '@/composables/useProxiedImage'
 import { useCountdown } from '@/composables/useCountdown'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import { colorForLabel } from '@/utils/categoryColor'
+import { t } from '@/i18n'
+import { categoryLabel } from '@/i18n/coinVocabulary'
 
 const props = withDefaults(defineProps<{
   lot: AuctionLot
@@ -144,16 +146,7 @@ function handleClick() {
 
 const lotImageSource = computed(() => props.lot.imageUrl ?? '')
 const { proxiedImageUrl } = useProxiedImage(lotImageSource)
-const statusLabel = computed(() => {
-  const labels: Record<string, string> = {
-    watching: 'Watching',
-    bidding: 'Bidding',
-    won: 'Won',
-    lost: 'Lost',
-    passed: 'Passed',
-  }
-  return labels[props.lot.status] ?? props.lot.status
-})
+const statusLabel = computed(() => auctionStatusLabel(props.lot.status))
 
 const countdownTarget = computed(() => props.lot.auctionEndTime ?? props.lot.saleDate)
 const { label: countdown } = useCountdown(countdownTarget)
@@ -161,9 +154,9 @@ const { label: countdown } = useCountdown(countdownTarget)
 const biddingIndicator = computed(() => {
   if (props.lot.status !== 'bidding' || !props.lot.currentBid || !props.lot.maxBid) return null
   if (props.lot.maxBid >= props.lot.currentBid) {
-    return { label: 'Winning', badgeCls: 'bg-gain text-surface' }
+    return { label: t('auctions.card.winning'), badgeCls: 'bg-gain text-surface' }
   }
-  return { label: 'Outbid', badgeCls: 'bg-loss text-surface' }
+  return { label: t('auctions.card.outbid'), badgeCls: 'bg-loss text-surface' }
 })
 
 const needsAttention = computed(() => auctionLotNeedsAttention(props.lot))

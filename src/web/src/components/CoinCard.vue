@@ -12,13 +12,13 @@
       </AuthenticatedImage>
       <div v-else class="text-text-primary/30"><Coins :size="48" :stroke-width="1" /></div>
       <div v-if="wishlist && coin.listingStatus === 'unavailable'" class="pointer-events-none absolute inset-0 z-[2] bg-black/50"></div>
-      <span v-if="wishlist && coin.listingStatus === 'unavailable'" class="absolute top-2 right-2 z-[3] rounded-full bg-red-600/85 px-2 py-[0.2rem] text-label font-semibold uppercase tracking-[0.08em] text-white">Unavailable</span>
+      <span v-if="wishlist && coin.listingStatus === 'unavailable'" class="absolute top-2 right-2 z-[3] rounded-full bg-red-600/85 px-2 py-[0.2rem] text-label font-semibold uppercase tracking-[0.08em] text-white">{{ t('coinCard.unavailable') }}</span>
       <button
         v-if="wishlist && coin.listingStatus === 'unavailable'"
         class="absolute right-2 bottom-2 z-[3] rounded-sm border border-border-subtle bg-black/70 px-2 py-[0.15rem] text-micro text-text-secondary transition-colors hover:bg-black/85 hover:text-text-primary"
         @click.stop="emit('dismiss-status', coin.id)"
       >
-        Dismiss
+        {{ t('common.dismiss') }}
       </button>
       <div
         v-if="selectable"
@@ -35,12 +35,12 @@
         <span
           v-if="wishlist && coin.listingStatus === 'available'"
           class="mr-1.5 inline-block h-2 w-2 shrink-0 align-middle rounded-full bg-gain"
-          title="Available"
+          :title="t('coinCard.available')"
         ></span>
         <span
           v-if="wishlist && coin.listingStatus === 'unknown'"
           class="mr-1.5 inline-block h-2 w-2 shrink-0 align-middle rounded-full bg-warning"
-          title="Unknown"
+          :title="t('coinCard.unknown')"
         ></span>
         {{ coin.name }}
       </h3>
@@ -55,9 +55,9 @@
               color: colorForLabel(coin.category),
               border: `1px solid ${colorForLabelBackground(coin.category, 30)}`,
             }"
-          >{{ coin.category }}</span>
+          >{{ categoryLabel(coin.category) }}</span>
           <span v-if="coin.denomination" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary [@media(display-mode:standalone)]:px-3 [@media(display-mode:standalone)]:py-1 [@media(display-mode:standalone)]:text-body">{{ coin.denomination }}</span>
-          <span v-if="coin.material" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary [@media(display-mode:standalone)]:px-3 [@media(display-mode:standalone)]:py-1 [@media(display-mode:standalone)]:text-body">{{ coin.material }}</span>
+          <span v-if="coin.material" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary [@media(display-mode:standalone)]:px-3 [@media(display-mode:standalone)]:py-1 [@media(display-mode:standalone)]:text-body">{{ materialLabel(coin.material) }}</span>
         </div>
         <div v-if="coin.tags?.length" class="mb-1 flex flex-wrap gap-1">
           <span
@@ -78,12 +78,12 @@
           >{{ tag.name }}</span>
         </div>
         <div class="mt-1 flex flex-col gap-[0.15rem] text-chip">
-          <div v-if="coin.soldPrice" class="font-semibold text-gold">Sold: {{ formatCurrency(coin.soldPrice) }}</div>
-          <div v-if="coin.purchasePrice" class="text-chip text-text-muted">Paid: {{ formatCurrency(coin.purchasePrice) }}</div>
+          <div v-if="coin.soldPrice" class="font-semibold text-gold">{{ t('coinCard.sold', { amount: formatCurrency(coin.soldPrice) }) }}</div>
+          <div v-if="coin.purchasePrice" class="text-chip text-text-muted">{{ t('coinCard.paid', { amount: formatCurrency(coin.purchasePrice) }) }}</div>
           <div v-if="coin.soldPrice && coin.purchasePrice" class="text-chip font-semibold" :class="coin.soldPrice < coin.purchasePrice ? 'text-loss' : 'text-gain'">
             {{ coin.soldPrice >= coin.purchasePrice ? '+' : '' }}{{ formatCurrency(coin.soldPrice - coin.purchasePrice) }}
           </div>
-          <div v-if="coin.soldTo" class="mt-[0.15rem] text-chip text-text-secondary">To: {{ coin.soldTo }}</div>
+          <div v-if="coin.soldTo" class="mt-[0.15rem] text-chip text-text-secondary">{{ t('coinCard.soldTo', { name: coin.soldTo }) }}</div>
         </div>
       </template>
       <div v-if="wishlist && (coin.currentValue || coin.purchasePrice)" class="mt-auto text-base font-semibold text-gold">
@@ -111,7 +111,7 @@
         class="btn btn-primary btn-sm mt-2 flex w-full justify-center gap-[0.35rem] text-chip"
         @click.stop="emit('purchase', coin)"
       >
-        <ShoppingCart :size="14" /> Purchased
+        <ShoppingCart :size="14" /> {{ t('coinCard.purchased') }}
       </button>
     </div>
   </div>
@@ -123,11 +123,13 @@ import type { PurchaseReminder } from '@/types/coin'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Check, Coins, ShoppingCart } from 'lucide-vue-next'
-import { formatCurrency } from '@/utils/format'
+import { formatCurrency, materialLabel } from '@/utils/format'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import { formatReminderBadge } from '@/composables/usePurchaseReminder'
+import { t } from '@/i18n'
+import { categoryLabel } from '@/i18n/coinVocabulary'
 
 const router = useRouter()
 

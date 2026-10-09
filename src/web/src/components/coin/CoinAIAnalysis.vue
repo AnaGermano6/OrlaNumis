@@ -5,45 +5,45 @@
         <button
           class="btn btn-primary btn-sm min-h-11 min-w-0 justify-center whitespace-nowrap leading-5"
           :disabled="busy || !hasObverse || !aiAvailable"
-          aria-label="Analyze obverse"
-          :title="!aiAvailable ? aiMessage : !hasObverse ? 'No obverse image' : ''"
+          :aria-label="t('coinDetail.ai.analyzeObverse')"
+          :title="!aiAvailable ? aiMessage : !hasObverse ? t('coinDetail.ai.noObverseImage') : ''"
           @click="handleAnalyze('obverse')"
         >
-          {{ analyzingSide === 'obverse' ? 'Analyzing...' : 'Obverse' }}
+          {{ analyzingSide === 'obverse' ? t('coinDetail.ai.analyzing') : t('common.obverse') }}
         </button>
         <button
           class="btn btn-primary btn-sm min-h-11 min-w-0 justify-center whitespace-nowrap leading-5"
           :disabled="busy || !hasReverse || !aiAvailable"
-          aria-label="Analyze reverse"
-          :title="!aiAvailable ? aiMessage : !hasReverse ? 'No reverse image' : ''"
+          :aria-label="t('coinDetail.ai.analyzeReverse')"
+          :title="!aiAvailable ? aiMessage : !hasReverse ? t('coinDetail.ai.noReverseImage') : ''"
           @click="handleAnalyze('reverse')"
         >
-          {{ analyzingSide === 'reverse' ? 'Analyzing...' : 'Reverse' }}
+          {{ analyzingSide === 'reverse' ? t('coinDetail.ai.analyzing') : t('common.reverse') }}
         </button>
         <button
           class="btn btn-primary btn-sm min-h-11 min-w-0 justify-center whitespace-nowrap leading-5"
           :disabled="busy || !canGradeCoin || !aiAvailable"
-          aria-label="Grade coin"
+          :aria-label="t('coinDetail.ai.gradeCoin')"
           :title="gradingDisabledTitle"
           @click="handleGradeCoin"
         >
-          {{ grading ? 'Grading...' : 'Grade' }}
+          {{ grading ? t('coinDetail.ai.grading') : t('coinDetail.ai.grade') }}
         </button>
       </div>
-      <p v-if="!aiAvailable" class="mt-2 text-body italic text-bronze">{{ aiMessage || 'AI unavailable — configure a provider in Admin → AI Configuration' }}</p>
+      <p v-if="!aiAvailable" class="mt-2 text-body italic text-bronze">{{ aiMessage || t('coinDetail.ai.unavailable') }}</p>
       <p v-if="jobStatusMessage" class="mt-2 text-body text-gold">{{ jobStatusMessage }}</p>
       <div class="mb-4">
         <div class="grid gap-[0.35rem]">
           <p class="text-body leading-6 text-text-secondary">
-            AI grading is an assisted estimate, not professional certification. Image quality and missing sides can reduce confidence. The saved coin grade is not changed automatically.
+            {{ t('coinDetail.ai.gradingDisclaimer') }}
           </p>
           <p v-if="!canGradeCoin" class="text-body leading-6 text-text-muted">
-            Add coin photos before requesting a grading estimate.
+            {{ t('coinDetail.ai.addPhotosFirst') }}
           </p>
           <p v-if="gradingError" class="text-body leading-6 text-bronze">{{ gradingError }}</p>
         </div>
         <div v-if="gradingReport" class="mt-3 border-b border-border-subtle pb-4">
-          <h5 class="mb-2 text-label font-semibold uppercase tracking-[0.08em] text-gold">Grading Report</h5>
+          <h5 class="mb-2 text-label font-semibold uppercase tracking-[0.08em] text-gold">{{ t('coinDetail.ai.gradingReport') }}</h5>
           <div
             class="ai-content text-body leading-[1.7] text-text-secondary [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-gold [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-gold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-gold [&_ol]:pl-5 [&_strong]:text-text-primary [&_ul]:pl-5"
             v-html="renderedGradingReport"
@@ -53,8 +53,8 @@
 
       <div v-if="obverseAnalysis" class="mb-5 border-b border-border-subtle pb-4">
         <div class="flex items-center justify-between gap-3">
-          <h5 class="mb-0 text-label font-semibold uppercase tracking-[0.08em] text-gold">Obverse Analysis</h5>
-          <button class="btn btn-ghost btn-xs" @click="handleDeleteAnalysis('obverse')">Remove</button>
+          <h5 class="mb-0 text-label font-semibold uppercase tracking-[0.08em] text-gold">{{ t('coinDetail.ai.obverseAnalysis') }}</h5>
+          <button class="btn btn-ghost btn-xs" @click="handleDeleteAnalysis('obverse')">{{ t('common.remove') }}</button>
         </div>
         <div
           class="ai-content text-body leading-[1.7] text-text-secondary [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-gold [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-gold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-gold [&_ol]:pl-5 [&_strong]:text-text-primary [&_ul]:pl-5"
@@ -64,8 +64,8 @@
 
       <div v-if="reverseAnalysis" class="mb-5 border-b border-border-subtle pb-4">
         <div class="flex items-center justify-between gap-3">
-          <h5 class="mb-0 text-label font-semibold uppercase tracking-[0.08em] text-gold">Reverse Analysis</h5>
-          <button class="btn btn-ghost btn-xs" @click="handleDeleteAnalysis('reverse')">Remove</button>
+          <h5 class="mb-0 text-label font-semibold uppercase tracking-[0.08em] text-gold">{{ t('coinDetail.ai.reverseAnalysis') }}</h5>
+          <button class="btn btn-ghost btn-xs" @click="handleDeleteAnalysis('reverse')">{{ t('common.remove') }}</button>
         </div>
         <div
           class="ai-content text-body leading-[1.7] text-text-secondary [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-gold [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-gold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-gold [&_ol]:pl-5 [&_strong]:text-text-primary [&_ul]:pl-5"
@@ -81,7 +81,7 @@
       </div>
 
       <p v-if="!obverseAnalysis && !reverseAnalysis && !aiAnalysis && aiAvailable" class="text-body italic text-text-muted">
-        Upload images and click an analyze button to get an expert assessment.
+        {{ t('coinDetail.ai.emptyHint') }}
       </p>
     </div>
   </div>
@@ -95,6 +95,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { renderSafeMarkdown } from '@/composables/useMarkdown'
 import { useToast } from '@/composables/useToast'
 import type { AIJob, AIJobStartResponse, CoinGradingResult } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   coinId: number
@@ -133,18 +134,18 @@ const busy = computed(() => analyzing.value || grading.value)
 const canGradeCoin = computed(() => props.hasObverse || props.hasReverse)
 const gradingDisabledTitle = computed(() => {
   if (!aiAvailable.value) return aiMessage.value
-  if (!canGradeCoin.value) return 'Add coin photos before requesting grading'
+  if (!canGradeCoin.value) return t('coinDetail.ai.addPhotosTitle')
   return ''
 })
 const jobStatusMessage = computed(() => {
   if (!activeJob.value) return ''
   if (grading.value) {
     const status = activeJob.value.status || 'queued'
-    return `Coin grading ${formatStatus(status)}. This will continue in the background; you can leave this page.`
+    return t('coinDetail.ai.gradingStatus', { status: formatStatus(status) })
   }
   if (!analyzingSide.value) return ''
   const status = activeJob.value.status || 'queued'
-  return `${capitalize(analyzingSide.value)} analysis ${formatStatus(status)}. This will continue in the background; you can leave this page.`
+  return t('coinDetail.ai.analysisStatus', { side: sideName(analyzingSide.value), status: formatStatus(status) })
 })
 
 onMounted(async () => {
@@ -154,7 +155,7 @@ onMounted(async () => {
     aiMessage.value = res.data.message
   } catch {
     aiAvailable.value = false
-    aiMessage.value = 'Unable to check AI status'
+    aiMessage.value = t('coinDetail.ai.statusCheckFailed')
   }
   await resumeAnalysisJob()
 })
@@ -174,11 +175,11 @@ async function handleAnalyze(side: 'obverse' | 'reverse') {
     const res = await analyzeCoin(props.coinId, side)
     const job = normalizeStartedJob(res.data, side)
     rememberJob(side, job.id)
-    showToast(`${capitalize(side)} analysis queued. You can leave this page; we will notify you when it is done.`, 'info')
+    showToast(t('coinDetail.ai.analysisQueued', { side: sideName(side) }), 'info')
     await pollAnalysisJob(job.id, side, job)
   } catch (err) {
-    const detail = formatAgentServiceError(err, 'Check the internal agent service configuration and retry.')
-    await showAlert(`AI analysis failed for ${side}. ${detail}`, { title: 'Analysis Failed' })
+    const detail = formatAgentServiceError(err, t('errors.agentRetry'))
+    await showAlert(t('coinDetail.ai.analysisFailedFor', { side: sideNameLower(side), detail }), { title: t('coinDetail.ai.analysisFailedTitle') })
     analyzing.value = false
     analyzingSide.value = null
   }
@@ -196,23 +197,23 @@ async function handleGradeCoin() {
     const res = await gradeCoin(props.coinId)
     const job = normalizeStartedJob(res.data)
     rememberGradingJob(job.id)
-    showToast('Coin grading queued. You can leave this page; we will notify you when it is done.', 'info')
+    showToast(t('coinDetail.ai.gradingQueued'), 'info')
     await pollGradingJob(job.id, job)
   } catch (err) {
-    const detail = formatAgentServiceError(err, 'Unable to start coin grading. Confirm both obverse and reverse images are available, then retry.')
+    const detail = formatAgentServiceError(err, t('coinDetail.ai.gradingStartFailed'))
     gradingError.value = detail
-    await showAlert(`Coin grading failed. ${detail}`, { title: 'Grading Failed' })
+    await showAlert(t('coinDetail.ai.gradingFailedDetail', { detail }), { title: t('coinDetail.ai.gradingFailedTitle') })
     grading.value = false
   }
 }
 
 async function handleDeleteAnalysis(side: 'obverse' | 'reverse') {
-  if (!await showConfirm(`Delete the ${side} analysis?`, { title: 'Delete Analysis', variant: 'danger' })) return
+  if (!await showConfirm(t('coinDetail.ai.confirmDelete', { side: sideNameLower(side) }), { title: t('coinDetail.ai.deleteTitle'), variant: 'danger' })) return
   try {
     await deleteAnalysis(props.coinId, side)
     emit('analysisUpdated')
   } catch {
-    await showAlert(`Failed to delete ${side} analysis`, { title: 'Error' })
+    await showAlert(t('coinDetail.ai.deleteFailed', { side: sideNameLower(side) }), { title: t('common.error') })
   }
 }
 
@@ -333,14 +334,14 @@ async function finishAnalysisJob(job: AIJob, side: 'obverse' | 'reverse') {
   analyzing.value = false
   analyzingSide.value = null
   if (isFailedStatus(job.status)) {
-    const message = job.errorMessage || 'AI analysis failed. Please retry.'
+    const message = job.errorMessage || t('coinDetail.ai.analysisFailedRetry')
     showToast(message, 'error')
-    await showAlert(message, { title: 'Analysis Failed' })
+    await showAlert(message, { title: t('coinDetail.ai.analysisFailedTitle') })
     return
   }
   activeJob.value = null
   emit('analysisUpdated')
-  showToast(`${capitalize(side)} analysis complete.`, 'success')
+  showToast(t('coinDetail.ai.analysisComplete', { side: sideName(side) }), 'success')
   await refreshNotifications()
 }
 
@@ -350,21 +351,21 @@ async function finishGradingJob(job: AIJob) {
   activeJob.value = job
   grading.value = false
   if (isFailedStatus(job.status)) {
-    gradingError.value = job.errorMessage || 'Coin grading failed. Please retry.'
+    gradingError.value = job.errorMessage || t('coinDetail.ai.gradingFailedRetry')
     showToast(gradingError.value, 'error')
-    await showAlert(gradingError.value, { title: 'Grading Failed' })
+    await showAlert(gradingError.value, { title: t('coinDetail.ai.gradingFailedTitle') })
     return
   }
 
   const parsed = parseGradingResult(job.result)
   if (!parsed?.gradingReport) {
-    gradingError.value = 'No grading report returned from AI'
+    gradingError.value = t('coinDetail.ai.noGradingReport')
     return
   }
 
   gradingReport.value = parsed.gradingReport
   activeJob.value = null
-  showToast('Coin grading report ready.', 'success')
+  showToast(t('coinDetail.ai.gradingReady'), 'success')
   await refreshNotifications()
 }
 
@@ -488,13 +489,18 @@ function gradingJobStorageKey() {
 
 function formatStatus(status: string) {
   const normalized = status.toLowerCase()
-  if (normalized === 'queued' || normalized === 'pending') return 'queued'
-  if (normalized === 'running' || normalized === 'processing') return 'in progress'
+  if (normalized === 'queued' || normalized === 'pending') return t('jobs.status.queued')
+  if (normalized === 'running' || normalized === 'processing') return t('jobs.status.inProgress')
   return normalized
 }
 
-function capitalize(value: string) {
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`
+// Side name as it opens a sentence ("Obverse analysis…") vs. mid-sentence ("…for obverse").
+function sideName(side: string) {
+  return side === 'reverse' ? t('coinDetail.ai.side.reverse') : t('coinDetail.ai.side.obverse')
+}
+
+function sideNameLower(side: string) {
+  return side === 'reverse' ? t('coinDetail.ai.sideLower.reverse') : t('coinDetail.ai.sideLower.obverse')
 }
 </script>
 

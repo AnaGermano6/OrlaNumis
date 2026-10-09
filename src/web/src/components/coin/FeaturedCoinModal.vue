@@ -5,30 +5,30 @@
         <div class="flex items-center justify-between border-b border-border-subtle px-5 py-4">
           <h2 class="flex items-center gap-2 font-display text-lg text-gold">
             <Sparkles :size="20" class="text-gold" />
-            <span>Coin of the Day</span>
+            <span>{{ t('featured.title') }}</span>
           </h2>
-          <button class="rounded-sm p-1 text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary" @click="close" title="Close">
+          <button class="rounded-sm p-1 text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary" @click="close" :title="t('common.close')">
             <X :size="18" />
           </button>
         </div>
 
         <div v-if="loading" class="overflow-y-auto px-5 py-8 text-center text-text-secondary">
-          Loading featured coin...
+          {{ t('featured.loading') }}
         </div>
 
         <div v-else-if="error || !featured" class="overflow-y-auto px-5 py-8 text-center text-text-secondary">
-          {{ error || 'Unable to load featured coin' }}
+          {{ error || t('featured.loadFailedShort') }}
         </div>
 
         <div v-else class="overflow-y-auto p-5">
           <div class="mb-1 flex flex-wrap items-center gap-2">
             <h3 class="m-0 font-display text-lg text-heading">{{ featured.coin?.name }}</h3>
-            <span v-if="featured.sourceType === 'wishlist'" class="chip-sm !border-gold !text-gold">Wishlist</span>
+            <span v-if="featured.sourceType === 'wishlist'" class="chip-sm !border-gold !text-gold">{{ t('nav.wishlist') }}</span>
           </div>
           <div v-if="featured.coin?.ruler || featured.coin?.era" class="mb-4 text-body text-text-secondary">
             <span v-if="featured.coin?.ruler">{{ featured.coin?.ruler }}</span>
             <span v-if="featured.coin?.ruler && featured.coin?.era"> &middot; </span>
-            <span v-if="featured.coin?.era">{{ featured.coin?.era }}</span>
+            <span v-if="featured.coin?.era">{{ eraLabel(featured.coin?.era) }}</span>
           </div>
 
           <div v-if="images.length > 0" class="mb-5 flex flex-wrap justify-center gap-3">
@@ -45,7 +45,7 @@
           ></div>
 
           <p v-if="moveError" role="alert" class="mt-3 text-body text-byzantine">{{ moveError }}</p>
-          <p v-else-if="moved" role="status" class="mt-3 text-body text-gold">Moved to your collection.</p>
+          <p v-else-if="moved" role="status" class="mt-3 text-body text-gold">{{ t('featured.moved') }}</p>
 
           <div class="mt-5 flex flex-wrap justify-end gap-2 border-t border-border-subtle pt-4">
             <router-link
@@ -54,7 +54,7 @@
               class="btn btn-secondary btn-sm"
               @click="close"
             >
-              View Full Coin
+              {{ t('featured.viewFull') }}
             </router-link>
             <button
               v-if="featured.coin"
@@ -63,7 +63,7 @@
               @click="handleShare"
             >
               <Share2 :size="14" />
-              {{ sharing ? 'Sharing...' : 'Share' }}
+              {{ sharing ? t('common.sharing') : t('common.share') }}
             </button>
             <button
               v-if="showMoveToCollection"
@@ -71,9 +71,9 @@
               :disabled="moving"
               @click="handleMoveToCollection"
             >
-              {{ moving ? 'Moving...' : 'Move to Collection' }}
+              {{ moving ? t('common.moving') : t('featured.moveToCollection') }}
             </button>
-            <button class="btn btn-primary btn-sm" @click="close">Close</button>
+            <button class="btn btn-primary btn-sm" @click="close">{{ t('common.close') }}</button>
           </div>
         </div>
       </div>
@@ -85,11 +85,14 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { Share2, Sparkles, X } from 'lucide-vue-next'
 import { getFeaturedCoin, updateCoin, getApiErrorMessage } from '@/api/client'
+import { imageTypeLabel } from '@/utils/format'
 import type { FeaturedCoin } from '@/types'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { renderSafeMarkdown } from '@/composables/useMarkdown'
 import { useCoinShareCard } from '@/composables/useCoinShareCard'
 import { useQuickAccess } from '@/composables/useQuickAccess'
+import { t } from '@/i18n'
+import { eraLabel } from '@/i18n/coinVocabulary'
 
 const props = defineProps<{ featuredCoinId: number }>()
 const emit = defineEmits<{ close: [] }>()
@@ -128,8 +131,7 @@ const images = computed(() => {
 const renderedSummary = computed(() => renderSafeMarkdown(featured.value?.summary))
 
 function formatImageLabel(type: string) {
-  if (!type) return ''
-  return type.charAt(0).toUpperCase() + type.slice(1)
+  return imageTypeLabel(type)
 }
 
 async function load() {
@@ -141,7 +143,7 @@ async function load() {
     const res = await getFeaturedCoin(props.featuredCoinId)
     featured.value = res.data
   } catch {
-    error.value = 'Failed to load featured coin'
+    error.value = t('featured.loadFailed')
   } finally {
     loading.value = false
   }
@@ -153,7 +155,7 @@ async function handleShare() {
 
   await shareCoinCard(coin, {
     context: {
-      heading: 'Coin of the Day',
+      heading: t('featured.title'),
       summary: featured.value?.summary ?? '',
     },
   })
@@ -172,7 +174,7 @@ async function handleMoveToCollection() {
     }
     moved.value = true
   } catch (err) {
-    moveError.value = getApiErrorMessage(err) || 'Unable to move this coin to your collection.'
+    moveError.value = getApiErrorMessage(err) || t('featured.moveFailed')
   } finally {
     moving.value = false
   }

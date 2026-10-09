@@ -11,11 +11,11 @@
           <RefreshCw :size="22" />
         </div>
         <div class="min-w-0 flex-1">
-          <h4 class="mb-[0.15rem] text-base text-gold">Update available</h4>
-          <p class="m-0 text-chip leading-6 text-text-secondary">A new version of Aurearia is ready. Refresh to update.</p>
+          <h4 class="mb-[0.15rem] text-base text-gold">{{ t('pwa.update.title') }}</h4>
+          <p class="m-0 text-chip leading-6 text-text-secondary">{{ t('pwa.update.body') }}</p>
         </div>
-        <button class="btn btn-primary shrink-0" type="button" @click="refresh">Refresh</button>
-        <button class="shrink-0 rounded-sm p-1 text-text-secondary transition-colors hover:bg-gold-glow hover:text-text-primary" type="button" @click="dismiss" aria-label="Dismiss">
+        <button class="btn btn-primary shrink-0" type="button" @click="refresh">{{ t('common.refresh') }}</button>
+        <button class="shrink-0 rounded-sm p-1 text-text-secondary transition-colors hover:bg-gold-glow hover:text-text-primary" type="button" @click="dismiss" :aria-label="t('common.dismiss')">
           <X :size="18" />
         </button>
       </div>
@@ -27,6 +27,7 @@
 import { ref, computed } from 'vue'
 import { RefreshCw, X } from 'lucide-vue-next'
 import { usePwaUpdate } from '@/composables/usePwaUpdate'
+import { t } from '@/i18n'
 
 const { updateAvailable, refresh } = usePwaUpdate()
 const dismissed = ref(false)

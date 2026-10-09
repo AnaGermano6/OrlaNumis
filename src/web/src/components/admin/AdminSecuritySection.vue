@@ -3,11 +3,11 @@
     <section class="admin-section card min-w-0">
       <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p class="section-label">Security</p>
-          <h2 class="m-0 text-xl font-medium">Security Overview</h2>
+          <p class="section-label">{{ t('admin.security.eyebrow') }}</p>
+          <h2 class="m-0 text-xl font-medium">{{ t('admin.security.title') }}</h2>
         </div>
         <button class="btn btn-secondary btn-sm" :disabled="loading" @click="loadAll">
-          {{ loading ? 'Loading...' : 'Refresh' }}
+          {{ loading ? t('common.loading') : t('admin.security.refresh') }}
         </button>
       </div>
 
@@ -31,17 +31,17 @@
     <section class="admin-section card min-w-0">
       <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p class="section-label">Exposure Check</p>
-          <h2 class="m-0 text-xl font-medium">Public-Facing Readiness</h2>
+          <p class="section-label">{{ t('admin.security.exposureEyebrow') }}</p>
+          <h2 class="m-0 text-xl font-medium">{{ t('admin.security.exposureTitle') }}</h2>
         </div>
         <button class="btn btn-secondary btn-sm" :disabled="exposureLoading" @click="loadExposure">
-          {{ exposureLoading ? 'Checking...' : 'Run Check' }}
+          {{ exposureLoading ? t('common.checking') : t('admin.security.runCheck') }}
         </button>
       </div>
 
       <div v-if="exposure" class="flex flex-col gap-3">
         <p v-if="exposure.publicIp" class="m-0 text-base text-text-secondary">
-          API sees your IP as <strong class="text-gold">{{ exposure.publicIp }}</strong>
+          <I18nT keypath="admin.security.ipSeen"><template #ip><strong class="text-gold">{{ exposure.publicIp }}</strong></template></I18nT>
         </p>
         <div
           v-for="check in exposureChecks"
@@ -49,7 +49,7 @@
           class="grid items-start gap-3 rounded-sm border border-border-subtle bg-input p-3 [grid-template-columns:max-content_minmax(0,1fr)]"
           :class="!check.ok ? 'border-border-accent' : ''"
         >
-          <span class="chip-sm inline-flex min-w-16 justify-center">{{ check.ok ? 'OK' : 'Review' }}</span>
+          <span class="chip-sm inline-flex min-w-16 justify-center">{{ check.ok ? t('common.ok') : t('admin.security.review') }}</span>
           <div class="min-w-0">
             <strong class="block leading-[1.3]">{{ check.label }}</strong>
             <p class="mt-1 break-words text-base text-text-secondary">{{ check.message }}</p>
@@ -65,62 +65,62 @@
           </ul>
         </div>
       </div>
-      <p v-else class="text-body text-text-muted">Run the exposure check to validate beta deployment settings.</p>
+      <p v-else class="text-body text-text-muted">{{ t('admin.security.runHint') }}</p>
     </section>
 
     <section class="admin-section card min-w-0">
       <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p class="section-label">Events</p>
-          <h2 class="m-0 text-xl font-medium">Security Events</h2>
+          <p class="section-label">{{ t('admin.security.eventsEyebrow') }}</p>
+          <h2 class="m-0 text-xl font-medium">{{ t('admin.security.eventsTitle') }}</h2>
         </div>
         <button class="btn btn-secondary btn-sm" :disabled="eventsLoading" @click="loadEvents">
-          {{ eventsLoading ? 'Loading...' : 'Apply Filters' }}
+          {{ eventsLoading ? t('common.loading') : t('admin.security.applyFilters') }}
         </button>
       </div>
 
       <form class="mb-4 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4" @submit.prevent="loadEvents">
-        <input v-model="filters.type" class="form-input min-w-0 w-full" placeholder="Type" />
+        <input v-model="filters.type" class="form-input min-w-0 w-full" :placeholder="t('admin.security.type')" />
         <select v-model="filters.outcome" class="form-select min-w-0 w-full">
-          <option value="">All outcomes</option>
-          <option value="success">Success</option>
-          <option value="failure">Failure</option>
-          <option value="blocked">Blocked</option>
+          <option value="">{{ t('admin.security.allOutcomes') }}</option>
+          <option value="success">{{ t('admin.security.outcomes.success') }}</option>
+          <option value="failure">{{ t('admin.security.outcomes.failure') }}</option>
+          <option value="blocked">{{ t('admin.security.outcomes.blocked') }}</option>
         </select>
         <select v-model="filters.severity" class="form-select min-w-0 w-full">
-          <option value="">All severities</option>
-          <option value="info">Info</option>
-          <option value="warning">Warning</option>
-          <option value="critical">Critical</option>
+          <option value="">{{ t('admin.security.allSeverities') }}</option>
+          <option value="info">{{ t('admin.security.severities.info') }}</option>
+          <option value="warning">{{ t('admin.security.severities.warning') }}</option>
+          <option value="critical">{{ t('admin.security.severities.critical') }}</option>
         </select>
-        <input v-model="filters.username" class="form-input min-w-0 w-full" placeholder="User" autocomplete="off" />
-        <input v-model="filters.ip" class="form-input min-w-0 w-full" placeholder="IP" autocomplete="off" />
-        <input v-model="filters.since" class="form-input min-w-0 w-full appearance-none overflow-hidden" type="date" aria-label="Since date" />
+        <input v-model="filters.username" class="form-input min-w-0 w-full" :placeholder="t('admin.security.user')" autocomplete="off" />
+        <input v-model="filters.ip" class="form-input min-w-0 w-full" :placeholder="t('admin.security.ip')" autocomplete="off" />
+        <input v-model="filters.since" class="form-input min-w-0 w-full appearance-none overflow-hidden" type="date" :aria-label="t('admin.security.sinceDate')" />
         <select v-model.number="filters.limit" class="form-select min-w-0 w-full">
           <option :value="25">25</option>
           <option :value="50">50</option>
           <option :value="100">100</option>
           <option :value="250">250</option>
         </select>
-        <button class="btn btn-primary btn-sm w-full justify-center" type="submit" :disabled="eventsLoading">Filter</button>
+        <button class="btn btn-primary btn-sm w-full justify-center" type="submit" :disabled="eventsLoading">{{ t('admin.security.filter') }}</button>
       </form>
 
       <div class="w-full max-w-full min-w-0 overflow-x-auto">
         <table class="data-table min-w-[44rem] table-fixed [&_th]:px-2 [&_th]:py-3 [&_td]:px-2 [&_td]:py-3 [&_td]:align-top">
           <thead>
             <tr>
-              <th>Time</th>
-              <th>Type</th>
-              <th>Severity</th>
-              <th>Outcome</th>
-              <th>User</th>
-              <th>IP</th>
-              <th>Message</th>
+              <th>{{ t('admin.security.time') }}</th>
+              <th>{{ t('admin.security.type') }}</th>
+              <th>{{ t('admin.security.severity') }}</th>
+              <th>{{ t('admin.security.outcome') }}</th>
+              <th>{{ t('admin.security.user') }}</th>
+              <th>{{ t('admin.security.ip') }}</th>
+              <th>{{ t('admin.security.message') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="events.length === 0">
-              <td colspan="7" class="p-6 text-center text-body text-text-muted">No security events match the current filters.</td>
+              <td colspan="7" class="p-6 text-center text-body text-text-muted">{{ t('admin.security.noEvents') }}</td>
             </tr>
             <tr v-for="event in events" :key="event.id">
               <td class="w-32 max-w-32 break-words text-body text-text-muted">{{ formatDateTime(event.timestamp) }}</td>
@@ -139,17 +139,17 @@
     <section class="admin-section card min-w-0">
       <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p class="section-label">IP Rules</p>
-          <h2 class="m-0 text-xl font-medium">Manual Bans</h2>
+          <p class="section-label">{{ t('admin.security.ipEyebrow') }}</p>
+          <h2 class="m-0 text-xl font-medium">{{ t('admin.security.bansTitle') }}</h2>
         </div>
       </div>
 
       <form class="mb-4 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4" @submit.prevent="submitBan">
-        <input v-model="newRule.cidr" class="form-input min-w-0 w-full" required placeholder="CIDR or IP, e.g. 203.0.113.0/24" />
-        <input v-model="newRule.duration" class="form-input min-w-0 w-full" placeholder="Duration, e.g. 24h or 7d" />
-        <input v-model="newRule.reason" class="form-input min-w-0 w-full" required placeholder="Reason" />
+        <input v-model="newRule.cidr" class="form-input min-w-0 w-full" required :placeholder="t('admin.security.cidrPlaceholder')" />
+        <input v-model="newRule.duration" class="form-input min-w-0 w-full" :placeholder="t('admin.security.durationPlaceholder')" />
+        <input v-model="newRule.reason" class="form-input min-w-0 w-full" required :placeholder="t('admin.security.reason')" />
         <button class="btn btn-primary btn-sm w-full justify-center" type="submit" :disabled="banSaving">
-          {{ banSaving ? 'Adding...' : 'Add Ban' }}
+          {{ banSaving ? t('admin.security.adding') : t('admin.security.addBan') }}
         </button>
       </form>
 
@@ -158,24 +158,24 @@
           <thead>
             <tr>
               <th>CIDR</th>
-              <th>Reason</th>
-              <th>Expires</th>
-              <th>Created By</th>
-              <th>Action</th>
+              <th>{{ t('admin.security.reason') }}</th>
+              <th>{{ t('admin.security.expires') }}</th>
+              <th>{{ t('admin.security.createdBy') }}</th>
+              <th>{{ t('admin.security.action') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="ipRules.length === 0">
-              <td colspan="5" class="p-6 text-center text-body text-text-muted">No active manual IP bans.</td>
+              <td colspan="5" class="p-6 text-center text-body text-text-muted">{{ t('admin.security.noBans') }}</td>
             </tr>
             <tr v-for="rule in ipRules" :key="rule.id">
               <td>{{ rule.cidr }}</td>
               <td>{{ rule.reason }}</td>
-              <td>{{ rule.expiresAt ? formatDateTime(rule.expiresAt) : 'Never' }}</td>
+              <td>{{ rule.expiresAt ? formatDateTime(rule.expiresAt) : t('admin.security.never') }}</td>
               <td>{{ rule.createdBy ?? '—' }}</td>
               <td>
                 <button class="btn btn-danger btn-xs" :disabled="deletingRuleId === rule.id" @click="removeRule(rule.id)">
-                  {{ deletingRuleId === rule.id ? 'Deleting...' : 'Delete' }}
+                  {{ deletingRuleId === rule.id ? t('common.deleting') : t('common.delete') }}
                 </button>
               </td>
             </tr>
@@ -187,12 +187,12 @@
     <section class="admin-section card min-w-0">
       <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p class="section-label">Lockouts</p>
-          <h2 class="m-0 text-xl font-medium">Locked Users</h2>
+          <p class="section-label">{{ t('admin.security.lockoutsEyebrow') }}</p>
+          <h2 class="m-0 text-xl font-medium">{{ t('admin.security.lockedTitle') }}</h2>
         </div>
       </div>
       <div v-if="lockedUsers.length === 0" class="text-body text-text-muted">
-        No locked accounts reported by the current user list.
+        {{ t('admin.security.noLocked') }}
       </div>
       <div v-else class="flex flex-col gap-3">
         <div
@@ -202,10 +202,10 @@
         >
           <div>
             <strong>{{ user.username }}</strong>
-            <p class="mt-1 break-words text-base text-text-secondary">Locked until {{ formatDateTime(user.lockedUntil ?? '') }}</p>
+            <p class="mt-1 break-words text-base text-text-secondary">{{ t('admin.security.lockedUntil', { date: formatDateTime(user.lockedUntil ?? '') }) }}</p>
           </div>
           <button class="btn btn-secondary btn-sm" :disabled="unlockingUserId === user.id" @click="unlock(user.id)">
-            {{ unlockingUserId === user.id ? 'Unlocking...' : 'Unlock' }}
+            {{ unlockingUserId === user.id ? t('admin.security.unlocking') : t('admin.security.unlock') }}
           </button>
         </div>
       </div>
@@ -228,6 +228,8 @@ import {
   unlockUser,
 } from '@/api/client'
 import type { SecurityEvent, SecurityEventFilters, SecurityExposureCheck, SecurityIpRule, SecuritySummary, UserInfo } from '@/types'
+import I18nT from '@/components/I18nT.vue'
+import { t, intlLocale } from '@/i18n'
 
 const props = defineProps<{
   users: UserInfo[]
@@ -272,10 +274,10 @@ const newRule = reactive({
 })
 
 const summaryCards = computed(() => [
-  { label: 'Failed Logins', value: summary.value.failedLogins },
-  { label: 'Locked Accounts', value: summary.value.lockedAccounts },
-  { label: 'Active Bans', value: summary.value.activeBans },
-  { label: 'Recent Security Events', value: summary.value.recentEvents },
+  { label: t('admin.security.cards.failedLogins'), value: summary.value.failedLogins },
+  { label: t('admin.security.cards.lockedAccounts'), value: summary.value.lockedAccounts },
+  { label: t('admin.security.cards.activeBans'), value: summary.value.activeBans },
+  { label: t('admin.security.cards.recentEvents'), value: summary.value.recentEvents },
 ])
 
 const lockedUsers = computed(() =>
@@ -291,12 +293,12 @@ const exposureChecks = computed(() => {
   const config = current.config
   const registrationMode = config?.registrationMode ?? props.registrationMode
   return [
-    buildExposureRow('Proxy Headers', current.proxy ?? config?.trustedProxiesConfigured ?? !hasWarning(current, 'Trusted proxies'), current.proxyWarning, 'Proxy headers look constrained.'),
-    buildExposureRow('CORS', current.cors ?? !hasWarning(current, 'CORS'), current.corsWarning, 'CORS is not reporting broad origins.'),
-    buildExposureRow('WebAuthn', current.webAuthn ?? !hasWarning(current, 'WebAuthn'), current.webAuthnWarning, 'WebAuthn relying-party settings are configured.'),
-    buildExposureRow('Public App URL', current.publicAppUrl ?? current.publicAppURL ?? Boolean(config?.publicAppURL && !hasWarning(current, 'PublicAppURL')), current.publicAppUrlWarning, 'Public app URL is configured.'),
-    buildExposureRow('Registration', current.registration ?? (registrationMode ? registrationMode === 'closed' : !hasWarning(current, 'Registration')), current.registrationWarning, `Registration mode: ${registrationMode || 'backend default'}.`),
-    buildExposureRow('Agent Token', current.agentToken ?? config?.agentInternalTokenSet, current.agentTokenWarning, 'Agent token exposure check passed.'),
+    buildExposureRow(t('admin.security.checks.proxy'), current.proxy ?? config?.trustedProxiesConfigured ?? !hasWarning(current, 'Trusted proxies'), current.proxyWarning, t('admin.security.checks.proxyOk')),
+    buildExposureRow('CORS', current.cors ?? !hasWarning(current, 'CORS'), current.corsWarning, t('admin.security.checks.corsOk')),
+    buildExposureRow('WebAuthn', current.webAuthn ?? !hasWarning(current, 'WebAuthn'), current.webAuthnWarning, t('admin.security.checks.webAuthnOk')),
+    buildExposureRow(t('admin.security.checks.publicUrl'), current.publicAppUrl ?? current.publicAppURL ?? Boolean(config?.publicAppURL && !hasWarning(current, 'PublicAppURL')), current.publicAppUrlWarning, t('admin.security.checks.publicUrlOk')),
+    buildExposureRow(t('admin.security.checks.registration'), current.registration ?? (registrationMode ? registrationMode === 'closed' : !hasWarning(current, 'Registration')), current.registrationWarning, t('admin.security.checks.registrationMode', { mode: registrationMode || t('admin.security.checks.backendDefault') })),
+    buildExposureRow(t('admin.security.checks.agentToken'), current.agentToken ?? config?.agentInternalTokenSet, current.agentTokenWarning, t('admin.security.checks.agentTokenOk')),
   ]
 })
 
@@ -322,7 +324,7 @@ async function loadAll() {
   try {
     await Promise.all([loadSummary(), loadEvents(), loadIpRules(), loadExposure()])
   } catch {
-    error.value = 'Failed to load security data'
+    error.value = t('admin.security.loadFailed')
   } finally {
     loading.value = false
   }
@@ -374,7 +376,7 @@ async function submitBan() {
     newRule.reason = ''
     await Promise.all([loadIpRules(), loadSummary()])
   } catch {
-    error.value = 'Failed to add IP ban'
+    error.value = t('admin.security.addBanFailed')
   } finally {
     banSaving.value = false
   }
@@ -387,7 +389,7 @@ async function removeRule(id: number) {
     await deleteSecurityIpRule(id)
     await Promise.all([loadIpRules(), loadSummary()])
   } catch {
-    error.value = 'Failed to delete IP ban'
+    error.value = t('admin.security.deleteBanFailed')
   } finally {
     deletingRuleId.value = null
   }
@@ -401,7 +403,7 @@ async function unlock(userId: number) {
     emit('unlocked', userId)
     await loadSummary()
   } catch {
-    error.value = 'Failed to unlock user'
+    error.value = t('admin.security.unlockFailed')
   } finally {
     unlockingUserId.value = null
   }
@@ -458,6 +460,6 @@ function formatDateTime(value: string) {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString()
+  return date.toLocaleString(intlLocale())
 }
 </script>

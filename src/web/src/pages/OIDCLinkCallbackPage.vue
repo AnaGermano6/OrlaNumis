@@ -3,7 +3,7 @@
     <div class="w-full max-w-[420px] text-center card">
       <img
         :src="coinLogoSrc"
-        alt="Aurearia - Coin Collection"
+        :alt="t('app.brandFull')"
         class="w-20 h-20 rounded-full object-cover border border-gold-dim mb-4 shadow-[var(--shadow-glow)] mx-auto block"
       />
       <div
@@ -27,11 +27,11 @@
         class="grid gap-3 p-4 mb-4 border border-border-subtle rounded-sm bg-input text-left"
       >
         <div class="flex items-center justify-between gap-3">
-          <span class="section-label">Provider</span>
+          <span class="section-label">{{ t('oidc.provider') }}</span>
           <strong class="text-gold text-base [overflow-wrap:anywhere] text-right">{{ identity.providerDisplayName }}</strong>
         </div>
         <div v-if="identity.email" class="flex items-center justify-between gap-3">
-          <span class="section-label">Email</span>
+          <span class="section-label">{{ t('auth.email') }}</span>
           <strong class="text-gold text-base [overflow-wrap:anywhere] text-right">{{ identity.email }}</strong>
         </div>
       </div>
@@ -49,7 +49,7 @@
         to="/settings?tab=account"
       >
         <ArrowLeft :size="18" aria-hidden="true" />
-        Back to Account Settings
+        {{ t('oidc.backToAccount') }}
       </router-link>
     </div>
   </div>
@@ -61,6 +61,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { completeOIDCLinkCallback, getApiErrorMessage } from '@/api/client'
 import type { OIDCLinkedIdentity } from '@/types'
 import { AlertTriangle, ArrowLeft, CheckCircle, LoaderCircle } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 type CallbackStatus = 'loading' | 'success' | 'error'
 
@@ -73,15 +74,15 @@ const message = ref('')
 const coinLogoSrc = '/coin-logo.jpg'
 
 const title = computed(() => {
-  if (status.value === 'loading') return 'Linking Sign-in Provider'
-  if (status.value === 'success') return 'Provider Linked'
-  return 'Linking Failed'
+  if (status.value === 'loading') return t('oidc.link.loadingTitle')
+  if (status.value === 'success') return t('oidc.link.successTitle')
+  return t('oidc.link.errorTitle')
 })
 
 const subtitle = computed(() => {
-  if (status.value === 'loading') return 'Finishing the secure provider handshake...'
-  if (status.value === 'success') return 'Your external sign-in provider is now connected to this account.'
-  return 'The provider could not be linked to your account.'
+  if (status.value === 'loading') return t('oidc.handshake')
+  if (status.value === 'success') return t('oidc.link.successSubtitle')
+  return t('oidc.link.errorSubtitle')
 })
 
 onMounted(() => {
@@ -97,7 +98,7 @@ async function completeCallback() {
   void router.replace({ name: 'oidc-link-callback', params: { providerId: route.params.providerId } })
 
   if (!Number.isInteger(providerId) || providerId <= 0) {
-    setError('The provider callback was missing a valid provider. Start linking again from Account Settings.')
+    setError(t('oidc.link.missingProvider'))
     return
   }
 
@@ -107,14 +108,14 @@ async function completeCallback() {
   }
 
   if (!code || !state) {
-    setError('The provider callback was incomplete. Start linking again from Account Settings.')
+    setError(t('oidc.link.incomplete'))
     return
   }
 
   try {
     const response = await completeOIDCLinkCallback(providerId, code, state)
     identity.value = response.data.identity
-    message.value = response.data.message || 'OIDC identity linked.'
+    message.value = response.data.message || t('oidc.link.linked')
     status.value = 'success'
   } catch (error: unknown) {
     setError(mapCallbackError(error))
@@ -140,9 +141,9 @@ function firstParamValue(value: string | string[] | undefined) {
 function mapProviderError(error: string) {
   const normalized = error.toLowerCase()
   if (normalized.includes('access_denied') || normalized.includes('cancel') || normalized.includes('denied')) {
-    return 'Linking was cancelled or denied at the provider. You can try again from Account Settings.'
+    return t('oidc.link.cancelled')
   }
-  return 'The provider returned an error before linking completed. Try again or ask an administrator to review the provider setup.'
+  return t('oidc.link.providerError')
 }
 
 function mapCallbackError(error: unknown) {
@@ -153,9 +154,9 @@ function mapCallbackError(error: unknown) {
 
   if (response?.status === 409) {
     if (normalized.includes('another user') || normalized.includes('already linked')) {
-      return 'This provider account is already linked to another user. Sign in with a different provider account or ask an administrator for help.'
+      return t('settings.account.errors.linkedElsewhere')
     }
-    return 'This provider account cannot be linked automatically. Sign in locally with the intended account, then try linking again.'
+    return t('settings.account.errors.cannotLink')
   }
 
   if (normalized.includes('redirect uri') || normalized.includes('client secret') || normalized.includes('configuration') || normalized.includes('discovery') || response?.status === 500) {
@@ -163,10 +164,10 @@ function mapCallbackError(error: unknown) {
   }
 
   if (normalized.includes('state') || normalized.includes('claims') || response?.status === 400 || response?.status === 401) {
-    return 'The provider response could not be validated. Start the linking flow again from Account Settings.'
+    return t('settings.account.errors.validation')
   }
 
-  return messageText || 'The provider could not be linked. Start the linking flow again from Account Settings.'
+  return messageText || t('oidc.link.failed')
 }
 
 function getErrorResponse(error: unknown): { status?: number } | null {
@@ -186,8 +187,8 @@ function getErrorDetail(error: unknown) {
 function providerConfigurationMessage(detail: string) {
   const safeDetail = detail.trim()
   if (safeDetail) {
-    return `The sign-in provider is not configured correctly: ${safeDetail}. Ask an administrator to review the provider settings.`
+    return t('oidc.misconfiguredDetail', { detail: safeDetail })
   }
-  return 'The sign-in provider is not configured correctly. Ask an administrator to review the provider settings.'
+  return t('oidc.misconfigured')
 }
 </script>

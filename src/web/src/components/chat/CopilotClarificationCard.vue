@@ -4,7 +4,7 @@
     aria-labelledby="copilot-clarification-heading"
     data-testid="copilot-clarification"
   >
-    <p class="section-label">Coin Copilot needs clarification</p>
+    <p class="section-label">{{ t('copilot.clarification.title') }}</p>
     <h3 id="copilot-clarification-heading" class="m-0 text-base text-text-primary">
       {{ clarification.question }}
     </h3>
@@ -23,12 +23,12 @@
     </div>
 
     <div v-else-if="clarification.inputType === 'boolean'" class="mt-3 flex gap-2">
-      <button type="button" class="chip min-h-[44px]" :class="{ active: answer === 'Yes' }" @click="answer = 'Yes'">Yes</button>
-      <button type="button" class="chip min-h-[44px]" :class="{ active: answer === 'No' }" @click="answer = 'No'">No</button>
+      <button type="button" class="chip min-h-[44px]" :class="{ active: answer === 'Yes' }" @click="answer = 'Yes'">{{ t('common.yes') }}</button>
+      <button type="button" class="chip min-h-[44px]" :class="{ active: answer === 'No' }" @click="answer = 'No'">{{ t('common.no') }}</button>
     </div>
 
     <label v-else class="form-group mt-3">
-      <span class="form-label">Your answer</span>
+      <span class="form-label">{{ t('copilot.clarification.answer') }}</span>
       <textarea v-model="answer" class="form-input min-h-[96px]" maxlength="4000" rows="3"></textarea>
     </label>
 
@@ -40,7 +40,7 @@
         :disabled="submitting || cancelling"
         @click="$emit('cancel')"
       >
-        Cancel run
+        {{ t('copilot.cancelRun') }}
       </button>
       <button
         type="button"
@@ -48,7 +48,7 @@
         :disabled="!answer.trim() || submitting || cancelling"
         @click="$emit('resume', answer.trim())"
       >
-        {{ submitting ? 'Resuming...' : 'Continue' }}
+        {{ submitting ? t('copilot.clarification.resuming') : t('copilot.clarification.continue') }}
       </button>
     </div>
   </section>
@@ -57,6 +57,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { CoinCopilotClarification } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   clarification: CoinCopilotClarification

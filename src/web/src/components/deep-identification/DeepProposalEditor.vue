@@ -1,8 +1,8 @@
 <template>
-  <section class="grid min-w-0 gap-4 overflow-hidden" aria-label="Deep Analysis proposal">
-    <h3 class="m-0 text-lg font-semibold text-text-primary">Review and save</h3>
+  <section class="grid min-w-0 gap-4 overflow-hidden" :aria-label="t('deepAnalysis.proposal.label')">
+    <h3 class="m-0 text-lg font-semibold text-text-primary">{{ t('deepAnalysis.proposal.title') }}</h3>
     <p class="m-0 text-sm text-text-secondary">
-      Accept the details you want to keep. Nothing is saved until you use the action below.
+      {{ t('deepAnalysis.proposal.intro') }}
     </p>
     <ul class="m-0 grid gap-3 p-0" style="list-style: none;">
       <li
@@ -16,19 +16,19 @@
             <span
               v-if="isImageDerived(name)"
               class="chip-sm"
-              title="This value came only from the image analysis — no catalog has corroborated it yet"
+              :title="t('deepAnalysis.proposal.imageOnlyTitle')"
             >
-              Image only
+              {{ t('deepAnalysis.proposal.imageOnly') }}
             </span>
             <span v-if="entryOf(name).ownerEdited" class="text-label font-semibold uppercase tracking-[0.08em] text-byzantine">
-              Edited by you
+              {{ t('deepAnalysis.proposal.editedByYou') }}
             </span>
-            <span v-else class="text-label font-semibold uppercase tracking-[0.08em] text-gold">AI proposed</span>
+            <span v-else class="text-label font-semibold uppercase tracking-[0.08em] text-gold">{{ t('deepAnalysis.proposal.aiProposed') }}</span>
           </div>
         </div>
 
         <p class="m-0 break-words text-sm text-text-secondary [overflow-wrap:anywhere]">
-          AI value: <span class="font-medium text-text-primary">{{ displayValue(entryOf(name).proposed) }}</span>
+          {{ t('deepAnalysis.proposal.aiValue') }} <span class="font-medium text-text-primary">{{ displayValue(entryOf(name).proposed) }}</span>
         </p>
 
         <OCREAttribution
@@ -37,7 +37,7 @@
         />
 
         <label class="grid gap-1 text-sm text-text-secondary" :for="`deep-proposal-field-${name}`">
-          Your value
+          {{ t('deepAnalysis.proposal.yourValue') }}
           <textarea
             v-if="name === 'notes'"
             :id="`deep-proposal-field-${name}`"
@@ -55,7 +55,7 @@
           >
         </label>
 
-        <div class="flex items-center gap-2" role="group" :aria-label="`${fieldLabel(name)} decision`">
+        <div class="flex items-center gap-2" role="group" :aria-label="t('deepAnalysis.proposal.decision', { field: fieldLabel(name) })">
           <button
             type="button"
             class="chip min-h-[44px]"
@@ -63,7 +63,7 @@
             :aria-pressed="isAccepted(name)"
             @click="setAccepted(name, true)"
           >
-            Accept
+            {{ t('common.accept') }}
           </button>
           <button
             type="button"
@@ -72,7 +72,7 @@
             :aria-pressed="isRejected(name)"
             @click="setAccepted(name, false)"
           >
-            Reject
+            {{ t('common.reject') }}
           </button>
         </div>
       </li>
@@ -95,6 +95,7 @@ import type { DeepProposal, DeepProposalFieldEntry } from '@/types'
 import OCREAttribution from './OCREAttribution.vue'
 import { formatFieldName } from '@/utils/format'
 import { effectiveDeepProposalAcceptance } from '@/utils/deepProposalAcceptance'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   proposal: DeepProposal
@@ -112,8 +113,8 @@ const emptyEntry: DeepProposalFieldEntry = { proposed: null, ownerEdited: false,
 
 const fields = computed(() => props.proposal.fields)
 const fieldNames = computed(() => Object.keys(props.proposal.fields).sort())
-const actionLabel = computed(() => props.actionLabel ?? 'Apply to Coin')
-const applyingLabel = computed(() => props.applyingLabel ?? 'Applying...')
+const actionLabel = computed(() => props.actionLabel ?? t('deepAnalysis.proposal.applyToCoin'))
+const applyingLabel = computed(() => props.applyingLabel ?? t('deepAnalysis.proposal.applying'))
 
 function entryOf(name: string): DeepProposalFieldEntry {
   return fields.value[name] ?? emptyEntry

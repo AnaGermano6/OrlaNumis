@@ -6,6 +6,7 @@ import type {
   NumistaLookupStatus,
   SelectedNumistaReference,
 } from '@/types'
+import { t } from '@/i18n'
 
 export type NumistaPanelState = 'idle' | 'loading' | NumistaLookupStatus
 
@@ -101,70 +102,70 @@ export function getNumistaStatusGuidance(
     case 'idle':
       return {
         state,
-        label: 'Ready',
-        title: 'Ready to search',
-        message: 'Review the query, then search when you are ready.',
+        label: t('numista.status.idle.label'),
+        title: t('numista.status.idle.title'),
+        message: t('numista.status.idle.message'),
         canRetry: false,
       }
     case 'loading':
       return {
         state,
-        label: 'Searching',
-        title: 'Searching Numista',
-        message: 'Looking for ranked catalog candidates.',
+        label: t('numista.status.loading.label'),
+        title: t('numista.status.loading.title'),
+        message: t('numista.status.loading.message'),
         canRetry: false,
       }
     case 'success':
       return {
         state,
-        label: 'Results ready',
-        title: 'Matches ready for review',
-        message: 'Review the evidence and explicitly select a catalog reference.',
+        label: t('numista.status.success.label'),
+        title: t('numista.status.success.title'),
+        message: t('numista.status.success.message'),
         canRetry: false,
       }
     case 'empty':
       return {
         state,
-        label: 'No matches',
-        title: 'No matches found',
-        message: 'Revise the query and search again.',
+        label: t('numista.status.empty.label'),
+        title: t('numista.status.empty.title'),
+        message: t('numista.status.empty.message'),
         canRetry: true,
       }
     case 'unconfigured':
       return {
         state,
-        label: 'Setup needed',
-        title: 'Numista lookup is not configured',
+        label: t('numista.status.unconfigured.label'),
+        title: t('numista.status.unconfigured.title'),
         message: isAdmin
-          ? 'Add the Numista API key in Admin System settings, then retry the lookup.'
-          : 'Numista lookup is not available on this instance. Ask an administrator for help.',
+          ? t('numista.status.unconfigured.adminMessage')
+          : t('numista.status.unconfigured.userMessage'),
         canRetry: isAdmin,
         settingsHref: isAdmin ? '/admin?tab=system' : undefined,
       }
     case 'quota-limited':
       return {
         state,
-        label: 'Temporarily limited',
-        title: 'Numista lookup limit reached',
+        label: t('numista.status.quota.label'),
+        title: t('numista.status.quota.title'),
         message: retryAfterSeconds
-          ? `Numista asked the app to wait ${formatDuration(retryAfterSeconds)} before retrying.`
-          : 'Wait before trying again.',
+          ? t('numista.status.quota.wait', { duration: formatDuration(retryAfterSeconds) })
+          : t('numista.status.quota.waitGeneric'),
         canRetry: true,
       }
     case 'timeout':
       return {
         state,
-        label: 'Timed out',
-        title: 'Numista lookup timed out',
-        message: 'The query and selection are unchanged. Retry when ready.',
+        label: t('numista.status.timeout.label'),
+        title: t('numista.status.timeout.title'),
+        message: t('numista.status.timeout.message'),
         canRetry: true,
       }
     case 'unavailable':
       return {
         state,
-        label: 'Unavailable',
-        title: 'Numista lookup is unavailable',
-        message: 'The service could not complete the lookup. Your query and selection are unchanged.',
+        label: t('numista.status.unavailable.label'),
+        title: t('numista.status.unavailable.title'),
+        message: t('numista.status.unavailable.message'),
         canRetry: true,
       }
   }
@@ -175,23 +176,22 @@ export function getNumistaCacheFreshnessText(
   cache: NumistaCacheMetadata | null | undefined,
 ): string | null {
   if (!cache || (status !== 'success' && status !== 'empty')) return null
-  if (cache.coalesced) return 'Shared in-flight results'
-  if (!cache.hit) return 'Fresh results'
-  return `Cached results · ${formatAge(cache.ageSeconds)} old`
+  if (cache.coalesced) return t('numista.cache.shared')
+  if (!cache.hit) return t('numista.cache.fresh')
+  return t('numista.cache.cached', { age: formatAge(cache.ageSeconds) })
 }
 
 function formatAge(seconds: number): string {
-  if (seconds < 60) return `${seconds} sec`
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} min`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hr`
-  return `${Math.floor(seconds / 86400)} day${seconds < 172800 ? '' : 's'}`
+  if (seconds < 60) return t('numista.age.seconds', { count: seconds })
+  if (seconds < 3600) return t('numista.age.minutes', { count: Math.floor(seconds / 60) })
+  if (seconds < 86400) return t('numista.age.hours', { count: Math.floor(seconds / 3600) })
+  return t('numista.age.days', { count: Math.floor(seconds / 86400) })
 }
 
 function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds} second${seconds === 1 ? '' : 's'}`
+  if (seconds < 60) return t('numista.duration.seconds', { count: seconds })
   if (seconds % 60 === 0 && seconds < 3600) {
-    const minutes = seconds / 60
-    return `${minutes} minute${minutes === 1 ? '' : 's'}`
+    return t('numista.duration.minutes', { count: seconds / 60 })
   }
-  return `${seconds} seconds`
+  return t('numista.duration.seconds', { count: seconds })
 }

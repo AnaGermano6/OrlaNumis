@@ -3,12 +3,13 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { withEnglishCopy } from '@/test/i18nSource'
 import QuickCaptureDraftsPage from '../QuickCaptureDraftsPage.vue'
 import { listQuickCaptureDrafts } from '@/api/client'
 import type { QuickCaptureDraft } from '@/types'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const source = fs.readFileSync(path.resolve(__dirname, '../QuickCaptureDraftsPage.vue'), 'utf8')
+const source = withEnglishCopy(fs.readFileSync(path.resolve(__dirname, '../QuickCaptureDraftsPage.vue'), 'utf8'))
 
 vi.mock('@/api/client', () => ({
   getApiErrorMessage: vi.fn(() => ''),

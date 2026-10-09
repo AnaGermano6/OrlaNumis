@@ -1,19 +1,19 @@
 <template>
   <section class="card">
-    <h2 class="mb-5 border-b border-border-subtle pb-3 text-xl font-medium">System Settings</h2>
+    <h2 class="mb-5 border-b border-border-subtle pb-3 text-xl font-medium">{{ t('admin.system.title') }}</h2>
     <form @submit.prevent="save">
       <div class="form-group">
-        <label class="form-label">Pushover API Token</label>
-        <input v-model="localPushoverAppToken" class="form-input" type="password" placeholder="Enter your Pushover application API token" />
-        <span class="mt-1 block text-sm text-text-muted">Create an app at <a href="https://pushover.net/apps" target="_blank" rel="noopener">pushover.net/apps</a> to get a token. Users provide their own User Key in Account Settings.</span>
+        <label class="form-label">{{ t('admin.system.pushoverToken') }}</label>
+        <input v-model="localPushoverAppToken" class="form-input" type="password" :placeholder="t('admin.system.pushoverTokenPlaceholder')" />
+        <span class="mt-1 block text-sm text-text-muted"><I18nT keypath="admin.system.pushoverHint"><template #link><a href="https://pushover.net/apps" target="_blank" rel="noopener">pushover.net/apps</a></template></I18nT></span>
       </div>
       <div class="form-group">
-        <label class="form-label">Public App URL</label>
+        <label class="form-label">{{ t('admin.security.checks.publicUrl') }}</label>
         <input v-model="localPublicAppUrl" class="form-input" type="url" placeholder="https://coins.example.com" />
-        <span class="mt-1 block text-sm text-text-muted">Full browser URL for this app. Used to make Pushover Coin of the Day links open directly to a coin; leave blank to send the alert without an external link.</span>
+        <span class="mt-1 block text-sm text-text-muted">{{ t('admin.system.publicUrlHint') }}</span>
       </div>
       <div class="form-group">
-        <label class="form-label">Log Level</label>
+        <label class="form-label">{{ t('admin.system.logLevel') }}</label>
         <select v-model="localLogLevel" class="form-select">
           <option v-for="level in logLevels" :key="level" :value="level">{{ level }}</option>
         </select>
@@ -25,12 +25,12 @@
         data-testid="search-sources-section"
       >
         <div class="mb-5">
-          <p class="section-label">External Search</p>
-          <h3 id="search-sources-heading" class="m-0 text-lg font-medium text-heading">Search Sources</h3>
+          <p class="section-label">{{ t('admin.system.externalSearch') }}</p>
+          <h3 id="search-sources-heading" class="m-0 text-lg font-medium text-heading">{{ t('admin.system.searchSources') }}</h3>
         </div>
         <div class="grid min-w-0 gap-4 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label" for="dealer-search-sources">Dealer Search Sources</label>
+            <label class="form-label" for="dealer-search-sources">{{ t('admin.system.dealerSources') }}</label>
             <textarea
               id="dealer-search-sources"
               v-model="localDealerSearchSources"
@@ -39,10 +39,10 @@
               spellcheck="false"
               required
             />
-            <span class="mt-1 block text-sm text-text-muted">One public hostname per line. Coin search and wishlist alerts use only these sites.</span>
+            <span class="mt-1 block text-sm text-text-muted">{{ t('admin.system.dealerSourcesHint') }}</span>
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label" for="auction-search-sources">Auction Search Sources</label>
+            <label class="form-label" for="auction-search-sources">{{ t('admin.system.auctionSources') }}</label>
             <textarea
               id="auction-search-sources"
               v-model="localAuctionSearchSources"
@@ -51,7 +51,7 @@
               spellcheck="false"
               required
             />
-            <span class="mt-1 block text-sm text-text-muted">One public hostname per line. Auction search uses only these sites.</span>
+            <span class="mt-1 block text-sm text-text-muted">{{ t('admin.system.auctionSourcesHint') }}</span>
           </div>
         </div>
       </section>
@@ -62,12 +62,12 @@
         data-testid="numista-section"
       >
         <div class="mb-5">
-          <p class="section-label">Catalog Integration</p>
+          <p class="section-label">{{ t('admin.system.catalogIntegration') }}</p>
           <h3 id="numista-section-heading" class="m-0 text-lg font-medium text-heading">Numista</h3>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="numista-api-key">Numista API Key</label>
+          <label class="form-label" for="numista-api-key">{{ t('admin.system.numistaKey') }}</label>
           <input
             id="numista-api-key"
             v-model="localNumistaApiKey"
@@ -75,16 +75,16 @@
             type="password"
             autocomplete="off"
             aria-describedby="numista-api-key-help"
-            placeholder="Enter your Numista API key"
+            :placeholder="t('admin.system.numistaKeyPlaceholder')"
           />
-          <span id="numista-api-key-help" class="mt-1 block text-sm text-text-muted">Get a free key at <a href="https://en.numista.com/api/" target="_blank" rel="noopener">numista.com/api</a> (2,000 requests/month free)</span>
+          <span id="numista-api-key-help" class="mt-1 block text-sm text-text-muted"><I18nT keypath="admin.system.numistaKeyHint"><template #link><a href="https://en.numista.com/api/" target="_blank" rel="noopener">numista.com/api</a></template></I18nT></span>
         </div>
 
         <fieldset class="mb-6 min-w-0">
-          <legend class="section-label mb-3">Numista Lookup Limits</legend>
+          <legend class="section-label mb-3">{{ t('admin.system.numistaLimits') }}</legend>
           <div class="grid min-w-0 gap-4 md:grid-cols-2">
             <div v-for="setting in numistaSettingFields" :key="setting.name" class="form-group min-w-0">
-              <label class="form-label" :for="setting.name">{{ setting.label }}</label>
+              <label class="form-label" :for="setting.name">{{ t(setting.labelKey) }}</label>
               <input
                 :id="setting.name"
                 v-model="setting.model.value"
@@ -96,63 +96,63 @@
                 step="1"
                 required
               />
-              <span class="mt-1 block text-sm text-text-muted">{{ setting.hint }}</span>
+              <span class="mt-1 block text-sm text-text-muted">{{ t(setting.hintKey, { min: setting.min, max: setting.max, default: setting.fallback }) }}</span>
             </div>
           </div>
         </fieldset>
 
         <section class="border-t border-border-subtle pt-6" aria-labelledby="numista-health-heading">
           <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h3 id="numista-health-heading" class="m-0 text-lg font-medium text-heading">Numista Health</h3>
+            <h3 id="numista-health-heading" class="m-0 text-lg font-medium text-heading">{{ t('admin.system.numistaHealth') }}</h3>
             <button type="button" class="btn btn-secondary btn-xs" :disabled="healthLoading" @click="loadHealth">
-              {{ healthLoading ? 'Refreshing...' : 'Refresh' }}
+              {{ healthLoading ? t('admin.system.refreshing') : t('admin.logs.refresh') }}
             </button>
           </div>
 
           <div v-if="healthLoading" class="flex items-center gap-3 py-6 text-sm text-text-secondary" role="status">
             <span class="spinner"></span>
-            Loading Numista health
+            {{ t('admin.system.loadingNumista') }}
           </div>
           <p v-else-if="healthError" class="rounded-sm border border-[var(--color-negative)] p-3 text-sm text-loss" role="alert">
-            Numista health is temporarily unavailable. Try again.
+            {{ t('admin.system.numistaUnavailable') }}
           </p>
           <div v-else-if="health && !hasHealthEvents" class="rounded-sm border border-border-subtle bg-card p-4" role="status">
-            <h4 class="section-label mb-2">No Recent Activity</h4>
-            <p class="m-0 text-sm text-text-primary">No Numista lookup health events have been recorded yet.</p>
+            <h4 class="section-label mb-2">{{ t('admin.system.noRecentActivity') }}</h4>
+            <p class="m-0 text-sm text-text-primary">{{ t('admin.system.noNumistaEvents') }}</p>
             <p class="mb-0 mt-1 text-sm text-text-secondary">
-              {{ health.configured ? 'Numista is configured.' : 'Numista is not configured.' }}
-              Refresh after a lookup to view operational metrics.
+              {{ health.configured ? t('admin.system.numistaConfigured') : t('admin.system.numistaNotConfigured') }}
+              {{ t('admin.system.refreshAfterLookup') }}
             </p>
           </div>
           <div v-else-if="health" class="grid gap-4">
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div class="rounded-sm border border-border-subtle bg-card p-3">
-                <div class="section-label">Configuration</div>
-                <div class="mt-1 font-semibold text-text-primary">{{ health.configured ? 'Configured' : 'Not configured' }}</div>
-                <div class="mt-1 text-sm text-text-secondary">{{ health.configurationValid ? 'Configuration valid' : 'Configuration invalid' }}</div>
+                <div class="section-label">{{ t('admin.groups.configuration') }}</div>
+                <div class="mt-1 font-semibold text-text-primary">{{ health.configured ? t('admin.oidc.configured') : t('admin.oidc.notConfigured') }}</div>
+                <div class="mt-1 text-sm text-text-secondary">{{ health.configurationValid ? t('admin.system.configValid') : t('admin.system.configInvalid') }}</div>
               </div>
               <div class="rounded-sm border border-border-subtle bg-card p-3">
-                <div class="section-label">Requests</div>
-                <div class="mt-1 text-sm text-text-primary">{{ health.broadRequestCount }} broad</div>
-                <div class="mt-1 text-sm text-text-secondary">{{ health.detailRequestCount }} detail</div>
+                <div class="section-label">{{ t('admin.system.requests') }}</div>
+                <div class="mt-1 text-sm text-text-primary">{{ t('admin.system.broad', { count: health.broadRequestCount }) }}</div>
+                <div class="mt-1 text-sm text-text-secondary">{{ t('admin.system.detail', { count: health.detailRequestCount }) }}</div>
               </div>
               <div class="rounded-sm border border-border-subtle bg-card p-3">
-                <div class="section-label">Latency</div>
+                <div class="section-label">{{ t('admin.system.latency') }}</div>
                 <div class="mt-1 text-sm text-text-primary">p50 {{ health.p50ElapsedMs }} ms</div>
                 <div class="mt-1 text-sm text-text-secondary">p95 {{ health.p95ElapsedMs }} ms</div>
               </div>
               <div class="rounded-sm border border-border-subtle bg-card p-3">
-                <div class="section-label">Latest Outcome</div>
+                <div class="section-label">{{ t('admin.system.latestOutcome') }}</div>
                 <div class="mt-1 font-semibold text-text-primary">{{ formatStatus(health.lastOutcome) }}</div>
                 <div class="mt-1 text-sm text-text-secondary">{{ formatTimestamp(health.lastCheckedAt) }}</div>
               </div>
             </div>
 
             <div class="rounded-sm border border-border-subtle bg-card p-4">
-              <h4 class="section-label mb-3">Status Counts</h4>
+              <h4 class="section-label mb-3">{{ t('admin.system.statusCounts') }}</h4>
               <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 <div v-for="status in statusRows" :key="status.key" class="flex items-center justify-between gap-2 rounded-sm bg-input px-3 py-2">
-                  <span class="text-sm text-text-secondary">{{ status.label }}</span>
+                  <span class="text-sm text-text-secondary">{{ t(status.labelKey) }}</span>
                   <strong class="text-gold">{{ health.statusCounts[status.key] ?? 0 }}</strong>
                 </div>
               </div>
@@ -160,28 +160,28 @@
 
             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <div class="rounded-sm border border-border-subtle bg-card p-4">
-                <h4 class="section-label mb-2">Cache</h4>
-                <p class="m-0 text-sm text-text-primary">{{ health.freshCacheHitCount }} fresh cache hits</p>
-                <p class="mb-0 mt-1 text-sm text-text-secondary">{{ health.coalescedRequestCount }} coalesced requests · {{ formatPercent(health.freshCacheHitRate) }}</p>
+                <h4 class="section-label mb-2">{{ t('admin.system.cache') }}</h4>
+                <p class="m-0 text-sm text-text-primary">{{ t('admin.system.freshHits', { count: health.freshCacheHitCount }) }}</p>
+                <p class="mb-0 mt-1 text-sm text-text-secondary">{{ t('admin.system.coalesced', { count: health.coalescedRequestCount, rate: formatPercent(health.freshCacheHitRate) }) }}</p>
               </div>
               <div class="rounded-sm border border-border-subtle bg-card p-4">
-                <h4 class="section-label mb-2">Provider Loads</h4>
-                <p class="m-0 text-sm text-text-primary">{{ health.providerLoadCount }} loads</p>
-                <p class="mb-0 mt-1 text-sm text-text-secondary">{{ health.providerFailureCount }} failed · {{ health.cancelledRequestCount }} cancelled</p>
+                <h4 class="section-label mb-2">{{ t('admin.system.providerLoads') }}</h4>
+                <p class="m-0 text-sm text-text-primary">{{ t('admin.system.loads', { count: health.providerLoadCount }) }}</p>
+                <p class="mb-0 mt-1 text-sm text-text-secondary">{{ t('admin.system.failedCancelled', { failed: health.providerFailureCount, cancelled: health.cancelledRequestCount }) }}</p>
               </div>
               <div class="rounded-sm border border-border-subtle bg-card p-4">
-                <h4 class="section-label mb-2">Enrichment</h4>
-                <p class="m-0 text-sm text-text-primary">{{ health.enrichmentAttempted }} attempted</p>
-                <p class="mb-0 mt-1 text-sm text-text-secondary">{{ health.enrichmentSucceeded }} succeeded · {{ health.enrichmentFailed }} failed</p>
+                <h4 class="section-label mb-2">{{ t('admin.system.enrichment') }}</h4>
+                <p class="m-0 text-sm text-text-primary">{{ t('admin.system.attempted', { count: health.enrichmentAttempted }) }}</p>
+                <p class="mb-0 mt-1 text-sm text-text-secondary">{{ t('admin.system.succeededFailed', { succeeded: health.enrichmentSucceeded, failed: health.enrichmentFailed }) }}</p>
               </div>
               <div class="rounded-sm border border-border-subtle bg-card p-4">
-                <h4 class="section-label mb-2">Quota Signals</h4>
-                <p class="m-0 text-sm text-text-primary">Last limited: {{ formatTimestamp(health.lastQuotaLimitedAt) }}</p>
-                <p class="mb-0 mt-1 text-sm text-text-secondary">Retry after: {{ formatRetryAfter(health.lastRetryAfterSeconds) }}</p>
+                <h4 class="section-label mb-2">{{ t('admin.system.quotaSignals') }}</h4>
+                <p class="m-0 text-sm text-text-primary">{{ t('admin.system.lastLimited', { value: formatTimestamp(health.lastQuotaLimitedAt) }) }}</p>
+                <p class="mb-0 mt-1 text-sm text-text-secondary">{{ t('admin.system.retryAfter', { value: formatRetryAfter(health.lastRetryAfterSeconds) }) }}</p>
               </div>
             </div>
           </div>
-          <p v-else class="py-6 text-sm text-text-muted">No Numista health data is available yet.</p>
+          <p v-else class="py-6 text-sm text-text-muted">{{ t('admin.system.noNumistaData') }}</p>
         </section>
       </section>
 
@@ -191,10 +191,10 @@
         data-testid="coin-copilot-section"
       >
         <div class="mb-5">
-          <p class="section-label">Beta Agent Harness</p>
+          <p class="section-label">{{ t('admin.system.betaHarness') }}</p>
           <h3 id="coin-copilot-section-heading" class="m-0 text-lg font-medium text-heading">Coin Copilot</h3>
           <p class="mt-1 text-sm text-text-muted">
-            Enables durable, read-only collection analysis in the existing app-wide Agent drawer when the selected model supports tools. Legacy chat remains the fallback.
+            {{ t('admin.system.copilotIntro') }}
           </p>
         </div>
 
@@ -207,10 +207,10 @@
               name="CoinCopilotEnabled"
               aria-describedby="coin-copilot-enabled-help"
             />
-            <span class="form-label m-0">Enable Coin Copilot beta</span>
+            <span class="form-label m-0">{{ t('admin.system.enableCopilot') }}</span>
           </label>
           <span id="coin-copilot-enabled-help" class="mt-1 block text-sm text-text-muted">
-            Off by default. Disabling blocks new runs and resumes while keeping existing runs readable and cancellable.
+            {{ t('admin.system.enableCopilotHint') }}
           </span>
         </div>
 
@@ -223,25 +223,25 @@
               name="CoinCopilotAttributionEnabled"
               aria-describedby="coin-copilot-attribution-enabled-help"
             />
-            <span class="form-label m-0">Allow Deep Analysis from Coin Copilot</span>
+            <span class="form-label m-0">{{ t('admin.system.allowDeep') }}</span>
           </label>
           <span id="coin-copilot-attribution-enabled-help" class="mt-1 block text-sm text-text-muted">
-            Lets Coin Copilot hand a coin off to Deep Analysis from the chat. Off by default.
+            {{ t('admin.system.allowDeepHint') }}
           </span>
           <span
             v-if="localCoinCopilotAttributionEnabled && !localDeepIdentificationEnabled"
             class="mt-1 block text-sm text-gold"
             data-testid="coin-copilot-attribution-dependency-hint"
           >
-            Also enable Deep Analysis below for the hand-off to work.
+            {{ t('admin.system.allowDeepDependency') }}
           </span>
         </div>
 
         <fieldset class="mb-2 min-w-0">
-          <legend class="section-label mb-3">Coin Copilot Limits</legend>
+          <legend class="section-label mb-3">{{ t('admin.system.copilotLimits') }}</legend>
           <div class="grid min-w-0 gap-4 md:grid-cols-2">
             <div v-for="setting in coinCopilotSettingFields" :key="setting.name" class="form-group min-w-0">
-              <label class="form-label" :for="setting.name">{{ setting.label }}</label>
+              <label class="form-label" :for="setting.name">{{ t(setting.labelKey) }}</label>
               <input
                 :id="setting.name"
                 v-model="setting.model.value"
@@ -253,7 +253,7 @@
                 step="1"
                 required
               />
-              <span class="mt-1 block text-sm text-text-muted">{{ setting.hint }}</span>
+              <span class="mt-1 block text-sm text-text-muted">{{ t(setting.hintKey, { min: setting.min, max: setting.max, default: setting.fallback }) }}</span>
             </div>
           </div>
         </fieldset>
@@ -265,11 +265,10 @@
         data-testid="ocre-section"
       >
         <div class="mb-5">
-          <p class="section-label">Deep Analysis Provider</p>
-          <h3 id="ocre-section-heading" class="m-0 text-lg font-medium text-heading">OCRE / Deep Analysis</h3>
+          <p class="section-label">{{ t('admin.system.deepProvider') }}</p>
+          <h3 id="ocre-section-heading" class="m-0 text-lg font-medium text-heading">{{ t('admin.system.ocreTitle') }}</h3>
           <p class="mt-1 text-sm text-text-muted">
-            Online Coins of the Roman Empire (Nomisma.org). Off by default; when enabled, Deep Analysis may
-            consult OCRE for Roman Imperial coin-type identification within a bounded per-job call budget.
+            {{ t('admin.system.ocreIntro') }}
           </p>
         </div>
 
@@ -283,18 +282,18 @@
               data-testid="deep-identification-enabled-toggle"
               aria-describedby="deep-identification-enabled-help"
             />
-            <span class="form-label m-0">Enable Deep Analysis</span>
+            <span class="form-label m-0">{{ t('admin.system.enableDeep') }}</span>
           </label>
           <span id="deep-identification-enabled-help" class="mt-1 block text-sm text-text-muted">
-            Shows the Deep Analysis action in Identify Coin and on saved coins, and allows new background analysis jobs.
+            {{ t('admin.system.enableDeepHint') }}
           </span>
         </div>
 
         <fieldset class="mb-6 min-w-0">
-          <legend class="section-label mb-3">Deep Analysis Limits</legend>
+          <legend class="section-label mb-3">{{ t('admin.system.deepLimits') }}</legend>
           <div class="grid min-w-0 gap-4 md:grid-cols-2">
             <div v-for="setting in deepIdentificationSettingFields" :key="setting.name" class="form-group min-w-0">
-              <label class="form-label" :for="setting.name">{{ setting.label }}</label>
+              <label class="form-label" :for="setting.name">{{ t(setting.labelKey) }}</label>
               <input
                 :id="setting.name"
                 v-model="setting.model.value"
@@ -306,7 +305,7 @@
                 step="1"
                 required
               />
-              <span class="mt-1 block text-sm text-text-muted">{{ setting.hint }}</span>
+              <span class="mt-1 block text-sm text-text-muted">{{ t(setting.hintKey, { min: setting.min, max: setting.max, default: setting.fallback }) }}</span>
             </div>
           </div>
         </fieldset>
@@ -321,18 +320,18 @@
               data-testid="ocre-enabled-toggle"
               aria-describedby="ocre-enabled-help"
             />
-            <span class="form-label m-0">Enable OCRE Deep Analysis provider</span>
+            <span class="form-label m-0">{{ t('admin.system.enableOcre') }}</span>
           </label>
           <span id="ocre-enabled-help" class="mt-1 block text-sm text-text-muted">
-            When off, no OCRE requests are ever made. Rollback at any time by disabling this toggle.
+            {{ t('admin.system.enableOcreHint') }}
           </span>
         </div>
 
         <fieldset class="mb-2 min-w-0">
-          <legend class="section-label mb-3">OCRE Limits</legend>
+          <legend class="section-label mb-3">{{ t('admin.system.ocreLimits') }}</legend>
           <div class="grid min-w-0 gap-4 md:grid-cols-2">
             <div class="form-group min-w-0">
-              <label class="form-label" for="ocre-call-budget">Per-job call budget</label>
+              <label class="form-label" for="ocre-call-budget">{{ t('admin.system.perJobBudget') }}</label>
               <input
                 id="ocre-call-budget"
                 v-model="localOCRECallBudget"
@@ -344,79 +343,79 @@
                 step="1"
                 required
               />
-              <span class="mt-1 block text-sm text-text-muted">Requests per job; 1–20. Default 3.</span>
+              <span class="mt-1 block text-sm text-text-muted">{{ t('admin.system.hints.requestsPerJob', { min: 1, max: 20, default: 3 }) }}</span>
             </div>
           </div>
         </fieldset>
 
         <section class="border-t border-border-subtle pt-6" aria-labelledby="ocre-health-heading">
           <div class="mb-4 flex items-center justify-between gap-3">
-            <h3 id="ocre-health-heading" class="m-0 text-lg font-medium text-heading">OCRE Health</h3>
+            <h3 id="ocre-health-heading" class="m-0 text-lg font-medium text-heading">{{ t('admin.system.ocreHealth') }}</h3>
             <button type="button" class="btn btn-secondary btn-xs" :disabled="ocreHealthLoading" @click="loadOCREHealth">
-              {{ ocreHealthLoading ? 'Refreshing...' : 'Refresh' }}
+              {{ ocreHealthLoading ? t('admin.system.refreshing') : t('admin.logs.refresh') }}
             </button>
           </div>
 
           <div v-if="ocreHealthLoading" class="flex items-center gap-3 py-6 text-sm text-text-secondary" role="status">
-            <span class="sr-only">Loading OCRE health</span>
-            Loading OCRE health
+            <span class="sr-only">{{ t('admin.system.loadingOcre') }}</span>
+            {{ t('admin.system.loadingOcre') }}
           </div>
           <p v-else-if="ocreHealthError" class="rounded-sm border border-[var(--color-negative)] p-3 text-sm text-loss" role="alert">
-            OCRE health is temporarily unavailable. Try again.
+            {{ t('admin.system.ocreUnavailable') }}
           </p>
           <div v-else-if="ocreHealth" class="grid gap-4 md:grid-cols-3" data-testid="ocre-health">
             <div class="rounded-sm border border-border-subtle bg-card p-4">
-              <p class="section-label m-0">Provider</p>
-              <div class="mt-1 font-semibold text-text-primary">{{ ocreHealth.enabled ? 'Enabled' : 'Disabled' }}</div>
-              <div class="mt-1 text-sm text-text-secondary">{{ ocreHealth.gateValidated ? 'Configuration valid' : 'Configuration invalid' }}</div>
+              <p class="section-label m-0">{{ t('admin.system.provider') }}</p>
+              <div class="mt-1 font-semibold text-text-primary">{{ ocreHealth.enabled ? t('admin.oidc.enabled') : t('admin.oidc.disabled') }}</div>
+              <div class="mt-1 text-sm text-text-secondary">{{ ocreHealth.gateValidated ? t('admin.system.configValid') : t('admin.system.configInvalid') }}</div>
             </div>
             <div class="rounded-sm border border-border-subtle bg-card p-4">
-              <p class="section-label m-0">Call budget</p>
-              <div class="mt-1 text-sm text-text-primary">{{ ocreHealth.callBudget }} per job</div>
+              <p class="section-label m-0">{{ t('admin.system.callBudget') }}</p>
+              <div class="mt-1 text-sm text-text-primary">{{ t('admin.system.perJob', { count: ocreHealth.callBudget }) }}</div>
             </div>
             <div class="rounded-sm border border-border-subtle bg-card p-4">
-              <p class="section-label m-0">Last outcome</p>
+              <p class="section-label m-0">{{ t('admin.system.lastOutcome') }}</p>
               <div class="mt-1 font-semibold text-text-primary">{{ formatOCREOutcome(ocreHealth.lastOutcome) }}</div>
               <div class="mt-1 text-sm text-text-secondary">{{ formatTimestamp(ocreHealth.lastCheckedAt) }}</div>
             </div>
           </div>
-          <p v-else class="py-6 text-sm text-text-muted">No OCRE health data is available yet.</p>
+          <p v-else class="py-6 text-sm text-text-muted">{{ t('admin.system.noOcreData') }}</p>
         </section>
 
         <section class="mt-6 border-t border-border-subtle pt-6" aria-labelledby="deep-observability-heading">
           <div class="mb-4 flex items-center justify-between gap-3">
-            <h3 id="deep-observability-heading" class="m-0 text-lg font-medium text-heading">Deep Analysis Operations</h3>
+            <h3 id="deep-observability-heading" class="m-0 text-lg font-medium text-heading">{{ t('admin.system.deepOps') }}</h3>
             <button type="button" class="btn btn-secondary btn-xs min-h-[44px]" :disabled="deepMetricsLoading" @click="loadDeepMetrics">
-              {{ deepMetricsLoading ? 'Refreshing...' : 'Refresh' }}
+              {{ deepMetricsLoading ? t('admin.system.refreshing') : t('admin.logs.refresh') }}
             </button>
           </div>
-          <div v-if="deepMetricsLoading" class="py-6 text-sm text-text-secondary" role="status">Loading Deep Analysis operations</div>
+          <div v-if="deepMetricsLoading" class="py-6 text-sm text-text-secondary" role="status">{{ t('admin.system.loadingDeepOps') }}</div>
           <p v-else-if="deepMetricsError" class="rounded-sm border border-[var(--color-negative)] p-3 text-sm text-loss" role="alert">
-            Deep Analysis operations are temporarily unavailable. Try again.
+            {{ t('admin.system.deepOpsUnavailable') }}
           </p>
           <div v-else-if="deepMetrics" class="grid gap-4" data-testid="deep-observability">
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div class="rounded-sm border border-border-subtle bg-card p-4">
-                <p class="section-label m-0">Terminal jobs</p>
+                <p class="section-label m-0">{{ t('admin.system.terminalJobs') }}</p>
                 <div class="mt-1 text-sm text-text-primary">{{ terminalJobCount }}</div>
               </div>
               <div class="rounded-sm border border-border-subtle bg-card p-4">
-                <p class="section-label m-0">Partial success</p>
+                <p class="section-label m-0">{{ t('admin.system.partialSuccess') }}</p>
                 <div class="mt-1 text-sm text-text-primary">{{ formatRate(deepMetrics.partialSuccessRate) }}</div>
               </div>
               <div class="rounded-sm border border-border-subtle bg-card p-4">
-                <p class="section-label m-0">Job duration</p>
+                <p class="section-label m-0">{{ t('admin.system.jobDuration') }}</p>
                 <div class="mt-1 text-sm text-text-primary">p50 {{ formatDuration(deepMetrics.duration.p50Ms) }} · p95 {{ formatDuration(deepMetrics.duration.p95Ms) }}</div>
               </div>
               <div class="rounded-sm border border-border-subtle bg-card p-4">
-                <p class="section-label m-0">Queue / live streams</p>
-                <div class="mt-1 text-sm text-text-primary">{{ deepMetrics.queueDepth }} queued · {{ deepMetrics.activeSseStreams }} live</div>
+                <p class="section-label m-0">{{ t('admin.system.queueStreams') }}</p>
+                <div class="mt-1 text-sm text-text-primary">{{ t('admin.system.queuedLive', { queued: deepMetrics.queueDepth, live: deepMetrics.activeSseStreams }) }}</div>
               </div>
             </div>
             <div class="overflow-x-auto">
               <table class="data-table min-w-[540px] text-sm [&_th]:p-2">
                 <thead>
-                  <tr><th>Provider</th><th>Outcomes</th><th>Latency</th></tr>
+                  <tr><th>{{ t('admin.system.provider') }}</th><th>{{ t('admin.system.outcomes') }}</th><th>{{ t('admin.system.latency') }}</th></tr>
                 </thead>
                 <tbody>
                   <tr v-for="(metrics, provider) in deepMetrics.providers" :key="provider">
@@ -428,10 +427,15 @@
               </table>
             </div>
             <p class="m-0 text-sm text-text-secondary">
-              SSE reconnects {{ deepMetrics.reconnectCount }}, truncations {{ deepMetrics.truncationCount }};
-              hint cleanup {{ deepMetrics.hintDeletion.success }} succeeded / {{ deepMetrics.hintDeletion.failure }} failed;
-              janitor {{ deepMetrics.janitor.recoverySweeps }} recovery / {{ deepMetrics.janitor.retentionSweeps }} retention sweeps,
-              {{ deepMetrics.janitor.failures }} failures.
+              {{ t('admin.system.deepOpsSummary', {
+                reconnects: deepMetrics.reconnectCount,
+                truncations: deepMetrics.truncationCount,
+                hintSuccess: deepMetrics.hintDeletion.success,
+                hintFailure: deepMetrics.hintDeletion.failure,
+                recovery: deepMetrics.janitor.recoverySweeps,
+                retention: deepMetrics.janitor.retentionSweeps,
+                failures: deepMetrics.janitor.failures,
+              }) }}
             </p>
           </div>
         </section>
@@ -439,14 +443,14 @@
 
       <p v-if="msg" class="my-2 text-body" :class="error ? 'text-loss' : 'text-gold'">{{ msg }}</p>
       <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">
-        {{ saving ? 'Saving...' : 'Save System Settings' }}
+        {{ saving ? t('common.saving') : t('admin.system.save') }}
       </button>
     </form>
 
     <div class="mt-6 flex items-center gap-2 border-t border-border-subtle pt-4 text-chip text-text-muted">
-      <span class="font-semibold uppercase tracking-[0.08em]">Version</span>
+      <span class="font-semibold uppercase tracking-[0.08em]">{{ t('admin.system.version') }}</span>
       <span class="font-mono text-text-secondary">{{ appVersion }}</span>
-      <span v-if="buildDate" class="ml-1">Built {{ buildDate }}</span>
+      <span v-if="buildDate" class="ml-1">{{ t('admin.system.built', { date: buildDate }) }}</span>
     </div>
   </section>
 </template>
@@ -455,6 +459,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { getAdminDeepIdentificationObservability, getAdminNumistaHealth, getAdminOCREHealth } from '@/api/client'
 import type { DeepIdentificationObservabilitySummary, NumistaHealthSummary, NumistaLookupStatus, OCREHealthSummary } from '@/types'
+import I18nT from '@/components/I18nT.vue'
+import { t, intlLocale, type MessageKey } from '@/i18n'
+import { deepProviderStatusLabel } from '@/utils/format'
 
 const props = withDefaults(defineProps<{
   numistaApiKey: string
@@ -671,45 +678,45 @@ const hasHealthEvents = computed(() => {
 })
 
 const numistaSettingFields = [
-  { name: 'NumistaSearchTTLHours', label: 'Search cache TTL', min: 1, max: 720, fallback: 24, model: localNumistaSearchTTLHours, hint: 'Hours; 1–720. Default 24.' },
-  { name: 'NumistaDetailTTLHours', label: 'Detail cache TTL', min: 1, max: 2160, fallback: 168, model: localNumistaDetailTTLHours, hint: 'Hours; 1–2160. Default 168.' },
-  { name: 'NumistaEnrichmentLimit', label: 'Enrichment limit', min: 1, max: 10, fallback: 5, model: localNumistaEnrichmentLimit, hint: 'Candidates per lookup; 1–10. Default 5.' },
-  { name: 'NumistaSearchResultLimit', label: 'Search result limit', min: 1, max: 50, fallback: 20, model: localNumistaSearchResultLimit, hint: 'Broad candidates; 1–50. Default 20.' },
-  { name: 'NumistaSearchTimeoutSeconds', label: 'Search timeout', min: 1, max: 10, fallback: 4, model: localNumistaSearchTimeoutSeconds, hint: 'Seconds; 1–10. Default 4.' },
-  { name: 'NumistaDetailTimeoutSeconds', label: 'Detail timeout', min: 1, max: 10, fallback: 3, model: localNumistaDetailTimeoutSeconds, hint: 'Seconds; 1–10. Default 3.' },
+  { name: 'NumistaSearchTTLHours', labelKey: 'admin.system.fields.searchCacheTtl', min: 1, max: 720, fallback: 24, model: localNumistaSearchTTLHours, hintKey: 'admin.system.hints.hours' },
+  { name: 'NumistaDetailTTLHours', labelKey: 'admin.system.fields.detailCacheTtl', min: 1, max: 2160, fallback: 168, model: localNumistaDetailTTLHours, hintKey: 'admin.system.hints.hours' },
+  { name: 'NumistaEnrichmentLimit', labelKey: 'admin.system.fields.enrichmentLimit', min: 1, max: 10, fallback: 5, model: localNumistaEnrichmentLimit, hintKey: 'admin.system.hints.candidatesPerLookup' },
+  { name: 'NumistaSearchResultLimit', labelKey: 'admin.system.fields.searchResultLimit', min: 1, max: 50, fallback: 20, model: localNumistaSearchResultLimit, hintKey: 'admin.system.hints.broadCandidates' },
+  { name: 'NumistaSearchTimeoutSeconds', labelKey: 'admin.system.fields.searchTimeout', min: 1, max: 10, fallback: 4, model: localNumistaSearchTimeoutSeconds, hintKey: 'admin.system.hints.seconds' },
+  { name: 'NumistaDetailTimeoutSeconds', labelKey: 'admin.system.fields.detailTimeout', min: 1, max: 10, fallback: 3, model: localNumistaDetailTimeoutSeconds, hintKey: 'admin.system.hints.seconds' },
 ] as const
 
 const deepIdentificationSettingFields = [
-  { name: 'DeepIdentificationWorkerCount', label: 'Worker count', min: 1, max: 32, fallback: 2, model: localDeepIdentificationWorkerCount, hint: 'Concurrent job workers; 1–32. Default 2.' },
-  { name: 'DeepIdentificationMaxActivePerUser', label: 'Active jobs per user', min: 1, max: 10, fallback: 1, model: localDeepIdentificationMaxActivePerUser, hint: 'Per-user active job limit; 1–10. Default 1.' },
-  { name: 'DeepIdentificationQueueDepth', label: 'Queue depth', min: 1, max: 1000, fallback: 32, model: localDeepIdentificationQueueDepth, hint: 'Queued jobs; 1–1000. Default 32.' },
-  { name: 'DeepIdentificationHardTimeoutSeconds', label: 'Hard timeout', min: 1, max: 900, fallback: 300, model: localDeepIdentificationHardTimeoutSeconds, hint: 'Seconds per job; 1–900. Default 300.' },
-  { name: 'DeepIdentificationEventRetentionHours', label: 'Event retention', min: 1, max: 720, fallback: 24, model: localDeepIdentificationEventRetentionHours, hint: 'Hours; 1–720. Default 24.' },
-  { name: 'DeepIdentificationResultRetentionDays', label: 'Result retention', min: 1, max: 3650, fallback: 90, model: localDeepIdentificationResultRetentionDays, hint: 'Days; 1–3650. Default 90.' },
-  { name: 'DeepIdentificationMaxProviders', label: 'Provider limit', min: 1, max: 10, fallback: 4, model: localDeepIdentificationMaxProviders, hint: 'Providers per job; 1–10. Default 4.' },
-  { name: 'DeepIdentificationNumistaCallBudget', label: 'Numista call budget', min: 1, max: 20, fallback: 4, model: localDeepIdentificationNumistaCallBudget, hint: 'Requests per job; 1–20. Default 4.' },
+  { name: 'DeepIdentificationWorkerCount', labelKey: 'admin.system.fields.workerCount', min: 1, max: 32, fallback: 2, model: localDeepIdentificationWorkerCount, hintKey: 'admin.system.hints.jobWorkers' },
+  { name: 'DeepIdentificationMaxActivePerUser', labelKey: 'admin.system.fields.activeJobsPerUser', min: 1, max: 10, fallback: 1, model: localDeepIdentificationMaxActivePerUser, hintKey: 'admin.system.hints.perUserJobs' },
+  { name: 'DeepIdentificationQueueDepth', labelKey: 'admin.system.fields.queueDepth', min: 1, max: 1000, fallback: 32, model: localDeepIdentificationQueueDepth, hintKey: 'admin.system.hints.queuedJobs' },
+  { name: 'DeepIdentificationHardTimeoutSeconds', labelKey: 'admin.system.fields.hardTimeout', min: 1, max: 900, fallback: 300, model: localDeepIdentificationHardTimeoutSeconds, hintKey: 'admin.system.hints.secondsPerJob' },
+  { name: 'DeepIdentificationEventRetentionHours', labelKey: 'admin.system.fields.eventRetention', min: 1, max: 720, fallback: 24, model: localDeepIdentificationEventRetentionHours, hintKey: 'admin.system.hints.hours' },
+  { name: 'DeepIdentificationResultRetentionDays', labelKey: 'admin.system.fields.resultRetention', min: 1, max: 3650, fallback: 90, model: localDeepIdentificationResultRetentionDays, hintKey: 'admin.system.hints.days' },
+  { name: 'DeepIdentificationMaxProviders', labelKey: 'admin.system.fields.providerLimit', min: 1, max: 10, fallback: 4, model: localDeepIdentificationMaxProviders, hintKey: 'admin.system.hints.providersPerJob' },
+  { name: 'DeepIdentificationNumistaCallBudget', labelKey: 'admin.system.fields.numistaCallBudget', min: 1, max: 20, fallback: 4, model: localDeepIdentificationNumistaCallBudget, hintKey: 'admin.system.hints.requestsPerJob' },
 ] as const
 
 const coinCopilotSettingFields = [
-  { name: 'CoinCopilotWorkerCount', label: 'Worker count', min: 1, max: 4, fallback: 1, model: localCoinCopilotWorkerCount, hint: 'Concurrent workers; 1–4. Default 1.' },
-  { name: 'CoinCopilotMaxActivePerUser', label: 'Active runs per user', min: 1, max: 3, fallback: 1, model: localCoinCopilotMaxActivePerUser, hint: 'Non-terminal runs per owner; 1–3. Default 1.' },
-  { name: 'CoinCopilotQueueDepth', label: 'Queue depth', min: 1, max: 100, fallback: 16, model: localCoinCopilotQueueDepth, hint: 'Queued runs; 1–100. Default 16.' },
-  { name: 'CoinCopilotMaxReasoningIterations', label: 'Reasoning iterations', min: 1, max: 20, fallback: 8, model: localCoinCopilotMaxReasoningIterations, hint: 'Planning steps per run; 1–20. Default 8.' },
-  { name: 'CoinCopilotMaxToolCalls', label: 'Tool-call limit', min: 1, max: 40, fallback: 12, model: localCoinCopilotMaxToolCalls, hint: 'Read-only tool calls per run; 1–40. Default 12.' },
-  { name: 'CoinCopilotHardTimeoutSeconds', label: 'Execution timeout', min: 15, max: 600, fallback: 120, model: localCoinCopilotHardTimeoutSeconds, hint: 'Seconds per execution; 15–600. Default 120.' },
-  { name: 'CoinCopilotMaxPersistedToolResultBytes', label: 'Persisted result bytes', min: 4096, max: 131072, fallback: 32768, model: localCoinCopilotMaxPersistedToolResultBytes, hint: 'Bytes retained per tool call; 4,096–131,072. Default 32,768.' },
-  { name: 'CoinCopilotEventRetentionHours', label: 'Event retention', min: 1, max: 720, fallback: 168, model: localCoinCopilotEventRetentionHours, hint: 'Hours after terminal state; 1–720. Default 168.' },
-  { name: 'CoinCopilotCheckpointRetentionDays', label: 'Checkpoint retention', min: 1, max: 365, fallback: 30, model: localCoinCopilotCheckpointRetentionDays, hint: 'Days after terminal state; 1–365. Default 30.' },
-  { name: 'CoinCopilotResumeWindowHours', label: 'Resume window', min: 1, max: 720, fallback: 168, model: localCoinCopilotResumeWindowHours, hint: 'Hours a paused run can resume; 1–720. Default 168.' },
+  { name: 'CoinCopilotWorkerCount', labelKey: 'admin.system.fields.workerCount', min: 1, max: 4, fallback: 1, model: localCoinCopilotWorkerCount, hintKey: 'admin.system.hints.concurrentWorkers' },
+  { name: 'CoinCopilotMaxActivePerUser', labelKey: 'admin.system.fields.activeRunsPerUser', min: 1, max: 3, fallback: 1, model: localCoinCopilotMaxActivePerUser, hintKey: 'admin.system.hints.runsPerOwner' },
+  { name: 'CoinCopilotQueueDepth', labelKey: 'admin.system.fields.queueDepth', min: 1, max: 100, fallback: 16, model: localCoinCopilotQueueDepth, hintKey: 'admin.system.hints.queuedRuns' },
+  { name: 'CoinCopilotMaxReasoningIterations', labelKey: 'admin.system.fields.reasoningIterations', min: 1, max: 20, fallback: 8, model: localCoinCopilotMaxReasoningIterations, hintKey: 'admin.system.hints.planningSteps' },
+  { name: 'CoinCopilotMaxToolCalls', labelKey: 'admin.system.fields.toolCallLimit', min: 1, max: 40, fallback: 12, model: localCoinCopilotMaxToolCalls, hintKey: 'admin.system.hints.toolCalls' },
+  { name: 'CoinCopilotHardTimeoutSeconds', labelKey: 'admin.system.fields.executionTimeout', min: 15, max: 600, fallback: 120, model: localCoinCopilotHardTimeoutSeconds, hintKey: 'admin.system.hints.secondsPerExecution' },
+  { name: 'CoinCopilotMaxPersistedToolResultBytes', labelKey: 'admin.system.fields.persistedResultBytes', min: 4096, max: 131072, fallback: 32768, model: localCoinCopilotMaxPersistedToolResultBytes, hintKey: 'admin.system.hints.persistedBytes' },
+  { name: 'CoinCopilotEventRetentionHours', labelKey: 'admin.system.fields.eventRetention', min: 1, max: 720, fallback: 168, model: localCoinCopilotEventRetentionHours, hintKey: 'admin.system.hints.hoursAfterTerminal' },
+  { name: 'CoinCopilotCheckpointRetentionDays', labelKey: 'admin.system.fields.checkpointRetention', min: 1, max: 365, fallback: 30, model: localCoinCopilotCheckpointRetentionDays, hintKey: 'admin.system.hints.daysAfterTerminal' },
+  { name: 'CoinCopilotResumeWindowHours', labelKey: 'admin.system.fields.resumeWindow', min: 1, max: 720, fallback: 168, model: localCoinCopilotResumeWindowHours, hintKey: 'admin.system.hints.resumeWindow' },
 ] as const
 
-const statusRows: { key: NumistaLookupStatus; label: string }[] = [
-  { key: 'success', label: 'Success' },
-  { key: 'empty', label: 'Empty' },
-  { key: 'unconfigured', label: 'Unconfigured' },
-  { key: 'quota-limited', label: 'Quota limited' },
-  { key: 'timeout', label: 'Timeout' },
-  { key: 'unavailable', label: 'Unavailable' },
+const statusRows: { key: NumistaLookupStatus; labelKey: MessageKey }[] = [
+  { key: 'success', labelKey: 'admin.system.statuses.success' },
+  { key: 'empty', labelKey: 'admin.system.statuses.empty' },
+  { key: 'unconfigured', labelKey: 'admin.system.statuses.unconfigured' },
+  { key: 'quota-limited', labelKey: 'admin.system.statuses.quotaLimited' },
+  { key: 'timeout', labelKey: 'admin.system.statuses.timeout' },
+  { key: 'unavailable', labelKey: 'admin.system.statuses.unavailable' },
 ]
 
 function boundedValue(value: string, min: number, max: number, fallback: number) {
@@ -830,7 +837,7 @@ function formatRate(value: number) {
 }
 
 function formatDuration(milliseconds: number) {
-  if (milliseconds <= 0) return 'not observed'
+  if (milliseconds <= 0) return t('admin.system.notObservedLower')
   if (milliseconds < 1000) return `${milliseconds} ms`
   return `${(milliseconds / 1000).toFixed(1)} s`
 }
@@ -839,36 +846,33 @@ function formatStatusCounts(counts: Record<string, number>) {
   const entries = Object.entries(counts).filter(([, count]) => count > 0)
   return entries.length
     ? entries.map(([status, count]) => `${formatOCREOutcome(status)} ${count}`).join(', ')
-    : 'No attempts'
+    : t('admin.system.noAttempts')
 }
 
 function formatOCREOutcome(status?: string | null) {
-  if (!status) return 'No recent outcome'
-  if (status === 'not_automated') return 'Manual Verification'
-  return status
-    .split('_')
-    .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : part))
-    .join(' ')
+  if (!status) return t('admin.system.noRecentOutcome')
+  return deepProviderStatusLabel(status)
 }
 
 function formatStatus(status?: NumistaLookupStatus | null) {
-  if (!status) return 'No recent outcome'
-  return status === 'quota-limited' ? 'Quota limited' : status.charAt(0).toUpperCase() + status.slice(1)
+  if (!status) return t('admin.system.noRecentOutcome')
+  const row = statusRows.find((candidate) => candidate.key === status)
+  return row ? t(row.labelKey) : status.charAt(0).toUpperCase() + status.slice(1)
 }
 
 function formatTimestamp(value?: string | null) {
-  if (!value) return 'Not observed'
+  if (!value) return t('admin.system.notObserved')
   const timestamp = new Date(value)
-  return Number.isNaN(timestamp.getTime()) ? 'Not observed' : timestamp.toLocaleString()
+  return Number.isNaN(timestamp.getTime()) ? t('admin.system.notObserved') : timestamp.toLocaleString(intlLocale())
 }
 
 function formatPercent(value: number) {
   const bounded = Math.min(1, Math.max(0, value))
-  return `${(bounded * 100).toFixed(1)}% fresh hit rate`
+  return t('admin.system.freshHitRate', { value: (bounded * 100).toFixed(1) })
 }
 
 function formatRetryAfter(value?: number | null) {
-  return value && value > 0 ? `${value} seconds` : 'Not observed'
+  return value && value > 0 ? t('admin.system.seconds', { count: value }) : t('admin.system.notObserved')
 }
 
 watch(() => props.numistaApiKey, (value) => { localNumistaApiKey.value = value })

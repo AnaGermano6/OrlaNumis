@@ -9,7 +9,7 @@
         role="status"
       >
         <span>{{ toast.message }}</span>
-        <button class="inline-flex shrink-0 items-center justify-center p-[0.15rem] text-text-secondary transition-colors hover:text-text-primary" type="button" aria-label="Dismiss notification" @click="removeToast(toast.id)">
+        <button class="inline-flex shrink-0 items-center justify-center p-[0.15rem] text-text-secondary transition-colors hover:text-text-primary" type="button" :aria-label="t('toasts.dismiss')" @click="removeToast(toast.id)">
           <X :size="14" />
         </button>
       </div>
@@ -20,6 +20,7 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
+import { t } from '@/i18n'
 
 const { toasts, removeToast } = useToast()
 </script>

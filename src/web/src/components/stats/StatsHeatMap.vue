@@ -1,19 +1,19 @@
 <template>
   <div class="stats-section card">
-    <h2 class="mb-5 text-md">Collection Distribution</h2>
+    <h2 class="mb-5 text-md">{{ t('stats.heatMap.title') }}</h2>
     <div v-if="heatMapEras.length && heatMapCategories.length" class="flex flex-col gap-3">
-      <ZoomableSurface :interactive="false" aria-label="Collection distribution heat map">
+      <ZoomableSurface :interactive="false" :aria-label="t('stats.heatMap.aria')">
         <div class="grid min-w-[300px] gap-[2px] p-3 max-[480px]:min-w-0 max-[480px]:gap-px" :style="{ gridTemplateColumns: `minmax(60px, 80px) repeat(${heatMapCategories.length}, 1fr)` }">
           <div></div>
-          <div v-for="cat in heatMapCategories" :key="cat" class="overflow-hidden text-ellipsis whitespace-nowrap px-[0.15rem] py-[0.25rem] text-center text-micro font-semibold text-text-secondary max-[480px]:px-[0.1rem] max-[480px]:py-[0.2rem] max-[480px]:text-2xs">{{ cat }}</div>
+          <div v-for="cat in heatMapCategories" :key="cat" class="overflow-hidden text-ellipsis whitespace-nowrap px-[0.15rem] py-[0.25rem] text-center text-micro font-semibold text-text-secondary max-[480px]:px-[0.1rem] max-[480px]:py-[0.2rem] max-[480px]:text-2xs">{{ categoryLabel(cat) }}</div>
           <template v-for="era in heatMapEras" :key="era">
-            <div class="flex max-w-[80px] items-center overflow-hidden text-ellipsis whitespace-nowrap pr-[0.35rem] text-micro font-semibold text-text-secondary max-[480px]:max-w-[60px] max-[480px]:pr-[0.2rem] max-[480px]:text-2xs">{{ era }}</div>
+            <div class="flex max-w-[80px] items-center overflow-hidden text-ellipsis whitespace-nowrap pr-[0.35rem] text-micro font-semibold text-text-secondary max-[480px]:max-w-[60px] max-[480px]:pr-[0.2rem] max-[480px]:text-2xs">{{ eraLabel(era) }}</div>
             <div
               v-for="cat in heatMapCategories"
               :key="`${era}-${cat}`"
               class="flex aspect-square min-h-[28px] cursor-pointer items-center justify-center rounded-sm border border-border-subtle transition hover:z-10 hover:scale-110 hover:shadow-[var(--shadow-gold-hover)] max-[480px]:min-h-[24px]"
               :style="{ backgroundColor: cellColor(heatMapData[`${era}|${cat}`] ?? 0) }"
-              :title="`${era} / ${cat}: ${heatMapData[`${era}|${cat}`] ?? 0} coins`"
+              :title="t('stats.heatMap.cell', { era: eraLabel(era), category: categoryLabel(cat), count: heatMapData[`${era}|${cat}`] ?? 0 })"
               @click="navigateToFiltered(era, cat)"
             >
               <span v-if="(heatMapData[`${era}|${cat}`] ?? 0) > 0" class="text-micro font-bold text-text-primary max-[480px]:text-2xs">{{ heatMapData[`${era}|${cat}`] }}</span>
@@ -27,7 +27,7 @@
         <span class="text-label text-text-muted">{{ heatMapMax }}</span>
       </div>
     </div>
-    <p v-else class="py-4 text-body italic text-text-muted">Add coins with era and category to see distribution.</p>
+    <p v-else class="py-4 text-body italic text-text-muted">{{ t('stats.heatMap.empty') }}</p>
   </div>
 </template>
 
@@ -36,6 +36,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getDistribution } from '@/api/client'
 import ZoomableSurface from '@/components/ZoomableSurface.vue'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 const router = useRouter()
 

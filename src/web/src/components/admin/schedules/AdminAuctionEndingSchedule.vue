@@ -2,29 +2,29 @@
   <hr class="my-6 border-0 border-t border-border-subtle" />
 
   <!-- Auction Ending Alerts -->
-  <h3 class="mb-4 text-lg font-medium text-heading">Auction Ending Alerts</h3>
-  <p class="mb-4 text-base text-text-secondary">Checks watched auction lots that are ending soon and sends Pushover reminders before bidding closes.</p>
+  <h3 class="mb-4 text-lg font-medium text-heading">{{ t('admin.schedules.ending.title') }}</h3>
+  <p class="mb-4 text-base text-text-secondary">{{ t('admin.schedules.ending.intro') }}</p>
   <div class="mb-4">
     <div class="form-group flex items-center justify-between gap-3">
-      <label class="form-label">Enable Automatic Alerts</label>
+      <label class="form-label">{{ t('admin.schedules.ending.enable') }}</label>
       <BaseToggle
         size="sm"
-        label="Enable Automatic Alerts"
+        :label="t('admin.schedules.ending.enable')"
         :model-value="settings.AuctionEndingCheckEnabled === 'true'"
         @update:model-value="settings.AuctionEndingCheckEnabled = $event ? 'true' : 'false'"
       />
     </div>
     <div class="form-group">
-      <label class="form-label">Start Time (daily anchor)</label>
+      <label class="form-label">{{ t('admin.schedules.startAnchor') }}</label>
       <input
         v-model="settings.AuctionEndingCheckStartTime"
         class="form-input w-full max-w-[120px]"
         type="time"
       />
-      <span class="form-hint">The first ending-alert check runs at this time each day.</span>
+      <span class="form-hint">{{ t('admin.schedules.ending.startHint') }}</span>
     </div>
     <div class="form-group">
-      <label class="form-label">Repeat Interval (minutes)</label>
+      <label class="form-label">{{ t('admin.schedules.repeatMinutes') }}</label>
       <input
         v-model="settings.AuctionEndingCheckInterval"
         class="form-input w-full max-w-[120px]"
@@ -32,36 +32,36 @@
         min="60"
         step="60"
       />
-      <span class="form-hint">How often to check for lots ending soon after the start time. Default 1440 (daily).</span>
+      <span class="form-hint">{{ t('admin.schedules.ending.intervalHint') }}</span>
       <AdminScheduleSummary :start-time="settings.AuctionEndingCheckStartTime" default-start-time="08:00" :interval-minutes="settings.AuctionEndingCheckInterval" :zone="settings.ScheduleTimezone" />
     </div>
     <div class="mt-4 flex w-full flex-col gap-3 md:flex-row md:items-center">
       <button class="btn btn-primary btn-sm" :disabled="settingsSaving" @click="emit('save')">
-        {{ settingsSaving ? 'Saving...' : 'Save Alert Settings' }}
+        {{ settingsSaving ? t('common.saving') : t('admin.schedules.ending.save') }}
       </button>
       <span v-if="settingsMsg" class="text-body text-gold md:mr-auto" :class="settingsError ? 'text-loss' : ''">{{ settingsMsg }}</span>
       <button class="btn btn-secondary btn-sm md:ml-auto" :disabled="triggerLoading" @click="triggerManualAuctionCheck()">
-        {{ triggerLoading ? 'Starting...' : 'Run Now' }}
+        {{ triggerLoading ? t('common.starting') : t('admin.schedules.runNow') }}
       </button>
     </div>
   </div>
 
   <hr class="my-6 border-0 border-t border-border-subtle" />
-  <h3 class="mb-4 text-lg font-medium text-heading">Auction Ending Alert Run History</h3>
+  <h3 class="mb-4 text-lg font-medium text-heading">{{ t('admin.schedules.ending.history') }}</h3>
 
   <div v-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
-  <div v-else-if="runs.length === 0" class="px-8 py-8 text-center font-sans text-text-muted">No auction ending alert runs recorded yet.</div>
+  <div v-else-if="runs.length === 0" class="px-8 py-8 text-center font-sans text-text-muted">{{ t('admin.schedules.ending.empty') }}</div>
   <template v-else>
     <div class="overflow-x-auto">
       <table class="data-table text-chip md:table-fixed [&_th]:px-[0.35rem] [&_th]:py-2 md:[&_th]:px-2 md:[&_th]:py-3 [&_td]:px-[0.35rem] [&_td]:py-2 md:[&_td]:px-2 md:[&_td]:py-3">
         <thead>
           <tr>
-            <th>Date</th>
-            <th class="hidden md:table-cell">Trigger</th>
-            <th>Lots</th>
-            <th>Alerts</th>
-            <th class="hidden md:table-cell">Status</th>
-            <th>Duration</th>
+            <th>{{ t('common.date') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.trigger') }}</th>
+            <th>{{ t('admin.schedules.lots') }}</th>
+            <th>{{ t('admin.schedules.alerts.alerts') }}</th>
+            <th class="hidden md:table-cell">{{ t('common.status') }}</th>
+            <th>{{ t('admin.schedules.duration') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -69,14 +69,14 @@
             <td class="text-body text-text-secondary">{{ formatDate(run.startedAt) }}</td>
             <td class="hidden md:table-cell">
               <BaseStatusBadge :tone="run.triggerType === 'manual' ? 'error' : 'warning'">
-                {{ run.triggerType }}
+                {{ runTriggerLabel(run.triggerType) }}
               </BaseStatusBadge>
             </td>
             <td>{{ run.lotsChecked }}</td>
             <td class="font-semibold text-gain">{{ run.alertsSent }}</td>
             <td class="hidden md:table-cell">
               <BaseStatusBadge :tone="run.status === 'error' ? 'error' : (run.status === 'success' ? 'success' : 'warning')">
-                {{ run.status }}
+                {{ runStatusLabel(run.status) }}
               </BaseStatusBadge>
             </td>
             <td>{{ formatDuration(run.durationMs) }}</td>
@@ -86,9 +86,9 @@
     </div>
 
     <div class="mt-4 flex items-center justify-center gap-3">
-      <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="prevPage()">Prev</button>
-      <span class="text-chip text-text-secondary">Page {{ page }}</span>
-      <button class="btn btn-secondary btn-sm" :disabled="runs.length < 5" @click="nextPage()">Next</button>
+      <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="prevPage()">{{ t('common.prev') }}</button>
+      <span class="text-chip text-text-secondary">{{ t('admin.schedules.page', { page }) }}</span>
+      <button class="btn btn-secondary btn-sm" :disabled="runs.length < 5" @click="nextPage()">{{ t('common.next') }}</button>
     </div>
   </template>
 </template>
@@ -100,6 +100,8 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { getAuctionEndingRun, getAuctionEndingRuns, triggerAuctionEndingCheck } from '@/api/client'
 import { useRunHistoryPagination } from '@/composables/useRunHistoryPagination'
 import type { AppSettings, AuctionEndingRun } from '@/types'
+import { t, intlLocale } from '@/i18n'
+import { runStatusLabel, runTriggerLabel } from '@/utils/format'
 
 defineProps<{
   settings: AppSettings
@@ -151,18 +153,18 @@ async function triggerManualAuctionCheck() {
     const res = await triggerAuctionEndingCheck()
     const { runId, status } = res.data
     if (status === 'queued' || status === 'running') {
-      emit('update:settingsMsg', `Run #${runId} queued — checking for results…`)
+      emit('update:settingsMsg', t('admin.schedules.ending.queued', { id: runId }))
       const pollCompleted = async () => {
         try {
           const runRes = await getAuctionEndingRun(runId)
           const run = runRes.data
           if (run.status === 'success') {
-            const durationSec = run.durationMs != null ? ` in ${(run.durationMs / 1000).toFixed(1)}s` : ''
-            emit('update:settingsMsg', `Run #${runId} completed — ${run.lotsChecked} lots checked, ${run.alertsSent} alerts sent${durationSec}`)
+            const durationSec = run.durationMs != null ? ` ${t('admin.schedules.inDuration', { value: (run.durationMs / 1000).toFixed(1) })}` : ''
+            emit('update:settingsMsg', t('admin.schedules.ending.completed', { id: runId, lots: run.lotsChecked, alerts: run.alertsSent, duration: durationSec }))
             timers.push(setTimeout(() => { emit('update:settingsMsg', '') }, 10000))
             loadRuns()
           } else if (run.status === 'error') {
-            emit('update:settingsMsg', `Run #${runId} failed`)
+            emit('update:settingsMsg', t('admin.schedules.alerts.runFailed', { id: runId }))
             emit('update:settingsError', true)
             loadRuns()
           } else {
@@ -174,14 +176,14 @@ async function triggerManualAuctionCheck() {
       }
       timers.push(setTimeout(pollCompleted, 1500))
     } else if (status === 'error') {
-      emit('update:settingsMsg', `Run #${runId} failed`)
+      emit('update:settingsMsg', t('admin.schedules.alerts.runFailed', { id: runId }))
       emit('update:settingsError', true)
       timers.push(setTimeout(() => { loadRuns() }, 1000))
     } else {
       timers.push(setTimeout(() => { loadRuns() }, 2000))
     }
   } catch {
-    emit('update:settingsMsg', 'Failed to trigger auction ending alerts')
+    emit('update:settingsMsg', t('admin.schedules.ending.failed'))
     emit('update:settingsError', true)
   } finally {
     triggerLoading.value = false
@@ -189,7 +191,7 @@ async function triggerManualAuctionCheck() {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString()
+  return new Date(dateStr).toLocaleDateString(intlLocale())
 }
 
 function formatDuration(ms: number) {

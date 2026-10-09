@@ -461,7 +461,7 @@ describe('Design Token Enforcement (Constitution Principle VI)', () => {
       // The containment check is file-scoped, not per-table: it asks whether
       // the template mentions `data-table` at all. A file holding one migrated
       // and one unmigrated table would slip through. That is the price of not
-      // parsing the template, and HelpSection.vue needs it — its tables are
+      // parsing the template, and the help guide (components/help/) needs it — its tables are
       // rendered from markdown and can only be reached through a wrapper.
       const violations: string[] = []
 

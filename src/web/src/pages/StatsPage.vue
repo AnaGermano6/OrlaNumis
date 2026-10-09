@@ -1,18 +1,18 @@
 <template>
   <PullToRefresh :on-refresh="handleRefresh">
     <div class="container flex flex-col gap-6">
-      <DesktopPageContext title="Stats">
+      <DesktopPageContext :title="t('nav.stats')">
         <header class="page-header mb-0">
           <div>
-            <p class="section-label">Collection Insights</p>
-            <h1>Stats</h1>
-            <p class="mt-[0.35rem] text-base text-text-secondary">Your collection summary at a glance.</p>
+            <p class="section-label">{{ t('stats.insights') }}</p>
+            <h1>{{ t('nav.stats') }}</h1>
+            <p class="mt-[0.35rem] text-base text-text-secondary">{{ t('stats.summaryAtGlance') }}</p>
           </div>
         </header>
         <template #desktop>
           <div>
-            <p class="section-label">Collection Insights</p>
-            <p class="mt-[0.35rem] text-base text-text-secondary">Your collection summary at a glance.</p>
+            <p class="section-label">{{ t('stats.insights') }}</p>
+            <p class="mt-[0.35rem] text-base text-text-secondary">{{ t('stats.summaryAtGlance') }}</p>
           </div>
         </template>
       </DesktopPageContext>
@@ -22,13 +22,13 @@
       </div>
 
       <template v-else>
-        <section id="summary" aria-label="Summary metrics">
+        <section id="summary" :aria-label="t('stats.summaryMetrics')">
           <StatsSummaryCards :stats="stats" />
         </section>
 
         <StatsBarChart
           v-if="categoryItems.length"
-          title="By Coin Type"
+          :title="t('stats.charts.byCoinType')"
           :items="categoryItems"
           :fill-class="(label: string) => label"
         >
@@ -40,20 +40,22 @@
                 color: colorForLabel(item.label),
                 border: `1px solid ${colorForLabelBackground(item.label, 30)}`,
               }"
-            >{{ item.label }}</span>
+            >{{ categoryLabel(item.label) }}</span>
           </template>
         </StatsBarChart>
 
         <StatsBarChart
           v-if="eraItems.length"
-          title="By Era"
+          :title="t('stats.charts.byEra')"
           :items="eraItems"
           :fill-class="() => 'fill-era'"
-        />
+        >
+          <template #label="{ item }">{{ eraLabel(item.label) }}</template>
+        </StatsBarChart>
 
         <StatsBarChart
           v-if="rulerItems.length"
-          title="Top Rulers"
+          :title="t('stats.charts.topRulers')"
           :items="rulerItems"
           :fill-class="() => 'fill-ruler'"
           :wide="true"
@@ -78,6 +80,8 @@ import StatsHeatMap from '@/components/stats/StatsHeatMap.vue'
 import StatsCoinFlowChart from '@/components/stats/StatsCoinFlowChart.vue'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 const store = useCoinsStore()
 const stats = computed(() => store.stats)

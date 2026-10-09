@@ -1,23 +1,23 @@
 ﻿<template>
   <div class="container">
-    <DesktopPageContext title="Notifications">
+    <DesktopPageContext :title="t('nav.notifications')">
       <template #actions>
         <AppIconButton
           v-if="notifications.length > 0 && hasUnread"
-          title="Mark all read"
+          :title="t('notifications.markAllRead')"
           @click="handleMarkAllRead"
         >
           <CheckCheck :size="20" />
         </AppIconButton>
       </template>
       <div class="page-header">
-        <h1>Notifications</h1>
+        <h1>{{ t('nav.notifications') }}</h1>
         <button
           v-if="notifications.length > 0 && hasUnread"
           class="btn btn-secondary btn-sm"
           @click="handleMarkAllRead"
         >
-          Mark all read
+          {{ t('notifications.markAllRead') }}
         </button>
       </div>
     </DesktopPageContext>
@@ -26,7 +26,7 @@
       v-if="loading && notifications.length === 0"
       class="py-12 text-center text-text-secondary"
     >
-      Loading notifications...
+      {{ t('notifications.loading') }}
     </div>
 
     <div
@@ -34,9 +34,9 @@
       class="empty-state card !px-6 !py-12 text-text-secondary"
     >
       <BellOff :size="48" class="mb-4 text-text-muted" />
-      <p>No notifications yet</p>
+      <p>{{ t('notifications.empty') }}</p>
       <p class="mx-auto mt-2 max-w-[360px] text-body text-text-muted">
-        You will be notified about follower requests, wishlist changes, and new coins from users you follow.
+        {{ t('notifications.emptyHint') }}
       </p>
     </div>
 
@@ -73,7 +73,7 @@
         </div>
         <button
           class="shrink-0 rounded-sm p-1 text-text-muted transition-colors hover:bg-status-error-tint hover:text-loss"
-          title="Delete"
+          :title="t('common.delete')"
           @click.stop="handleDelete(n.id)"
         >
           <X :size="16" />
@@ -82,7 +82,7 @@
 
       <div v-if="hasMore" class="py-4 text-center">
         <button class="btn btn-secondary btn-sm" @click="loadMore" :disabled="loading">
-          {{ loading ? 'Loading...' : 'Load more' }}
+          {{ loading ? t('common.loading') : t('common.loadMore') }}
         </button>
       </div>
     </div>
@@ -110,6 +110,7 @@ import FeaturedCoinModal from '@/components/coin/FeaturedCoinModal.vue'
 import type { Notification } from '@/types'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t, intlLocale } from '@/i18n'
 
 const router = useRouter()
 const { refresh: refreshBadge } = useNotifications()
@@ -177,14 +178,14 @@ async function handleClick(n: Notification) {
 
 function notificationHint(n: Notification): string {
   if (n.type === 'agentic_set_proposal_failed') {
-    const runLabel = n.referenceId ? ` Run #${n.referenceId}.` : ''
-    return `Try a narrower prompt by date range, mint, ruler, or series, then submit again.${runLabel}`
+    const runLabel = n.referenceId ? ` ${t('notifications.runNumber', { id: n.referenceId })}` : ''
+    return `${t('notifications.hints.proposalFailed')}${runLabel}`
   }
   if (n.type === 'agentic_set_proposal_ready') {
-    return 'Open review to inspect the proposed slots, scope interpretation, and collection match estimates before approving.'
+    return t('notifications.hints.proposalReady')
   }
   if (n.type === 'agentic_set_creation_failed') {
-    return 'Open Sets and retry from a reviewed proposal, or regenerate with clearer instructions.'
+    return t('notifications.hints.creationFailed')
   }
   return ''
 }
@@ -207,13 +208,13 @@ function formatTime(iso: string): string {
   const now = new Date()
   const diff = now.getTime() - d.getTime()
   const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return 'Just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return t('common.time.justNowCap')
+  if (mins < 60) return t('common.time.minutesAgo', { count: mins })
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return t('common.time.hoursAgo', { count: hours })
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return d.toLocaleDateString()
+  if (days < 7) return t('common.time.daysAgo', { count: days })
+  return d.toLocaleDateString(intlLocale())
 }
 
 onMounted(() => fetchNotifications(1))

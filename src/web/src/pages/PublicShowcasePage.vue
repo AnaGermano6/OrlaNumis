@@ -1,26 +1,29 @@
 <template>
   <div class="container py-4 pb-20 md:py-8 md:pb-20">
+    <div v-if="!auth.isAuthenticated" class="mb-4 flex justify-end">
+      <LanguageSwitcher />
+    </div>
     <div v-if="loading" class="loading-overlay">
       <div class="spinner"></div>
-      <p>Loading showcase...</p>
+      <p>{{ t('showcases.loadingOne') }}</p>
     </div>
 
     <div v-else-if="notFound" class="empty-state">
-      <h3>Showcase not found</h3>
-      <p>This showcase may have been removed or the link is incorrect.</p>
+      <h3>{{ t('showcases.notFound') }}</h3>
+      <p>{{ t('showcases.notFoundHint') }}</p>
     </div>
 
     <template v-else-if="showcase">
       <div class="mb-8 text-center">
         <h1 class="mb-2 mt-0 text-2xl text-text-primary">{{ showcase.title }}</h1>
-        <p v-if="showcase.ownerName" class="mb-2 mt-0 text-base text-gold">Curated by {{ showcase.ownerName }}</p>
+        <p v-if="showcase.ownerName" class="mb-2 mt-0 text-base text-gold">{{ t('showcases.curatedBy', { name: showcase.ownerName }) }}</p>
         <p v-if="showcase.description" class="mx-auto m-0 max-w-[600px] text-base leading-6 text-text-secondary">{{ showcase.description }}</p>
       </div>
 
       <div v-if="trayCoins.length" class="flex flex-col gap-4 pb-20">
         <div class="flex justify-center md:justify-end">
           <label class="inline-flex w-full items-center justify-between gap-3 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.04)] px-3 py-2 text-label font-semibold uppercase tracking-[0.08em] text-text-secondary md:w-auto md:justify-start">
-            <span>Coin size</span>
+            <span>{{ t('showcases.coinSize') }}</span>
             <input
               id="showcase-tray-size-slider"
               v-model.number="traySizeScale"
@@ -51,7 +54,7 @@
       </div>
 
       <div v-else class="empty-state">
-        <p>This showcase has no coins yet.</p>
+        <p>{{ t('showcases.noCoins') }}</p>
       </div>
     </template>
   </div>
@@ -66,6 +69,9 @@ import TrayControls from '@/components/tray/TrayControls.vue'
 import { useTrayPreference } from '@/composables/useTrayPreference'
 import { publicShowcaseMediaUrl } from '@/utils/media'
 import { getDrawerCoins, getTotalDrawers, type TrayCoin } from '@/utils/trayLayout'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import { useAuthStore } from '@/stores/auth'
+import { t } from '@/i18n'
 
 interface PublicCoinImage {
   id: number
@@ -91,6 +97,7 @@ interface PublicShowcase {
 }
 
 const route = useRoute()
+const auth = useAuthStore()
 const { feltColor } = useTrayPreference()
 const loading = ref(true)
 const notFound = ref(false)
@@ -102,7 +109,7 @@ const traySizeScale = ref(1)
 
 const trayCoins = computed((): TrayCoin[] => coins.value.map(coin => ({
   id: coin.id,
-  name: coin.name ?? 'Untitled',
+  name: coin.name ?? t('showcases.untitled'),
   diameterMm: coin.diameterMm ?? null,
   images: coin.images ?? [],
 })))

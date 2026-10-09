@@ -113,7 +113,7 @@ describe('SettingsDataSection — Custom Mint Locations', () => {
     mockGetMintLocations.mockResolvedValue(mintResponse([globalMint, userMint]))
     const wrapper = mount(SettingsDataSection)
     await flushPromises()
-    expect(wrapper.text()).toContain('1 locations')
+    expect(wrapper.text()).toContain('1 location')
   })
 
   it('calls createMintLocation with correct payload on form submit', async () => {

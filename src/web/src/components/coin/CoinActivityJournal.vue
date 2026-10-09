@@ -5,10 +5,10 @@
         v-model="input"
         type="text"
         class="form-input flex-1"
-        placeholder="e.g. Cleaned, sent to grading, displayed at show..."
+        :placeholder="t('journal.placeholder')"
         @keyup.enter="handleAdd"
       />
-      <button class="btn btn-primary btn-sm" :disabled="!input.trim()" @click="handleAdd">Add</button>
+      <button class="btn btn-primary btn-sm" :disabled="!input.trim()" @click="handleAdd">{{ t('common.add') }}</button>
     </div>
     <div v-if="entries.length" class="flex flex-col gap-[0.4rem]" :class="{ 'max-h-[16.5rem] overflow-y-auto pr-1': entries.length > 3 }">
       <div v-for="entry in entries" :key="entry.id" class="flex items-start justify-between gap-2 rounded-sm border border-border-subtle bg-card px-3 py-2">
@@ -19,13 +19,14 @@
         <button class="btn btn-ghost btn-xs" @click="$emit('delete', entry.id)">✕</button>
       </div>
     </div>
-    <p v-else class="text-body italic text-text-muted">No activity recorded yet.</p>
+    <p v-else class="text-body italic text-text-muted">{{ t('journal.empty') }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { CoinJournal } from '@/types'
+import { intlLocale, t } from '@/i18n'
 
 defineProps<{
   entries: CoinJournal[]
@@ -46,7 +47,7 @@ function handleAdd() {
 }
 
 function formatJournalDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(undefined, {
+  return new Date(dateStr).toLocaleDateString(intlLocale(), {
     month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 }

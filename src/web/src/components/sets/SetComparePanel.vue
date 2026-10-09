@@ -2,14 +2,14 @@
   <section class="mb-6 rounded-md border border-border-subtle bg-card p-6">
     <div class="mb-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
       <div>
-        <h2>Compare Sets</h2>
+        <h2>{{ t('sets.compare.title') }}</h2>
       </div>
       <button
         class="btn btn-secondary btn-sm"
         :disabled="selected.length === 0 || loading"
         @click="runCompare"
       >
-        {{ loading ? 'Comparing...' : 'Compare' }}
+        {{ loading ? t('sets.compare.comparing') : t('sets.compare.compare') }}
       </button>
     </div>
 
@@ -19,15 +19,15 @@
           id="set-compare-select"
           v-model.number="pendingSetId"
           class="form-select"
-          aria-label="Choose a set to compare"
+          :aria-label="t('sets.compare.choose')"
         >
-          <option :value="0" disabled>Select set to compare...</option>
+          <option :value="0" disabled>{{ t('sets.compare.selectPlaceholder') }}</option>
           <option v-for="set in sets" :key="set.id" :value="set.id">
             {{ set.name }}
           </option>
         </select>
         <button class="btn btn-secondary btn-sm" type="button" :disabled="pendingSetId === 0" @click="addPendingSet">
-          Add
+          {{ t('common.add') }}
         </button>
       </div>
       <div v-if="selected.length" class="flex flex-wrap gap-[0.35rem]">
@@ -41,18 +41,18 @@
           {{ setNameById(setId) }} ×
         </button>
       </div>
-      <p class="m-0 text-chip text-text-muted">{{ selected.length }} {{ selected.length === 1 ? 'set selected' : 'sets selected' }}</p>
+      <p class="m-0 text-chip text-text-muted">{{ t('sets.compare.selected', { count: selected.length }) }}</p>
     </div>
-    <p v-else class="mb-4 text-body text-text-secondary">Create another set to enable comparisons.</p>
+    <p v-else class="mb-4 text-body text-text-secondary">{{ t('sets.compare.needAnother') }}</p>
 
     <p v-if="error" class="mt-4 text-body text-confidence-low" role="alert">{{ error }}</p>
 
     <div v-if="results.length" class="mt-4 overflow-hidden rounded-sm border border-border-subtle" aria-live="polite">
       <div class="hidden bg-input px-3 py-2 text-label font-semibold uppercase tracking-[0.08em] text-text-muted md:grid md:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] md:gap-3">
-        <span>Set</span>
-        <span>Start</span>
-        <span>End</span>
-        <span>Change</span>
+        <span>{{ t('coinDetail.tags.typeSet') }}</span>
+        <span>{{ t('sets.compare.start') }}</span>
+        <span>{{ t('sets.compare.end') }}</span>
+        <span>{{ t('common.change') }}</span>
       </div>
       <div
         v-for="result in results"
@@ -79,6 +79,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { CoinSetComparison, CoinSetSummary } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   sets: CoinSetSummary[]
@@ -105,7 +106,7 @@ function removeSelectedSet(setId: number) {
 }
 
 function setNameById(setId: number): string {
-  return props.sets.find((set) => set.id === setId)?.name ?? 'Set'
+  return props.sets.find((set) => set.id === setId)?.name ?? t('coinDetail.tags.typeSet')
 }
 
 function runCompare() {

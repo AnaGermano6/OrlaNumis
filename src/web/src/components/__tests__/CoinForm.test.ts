@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import CoinForm from '../CoinForm.vue'
 
 const apiMocks = vi.hoisted(() => ({
@@ -23,9 +24,9 @@ vi.mock('@/composables/usePwa', () => ({
 
 vi.mock('@/composables/useCoinOptions', () => ({
   useCoinOptions: () => ({
-    categoryOptions: { value: ['Roman', 'Greek'] },
-    eraOptions: { value: ['ancient'] },
-    materialOptions: { value: ['Silver'] },
+    categoryOptions: ref(['Roman', 'Greek']),
+    eraOptions: ref(['ancient']),
+    materialOptions: ref(['Silver']),
     loadOptions: vi.fn(),
   }),
 }))
@@ -59,7 +60,7 @@ describe('CoinForm', () => {
 
     // Section titles are <h2>s (not <legend>s) styled with the Tailwind
     // `text-lg` utility instead of a dedicated `.form-section-title` class.
-    expect(source).toContain('<h2 class="mb-4 font-display text-lg font-medium text-gold">Basic Information</h2>')
+    expect(source).toContain(`<h2 class="mb-4 font-display text-lg font-medium text-gold">{{ t('coinForm.sections.basic') }}</h2>`)
     expect(source).not.toContain('<legend>Basic Information</legend>')
     // `text-lg` resolves to the same 1.2rem the old CSS block hard-coded, and
     // `mb-4` is the Tailwind 1rem spacing step used for the old bottom margin.
@@ -88,7 +89,7 @@ describe('CoinForm', () => {
 
     expect(source).toContain('v-if="form.category === \'Roman\'"')
     expect(source).toContain('<ImperialFigurePicker v-model="form.romanImperialFigureId!" />')
-    expect(source).toContain('<AutocompleteInput v-model="form.ruler!" field="ruler" placeholder="e.g. Augustus" />')
+    expect(source).toContain(`<AutocompleteInput v-model="form.ruler!" field="ruler" :placeholder="t('coinForm.rulerPlaceholder')" />`)
     expect(source).toContain("import ImperialFigurePicker from '@/components/ImperialFigurePicker.vue'")
     expect(source).toContain("if (category !== 'Roman')")
     expect(source).toContain('props.form.romanImperialFigureId = null')
@@ -99,10 +100,10 @@ describe('CoinForm', () => {
 
     expect(source).not.toContain('<input v-model="form.mint" class="form-input" placeholder="e.g. Rome" />')
     expect(source).toContain('v-model="mintLocationIdModel"')
-    expect(source).toContain('<option value="">Unknown</option>')
-    expect(source).toContain('label="My Mints"')
-    expect(source).toContain('label="Mints"')
-    expect(source).toContain('<option value="__create__">+ Create new mint…</option>')
+    expect(source).toContain(`<option value="">{{ t('coinForm.mintUnknown') }}</option>`)
+    expect(source).toContain(`:label="t('coinForm.myMints')"`)
+    expect(source).toContain(`:label="t('coinForm.mints')"`)
+    expect(source).toContain(`<option value="__create__">{{ t('coinForm.createMint') }}</option>`)
     expect(source).toContain("import CreateMintModal from '@/components/CreateMintModal.vue'")
   })
 
@@ -110,7 +111,7 @@ describe('CoinForm', () => {
     const source = fs.readFileSync(coinFormPath, 'utf8')
 
     expect(source).toContain('form.mint && !form.mintLocationId')
-    expect(source).toContain('Unlinked legacy mint')
+    expect(source).toContain("t('coinForm.unlinkedMint'")
   })
 
   it('opens the create-mint modal from the dropdown and adopts the newly created mint', () => {

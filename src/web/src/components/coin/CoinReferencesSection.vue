@@ -1,10 +1,10 @@
 <template>
   <section id="catalog-references" class="mb-6 scroll-mt-24">
     <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-      <h3 class="m-0 text-base font-medium text-text-primary">Catalog References</h3>
+      <h3 class="m-0 text-base font-medium text-text-primary">{{ t('coinDetail.references.title') }}</h3>
       <div class="inline-flex flex-wrap items-center gap-[0.35rem]">
         <button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="startCreate">
-          Add Reference
+          {{ t('coinDetail.references.add') }}
         </button>
         <button
           ref="numistaDisclosure"
@@ -16,7 +16,7 @@
           @keydown.enter.prevent="toggleNumista"
           @keydown.space.prevent="toggleNumista"
         >
-          Search Numista
+          {{ t('coinDetail.references.searchNumista') }}
         </button>
       </div>
     </div>
@@ -41,7 +41,7 @@
     </div>
 
     <div v-if="!rows.length && !editing" class="section-content-card text-body text-text-secondary">
-      No structured references added yet.
+      {{ t('coinDetail.references.empty') }}
     </div>
 
     <div v-else class="flex flex-col gap-2">
@@ -54,16 +54,16 @@
           <form class="flex w-full flex-col gap-2" @submit.prevent="saveEdit">
             <div class="grid gap-2 md:grid-cols-3">
               <select v-model="draft.catalog" class="form-input">
-                <option value="" disabled>Select catalog</option>
+                <option value="" disabled>{{ t('coinDetail.references.selectCatalog') }}</option>
                 <option v-for="opt in editingCatalogOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
-              <input v-model.trim="draft.volume" class="form-input" placeholder="Volume (optional)" />
-              <input v-model.trim="draft.number" class="form-input" placeholder="Number" />
+              <input v-model.trim="draft.volume" class="form-input" :placeholder="t('coinDetail.references.volume')" />
+              <input v-model.trim="draft.number" class="form-input" :placeholder="t('coinDetail.references.number')" />
             </div>
-            <input v-model.trim="draft.uri" class="form-input" placeholder="Catalog Reference URL (optional)" />
+            <input v-model.trim="draft.uri" class="form-input" :placeholder="t('coinDetail.references.url')" />
             <div class="inline-flex flex-wrap items-center gap-[0.35rem]">
-              <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">Save</button>
-              <button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="cancelEdit">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">{{ t('common.save') }}</button>
+              <button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="cancelEdit">{{ t('common.cancel') }}</button>
             </div>
           </form>
         </template>
@@ -81,13 +81,13 @@
               :href="reference.uri"
               class="btn btn-ghost btn-xs"
             >
-              Open
+              {{ t('common.open') }}
             </SafeExternalLink>
             <button type="button" class="btn btn-ghost btn-xs" :disabled="saving" @click="startEdit(reference)">
-              Edit
+              {{ t('common.edit') }}
             </button>
             <button type="button" class="btn btn-danger btn-xs" :disabled="saving" @click="removeReference(reference)">
-              Delete
+              {{ t('common.delete') }}
             </button>
           </div>
         </template>
@@ -97,16 +97,16 @@
         <form class="flex w-full flex-col gap-2" @submit.prevent="saveCreate">
           <div class="grid gap-2 md:grid-cols-3">
             <select v-model="draft.catalog" class="form-input">
-              <option value="" disabled>Select catalog</option>
+              <option value="" disabled>{{ t('coinDetail.references.selectCatalog') }}</option>
               <option v-for="c in catalogs" :key="c.id" :value="c.catalog">{{ c.catalog }} — {{ c.displayName }}</option>
             </select>
-            <input v-model.trim="draft.volume" class="form-input" placeholder="Volume (optional)" />
-            <input v-model.trim="draft.number" class="form-input" placeholder="Number" />
+            <input v-model.trim="draft.volume" class="form-input" :placeholder="t('coinDetail.references.volume')" />
+            <input v-model.trim="draft.number" class="form-input" :placeholder="t('coinDetail.references.number')" />
           </div>
-          <input v-model.trim="draft.uri" class="form-input" placeholder="Catalog Reference URL (optional)" />
+          <input v-model.trim="draft.uri" class="form-input" :placeholder="t('coinDetail.references.url')" />
           <div class="inline-flex flex-wrap items-center gap-[0.35rem]">
-            <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">Save</button>
-            <button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="cancelEdit">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">{{ t('common.save') }}</button>
+            <button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="cancelEdit">{{ t('common.cancel') }}</button>
           </div>
         </form>
       </article>
@@ -121,6 +121,7 @@ import type { Coin, CoinReference, CatalogRegistry, NumistaCandidate } from '@/t
 import { useDialog } from '@/composables/useDialog'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import CoinNumistaPanel from '@/components/coin/CoinNumistaPanel.vue'
+import { t } from '@/i18n'
 
 type ReferenceDraft = {
   catalog: string
@@ -184,7 +185,7 @@ const rows = computed(() =>
 const editingCatalogOptions = computed(() => {
   const opts = catalogs.value.map(c => ({ value: c.catalog, label: `${c.catalog} — ${c.displayName}` }))
   if (draft.value.catalog && !catalogs.value.some(c => c.catalog === draft.value.catalog)) {
-    opts.push({ value: draft.value.catalog, label: `${draft.value.catalog} (legacy)` })
+    opts.push({ value: draft.value.catalog, label: t('coinDetail.references.legacy', { catalog: draft.value.catalog }) })
   }
   return opts
 })
@@ -267,7 +268,7 @@ function cancelEdit() {
 
 async function saveCreate() {
   if (!draft.value.catalog || !draft.value.number) {
-    await showAlert('Catalog and number are required.', { title: 'Missing Data' })
+    await showAlert(t('coinDetail.references.required'), { title: t('coinDetail.references.missingData') })
     return
   }
 
@@ -278,7 +279,7 @@ async function saveCreate() {
     editing.value = null
     emit('changed')
   } catch (error) {
-    await showAlert(getErrorMessage(error), { title: 'Failed to add reference' })
+    await showAlert(getErrorMessage(error), { title: t('coinDetail.references.addFailed') })
   } finally {
     saving.value = false
   }
@@ -287,7 +288,7 @@ async function saveCreate() {
 async function saveEdit() {
   if (editing.value?.mode !== 'edit') return
   if (!draft.value.catalog || !draft.value.number) {
-    await showAlert('Catalog and number are required.', { title: 'Missing Data' })
+    await showAlert(t('coinDetail.references.required'), { title: t('coinDetail.references.missingData') })
     return
   }
 
@@ -301,7 +302,7 @@ async function saveEdit() {
     editing.value = null
     emit('changed')
   } catch (error) {
-    await showAlert(getErrorMessage(error), { title: 'Failed to update reference' })
+    await showAlert(getErrorMessage(error), { title: t('coinDetail.references.updateFailed') })
   } finally {
     saving.value = false
   }
@@ -309,8 +310,8 @@ async function saveEdit() {
 
 async function removeReference(reference: CoinReference) {
   const confirmed = await showConfirm(
-    `Delete ${reference.catalog} ${reference.volume ? `${reference.volume} ` : ''}${reference.number}?`,
-    { title: 'Delete Reference', variant: 'danger' },
+    t('coinDetail.references.confirmDelete', { reference: `${reference.catalog} ${reference.volume ? `${reference.volume} ` : ''}${reference.number}` }),
+    { title: t('coinDetail.references.deleteTitle'), variant: 'danger' },
   )
   if (!confirmed) return
 
@@ -320,7 +321,7 @@ async function removeReference(reference: CoinReference) {
     localReferences.value = localReferences.value.filter((item) => item.id !== reference.id)
     emit('changed')
   } catch (error) {
-    await showAlert(getErrorMessage(error), { title: 'Failed to delete reference' })
+    await showAlert(getErrorMessage(error), { title: t('coinDetail.references.deleteFailed') })
   } finally {
     saving.value = false
   }
@@ -328,6 +329,6 @@ async function removeReference(reference: CoinReference) {
 
 function getErrorMessage(error: unknown): string {
   const err = error as { response?: { data?: { error?: string } } }
-  return err.response?.data?.error || 'Request failed.'
+  return err.response?.data?.error || t('common.requestFailed')
 }
 </script>

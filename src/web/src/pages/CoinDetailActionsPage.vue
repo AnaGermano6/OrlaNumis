@@ -1,5 +1,5 @@
 <template>
-  <CoinDetailSectionPageShell section-title="Actions">
+  <CoinDetailSectionPageShell :section-title="t('coinDetail.sections.actions.title')">
     <template #default="{ coin, refresh }">
       <CoinActionsPanel
         :coin-id="coin.id"
@@ -30,6 +30,7 @@ import { usePwa } from '@/composables/usePwa'
 import { getJournalEntries } from '@/api/client'
 import type { CoinJournal } from '@/types'
 import { ref } from 'vue'
+import { t } from '@/i18n'
 
 const { isPwa } = usePwa()
 const route = useRoute()

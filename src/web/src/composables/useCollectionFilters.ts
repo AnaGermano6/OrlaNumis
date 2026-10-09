@@ -1,10 +1,10 @@
 import { ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useCoinsStore } from '@/stores/coins'
-import { getAppSettings, getSets, getTags } from '@/api/client'
+import { getSets, getTags } from '@/api/client'
+import { coinVocabulary, loadCoinVocabulary } from '@/i18n/coinVocabulary'
 import { usePwa } from '@/composables/usePwa'
 import { COIN_ERAS, normalizeCoinSetType } from '@/types'
 import type { CollectionSetOption } from '@/types'
-import { parseOptionList } from '@/utils/options'
 
 const RANDOM_SEED_KEY = 'coins:randomSeed'
 const PWA_RESUME_THRESHOLD_MS = 30_000
@@ -44,8 +44,7 @@ export function useCollectionFilters() {
 
   async function fetchUserTags() {
     try {
-      const settingsPromise = getAppSettings().catch(() => null)
-      const [tagRes, setRes, settingsRes] = await Promise.all([getTags(), getSets(), settingsPromise])
+      const [tagRes, setRes] = await Promise.all([getTags(), getSets(), loadCoinVocabulary()])
       const tagOptions = (tagRes.data?.tags ?? []).map((tag) => ({
         id: tag.id,
         name: tag.name,
@@ -64,7 +63,7 @@ export function useCollectionFilters() {
           source: 'set' as const,
         }))
       userTags.value = [...tagOptions, ...setOptions]
-      eraOptions.value = parseOptionList(settingsRes?.data?.CoinEras, COIN_ERAS)
+      eraOptions.value = [...coinVocabulary.eras]
     } catch { /* ignore */ }
   }
 

@@ -1,5 +1,5 @@
 <template>
-  <CoinDetailSectionPageShell section-title="Metadata Health">
+  <CoinDetailSectionPageShell :section-title="t('coinDetail.sections.health.title')">
     <template #default="{ coin }">
       <CoinHealthChecklist
         v-if="coinHealth && !coin.isWishlist && !coin.isSold"
@@ -10,9 +10,9 @@
       />
       <div v-else class="card p-6 text-center text-text-secondary text-base">
         <p v-if="coin.isWishlist || coin.isSold">
-          Metadata health scoring is only available for active coins in your collection.
+          {{ t('coinDetail.health.activeOnly') }}
         </p>
-        <p v-else>No health data available for this coin yet.</p>
+        <p v-else>{{ t('coinDetail.health.noData') }}</p>
       </div>
     </template>
   </CoinDetailSectionPageShell>
@@ -26,6 +26,7 @@ import CoinHealthChecklist from '@/components/coin/CoinHealthChecklist.vue'
 import { getCoinHealth } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
 import type { CoinHealthItem, HealthQuickAction } from '@/types'
+import { t } from '@/i18n'
 
 const route = useRoute()
 const router = useRouter()
@@ -63,7 +64,7 @@ function handleHealthQuickAction(coinId: number, action: HealthQuickAction) {
       router.push(`/coin/${coinId}/analysis`)
       break
     default:
-      showAlert('Action unavailable')
+      showAlert(t('coinDetail.health.actionUnavailable'))
   }
 }
 </script>

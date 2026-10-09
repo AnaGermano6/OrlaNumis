@@ -1,15 +1,15 @@
 <template>
   <div class="container">
     <div class="form-wrapper">
-      <DesktopPageContext title="Edit Coin">
+      <DesktopPageContext :title="t('editCoin.title')">
         <div class="page-header">
-          <h1>Edit Coin</h1>
+          <h1>{{ t('editCoin.title') }}</h1>
         </div>
       </DesktopPageContext>
       <div v-if="loading" class="loading-overlay">
         <div class="spinner"></div>
       </div>
-      <CoinForm v-else ref="coinFormRef" :form="form" :coin-id="form.id" submit-label="Save Changes" :loading="saving" @submit="handleSubmit" />
+      <CoinForm v-else ref="coinFormRef" :form="form" :coin-id="form.id" :submit-label="t('common.saveChanges')" :loading="saving" @submit="handleSubmit" />
     </div>
   </div>
 </template>
@@ -23,6 +23,7 @@ import type { Coin } from '@/types'
 import { useDialog } from '@/composables/useDialog'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
+import { t } from '@/i18n'
 
 const { showAlert } = useDialog()
 const { refresh: refreshQuickAccess } = useQuickAccess()
@@ -43,7 +44,7 @@ onMounted(async () => {
       form.purchaseDate = form.purchaseDate.substring(0, 10)
     }
   } catch {
-    await showAlert('Failed to load coin', { title: 'Error' })
+    await showAlert(t('editCoin.loadFailed'), { title: t('common.error') })
     router.push('/')
   } finally {
     loading.value = false
@@ -119,21 +120,21 @@ async function handleSubmit() {
 
     await refreshQuickAccess()
     if (cleanupPending) {
-      await showAlert('Your changes were saved. Old image files are awaiting cleanup; the API will retry on startup. Do not upload the replacement again.', { title: 'Image cleanup pending' })
+      await showAlert(t('editCoin.cleanupPending'), { title: t('editCoin.cleanupPendingTitle') })
     }
     router.back()
   } catch (error: unknown) {
     const code = (error as { response?: { data?: { code?: string } } })?.response?.data?.code
     if (!coinSaved && code === 'slot_occupied') {
       await coinFormRef.value?.refreshStorageOccupancy()
-      await showAlert('That tray slot was just taken. Choose another available slot; your form has been preserved.', { title: 'Slot unavailable' })
+      await showAlert(t('addCoin.slotTaken'), { title: t('addCoin.slotUnavailable') })
       return
     }
     await showAlert(
       coinSaved
-        ? 'Coin details were saved, but the image could not be uploaded. Try adding the image again.'
-        : 'Failed to update coin',
-      { title: 'Error' },
+        ? t('editCoin.imageNotUploaded')
+        : t('editCoin.updateFailed'),
+      { title: t('common.error') },
     )
   } finally {
     saving.value = false

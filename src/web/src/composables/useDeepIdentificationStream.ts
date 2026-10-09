@@ -1,6 +1,7 @@
 import { ref, shallowRef } from 'vue'
 import { refreshAccessToken } from '@/api/client'
 import type { DeepJobStatus, DeepStreamEvent, DeepStreamTerminalPayload } from '@/types'
+import { t } from '@/i18n'
 
 /**
  * Replayable/resumable SSE reader for a Deep Analysis job's event stream
@@ -138,12 +139,12 @@ export function useDeepIdentificationStream() {
       const resp = await fetchWithAuthRetry(`/api/deep-identification/jobs/${jobId}/events${query}`, controllerForThisConnect.signal)
       if (!resp.ok) {
         error.value = resp.status === 429
-          ? 'Too many active viewers for this job. Please try again shortly.'
+          ? t('deepAnalysis.errors.tooManyViewers')
           : resp.status === 410
-            ? 'This Deep Analysis result has expired.'
+            ? t('deepAnalysis.errors.expired')
             : resp.status === 404
-              ? 'Deep Analysis job not found.'
-              : `Unable to open the Deep Analysis stream (HTTP ${resp.status}).`
+              ? t('deepAnalysis.errors.notFound')
+              : t('deepAnalysis.errors.streamHttp', { status: resp.status })
         streaming.value = false
         return
       }
@@ -151,7 +152,7 @@ export function useDeepIdentificationStream() {
 
       const reader = resp.body?.getReader()
       if (!reader) {
-        error.value = 'Streaming is not supported in this browser.'
+        error.value = t('deepAnalysis.errors.streamUnsupported')
         return
       }
       const decoder = new TextDecoder()
@@ -171,7 +172,7 @@ export function useDeepIdentificationStream() {
       if (buffer.trim()) handleFrame(buffer)
     } catch (err: unknown) {
       if (controllerForThisConnect.signal.aborted) return
-      error.value = err instanceof Error ? err.message : 'Deep Analysis stream failed.'
+      error.value = err instanceof Error ? err.message : t('deepAnalysis.errors.streamFailed')
     } finally {
       connected.value = false
       streaming.value = false

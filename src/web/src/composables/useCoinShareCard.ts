@@ -3,8 +3,7 @@ import type { Coin } from '@/types'
 import { getShareCardFilename, getShareImageUrls, renderCoinShareCard } from '@/utils/coinShareCard'
 import type { CoinShareCardContext } from '@/utils/coinShareCard'
 import { useDialog } from '@/composables/useDialog'
-
-const APP_NAME = 'Aurearia - Coin Collection'
+import { t } from '@/i18n'
 
 export type CoinShareResultMode = 'shared' | 'downloaded'
 
@@ -45,7 +44,7 @@ export function useCoinShareCard() {
         coin,
         imageUrl: imageUrls[0] ?? null,
         imageUrls,
-        appName: APP_NAME,
+        appName: t('app.brandFull'),
         context: options.context,
       })
       const filename = getShareCardFilename(coin)
@@ -54,8 +53,10 @@ export function useCoinShareCard() {
       const navigatorWithShare = navigator as unknown as ShareNavigator
       const shareData: ShareData = {
         files: [file],
-        title: coin.name || 'Coin share card',
-        text: contextSummary ? `${contextSummary}\n\nShared from ${APP_NAME}` : `Shared from ${APP_NAME}`,
+        title: coin.name || t('shareCard.fallbackTitle'),
+        text: contextSummary
+          ? `${contextSummary}\n\n${t('shareCard.sharedFrom', { app: t('app.brandFull') })}`
+          : t('shareCard.sharedFrom', { app: t('app.brandFull') }),
       }
 
       if (navigatorWithShare.share && navigatorWithShare.canShare?.(shareData)) {
@@ -66,8 +67,8 @@ export function useCoinShareCard() {
       downloadBlob(blob, filename)
       return { mode: 'downloaded' }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to generate share card.'
-      await showAlert(message, { title: 'Share Failed' })
+      const message = error instanceof Error ? error.message : t('shareCard.generateFailed')
+      await showAlert(message, { title: t('shareCard.shareFailedTitle') })
       throw error
     } finally {
       sharing.value = false

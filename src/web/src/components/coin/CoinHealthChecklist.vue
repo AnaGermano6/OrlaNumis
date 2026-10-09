@@ -11,7 +11,7 @@
           'border-status-error-border bg-status-error-bg text-loss': grade.toLowerCase() === 'f',
         }"
       >
-        <span class="section-label !mb-0 opacity-80">Health Score</span>
+        <span class="section-label !mb-0 opacity-80">{{ t('health.score') }}</span>
         <span class="text-lg font-bold">{{ score }}</span>
         <span class="text-label font-semibold uppercase tracking-[0.08em]">{{ grade }}</span>
       </div>
@@ -22,13 +22,13 @@
       class="flex items-center gap-2 rounded-sm border border-status-success-border bg-status-success-bg px-3 py-3 text-body font-medium text-gain"
     >
       <CircleCheck :size="20" />
-      <span>All quality checks passed</span>
+      <span>{{ t('health.allPassed') }}</span>
     </div>
 
     <div v-else class="flex flex-col gap-3">
       <div class="section-label !mb-0 flex items-center gap-2 text-text-secondary">
         <AlertCircle :size="16" />
-        Needs Attention ({{ missingItems.length }})
+        {{ t('collection.needsAttention.title') }} ({{ missingItems.length }})
       </div>
 
       <div class="flex flex-col gap-2">
@@ -72,6 +72,7 @@
 <script setup lang="ts">
 import { AlertCircle, CircleCheck, AlertTriangle, Info, AlertOctagon } from 'lucide-vue-next'
 import type { HealthGrade, MissingChecklistItem, HealthQuickAction } from '@/types'
+import { t } from '@/i18n'
 
 defineProps<{
   score: number
@@ -96,20 +97,20 @@ function getSeverityIcon(severity: string) {
 
 function formatDimension(dimension: string): string {
   const labels: Record<string, string> = {
-    metadata: 'Metadata',
-    images: 'Images',
-    valuation: 'Valuation',
-    ai: 'AI Analysis',
+    metadata: t('health.dimensions.metadata'),
+    images: t('health.dimensions.images'),
+    valuation: t('health.dimensions.valuation'),
+    ai: t('coinDetail.sections.analysis.title'),
   }
   return labels[dimension] || dimension
 }
 
 function formatQuickAction(action: HealthQuickAction): string {
   const labels: Record<HealthQuickAction, string> = {
-    edit_metadata: 'Edit',
-    upload_images: 'Upload',
-    run_valuation: 'Valuate',
-    run_ai_analysis: 'Analyze',
+    edit_metadata: t('collection.needsAttention.actions.edit'),
+    upload_images: t('collection.needsAttention.actions.upload'),
+    run_valuation: t('collection.needsAttention.actions.valuate'),
+    run_ai_analysis: t('collection.needsAttention.actions.analyze'),
   }
   return labels[action] || action
 }

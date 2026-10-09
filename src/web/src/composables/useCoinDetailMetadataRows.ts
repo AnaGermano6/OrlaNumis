@@ -3,8 +3,10 @@
 
 import { computed } from 'vue'
 import type { Coin, CoinDetailMetadataRow } from '@/types'
-import { formatCurrency } from '@/utils/format'
+import { formatCurrency, materialLabel } from '@/utils/format'
 import { sanitizeExternalUrl } from '@/composables/useSafeExternalLink'
+import { intlLocale, t } from '@/i18n'
+import { eraLabel } from '@/i18n/coinVocabulary'
 
 export function useCoinDetailMetadataRows(coin: Coin | null) {
   const rows = computed<CoinDetailMetadataRow[]>(() => {
@@ -16,7 +18,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
     if (coin.purchasePrice != null) {
       result.push({
         key: 'purchasePrice',
-        label: 'Purchase Price',
+        label: t('coinFields.purchasePrice'),
         value: formatCurrency(coin.purchasePrice),
       })
     }
@@ -24,7 +26,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
     if (coin.currentValue != null) {
       result.push({
         key: 'currentValue',
-        label: 'Current Value',
+        label: t('coinFields.currentValue'),
         value: formatCurrency(coin.currentValue),
         valueClass: 'gold',
       })
@@ -33,15 +35,15 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
     if (coin.purchaseDate) {
       result.push({
         key: 'purchaseDate',
-        label: 'Purchase Date',
-        value: new Date(coin.purchaseDate).toLocaleDateString(),
+        label: t('coinFields.purchaseDate'),
+        value: new Date(coin.purchaseDate).toLocaleDateString(intlLocale()),
       })
     }
 
     if (coin.vendorSku) {
       result.push({
         key: 'vendorSku',
-        label: 'Vendor SKU',
+        label: t('coinFields.vendorSku'),
         value: coin.vendorSku,
       })
     }
@@ -49,14 +51,14 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
     if (coin.vendorInvoice) {
       result.push({
         key: 'vendorInvoice',
-        label: 'Vendor Invoice',
+        label: t('coinFields.vendorInvoice'),
         value: coin.vendorInvoice,
       })
     }
 
     result.push({
       key: 'storageLocation',
-      label: 'Storage Location',
+      label: t('coinFields.storageLocation'),
       value: coin.storageLocation?.name ?? '—',
     })
 
@@ -64,7 +66,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
     if (coin.denomination) {
       result.push({
         key: 'denomination',
-        label: 'Denomination',
+        label: t('coinFields.denomination'),
         value: coin.denomination,
       })
     }
@@ -72,15 +74,15 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
     if (coin.era) {
       result.push({
         key: 'era',
-        label: 'Era',
-        value: coin.era,
+        label: t('coinFields.era'),
+        value: eraLabel(coin.era),
       })
     }
 
     if (coin.mint) {
       result.push({
         key: 'mint',
-        label: 'Mint',
+        label: t('coinFields.mint'),
         value: coin.mint,
       })
     }
@@ -88,15 +90,15 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
     if (coin.material) {
       result.push({
         key: 'material',
-        label: 'Material',
-        value: coin.material,
+        label: t('coinFields.material'),
+        value: materialLabel(coin.material),
       })
     }
 
     if (coin.weightGrams != null) {
       result.push({
         key: 'weight',
-        label: 'Weight',
+        label: t('coinFields.weight'),
         value: `${coin.weightGrams}g`,
       })
     }
@@ -104,7 +106,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
     if (coin.diameterMm != null) {
       result.push({
         key: 'diameter',
-        label: 'Diameter',
+        label: t('coinFields.diameter'),
         value: `${coin.diameterMm}mm`,
       })
     }
@@ -112,7 +114,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
     if (coin.grade) {
       result.push({
         key: 'grade',
-        label: 'Grade',
+        label: t('coinFields.grade'),
         value: coin.grade,
         valueClass: 'gold',
       })

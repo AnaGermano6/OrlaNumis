@@ -20,6 +20,7 @@ import NumistaLookupPanel from '@/components/numista/NumistaLookupPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import { buildDirectNumistaEvidence } from '@/utils/numistaLookup'
 import type { Coin, NumistaCandidate } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   coinId: number
@@ -74,11 +75,11 @@ async function addSelectedReference(candidate: NumistaCandidate) {
       number: String(candidate.id),
       uri: candidate.canonicalUrl,
     })
-    saveMessage.value = 'Numista reference added.'
+    saveMessage.value = t('coinDetail.numista.added')
     emit('referenceAdded', candidate)
   } catch (error) {
     saveError.value = true
-    saveMessage.value = getApiErrorMessage(error) || 'The Numista reference could not be added.'
+    saveMessage.value = getApiErrorMessage(error) || t('coinDetail.numista.addFailed')
   } finally {
     saving.value = false
   }

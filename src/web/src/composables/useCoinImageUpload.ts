@@ -1,5 +1,6 @@
 import { type MaybeRefOrGetter, ref, toValue } from 'vue'
 import { proxyImage, uploadImage } from '@/api/client'
+import { t } from '@/i18n'
 
 /**
  * Image upload seam extracted from `CoinActionsPanel.vue` (F6 god-component
@@ -28,31 +29,31 @@ export function useCoinImageUpload(
     const file = (e.target as HTMLInputElement).files?.[0]
     if (!file) return
 
-    uploadStatus.value = 'Uploading...'
+    uploadStatus.value = t('upload.uploading')
     uploadError.value = false
 
     try {
       await uploadImage(toValue(coinId), file, uploadType.value, isFirstImage())
-      uploadStatus.value = 'Upload complete!'
+      uploadStatus.value = t('upload.complete')
       options.onUploaded?.()
     } catch {
-      uploadStatus.value = 'Upload failed'
+      uploadStatus.value = t('upload.failed')
       uploadError.value = true
     }
   }
 
   async function handleCameraCaptured(file: File) {
-    uploadStatus.value = 'Uploading...'
+    uploadStatus.value = t('upload.uploading')
     uploadError.value = false
 
     try {
       // Pass circleClip=true for obverse/reverse, false for other types
       const shouldCircleClip = uploadType.value === 'obverse' || uploadType.value === 'reverse'
       await uploadImage(toValue(coinId), file, uploadType.value, isFirstImage(), shouldCircleClip)
-      uploadStatus.value = 'Upload complete!'
+      uploadStatus.value = t('upload.complete')
       options.onUploaded?.()
     } catch {
-      uploadStatus.value = 'Upload failed'
+      uploadStatus.value = t('upload.failed')
       uploadError.value = true
     }
   }
@@ -61,25 +62,25 @@ export function useCoinImageUpload(
     if (!imageUrl.value) return
 
     urlLoading.value = true
-    uploadStatus.value = 'Fetching image...'
+    uploadStatus.value = t('upload.fetching')
     uploadError.value = false
 
     try {
       const imgRes = await proxyImage(imageUrl.value)
       const blob = imgRes.data as Blob
       if (blob.size === 0) {
-        uploadStatus.value = 'No image data received from URL'
+        uploadStatus.value = t('upload.noData')
         uploadError.value = true
         return
       }
       const ext = blob.type.includes('png') ? '.png' : '.jpg'
       const file = new File([blob], `${uploadType.value}${ext}`, { type: blob.type || 'image/jpeg' })
       await uploadImage(toValue(coinId), file, uploadType.value, isFirstImage())
-      uploadStatus.value = 'Image saved from URL!'
+      uploadStatus.value = t('upload.savedFromUrl')
       imageUrl.value = ''
       options.onUploaded?.()
     } catch {
-      uploadStatus.value = 'Failed to fetch image from URL'
+      uploadStatus.value = t('upload.fetchFailed')
       uploadError.value = true
     } finally {
       urlLoading.value = false

@@ -8,6 +8,9 @@ import { CATEGORY_COLORS } from '@/types'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t, intlLocale } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
+import { materialLabel } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -55,7 +58,7 @@ function cycleImage() {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
+  return new Date(iso).toLocaleDateString(intlLocale(), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -74,7 +77,7 @@ async function loadCoin() {
     comments.value = (result.data as { comments?: CoinComment[] }).comments || []
     rating.value = (result.data as { rating?: CoinRating }).rating || { average: 0, count: 0, userRating: 0 }
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Failed to load coin'
+    const msg = e instanceof Error ? e.message : t('social.coin.loadFailed')
     if (typeof e === 'object' && e !== null && 'response' in e) {
       const axiosErr = e as { response?: { data?: { error?: string } } }
       error.value = axiosErr.response?.data?.error || msg
@@ -130,25 +133,25 @@ onMounted(loadCoin)
   <div class="mx-auto w-full max-w-[1100px] px-4 py-8 md:px-6">
     <div v-if="loading" class="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-text-secondary">
       <div class="spinner" />
-      <p>Loading coin details…</p>
+      <p>{{ t('social.coin.loading') }}</p>
     </div>
 
     <div v-else-if="error" class="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-text-secondary">
       <p>{{ error }}</p>
       <button class="btn btn-secondary btn-sm" @click="goBack">
-        <ArrowLeft :size="18" /> Go Back
+        <ArrowLeft :size="18" /> {{ t('social.coin.goBack') }}
       </button>
     </div>
 
     <template v-else-if="coin">
       <DesktopPageContext :title="coin.name">
         <template #actions>
-          <AppIconButton title="Back to Gallery" @click="goBack"><ArrowLeft :size="20" /></AppIconButton>
+          <AppIconButton :title="t('social.coin.backToGallery')" @click="goBack"><ArrowLeft :size="20" /></AppIconButton>
         </template>
         <header class="mb-6 flex flex-col items-start gap-2 md:flex-row md:items-center md:gap-4">
           <button class="btn btn-secondary btn-sm" @click="goBack">
             <ArrowLeft :size="18" />
-            <span>Back to Gallery</span>
+            <span>{{ t('social.coin.backToGallery') }}</span>
           </button>
           <h1 class="m-0 text-xl font-semibold text-heading">{{ coin.name }}</h1>
         </header>
@@ -183,34 +186,34 @@ onMounted(loadCoin)
             </div>
           </div>
           <div v-else class="rounded-md border border-border-subtle bg-card px-8 py-16 text-center text-text-muted">
-            No images available
+            {{ t('social.coin.noImages') }}
           </div>
         </section>
 
         <div class="space-y-4">
           <section class="card p-5">
-            <h2 class="mb-4 flex items-center gap-2 text-lg font-medium text-heading">Details</h2>
+            <h2 class="mb-4 flex items-center gap-2 text-lg font-medium text-heading">{{ t('common.details') }}</h2>
             <div class="grid gap-3 md:grid-cols-2">
               <div class="flex flex-col gap-1">
-                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Category</span>
+                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('coinFields.category') }}</span>
                 <span class="inline-flex w-fit rounded-sm px-[0.6rem] py-[0.2rem] text-chip font-medium text-white" :style="{ background: categoryColor }">
-                  {{ coin.category }}
+                  {{ categoryLabel(coin.category) }}
                 </span>
               </div>
               <div v-if="coin.ruler" class="flex flex-col gap-1">
-                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Ruler</span>
+                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('coinFields.ruler') }}</span>
                 <span class="text-base text-text-primary">{{ coin.ruler }}</span>
               </div>
               <div v-if="coin.era" class="flex flex-col gap-1">
-                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Era</span>
-                <span class="text-base text-text-primary">{{ coin.era }}</span>
+                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('coinFields.era') }}</span>
+                <span class="text-base text-text-primary">{{ eraLabel(coin.era) }}</span>
               </div>
               <div v-if="coin.denomination" class="flex flex-col gap-1">
-                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Denomination</span>
+                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('coinFields.denomination') }}</span>
                 <span class="text-base text-text-primary">{{ coin.denomination }}</span>
               </div>
               <div v-if="coin.material" class="flex flex-col gap-1">
-                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Material</span>
+                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('coinFields.material') }}</span>
                 <span
                   :class="[
                     'text-base font-medium',
@@ -223,18 +226,18 @@ onMounted(loadCoin)
                     },
                   ]"
                 >
-                  {{ coin.material }}
+                  {{ materialLabel(coin.material) }}
                 </span>
               </div>
               <div v-if="coin.grade" class="flex flex-col gap-1">
-                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Grade</span>
+                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('coinFields.grade') }}</span>
                 <span class="text-base text-text-primary">{{ coin.grade }}</span>
               </div>
             </div>
           </section>
 
           <section class="card p-5">
-            <h2 class="mb-4 flex items-center gap-2 text-lg font-medium text-heading">Rating</h2>
+            <h2 class="mb-4 flex items-center gap-2 text-lg font-medium text-heading">{{ t('social.coin.rating') }}</h2>
             <div class="flex flex-col gap-4">
               <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
                 <div class="flex gap-[2px]">
@@ -247,12 +250,12 @@ onMounted(loadCoin)
                   />
                 </div>
                 <span class="text-body text-text-secondary">
-                  {{ rating.average.toFixed(1) }} avg · {{ rating.count }} {{ rating.count === 1 ? 'rating' : 'ratings' }}
+                  {{ t('social.coin.avg', { value: rating.average.toFixed(1) }) }} · {{ t('social.coin.ratings', { count: rating.count }) }}
                 </span>
               </div>
 
               <div class="flex flex-col gap-[0.35rem]">
-                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Your Rating</span>
+                <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('social.coin.yourRating') }}</span>
                 <div class="flex gap-[2px]">
                   <Star
                     v-for="i in 5"
@@ -272,14 +275,14 @@ onMounted(loadCoin)
 
           <section class="card p-5">
             <h2 class="mb-4 flex items-center gap-2 text-lg font-medium text-heading">
-              Comments
+              {{ t('social.coin.comments') }}
               <span class="inline-flex min-w-[1.75rem] items-center justify-center rounded-full bg-[var(--accent-gold-dim)] px-2 py-px text-sm font-semibold text-gold">
                 {{ comments.length }}
               </span>
             </h2>
 
             <div v-if="comments.length === 0" class="py-6 text-center text-base text-text-muted">
-              No comments yet. Be the first!
+              {{ t('social.coin.noComments') }}
             </div>
 
             <div v-else class="mb-5 flex flex-col gap-3">
@@ -309,7 +312,7 @@ onMounted(loadCoin)
                   </div>
                   <button
                     class="flex shrink-0 items-center rounded-[4px] p-1 text-text-muted transition hover:bg-status-error-tint hover:text-loss"
-                    title="Delete comment"
+                    :title="t('social.coin.deleteComment')"
                     @click="handleDeleteComment(comment.id)"
                   >
                     <Trash2 :size="14" />
@@ -320,16 +323,16 @@ onMounted(loadCoin)
             </div>
 
             <div class="mt-2 border-t border-border-subtle pt-4">
-              <h3 class="mb-3 text-body font-medium text-text-secondary">Add a Comment</h3>
+              <h3 class="mb-3 text-body font-medium text-text-secondary">{{ t('social.coin.addComment') }}</h3>
               <textarea
                 v-model="newComment"
                 class="min-h-[5.5rem] w-full resize-y rounded-sm border border-border-subtle bg-input px-3 py-2.5 text-body text-text-primary transition placeholder:text-text-muted focus:border-[var(--accent-gold)] focus:outline-none"
-                placeholder="Share your thoughts on this coin…"
+                :placeholder="t('social.coin.commentPlaceholder')"
                 rows="3"
               />
               <div class="mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div class="flex flex-col gap-1">
-                  <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Rating (optional)</span>
+                  <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('social.coin.ratingOptional') }}</span>
                   <div class="flex gap-px">
                     <Star
                       v-for="i in 5"
@@ -350,7 +353,7 @@ onMounted(loadCoin)
                   @click="handleAddComment"
                 >
                   <Send :size="16" />
-                  {{ submitting ? 'Posting…' : 'Post Comment' }}
+                  {{ submitting ? t('social.coin.posting') : t('social.coin.post') }}
                 </button>
               </div>
             </div>

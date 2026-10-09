@@ -3,11 +3,12 @@ import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { COIN_ERAS } from '@/types'
-import { getAppSettings, getSets, getTags } from '@/api/client'
+import { getCoinOptions, getSets, getTags } from '@/api/client'
+import { resetCoinVocabulary } from '@/i18n/coinVocabulary'
 import { useCollectionFilters } from '../useCollectionFilters'
 
 vi.mock('@/api/client', () => ({
-  getAppSettings: vi.fn(),
+  getCoinOptions: vi.fn(),
   getSets: vi.fn(),
   getTags: vi.fn(),
 }))
@@ -18,9 +19,10 @@ describe('useCollectionFilters', () => {
     localStorage.clear()
     sessionStorage.clear()
     vi.clearAllMocks()
+    resetCoinVocabulary()
   })
 
-  it('keeps tag and set filters when admin settings are unavailable', async () => {
+  it('keeps tag and set filters when coin options are unavailable', async () => {
     vi.mocked(getTags).mockResolvedValue({
       data: {
         tags: [
@@ -35,7 +37,7 @@ describe('useCollectionFilters', () => {
         ],
       },
     } as Awaited<ReturnType<typeof getSets>>)
-    vi.mocked(getAppSettings).mockRejectedValue({ response: { status: 403 } })
+    vi.mocked(getCoinOptions).mockRejectedValue({ response: { status: 500 } })
 
     let filters!: ReturnType<typeof useCollectionFilters>
     const wrapper = mount(defineComponent({
@@ -63,6 +65,26 @@ describe('useCollectionFilters', () => {
       },
     ])
     expect(filters.eraOptions.value).toEqual(COIN_ERAS)
+    wrapper.unmount()
+  })
+
+  it('uses the configured era choices', async () => {
+    vi.mocked(getTags).mockResolvedValue({ data: { tags: [] } } as unknown as Awaited<ReturnType<typeof getTags>>)
+    vi.mocked(getSets).mockResolvedValue({ data: { sets: [] } } as unknown as Awaited<ReturnType<typeof getSets>>)
+    vi.mocked(getCoinOptions).mockResolvedValue({
+      data: { categories: ['Roman'], eras: ['ancient', 'Republican'], labels: {} },
+    } as unknown as Awaited<ReturnType<typeof getCoinOptions>>)
+
+    let filters!: ReturnType<typeof useCollectionFilters>
+    const wrapper = mount(defineComponent({
+      setup() {
+        filters = useCollectionFilters()
+        return () => h('div')
+      },
+    }))
+    await filters.fetchUserTags()
+
+    expect(filters.eraOptions.value).toEqual(['ancient', 'Republican'])
     wrapper.unmount()
   })
 })

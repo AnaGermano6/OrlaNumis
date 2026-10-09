@@ -18,7 +18,7 @@
       <input
         v-model="query"
         class="form-input"
-        placeholder="Search Roman imperial figures..."
+        :placeholder="t('imperial.searchPlaceholder')"
         autocomplete="off"
         @input="onInput"
         @focus="onFocus"
@@ -29,7 +29,7 @@
         class="btn btn-sm"
         @click="clearSelection"
       >
-        Clear
+        {{ t('common.clear') }}
       </button>
     </div>
     <ul
@@ -53,9 +53,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { searchRomanImperialFigures, getRomanImperialFigure } from '@/api/client'
 import type { RomanImperialFigure, ImperialFigureRole } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   modelValue: number | null
@@ -65,14 +66,14 @@ const emit = defineEmits<{
   'update:modelValue': [value: number | null]
 }>()
 
-const roleTabs: { value: ImperialFigureRole | ''; label: string }[] = [
-  { value: '', label: 'All' },
-  { value: 'emperor', label: 'Emperor' },
-  { value: 'empress', label: 'Empress' },
-  { value: 'caesar', label: 'Caesar' },
-  { value: 'usurper', label: 'Usurper' },
-  { value: 'other', label: 'Other' },
-]
+const roleTabs = computed<{ value: ImperialFigureRole | ''; label: string }[]>(() => [
+  { value: '', label: t('imperial.roles.all') },
+  { value: 'emperor', label: t('imperial.roles.emperor') },
+  { value: 'empress', label: t('imperial.roles.empress') },
+  { value: 'caesar', label: t('imperial.roles.caesar') },
+  { value: 'usurper', label: t('imperial.roles.usurper') },
+  { value: 'other', label: t('imperial.roles.other') },
+])
 
 const query = ref('')
 const results = ref<RomanImperialFigure[]>([])

@@ -1,0 +1,37 @@
+export default {
+  title: 'Availability Run History',
+  back: 'Back to Wishlist',
+  signInTitle: 'Sign in required',
+  signInBody: 'Please sign in to view your availability run history.',
+  runNotFound: 'Run not found',
+  runNumber: 'Run #{id}',
+  unavailShort: '{count} unavail',
+  noResults: 'No results for this run.',
+  coin: 'Coin',
+  reason: 'Reason',
+  backToRuns: 'Back to all runs',
+  loadFailedTitle: 'Unable to load run history',
+  empty: {
+    title: 'No availability runs yet',
+    body: 'Runs appear here whenever your wishlist URLs are checked for availability.',
+  },
+  page: 'Page {page}',
+  loadFailed: 'Failed to load availability run history. Please try again.',
+  detailFailed: 'This run could not be found or is no longer available.',
+  runStatus: {
+    done: 'done',
+    queued: 'queued',
+    running: 'running',
+    failed: 'failed',
+    partialFailure: 'partial failure',
+  },
+  resultStatus: {
+    available: 'available',
+    unavailable: 'unavailable',
+    unknown: 'unknown',
+  },
+  trigger: {
+    scheduled: 'scheduled',
+    manual: 'manual',
+  },
+}

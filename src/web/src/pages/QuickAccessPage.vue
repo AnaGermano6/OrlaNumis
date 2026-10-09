@@ -1,10 +1,10 @@
 <template>
   <PullToRefresh :on-refresh="refresh">
     <div class="container mx-auto max-w-[900px]">
-      <DesktopPageContext title="Quick Access">
+      <DesktopPageContext :title="t('nav.quickAccess')">
         <template #actions>
           <AppIconButton
-            :title="loading ? 'Refreshing Quick Access' : 'Refresh Quick Access'"
+            :title="loading ? t('quickAccessPage.refreshing') : t('quickAccessPage.refresh')"
             :disabled="loading"
             @click="refresh"
           >
@@ -12,38 +12,38 @@
           </AppIconButton>
         </template>
         <header class="page-header">
-          <h1>Quick Access</h1>
+          <h1>{{ t('nav.quickAccess') }}</h1>
           <button
             class="btn btn-ghost btn-sm"
             :disabled="loading"
             :aria-busy="loading"
-            :aria-label="loading ? 'Refreshing Quick Access' : 'Refresh Quick Access'"
+            :aria-label="loading ? t('quickAccessPage.refreshing') : t('quickAccessPage.refresh')"
             @click="refresh"
           >
             <RefreshCw :size="16" :class="{ 'animate-spin': loading }" />
-            {{ loading ? 'Refreshing...' : 'Refresh' }}
+            {{ loading ? t('admin.system.refreshing') : t('admin.logs.refresh') }}
           </button>
         </header>
       </DesktopPageContext>
 
-      <div v-if="loading && !items.length" class="loading-overlay" role="status" aria-live="polite" aria-label="Loading Quick Access">
+      <div v-if="loading && !items.length" class="loading-overlay" role="status" aria-live="polite" :aria-label="t('quickAccessPage.loadingLabel')">
         <div class="spinner"></div>
       </div>
 
       <div v-else>
         <div v-if="error" class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-sm border border-[var(--color-negative)] bg-card p-3" role="alert">
           <span class="text-body text-loss">{{ error }}</span>
-          <button class="btn btn-secondary btn-sm" :disabled="loading" @click="refresh">Retry</button>
+          <button class="btn btn-secondary btn-sm" :disabled="loading" @click="refresh">{{ t('common.retry') }}</button>
         </div>
 
         <BaseEmptyState
           v-if="!items.length && !error"
-          title="Nothing pinned yet"
-          message="Pin coins, sets, active auction lots, or manual calendar events to keep them close at hand."
+          :title="t('quickAccessPage.emptyTitle')"
+          :message="t('quickAccessPage.emptyMessage')"
           :icon-component="Pin"
         />
 
-        <div v-else-if="items.length" class="grid gap-3" aria-label="Pinned items">
+        <div v-else-if="items.length" class="grid gap-3" :aria-label="t('quickAccessPage.pinnedItems')">
           <article
             v-for="item in items"
             :key="`${item.type}-${item.id}`"
@@ -74,14 +74,14 @@
                 <span class="chip-sm">{{ typeLabel(item.type) }}</span>
               </div>
               <p class="m-0 truncate text-body text-text-secondary">{{ metadataFor(item) }}</p>
-              <p class="m-0 mt-1 text-sm text-text-muted">Pinned {{ formatDate(item.pinnedAt) }}</p>
+              <p class="m-0 mt-1 text-sm text-text-muted">{{ t('quickAccessPage.pinned', { date: formatDate(item.pinnedAt) }) }}</p>
             </div>
 
             <button
               class="inline-flex h-11 w-11 items-center justify-center rounded-sm text-gold transition-colors hover:bg-gold-glow disabled:opacity-55"
               :disabled="isBusy(item.type, item.id).value"
               :aria-busy="isBusy(item.type, item.id).value"
-              :aria-label="isBusy(item.type, item.id).value ? `Removing ${titleFor(item)} from Quick Access` : `Unpin ${titleFor(item)} from Quick Access`"
+              :aria-label="isBusy(item.type, item.id).value ? t('quickAccessPage.removing', { title: titleFor(item) }) : t('quickAccessPage.unpin', { title: titleFor(item) })"
               aria-pressed="true"
               @click.stop="removeItem(item)"
               @keydown.enter.stop
@@ -108,6 +108,8 @@ import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import { useToast } from '@/composables/useToast'
 import type { QuickAccessItem, QuickAccessTargetType } from '@/types'
+import { t, intlLocale } from '@/i18n'
+import { auctionStatusLabel } from '@/utils/format'
 
 const router = useRouter()
 const { showToast } = useToast()
@@ -158,28 +160,28 @@ function setAccentStyle(item: QuickAccessItem): StyleValue | undefined {
 
 function typeLabel(type: QuickAccessTargetType) {
   return {
-    coin: 'Coin',
-    coin_set: 'Set',
-    auction_lot: 'Auction Lot',
-    calendar_event: 'Calendar Event',
+    coin: t('quickAccessPage.types.coin'),
+    coin_set: t('quickAccessPage.types.coinSet'),
+    auction_lot: t('quickAccessPage.types.auctionLot'),
+    calendar_event: t('quickAccessPage.types.calendarEvent'),
   }[type]
 }
 
 function formatOptionalDate(value: string | null) {
-  return value ? new Date(value).toLocaleDateString() : 'Date not set'
+  return value ? new Date(value).toLocaleDateString(intlLocale()) : t('quickAccessPage.dateNotSet')
 }
 
 function metadataFor(item: QuickAccessItem) {
   switch (item.type) {
-    case 'coin': return item.coin.classification === 'wishlist' ? 'Wishlist coin' : 'Collection coin'
+    case 'coin': return item.coin.classification === 'wishlist' ? t('quickAccessPage.wishlistCoin') : t('quickAccessPage.collectionCoin')
     case 'coin_set': return item.coinSet.setType
-    case 'auction_lot': return [item.auctionLot.status, item.auctionLot.auctionHouse, formatOptionalDate(item.auctionLot.auctionEndTime ?? item.auctionLot.saleDate)].filter(Boolean).join(' · ')
+    case 'auction_lot': return [item.auctionLot.status ? auctionStatusLabel(item.auctionLot.status) : '', item.auctionLot.auctionHouse, formatOptionalDate(item.auctionLot.auctionEndTime ?? item.auctionLot.saleDate)].filter(Boolean).join(' · ')
     case 'calendar_event': return [item.calendarEvent.auctionHouse, formatOptionalDate(item.calendarEvent.startDate)].filter(Boolean).join(' · ')
   }
 }
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString()
+  return new Date(value).toLocaleDateString(intlLocale())
 }
 
 function openItem(item: QuickAccessItem) {
@@ -194,9 +196,9 @@ function openItem(item: QuickAccessItem) {
 async function removeItem(item: QuickAccessItem) {
   try {
     await unpin(item.type, item.id)
-    showToast(`${titleFor(item)} removed from Quick Access`, 'success')
+    showToast(t('quickAccessPage.removed', { title: titleFor(item) }), 'success')
   } catch {
-    showToast(error.value || 'Unable to unpin this item.', 'error')
+    showToast(error.value || t('quickAccessPage.unpinFailed'), 'error')
   }
 }
 

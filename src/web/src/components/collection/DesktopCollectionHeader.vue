@@ -22,7 +22,7 @@
         <div class="flex min-w-[220px] flex-1 items-center gap-2 max-md:w-full max-sm:flex-col max-sm:items-stretch">
           <EraFilter :model-value="selectedEra" :eras="eraOptions" @update:model-value="$emit('update:selectedEra', $event)" />
           <select v-if="userTags.length" :value="selectedTag" @change="$emit('update:selectedTag', ($event.target as HTMLSelectElement).value)" class="form-select h-[38px] min-w-0 flex-1 bg-card px-[0.6rem] py-[0.45rem] text-body transition-colors hover:border-border-accent">
-            <option value="">All Sets</option>
+            <option value="">{{ t('collection.allSets') }}</option>
             <option v-for="tag in userTags" :key="tag.filterValue" :value="tag.filterValue">{{ tag.name }}</option>
           </select>
         </div>
@@ -36,14 +36,14 @@
               :class="gridSide === 'obverse' ? 'bg-gold text-surface hover:bg-gold hover:text-surface font-semibold' : ''"
               @click="$emit('update:gridSide', gridSide === 'obverse' ? null : 'obverse')"
             >
-              Obverse
+              {{ t('common.obverse') }}
             </button>
             <button
               class="rounded-[6px] bg-transparent px-3 py-1.5 text-chip font-medium text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary"
               :class="gridSide === 'reverse' ? 'bg-gold text-surface hover:bg-gold hover:text-surface font-semibold' : ''"
               @click="$emit('update:gridSide', gridSide === 'reverse' ? null : 'reverse')"
             >
-              Reverse
+              {{ t('common.reverse') }}
             </button>
           </div>
         </div>
@@ -58,6 +58,7 @@ import CategoryFilter from '@/components/CategoryFilter.vue'
 import EraFilter from '@/components/collection/EraFilter.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import SortSelect from '@/components/SortSelect.vue'
+import { t } from '@/i18n'
 
 defineProps<{
   search: string

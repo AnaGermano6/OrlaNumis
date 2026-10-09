@@ -16,7 +16,7 @@ vi.mock('@/api/client', () => ({
   proxyImage: mocks.proxy,
   uploadImage: mocks.upload,
   getApiErrorMessage: () => 'Request failed',
-  getAppSettings: mocks.settings,
+  getCoinOptions: mocks.settings,
 }))
 
 function mountComponent() {
@@ -34,7 +34,7 @@ describe('WishlistURLIntake', () => {
     vi.clearAllMocks()
     mocks.proxy.mockRejectedValue(new Error('no image'))
     mocks.create.mockResolvedValue({ data: { id: 77 } })
-    mocks.settings.mockResolvedValue({ data: {} })
+    mocks.settings.mockResolvedValue({ data: { categories: [], eras: [], labels: {} } })
   })
 
   it('keeps duplicate results read-only and links to the existing coin', async () => {

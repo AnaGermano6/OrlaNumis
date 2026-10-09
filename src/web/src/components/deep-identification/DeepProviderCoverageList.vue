@@ -1,6 +1,6 @@
 <template>
-  <section class="grid min-w-0 gap-2" aria-label="Provider coverage">
-    <h3 class="m-0 text-lg font-semibold text-text-primary">{{ title }}</h3>
+  <section class="grid min-w-0 gap-2" :aria-label="t('deepAnalysis.coverage.title')">
+    <h3 class="m-0 text-lg font-semibold text-text-primary">{{ title || t('deepAnalysis.coverage.title') }}</h3>
     <ul class="m-0 grid gap-2 p-0" style="list-style: none;">
       <li
         v-for="entry in coverage"
@@ -20,7 +20,7 @@
             :href="entry.linkOut"
             class="text-gold underline"
           >
-            View reference
+            {{ t('deepAnalysis.coverage.viewReference') }}
           </SafeExternalLink>
         </span>
       </li>
@@ -31,24 +31,26 @@
 <script setup lang="ts">
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import type { DeepProviderId, DeepProviderStatus, DeepReportCoverage } from '@/types'
+import type { MessageKey } from '@/i18n'
+import { t } from '@/i18n'
 
 withDefaults(defineProps<{
   coverage: DeepReportCoverage[]
   title?: string
 }>(), {
-  title: 'Provider coverage',
+  title: undefined,
 })
 
-const statusLabels: Record<DeepProviderStatus, string> = {
-  pending: 'Pending',
-  running: 'Running',
-  contributed: 'Contributed',
-  no_match: 'No match',
-  failed: 'Failed',
-  timed_out: 'Timed out',
-  skipped: 'Skipped',
-  not_automated: 'Manual verification',
-  unavailable: 'Unavailable',
+const statusLabelKeys: Record<DeepProviderStatus, MessageKey> = {
+  pending: 'deepAnalysis.coverageStatus.pending',
+  running: 'deepAnalysis.coverageStatus.running',
+  contributed: 'deepAnalysis.coverageStatus.contributed',
+  no_match: 'deepAnalysis.coverageStatus.noMatch',
+  failed: 'deepAnalysis.coverageStatus.failed',
+  timed_out: 'deepAnalysis.coverageStatus.timedOut',
+  skipped: 'deepAnalysis.coverageStatus.skipped',
+  not_automated: 'deepAnalysis.coverageStatus.notAutomated',
+  unavailable: 'deepAnalysis.coverageStatus.unavailable',
 }
 
 function providerLabel(provider: DeepProviderId): string {
@@ -56,7 +58,8 @@ function providerLabel(provider: DeepProviderId): string {
 }
 
 function statusLabel(status: DeepProviderStatus): string {
-  return statusLabels[status] ?? status
+  const key = statusLabelKeys[status]
+  return key ? t(key) : status
 }
 
 function statusClasses(status: DeepProviderStatus): string {

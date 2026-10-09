@@ -1,9 +1,9 @@
 ﻿<template>
   <div class="container">
-    <DesktopPageContext title="Wishlist">
+    <DesktopPageContext :title="t('nav.wishlist')">
       <template #actions>
         <AppIconButton
-          title="Check Availability"
+          :title="t('wishlist.checkAvailability')"
           :disabled="checking"
           @click="handleCheckAvailability"
         >
@@ -16,25 +16,25 @@
         <AppIconButton
           v-if="store.coins.length"
           to="/wishlist/search-alerts"
-          title="Search Alerts"
+          :title="t('wishlist.searchAlerts')"
         >
           <CalendarClock :size="20" />
         </AppIconButton>
-        <AppIconButton to="/wishlist/availability-runs" title="Run History">
+        <AppIconButton to="/wishlist/availability-runs" :title="t('wishlist.runHistory')">
           <History :size="20" />
         </AppIconButton>
-        <AppIconButton title="Add to wishlist" @click="showAddDialog = true">
+        <AppIconButton :title="t('wishlist.addTo')" @click="showAddDialog = true">
           <CirclePlus :size="20" />
         </AppIconButton>
       </template>
       <div class="page-header">
-        <h1>Wishlist</h1>
+        <h1>{{ t('nav.wishlist') }}</h1>
         <div v-if="isPwa" class="pwa-actions">
           <button
             class="pwa-icon-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
             :disabled="checking"
             @click="handleCheckAvailability"
-            title="Check Availability"
+            :title="t('wishlist.checkAvailability')"
           >
             <span
               v-if="checking"
@@ -46,24 +46,24 @@
             v-if="store.coins.length"
             to="/wishlist/search-alerts"
             class="pwa-icon-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
-            title="Add Wish List Finder Agent"
-            aria-label="Add Wish List Finder Agent"
+            :title="t('wishlist.finderAgent')"
+            :aria-label="t('wishlist.finderAgent')"
           >
             <CalendarClock :size="22" />
           </router-link>
           <router-link
             to="/wishlist/availability-runs"
             class="pwa-icon-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
-            title="Run History"
-            aria-label="Run History"
+            :title="t('wishlist.runHistory')"
+            :aria-label="t('wishlist.runHistory')"
           >
             <History :size="22" />
           </router-link>
           <button
             type="button"
             class="pwa-icon-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
-            title="Add to wishlist"
-            aria-label="Add to wishlist"
+            :title="t('wishlist.addTo')"
+            :aria-label="t('wishlist.addTo')"
             @click="showAddDialog = true"
           >
             <CirclePlus :size="22" />
@@ -71,16 +71,16 @@
         </div>
         <div v-else class="header-actions flex-wrap gap-3">
           <button class="btn btn-secondary" :disabled="checking" @click="handleCheckAvailability">
-            <ShieldCheck :size="16" /> {{ checking ? 'Checking...' : 'Check Availability' }}
+            <ShieldCheck :size="16" /> {{ checking ? t('common.checking') : t('wishlist.checkAvailability') }}
           </button>
           <router-link v-if="store.coins.length" to="/wishlist/search-alerts" class="btn btn-secondary">
-            <CalendarClock :size="16" /> Search Alerts
+            <CalendarClock :size="16" /> {{ t('wishlist.searchAlerts') }}
           </router-link>
           <router-link to="/wishlist/availability-runs" class="btn btn-secondary">
-            <History :size="16" /> Run History
+            <History :size="16" /> {{ t('wishlist.runHistory') }}
           </router-link>
           <button type="button" class="btn btn-secondary" @click="showAddDialog = true">
-            <CirclePlus :size="16" /> Add Coin
+            <CirclePlus :size="16" /> {{ t('nav.addCoin') }}
           </button>
         </div>
       </div>
@@ -91,15 +91,15 @@
       class="mb-4 flex flex-wrap items-center gap-4 rounded-md border border-border-subtle bg-card px-4 py-3 text-body"
     >
       <span class="inline-flex rounded-full bg-status-success-bg px-2.5 py-1 text-chip font-semibold text-status-success-fg">
-        {{ checkResult.available }} available
+        {{ t('wishlist.check.available', { count: checkResult.available }) }}
       </span>
       <span class="inline-flex rounded-full bg-status-error-bg px-2.5 py-1 text-chip font-semibold text-status-error-fg">
-        {{ checkResult.unavailable }} unavailable
+        {{ t('wishlist.check.unavailable', { count: checkResult.unavailable }) }}
       </span>
       <span class="inline-flex rounded-full bg-status-warning-bg px-2.5 py-1 text-chip font-semibold text-status-warning-fg">
-        {{ checkResult.unknown }} unknown
+        {{ t('wishlist.check.unknown', { count: checkResult.unknown }) }}
       </span>
-      <span class="ml-auto text-text-muted">{{ checkResult.coinsChecked }} checked</span>
+      <span class="ml-auto text-text-muted">{{ t('wishlist.check.checked', { count: checkResult.coinsChecked }) }}</span>
       <button
         class="px-1 text-xl leading-none text-text-muted transition hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
         @click="checkResult = null"
@@ -125,26 +125,26 @@
     </div>
 
     <div v-else class="empty-state">
-      <h3>Your wishlist is empty</h3>
-      <p>Add coins to your wishlist to track what you're looking for</p>
+      <h3>{{ t('wishlist.empty.title') }}</h3>
+      <p>{{ t('wishlist.empty.body') }}</p>
       <div class="mt-3 flex flex-wrap justify-center gap-3">
         <button class="btn btn-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" @click="showChat = true">
-          <Bot :size="16" /> Search for Coins with AI
+          <Bot :size="16" /> {{ t('wishlist.empty.searchAi') }}
         </button>
         <router-link
           to="/wishlist/search-alerts"
           class="btn btn-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
-          title="Add Wish List Finder Agent"
+          :title="t('wishlist.finderAgent')"
         >
-          <CalendarClock :size="16" /> Add Wish List Finder Agent
+          <CalendarClock :size="16" /> {{ t('wishlist.finderAgent') }}
         </router-link>
       </div>
     </div>
 
     <div v-if="store.coins.length && store.total > pageSize" class="mt-6 flex flex-wrap items-center justify-center gap-4 py-4">
-      <button class="btn btn-secondary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" :disabled="page <= 1" @click="page--">← Previous</button>
-      <span class="text-body text-text-secondary">Page {{ page }} of {{ Math.ceil(store.total / pageSize) }}</span>
-      <button class="btn btn-secondary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" :disabled="page * pageSize >= store.total" @click="page++">Next →</button>
+      <button class="btn btn-secondary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" :disabled="page <= 1" @click="page--">← {{ t('common.previous') }}</button>
+      <span class="text-body text-text-secondary">{{ t('common.pageOf', { page, total: Math.ceil(store.total / pageSize) }) }}</span>
+      <button class="btn btn-secondary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" :disabled="page * pageSize >= store.total" @click="page++">{{ t('common.next') }} →</button>
     </div>
 
     <PurchaseModal
@@ -169,12 +169,12 @@
         tabindex="-1"
       >
         <div class="mb-4 flex items-center justify-between gap-3">
-          <h2 id="wishlist-add-title" class="m-0 text-heading">Add to wishlist</h2>
+          <h2 id="wishlist-add-title" class="m-0 text-heading">{{ t('wishlist.addTo') }}</h2>
           <button
             type="button"
             class="pwa-icon-btn"
-            title="Close"
-            aria-label="Close"
+            :title="t('common.close')"
+            :aria-label="t('common.close')"
             @click="closeAddDialog"
           >
             <X :size="18" />
@@ -185,22 +185,22 @@
           <button type="button" class="add-method" @click="addMethod = 'url'">
             <Link :size="24" />
             <span>
-              <strong>Add from URL</strong>
-              <small>Import and review a public dealer listing.</small>
+              <strong>{{ t('wishlist.add.fromUrl') }}</strong>
+              <small>{{ t('wishlist.add.fromUrlHint') }}</small>
             </span>
           </button>
           <router-link to="/lookup" class="add-method" @click="closeAddDialog">
             <ScanLine :size="24" />
             <span>
-              <strong>Add from image analysis</strong>
-              <small>Photograph or upload a coin for identification.</small>
+              <strong>{{ t('wishlist.add.fromImage') }}</strong>
+              <small>{{ t('wishlist.add.fromImageHint') }}</small>
             </span>
           </router-link>
         </div>
 
         <div v-else>
           <button type="button" class="btn btn-ghost btn-xs mb-4" @click="addMethod = null">
-            <ChevronLeft :size="15" /> Add another way
+            <ChevronLeft :size="15" /> {{ t('wishlist.add.another') }}
           </button>
           <WishlistURLIntake embedded @created="handleURLCreated" />
         </div>
@@ -225,6 +225,7 @@ import type { Coin, AvailabilityRunSummary, PurchaseReminder } from '@/types'
 import { CirclePlus, Bot, ShieldCheck, CalendarClock, History, ChevronLeft, Link, ScanLine, X } from 'lucide-vue-next'
 import { usePwa } from '@/composables/usePwa'
 import { useQuickAccess } from '@/composables/useQuickAccess'
+import { t } from '@/i18n'
 
 const store = useCoinsStore()
 const { isPwa } = usePwa()

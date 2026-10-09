@@ -3,88 +3,88 @@
     <div class="grid gap-6 md:grid-cols-2">
       <!-- Basic Info -->
       <fieldset class="m-0 rounded-md border border-border-subtle bg-card p-5">
-        <h2 class="mb-4 font-display text-lg font-medium text-gold">Basic Information</h2>
+        <h2 class="mb-4 font-display text-lg font-medium text-gold">{{ t('coinForm.sections.basic') }}</h2>
         <div class="form-group min-w-0">
-          <label class="form-label">Name *</label>
-          <AutocompleteInput v-model="form.name!" field="name" required placeholder="e.g. Augustus Denarius" />
+          <label class="form-label">{{ t('coinForm.name') }}</label>
+          <AutocompleteInput v-model="form.name!" field="name" required :placeholder="t('coinForm.namePlaceholder')" />
         </div>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Category</label>
+            <label class="form-label">{{ t('collection.menu.category') }}</label>
             <select v-model="form.category" class="form-select">
-              <option v-for="c in categoryOptions" :key="c" :value="c">{{ c }}</option>
+              <option v-for="c in categoryOptions" :key="c" :value="c">{{ categoryLabel(c) }}</option>
             </select>
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Material</label>
+            <label class="form-label">{{ t('coinFields.material') }}</label>
             <select v-model="form.material" class="form-select">
-              <option v-for="m in materialOptions" :key="m" :value="m">{{ m }}</option>
+              <option v-for="m in materialOptions" :key="m" :value="m">{{ materialLabel(m) }}</option>
             </select>
           </div>
         </div>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Denomination</label>
-            <AutocompleteInput v-model="form.denomination!" field="denomination" placeholder="e.g. Denarius" />
+            <label class="form-label">{{ t('coinFields.denomination') }}</label>
+            <AutocompleteInput v-model="form.denomination!" field="denomination" :placeholder="t('coinForm.denominationPlaceholder')" />
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Mint</label>
+            <label class="form-label">{{ t('coinFields.mint') }}</label>
             <select v-model="mintLocationIdModel" class="form-select" :disabled="mintLocationsLoading">
-              <option value="">Unknown</option>
-              <optgroup v-if="myMintLocations.length" label="My Mints">
+              <option value="">{{ t('coinForm.mintUnknown') }}</option>
+              <optgroup v-if="myMintLocations.length" :label="t('coinForm.myMints')">
                 <option v-for="location in myMintLocations" :key="location.id" :value="String(location.id)">
                   {{ location.displayName }}
                 </option>
               </optgroup>
-              <optgroup v-if="globalMintLocations.length" label="Mints">
+              <optgroup v-if="globalMintLocations.length" :label="t('coinForm.mints')">
                 <option v-for="location in globalMintLocations" :key="location.id" :value="String(location.id)">
                   {{ location.displayName }}
                 </option>
               </optgroup>
-              <option value="__create__">+ Create new mint…</option>
+              <option value="__create__">{{ t('coinForm.createMint') }}</option>
             </select>
             <p v-if="mintLocationError" class="mt-2 text-body text-text-secondary">{{ mintLocationError }}</p>
             <p v-else-if="form.mint && !form.mintLocationId" class="mt-2 text-body text-text-secondary">
-              Unlinked legacy mint: "{{ form.mint }}" — pick a location above or create one to link it.
+              {{ t('coinForm.unlinkedMint', { mint: form.mint }) }}
             </p>
           </div>
         </div>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Ruler</label>
-            <AutocompleteInput v-model="form.ruler!" field="ruler" placeholder="e.g. Augustus" />
+            <label class="form-label">{{ t('coinFields.ruler') }}</label>
+            <AutocompleteInput v-model="form.ruler!" field="ruler" :placeholder="t('coinForm.rulerPlaceholder')" />
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Era</label>
+            <label class="form-label">{{ t('coinFields.era') }}</label>
             <select v-model="form.era" class="form-select">
-              <option value="">Unspecified</option>
-              <option v-for="era in displayedEraOptions" :key="era" :value="era">{{ era }}</option>
+              <option value="">{{ t('coinForm.eraUnspecified') }}</option>
+              <option v-for="era in displayedEraOptions" :key="era" :value="era">{{ eraLabel(era) }}</option>
             </select>
           </div>
         </div>
         <div class="form-group min-w-0">
-          <label class="form-label">Date or Date Range</label>
+          <label class="form-label">{{ t('coinForm.dateRange') }}</label>
           <input
             v-model="form.dateRange"
             class="form-input"
             type="text"
             maxlength="200"
-            placeholder="e.g. 138–161 CE or c. 330–335"
+            :placeholder="t('coinForm.dateRangePlaceholder')"
           />
         </div>
         <div v-if="form.category === 'Roman'" class="form-group min-w-0">
-          <label class="form-label">Imperial figure (optional)</label>
+          <label class="form-label">{{ t('coinForm.imperialFigure') }}</label>
           <ImperialFigurePicker v-model="form.romanImperialFigureId!" />
           <p class="mt-1 text-sm text-text-muted">
-            Matches this coin to a curated Roman emperor, empress, Caesar, or usurper for the
-            <router-link to="/sets/emperors" class="underline">Emperor Tracker</router-link>. Leave blank if unsure — the
-            free-text Ruler field above is unaffected.
+            <I18nT keypath="coinForm.imperialFigureHint">
+              <template #link><router-link to="/sets/emperors" class="underline">{{ t('coinForm.emperorTracker') }}</router-link></template>
+            </I18nT>
           </p>
         </div>
         <div class="form-group min-w-0">
-          <label class="form-label">Storage Location</label>
+          <label class="form-label">{{ t('coinFields.storageLocation') }}</label>
           <select v-model="storageLocationIdModel" class="form-select" :disabled="storageLocationsLoading">
-            <option value="">None</option>
+            <option value="">{{ t('coinForm.storageNone') }}</option>
             <option
               v-for="location in storageLocations"
               :key="location.id"
@@ -96,14 +96,14 @@
           <p v-if="storageLocationError" class="mt-2 text-body text-text-secondary">{{ storageLocationError }}</p>
           <div v-if="selectedStorageLocation?.type === 'tray'" class="mt-3">
             <p class="text-body text-text-secondary">
-              Choose an exact slot. {{ selectedStorageLocation.occupied }} / {{ selectedStorageLocation.capacity }} occupied.
+              {{ t('coinForm.chooseSlot', { occupied: selectedStorageLocation.occupied, capacity: selectedStorageLocation.capacity }) }}
             </p>
-            <p v-if="occupancyLoading" class="text-body text-text-muted">Loading tray slots...</p>
+            <p v-if="occupancyLoading" class="text-body text-text-muted">{{ t('coinForm.loadingSlots') }}</p>
             <div
               v-else-if="trayOccupancy"
               class="slot-picker"
               role="grid"
-              :aria-label="`${selectedStorageLocation.name} slots`"
+              :aria-label="t('coinForm.slotsLabel', { name: selectedStorageLocation.name })"
               :style="{ gridTemplateColumns: `repeat(${trayOccupancy.columns}, minmax(44px, 1fr))` }"
             >
               <button
@@ -119,12 +119,12 @@
                 @click="form.storageSlot = slot"
               >
                 <span>{{ slotCoordinates(slot) }}</span>
-                <small>{{ isOccupiedSlot(slot) ? 'Occupied' : form.storageSlot === slot ? 'Selected' : 'Available' }}</small>
+                <small>{{ isOccupiedSlot(slot) ? t('coinForm.slotState.occupied') : form.storageSlot === slot ? t('coinForm.slotState.selected') : t('coinForm.slotState.available') }}</small>
               </button>
             </div>
             <p v-if="occupancyError" class="mt-2 text-body text-text-secondary">
               {{ occupancyError }}
-              <button type="button" class="btn btn-xs btn-secondary" @click="loadOccupancy">Retry</button>
+              <button type="button" class="btn btn-xs btn-secondary" @click="loadOccupancy">{{ t('common.retry') }}</button>
             </p>
             <p v-if="slotValidationError" class="mt-2 text-body text-text-secondary" role="alert">{{ slotValidationError }}</p>
           </div>
@@ -133,63 +133,63 @@
 
       <!-- Physical Details -->
       <fieldset class="m-0 rounded-md border border-border-subtle bg-card p-5">
-        <h2 class="mb-4 font-display text-lg font-medium text-gold">Physical Details</h2>
+        <h2 class="mb-4 font-display text-lg font-medium text-gold">{{ t('coinForm.sections.physical') }}</h2>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Weight (grams)</label>
+            <label class="form-label">{{ t('coinForm.weightGrams') }}</label>
             <input v-model.number="form.weightGrams" class="form-input" type="number" step="0.01" />
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Diameter (mm)</label>
+            <label class="form-label">{{ t('coinForm.diameterMm') }}</label>
             <input v-model.number="form.diameterMm" class="form-input" type="number" step="0.1" />
           </div>
         </div>
         <div class="form-group min-w-0">
-          <label class="form-label">Grade</label>
-          <input v-model="form.grade" class="form-input" placeholder="e.g. VF, EF, MS-65" />
+          <label class="form-label">{{ t('coinFields.grade') }}</label>
+          <input v-model="form.grade" class="form-input" :placeholder="t('coinForm.gradePlaceholder')" />
         </div>
       </fieldset>
 
       <!-- Inscriptions, Images & Descriptions -->
       <fieldset class="m-0 rounded-md border border-border-subtle bg-card p-5 md:col-span-2">
-        <h2 class="mb-4 font-display text-lg font-medium text-gold">Inscriptions & Descriptions</h2>
+        <h2 class="mb-4 font-display text-lg font-medium text-gold">{{ t('coinForm.sections.inscriptions') }}</h2>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Obverse Inscription</label>
-            <input v-model="form.obverseInscription" class="form-input" placeholder="Obverse legend text" />
+            <label class="form-label">{{ t('coinForm.obverseInscription') }}</label>
+            <input v-model="form.obverseInscription" class="form-input" :placeholder="t('coinForm.obverseLegend')" />
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Reverse Inscription</label>
-            <input v-model="form.reverseInscription" class="form-input" placeholder="Reverse legend text" />
+            <label class="form-label">{{ t('coinForm.reverseInscription') }}</label>
+            <input v-model="form.reverseInscription" class="form-input" :placeholder="t('coinForm.reverseLegend')" />
           </div>
         </div>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Obverse Image</label>
+            <label class="form-label">{{ t('coinForm.obverseImage') }}</label>
             <div v-if="obversePreview || existingObverse" class="relative mb-2 inline-block">
-              <img v-if="obversePreview" :src="obversePreview" alt="Obverse" class="h-[140px] w-[140px] rounded-sm border border-border-subtle object-cover" />
-              <AuthenticatedImage v-else :media-path="existingObverse" alt="Obverse" class="h-[140px] w-[140px] rounded-sm border border-border-subtle object-cover" />
-              <button type="button" class="absolute -top-1.5 -right-1.5 flex h-[22px] w-[22px] items-center justify-center rounded-full border-0 bg-red-700 p-0 text-white" @click="clearObverse" title="Remove" aria-label="Remove obverse image"><X :size="12" /></button>
+              <img v-if="obversePreview" :src="obversePreview" :alt="t('common.obverse')" class="h-[140px] w-[140px] rounded-sm border border-border-subtle object-cover" />
+              <AuthenticatedImage v-else :media-path="existingObverse" :alt="t('common.obverse')" class="h-[140px] w-[140px] rounded-sm border border-border-subtle object-cover" />
+              <button type="button" class="absolute -top-1.5 -right-1.5 flex h-[22px] w-[22px] items-center justify-center rounded-full border-0 bg-red-700 p-0 text-white" @click="clearObverse" :title="t('common.remove')" :aria-label="t('coinForm.removeObverseImage')"><X :size="12" /></button>
             </div>
             <div class="flex items-center gap-2">
-              <input type="file" accept=".jpg,.jpeg,.png" class="form-input min-w-0 flex-1 text-base" aria-label="Upload obverse image" @change="onObverseFile" ref="obverseInput" />
+              <input type="file" accept=".jpg,.jpeg,.png" class="form-input min-w-0 flex-1 text-base" :aria-label="t('coinForm.uploadObverseImage')" @change="onObverseFile" ref="obverseInput" />
               <label v-if="isPwa" class="btn btn-secondary btn-sm inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap">
-                <Camera :size="14" /> Photo
+                <Camera :size="14" /> {{ t('coinDetail.actions.photo') }}
                 <input type="file" accept="image/*" capture="environment" hidden @change="onObverseFile" />
               </label>
             </div>
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Reverse Image</label>
+            <label class="form-label">{{ t('coinForm.reverseImage') }}</label>
             <div v-if="reversePreview || existingReverse" class="relative mb-2 inline-block">
-              <img v-if="reversePreview" :src="reversePreview" alt="Reverse" class="h-[140px] w-[140px] rounded-sm border border-border-subtle object-cover" />
-              <AuthenticatedImage v-else :media-path="existingReverse" alt="Reverse" class="h-[140px] w-[140px] rounded-sm border border-border-subtle object-cover" />
-              <button type="button" class="absolute -top-1.5 -right-1.5 flex h-[22px] w-[22px] items-center justify-center rounded-full border-0 bg-red-700 p-0 text-white" @click="clearReverse" title="Remove" aria-label="Remove reverse image"><X :size="12" /></button>
+              <img v-if="reversePreview" :src="reversePreview" :alt="t('common.reverse')" class="h-[140px] w-[140px] rounded-sm border border-border-subtle object-cover" />
+              <AuthenticatedImage v-else :media-path="existingReverse" :alt="t('common.reverse')" class="h-[140px] w-[140px] rounded-sm border border-border-subtle object-cover" />
+              <button type="button" class="absolute -top-1.5 -right-1.5 flex h-[22px] w-[22px] items-center justify-center rounded-full border-0 bg-red-700 p-0 text-white" @click="clearReverse" :title="t('common.remove')" :aria-label="t('coinForm.removeReverseImage')"><X :size="12" /></button>
             </div>
             <div class="flex items-center gap-2">
-              <input type="file" accept=".jpg,.jpeg,.png" class="form-input min-w-0 flex-1 text-base" aria-label="Upload reverse image" @change="onReverseFile" ref="reverseInput" />
+              <input type="file" accept=".jpg,.jpeg,.png" class="form-input min-w-0 flex-1 text-base" :aria-label="t('coinForm.uploadReverseImage')" @change="onReverseFile" ref="reverseInput" />
               <label v-if="isPwa" class="btn btn-secondary btn-sm inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap">
-                <Camera :size="14" /> Photo
+                <Camera :size="14" /> {{ t('coinDetail.actions.photo') }}
                 <input type="file" accept="image/*" capture="environment" hidden @change="onReverseFile" />
               </label>
             </div>
@@ -197,93 +197,93 @@
         </div>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Obverse Description</label>
-            <textarea v-model="form.obverseDescription" class="form-textarea" placeholder="Describe the obverse design" />
+            <label class="form-label">{{ t('coinForm.obverseDescription') }}</label>
+            <textarea v-model="form.obverseDescription" class="form-textarea" :placeholder="t('coinForm.describeObverse')" />
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Reverse Description</label>
-            <textarea v-model="form.reverseDescription" class="form-textarea" placeholder="Describe the reverse design" />
+            <label class="form-label">{{ t('coinForm.reverseDescription') }}</label>
+            <textarea v-model="form.reverseDescription" class="form-textarea" :placeholder="t('coinForm.describeReverse')" />
           </div>
         </div>
       </fieldset>
 
       <!-- Purchase Info -->
       <fieldset class="m-0 rounded-md border border-border-subtle bg-card p-5">
-        <h2 class="mb-4 font-display text-lg font-medium text-gold">Purchase & Value</h2>
+        <h2 class="mb-4 font-display text-lg font-medium text-gold">{{ t('coinForm.sections.purchase') }}</h2>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Purchase Price ($)</label>
+            <label class="form-label">{{ t('coinForm.purchasePriceUsd') }}</label>
             <input v-model.number="form.purchasePrice" class="form-input" type="number" step="0.01" />
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Current Value ($)</label>
+            <label class="form-label">{{ t('coinForm.currentValueUsd') }}</label>
             <input v-model.number="form.currentValue" class="form-input" type="number" step="0.01" />
           </div>
         </div>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Purchase Date</label>
+            <label class="form-label">{{ t('coinFields.purchaseDate') }}</label>
             <input v-model="form.purchaseDate" class="form-input" type="date" />
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Store</label>
-            <AutocompleteInput v-model="form.purchaseLocation!" field="purchaseLocation" placeholder="e.g. Heritage Auctions" />
+            <label class="form-label">{{ t('coinFields.store') }}</label>
+            <AutocompleteInput v-model="form.purchaseLocation!" field="purchaseLocation" :placeholder="t('coinForm.storePlaceholder')" />
           </div>
         </div>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Vendor SKU</label>
-            <input v-model="form.vendorSku" class="form-input" placeholder="e.g. CNG-12345" />
+            <label class="form-label">{{ t('coinFields.vendorSku') }}</label>
+            <input v-model="form.vendorSku" class="form-input" :placeholder="t('coinForm.skuPlaceholder')" />
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Vendor Invoice</label>
-            <input v-model="form.vendorInvoice" class="form-input" placeholder="e.g. INV-2026-0421" />
+            <label class="form-label">{{ t('coinFields.vendorInvoice') }}</label>
+            <input v-model="form.vendorInvoice" class="form-input" :placeholder="t('coinForm.invoicePlaceholder')" />
           </div>
         </div>
       </fieldset>
 
       <!-- Links & Notes -->
       <fieldset class="m-0 rounded-md border border-border-subtle bg-card p-5">
-        <h2 class="mb-4 font-display text-lg font-medium text-gold">Reference & Notes</h2>
+        <h2 class="mb-4 font-display text-lg font-medium text-gold">{{ t('coinForm.sections.reference') }}</h2>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">Reference URL</label>
+            <label class="form-label">{{ t('coinForm.referenceUrl') }}</label>
             <input v-model="form.referenceUrl" class="form-input" type="url" placeholder="https://..." />
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">Reference Text</label>
-            <input v-model="form.referenceText" class="form-input" placeholder="Link display text" />
+            <label class="form-label">{{ t('coinForm.referenceText') }}</label>
+            <input v-model="form.referenceText" class="form-input" :placeholder="t('coinForm.referenceTextPlaceholder')" />
           </div>
         </div>
         <div class="form-group min-w-0">
-          <label class="form-label">Store Card Image</label>
-          <p class="mb-2 text-body text-text-muted">Upload a photo of the store card. Text will be extracted automatically and saved to Notes.</p>
+          <label class="form-label">{{ t('coinForm.storeCardImage') }}</label>
+          <p class="mb-2 text-body text-text-muted">{{ t('coinForm.storeCardHint') }}</p>
           <div v-if="cardPreview" class="relative mb-2 inline-block">
-            <img :src="cardPreview" alt="Store card" class="h-[140px] w-[140px] rounded-sm border border-border-subtle object-cover" />
-            <button type="button" class="absolute -top-1.5 -right-1.5 flex h-[22px] w-[22px] items-center justify-center rounded-full border-0 bg-red-700 p-0 text-white" @click="clearCard" title="Remove" aria-label="Remove store card image"><X :size="12" /></button>
+            <img :src="cardPreview" :alt="t('coinForm.storeCardAlt')" class="h-[140px] w-[140px] rounded-sm border border-border-subtle object-cover" />
+            <button type="button" class="absolute -top-1.5 -right-1.5 flex h-[22px] w-[22px] items-center justify-center rounded-full border-0 bg-red-700 p-0 text-white" @click="clearCard" :title="t('common.remove')" :aria-label="t('coinForm.removeStoreCard')"><X :size="12" /></button>
           </div>
-          <input type="file" accept=".jpg,.jpeg,.png" class="form-input text-base" aria-label="Upload store card image" @change="onCardFile" ref="cardInput" />
+          <input type="file" accept=".jpg,.jpeg,.png" class="form-input text-base" :aria-label="t('coinForm.uploadStoreCard')" @change="onCardFile" ref="cardInput" />
         </div>
         <div class="form-group min-w-0">
-          <label class="form-label">Notes</label>
-          <textarea v-model="form.notes" class="form-textarea" rows="3" placeholder="Any additional notes..." />
+          <label class="form-label">{{ t('coinFields.notes') }}</label>
+          <textarea v-model="form.notes" class="form-textarea" rows="3" :placeholder="t('coinForm.notesPlaceholder')" />
         </div>
         <div class="form-group flex items-center gap-3">
-          <label class="form-label mb-0">Private Coin</label>
+          <label class="form-label mb-0">{{ t('coinForm.privateCoin') }}</label>
           <BaseToggle
             v-model="form.isPrivate"
             size="sm"
-            label="Private Coin"
+            :label="t('coinForm.privateCoin')"
           />
-          <span class="text-chip text-text-secondary">Hidden from followers</span>
+          <span class="text-chip text-text-secondary">{{ t('coinForm.hiddenFromFollowers') }}</span>
         </div>
       </fieldset>
     </div>
 
     <div class="mt-8 flex justify-end gap-3 border-t border-border-subtle pt-6">
-      <button type="button" class="btn btn-secondary" @click="$router.back()">Cancel</button>
+      <button type="button" class="btn btn-secondary" @click="$router.back()">{{ t('common.cancel') }}</button>
       <button type="submit" class="btn btn-primary" :disabled="loading">
-        {{ loading ? 'Saving...' : submitLabel }}
+        {{ loading ? t('common.saving') : submitLabel }}
       </button>
     </div>
 
@@ -308,6 +308,10 @@ import { X, Camera } from 'lucide-vue-next'
 import { usePwa } from '@/composables/usePwa'
 import { useCoinOptions } from '@/composables/useCoinOptions'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
+import I18nT from '@/components/I18nT.vue'
+import { materialLabel } from '@/utils/format'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 function unwrapMintLocations(data: MintLocationsResponse): MintLocation[] {
   return Array.isArray(data) ? data : data.mintLocations ?? []
@@ -373,7 +377,7 @@ async function loadOccupancy() {
     trayOccupancy.value = response.data
   } catch {
     trayOccupancy.value = null
-    occupancyError.value = 'Tray occupancy changed or could not be loaded.'
+    occupancyError.value = t('coinForm.occupancyFailed')
   } finally {
     occupancyLoading.value = false
   }
@@ -390,14 +394,16 @@ function slotCoordinates(slot: number): string {
 }
 
 function slotLabel(slot: number): string {
-  const state = isOccupiedSlot(slot) ? 'occupied' : props.form.storageSlot === slot ? 'selected' : 'available'
-  const [row, column] = slotCoordinates(slot).split(',')
-  return `Row ${row}, column ${column}, ${state}`
+  const state = isOccupiedSlot(slot)
+    ? t('coinForm.slotStateLower.occupied')
+    : props.form.storageSlot === slot ? t('coinForm.slotStateLower.selected') : t('coinForm.slotStateLower.available')
+  const [row = '', column = ''] = slotCoordinates(slot).split(',')
+  return t('coinForm.slotLabel', { row, column, state })
 }
 
 function handleSubmit() {
   if (selectedStorageLocation.value?.type === 'tray' && props.form.storageSlot == null) {
-    slotValidationError.value = 'Choose an exact tray slot before saving.'
+    slotValidationError.value = t('coinForm.chooseSlotBeforeSave')
     return
   }
   slotValidationError.value = ''
@@ -439,7 +445,7 @@ async function loadMintLocations() {
     mintLocationError.value = ''
   } catch {
     mintLocations.value = []
-    mintLocationError.value = 'Mint locations are unavailable'
+    mintLocationError.value = t('coinForm.mintsUnavailable')
   } finally {
     mintLocationsLoading.value = false
   }
@@ -482,7 +488,7 @@ onMounted(async () => {
     await loadOccupancy()
   } catch {
     storageLocations.value = []
-    storageLocationError.value = 'Storage locations are unavailable'
+    storageLocationError.value = t('coinForm.storageUnavailable')
   } finally {
     storageLocationsLoading.value = false
   }

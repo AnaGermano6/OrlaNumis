@@ -25,6 +25,8 @@ export interface AppSettings extends Partial<NumistaSettings> {
   ReminderCheckStartTime?: string
   CoinCategories?: string
   CoinEras?: string
+  CoinCategoryLabelsPtPT?: string
+  CoinEraLabelsPtPT?: string
   DeepIdentificationOCREEnabled?: string
   DeepIdentificationOCRECallBudget?: string
   ExternalToolServerEnabled?: string

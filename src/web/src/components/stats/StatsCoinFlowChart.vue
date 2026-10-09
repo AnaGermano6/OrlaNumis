@@ -2,11 +2,11 @@
   <div class="stats-section card relative overflow-hidden border-border-subtle shadow-card">
     <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <p class="section-label">Acquisition Flow</p>
-        <h2 class="mt-[0.15rem]">Coins Bought by Period, Ruler, Era &amp; Type</h2>
+        <p class="section-label">{{ t('stats.flow.eyebrow') }}</p>
+        <h2 class="mt-[0.15rem]">{{ t('stats.flow.title') }}</h2>
       </div>
       <span v-if="!isLoading && chartCoins.length" class="self-end text-chip text-text-muted">
-        {{ chartCoins.length }} coins with purchase date
+        {{ t('stats.flow.withDate', { count: chartCoins.length }) }}
       </span>
     </div>
 
@@ -16,18 +16,17 @@
 
     <div v-else-if="chartCoins.length < 3" class="py-8 text-center text-base text-text-muted">
       <p>
-        Not enough coins with a purchase date to draw this chart.
-        Set a purchase date on your coins to see their acquisition flow.
+        {{ t('stats.flow.notEnough') }}
       </p>
     </div>
 
     <div v-else class="flex flex-col gap-2">
-      <ZoomableSurface :interactive="false" aria-label="Acquisition flow chart">
+      <ZoomableSurface :interactive="false" :aria-label="t('stats.flow.aria')">
         <div class="grid pb-[0.35rem]" :style="colHeaderStyle">
-          <span class="text-left text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Purchase Period</span>
-          <span class="text-center text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Ruler</span>
-          <span class="text-center text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Era</span>
-          <span class="text-right text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Type</span>
+          <span class="text-left text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.flow.period') }}</span>
+          <span class="text-center text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('coinFields.ruler') }}</span>
+          <span class="text-center text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('coinFields.era') }}</span>
+          <span class="text-right text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.flow.type') }}</span>
         </div>
 
         <svg
@@ -35,7 +34,7 @@
           preserveAspectRatio="xMidYMid meet"
           class="h-auto w-full overflow-visible"
           role="img"
-          aria-label="Alluvial flow chart of acquired coins by purchase period, ruler, era, and type"
+          :aria-label="t('stats.flow.svgAria')"
         >
           <path
             v-for="(band, i) in periodRulerFlows"
@@ -118,7 +117,7 @@
               :y="node.y + node.height / 2"
               dominant-baseline="middle"
               text-anchor="middle"
-            >{{ node.label }}</text>
+            >{{ eraLabel(node.label) }}</text>
           </g>
 
           <g v-for="node in typeNodes" :key="`type-${node.key}`">
@@ -137,14 +136,13 @@
               :y="node.y + node.height / 2"
               dominant-baseline="middle"
               text-anchor="start"
-            >{{ node.label }} ({{ node.count }})</text>
+            >{{ categoryLabel(node.label) }} ({{ node.count }})</text>
           </g>
         </svg>
       </ZoomableSurface>
 
       <p class="mt-2 text-sm italic text-text-muted">
-        Only coins with a recorded purchase date are shown. Ruler and type columns show top
-        {{ TOP_N }} by count; remaining items are grouped as "Other Rulers" / "Other Types".
+        {{ t('stats.flow.footnote', { count: TOP_N, otherRulers: t('stats.flow.otherRulers'), otherTypes: t('stats.flow.otherTypes') }) }}
       </p>
     </div>
   </div>
@@ -156,6 +154,8 @@ import { getCoins } from '@/api/client'
 import ZoomableSurface from '@/components/ZoomableSurface.vue'
 import { colorForLabel } from '@/utils/categoryColor'
 import type { Coin } from '@/types'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 interface SankeyNode {
   key: string
@@ -201,11 +201,11 @@ function getEraColor(key: string): string {
 }
 
 function getRulerColor(key: string): string {
-  return key === 'Other Rulers' ? 'var(--text-muted)' : 'var(--accent-bronze)'
+  return key === t('stats.flow.otherRulers') ? 'var(--text-muted)' : 'var(--accent-bronze)'
 }
 
 function getTypeColor(key: string): string {
-  return key === 'Other Types' ? 'var(--text-muted)' : 'var(--accent-gold)'
+  return key === t('stats.flow.otherTypes') ? 'var(--text-muted)' : 'var(--accent-gold)'
 }
 
 function getScale(total: number, maxNodes: number): number {
@@ -269,17 +269,17 @@ const mappedCoins = computed<MappedRow[]>(() => {
   const base = chartCoins.value
   if (!base.length) return []
 
-  const rulerRaw = base.map((c) => c.ruler?.trim() || 'Unknown Ruler')
+  const rulerRaw = base.map((c) => c.ruler?.trim() || t('stats.flow.unknownRuler'))
   // Type: denomination preferred, then category, then fallback
-  const typeRaw = base.map((c) => c.denomination?.trim() || c.category?.trim() || 'Unknown Type')
+  const typeRaw = base.map((c) => c.denomination?.trim() || c.category?.trim() || t('stats.flow.unknownType'))
 
-  const rulerMapped = applyTopN(rulerRaw, TOP_N, 'Other Rulers')
-  const typeMapped = applyTopN(typeRaw, TOP_N, 'Other Types')
+  const rulerMapped = applyTopN(rulerRaw, TOP_N, t('stats.flow.otherRulers'))
+  const typeMapped = applyTopN(typeRaw, TOP_N, t('stats.flow.otherTypes'))
 
   return base.map((coin, i) => ({
     period: (coin.purchaseDate ?? '').slice(0, 4),
     ruler: rulerMapped[i]!,
-    era: coin.era?.trim() || 'Unknown Era',
+    era: coin.era?.trim() || t('stats.flow.unknownEra'),
     type: typeMapped[i]!,
   }))
 })

@@ -2,24 +2,24 @@
   <div class="w-full">
     <form @submit.prevent="submit">
       <div class="form-group mb-4">
-        <label for="setType" class="form-label mb-2 block">Set type</label>
+        <label for="setType" class="form-label mb-2 block">{{ t('sets.wizard.setType') }}</label>
         <select id="setType" v-model="form.setType" class="form-input w-full">
-          <option value="standard">Standard</option>
-          <option value="goal">Goal</option>
-          <option value="smart">Smart</option>
-          <option value="agentic">Agentic</option>
+          <option value="standard">{{ t('sets.types.standard') }}</option>
+          <option value="goal">{{ t('sets.types.goal') }}</option>
+          <option value="smart">{{ t('sets.types.smart') }}</option>
+          <option value="agentic">{{ t('sets.types.agentic') }}</option>
         </select>
       </div>
       <div v-if="form.setType === 'goal'" class="form-group mb-4 rounded-sm border border-border-subtle bg-card p-4">
-        <span class="section-label">How goal completion works</span>
+        <span class="section-label">{{ t('sets.wizard.goalTitle') }}</span>
         <p class="mt-2 mb-0 text-body text-text-secondary">
-          Goal sets track both collection and wishlist members.
+          {{ t('sets.wizard.goalP1') }}
         </p>
         <p class="mt-2 mb-0 text-body text-text-secondary">
-          Completion is calculated as collection items divided by collection plus wishlist items.
+          {{ t('sets.wizard.goalP2') }}
         </p>
         <p class="mt-2 mb-0 text-chip text-text-muted">
-          Example: 2 collection and 5 wishlist = 2 / (2 + 5) = 28.6%.
+          {{ t('sets.wizard.goalP3') }}
         </p>
       </div>
       <SetSmartRuleBuilder
@@ -27,31 +27,31 @@
         @update="form.smartCriteria = $event"
       />
       <div v-if="form.setType === 'agentic'" class="form-group mb-4 rounded-sm border border-border-subtle bg-card p-4">
-        <span class="section-label">How agentic sets work</span>
+        <span class="section-label">{{ t('sets.wizard.agenticTitle') }}</span>
         <p class="mt-2 mb-0 text-body text-text-secondary">
-          Describe the set you want and the agent will propose matching coins for you to review.
+          {{ t('sets.wizard.agenticP1') }}
         </p>
         <p class="mt-2 mb-0 text-body text-text-secondary">
-          No set is created immediately. A proposal request is submitted for the agent to work through.
+          {{ t('sets.wizard.agenticP2') }}
         </p>
         <p class="mt-2 mb-0 text-chip text-text-muted">
-          The workflow can draft up to 300 roster slots. For broad ideas, narrow by date range, mint, ruler, or series and submit another run.
+          {{ t('sets.wizard.agenticP3') }}
         </p>
       </div>
       <div v-if="form.setType === 'agentic'" class="form-group mb-4">
-        <label for="agenticPrompt" class="form-label mb-2 block">Agentic prompt</label>
+        <label for="agenticPrompt" class="form-label mb-2 block">{{ t('sets.wizard.agenticPrompt') }}</label>
         <textarea
           id="agenticPrompt"
           v-model="form.agenticPrompt"
           rows="3"
           maxlength="500"
           class="form-input w-full"
-          placeholder="Example: All US silver quarters from 1940s to 1960s"
+          :placeholder="t('sets.wizard.agenticPlaceholder')"
           :required="form.setType === 'agentic'"
         />
       </div>
       <div class="form-group mb-4">
-        <label for="setName" class="form-label mb-2 block">Name</label>
+        <label for="setName" class="form-label mb-2 block">{{ t('common.name') }}</label>
         <input
           id="setName"
           v-model="form.name"
@@ -62,7 +62,7 @@
         />
       </div>
       <div class="form-group mb-4">
-        <label for="setDescription" class="form-label mb-2 block">Description</label>
+        <label for="setDescription" class="form-label mb-2 block">{{ t('common.description') }}</label>
         <textarea
           id="setDescription"
           v-model="form.description"
@@ -72,7 +72,7 @@
         />
       </div>
       <div class="form-group mb-4">
-        <label for="setColor" class="form-label mb-2 block">Color</label>
+        <label for="setColor" class="form-label mb-2 block">{{ t('common.color') }}</label>
         <input
           id="setColor"
           v-model="form.color"
@@ -81,9 +81,9 @@
         />
       </div>
       <div class="mt-6 flex justify-end gap-2">
-        <button type="button" class="btn btn-secondary" @click="$emit('cancel')">Cancel</button>
+        <button type="button" class="btn btn-secondary" @click="$emit('cancel')">{{ t('common.cancel') }}</button>
         <button type="submit" class="btn btn-primary" :disabled="!form.name.trim()">
-          {{ submitLabel }}
+          {{ submitLabel || t('common.create') }}
         </button>
       </div>
     </form>
@@ -96,12 +96,13 @@ import { normalizeCoinSetType } from '@/types'
 import type { CreateCoinSetRequest, SmartCriteriaGroup } from '@/types'
 import SetSmartRuleBuilder from '@/components/sets/SetSmartRuleBuilder.vue'
 import { randomSetColor } from '@/utils/setColors'
+import { t } from '@/i18n'
 
 const props = withDefaults(defineProps<{
   initialValue?: Partial<CreateCoinSetRequest>
   submitLabel?: string
 }>(), {
-  submitLabel: 'Create',
+  submitLabel: '',
 })
 
 const emit = defineEmits<{

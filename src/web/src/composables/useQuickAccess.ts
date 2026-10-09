@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { getApiErrorMessage, getQuickAccess, pinQuickAccess, unpinQuickAccess } from '@/api/client'
 import type { QuickAccessItem, QuickAccessTargetType } from '@/types'
+import { t } from '@/i18n'
 
 const items = ref<QuickAccessItem[]>([])
 const loading = ref(false)
@@ -38,7 +39,7 @@ function refresh() {
       }
     } catch (cause) {
       if (requestGeneration === generation && requestRevision === stateRevision) {
-        error.value = getApiErrorMessage(cause) || 'Unable to load Quick Access.'
+        error.value = getApiErrorMessage(cause) || t('quickAccess.errors.load')
       }
     } finally {
       if (requestGeneration === generation) loading.value = false
@@ -75,7 +76,7 @@ async function pin(type: QuickAccessTargetType, id: number) {
     return response.data
   } catch (cause) {
     if (requestGeneration === generation) {
-      error.value = getApiErrorMessage(cause) || 'Unable to pin this item.'
+      error.value = getApiErrorMessage(cause) || t('quickAccess.errors.pin')
     }
     throw cause
   } finally {
@@ -95,7 +96,7 @@ async function unpin(type: QuickAccessTargetType, id: number) {
     }
   } catch (cause) {
     if (requestGeneration === generation) {
-      error.value = getApiErrorMessage(cause) || 'Unable to unpin this item.'
+      error.value = getApiErrorMessage(cause) || t('quickAccess.errors.unpin')
     }
     throw cause
   } finally {

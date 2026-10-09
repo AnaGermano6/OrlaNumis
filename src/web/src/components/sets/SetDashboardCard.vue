@@ -16,7 +16,7 @@
     <span class="flex items-center justify-end gap-[0.85rem]">
       <span class="flex min-w-14 flex-col items-end whitespace-nowrap">
         <span class="font-sans text-3xl leading-[0.85] font-bold text-gold min-[561px]:text-4xl">{{ set.coinCount }}</span>
-        <span class="text-sm font-semibold text-gold min-[561px]:text-base">{{ set.coinCount === 1 ? 'Coin' : 'Coins' }}</span>
+        <span class="text-sm font-semibold text-gold min-[561px]:text-base">{{ set.coinCount === 1 ? t('sets.card.coin') : t('sets.card.coins') }}</span>
       </span>
     </span>
   </button>
@@ -26,6 +26,7 @@
 import { computed } from 'vue'
 import { normalizeCoinSetType } from '@/types'
 import type { CoinSetSummary } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   set: CoinSetSummary
@@ -37,9 +38,9 @@ defineEmits<{
 
 const setDescription = computed(() => {
   const normalizedType = normalizeCoinSetType(props.set.setType)
-  if (normalizedType === 'goal') return 'Goal set'
-  if (normalizedType === 'smart') return 'Smart set'
-  if (normalizedType === 'agentic') return props.set.agenticStatus === 'generating' ? 'Agentic set generating' : 'Agentic set'
-  return props.set.coinCount > 0 ? 'Standard set' : 'Ready for coins'
+  if (normalizedType === 'goal') return t('sets.card.goal')
+  if (normalizedType === 'smart') return t('sets.card.smart')
+  if (normalizedType === 'agentic') return props.set.agenticStatus === 'generating' ? t('sets.card.agenticGenerating') : t('sets.card.agentic')
+  return props.set.coinCount > 0 ? t('sets.card.standard') : t('sets.card.ready')
 })
 </script>

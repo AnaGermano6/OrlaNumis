@@ -3,6 +3,7 @@ import type {
   CoinCopilotSpecialistEvidence,
   CoinSuggestion,
 } from '@/types'
+import { t } from '@/i18n'
 
 export function isEligibleCopilotDealerListing(
   capability: CoinCopilotSpecialistCapability,
@@ -24,8 +25,8 @@ export function copilotDealerListingKey(toolCallId: string, sourceUrl: string): 
 
 export function copilotDealerListingUncertainty(item: CoinCopilotSpecialistEvidence): string {
   return [
-    item.verificationState === 'partial' ? 'This listing is only partially verified.' : '',
-    item.availability === 'unknown' ? 'Availability is unknown.' : '',
+    item.verificationState === 'partial' ? t('copilot.listing.partial') : '',
+    item.availability === 'unknown' ? t('copilot.listing.availabilityUnknown') : '',
   ].filter(Boolean).join(' ')
 }
 

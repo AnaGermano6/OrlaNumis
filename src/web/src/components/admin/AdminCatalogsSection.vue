@@ -1,8 +1,8 @@
 <template>
   <section class="card p-6">
-    <h2 class="text-xl font-medium text-heading">Catalog Registry</h2>
+    <h2 class="text-xl font-medium text-heading">{{ t('admin.catalogs.title') }}</h2>
     <p class="mb-6 text-body leading-6 text-text-secondary">
-      Manage coin catalog codes used in structured references. Deleting a catalog is only allowed if no coins reference it.
+      {{ t('admin.catalogs.intro') }}
     </p>
 
     <div v-if="loading" class="flex items-center justify-center p-12">
@@ -21,22 +21,22 @@
     <template v-else>
       <div class="mb-4 flex justify-end">
         <button class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="openCreateForm">
-          + Add Catalog
+          {{ t('admin.catalogs.add') }}
         </button>
       </div>
 
       <div v-if="catalogs.length === 0" class="py-8 text-center text-body text-text-muted">
-        No catalogs defined yet.
+        {{ t('admin.catalogs.empty') }}
       </div>
 
       <div v-else class="overflow-x-auto">
         <table class="data-table text-body [&_th]:px-2 [&_th]:py-3 [&_td]:px-2 [&_td]:py-3 [&_td]:align-top">
           <thead>
             <tr>
-              <th>Code</th>
-              <th>Display Name</th>
-              <th class="hidden md:table-cell">Volume Required</th>
-              <th>Actions</th>
+              <th>{{ t('admin.catalogs.code') }}</th>
+              <th>{{ t('admin.catalogs.displayName') }}</th>
+              <th class="hidden md:table-cell">{{ t('admin.catalogs.volumeRequired') }}</th>
+              <th>{{ t('common.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -52,7 +52,7 @@
                       color: colorForLabel(cat.era),
                     }"
                   >
-                    {{ cat.era }}
+                    {{ eraLabel(cat.era) }}
                   </span>
                 </div>
               </td>
@@ -62,16 +62,16 @@
                   size="sm"
                   :model-value="cat.volumeRequired"
                   disabled
-                  :label="`Volume required for ${cat.displayName}`"
+                  :label="t('admin.catalogs.volumeRequiredFor', { name: cat.displayName })"
                 />
               </td>
               <td>
                 <div class="flex flex-wrap justify-end gap-[0.35rem]">
                   <button class="btn btn-ghost btn-xs focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="openEditForm(cat)">
-                    Edit
+                    {{ t('common.edit') }}
                   </button>
                   <button class="btn btn-danger btn-xs focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="handleDelete(cat.id)">
-                    Delete
+                    {{ t('common.delete') }}
                   </button>
                 </div>
               </td>
@@ -83,7 +83,7 @@
       <div v-if="showForm" class="fixed inset-0 z-[200] flex items-center justify-center bg-overlay-60 p-4" @click.self="closeForm">
         <div class="max-h-[90vh] w-full max-w-[500px] overflow-auto rounded-md border border-border-subtle bg-card shadow-[var(--shadow-card)]">
           <div class="flex items-center justify-between gap-4 border-b border-border-subtle px-6 py-4">
-            <h3 class="m-0 text-lg font-medium text-heading">{{ editingCatalog ? 'Edit Catalog' : 'Add Catalog' }}</h3>
+            <h3 class="m-0 text-lg font-medium text-heading">{{ editingCatalog ? t('admin.catalogs.editTitle') : t('admin.catalogs.addTitle') }}</h3>
             <button
               class="inline-flex h-[30px] w-[30px] items-center justify-center p-0 text-text-muted transition-colors hover:text-text-primary focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
               @click="closeForm"
@@ -93,44 +93,44 @@
           </div>
           <form class="p-6" @submit.prevent="saveForm">
             <div class="form-group">
-              <label class="form-label">Catalog Code<span class="ml-[0.15rem] text-loss">*</span></label>
+              <label class="form-label">{{ t('admin.catalogs.catalogCode') }}<span class="ml-[0.15rem] text-loss">*</span></label>
               <input
                 v-model.trim="formData.catalog"
                 class="form-input"
-                placeholder="e.g. RIC, BMC, SNG"
+                :placeholder="t('admin.catalogs.codePlaceholder')"
                 required
                 :disabled="!!editingCatalog"
               />
             </div>
             <div class="form-group">
-              <label class="form-label">Display Name<span class="ml-[0.15rem] text-loss">*</span></label>
+              <label class="form-label">{{ t('admin.catalogs.displayName') }}<span class="ml-[0.15rem] text-loss">*</span></label>
               <input
                 v-model.trim="formData.displayName"
                 class="form-input"
-                placeholder="e.g. Roman Imperial Coinage"
+                :placeholder="t('admin.catalogs.namePlaceholder')"
                 required
               />
             </div>
             <div class="form-group">
-              <label class="form-label">Era<span class="ml-[0.15rem] text-loss">*</span></label>
+              <label class="form-label">{{ t('admin.catalogs.era') }}<span class="ml-[0.15rem] text-loss">*</span></label>
               <select v-model="formData.era" class="form-input" required>
-                <option value="" disabled>Select era</option>
-                <option v-for="era in eraOptions" :key="era" :value="era">{{ era }}</option>
+                <option value="" disabled>{{ t('admin.catalogs.selectEra') }}</option>
+                <option v-for="era in eraOptions" :key="era" :value="era">{{ eraLabel(era) }}</option>
               </select>
             </div>
             <div class="form-group flex items-center justify-between gap-4">
-              <label class="form-label mb-0">Volume Required</label>
+              <label class="form-label mb-0">{{ t('admin.catalogs.volumeRequired') }}</label>
               <BaseToggle
                 v-model="formData.volumeRequired"
-                label="Volume required"
+                :label="t('admin.catalogs.volumeRequiredLabel')"
               />
             </div>
             <div class="mt-6 flex flex-col gap-2 md:flex-row md:justify-end">
               <button type="button" class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="closeForm">
-                Cancel
+                {{ t('common.cancel') }}
               </button>
               <button type="submit" class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" :disabled="saving">
-                {{ saving ? 'Saving...' : 'Save' }}
+                {{ saving ? t('common.saving') : t('common.save') }}
               </button>
             </div>
             <div
@@ -157,6 +157,8 @@ import type { CatalogRegistry } from '@/types'
 import { useDialog } from '@/composables/useDialog'
 import { useCoinOptions } from '@/composables/useCoinOptions'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
+import { t } from '@/i18n'
+import { eraLabel } from '@/i18n/coinVocabulary'
 
 const { showAlert, showConfirm } = useDialog()
 const { eraOptions, loadOptions: loadCoinOptions } = useCoinOptions()
@@ -181,7 +183,7 @@ async function loadCatalogs() {
   try {
     catalogs.value = await listCatalogs()
   } catch (_e) {
-    error.value = 'Failed to load catalogs'
+    error.value = t('admin.catalogs.loadFailed')
   } finally {
     loading.value = false
   }
@@ -225,7 +227,7 @@ function closeForm() {
 
 async function saveForm() {
   if (!formData.value.catalog || !formData.value.displayName || !formData.value.era) {
-    formError.value = 'All required fields must be filled.'
+    formError.value = t('admin.catalogs.requiredFields')
     return
   }
 
@@ -249,7 +251,7 @@ async function saveForm() {
     closeForm()
   } catch (e: unknown) {
     const err = e as { response?: { data?: { error?: string } } }
-    formError.value = err.response?.data?.error || 'Failed to save catalog'
+    formError.value = err.response?.data?.error || t('admin.catalogs.saveFailed')
   } finally {
     saving.value = false
   }
@@ -257,8 +259,8 @@ async function saveForm() {
 
 async function handleDelete(id: number) {
   const confirmed = await showConfirm(
-    'Are you sure you want to delete this catalog? This will fail if any coins reference it.',
-    { title: 'Delete Catalog', variant: 'danger' },
+    t('admin.catalogs.confirmDelete'),
+    { title: t('admin.catalogs.deleteTitle'), variant: 'danger' },
   )
   if (!confirmed) return
 
@@ -269,13 +271,13 @@ async function handleDelete(id: number) {
     const err = e as { response?: { status?: number; data?: { error?: string } } }
     if (err.response?.status === 409) {
       await showAlert(
-        'This catalog is in use by one or more coins and cannot be deleted.',
-        { title: 'Cannot Delete' },
+        t('admin.catalogs.inUse'),
+        { title: t('admin.catalogs.cannotDelete') },
       )
     } else {
       await showAlert(
-        err.response?.data?.error || 'Failed to delete catalog',
-        { title: 'Delete Failed' },
+        err.response?.data?.error || t('admin.catalogs.deleteFailed'),
+        { title: t('admin.catalogs.deleteFailedTitle') },
       )
     }
   }

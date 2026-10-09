@@ -2,6 +2,7 @@ import { ref, watch, nextTick, onMounted, onUnmounted, type Ref } from 'vue'
 import { proxyImage, uploadImage, createCoin, getCoins, getCoin } from '@/api/client'
 import type { Coin } from '@/types'
 import { removeCoinBackground } from '@/utils/backgroundRemoval'
+import { t } from '@/i18n'
 
 export type Step = 'preview' | 'removing' | 'crop' | 'done'
 
@@ -61,7 +62,7 @@ export function useImageProcessor(
   function loadImageFromFile(file: File) {
     inputError.value = ''
     if (!file.type.startsWith('image/')) {
-      inputError.value = 'Please select an image file'
+      inputError.value = t('imageTools.selectImageFile')
       return
     }
     const reader = new FileReader()
@@ -86,7 +87,7 @@ export function useImageProcessor(
       }
       reader.readAsDataURL(blob)
     } catch {
-      inputError.value = 'Failed to fetch image from URL'
+      inputError.value = t('upload.fetchFailed')
     } finally {
       urlLoading.value = false
     }
@@ -114,7 +115,7 @@ export function useImageProcessor(
       img.src = URL.createObjectURL(result)
     } catch (err) {
       console.error('Background removal failed:', err)
-      inputError.value = 'Background removal failed. Please try again.'
+      inputError.value = t('imageTools.bgRemovalFailed')
       step.value = 'preview'
     }
   }
@@ -385,10 +386,11 @@ export function useImageProcessor(
       const isPrimary = saveImageType.value === 'obverse'
       await uploadImage(selectedCoinId.value, file, saveImageType.value, isPrimary)
       const coin = coinOptions.value.find(c => c.id === selectedCoinId.value)
-      saveMsg.value = `Saved as ${saveImageType.value} to "${coin?.name || 'coin'}"!`
+      const side = saveImageType.value === 'reverse' ? t('coinDetail.ai.sideLower.reverse') : t('coinDetail.ai.sideLower.obverse')
+      saveMsg.value = t('imageTools.savedTo', { side, name: coin?.name || t('imageTools.coinFallback') })
       return selectedCoinId.value
     } catch {
-      saveMsg.value = 'Failed to save image'
+      saveMsg.value = t('imageTools.saveFailed')
       saveError.value = true
       return null
     } finally {
@@ -407,10 +409,10 @@ export function useImageProcessor(
       const blob = await getResultBlob()
       const file = new File([blob], 'obverse.png', { type: 'image/png' })
       await uploadImage(coin.id, file, 'obverse', true)
-      saveMsg.value = `Created "${coin.name}" with obverse image!`
+      saveMsg.value = t('imageTools.createdWithObverse', { name: coin.name })
       return coin.id
     } catch {
-      saveMsg.value = 'Failed to create coin'
+      saveMsg.value = t('imageTools.createFailed')
       saveError.value = true
       return null
     } finally {

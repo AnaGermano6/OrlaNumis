@@ -3,7 +3,7 @@
     <div class="w-full max-w-[420px] text-center card">
       <img
         :src="coinLogoSrc"
-        alt="Aurearia - Coin Collection"
+        :alt="t('app.brandFull')"
         class="w-20 h-20 rounded-full object-cover border border-gold-dim mb-4 shadow-[var(--shadow-glow)] mx-auto block"
       />
       <div
@@ -37,7 +37,7 @@
         @click="continueToApp"
       >
         <ArrowRight :size="18" aria-hidden="true" />
-        Continue to Collection
+        {{ t('oidc.login.continue') }}
       </button>
       <router-link
         v-else-if="status === 'error'"
@@ -45,7 +45,7 @@
         to="/login"
       >
         <ArrowLeft :size="18" aria-hidden="true" />
-        Back to Sign In
+        {{ t('oidc.login.back') }}
       </router-link>
     </div>
   </div>
@@ -57,6 +57,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { completeOIDCLoginCallback, getApiErrorMessage } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle, LoaderCircle } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 type CallbackStatus = 'loading' | 'success' | 'error'
 
@@ -69,15 +70,15 @@ const message = ref('')
 const coinLogoSrc = '/coin-logo.jpg'
 
 const title = computed(() => {
-  if (status.value === 'loading') return 'Signing You In'
-  if (status.value === 'success') return 'Sign In Complete'
-  return 'Sign In Failed'
+  if (status.value === 'loading') return t('oidc.login.loadingTitle')
+  if (status.value === 'success') return t('oidc.login.successTitle')
+  return t('oidc.login.errorTitle')
 })
 
 const subtitle = computed(() => {
-  if (status.value === 'loading') return 'Finishing the secure provider handshake...'
-  if (status.value === 'success') return 'Your secure session is ready.'
-  return 'The provider sign-in could not be completed.'
+  if (status.value === 'loading') return t('oidc.handshake')
+  if (status.value === 'success') return t('oidc.login.successSubtitle')
+  return t('oidc.login.errorSubtitle')
 })
 
 onMounted(() => {
@@ -94,7 +95,7 @@ async function completeCallback() {
   void router.replace({ name: 'oidc-login-callback', params: { providerId: providerIdParam ?? '' } })
 
   if (!Number.isInteger(providerId) || providerId <= 0) {
-    setError('The provider callback was missing a valid provider. Start sign-in again.')
+    setError(t('oidc.login.missingProvider'))
     return
   }
 
@@ -104,14 +105,14 @@ async function completeCallback() {
   }
 
   if (!code || !state) {
-    setError('The provider callback was incomplete. Start sign-in again.')
+    setError(t('oidc.login.incomplete'))
     return
   }
 
   try {
     const response = await completeOIDCLoginCallback(providerId, code, state)
     await auth.applyAuthResponse(response.data)
-    message.value = 'You are signed in. Continue to your collection.'
+    message.value = t('oidc.login.signedIn')
     status.value = 'success'
   } catch (error: unknown) {
     setError(mapCallbackError(error))
@@ -141,9 +142,9 @@ function firstParamValue(value: string | string[] | undefined) {
 function mapProviderError(error: string) {
   const normalized = error.toLowerCase()
   if (normalized.includes('access_denied') || normalized.includes('cancel') || normalized.includes('denied')) {
-    return 'Sign-in was cancelled or denied at the provider. You can try again or use your local password.'
+    return t('oidc.login.cancelled')
   }
-  return 'The provider returned an error before sign-in completed. Try again or ask an administrator to review the provider setup.'
+  return t('oidc.login.providerError')
 }
 
 function mapCallbackError(error: unknown) {
@@ -153,7 +154,7 @@ function mapCallbackError(error: unknown) {
   const normalized = `${messageText} ${detailText}`.toLowerCase()
 
   if (response?.status === 409) {
-    return 'This provider account matches an existing local account. Sign in locally, then link the provider from Account Settings.'
+    return t('oidc.login.existingAccount')
   }
 
   if (normalized.includes('redirect uri') || normalized.includes('client secret') || normalized.includes('configuration') || normalized.includes('discovery') || response?.status === 500) {
@@ -161,10 +162,10 @@ function mapCallbackError(error: unknown) {
   }
 
   if (normalized.includes('state') || normalized.includes('claims') || response?.status === 400 || response?.status === 401) {
-    return 'The provider response could not be validated. Start sign-in again.'
+    return t('oidc.login.validation')
   }
 
-  return messageText || 'OIDC sign-in failed. Try again or use your local password.'
+  return messageText || t('oidc.login.failed')
 }
 
 function getErrorResponse(error: unknown): { status?: number } | null {
@@ -184,8 +185,8 @@ function getErrorDetail(error: unknown) {
 function providerConfigurationMessage(detail: string) {
   const safeDetail = detail.trim()
   if (safeDetail) {
-    return `The sign-in provider is not configured correctly: ${safeDetail}. Ask an administrator to review the provider settings.`
+    return t('oidc.misconfiguredDetail', { detail: safeDetail })
   }
-  return 'The sign-in provider is not configured correctly. Ask an administrator to review the provider settings.'
+  return t('oidc.misconfigured')
 }
 </script>

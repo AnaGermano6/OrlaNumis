@@ -11,7 +11,7 @@
         {{ slot.figure.name }}
       </span>
       <label v-if="slot.coins.length > 1" class="flex w-full max-w-[120px] flex-col gap-1">
-        <span class="sr-only">Highlighted {{ slot.figure.name }} coin</span>
+        <span class="sr-only">{{ t('emperors.highlighted', { name: slot.figure.name }) }}</span>
         <select
           class="form-select px-2 py-1 text-xs"
           :value="slot.highlightedCoinId ?? slot.coin?.id ?? ''"
@@ -30,6 +30,7 @@ import MuseumTrayWell from '@/components/tray/MuseumTrayWell.vue'
 import { updateEmperorTrackerHighlight } from '@/api/client'
 import type { ImperialFigureSlot } from '@/types'
 import type { TrayCoin } from '@/utils/trayLayout'
+import { t } from '@/i18n'
 
 defineProps<{
   slots: ImperialFigureSlot[]

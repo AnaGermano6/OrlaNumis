@@ -4,7 +4,7 @@
       ref="inputEl"
       v-model="model"
       class="form-input flex-1"
-      :placeholder="providerConfigured ? 'Describe the coins you\'re looking for...' : 'Configure AI provider in Admin Settings'"
+      :placeholder="providerConfigured ? t('chat.inputPlaceholder') : t('chat.configureProvider')"
       :disabled="loading || !providerConfigured"
     />
     <button
@@ -20,6 +20,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { SendHorizontal } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 const model = defineModel<string>({ required: true })
 

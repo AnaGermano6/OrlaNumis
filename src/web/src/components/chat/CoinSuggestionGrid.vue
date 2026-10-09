@@ -12,7 +12,7 @@
         <h4 class="mb-1 text-body leading-snug text-text-primary">{{ coin.name }}</h4>
         <p class="mb-1.5 line-clamp-2 text-sm text-text-secondary">{{ coin.description }}</p>
         <div class="mb-1.5 flex flex-wrap gap-1">
-          <span v-if="coin.era" class="chip-sm">{{ coin.era }}</span>
+          <span v-if="coin.era" class="chip-sm">{{ eraLabel(coin.era) }}</span>
           <span v-if="coin.material" class="chip-sm">{{ coin.material }}</span>
           <span v-if="coin.denomination" class="chip-sm">{{ coin.denomination }}</span>
         </div>
@@ -26,7 +26,7 @@
             class="flex items-center gap-1 text-sm text-text-muted no-underline transition-colors hover:text-gold"
           >
             <ExternalLink :size="12" />
-            {{ coin.sourceName || 'Source' }}
+            {{ coin.sourceName || t('chat.suggestions.source') }}
           </SafeExternalLink>
           <button
             v-if="coin.era || coin.material || coin.denomination"
@@ -35,7 +35,7 @@
             @click="$emit('add-to-wishlist', coin, `${messageIndex}-${j}`)"
           >
             <CirclePlus :size="14" />
-            {{ addedSet.has(`${messageIndex}-${j}`) ? 'Added!' : addingIdx === `${messageIndex}-${j}` ? 'Adding...' : 'Add to Wishlist' }}
+            {{ addedSet.has(`${messageIndex}-${j}`) ? t('chat.suggestions.added') : addingIdx === `${messageIndex}-${j}` ? t('common.adding') : t('chat.suggestions.addToWishlist') }}
           </button>
         </div>
       </div>
@@ -49,6 +49,8 @@ import type { CoinSuggestion } from '@/types'
 import { CirclePlus, ExternalLink } from 'lucide-vue-next'
 import { proxyImage, scrapeImage } from '@/api/client'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
+import { t } from '@/i18n'
+import { eraLabel } from '@/i18n/coinVocabulary'
 
 defineProps<{
   suggestions: CoinSuggestion[]

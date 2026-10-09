@@ -6,31 +6,31 @@
         <h2 class="mt-1">{{ title }}</h2>
         <p v-if="description" class="mt-[0.35rem] text-body text-text-secondary">{{ description }}</p>
       </div>
-      <span v-if="rows.length" class="inline-flex whitespace-nowrap rounded-full border border-border-accent bg-gold-dim px-[0.7rem] py-[0.2rem] text-sm font-semibold text-gold">{{ totalCoinCount }} coins</span>
+      <span v-if="rows.length" class="inline-flex whitespace-nowrap rounded-full border border-border-accent bg-gold-dim px-[0.7rem] py-[0.2rem] text-sm font-semibold text-gold">{{ t('stats.breakdown.coins', { count: totalCoinCount }) }}</span>
     </div>
 
     <div v-if="!rows.length" class="empty-state">
-      <p>No investment data is available for this breakdown.</p>
+      <p>{{ t('stats.breakdown.empty') }}</p>
     </div>
 
     <template v-else>
-      <div class="grid gap-3 min-[641px]:grid-cols-2 xl:grid-cols-4" aria-label="Investment summary">
+      <div class="grid gap-3 min-[641px]:grid-cols-2 xl:grid-cols-4" :aria-label="t('stats.breakdown.summary')">
         <div class="flex flex-col gap-1 rounded-sm border border-border-subtle bg-input p-3">
-          <span class="text-sm text-text-muted">Invested</span>
+          <span class="text-sm text-text-muted">{{ t('stats.timeMachine.invested') }}</span>
           <strong class="text-text-primary">{{ formatCurrency(totals.invested) }}</strong>
         </div>
         <div class="flex flex-col gap-1 rounded-sm border border-border-subtle bg-input p-3">
-          <span class="text-sm text-text-muted">Current Value</span>
+          <span class="text-sm text-text-muted">{{ t('coinFields.currentValue') }}</span>
           <strong class="text-gold">{{ formatCurrency(totals.currentValue) }}</strong>
         </div>
         <div class="flex flex-col gap-1 rounded-sm border border-border-subtle bg-input p-3">
-          <span class="text-sm text-text-muted">Gain / Loss</span>
+          <span class="text-sm text-text-muted">{{ t('stats.breakdown.gainLoss') }}</span>
           <strong :class="totals.gainLoss >= 0 ? 'text-gold' : 'text-byzantine'">
             {{ totals.gainLoss >= 0 ? '+' : '' }}{{ formatCurrency(totals.gainLoss) }}
           </strong>
         </div>
         <div class="flex flex-col gap-1 rounded-sm border border-border-subtle bg-input p-3">
-          <span class="text-sm text-text-muted">ROI</span>
+          <span class="text-sm text-text-muted">{{ t('stats.value.roi') }}</span>
           <strong :class="summaryGainLossPct >= 0 ? 'text-gold' : 'text-byzantine'">
             {{ summaryGainLossPct >= 0 ? '+' : '' }}{{ summaryGainLossPct.toFixed(1) }}%
           </strong>
@@ -38,13 +38,13 @@
       </div>
 
       <div v-if="hasMissingValues" class="rounded-sm border border-border-subtle bg-gold-glow p-3" role="note">
-        <span class="section-label">Confidence</span>
+        <span class="section-label">{{ t('stats.breakdown.confidence') }}</span>
         <p class="mt-1 text-body text-text-secondary">
-          {{ missingValueSummary }}. Totals use available prices and values, so returns may change as records are completed.
+          {{ t('stats.breakdown.missingNote', { summary: missingValueSummary }) }}
         </p>
       </div>
 
-      <div class="flex flex-col gap-3" aria-label="Investment performance rows">
+      <div class="flex flex-col gap-3" :aria-label="t('stats.breakdown.rows')">
         <article
           v-for="row in displayRows"
           :key="rowKey(row)"
@@ -53,7 +53,7 @@
           <div class="flex items-start justify-between gap-3">
             <div>
               <h3 class="m-0 text-lg text-heading">{{ formatSegmentLabel(row) }}</h3>
-              <p class="mt-[0.35rem] text-body text-text-secondary">{{ row.coinCount }} coins</p>
+              <p class="mt-[0.35rem] text-body text-text-secondary">{{ t('stats.breakdown.coins', { count: row.coinCount }) }}</p>
             </div>
             <span class="inline-flex items-center rounded-full px-2 py-[0.15rem] text-sm font-semibold whitespace-nowrap" :class="row.gainLoss >= 0 ? 'bg-gold-dim text-gold' : 'bg-[color-mix(in_srgb,var(--color-byzantine)_18%,transparent)] text-byzantine'">
               {{ row.gainLoss >= 0 ? '+' : '' }}{{ normalizedPct(row).toFixed(1) }}%
@@ -62,15 +62,15 @@
 
           <div class="grid gap-3 max-[640px]:grid-cols-1 min-[641px]:grid-cols-3">
             <div class="flex flex-col gap-1">
-              <span class="text-sm text-text-muted">Invested</span>
+              <span class="text-sm text-text-muted">{{ t('stats.timeMachine.invested') }}</span>
               <strong class="text-text-primary">{{ formatCurrency(row.invested) }}</strong>
             </div>
             <div class="flex flex-col gap-1">
-              <span class="text-sm text-text-muted">Current</span>
+              <span class="text-sm text-text-muted">{{ t('stats.breakdown.current') }}</span>
               <strong class="text-gold">{{ formatCurrency(row.currentValue) }}</strong>
             </div>
             <div class="flex flex-col gap-1">
-              <span class="text-sm text-text-muted">Gain / Loss</span>
+              <span class="text-sm text-text-muted">{{ t('stats.breakdown.gainLoss') }}</span>
               <strong :class="row.gainLoss >= 0 ? 'text-gold' : 'text-byzantine'">
                 {{ row.gainLoss >= 0 ? '+' : '' }}{{ formatCurrency(row.gainLoss) }}
               </strong>
@@ -79,13 +79,13 @@
 
           <div class="flex flex-col gap-2" aria-hidden="true">
             <div class="grid items-center gap-2 [grid-template-columns:4.5rem_1fr]">
-              <span class="text-sm text-text-muted">Invested</span>
+              <span class="text-sm text-text-muted">{{ t('stats.timeMachine.invested') }}</span>
               <div class="h-[0.45rem] overflow-hidden rounded-full bg-card">
                 <span class="block h-full rounded-full bg-bronze" :style="{ width: `${barWidth(row.invested, maxInvested)}%` }"></span>
               </div>
             </div>
             <div class="grid items-center gap-2 [grid-template-columns:4.5rem_1fr]">
-              <span class="text-sm text-text-muted">Current</span>
+              <span class="text-sm text-text-muted">{{ t('stats.breakdown.current') }}</span>
               <div class="h-[0.45rem] overflow-hidden rounded-full bg-card">
                 <span class="block h-full rounded-full bg-gold" :style="{ width: `${barWidth(row.currentValue, maxCurrentValue)}%` }"></span>
               </div>
@@ -99,8 +99,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatCurrency } from '@/utils/format'
+import { formatCurrency, materialLabel } from '@/utils/format'
 import type { InvestmentBreakdownSegment } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   title: string
@@ -138,9 +139,9 @@ const missingValueSummary = computed(() => {
   const missingPurchase = props.rows.reduce((sum, row) => sum + row.missingPurchasePriceCount, 0)
   const missingCurrent = props.rows.reduce((sum, row) => sum + row.missingCurrentValueCount, 0)
   const parts: string[] = []
-  if (missingPurchase > 0) parts.push(`${missingPurchase} missing purchase price${missingPurchase === 1 ? '' : 's'}`)
-  if (missingCurrent > 0) parts.push(`${missingCurrent} missing current value${missingCurrent === 1 ? '' : 's'}`)
-  return parts.join(' and ')
+  if (missingPurchase > 0) parts.push(t('stats.breakdown.missingPurchase', { count: missingPurchase }))
+  if (missingCurrent > 0) parts.push(t('stats.breakdown.missingCurrent', { count: missingCurrent }))
+  return parts.join(t('stats.breakdown.and'))
 })
 
 function rowKey(row: InvestmentBreakdownSegment): string {
@@ -149,7 +150,7 @@ function rowKey(row: InvestmentBreakdownSegment): string {
 
 function formatSegmentLabel(row: InvestmentBreakdownSegment): string {
   if (row.year) return `${row.year}`
-  return row.label
+  return materialLabel(row.label)
 }
 
 function normalizedPct(row: InvestmentBreakdownSegment): number {

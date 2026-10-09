@@ -30,6 +30,7 @@ import type {
   UpdateDeepIdentificationProposalInput,
 } from '@/types'
 import { appendOptionalFormValue } from '@/api/endpoints/_shared'
+import { t } from '@/i18n'
 
 export const getValuationPrompt = () => api.get<{ prompt: string; default: string }>('/agent/valuation-prompt')
 
@@ -84,7 +85,7 @@ export async function agentChatStream(
     }
 
     const reader = resp.body?.getReader()
-    if (!reader) { onError('No response body'); return }
+    if (!reader) { onError(t('agent.errors.noBody')); return }
 
     const decoder = new TextDecoder()
     let buffer = ''
@@ -128,7 +129,7 @@ export async function agentChatStream(
         } else if (event.type === 'error') {
           sendError(formatAgentServiceError(
             typeof event.message === 'string' ? event.message : '',
-            'Agent stream error',
+            t('agent.errors.stream'),
           ))
         }
       } catch {
@@ -159,11 +160,11 @@ export async function agentChatStream(
       if (accumulatedText.trim()) {
         sendDone(accumulatedText, [])
       } else {
-        sendError('Stream ended unexpectedly')
+        sendError(t('agent.errors.ended'))
       }
     }
   } catch (err: unknown) {
-    if (!signal?.aborted) onError(err instanceof Error ? err.message : 'Stream failed')
+    if (!signal?.aborted) onError(err instanceof Error ? err.message : t('agent.errors.failed'))
   }
 }
 
@@ -674,10 +675,10 @@ export async function streamCoinCopilotRunEvents(
   )
   if (!response.ok) {
     const body = await response.json().catch(() => null)
-    throw new Error(formatAgentServiceError(body, `Unable to open Coin Copilot stream (HTTP ${response.status}).`))
+    throw new Error(formatAgentServiceError(body, t('agent.errors.copilotStream', { status: response.status })))
   }
   const reader = response.body?.getReader()
-  if (!reader) throw new Error('Streaming is not supported in this browser.')
+  if (!reader) throw new Error(t('deepAnalysis.errors.streamUnsupported'))
 
   const parser = createCoinCopilotSSEParser(handlers, options.seenSeqs)
   const decoder = new TextDecoder()

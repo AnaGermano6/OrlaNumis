@@ -10,7 +10,7 @@
         :class="{ 'animate-spin': refreshing }"
         :style="refreshing ? '' : `transform: rotate(${pullDistance * 3}deg)`"
       ></div>
-      <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? 'Refreshing...' : pullDistance >= 60 ? 'Release to refresh' : 'Pull to refresh' }}</span>
+      <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? t('common.pull.refreshing') : pullDistance >= 60 ? t('common.pull.release') : t('common.pull.pull') }}</span>
     </div>
 
     <PwaCollectionHeader
@@ -126,6 +126,7 @@ import BulkActionBar from '@/components/BulkActionBar.vue'
 import BulkTagPickerModal from '@/components/BulkTagPickerModal.vue'
 import BulkLocationPickerModal from '@/components/BulkLocationPickerModal.vue'
 import NeedsAttentionQueue from '@/components/collection/NeedsAttentionQueue.vue'
+import { t } from '@/i18n'
 
 const store = useCoinsStore()
 const router = useRouter()
@@ -266,7 +267,7 @@ function deselectAll() {
 
 async function bulkDelete() {
   const count = selectedCoinIds.value.size
-  if (!confirm(`Delete ${count} coin${count === 1 ? '' : 's'}? This cannot be undone.`)) return
+  if (!confirm(t('collection.bulk.confirmDelete', { count }))) return
   try {
     await bulkAction([...selectedCoinIds.value], 'delete')
     await refreshQuickAccess()
@@ -275,13 +276,13 @@ async function bulkDelete() {
     bulkSelectActive.value = false
     loadCoins()
   } catch {
-    alert('Failed to delete coins')
+    alert(t('collection.bulk.deleteFailed'))
   }
 }
 
 async function bulkSell() {
   const count = selectedCoinIds.value.size
-  if (!confirm(`Mark ${count} coin${count === 1 ? '' : 's'} as sold?`)) return
+  if (!confirm(t('collection.bulk.confirmSell', { count }))) return
   try {
     await bulkAction([...selectedCoinIds.value], 'sell')
     await refreshQuickAccess()
@@ -290,7 +291,7 @@ async function bulkSell() {
     bulkSelectActive.value = false
     loadCoins()
   } catch {
-    alert('Failed to mark coins as sold')
+    alert(t('collection.bulk.sellFailed'))
   }
 }
 
@@ -310,7 +311,7 @@ async function bulkTag(target: string) {
     bulkSelectActive.value = false
     loadCoins()
   } catch {
-    alert(applyingSet ? 'Failed to apply set' : 'Failed to apply tag')
+    alert(applyingSet ? t('collection.bulk.applySetFailed') : t('collection.bulk.applyTagFailed'))
   }
 }
 
@@ -323,7 +324,7 @@ async function bulkAssignLocation(locationId: number | null) {
     bulkSelectActive.value = false
     loadCoins()
   } catch {
-    alert('Failed to assign location')
+    alert(t('collection.bulk.assignLocationFailed'))
   }
 }
 

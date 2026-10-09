@@ -41,7 +41,7 @@
             @pointerdown.stop
             @click.stop="flipCoin"
             :disabled="isFlipping"
-            title="Flip coin"
+            :title="t('swipe.flip')"
           >
             ⟳
           </button>
@@ -53,17 +53,17 @@
     </div>
 
     <div v-else class="swipe-empty">
-      <p>No coins to display</p>
+      <p>{{ t('swipe.empty') }}</p>
     </div>
 
     <!-- Arrow navigation -->
     <div v-if="total > 1" class="swipe-nav">
       <button class="nav-btn" @click="goPrev">
         <ChevronLeft :size="16" />
-        <span>Prev</span>
+        <span>{{ t('common.prev') }}</span>
       </button>
       <button class="nav-btn" @click="goNext">
-        <span>Next</span>
+        <span>{{ t('common.next') }}</span>
         <ChevronRight :size="16" />
       </button>
     </div>
@@ -78,6 +78,7 @@ import { useCoinsStore } from '@/stores/coins'
 import { Coins, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { useSwipeGesture } from '@/composables/useSwipeGesture'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   coins: Coin[]

@@ -21,6 +21,7 @@ import type {
   CoinCopilotThread,
   CoinCopilotToolCompletedEvent,
 } from '@/types'
+import { t } from '@/i18n'
 
 const ACTIVE_RUN_KEY = 'coinCopilot:activeRun'
 // Kept after a run finishes so reopening the chat restores the conversation.
@@ -68,13 +69,13 @@ function responseStatus(error: unknown): number | undefined {
 function actionableError(error: unknown, fallback: string) {
   const message = getApiErrorMessage(error).trim()
   if (/capacity|queue|conflicts with current state/i.test(message)) {
-    return 'Another Coin Copilot run is active. Reopen it or wait for it to finish.'
+    return t('copilot.errors.anotherActive')
   }
   if (/checkpoint|stale/i.test(message)) {
-    return 'This clarification is out of date. Reload the run before answering again.'
+    return t('copilot.errors.stale')
   }
   if (/not found/i.test(message)) {
-    return 'This Coin Copilot run is no longer available.'
+    return t('copilot.errors.gone')
   }
   return message || fallback
 }
@@ -364,7 +365,7 @@ export function useCoinCopilot(options: UseCoinCopilotOptions = {}) {
         if (!hasUnappliedEvents() && (terminal.value || paused())) break
         reconnectAttempt += 1
         if (reconnectAttempt > MAX_RECONNECTS) {
-          error.value = 'Coin Copilot disconnected. Reopen the drawer to reconnect.'
+          error.value = t('copilot.errors.disconnected')
           break
         }
         reconnecting.value = true
@@ -376,13 +377,13 @@ export function useCoinCopilot(options: UseCoinCopilotOptions = {}) {
           if (currentGeneration !== generation) break
         } catch (refreshError: unknown) {
           if (currentGeneration !== generation) break
-          error.value = actionableError(refreshError, 'Coin Copilot could not reload the durable run.')
+          error.value = actionableError(refreshError, t('copilot.errors.reloadFailed'))
           break
         }
         if (!hasUnappliedEvents() && (terminal.value || paused())) break
         reconnectAttempt += 1
         if (reconnectAttempt > MAX_RECONNECTS) {
-          error.value = actionableError(streamError, 'Coin Copilot disconnected. Reopen the drawer to reconnect.')
+          error.value = actionableError(streamError, t('copilot.errors.disconnected'))
           break
         }
         reconnecting.value = true
@@ -423,7 +424,7 @@ export function useCoinCopilot(options: UseCoinCopilotOptions = {}) {
     } catch (firstError: unknown) {
       if (responseStatus(firstError) === 503) return { accepted: false, fallback: true }
       if (responseStatus(firstError) !== undefined) {
-        return { accepted: false, fallback: false, error: actionableError(firstError, 'Coin Copilot could not start.') }
+        return { accepted: false, fallback: false, error: actionableError(firstError, t('copilot.errors.startFailed')) }
       }
       try {
         response = await startCoinCopilotRun(input, key)
@@ -432,14 +433,14 @@ export function useCoinCopilot(options: UseCoinCopilotOptions = {}) {
         return {
           accepted: false,
           fallback: false,
-          error: actionableError(retryError, 'Coin Copilot start could not be confirmed. Try again to safely reuse the request.'),
+          error: actionableError(retryError, t('copilot.errors.startUnconfirmed')),
         }
       }
     } finally {
       starting.value = false
     }
 
-    if (currentGeneration !== generation) return { accepted: false, fallback: false, error: 'Chat was reset.' }
+    if (currentGeneration !== generation) return { accepted: false, fallback: false, error: t('copilot.errors.chatReset') }
     run.value = response.data.run
     persistCursor()
     await connect()
@@ -461,7 +462,7 @@ export function useCoinCopilot(options: UseCoinCopilotOptions = {}) {
       persistCursor()
       return true
     } catch (cancelError: unknown) {
-      error.value = actionableError(cancelError, 'Coin Copilot could not cancel this run.')
+      error.value = actionableError(cancelError, t('copilot.errors.cancelFailed'))
       return false
     }
   }
@@ -500,11 +501,11 @@ export function useCoinCopilot(options: UseCoinCopilotOptions = {}) {
           return true
         } catch (retryError: unknown) {
           if (currentGeneration !== generation) return false
-          error.value = actionableError(retryError, 'Coin Copilot could not resume this run.')
+          error.value = actionableError(retryError, t('copilot.errors.resumeFailed'))
           return false
         }
       }
-      error.value = actionableError(firstError, 'Coin Copilot could not resume this run.')
+      error.value = actionableError(firstError, t('copilot.errors.resumeFailed'))
       return false
     }
   }

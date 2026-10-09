@@ -19,9 +19,9 @@
   />
 
   <section v-else class="capture-wizard" aria-labelledby="capture-wizard-title">
-    <h2 id="capture-wizard-title" class="sr-only">Coin photo steps</h2>
+    <h2 id="capture-wizard-title" class="sr-only">{{ t('lookup.wizard.title') }}</h2>
 
-    <ol class="capture-progress" :aria-label="purpose === 'intake' ? 'Coin intake progress' : 'Identification progress'">
+    <ol class="capture-progress" :aria-label="purpose === 'intake' ? t('lookup.wizard.intakeProgress') : t('lookup.wizard.identifyProgress')">
       <li
         v-for="(wizardStep, index) in steps"
         :key="wizardStep.role"
@@ -35,12 +35,12 @@
     <div class="capture-workspace">
       <aside class="capture-guidance">
         <div>
-          <span class="section-label">Step {{ step + 1 }} of 3</span>
+          <span class="section-label">{{ t('lookup.wizard.stepOf', { step: step + 1 }) }}</span>
           <h2 class="mt-1 text-heading">{{ currentStep.title }}</h2>
           <p class="mt-1 text-body leading-5 text-text-secondary">{{ currentStep.description }}</p>
         </div>
 
-        <div class="capture-evidence" aria-label="Captured evidence">
+        <div class="capture-evidence" :aria-label="t('lookup.wizard.evidence')">
           <button
             v-for="(wizardStep, index) in steps.slice(0, 2)"
             :key="wizardStep.role"
@@ -53,12 +53,12 @@
             <img
               v-if="stepImage(wizardStep.role)"
               :src="stepImage(wizardStep.role)?.preview"
-              :alt="`${wizardStep.label} thumbnail`"
+              :alt="t('lookup.wizard.thumbnail', { label: wizardStep.label })"
             />
             <span v-else class="evidence-placeholder"><Camera :size="18" /></span>
             <span>
               <strong>{{ wizardStep.label }}</strong>
-              <small>{{ stepImage(wizardStep.role) ? 'Image added' : wizardStep.required ? 'Required' : 'Optional' }}</small>
+              <small>{{ stepImage(wizardStep.role) ? t('lookup.wizard.imageAdded') : wizardStep.required ? t('lookup.wizard.required') : t('lookup.wizard.optional') }}</small>
             </span>
             <Check v-if="stepImage(wizardStep.role)" :size="16" class="evidence-check" />
           </button>
@@ -68,12 +68,12 @@
       <div class="capture-stage">
         <div v-if="showNotesEditor" class="notes-editor">
           <label class="notes-field">
-            <span class="section-label">Identification notes (optional)</span>
+            <span class="section-label">{{ t('lookup.wizard.notesLabel') }}</span>
             <textarea
               :value="notes"
               class="form-input"
               maxlength="2000"
-              placeholder="Add anything you know about the coin, such as weight, diameter, ruler, inscription, or provenance. Leave blank to use the photos only."
+              :placeholder="t('lookup.wizard.notesPlaceholder')"
               @input="$emit('update:notes', ($event.target as HTMLTextAreaElement).value)"
             ></textarea>
             <span class="text-right text-sm text-text-muted">{{ notes.length }} / 2000</span>
@@ -90,7 +90,7 @@
               :checked="includePriceEstimate"
               @change="$emit('update:includePriceEstimate', ($event.target as HTMLInputElement).checked)"
             />
-            <span>Include an estimated price range</span>
+            <span>{{ t('lookup.wizard.includePrice') }}</span>
           </label>
         </div>
 
@@ -99,11 +99,11 @@
             v-if="currentImage"
             class="capture-preview relative w-full overflow-hidden rounded-sm border border-border-accent bg-card"
           >
-            <img :src="currentImage.preview" :alt="`${currentStep.label} coin image`" class="h-full w-full object-contain" />
+            <img :src="currentImage.preview" :alt="t('lookup.wizard.coinImage', { label: currentStep.label })" class="h-full w-full object-contain" />
             <button
               type="button"
               class="absolute right-2 top-2 flex min-h-11 min-w-11 items-center justify-center rounded-sm bg-overlay text-text-primary"
-              :aria-label="`Remove ${currentStep.label.toLowerCase()} image`"
+              :aria-label="t('lookup.wizard.removeImage', { side: currentStep.label.toLowerCase() })"
               @click="$emit('remove', currentStep.role)"
             >
               <X :size="18" />
@@ -148,12 +148,12 @@
             v-if="step > 0"
             type="button"
             class="btn btn-secondary min-h-11 shrink-0 justify-center"
-            title="Previous step"
-            aria-label="Previous step"
+            :title="t('lookup.wizard.previousStep')"
+            :aria-label="t('lookup.wizard.previousStep')"
             @click="goToStep(step - 1)"
           >
             <ChevronLeft :size="20" aria-hidden="true" />
-            <span class="hidden sm:inline">Previous</span>
+            <span class="hidden sm:inline">{{ t('common.previous') }}</span>
           </button>
 
           <button
@@ -166,7 +166,7 @@
             <span v-if="submitting" class="inline-block h-[14px] w-[14px] animate-spin rounded-full border-2 border-border-subtle border-t-gold"></span>
             <span v-else-if="preparingImage" class="inline-block h-[14px] w-[14px] animate-spin rounded-full border-2 border-border-subtle border-t-gold"></span>
             <Search v-else :size="19" class="hidden sm:block" />
-            {{ submitting ? 'Analyzing...' : preparingImage ? 'Preparing image...' : purpose === 'intake' ? 'Generate Intake Draft' : 'Analyze Photos' }}
+            {{ submitting ? t('lookup.wizard.analyzing') : preparingImage ? t('lookup.wizard.preparing') : purpose === 'intake' ? t('lookup.wizard.generateIntake') : t('lookup.wizard.analyzePhotos') }}
           </button>
 
           <button
@@ -178,7 +178,7 @@
             @click="startDeepAnalysis"
           >
             <Microscope :size="19" class="hidden sm:block" aria-hidden="true" />
-            Deep Analysis
+            {{ t('deepAnalysis.title') }}
           </button>
 
           <button
@@ -186,11 +186,11 @@
             type="button"
             class="btn btn-secondary ml-auto min-h-11 shrink-0 justify-center"
             :disabled="!obverse || preparingImage"
-            :title="step === 0 ? 'Add reverse image' : purpose === 'intake' ? 'Add coin card' : 'Add notes'"
-            :aria-label="step === 0 ? 'Add reverse image' : purpose === 'intake' ? 'Add coin card' : 'Add notes'"
+            :title="step === 0 ? t('lookup.wizard.addReverse') : purpose === 'intake' ? t('lookup.wizard.addCard') : t('lookup.wizard.addNotes')"
+            :aria-label="step === 0 ? t('lookup.wizard.addReverse') : purpose === 'intake' ? t('lookup.wizard.addCard') : t('lookup.wizard.addNotes')"
             @click="goToStep(step + 1)"
           >
-            <span class="hidden sm:inline">{{ step === 0 ? 'Next: Reverse' : purpose === 'intake' ? 'Next: Card' : 'Next: Notes' }}</span>
+            <span class="hidden sm:inline">{{ step === 0 ? t('lookup.wizard.nextReverse') : purpose === 'intake' ? t('lookup.wizard.nextCard') : t('lookup.wizard.nextNotes') }}</span>
             <ChevronRight :size="20" aria-hidden="true" />
           </button>
         </div>
@@ -208,6 +208,7 @@ import VoiceDictationButton from '@/components/voice/VoiceDictationButton.vue'
 import { usePwa } from '@/composables/usePwa'
 import { appendVoiceTranscript } from '@/composables/useVoiceDictation'
 import type { CoinLookupImageRole } from '@/types'
+import { t } from '@/i18n'
 
 interface CaptureImage {
   file: File
@@ -259,31 +260,31 @@ const pwaShell = ref<InstanceType<typeof PwaCaptureShell> | null>(null)
 const steps = computed(() => [
   {
     role: 'obverse' as const,
-    label: 'Obverse',
+    label: t('common.obverse'),
     required: true,
-    title: 'Add the obverse',
-    description: 'Photograph or upload the front of the coin. This is the only required image.',
-    instruction: 'Center the obverse in the circle',
+    title: t('lookup.wizard.steps.obverseTitle'),
+    description: t('lookup.wizard.steps.obverseDescription'),
+    instruction: t('lookup.wizard.steps.obverseInstruction'),
   },
   {
     role: 'reverse' as const,
-    label: 'Reverse',
+    label: t('common.reverse'),
     required: false,
-    title: 'Add the reverse',
+    title: t('lookup.wizard.steps.reverseTitle'),
     description: props.purpose === 'intake'
-      ? 'Optional. Legends and designs on the back help prepare a more complete draft.'
-      : 'Optional for quick analysis and required for Deep Analysis. Legends and designs significantly improve attribution.',
-    instruction: 'Center the reverse in the circle',
+      ? t('lookup.wizard.steps.reverseIntake')
+      : t('lookup.wizard.steps.reverseIdentify'),
+    instruction: t('lookup.wizard.steps.reverseInstruction'),
   },
   {
     role: 'notes' as const,
-    label: props.purpose === 'intake' ? 'Card' : 'Notes',
+    label: props.purpose === 'intake' ? t('lookup.wizard.steps.card') : t('lookup.wizard.steps.notes'),
     required: false,
-    title: props.purpose === 'intake' ? 'Add a coin card' : 'Add notes',
+    title: props.purpose === 'intake' ? t('lookup.wizard.steps.cardTitle') : t('lookup.wizard.addNotes'),
     description: props.purpose === 'intake'
-      ? 'Optional. Photograph or upload a coin card or label. For a PDF card, use manual mode.'
-      : 'Optional. Add anything you know about the coin, or leave this blank and analyze the photos.',
-    instruction: 'Capture a label, edge, measurement, or other detail',
+      ? t('lookup.wizard.steps.cardDescription')
+      : t('lookup.wizard.steps.notesDescription'),
+    instruction: t('lookup.wizard.steps.notesInstruction'),
   },
 ] as const)
 
@@ -308,7 +309,7 @@ function appendDictatedNotes(transcript: string) {
   const result = appendVoiceTranscript(props.notes, transcript)
   emit('update:notes', result.value)
   voiceNotice.value = result.truncated
-    ? 'The transcript was shortened to the 2,000-character notes limit.'
+    ? t('deepAnalysis.start.transcriptShortened')
     : ''
 }
 
@@ -343,7 +344,7 @@ function startDeepAnalysis() {
   deepRequirementError.value = ''
   if (!props.reverse) {
     goToStep(1)
-    deepRequirementError.value = 'Add a reverse image before starting Deep Analysis.'
+    deepRequirementError.value = t('lookup.wizard.reverseRequired')
     return
   }
   emit('deepAnalyze')

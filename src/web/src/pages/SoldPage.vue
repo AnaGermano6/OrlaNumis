@@ -1,9 +1,9 @@
 <template>
   <PullToRefresh :on-refresh="handleRefresh">
     <div class="container">
-      <DesktopPageContext title="Sold Coins">
+      <DesktopPageContext :title="t('sold.title')">
         <div class="page-header">
-          <h1>Sold Coins</h1>
+          <h1>{{ t('sold.title') }}</h1>
         </div>
       </DesktopPageContext>
 
@@ -16,14 +16,14 @@
       </div>
 
       <div v-if="store.total > pageSize" class="mt-6 flex items-center justify-center gap-4 py-4">
-        <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="page--">← Previous</button>
-        <span class="text-body text-text-secondary">Page {{ page }} of {{ Math.ceil(store.total / pageSize) }}</span>
-        <button class="btn btn-secondary btn-sm" :disabled="page * pageSize >= store.total" @click="page++">Next →</button>
+        <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="page--">← {{ t('common.previous') }}</button>
+        <span class="text-body text-text-secondary">{{ t('common.pageOf', { page, total: Math.ceil(store.total / pageSize) }) }}</span>
+        <button class="btn btn-secondary btn-sm" :disabled="page * pageSize >= store.total" @click="page++">{{ t('common.next') }} →</button>
       </div>
 
       <div v-else-if="!store.loading && !store.coins.length" class="empty-state">
-        <h3>No sold coins yet</h3>
-        <p>When you sell coins from your collection, they'll appear here with their sale history.</p>
+        <h3>{{ t('sold.empty.title') }}</h3>
+        <p>{{ t('sold.empty.body') }}</p>
       </div>
     </div>
   </PullToRefresh>
@@ -35,6 +35,7 @@ import { useCoinsStore } from '@/stores/coins'
 import CoinCard from '@/components/CoinCard.vue'
 import PullToRefresh from '@/components/PullToRefresh.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
+import { t } from '@/i18n'
 
 const store = useCoinsStore()
 const page = ref(1)

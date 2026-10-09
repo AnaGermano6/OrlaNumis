@@ -1,15 +1,15 @@
 <template>
   <div class="capture-shell">
     <div class="shell-frame">
-      <p class="sr-only">Step {{ step + 1 }} of 3</p>
+      <p class="sr-only">{{ t('lookup.wizard.stepOf', { step: step + 1 }) }}</p>
       <h2 class="sr-only">{{ currentStep.title }}</h2>
 
       <header class="shell-top">
-        <button type="button" class="icon-round" aria-label="Close capture" @click="closeShell">
+        <button type="button" class="icon-round" :aria-label="t('lookup.shell.close')" @click="closeShell">
           <X :size="20" aria-hidden="true" />
         </button>
 
-        <div class="segmented" role="tablist" aria-label="Capture mode">
+        <div class="segmented" role="tablist" :aria-label="t('lookup.shell.mode')">
           <button
             type="button"
             role="tab"
@@ -18,7 +18,7 @@
             :aria-selected="purpose === 'intake'"
             @click="switchPurpose('intake')"
           >
-            Add
+            {{ t('lookup.shell.add') }}
           </button>
           <button
             type="button"
@@ -28,16 +28,16 @@
             :aria-selected="purpose === 'identify'"
             @click="switchPurpose('identify')"
           >
-            Identify
+            {{ t('lookup.shell.identify') }}
           </button>
         </div>
 
-        <button type="button" class="icon-round" aria-label="Quick Capture" title="Quick Capture" @click="openQuickCapture">
+        <button type="button" class="icon-round" :aria-label="t('quickCapture.title')" :title="t('quickCapture.title')" @click="openQuickCapture">
           <Zap :size="20" aria-hidden="true" />
         </button>
       </header>
 
-      <ol class="capture-rail" :aria-label="purpose === 'intake' ? 'Coin intake progress' : 'Identification progress'">
+      <ol class="capture-rail" :aria-label="purpose === 'intake' ? t('lookup.wizard.intakeProgress') : t('lookup.wizard.identifyProgress')">
         <li v-for="(wizardStep, index) in steps" :key="wizardStep.role">
           <button
             type="button"
@@ -57,12 +57,12 @@
       <section class="capture-stage">
         <div v-if="showNotesField" class="stage-notes">
           <label>
-            <span class="sr-only">Identification notes (optional)</span>
+            <span class="sr-only">{{ t('lookup.wizard.notesLabel') }}</span>
             <textarea
               class="form-input"
               :value="notes"
               maxlength="2000"
-              placeholder="Add anything you know about the coin, such as weight, diameter, ruler, inscription, or provenance. Leave blank to use the photos only."
+              :placeholder="t('lookup.wizard.notesPlaceholder')"
               @input="$emit('update:notes', ($event.target as HTMLTextAreaElement).value)"
             ></textarea>
           </label>
@@ -78,7 +78,7 @@
                 :checked="includePriceEstimate"
                 @change="$emit('update:includePriceEstimate', ($event.target as HTMLInputElement).checked)"
               />
-              <span>Include an estimated price range</span>
+              <span>{{ t('lookup.wizard.includePrice') }}</span>
             </label>
             <span class="stage-notes-count">{{ notes.length }} / 2000</span>
           </div>
@@ -88,7 +88,7 @@
           <img
             v-if="currentImage"
             :src="currentImage.preview"
-            :alt="`${currentStep.label} coin image`"
+            :alt="t('lookup.wizard.coinImage', { label: currentStep.label })"
             class="stage-photo"
           />
           <InlineCameraCapturePanel
@@ -117,7 +117,7 @@
           v-if="currentImage && !showNotesField"
           type="button"
           class="stage-remove"
-          :aria-label="`Remove ${currentStep.label.toLowerCase()} image`"
+          :aria-label="t('lookup.wizard.removeImage', { side: currentStep.label.toLowerCase() })"
           @click="$emit('remove', currentStep.role)"
         >
           <X :size="18" aria-hidden="true" />
@@ -148,12 +148,12 @@
           v-if="!showNotesField"
           type="button"
           class="tool-btn"
-          aria-label="Choose from library"
+          :aria-label="t('lookup.shell.chooseLibrary')"
           :disabled="submitting || preparingImage"
           @click="pickFromLibrary"
         >
           <Images :size="20" aria-hidden="true" />
-          <span>Library</span>
+          <span>{{ t('lookup.shell.library') }}</span>
         </button>
 
         <button
@@ -171,23 +171,23 @@
           v-if="purpose === 'intake'"
           type="button"
           class="tool-btn"
-          aria-label="Use manual entry"
+          :aria-label="t('lookup.shell.manualEntry')"
           @click="$emit('manual')"
         >
           <Pencil :size="20" aria-hidden="true" />
-          <span>Manual</span>
+          <span>{{ t('lookup.shell.manual') }}</span>
         </button>
         <button
           v-else-if="deepAnalysisEnabled"
           type="button"
           class="tool-btn"
-          aria-label="Deep Analysis"
-          :title="deepAnalysisDisabled ? deepAnalysisDisabledTitle : 'Deep Analysis'"
+          :aria-label="t('deepAnalysis.title')"
+          :title="deepAnalysisDisabled ? deepAnalysisDisabledTitle : t('deepAnalysis.title')"
           :disabled="submitting || preparingImage || deepAnalysisDisabled"
           @click="startDeepAnalysis"
         >
           <Microscope :size="20" aria-hidden="true" />
-          <span>Deep</span>
+          <span>{{ t('lookup.shell.deep') }}</span>
         </button>
         <span v-else class="tool-btn-spacer" aria-hidden="true"></span>
       </footer>
@@ -214,6 +214,7 @@ import { useDialog } from '@/composables/useDialog'
 import { useImmersiveShellClaim } from '@/composables/useImmersiveShell'
 import { appendVoiceTranscript } from '@/composables/useVoiceDictation'
 import type { CoinLookupImageRole } from '@/types'
+import { t } from '@/i18n'
 
 interface CaptureImage {
   file: File
@@ -265,29 +266,29 @@ const cameraPanel = ref<InstanceType<typeof InlineCameraCapturePanel> | null>(nu
 const steps = computed(() => [
   {
     role: 'obverse' as const,
-    label: 'Obverse',
-    navLabel: 'Add obverse image',
-    title: 'Add the obverse',
-    chip: 'Obverse · required',
-    hint: 'Fill the ring · soft, even light',
+    label: t('common.obverse'),
+    navLabel: t('lookup.shell.addObverse'),
+    title: t('lookup.wizard.steps.obverseTitle'),
+    chip: t('lookup.shell.obverseChip'),
+    hint: t('lookup.shell.ringHint'),
   },
   {
     role: 'reverse' as const,
-    label: 'Reverse',
-    navLabel: 'Add reverse image',
-    title: 'Add the reverse',
-    chip: 'Reverse · optional',
-    hint: 'Fill the ring · soft, even light',
+    label: t('common.reverse'),
+    navLabel: t('lookup.wizard.addReverse'),
+    title: t('lookup.wizard.steps.reverseTitle'),
+    chip: t('lookup.shell.reverseChip'),
+    hint: t('lookup.shell.ringHint'),
   },
   {
     role: 'notes' as const,
-    label: 'Details',
-    navLabel: props.purpose === 'intake' ? 'Add coin card' : 'Add notes',
-    title: props.purpose === 'intake' ? 'Add a coin card' : 'Add notes',
-    chip: props.purpose === 'intake' ? 'Card · optional' : 'Notes · optional',
+    label: t('lookup.shell.details'),
+    navLabel: props.purpose === 'intake' ? t('lookup.wizard.addCard') : t('lookup.wizard.addNotes'),
+    title: props.purpose === 'intake' ? t('lookup.wizard.steps.cardTitle') : t('lookup.wizard.addNotes'),
+    chip: props.purpose === 'intake' ? t('lookup.shell.cardChip') : t('lookup.shell.notesChip'),
     hint: props.purpose === 'intake'
-      ? 'Frame the coin card or label'
-      : 'Notes are optional',
+      ? t('lookup.shell.cardHint')
+      : t('lookup.shell.notesOptional'),
   },
 ] as const)
 
@@ -302,26 +303,26 @@ function appendDictatedNotes(transcript: string) {
   const result = appendVoiceTranscript(props.notes, transcript)
   emit('update:notes', result.value)
   voiceNotice.value = result.truncated
-    ? 'The transcript was shortened to the 2,000-character notes limit.'
+    ? t('deepAnalysis.start.transcriptShortened')
     : ''
 }
 
 const actionLabel = computed(() => {
-  if (props.submitting) return 'Analyzing...'
-  if (props.preparingImage) return 'Preparing image...'
-  return props.purpose === 'intake' ? 'Generate Intake Draft' : 'Analyze Photos'
+  if (props.submitting) return t('lookup.wizard.analyzing')
+  if (props.preparingImage) return t('lookup.wizard.preparing')
+  return props.purpose === 'intake' ? t('lookup.wizard.generateIntake') : t('lookup.wizard.analyzePhotos')
 })
 
 const shutterLabel = computed(() => {
-  if (currentImage.value) return 'Retake photo'
-  return cameraPanel.value?.cameraActive ? 'Capture photo' : 'Start camera'
+  if (currentImage.value) return t('lookup.shell.retakePhoto')
+  return cameraPanel.value?.cameraActive ? t('camera.capturePhotoAria') : t('lookup.shell.startCamera')
 })
 
 const hintText = computed(() => (
   showNotesField.value
-    ? 'Notes are optional'
+    ? t('lookup.shell.notesOptional')
     : currentImage.value
-      ? `${currentStep.value.label} added · shutter retakes it`
+      ? t('lookup.shell.added', { label: currentStep.value.label })
       : currentStep.value.hint
 ))
 
@@ -338,9 +339,9 @@ function hasWork() {
 
 async function confirmDiscard() {
   if (!hasWork()) return true
-  return await showConfirm('Leaving now discards the photos you have taken.', {
-    title: 'Discard capture?',
-    confirmLabel: 'Discard',
+  return await showConfirm(t('lookup.shell.discardMessage'), {
+    title: t('lookup.shell.discardTitle'),
+    confirmLabel: t('lookup.shell.discard'),
     variant: 'danger',
   })
 }
@@ -412,7 +413,7 @@ function startDeepAnalysis() {
   deepRequirementError.value = ''
   if (!props.reverse) {
     goToStep(1)
-    deepRequirementError.value = 'Add a reverse image before starting Deep Analysis.'
+    deepRequirementError.value = t('lookup.wizard.reverseRequired')
     return
   }
   emit('deepAnalyze')

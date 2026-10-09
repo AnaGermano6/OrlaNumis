@@ -4,6 +4,7 @@
 // may import from ./endpoints — that would create a cycle.
 import axios from 'axios'
 import type { AuthResponse } from '@/types'
+import { t } from '@/i18n'
 
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -72,20 +73,20 @@ export function getApiErrorCode(error: unknown): string {
   return ''
 }
 
-export function formatAgentServiceError(error: unknown, fallback = 'Agent service unavailable. Check the internal agent service configuration.'): string {
+export function formatAgentServiceError(error: unknown, fallback = t('errors.agentUnavailable')): string {
   const message = getApiErrorMessage(error).trim()
   if (!message) return fallback
 
   if (/internal service credential is not configured/i.test(message)) {
-    return 'Internal agent service credential is not configured. Check the internal agent service configuration.'
+    return t('errors.agentCredentialMissing')
   }
 
   if (/agent service unavailable/i.test(message) || /^HTTP 503$/i.test(message)) {
-    return 'Agent service unavailable. Check the internal agent service configuration.'
+    return t('errors.agentUnavailable')
   }
 
   if (/check agent service configuration/i.test(message)) {
-    return 'Check the agent service configuration and retry.'
+    return t('errors.agentCheckConfig')
   }
 
   return message
@@ -94,18 +95,18 @@ export function formatAgentServiceError(error: unknown, fallback = 'Agent servic
 export function formatSetBuilderError(error: unknown): string {
   const message = getApiErrorMessage(error).trim()
   if (/max_slots|maximum.*slots|less than or equal to 300/i.test(message)) {
-    return 'The set-builder request exceeded the workflow slot limit. Try a narrower prompt by date range, mint, ruler, or series, then submit again.'
+    return t('errors.setBuilder.slotLimit')
   }
   if (/agent service returned HTTP 422/i.test(message)) {
-    return 'The agent rejected the set-builder request before it could run. Try a narrower prompt, or check the agent service configuration if this repeats.'
+    return t('errors.setBuilder.rejected')
   }
   if (/set builder prompt is too long/i.test(message)) {
-    return 'The prompt is too long. Shorten it to the key series, date range, mints, and completion goal.'
+    return t('errors.setBuilder.tooLong')
   }
   if (/failed to submit set proposal request/i.test(message)) {
-    return 'The proposal request could not be submitted. Check AI provider and agent service configuration, then try again.'
+    return t('errors.setBuilder.submitFailed')
   }
-  return message || 'The proposal request could not be submitted. Check AI provider and agent service configuration, then try again.'
+  return message || t('errors.setBuilder.submitFailed')
 }
 
 api.interceptors.request.use((config) => {

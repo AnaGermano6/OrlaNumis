@@ -13,7 +13,7 @@
 
       <!-- Purchase location row with Store: prefix -->
       <template v-if="row.key === 'purchaseLocation'">
-        <span class="text-sm italic text-text-muted">Store: </span>
+        <span class="text-sm italic text-text-muted">{{ t('coinDetail.metadata.store') }} </span>
         <span
           v-if="!row.url"
           class="row-value"
@@ -58,6 +58,7 @@
 <script setup lang="ts">
 import type { CoinDetailMetadataRow } from '@/types'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
+import { t } from '@/i18n'
 
 defineProps<{
   rows: CoinDetailMetadataRow[]

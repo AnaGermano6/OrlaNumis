@@ -1,0 +1,28 @@
+import type { Messages } from '../../types'
+
+const messages: Messages['addCoin'] = {
+  manualMode: 'Modo manual',
+  aiMode: 'Modo assistido por IA',
+  analyzing: 'A analisar a sua moeda…',
+  reviewDraft: 'Rever rascunho',
+  eraUnknown: 'Desconhecida',
+  needsReview: 'Requer revisão: {fields}',
+  useManual: 'Usar modo manual',
+  confirmSave: 'Confirmar e guardar moeda',
+  addToCollection: 'Adicionar à coleção',
+  coinSaved: 'Moeda guardada. {error}',
+  retryUploads: 'Repetir os carregamentos em falta',
+  openSaved: 'Abrir a moeda guardada',
+  prepareFailed: 'Não foi possível preparar esta imagem. Experimente um JPEG ou PNG.',
+  needObverse: 'Adicione uma imagem do anverso para continuar.',
+  draftFailed: 'Não foi possível gerar o rascunho.',
+  imageUploadFailed: 'O carregamento da imagem falhou. Repita os carregamentos em falta ou abra a moeda guardada.',
+  draftSaveFailed: 'Não foi possível guardar a moeda a partir do rascunho.',
+  imageOrCardFailed: 'O carregamento da imagem ou do cartão falhou. Repita os carregamentos em falta ou abra a moeda guardada.',
+  slotTaken: 'Essa posição do tabuleiro acabou de ser ocupada. Escolha outra posição disponível; o seu formulário foi preservado.',
+  slotUnavailable: 'Posição indisponível',
+  addFailed: 'Não foi possível adicionar a moeda',
+  retryFailed: 'O carregamento falhou. A sua moeda já está guardada; repita os carregamentos em falta.',
+}
+
+export default messages

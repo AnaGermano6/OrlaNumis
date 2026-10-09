@@ -1,56 +1,56 @@
 <template>
   <section class="card">
-    <h2 class="mb-5 border-b border-border-subtle pb-3 text-lg">Backups</h2>
+    <h2 class="mb-5 border-b border-border-subtle pb-3 text-lg">{{ t('settings.tabs.backups') }}</h2>
 
     <div class="flex flex-col gap-4 border-b border-border-subtle py-3 md:flex-row md:items-center md:justify-between last:border-0">
       <div class="flex min-w-0 flex-col gap-[0.15rem]">
-        <span class="text-base font-medium text-text-primary">Export Collection</span>
-        <span class="text-sm text-text-muted">Download your collection data and photos as a zip archive</span>
+        <span class="text-base font-medium text-text-primary">{{ t('settings.backups.exportTitle') }}</span>
+        <span class="text-sm text-text-muted">{{ t('settings.backups.exportHint') }}</span>
       </div>
       <button
         class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
         :disabled="exporting"
         @click="handleExport"
       >
-        {{ exporting ? 'Exporting...' : 'Export ZIP' }}
+        {{ exporting ? t('settings.backups.exporting') : t('settings.backups.exportZip') }}
       </button>
     </div>
 
     <div class="flex flex-col gap-4 border-b border-border-subtle py-3 md:flex-row md:items-center md:justify-between last:border-0">
       <div class="flex min-w-0 flex-col gap-[0.15rem]">
-        <span class="text-base font-medium text-text-primary">PDF Catalog</span>
-        <span class="text-sm text-text-muted">Generate a styled PDF catalog with photos, grades, and valuations</span>
+        <span class="text-base font-medium text-text-primary">{{ t('settings.backups.pdfTitle') }}</span>
+        <span class="text-sm text-text-muted">{{ t('settings.backups.pdfHint') }}</span>
       </div>
       <button
         class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
         :disabled="exportingPdf"
         @click="handleExportPDF"
       >
-        {{ exportingPdf ? 'Generating...' : 'Export PDF' }}
+        {{ exportingPdf ? t('settings.backups.generating') : t('settings.backups.exportPdf') }}
       </button>
     </div>
 
     <div class="flex flex-col gap-4 border-b border-border-subtle py-3 md:flex-row md:items-center md:justify-between last:border-0">
       <div class="flex min-w-0 flex-col gap-[0.15rem]">
-        <span class="text-base font-medium text-text-primary">Import Collection</span>
-        <span class="text-sm text-text-muted">Import coins from a JSON or CSV file</span>
+        <span class="text-base font-medium text-text-primary">{{ t('settings.backups.importTitle') }}</span>
+        <span class="text-sm text-text-muted">{{ t('settings.backups.importHint') }}</span>
       </div>
       <div class="flex flex-wrap items-center justify-end gap-2">
         <label class="btn btn-secondary btn-sm inline-flex cursor-pointer focus-within:outline-2 focus-within:outline-gold focus-within:outline-offset-2">
-          Import
+          {{ t('settings.backups.import') }}
           <input type="file" accept=".json,.csv,text/csv" hidden @change="handleImport" />
         </label>
         <button
           class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
           @click="downloadCsvTemplate"
         >
-          CSV Template
+          {{ t('settings.backups.csvTemplate') }}
         </button>
         <button
           class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
           @click="openCsvGuide"
         >
-          Guide
+          {{ t('settings.backups.guide') }}
         </button>
       </div>
     </div>
@@ -65,6 +65,7 @@ import { useRouter } from 'vue-router'
 import { exportCollection, exportCatalogPDF, importCollection } from '@/api/client'
 import { CATEGORIES, MATERIALS } from '@/types'
 import type { Coin, Category, Material } from '@/types'
+import { t } from '@/i18n'
 
 const router = useRouter()
 
@@ -317,9 +318,9 @@ async function handleExport() {
     a.download = `ancient-coins-export-${new Date().toISOString().slice(0, 10)}.zip`
     a.click()
     URL.revokeObjectURL(url)
-    dataMsg.value = 'Export downloaded'
+    dataMsg.value = t('settings.backups.exportDownloaded')
   } catch {
-    dataMsg.value = 'Export failed'
+    dataMsg.value = t('settings.backups.exportFailed')
     dataError.value = true
   } finally {
     exporting.value = false
@@ -338,9 +339,9 @@ async function handleExportPDF() {
     a.download = `coin-catalog-${new Date().toISOString().slice(0, 10)}.pdf`
     a.click()
     URL.revokeObjectURL(url)
-    dataMsg.value = 'PDF catalog downloaded'
+    dataMsg.value = t('settings.backups.pdfDownloaded')
   } catch {
-    dataMsg.value = 'PDF generation failed'
+    dataMsg.value = t('settings.backups.pdfFailed')
     dataError.value = true
   } finally {
     exportingPdf.value = false
@@ -378,10 +379,10 @@ async function handleImport(e: Event) {
 
     const res = await importCollection(coins)
     dataMsg.value = skippedRows > 0
-      ? `Imported ${res.data.imported} coins (${skippedRows} skipped rows missing a name)`
-      : `Imported ${res.data.imported} coins`
+      ? `${t('settings.backups.imported', { count: res.data.imported })} (${t('settings.backups.skippedRows', { count: skippedRows })})`
+      : t('settings.backups.imported', { count: res.data.imported })
   } catch {
-    dataMsg.value = 'Import failed — ensure the file is valid JSON or CSV'
+    dataMsg.value = t('settings.backups.importFailed')
     dataError.value = true
   } finally {
     input.value = ''

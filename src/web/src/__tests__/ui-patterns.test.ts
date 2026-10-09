@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import { withEnglishCopy } from '@/test/i18nSource'
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..')
 const SRC_DIR = join(REPO_ROOT, 'src', 'web', 'src')
@@ -21,13 +22,13 @@ describe('UI pattern recipes', () => {
   })
 
   it('keeps tray pagination in one Previous, drawer label, Next row', () => {
-    const trayControls = readRepoFile(join('components', 'tray', 'TrayControls.vue'))
+    const trayControls = withEnglishCopy(readRepoFile(join('components', 'tray', 'TrayControls.vue')))
 
     // TrayControls no longer has scoped `.drawer-navigation`/`.drawer-label`
     // CSS classes or a `nav-btn` class — the fixed positioning, the nowrap
     // row, and the button styling are all inline Tailwind utility classes now.
     expect(trayControls).toContain('Prev')
-    expect(trayControls).toContain('Tray {{ drawerIndex + 1 }} of {{ totalDrawers }}')
+    expect(trayControls).toContain("t('trays.trayOf', { current: drawerIndex + 1, total: totalDrawers })")
     expect(trayControls).toContain('Next')
     // Row stays a single non-wrapping flex row (Prev, label, Next side by side).
     expect(trayControls).toContain('flex flex-nowrap items-center justify-center gap-4 rounded-full')
@@ -62,7 +63,7 @@ describe('UI pattern recipes', () => {
     expect(addCoinPage).toContain('CoinLookupCaptureWizard')
     expect(addCoinPage).toContain('purpose="intake"')
     expect(inlineCameraPanel).toContain('ref="cameraVideo"')
-    expect(inlineCameraPanel).toContain('Start Camera')
+    expect(inlineCameraPanel).toContain("t('camera.start')")
     expect(inlineCameraPanel).toContain('@click="startCamera"')
     expect(addCoinPage).not.toContain('await startCamera()')
     expect(inlineCameraPanel).toContain('class="shutter-btn"')
@@ -77,7 +78,7 @@ describe('UI pattern recipes', () => {
   it('gives the installed PWA the full-bleed capture shell from the mockup', () => {
     const instructions = readFileSync(WEB_INSTRUCTIONS, 'utf-8')
     const wizard = readRepoFile(join('components', 'coin-lookup', 'CoinLookupCaptureWizard.vue'))
-    const shell = readRepoFile(join('components', 'coin-lookup', 'PwaCaptureShell.vue'))
+    const shell = withEnglishCopy(readRepoFile(join('components', 'coin-lookup', 'PwaCaptureShell.vue')))
     const variables = readRepoFile(join('assets', 'styles', 'variables.css'))
     const app = readRepoFile('App.vue')
 
@@ -137,7 +138,7 @@ describe('UI pattern recipes', () => {
     expect(setDetailPage).toContain('<ChevronUp :size="16" />')
     expect(setDetailPage).toContain('<ChevronDown :size="16" />')
     expect(setDetailPage).toContain('<X :size="16" />')
-    expect(setDetailPage).toContain('class="flex flex-nowrap justify-end gap-1.5" aria-label="Set coin actions"')
+    expect(setDetailPage).toContain(`class="flex flex-nowrap justify-end gap-1.5" :aria-label="t('sets.detail.coinActions')"`)
     expect(setDetailPage).not.toContain('>Up<')
     expect(setDetailPage).not.toContain('>Down<')
     expect(setDetailPage).not.toContain('>Remove<')
@@ -151,7 +152,7 @@ describe('UI pattern recipes', () => {
     // align-items: flex-end, `text-4xl` is the 3rem top step of the app's
     // typography scale, and `rounded-md` resolves to the app's `--radius-md`
     // theme token.
-    expect(setCard).toContain('Standard set')
+    expect(setCard).toContain("t('sets.card.standard')")
     expect(setCard).toContain('min-[561px]:min-h-20')
     expect(setCard).toContain('min-[561px]:h-16')
     expect(setCard).toContain('items-end')
@@ -189,7 +190,7 @@ describe('UI pattern recipes', () => {
     expect(app).toContain('@pointermove="moveAgentFabDrag"')
     expect(app).toContain('@pointerup="stopAgentFabDrag"')
 
-    const fabButtonMatch = app.match(/<button\s+v-if="isPwa[^>]*aria-label="Open AI Agent"/s)
+    const fabButtonMatch = app.match(/<button\s+v-if="isPwa[^>]*aria-label="t\('app\.openAgent'\)"/s)
     expect(fabButtonMatch).not.toBeNull()
     const fabButtonSource = fabButtonMatch![0]
     expect(fabButtonSource).toContain('fixed')
@@ -230,10 +231,10 @@ describe('UI pattern recipes', () => {
     expect(app).toContain("const statsExpanded = ref(false)")
     expect(app).toContain("const collectionExpanded = ref(false)")
     expect(app).toContain("id: 'collection'")
-    expect(app).toContain("label: 'Gallery'")
-    expect(app).toContain("label: 'Tray'")
+    expect(app).toContain("labelKey: 'nav.gallery'")
+    expect(app).toContain("labelKey: 'nav.tray'")
     expect(app).toContain("id: 'stats'")
-    expect(app).toContain("label: 'Timeline'")
-    expect(app).toContain("label: 'Map'")
+    expect(app).toContain("labelKey: 'nav.timeline'")
+    expect(app).toContain("labelKey: 'nav.map'")
   })
 })

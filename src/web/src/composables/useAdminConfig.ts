@@ -8,6 +8,8 @@ import type { AnthropicModel } from '@/api/client'
 import type { AppSettings } from '@/types'
 import { CATEGORIES, COIN_ERAS } from '@/types'
 import { formatOptionList } from '@/utils/options'
+import { t } from '@/i18n'
+import { loadCoinVocabulary } from '@/i18n/coinVocabulary'
 
 const legacyAuctionAlertSettingKeys = [
   'PriceAlertCheckEnabled',
@@ -294,29 +296,31 @@ export function useAdminConfig() {
       const entries = Object.entries(settings.value).map(([key, value]) => ({ key, value: String(value) }))
       await updateAppSettings(entries)
       savedAnthropicAPIKey = settings.value.AnthropicAPIKey ?? ''
-      settingsMsg.value = 'Settings saved'
-      availSettingsMsg.value = 'Settings saved'
-      auctionSettingsMsg.value = 'Settings saved'
-      alertReminderSettingsMsg.value = 'Settings saved'
-      watchBidDigestSettingsMsg.value = 'Settings saved'
-      healthSettingsMsg.value = 'Settings saved'
-      valSettingsMsg.value = 'Settings saved'
+      // Pick up renamed or newly translated categories and eras right away.
+      void loadCoinVocabulary()
+      settingsMsg.value = t('admin.config.saved')
+      availSettingsMsg.value = t('admin.config.saved')
+      auctionSettingsMsg.value = t('admin.config.saved')
+      alertReminderSettingsMsg.value = t('admin.config.saved')
+      watchBidDigestSettingsMsg.value = t('admin.config.saved')
+      healthSettingsMsg.value = t('admin.config.saved')
+      valSettingsMsg.value = t('admin.config.saved')
       if (saveTimerId) clearTimeout(saveTimerId)
       saveTimerId = setTimeout(() => { availSettingsMsg.value = ''; auctionSettingsMsg.value = ''; alertReminderSettingsMsg.value = ''; watchBidDigestSettingsMsg.value = ''; healthSettingsMsg.value = ''; valSettingsMsg.value = '' }, 3000)
     } catch {
-      settingsMsg.value = 'Failed to save settings'
+      settingsMsg.value = t('admin.config.saveFailed')
       settingsError.value = true
-      availSettingsMsg.value = 'Failed to save settings'
+      availSettingsMsg.value = t('admin.config.saveFailed')
       availSettingsError.value = true
-      auctionSettingsMsg.value = 'Failed to save settings'
+      auctionSettingsMsg.value = t('admin.config.saveFailed')
       auctionSettingsError.value = true
-      alertReminderSettingsMsg.value = 'Failed to save settings'
+      alertReminderSettingsMsg.value = t('admin.config.saveFailed')
       alertReminderSettingsError.value = true
-      watchBidDigestSettingsMsg.value = 'Failed to save settings'
+      watchBidDigestSettingsMsg.value = t('admin.config.saveFailed')
       watchBidDigestSettingsError.value = true
-      healthSettingsMsg.value = 'Failed to save settings'
+      healthSettingsMsg.value = t('admin.config.saveFailed')
       healthSettingsError.value = true
-      valSettingsMsg.value = 'Failed to save settings'
+      valSettingsMsg.value = t('admin.config.saveFailed')
       valSettingsError.value = true
     } finally {
       settingsSaving.value = false
@@ -332,7 +336,7 @@ export function useAdminConfig() {
       ollamaTestResult.value = res.data.message
     } catch {
       ollamaTestOk.value = false
-      ollamaTestResult.value = 'Failed to check Ollama status'
+      ollamaTestResult.value = t('admin.config.ollamaFailed')
     } finally {
       ollamaTesting.value = false
     }
@@ -341,7 +345,7 @@ export function useAdminConfig() {
   async function testAnthropicConn() {
     if ((settings.value.AnthropicAPIKey ?? '') !== savedAnthropicAPIKey) {
       anthropicTestOk.value = false
-      anthropicTestResult.value = 'Save AI settings before testing the Anthropic API.'
+      anthropicTestResult.value = t('admin.config.saveBeforeTest')
       return
     }
 
@@ -353,7 +357,7 @@ export function useAdminConfig() {
       anthropicTestResult.value = res.data.message
     } catch {
       anthropicTestOk.value = false
-      anthropicTestResult.value = 'Failed to test Anthropic connection'
+      anthropicTestResult.value = t('admin.config.anthropicFailed')
     } finally {
       anthropicTesting.value = false
     }
@@ -368,7 +372,7 @@ export function useAdminConfig() {
       searxngTestResult.value = res.data.message
     } catch {
       searxngTestOk.value = false
-      searxngTestResult.value = 'Failed to test SearXNG connection'
+      searxngTestResult.value = t('admin.config.searxngFailed')
     } finally {
       searxngTesting.value = false
     }

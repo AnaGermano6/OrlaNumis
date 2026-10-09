@@ -1,4 +1,5 @@
 import { getBrowserTimezone } from '@/composables/usePurchaseReminder'
+import { t } from '@/i18n'
 
 // Intl.supportedValuesOf is missing on older Safari; fall back to the browser
 // zone alone so a saved value is still selectable.
@@ -14,15 +15,14 @@ export function timezoneOptionsWith(saved?: string): string[] {
 }
 
 export function scheduleZoneLabel(zone?: string): string {
-  return zone?.trim() || 'server time'
+  return zone?.trim() || t('admin.schedules.serverTime')
 }
 
 function formatMinutes(minutes: number): string {
   if (minutes % 60 === 0) {
-    const hours = minutes / 60
-    return hours === 1 ? 'hour' : `${hours} hours`
+    return t('admin.schedules.everyHours', { count: minutes / 60 })
   }
-  return minutes === 1 ? 'minute' : `${minutes} minutes`
+  return t('admin.schedules.everyMinutes', { count: minutes })
 }
 
 export interface ScheduleDescription {
@@ -43,12 +43,12 @@ export function describeSchedule(options: ScheduleDescription): string {
   const minutes = Number(options.intervalMinutes)
   if (!(days > 0) && minutes > 0) {
     if (minutes < 1440) {
-      return `Runs at ${time} ${zone}, then every ${formatMinutes(Math.floor(minutes))} until the next day's start.`
+      return t('admin.schedules.runsInterval', { time, zone, interval: formatMinutes(Math.floor(minutes)) })
     }
     days = Math.floor(minutes / 1440)
   }
   days = days > 0 ? Math.floor(days) : 1
   return days === 1
-    ? `Runs daily at ${time} ${zone}.`
-    : `Runs every ${days} days at ${time} ${zone}.`
+    ? t('admin.schedules.runsDaily', { time, zone })
+    : t('admin.schedules.runsEveryDays', { days, time, zone })
 }

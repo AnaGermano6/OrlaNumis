@@ -7,8 +7,8 @@
   >
     <header class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
       <div>
-        <p class="section-label">{{ candidate.sourceName || 'Unknown source' }}</p>
-        <h3 class="mt-1">{{ candidate.title || 'Unknown title' }}</h3>
+        <p class="section-label">{{ candidate.sourceName || t('wishlistAlerts.card.unknownSource') }}</p>
+        <h3 class="mt-1">{{ candidate.title || t('wishlistAlerts.card.unknownTitle') }}</h3>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <span
@@ -28,15 +28,15 @@
     </header>
 
     <div class="grid gap-3 md:grid-cols-2">
-      <div class="grid gap-1 rounded-sm border border-border-subtle bg-input p-3"><span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Price</span><strong>{{ priceLabel }}</strong></div>
-      <div class="grid gap-1 rounded-sm border border-border-subtle bg-input p-3"><span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Last seen</span><strong>{{ formatDate(candidate.lastSeenAt) }}</strong></div>
-      <div v-if="candidate.matchingWishlistCoinId" class="grid gap-1 rounded-sm border border-border-subtle bg-input p-3"><span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Duplicate warning</span><strong>Matches wishlist coin #{{ candidate.matchingWishlistCoinId }}</strong></div>
-      <div v-if="candidate.duplicateOfCandidateId" class="grid gap-1 rounded-sm border border-border-subtle bg-input p-3"><span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Suppressed duplicate</span><strong>Candidate #{{ candidate.duplicateOfCandidateId }}</strong></div>
+      <div class="grid gap-1 rounded-sm border border-border-subtle bg-input p-3"><span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('wishlistAlerts.card.price') }}</span><strong>{{ priceLabel }}</strong></div>
+      <div class="grid gap-1 rounded-sm border border-border-subtle bg-input p-3"><span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('wishlistAlerts.card.lastSeen') }}</span><strong>{{ formatDate(candidate.lastSeenAt) }}</strong></div>
+      <div v-if="candidate.matchingWishlistCoinId" class="grid gap-1 rounded-sm border border-border-subtle bg-input p-3"><span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('wishlistAlerts.card.duplicateWarning') }}</span><strong>{{ t('wishlistAlerts.card.matchesCoin', { id: candidate.matchingWishlistCoinId }) }}</strong></div>
+      <div v-if="candidate.duplicateOfCandidateId" class="grid gap-1 rounded-sm border border-border-subtle bg-input p-3"><span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('wishlistAlerts.card.suppressedDuplicate') }}</span><strong>{{ t('wishlistAlerts.card.candidateNumber', { id: candidate.duplicateOfCandidateId }) }}</strong></div>
     </div>
 
-    <p class="m-0 text-body text-text-secondary">{{ candidate.reasonForMatch || 'No source-backed match reason provided.' }}</p>
+    <p class="m-0 text-body text-text-secondary">{{ candidate.reasonForMatch || t('wishlistAlerts.card.noReason') }}</p>
 
-    <SafeExternalLink :href="candidate.sourceUrl" class="break-words text-gold">Open source listing</SafeExternalLink>
+    <SafeExternalLink :href="candidate.sourceUrl" class="break-words text-gold">{{ t('wishlistAlerts.card.openSource') }}</SafeExternalLink>
 
     <dl v-if="sourceFields.length" class="grid gap-3 md:grid-cols-2">
       <div
@@ -50,20 +50,20 @@
     </dl>
 
     <details v-if="candidate.provenance?.length" class="grid gap-2">
-      <summary class="cursor-pointer text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]">Provenance</summary>
+      <summary class="cursor-pointer text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]">{{ t('wishlistAlerts.card.provenance') }}</summary>
       <ul class="mt-3 grid gap-2 pl-5 text-body text-text-secondary">
         <li v-for="item in candidate.provenance" :key="item.id">
-          <span>{{ item.field }}:</span> {{ item.value || 'Unknown' }}
-          <SafeExternalLink :href="item.sourceUrl" class="text-gold">source</SafeExternalLink>
-          <span class="text-text-muted">{{ item.verificationState }}, {{ item.confidence || 'unknown confidence' }}</span>
+          <span>{{ item.field }}:</span> {{ item.value || t('common.unknown') }}
+          <SafeExternalLink :href="item.sourceUrl" class="text-gold">{{ t('wishlistAlerts.card.source') }}</SafeExternalLink>
+          <span class="text-text-muted">{{ item.verificationState }}, {{ item.confidence || t('wishlistAlerts.card.unknownConfidence') }}</span>
         </li>
       </ul>
     </details>
-    <p v-else class="m-0 text-body text-text-secondary">No detailed provenance was returned for this candidate.</p>
+    <p v-else class="m-0 text-body text-text-secondary">{{ t('wishlistAlerts.card.noProvenance') }}</p>
 
     <section v-if="candidate.lifecycleState !== 'converted'" class="grid gap-3 border-t border-border-subtle pt-3">
       <div v-if="candidate.lifecycleState === 'dismissed'" class="flex flex-wrap items-center gap-2">
-        <button class="btn btn-secondary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="button" :disabled="busy" @click="$emit('restore', candidate)">Restore</button>
+        <button class="btn btn-secondary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="button" :disabled="busy" @click="$emit('restore', candidate)">{{ t('common.restore') }}</button>
       </div>
       <template v-else>
         <div class="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
@@ -72,40 +72,40 @@
             class="form-select md:min-w-[11rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
             :disabled="busy"
           >
-            <option value="irrelevant">Irrelevant</option>
-            <option value="duplicate">Duplicate</option>
-            <option value="price_too_high">Price too high</option>
-            <option value="poor_provenance">Poor provenance</option>
-            <option value="other">Other</option>
+            <option value="irrelevant">{{ t('wishlistAlerts.card.reasons.irrelevant') }}</option>
+            <option value="duplicate">{{ t('wishlistAlerts.card.reasons.duplicate') }}</option>
+            <option value="price_too_high">{{ t('wishlistAlerts.card.reasons.priceTooHigh') }}</option>
+            <option value="poor_provenance">{{ t('wishlistAlerts.card.reasons.poorProvenance') }}</option>
+            <option value="other">{{ t('wishlistAlerts.card.reasons.other') }}</option>
           </select>
           <input
             v-model.trim="dismissNotes"
             class="form-input md:flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
             :disabled="busy"
             maxlength="300"
-            placeholder="Optional note"
+            :placeholder="t('wishlistAlerts.card.optionalNote')"
           />
-          <button class="btn btn-secondary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="button" :disabled="busy" @click="emitDismiss">Dismiss</button>
+          <button class="btn btn-secondary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="button" :disabled="busy" @click="emitDismiss">{{ t('common.dismiss') }}</button>
         </div>
         <details class="grid gap-3">
-          <summary class="cursor-pointer text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]">Convert to wishlist item</summary>
+          <summary class="cursor-pointer text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]">{{ t('wishlistAlerts.card.convertTitle') }}</summary>
           <div class="mt-3 grid gap-3 md:grid-cols-2">
-            <label class="grid gap-1 text-base text-text-secondary">Name <input v-model.trim="coin.name" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
-            <label class="grid gap-1 text-base text-text-secondary">Category <input v-model.trim="coin.category" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
-            <label class="grid gap-1 text-base text-text-secondary">Denomination <input v-model.trim="coin.denomination" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
-            <label class="grid gap-1 text-base text-text-secondary">Ruler <input v-model.trim="coin.ruler" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
-            <label class="grid gap-1 text-base text-text-secondary">Era <input v-model.trim="coin.era" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
-            <label class="grid gap-1 text-base text-text-secondary">Mint <input v-model.trim="coin.mint" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
-            <label class="grid gap-1 text-base text-text-secondary">Material <input v-model.trim="coin.material" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
-            <label class="grid gap-1 text-base text-text-secondary">Grade <input v-model.trim="coin.grade" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
-            <label class="grid gap-1 text-base text-text-secondary">Price <input v-model.number="coin.purchasePrice" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="number" min="0" step="0.01" /></label>
+            <label class="grid gap-1 text-base text-text-secondary">{{ t('coinFields.name') }} <input v-model.trim="coin.name" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
+            <label class="grid gap-1 text-base text-text-secondary">{{ t('collection.menu.category') }} <input v-model.trim="coin.category" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
+            <label class="grid gap-1 text-base text-text-secondary">{{ t('coinFields.denomination') }} <input v-model.trim="coin.denomination" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
+            <label class="grid gap-1 text-base text-text-secondary">{{ t('coinFields.ruler') }} <input v-model.trim="coin.ruler" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
+            <label class="grid gap-1 text-base text-text-secondary">{{ t('coinFields.era') }} <input v-model.trim="coin.era" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
+            <label class="grid gap-1 text-base text-text-secondary">{{ t('coinFields.mint') }} <input v-model.trim="coin.mint" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
+            <label class="grid gap-1 text-base text-text-secondary">{{ t('coinFields.material') }} <input v-model.trim="coin.material" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
+            <label class="grid gap-1 text-base text-text-secondary">{{ t('coinFields.grade') }} <input v-model.trim="coin.grade" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" /></label>
+            <label class="grid gap-1 text-base text-text-secondary">{{ t('wishlistAlerts.card.price') }} <input v-model.number="coin.purchasePrice" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="number" min="0" step="0.01" /></label>
             <div class="grid gap-1 text-base text-text-secondary">
-              <span>Source</span>
+              <span>{{ t('common.source') }}</span>
               <SafeExternalLink v-if="coin.referenceUrl" :href="coin.referenceUrl" class="break-words text-gold">{{ coin.referenceUrl }}</SafeExternalLink>
-              <span v-else class="text-body text-text-secondary">No source URL provided</span>
+              <span v-else class="text-body text-text-secondary">{{ t('wishlistAlerts.card.noSourceUrl') }}</span>
             </div>
           </div>
-          <p class="m-0 text-body text-text-secondary">Review missing or uncertain fields before saving. Only source-backed candidate fields are prefilled.</p>
+          <p class="m-0 text-body text-text-secondary">{{ t('wishlistAlerts.card.reviewHint') }}</p>
           <p v-if="convertError" class="m-0 text-body text-bronze">{{ convertError }}</p>
           <label v-if="showDuplicateAck" class="mt-3 flex items-center gap-2 text-base text-text-secondary">
             <input
@@ -113,10 +113,10 @@
               class="h-4 w-4 rounded-sm border border-border-subtle bg-input accent-[var(--accent-gold)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
               type="checkbox"
             />
-            I acknowledge this may duplicate an existing wishlist item.
+            {{ t('wishlistAlerts.card.ackDuplicate') }}
           </label>
           <div class="flex flex-wrap items-center gap-2">
-            <button class="btn btn-primary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="button" :disabled="busy || !canConvert" @click="emitConvert">Save as Wishlist Item</button>
+            <button class="btn btn-primary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="button" :disabled="busy || !canConvert" @click="emitConvert">{{ t('wishlistAlerts.card.saveAsWishlist') }}</button>
           </div>
         </details>
       </template>
@@ -126,7 +126,7 @@
       class="btn btn-secondary btn-sm w-fit focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
       :to="`/coin/${candidate.convertedCoinId}`"
     >
-      Open converted wishlist item
+      {{ t('wishlistAlerts.card.openConverted') }}
     </router-link>
   </article>
 </template>
@@ -134,6 +134,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
+import { candidateStateLabel, provenanceStatusLabel } from '@/utils/format'
+import { t, intlLocale } from '@/i18n'
 import { MATERIALS, type AlertCandidate, type CandidateDismissalReason, type CoinMutationPayload, type Material } from '@/types'
 
 const props = defineProps<{ candidate: AlertCandidate; busy?: boolean; duplicateWarnings?: string[] }>()
@@ -148,16 +150,16 @@ const dismissNotes = ref('')
 const ackDuplicate = ref(false)
 const coin = reactive<CoinMutationPayload>({})
 
-const provenanceLabel = computed(() => props.candidate.provenanceStatus.replace(/_/g, ' '))
-const stateLabel = computed(() => props.candidate.lifecycleState.replace(/_/g, ' '))
-const priceLabel = computed(() => props.candidate.observedPrice == null ? 'Unknown' : `${props.candidate.observedPrice.toLocaleString()} ${props.candidate.observedCurrency || 'USD'}`)
+const provenanceLabel = computed(() => provenanceStatusLabel(props.candidate.provenanceStatus).toLowerCase())
+const stateLabel = computed(() => candidateStateLabel(props.candidate.lifecycleState).toLowerCase())
+const priceLabel = computed(() => props.candidate.observedPrice == null ? t('common.unknown') : `${props.candidate.observedPrice.toLocaleString(intlLocale())} ${props.candidate.observedCurrency || 'USD'}`)
 const sourceFields = computed(() => Object.entries(props.candidate.fields ?? {}).filter(([, value]) => String(value ?? '').trim()))
 const showDuplicateAck = computed(() => !!props.candidate.matchingWishlistCoinId || !!props.duplicateWarnings?.length)
 const convertError = computed(() => {
-  if (!String(coin.name ?? '').trim()) return 'Name is required before conversion.'
-  if (!String(coin.category ?? '').trim()) return 'Category is required before conversion.'
-  if (!String(coin.era ?? '').trim()) return 'Era is required before conversion.'
-  if (showDuplicateAck.value && !ackDuplicate.value) return 'Acknowledge the duplicate warning before saving.'
+  if (!String(coin.name ?? '').trim()) return t('wishlistAlerts.card.nameRequired')
+  if (!String(coin.category ?? '').trim()) return t('wishlistAlerts.card.categoryRequired')
+  if (!String(coin.era ?? '').trim()) return t('wishlistAlerts.card.eraRequired')
+  if (showDuplicateAck.value && !ackDuplicate.value) return t('wishlistAlerts.card.ackRequired')
   return ''
 })
 const canConvert = computed(() => !convertError.value)
@@ -184,7 +186,7 @@ function resetCoin(candidate: AlertCandidate) {
 }
 
 function formatDate(value: string) {
-  return value ? new Date(value).toLocaleString() : 'Unknown'
+  return value ? new Date(value).toLocaleString(intlLocale()) : t('common.unknown')
 }
 
 function candidateField(candidate: AlertCandidate, keys: string[]) {

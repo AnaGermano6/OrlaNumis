@@ -1,6 +1,6 @@
 ﻿<template>
   <section class="admin-section card flex flex-col">
-    <h2 class="mb-5 border-b border-border-subtle pb-3 text-xl font-medium">Schedules</h2>
+    <h2 class="mb-5 border-b border-border-subtle pb-3 text-xl font-medium">{{ t('admin.tabs.schedules') }}</h2>
 
     <AdminScheduleTimezone
       :settings="settings"
@@ -23,20 +23,20 @@
     <hr class="my-6 border-0 border-t border-border-subtle" />
 
     <!-- ParcelApp Shipment Tracking -->
-    <h3 class="mb-4 text-lg font-medium text-heading">ParcelApp Shipment Tracking</h3>
-    <p class="mb-4 text-base text-text-secondary">Enables ParcelApp shipment checks for users who have saved a ParcelApp API key. Automated checks run no more often than every 20 minutes.</p>
+    <h3 class="mb-4 text-lg font-medium text-heading">{{ t('admin.schedules.parcelTitle') }}</h3>
+    <p class="mb-4 text-base text-text-secondary">{{ t('admin.schedules.parcelIntro') }}</p>
     <div class="mb-4">
       <div class="form-group flex items-center justify-between gap-3">
-        <label class="form-label">Enable ParcelApp Tracking</label>
+        <label class="form-label">{{ t('admin.schedules.parcelEnable') }}</label>
         <BaseToggle
           size="sm"
-          label="Enable ParcelApp Tracking"
+          :label="t('admin.schedules.parcelEnable')"
           :model-value="settings.ParcelAppEnabled === 'true'"
           @update:model-value="settings.ParcelAppEnabled = $event ? 'true' : 'false'"
         />
       </div>
       <div class="form-group">
-        <label class="form-label">Repeat Interval (minutes)</label>
+        <label class="form-label">{{ t('admin.schedules.repeatMinutes') }}</label>
         <input
           v-model="settings.ShipmentSyncInterval"
           class="form-input w-full max-w-[120px]"
@@ -44,11 +44,11 @@
           min="20"
           step="5"
         />
-        <span class="form-hint">Minimum 20 minutes to stay within ParcelApp's 20 requests/hour limit.</span>
+        <span class="form-hint">{{ t('admin.schedules.parcelMinimum') }}</span>
       </div>
       <div class="mt-4 flex w-full flex-col gap-3 md:flex-row md:items-center">
         <button class="btn btn-primary btn-sm" :disabled="settingsSaving" @click="emit('save')">
-          {{ settingsSaving ? 'Saving...' : 'Save ParcelApp Settings' }}
+          {{ settingsSaving ? t('common.saving') : t('admin.schedules.parcelSave') }}
         </button>
       </div>
     </div>
@@ -136,6 +136,7 @@ import AdminScheduleTimezone from '@/components/admin/schedules/AdminScheduleTim
 import AdminCollectionHealthSchedule from '@/components/admin/schedules/AdminCollectionHealthSchedule.vue'
 import AdminValuationSchedule from '@/components/admin/schedules/AdminValuationSchedule.vue'
 import type { AppSettings } from '@/types'
+import { t } from '@/i18n'
 
 defineProps<{
   settings: AppSettings

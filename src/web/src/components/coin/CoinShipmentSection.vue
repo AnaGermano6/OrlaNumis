@@ -1,39 +1,39 @@
 <template>
   <section class="mb-6">
-    <h3 class="mb-3 font-display text-base font-medium text-heading">Shipment Tracking</h3>
+    <h3 class="mb-3 font-display text-base font-medium text-heading">{{ t('shipment.title') }}</h3>
     <div class="rounded-sm border border-border-subtle bg-card p-4">
-      <div v-if="loading" class="text-body text-text-secondary">Loading shipment...</div>
+      <div v-if="loading" class="text-body text-text-secondary">{{ t('shipment.loading') }}</div>
 
       <template v-else-if="shipment">
         <div class="mb-3 flex flex-wrap items-center gap-2">
           <span class="chip-sm">{{ carrierLabel(shipment.carrier, shipment.manualCarrierName) }}</span>
           <span class="chip-sm">{{ statusLabel(shipment.currentStatus) }}</span>
-          <a v-if="trackingUrl" :href="trackingUrl" target="_blank" rel="noopener" class="text-chip text-gold hover:underline">Open carrier tracking</a>
+          <a v-if="trackingUrl" :href="trackingUrl" target="_blank" rel="noopener" class="text-chip text-gold hover:underline">{{ t('shipment.openCarrier') }}</a>
         </div>
         <div class="mb-4 grid gap-2 text-body text-text-secondary">
-          <p class="m-0"><strong class="text-text-primary">Tracking:</strong> {{ shipment.trackingNumber }}</p>
-          <p v-if="shipment.notes" class="m-0"><strong class="text-text-primary">Notes:</strong> {{ shipment.notes }}</p>
-          <p class="m-0"><strong class="text-text-primary">Status:</strong> {{ statusLabel(shipment.currentStatus) }}</p>
+          <p class="m-0"><strong class="text-text-primary">{{ t('shipment.tracking') }}</strong> {{ shipment.trackingNumber }}</p>
+          <p v-if="shipment.notes" class="m-0"><strong class="text-text-primary">{{ t('shipment.notes') }}</strong> {{ shipment.notes }}</p>
+          <p class="m-0"><strong class="text-text-primary">{{ t('shipment.status') }}</strong> {{ statusLabel(shipment.currentStatus) }}</p>
           <p v-if="shipment.lastSyncError" class="m-0 text-loss"><strong>ParcelApp:</strong> {{ shipment.lastSyncError }}</p>
         </div>
 
         <div class="mb-4 grid gap-2 border-t border-border-subtle pt-4">
-          <label class="form-label">Update Shipment Status</label>
-          <p class="m-0 text-body text-text-secondary">Shipment status is managed manually.</p>
+          <label class="form-label">{{ t('shipment.updateStatus') }}</label>
+          <p class="m-0 text-body text-text-secondary">{{ t('shipment.manualHint') }}</p>
           <div class="grid gap-2 md:grid-cols-2">
             <select v-model="manualStatus" class="form-input">
               <option v-for="value in statusOptions" :key="value" :value="value">{{ statusLabel(value) }}</option>
             </select>
-            <input v-model="manualNote" class="form-input" placeholder="Optional status note" />
+            <input v-model="manualNote" class="form-input" :placeholder="t('shipment.statusNotePlaceholder')" />
           </div>
           <button class="btn btn-secondary btn-sm w-fit" :disabled="saving" @click="saveStatus">
-            {{ saving ? 'Saving...' : 'Save Status' }}
+            {{ saving ? t('common.saving') : t('shipment.saveStatus') }}
           </button>
         </div>
 
         <div class="mb-4 grid gap-2 border-t border-border-subtle pt-4">
-          <h4 class="m-0 text-sm font-semibold text-text-primary">Timeline</h4>
-          <p v-if="!shipment.events?.length" class="m-0 text-body text-text-muted">No tracking events yet.</p>
+          <h4 class="m-0 text-sm font-semibold text-text-primary">{{ t('nav.timeline') }}</h4>
+          <p v-if="!shipment.events?.length" class="m-0 text-body text-text-muted">{{ t('shipment.noEvents') }}</p>
           <ul v-else class="m-0 grid list-none gap-2 p-0">
             <li v-for="event in shipment.events" :key="event.id" class="rounded-sm border border-border-subtle bg-card-hover px-3 py-2 text-body text-text-secondary">
               <p class="m-0 font-medium text-text-primary">{{ statusLabel(event.status) }}</p>
@@ -47,24 +47,24 @@
           <button
             class="btn btn-secondary btn-sm"
             :disabled="syncing || shipment.carrier !== 'parcel' || isDelivered"
-            :title="isDelivered ? 'Tracking is complete — this shipment was delivered' : undefined"
+            :title="isDelivered ? t('shipment.deliveredTitle') : undefined"
             @click="syncShipment"
           >
-            {{ isDelivered ? 'Tracking Complete' : (syncing ? 'Checking...' : 'Check ParcelApp Now') }}
+            {{ isDelivered ? t('shipment.trackingComplete') : (syncing ? t('common.checking') : t('shipment.checkNow')) }}
           </button>
-          <button class="btn btn-danger btn-sm" :disabled="deleting" @click="removeShipment">{{ deleting ? 'Removing...' : 'Remove Shipment' }}</button>
+          <button class="btn btn-danger btn-sm" :disabled="deleting" @click="removeShipment">{{ deleting ? t('common.removing') : t('shipment.remove') }}</button>
         </div>
       </template>
 
       <template v-else>
-        <p class="m-0 mb-4 text-body text-text-secondary">No shipment attached to this coin yet.</p>
-        <p class="m-0 mb-4 text-body text-text-secondary">Enter the tracking number only. Aurearia uses ParcelApp and the coin title as the delivery description.</p>
+        <p class="m-0 mb-4 text-body text-text-secondary">{{ t('shipment.none') }}</p>
+        <p class="m-0 mb-4 text-body text-text-secondary">{{ t('shipment.enterTracking') }}</p>
         <div class="grid gap-3 md:grid-cols-2">
-          <input v-model="form.trackingNumber" class="form-input" placeholder="Tracking number" />
-          <input v-model="form.notes" class="form-input md:col-span-2" placeholder="Optional notes" />
+          <input v-model="form.trackingNumber" class="form-input" :placeholder="t('shipment.trackingNumber')" />
+          <input v-model="form.notes" class="form-input md:col-span-2" :placeholder="t('shipment.optionalNotes')" />
         </div>
         <div class="mt-4">
-          <button class="btn btn-primary btn-sm" :disabled="saving" @click="saveShipment">{{ saving ? 'Saving...' : 'Save Shipment' }}</button>
+          <button class="btn btn-primary btn-sm" :disabled="saving" @click="saveShipment">{{ saving ? t('common.saving') : t('shipment.save') }}</button>
         </div>
       </template>
 
@@ -77,6 +77,8 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { deleteCoinShipment, getCoinShipment, setCoinShipmentManualOverride, syncCoinShipment, upsertCoinShipment } from '@/api/client'
 import type { Shipment, ShipmentCarrier, ShipmentStatus, ShipmentUpsertInput } from '@/types'
+import { shipmentStatusLabel } from '@/utils/format'
+import { intlLocale, t } from '@/i18n'
 
 const props = defineProps<{ coinId: number }>()
 const emit = defineEmits<{ changed: [] }>()
@@ -117,7 +119,7 @@ function apiErrorMessage(err: unknown): string {
 }
 
 function statusLabel(status: string) {
-  return status.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())
+  return shipmentStatusLabel(status)
 }
 
 function carrierLabel(carrier: ShipmentCarrier, manualName: string) {
@@ -127,7 +129,7 @@ function carrierLabel(carrier: ShipmentCarrier, manualName: string) {
 }
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleString()
+  return new Date(value).toLocaleString(intlLocale())
 }
 
 async function loadShipment() {
@@ -144,7 +146,7 @@ async function loadShipment() {
       shipment.value = null
       trackingUrl.value = ''
     } else {
-      setMessage(apiErrorMessage(err) || 'Failed to load shipment', true)
+      setMessage(apiErrorMessage(err) || t('shipment.loadFailed'), true)
     }
   } finally {
     loading.value = false
@@ -154,7 +156,7 @@ async function loadShipment() {
 function buildUpsertInput(): ShipmentUpsertInput | null {
   const trackingNumber = form.trackingNumber.trim()
   if (!trackingNumber) {
-    setMessage('Tracking number is required', true)
+    setMessage(t('shipment.trackingRequired'), true)
     return null
   }
   return {
@@ -175,13 +177,13 @@ async function saveShipment() {
     shipment.value = res.data.shipment
     trackingUrl.value = res.data.trackingUrl ?? ''
     if (shipment.value.lastSyncError) {
-      setMessage(`Shipment saved. ParcelApp check failed: ${shipment.value.lastSyncError}`, true)
+      setMessage(t('shipment.savedSyncFailed', { error: shipment.value.lastSyncError }), true)
     } else {
-      setMessage('Shipment saved')
+      setMessage(t('shipment.saved'))
     }
     emit('changed')
   } catch (err: unknown) {
-    setMessage(apiErrorMessage(err) || 'Failed to save shipment', true)
+    setMessage(apiErrorMessage(err) || t('shipment.saveFailed'), true)
   } finally {
     saving.value = false
   }
@@ -199,9 +201,9 @@ async function saveStatus() {
     })
     shipment.value = res.data.shipment
     trackingUrl.value = res.data.trackingUrl ?? ''
-    setMessage('Shipment status saved')
+    setMessage(t('shipment.statusSaved'))
   } catch (err: unknown) {
-    setMessage(apiErrorMessage(err) || 'Failed to save shipment status', true)
+    setMessage(apiErrorMessage(err) || t('shipment.statusSaveFailed'), true)
   } finally {
     saving.value = false
   }
@@ -216,12 +218,12 @@ async function syncShipment() {
     shipment.value = res.data.shipment
     trackingUrl.value = res.data.trackingUrl ?? ''
     if (shipment.value.lastSyncError) {
-      setMessage(`ParcelApp check failed: ${shipment.value.lastSyncError}`, true)
+      setMessage(t('shipment.syncFailed', { error: shipment.value.lastSyncError }), true)
     } else {
-      setMessage('ParcelApp status checked')
+      setMessage(t('shipment.synced'))
     }
   } catch (err: unknown) {
-    setMessage(apiErrorMessage(err) || 'Failed to check ParcelApp status', true)
+    setMessage(apiErrorMessage(err) || t('shipment.syncRequestFailed'), true)
   } finally {
     syncing.value = false
   }
@@ -234,10 +236,10 @@ async function removeShipment() {
     await deleteCoinShipment(props.coinId)
     shipment.value = null
     trackingUrl.value = ''
-    setMessage('Shipment removed')
+    setMessage(t('shipment.removed'))
     emit('changed')
   } catch (err: unknown) {
-    setMessage(apiErrorMessage(err) || 'Failed to remove shipment', true)
+    setMessage(apiErrorMessage(err) || t('shipment.removeFailed'), true)
   } finally {
     deleting.value = false
   }

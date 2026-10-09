@@ -1,27 +1,27 @@
 <template>
   <div class="container flex flex-col gap-6">
-    <DesktopPageContext title="Time Machine">
+    <DesktopPageContext :title="t('nav.timeMachine')">
       <template #actions>
-        <AppIconButton to="/stats" title="Back to Stats"><ArrowLeft :size="20" /></AppIconButton>
+        <AppIconButton to="/stats" :title="t('stats.backToStats')"><ArrowLeft :size="20" /></AppIconButton>
       </template>
       <header class="page-header flex flex-nowrap items-center justify-between gap-4">
         <div>
-          <p class="section-label">Collection Insights</p>
-          <h1>Time Machine</h1>
+          <p class="section-label">{{ t('stats.insights') }}</p>
+          <h1>{{ t('nav.timeMachine') }}</h1>
           <p class="mt-[0.35rem] text-base text-text-secondary">
-            Scrub back through time to see the collection as it stood on any date.
+            {{ t('stats.timeMachine.intro') }}
           </p>
         </div>
         <router-link
           class="inline-flex shrink-0 items-center justify-center rounded-sm border border-border-subtle bg-transparent p-[0.4rem] text-text-secondary transition hover:border-border-accent hover:bg-gold-glow hover:text-gold"
           to="/stats"
-          aria-label="Back to Stats"
+          :aria-label="t('stats.backToStats')"
         >
           <ArrowLeft :size="20" />
         </router-link>
       </header>
       <template #desktop>
-        <p class="text-base text-text-secondary">Scrub back through time to see the collection as it stood on any date.</p>
+        <p class="text-base text-text-secondary">{{ t('stats.timeMachine.intro') }}</p>
       </template>
     </DesktopPageContext>
 
@@ -31,25 +31,24 @@
 
     <div v-else-if="error" class="card flex flex-col gap-2">
       <p class="text-loss">{{ error }}</p>
-      <button class="btn btn-secondary self-start" @click="init">Try again</button>
+      <button class="btn btn-secondary self-start" @click="init">{{ t('common.tryAgain') }}</button>
     </div>
 
     <!-- Nothing is dated, so there is no timeline to scrub. Say so plainly
          rather than rendering an empty slider. -->
     <div v-else-if="!bounds?.hasData" class="card flex flex-col gap-3">
-      <h2>No dated acquisitions yet</h2>
+      <h2>{{ t('stats.timeMachine.noDatesTitle') }}</h2>
       <p class="text-text-secondary">
-        The Time Machine reconstructs your collection from purchase dates. None of your coins has
-        one recorded yet, so there is no timeline to travel along.
+        {{ t('stats.timeMachine.noDatesBody') }}
       </p>
-      <router-link class="btn btn-primary self-start" to="/">Add purchase dates</router-link>
+      <router-link class="btn btn-primary self-start" to="/">{{ t('stats.timeMachine.addDates') }}</router-link>
     </div>
 
     <template v-else>
       <section class="card flex flex-col gap-4">
         <div class="flex flex-wrap items-baseline justify-between gap-3">
           <div>
-            <span class="section-label">Viewing</span>
+            <span class="section-label">{{ t('stats.timeMachine.viewing') }}</span>
             <p class="font-display text-2xl font-semibold text-gold">{{ formattedDate }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
@@ -67,7 +66,7 @@
         </div>
 
         <label class="flex flex-col gap-2">
-          <span class="sr-only">Date</span>
+          <span class="sr-only">{{ t('common.date') }}</span>
           <input
             v-model="sliderValue"
             type="range"
@@ -75,7 +74,7 @@
             :min="0"
             :max="totalDays"
             step="1"
-            aria-label="Collection date"
+            :aria-label="t('stats.timeMachine.collectionDate')"
             @input="onScrub"
           />
         </label>
@@ -91,7 +90,7 @@
           class="form-input w-auto self-start"
           :min="bounds.earliestDate"
           :max="bounds.latestDate"
-          aria-label="Jump to date"
+          :aria-label="t('stats.timeMachine.jumpToDate')"
           @change="onDateInput"
         />
       </section>
@@ -107,15 +106,15 @@
         >
           <div class="flex flex-col gap-1 rounded-md border border-border-subtle bg-card p-6 text-center">
             <span class="font-display text-xl font-semibold text-gold">{{ snapshot.coinCount }}</span>
-            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Coins Owned</span>
+            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.timeMachine.coinsOwned') }}</span>
           </div>
           <div class="flex flex-col gap-1 rounded-md border border-border-subtle bg-card p-6 text-center">
             <span class="font-display text-xl font-semibold text-gold">{{ formatCurrency(snapshot.totalValue) }}</span>
-            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Value</span>
+            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('common.value') }}</span>
           </div>
           <div class="flex flex-col gap-1 rounded-md border border-border-subtle bg-card p-6 text-center">
             <span class="font-display text-xl font-semibold text-text-primary">{{ formatCurrency(snapshot.totalInvested) }}</span>
-            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Invested</span>
+            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.timeMachine.invested') }}</span>
           </div>
           <div class="flex flex-col gap-1 rounded-md border border-border-subtle bg-card p-6 text-center">
             <span
@@ -124,15 +123,15 @@
             >
               {{ snapshot.unrealizedGain >= 0 ? '+' : '' }}{{ formatCurrency(snapshot.unrealizedGain) }}
             </span>
-            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Unrealized</span>
+            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.timeMachine.unrealized') }}</span>
           </div>
           <div v-if="snapshot.healthScore !== null" class="flex flex-col gap-1 rounded-md border border-border-subtle bg-card p-6 text-center">
             <span class="font-display text-xl font-semibold text-text-primary">{{ snapshot.healthScore }}</span>
-            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Health Score</span>
+            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('health.score') }}</span>
           </div>
           <div class="flex flex-col gap-1 rounded-md border border-border-subtle bg-card p-6 text-center">
             <span class="font-display text-xl font-semibold text-text-primary">{{ snapshot.acquiredInYear }}</span>
-            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Added That Year</span>
+            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.timeMachine.addedThatYear') }}</span>
           </div>
         </div>
 
@@ -140,13 +139,11 @@
              valuation scheduler, so most values are purchase prices. -->
         <p v-if="basisNote" class="text-sm text-text-muted">{{ basisNote }}</p>
         <p v-if="snapshot.undatedCoinCount > 0" class="text-sm text-text-muted">
-          {{ snapshot.undatedCoinCount }}
-          {{ snapshot.undatedCoinCount === 1 ? 'coin has' : 'coins have' }}
-          no purchase date and so appear nowhere on this timeline.
+          {{ t('stats.timeMachine.undated', { count: snapshot.undatedCoinCount }) }}
         </p>
 
         <div v-if="snapshot.coinCount === 0" class="card">
-          <p class="text-text-secondary">You owned no coins on this date.</p>
+          <p class="text-text-secondary">{{ t('stats.timeMachine.ownedNone') }}</p>
         </div>
 
         <template v-else>
@@ -154,7 +151,7 @@
             <h2>{{ group.title }}</h2>
             <div v-for="entry in group.entries" :key="entry.label" class="flex flex-col gap-1">
               <div class="flex justify-between text-sm">
-                <span class="text-text-primary">{{ entry.label }}</span>
+                <span class="text-text-primary">{{ breakdownLabel(group.key, entry.label) }}</span>
                 <span class="text-text-muted">
                   {{ entry.count }} · {{ formatCurrency(entry.value) }}
                 </span>
@@ -169,7 +166,7 @@
           </section>
 
           <section class="card flex flex-col gap-3">
-            <h2>Largest Holdings</h2>
+            <h2>{{ t('stats.timeMachine.largestHoldings') }}</h2>
             <ol class="flex flex-col gap-2">
               <li
                 v-for="(coin, index) in snapshot.topCoins"
@@ -182,7 +179,7 @@
                 </span>
                 <span class="whitespace-nowrap text-text-muted">
                   {{ formatCurrency(coin.value) }}
-                  <span v-if="!coin.valueFromHistory" title="Purchase price; no valuation recorded by this date">*</span>
+                  <span v-if="!coin.valueFromHistory" :title="t('stats.timeMachine.purchasePriceNote')">*</span>
                 </span>
               </li>
             </ol>
@@ -197,7 +194,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { ArrowLeft } from 'lucide-vue-next'
 import { getTimeMachineBounds, getTimeMachineSnapshot, getApiErrorMessage } from '@/api/client'
-import { formatCurrency } from '@/utils/format'
+import { formatCurrency, materialLabel } from '@/utils/format'
+import { t, intlLocale } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 import type { TimeMachineBounds, TimeMachineBreakdownEntry, TimeMachineSnapshot } from '@/types'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
@@ -234,7 +233,7 @@ const totalDays = computed(() => {
 
 const formattedDate = computed(() => {
   if (!selectedDate.value) return ''
-  return toDate(selectedDate.value).toLocaleDateString(undefined, {
+  return toDate(selectedDate.value).toLocaleDateString(intlLocale(), {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -248,19 +247,26 @@ const basisNote = computed(() => {
   const total = basis.fromValuationHistory + basis.fromPurchasePrice
   if (total === 0 || basis.fromPurchasePrice === 0) return ''
   if (basis.fromValuationHistory === 0) {
-    return 'No valuations had been recorded by this date, so every figure is the purchase price.'
+    return t('stats.timeMachine.allPurchasePrice')
   }
-  return `${basis.fromPurchasePrice} of ${total} coins had no recorded valuation by this date; those use purchase price.`
+  return t('stats.timeMachine.partialBasis', { fallback: basis.fromPurchasePrice, total })
 })
 
 const breakdownGroups = computed(() => {
   if (!snapshot.value) return []
   return [
-    { title: 'By Category', entries: snapshot.value.byCategory },
-    { title: 'By Material', entries: snapshot.value.byMaterial },
-    { title: 'By Era', entries: snapshot.value.byEra },
+    { key: 'category', title: t('stats.charts.byCategory'), entries: snapshot.value.byCategory },
+    { key: 'material', title: t('stats.charts.byMaterial'), entries: snapshot.value.byMaterial },
+    { key: 'era', title: t('stats.charts.byEra'), entries: snapshot.value.byEra },
   ].filter((group) => group.entries.length > 0)
 })
+
+function breakdownLabel(key: string, label: string): string {
+  if (key === 'material') return materialLabel(label)
+  if (key === 'category') return categoryLabel(label)
+  if (key === 'era') return eraLabel(label)
+  return label
+}
 
 const presets = computed(() => {
   if (!bounds.value?.hasData) return []
@@ -274,11 +280,11 @@ const presets = computed(() => {
   }
 
   return [
-    { label: 'Today', date: bounds.value.latestDate },
-    { label: '1 year ago', date: back(1) },
-    { label: '3 years ago', date: back(3) },
-    { label: '5 years ago', date: back(5) },
-    { label: 'The beginning', date: bounds.value.earliestDate },
+    { label: t('stats.timeMachine.presets.today'), date: bounds.value.latestDate },
+    { label: t('stats.timeMachine.presets.oneYear'), date: back(1) },
+    { label: t('stats.timeMachine.presets.threeYears'), date: back(3) },
+    { label: t('stats.timeMachine.presets.fiveYears'), date: back(5) },
+    { label: t('stats.timeMachine.presets.beginning'), date: bounds.value.earliestDate },
   ].filter((preset): preset is { label: string; date: string } => preset.date !== null)
 })
 
@@ -325,7 +331,7 @@ async function loadSnapshot(date: string) {
     error.value = ''
   } catch (err) {
     if (version !== requestVersion) return
-    error.value = getApiErrorMessage(err) || 'Failed to load the collection for that date.'
+    error.value = getApiErrorMessage(err) || t('stats.timeMachine.loadSnapshotFailed')
   } finally {
     if (version === requestVersion) loadingSnapshot.value = false
   }
@@ -347,7 +353,7 @@ async function init() {
       await loadSnapshot(res.data.latestDate)
     }
   } catch (err) {
-    error.value = getApiErrorMessage(err) || 'Failed to load the Time Machine.'
+    error.value = getApiErrorMessage(err) || t('stats.timeMachine.loadFailed')
   } finally {
     loadingBounds.value = false
   }

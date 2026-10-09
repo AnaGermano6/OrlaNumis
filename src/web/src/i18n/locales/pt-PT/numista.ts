@@ -1,0 +1,115 @@
+import type { Messages } from '../../types'
+
+const messages: Messages['numista'] = {
+  status: {
+    idle: {
+      label: 'Pronto',
+      title: 'Pronto para pesquisar',
+      message: 'Reveja a pesquisa e pesquise quando estiver pronto.',
+    },
+    loading: {
+      label: 'A pesquisar',
+      title: 'A pesquisar no Numista',
+      message: 'À procura de candidatos de catálogo ordenados.',
+    },
+    success: {
+      label: 'Resultados prontos',
+      title: 'Correspondências prontas para rever',
+      message: 'Reveja as evidências e selecione explicitamente uma referência de catálogo.',
+    },
+    empty: {
+      label: 'Sem correspondências',
+      title: 'Não foram encontradas correspondências',
+      message: 'Reveja a pesquisa e pesquise novamente.',
+    },
+    unconfigured: {
+      label: 'Configuração necessária',
+      title: 'A pesquisa no Numista não está configurada',
+      adminMessage: 'Adicione a chave de API do Numista nas definições de Sistema da Administração e repita a pesquisa.',
+      userMessage: 'A pesquisa no Numista não está disponível nesta instância. Peça ajuda a um administrador.',
+    },
+    quota: {
+      label: 'Temporariamente limitado',
+      title: 'Limite de pesquisas no Numista atingido',
+      wait: 'O Numista pediu à aplicação que aguarde {duration} antes de tentar novamente.',
+      waitGeneric: 'Aguarde antes de tentar novamente.',
+    },
+    timeout: {
+      label: 'Tempo esgotado',
+      title: 'A pesquisa no Numista excedeu o tempo limite',
+      message: 'A pesquisa e a seleção não foram alteradas. Tente novamente quando estiver pronto.',
+    },
+    unavailable: {
+      label: 'Indisponível',
+      title: 'A pesquisa no Numista está indisponível',
+      message: 'O serviço não conseguiu concluir a pesquisa. A sua pesquisa e seleção não foram alteradas.',
+    },
+  },
+  cache: {
+    shared: 'Resultados partilhados em curso',
+    fresh: 'Resultados recentes',
+    cached: 'Resultados em cache · há {age}',
+  },
+  age: {
+    seconds: '{count} s',
+    minutes: '{count} min',
+    hours: '{count} h',
+    days: { one: '{count} dia', other: '{count} dias' },
+  },
+  duration: {
+    seconds: { one: '{count} segundo', other: '{count} segundos' },
+    minutes: { one: '{count} minuto', other: '{count} minutos' },
+  },
+  panel: {
+    title: 'Pesquisa no Numista',
+    status: 'Estado: {label}',
+    query: 'Termos de pesquisa',
+    cancelEnrichment: 'Cancelar enriquecimento',
+    retryDetails: 'Repetir detalhes',
+    removeSelectionLabel: 'Remover a referência Numista selecionada',
+    removeSelection: 'Remover seleção',
+    openSettings: 'Abrir definições do Numista',
+    retained: 'Seleção mantida de uma pesquisa anterior',
+    ranked: 'Candidatos ordenados',
+    enlargeObverse: 'Ampliar a imagem do anverso de {title}',
+    obverseThumb: 'Miniatura do anverso de {title}',
+    enlargeReverse: 'Ampliar a imagem do reverso de {title}',
+    reverseThumb: 'Miniatura do reverso de {title}',
+    conflict: 'Conflito:',
+    noExplanation: 'Não há uma explicação detalhada da relevância.',
+    viewEntry: 'Ver entrada no catálogo',
+    selected: 'Selecionado:',
+    closeImage: 'Fechar a imagem ampliada do candidato',
+    addSelected: 'Adicionar referência selecionada',
+    help: {
+      empty: 'Introduza pelo menos um termo para ativar a pesquisa no Numista.',
+      generated: 'Gerado a partir das evidências de catálogo. Reveja ou ajuste antes de pesquisar.',
+      manual: 'Reveja ou ajuste as evidências de atribuição antes de pesquisar.',
+    },
+    relaxed: 'O Numista tentou novamente com a pesquisa simplificada “{query}”. A sua pesquisa editável não foi alterada.',
+    searchNumista: 'Pesquisar no Numista',
+    searchAgain: 'Pesquisar novamente',
+    retryAfterConfig: 'Repetir após configurar',
+    retryLookup: 'Repetir pesquisa',
+    searchUnavailable: 'Pesquisa indisponível',
+    enriching: 'A enriquecer os principais candidatos com dados do catálogo.',
+    detailsReady: 'Os detalhes dos candidatos estão prontos.',
+    detailsFailed: 'Não foi possível carregar os detalhes. Os resultados gerais continuam selecionáveis.',
+    detailsPartial: 'Há detalhes para {detailed} candidatos; {failed} continuam como resultados gerais.',
+    enrichmentCancelled: 'Enriquecimento cancelado. Os resultados gerais continuam selecionáveis.',
+    enrichment: {
+      enriched: 'Detalhes enriquecidos',
+      cached: 'Detalhes em cache',
+      failed: 'Detalhe indisponível',
+      broad: 'Resultado geral',
+    },
+    imageAlt: 'Imagem do {side} do candidato Numista {title}',
+  },
+  bands: {
+    strong: 'forte',
+    possible: 'possível',
+    weak: 'fraca',
+  },
+}
+
+export default messages
