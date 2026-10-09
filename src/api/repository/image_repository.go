@@ -193,3 +193,8 @@ func (r *ImageRepository) SetPrimaryAndCreate(coinID uint, image *models.CoinIma
 		return tx.Create(image).Error
 	})
 }
+
+// UpdateCoinNotes replaces a coin's notes.
+func (r *ImageRepository) UpdateCoinNotes(coinID uint, notes string) error {
+	return r.db.Model(&models.Coin{}).Where("id = ?", coinID).Update("notes", notes).Error
+}

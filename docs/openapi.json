@@ -6503,7 +6503,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "coins"
+                    "Coins"
                 ],
                 "summary": "Get coin category and era options",
                 "responses": {
@@ -6511,6 +6511,58 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handlers.CoinOptionsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coin-photos/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns real photos of a coin with their author and license: the Numista catalogue photos of numistaTypeId, then Wikimedia Commons files matching q. Commons searches are cached for a week. Import a chosen photo with POST /coins/{id}/images/import.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Search real coin photos",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search text, e.g. title and year (required unless numistaTypeId is set)",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Numista type whose catalogue photos to include",
+                        "name": "numistaTypeId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "en",
+                        "description": "Language of catalogue data",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.CoinPhotoSearchResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -6542,6 +6594,41 @@
                         "type": "string",
                         "description": "Filter by era (ancient, medieval, modern)",
                         "name": "era",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by country (exact)",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "loose",
+                            "coincard",
+                            "capsule",
+                            "flip",
+                            "proof_set",
+                            "blister",
+                            "slab"
+                        ],
+                        "type": "string",
+                        "description": "Filter by presentation",
+                        "name": "presentation",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "common",
+                            "uncommon",
+                            "scarce",
+                            "rare",
+                            "very_rare",
+                            "extremely_rare"
+                        ],
+                        "type": "string",
+                        "description": "Filter by rarity",
+                        "name": "rarity",
                         "in": "query"
                     },
                     {
@@ -6738,6 +6825,86 @@
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/countries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns each country of the user's collection coins (excluding wishlist and sold) with how many coins it has, alphabetically.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "List collection countries",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.CountryCount"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/country-from-numista": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "For the user's coins that have no country but are linked to a Numista type, sets the country from the type's issuer. Handles up to 25 coins per call (issuer details are cached for 30 days); call again while remaining \u003e 0. Stops early when Numista is not configured or the quota is spent (see status).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Fill coin countries from Numista",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Only this coin",
+                        "name": "coinId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "en",
+                        "description": "Language of country names",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.CoinCountryFillResult"
                         }
                     },
                     "400": {
@@ -7065,6 +7232,37 @@
                                     "type": "string"
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/summary": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Counts the user's collection coins (excluding wishlist and sold), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries, how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (stored in US dollars) and converts the total to euros with the ECB daily reference rate (cached; null when unavailable).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Get collection summary",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CollectionSummaryResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -7859,6 +8057,70 @@
                 }
             }
         },
+        "/coins/{id}/images/import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Downloads a photo from Wikimedia Commons or the Numista catalogue (as returned by GET /coin-photos/search) and saves it as a coin image, with thumbnails. The credit, if given, is appended to the coin's notes. A source that refuses the download (e.g. bot protection) returns 502 with code source_refused.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Import a real coin photo",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Coin ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Photo to import",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.importImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.CoinImage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/coins/{id}/images/{imageId}": {
             "delete": {
                 "security": [
@@ -8146,6 +8408,72 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/{id}/market-value": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns Numista's estimated price per grade for the issue of the coin's linked Numista type (from its \"Numista\" catalogue reference), plus the type's catalogue photos with credit. Responses are cached for days to stay inside Numista's free plan; when Numista cannot be reached the last stored values are returned with stale=true. Provider problems are reported in status, not as HTTP errors.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Get a coin's Numista market value",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Coin ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Numista issue ID; defaults to the issue matching the coin's date, else the first",
+                        "name": "issueId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "EUR",
+                        "description": "ISO 4217 currency code",
+                        "name": "currency",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "en",
+                        "description": "Language of catalogue data",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.CoinMarketValue"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -11659,6 +11987,224 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/numista/catalog/issuers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns up to 20 Numista issuers (countries and authorities) whose name matches q, best matches first. The issuer list is cached for 30 days.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Numista"
+                ],
+                "summary": "Search Numista issuers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Part of the issuer name",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "en",
+                        "description": "Language of issuer names",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.NumistaCatalogIssuersResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/numista/catalog/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns one page (20 types) of Numista coin types matching the text and/or issuer, optionally limited to a year. Searches are cached for a day.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Numista"
+                ],
+                "summary": "Search the Numista coin catalogue",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search text (required unless issuer is set)",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Numista issuer code, e.g. portugal",
+                        "name": "issuer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Year the type was issued (negative for BC)",
+                        "name": "year",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "en",
+                        "description": "Language of results",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.NumistaCatalogSearchResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/numista/catalog/types/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a Numista coin type's catalogue details (denomination, rulers, composition, weight, size, mints, designs, references, reference photos with credit) and its issues. Cached for 30 days.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Numista"
+                ],
+                "summary": "Get a Numista coin type",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Numista type ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "en",
+                        "description": "Language of catalogue data",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.NumistaCatalogTypeResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/numista/catalog/types/{id}/market-value": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns Numista's estimated price per grade for an issue of a coin type, before a coin exists. Same caching and status rules as the coin market value.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Numista"
+                ],
+                "summary": "Get a Numista type's market value",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Numista type ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Numista issue ID; defaults to the issue of year, else the first",
+                        "name": "issueId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Year used to pick the default issue (negative for BC)",
+                        "name": "year",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "EUR",
+                        "description": "ISO 4217 currency code",
+                        "name": "currency",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.CoinMarketValue"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -19398,6 +19944,10 @@
                         }
                     ]
                 },
+                "country": {
+                    "type": "string",
+                    "maxLength": 120
+                },
                 "currentValue": {
                     "type": "number"
                 },
@@ -19459,6 +20009,19 @@
                     "type": "string",
                     "maxLength": 1000
                 },
+                "presentation": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "enum": [
+                        "loose",
+                        "coincard",
+                        "capsule",
+                        "flip",
+                        "proof_set",
+                        "blister",
+                        "slab"
+                    ]
+                },
                 "purchaseDate": {
                     "type": "string"
                 },
@@ -19468,6 +20031,18 @@
                 },
                 "purchasePrice": {
                     "type": "number"
+                },
+                "rarity": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "enum": [
+                        "common",
+                        "uncommon",
+                        "scarce",
+                        "rare",
+                        "very_rare",
+                        "extremely_rare"
+                    ]
                 },
                 "rarityRating": {
                     "type": "string",
@@ -19533,6 +20108,12 @@
                 },
                 "weightGrams": {
                     "type": "number"
+                },
+                "year": {
+                    "description": "Year is the coin's year (negative for BC); when omitted it is read from dateRange.",
+                    "type": "integer",
+                    "maximum": 3000,
+                    "minimum": -5000
                 }
             }
         },
@@ -19786,6 +20367,10 @@
                         }
                     ]
                 },
+                "country": {
+                    "type": "string",
+                    "maxLength": 120
+                },
                 "currentValue": {
                     "type": "number"
                 },
@@ -19847,6 +20432,19 @@
                     "type": "string",
                     "maxLength": 1000
                 },
+                "presentation": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "enum": [
+                        "loose",
+                        "coincard",
+                        "capsule",
+                        "flip",
+                        "proof_set",
+                        "blister",
+                        "slab"
+                    ]
+                },
                 "purchaseDate": {
                     "type": "string"
                 },
@@ -19856,6 +20454,18 @@
                 },
                 "purchasePrice": {
                     "type": "number"
+                },
+                "rarity": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "enum": [
+                        "common",
+                        "uncommon",
+                        "scarce",
+                        "rare",
+                        "very_rare",
+                        "extremely_rare"
+                    ]
                 },
                 "rarityRating": {
                     "type": "string",
@@ -19921,6 +20531,49 @@
                 },
                 "weightGrams": {
                     "type": "number"
+                },
+                "year": {
+                    "description": "Year (negative for BC); null means \"read it from dateRange\".",
+                    "type": "integer",
+                    "maximum": 3000,
+                    "minimum": -5000
+                }
+            }
+        },
+        "handlers.CollectionSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "coincards": {
+                    "description": "Coincards counts coins whose presentation is \"coincard\".",
+                    "type": "integer"
+                },
+                "coins": {
+                    "type": "integer"
+                },
+                "countries": {
+                    "type": "integer"
+                },
+                "exchangeRate": {
+                    "$ref": "#/definitions/services.ExchangeRate"
+                },
+                "totalValue": {
+                    "description": "TotalValue sums the coins' current values, in the app's stored currency (US dollars).",
+                    "type": "number"
+                },
+                "totalValueEur": {
+                    "description": "TotalValueEUR is TotalValue converted with ExchangeRate; null when no rate is available.",
+                    "type": "number"
+                },
+                "types": {
+                    "description": "Types counts distinct coin types: coins linked to the same Numista type\ncount once; other coins count once per distinct name.",
+                    "type": "integer"
+                },
+                "unvaluedCoins": {
+                    "description": "UnvaluedCoins have no current value and are left out of TotalValue.",
+                    "type": "integer"
+                },
+                "withoutCountry": {
+                    "type": "integer"
                 }
             }
         },
@@ -22234,6 +22887,34 @@
                 }
             }
         },
+        "handlers.importImageRequest": {
+            "type": "object",
+            "required": [
+                "imageType",
+                "url"
+            ],
+            "properties": {
+                "credit": {
+                    "description": "Credit is appended to the coin's notes after a successful import.",
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Obverse photo: Jane Doe, CC BY-SA 4.0 (Wikimedia Commons)"
+                },
+                "imageType": {
+                    "type": "string",
+                    "example": "obverse"
+                },
+                "isPrimary": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "url": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "https://upload.wikimedia.org/wikipedia/commons/5/54/Coin.jpg"
+                }
+            }
+        },
         "handlers.loginRequest": {
             "type": "object",
             "required": [
@@ -23236,6 +23917,11 @@
                         }
                     ]
                 },
+                "country": {
+                    "description": "Country is the issuing country or authority (e.g. from the Numista issuer).",
+                    "type": "string",
+                    "maxLength": 120
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -23327,6 +24013,10 @@
                     "type": "string",
                     "maxLength": 1000
                 },
+                "presentation": {
+                    "description": "Presentation is how the coin is kept or was issued (see CoinPresentations).",
+                    "type": "string"
+                },
                 "purchaseDate": {
                     "type": "string"
                 },
@@ -23336,6 +24026,10 @@
                 },
                 "purchasePrice": {
                     "type": "number"
+                },
+                "rarity": {
+                    "description": "Rarity is a fixed scale (see CoinRarities). RarityRating is a legacy free-text field.",
+                    "type": "string"
                 },
                 "rarityRating": {
                     "type": "string",
@@ -23428,6 +24122,30 @@
                 },
                 "weightGrams": {
                     "type": "number"
+                },
+                "year": {
+                    "description": "Year is derived from DateRange (first year, negative for BC) for sorting and grouping.",
+                    "type": "integer"
+                }
+            }
+        },
+        "models.CoinCountryFillResult": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "description": "Failed coins could not be resolved (e.g. Numista did not answer).",
+                    "type": "integer"
+                },
+                "remaining": {
+                    "description": "Remaining linked coins still have no country (call again to continue).",
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "Updated coins got a country in this call.",
+                    "type": "integer"
                 }
             }
         },
@@ -23471,6 +24189,53 @@
                 },
                 "userId": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.CoinMarketValue": {
+            "type": "object",
+            "properties": {
+                "catalogPhotos": {
+                    "description": "CatalogPhotos are Numista's reference photos of the type, with credit.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaCatalogPhoto"
+                    }
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "fetchedAt": {
+                    "description": "FetchedAt is when Numista last returned these prices.",
+                    "type": "string"
+                },
+                "issues": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaIssueSummary"
+                    }
+                },
+                "numistaTypeId": {
+                    "type": "integer"
+                },
+                "numistaUrl": {
+                    "type": "string"
+                },
+                "prices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaGradePrice"
+                    }
+                },
+                "selectedIssueId": {
+                    "type": "integer"
+                },
+                "stale": {
+                    "description": "Stale is true when a refresh failed and stored values are being shown.",
+                    "type": "boolean"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
@@ -23540,6 +24305,54 @@
                 "CoinOfDayRunTriggerManual",
                 "CoinOfDayRunTriggerScheduled"
             ]
+        },
+        "models.CoinPhotoCandidate": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "imageUrl": {
+                    "description": "ImageURL is the full-size photo to import into a coin.",
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "pageUrl": {
+                    "type": "string"
+                },
+                "side": {
+                    "description": "Side is \"obverse\" or \"reverse\" when the source states it.",
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CoinPhotoSearchResult": {
+            "type": "object",
+            "properties": {
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CoinPhotoCandidate"
+                    }
+                },
+                "query": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
         },
         "models.CoinReference": {
             "type": "object",
@@ -24111,6 +24924,219 @@
                 }
             }
         },
+        "models.NumistaCatalogIssuer": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.NumistaCatalogIssuersResult": {
+            "type": "object",
+            "properties": {
+                "issuers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaCatalogIssuer"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.NumistaCatalogPhoto": {
+            "type": "object",
+            "properties": {
+                "copyright": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "picture": {
+                    "type": "string"
+                },
+                "side": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.NumistaCatalogReference": {
+            "type": "object",
+            "properties": {
+                "catalogue": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.NumistaCatalogSearchItem": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "issuer": {
+                    "$ref": "#/definitions/models.NumistaCatalogIssuer"
+                },
+                "maxYear": {
+                    "type": "integer"
+                },
+                "minYear": {
+                    "type": "integer"
+                },
+                "obverseThumbnail": {
+                    "type": "string"
+                },
+                "reverseThumbnail": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.NumistaCatalogSearchResult": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaCatalogSearchItem"
+                    }
+                }
+            }
+        },
+        "models.NumistaCatalogSide": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "lettering": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.NumistaCatalogType": {
+            "type": "object",
+            "properties": {
+                "composition": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "denomination": {
+                    "type": "string"
+                },
+                "diameterMm": {
+                    "type": "number"
+                },
+                "edge": {
+                    "$ref": "#/definitions/models.NumistaCatalogSide"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "issuer": {
+                    "$ref": "#/definitions/models.NumistaCatalogIssuer"
+                },
+                "maxYear": {
+                    "type": "integer"
+                },
+                "minYear": {
+                    "type": "integer"
+                },
+                "mints": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "obverse": {
+                    "$ref": "#/definitions/models.NumistaCatalogSide"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaCatalogPhoto"
+                    }
+                },
+                "references": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaCatalogReference"
+                    }
+                },
+                "reverse": {
+                    "$ref": "#/definitions/models.NumistaCatalogSide"
+                },
+                "rulers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "shape": {
+                    "type": "string"
+                },
+                "technique": {
+                    "type": "string"
+                },
+                "thicknessMm": {
+                    "type": "number"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "weightGrams": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.NumistaCatalogTypeResult": {
+            "type": "object",
+            "properties": {
+                "issues": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaIssueSummary"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/models.NumistaCatalogType"
+                }
+            }
+        },
         "models.NumistaEnrichmentState": {
             "type": "string",
             "enum": [
@@ -24161,6 +25187,17 @@
                 },
                 "visibleText": {
                     "type": "string"
+                }
+            }
+        },
+        "models.NumistaGradePrice": {
+            "type": "object",
+            "properties": {
+                "grade": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
                 }
             }
         },
@@ -24243,6 +25280,33 @@
                     }
                 },
                 "userEditedQueryCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.NumistaIssueSummary": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "maxYear": {
+                    "type": "integer"
+                },
+                "minYear": {
+                    "type": "integer"
+                },
+                "mintLetter": {
+                    "type": "string"
+                },
+                "mintage": {
+                    "type": "integer"
+                },
+                "year": {
+                    "description": "Year is the Gregorian year for dated issues (negative for BC).",
                     "type": "integer"
                 }
             }
@@ -25356,6 +26420,17 @@
                 }
             }
         },
+        "repository.CountryCount": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "country": {
+                    "type": "string"
+                }
+            }
+        },
         "repository.DistributionCell": {
             "type": "object",
             "properties": {
@@ -25992,6 +27067,19 @@
                 },
                 "lotId": {
                     "type": "integer"
+                }
+            }
+        },
+        "services.ExchangeRate": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description": "Date is the ECB reference date, YYYY-MM-DD.",
+                    "type": "string"
+                },
+                "usdPerEur": {
+                    "description": "USDPerEUR is how many US dollars one euro buys (e.g. 1.1206).",
+                    "type": "number"
                 }
             }
         },

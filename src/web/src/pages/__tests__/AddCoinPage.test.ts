@@ -13,6 +13,6 @@ describe('AddCoinPage', () => {
 
     expect(source).toContain("romanImperialFigureId: source.category === 'Roman' ? (source.romanImperialFigureId ?? null) : null")
     expect(source).toContain('overrides: buildCoinPayload(reviewForm)')
-    expect(source).toContain('store.addCoin(buildCoinPayload(form))')
+    expect(source).toContain('const payload = buildCoinPayload(form)')
   })
 })

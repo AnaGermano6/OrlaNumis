@@ -29,4 +29,7 @@ export default {
   diameterMm: 'Diameter (mm)',
   coinType: 'Coin type',
   rarityRating: 'Rarity Rating',
+  country: 'Country',
+  presentation: 'Presentation',
+  rarity: 'Rarity',
 }

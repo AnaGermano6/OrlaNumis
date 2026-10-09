@@ -62,15 +62,54 @@
             </select>
           </div>
         </div>
+        <div class="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div class="form-group min-w-0">
+            <label class="form-label">{{ t('coinForm.dateRange') }}</label>
+            <input
+              v-model="form.dateRange"
+              class="form-input"
+              type="text"
+              maxlength="200"
+              :placeholder="t('coinForm.dateRangePlaceholder')"
+            />
+          </div>
+          <div class="form-group min-w-0">
+            <label class="form-label" for="coin-year">{{ t('coinForm.year') }}</label>
+            <input
+              id="coin-year"
+              class="form-input"
+              type="number"
+              inputmode="numeric"
+              step="1"
+              min="-5000"
+              max="3000"
+              :value="form.year ?? ''"
+              :placeholder="yearPlaceholder"
+              aria-describedby="coin-year-hint"
+              @input="setYear(($event.target as HTMLInputElement).value)"
+            />
+          </div>
+        </div>
+        <p id="coin-year-hint" class="-mt-2 mb-3 text-chip text-text-muted">{{ t('coinForm.yearHint') }}</p>
         <div class="form-group min-w-0">
-          <label class="form-label">{{ t('coinForm.dateRange') }}</label>
-          <input
-            v-model="form.dateRange"
-            class="form-input"
-            type="text"
-            maxlength="200"
-            :placeholder="t('coinForm.dateRangePlaceholder')"
-          />
+          <label class="form-label">{{ t('coinFields.country') }}</label>
+          <AutocompleteInput v-model="countryModel" field="country" :placeholder="t('coinForm.countryPlaceholder')" />
+        </div>
+        <div class="grid gap-3 md:grid-cols-2">
+          <div class="form-group min-w-0">
+            <label class="form-label" for="coin-presentation">{{ t('coinFields.presentation') }}</label>
+            <select id="coin-presentation" v-model="presentationModel" class="form-select">
+              <option value="">{{ t('coinForm.notSpecified') }}</option>
+              <option v-for="option in COIN_PRESENTATIONS" :key="option" :value="option">{{ presentationLabel(option) }}</option>
+            </select>
+          </div>
+          <div class="form-group min-w-0">
+            <label class="form-label" for="coin-rarity">{{ t('coinFields.rarity') }}</label>
+            <select id="coin-rarity" v-model="rarityModel" class="form-select">
+              <option value="">{{ t('coinForm.notSpecified') }}</option>
+              <option v-for="option in COIN_RARITIES" :key="option" :value="option">{{ rarityLabel(option) }}</option>
+            </select>
+          </div>
         </div>
         <div v-if="form.category === 'Roman'" class="form-group min-w-0">
           <label class="form-label">{{ t('coinForm.imperialFigure') }}</label>
@@ -312,6 +351,8 @@ import I18nT from '@/components/I18nT.vue'
 import { materialLabel } from '@/utils/format'
 import { t } from '@/i18n'
 import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
+import { COIN_PRESENTATIONS, COIN_RARITIES, deriveCoinYear, presentationLabel, rarityLabel } from '@/utils/coinAttributes'
+import { formatNumistaYear } from '@/utils/numistaCatalog'
 
 function unwrapMintLocations(data: MintLocationsResponse): MintLocation[] {
   return Array.isArray(data) ? data : data.mintLocations ?? []
@@ -326,6 +367,31 @@ const props = defineProps<{
   loading?: boolean
   coinId?: number
 }>()
+
+// Coins saved before these fields existed may not carry them; edit them as ''.
+const countryModel = computed({
+  get: () => props.form.country ?? '',
+  set: (value: string) => { props.form.country = value },
+})
+const presentationModel = computed({
+  get: () => props.form.presentation ?? '',
+  set: (value: string) => { props.form.presentation = value },
+})
+const rarityModel = computed({
+  get: () => props.form.rarity ?? '',
+  set: (value: string) => { props.form.rarity = value },
+})
+
+// An empty year is worked out from "Date or range" by the server; show which.
+const yearPlaceholder = computed(() => {
+  const derived = deriveCoinYear(props.form.dateRange)
+  return derived === undefined ? t('coinForm.yearPlaceholder') : t('coinForm.yearAuto', { year: formatNumistaYear(derived) })
+})
+
+function setYear(value: string) {
+  const year = Math.trunc(Number(value))
+  props.form.year = value.trim() === '' || !Number.isFinite(year) || year === 0 ? null : year
+}
 
 const emit = defineEmits<{ submit: [] }>()
 

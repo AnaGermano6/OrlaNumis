@@ -7,11 +7,17 @@ import (
 )
 
 // OSMTileHost is the OpenStreetMap tile origin used by the mint map
-// (src/web/src/components/map/MintMapLeaflet.vue). It is the only external
-// host the SPA contacts directly — every other remote image (auction lot
-// photos, dealer listings) is fetched server-side through the image proxy and
-// handed to the browser as a blob: URL, so it needs no allowance here.
+// (src/web/src/components/map/MintMapLeaflet.vue). Apart from it and
+// NumistaPhotoHost, every remote image (auction lot photos, dealer listings)
+// is fetched server-side through the image proxy and handed to the browser as
+// a blob: URL, so it needs no allowance here.
 const OSMTileHost = "https://*.tile.openstreetmap.org"
+
+// NumistaPhotoHost serves the Numista catalogue reference photos shown when
+// browsing the catalogue and on coins linked to a Numista type. They are
+// loaded by the browser directly because Numista's bot protection usually
+// rejects server-side (proxied) fetches.
+const NumistaPhotoHost = "https://en.numista.com"
 
 // appCSP is the policy for the SPA and the API.
 //
@@ -41,7 +47,7 @@ var appCSP = strings.Join([]string{
 	"form-action 'self'",
 	"script-src 'self' 'wasm-unsafe-eval' blob:",
 	"style-src 'self' 'unsafe-inline'",
-	"img-src 'self' data: blob: " + OSMTileHost,
+	"img-src 'self' data: blob: " + OSMTileHost + " " + NumistaPhotoHost,
 	"font-src 'self' data:",
 	"connect-src 'self' blob:",
 	"worker-src 'self' blob:",

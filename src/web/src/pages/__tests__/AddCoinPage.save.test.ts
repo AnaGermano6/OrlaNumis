@@ -216,7 +216,7 @@ describe('Add Coin save workflow', () => {
     expect(wrapper.findComponent(CoinLookupCaptureWizard).exists()).toBe(false)
     expect(wrapper.text()).toContain('Save manual')
     expect(wrapper.get('header.page-header').findAll('button').map(button => button.text()))
-      .toEqual(['Manual Mode', 'AI Assist Mode'])
+      .toEqual(['Manual Mode', 'AI Assist Mode', 'Catalog'])
 
     await click(wrapper, 'AI Assist Mode')
     expect(wrapper.getComponent(CoinLookupCaptureWizard).props('purpose')).toBe('intake')

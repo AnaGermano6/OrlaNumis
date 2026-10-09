@@ -40,6 +40,7 @@ var nullableCoinUpdateScalarFields = map[string]string{
 	"diameterMm":            "DiameterMm",
 	"romanImperialFigureId": "RomanImperialFigureID",
 	"mintLocationId":        "MintLocationID",
+	"year":                  "Year",
 }
 
 func nullableScalarFieldPresence(raw map[string]json.RawMessage) map[string]bool {
@@ -153,7 +154,7 @@ type CoinOptionsResponse struct {
 //
 //	@Summary		Get coin category and era options
 //	@Description	Returns the admin-configured category and era choices with translated display names
-//	@Tags			coins
+//	@Tags			Coins
 //	@Produce		json
 //	@Security		BearerAuth
 //	@Success		200	{object}	CoinOptionsResponse
@@ -220,6 +221,9 @@ type ShipmentAttachRequest struct {
 //	@Produce		json
 //	@Param			category	query		string	false	"Filter by category (Roman, Greek, Byzantine, Modern, Other)"
 //	@Param			era			query		string	false	"Filter by era (ancient, medieval, modern)"
+//	@Param			country		query		string	false	"Filter by country (exact)"
+//	@Param			presentation	query	string	false	"Filter by presentation"	Enums(loose, coincard, capsule, flip, proof_set, blister, slab)
+//	@Param			rarity		query		string	false	"Filter by rarity"	Enums(common, uncommon, scarce, rare, very_rare, extremely_rare)
 //	@Param			search		query		string	false	"Search across name, denomination, ruler, era, mint, inscriptions, notes"
 //	@Param			wishlist	query		string	false	"Filter by wishlist status"	Enums(true, false)
 //	@Param			sold		query		string	false	"Filter by sold status"	Enums(true, false)
@@ -273,13 +277,20 @@ func (h *CoinHandler) List(c *gin.Context) {
 	}
 
 	filters := repository.CoinListFilters{
-		Category:  c.Query("category"),
-		Era:       c.Query("era"),
-		Search:    c.Query("search"),
-		SortField: sortField,
-		SortOrder: sortOrder,
-		Page:      page,
-		Limit:     limit,
+		Category:     c.Query("category"),
+		Era:          c.Query("era"),
+		Country:      models.NormalizeCoinCountry(c.Query("country")),
+		Presentation: strings.TrimSpace(c.Query("presentation")),
+		Rarity:       strings.TrimSpace(c.Query("rarity")),
+		Search:       c.Query("search"),
+		SortField:    sortField,
+		SortOrder:    sortOrder,
+		Page:         page,
+		Limit:        limit,
+	}
+	if !models.ValidCoinPresentation(filters.Presentation) || !models.ValidCoinRarity(filters.Rarity) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Unknown presentation or rarity"})
+		return
 	}
 	// Parse optional seed for deterministic random sort.
 	// Use strconv.Atoi to ensure it's a real integer (defense against SQL injection).
@@ -818,6 +829,8 @@ func (h *CoinHandler) Suggestions(c *gin.Context) {
 		column = "era"
 	case "purchaseLocation":
 		column = "purchase_location"
+	case "country":
+		column = "country"
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid field"})
 		return
@@ -901,7 +914,9 @@ func handleCoinMutationError(c *gin.Context, err error) bool {
 		errors.Is(err, services.ErrReferenceDuplicate),
 		errors.Is(err, services.ErrMintLocationNotFound),
 		errors.Is(err, services.ErrCoinInvalidEra),
-		errors.Is(err, services.ErrCoinInvalidCategory):
+		errors.Is(err, services.ErrCoinInvalidCategory),
+		errors.Is(err, services.ErrCoinInvalidPresentation),
+		errors.Is(err, services.ErrCoinInvalidRarity):
 		respondError(c, http.StatusBadRequest, err.Error(), err)
 		return true
 	case errors.Is(err, services.ErrStorageSlotRequired),

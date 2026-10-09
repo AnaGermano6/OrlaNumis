@@ -75,6 +75,12 @@ const messages: Messages['coinForm'] = {
   chooseSlotBeforeSave: 'Escolha uma posição exata no tabuleiro antes de guardar.',
   mintsUnavailable: 'As casas da moeda não estão disponíveis',
   storageUnavailable: 'As localizações de arrumação não estão disponíveis',
+  countryPlaceholder: 'ex.: Portugal',
+  notSpecified: 'Não indicada',
+  year: 'Ano',
+  yearPlaceholder: 'ex.: 1968',
+  yearAuto: 'Automático: {year}',
+  yearHint: 'Use um ano negativo para a.C. (ex.: -44). Se ficar vazio, o ano é lido da data ou intervalo.',
 }
 
 export default messages

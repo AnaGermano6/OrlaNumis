@@ -10,6 +10,9 @@
             <AppIconButton :active="entryMode === 'agentic'" :disabled="formDisabled" :title="t('addCoin.aiMode')" @click="entryMode = 'agentic'">
               <Sparkles :size="20" />
             </AppIconButton>
+            <AppIconButton :active="entryMode === 'catalog'" :disabled="formDisabled" :title="t('addCoin.catalogMode')" @click="entryMode = 'catalog'">
+              <Library :size="20" />
+            </AppIconButton>
           </template>
           <header class="page-header">
             <h1>{{ t('nav.addCoin') }}</h1>
@@ -20,9 +23,15 @@
               <button type="button" class="chip border border-border-subtle" :class="{ 'border-gold': entryMode === 'agentic' }" @click="entryMode = 'agentic'">
                 {{ t('addCoin.aiMode') }}
               </button>
+              <button type="button" class="chip border border-border-subtle" :class="{ 'border-gold': entryMode === 'catalog' }" @click="entryMode = 'catalog'">
+                {{ t('addCoin.catalogMode') }}
+              </button>
             </div>
           </header>
         </DesktopPageContext>
+
+        <!-- Mounted on first use, then kept so returning from the form keeps the search and results. -->
+        <NumistaCatalogBrowser v-if="catalogOpened" v-show="entryMode === 'catalog'" @use="applyCatalogSelection" />
 
         <section v-if="entryMode === 'agentic'" class="relative grid gap-4">
           <!-- Loading overlay for AI analysis -->
@@ -157,14 +166,25 @@
           </form>
         </section>
 
-        <CoinForm
-          v-else
-          ref="coinFormRef"
-          :form="form"
-          :submit-label="t('addCoin.addToCollection')"
-          :loading="saving"
-          @submit="handleManualSubmit"
-        />
+        <template v-else-if="entryMode === 'manual'">
+          <div v-if="catalogSource" class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-gold bg-gold-glow p-3" role="status">
+            <p class="m-0 min-w-0 text-body text-text-primary">
+              <I18nT keypath="addCoin.fromCatalog" :params="{ title: catalogSource.title }">
+                <template #title><strong>{{ catalogSource.title }}</strong></template>
+              </I18nT>
+              {{ catalogSource.wishlist ? t('addCoin.fromCatalogWishlistHint') : t('addCoin.fromCatalogHint') }}
+              <span v-if="catalogPhotoSides" class="mt-1 block text-chip text-text-secondary">{{ t('photos.chosenForCoin', { sides: catalogPhotoSides }) }}</span>
+            </p>
+            <button type="button" class="btn btn-secondary btn-sm" @click="entryMode = 'catalog'">{{ t('addCoin.chooseAnother') }}</button>
+          </div>
+          <CoinForm
+            ref="coinFormRef"
+            :form="form"
+            :submit-label="form.isWishlist ? t('addCoin.addToWishlist') : t('addCoin.addToCollection')"
+            :loading="saving"
+            @submit="handleManualSubmit"
+          />
+        </template>
       </fieldset>
       <div v-if="savedCoinId && saveCompletionError" role="alert" class="mt-4 grid gap-3 rounded-md border border-border-subtle bg-card p-4">
         <p>{{ t('addCoin.coinSaved', { error: saveCompletionError }) }}</p>
@@ -182,29 +202,36 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { Category, Coin, CoinLookupImageRole, CoinMutationPayload, IntakeDraft, Material } from '@/types'
+import type { CatalogRegistry, Category, Coin, CoinLookupImageRole, CoinMutationPayload, CoinReferenceInput, IntakeDraft, Material } from '@/types'
 import {
   commitIntakeDraft,
   createIntakeDraft,
   extractText,
+  importCoinImage,
+  listCatalogs,
   updateCoin,
   uploadImage,
 } from '@/api/client'
 import { useCoinsStore } from '@/stores/coins'
 import CoinForm from '@/components/CoinForm.vue'
+import I18nT from '@/components/I18nT.vue'
+import NumistaCatalogBrowser from '@/components/catalog/NumistaCatalogBrowser.vue'
+import { buildCatalogPrefill, type CatalogSelection } from '@/utils/numistaCatalogPrefill'
+import { photoCreditLine, type RealPhotoChoice } from '@/utils/coinPhotos'
+import type { CoinPhotoCandidate } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
 import { usePwa } from '@/composables/usePwa'
 import { useCoinOptions } from '@/composables/useCoinOptions'
 import CoinLookupCaptureWizard from '@/components/coin-lookup/CoinLookupCaptureWizard.vue'
 import { normalizeGalleryImage } from '@/utils/galleryImage'
-import { PencilLine, Sparkles } from 'lucide-vue-next'
+import { Library, PencilLine, Sparkles } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { confidenceLabel, materialLabel } from '@/utils/format'
 import { t } from '@/i18n'
 import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
-type EntryMode = 'manual' | 'agentic'
+type EntryMode = 'manual' | 'agentic' | 'catalog'
 
 const route = useRoute()
 const router = useRouter()
@@ -230,7 +257,11 @@ const formDisabled = computed(() =>
   || preparingImage.value
   || savedCoinId.value !== null,
 )
-type PendingImage = { file: File; face: 'obverse' | 'reverse'; primary: boolean; circleClip: boolean }
+// A photo to attach after the coin is created: a local file, or a real photo
+// chosen in the catalogue and imported by the server with its credit.
+type PendingImage =
+  | { file: File; remote?: undefined; face: 'obverse' | 'reverse'; primary: boolean; circleClip: boolean }
+  | { file?: undefined; remote: CoinPhotoCandidate; face: 'obverse' | 'reverse'; primary: boolean; circleClip: boolean }
 const pendingImages: PendingImage[] = []
 let pendingCard: File | null = null
 let savedNotes = ''
@@ -265,6 +296,10 @@ function createEmptyForm(category: Category, material: Material): Partial<Coin> 
     mint: '',
     era: '',
     dateRange: '',
+    year: null,
+    country: '',
+    presentation: '',
+    rarity: '',
     weightGrams: undefined,
     diameterMm: undefined,
     grade: '',
@@ -401,9 +436,15 @@ function buildCoinPayload(source: Partial<Coin>): CoinMutationPayload {
     mint: source.mint?.trim() || undefined,
     mintLocationId: source.mintLocationId ?? null,
     era: source.era?.trim() ?? '',
+    dateRange: source.dateRange?.trim() || undefined,
+    // Empty: the server reads the year from dateRange.
+    year: source.year ?? null,
     weightGrams: source.weightGrams ?? undefined,
     diameterMm: source.diameterMm ?? undefined,
     grade: source.grade?.trim() || undefined,
+    country: source.country?.trim() || undefined,
+    presentation: source.presentation || undefined,
+    rarity: source.rarity || undefined,
     obverseInscription: source.obverseInscription?.trim() || undefined,
     reverseInscription: source.reverseInscription?.trim() || undefined,
     obverseDescription: source.obverseDescription?.trim() || undefined,
@@ -540,11 +581,45 @@ async function confirmDraft() {
   }
 }
 
+// Set when the form was filled from the Numista catalogue: shown as a notice
+// and saved with the coin as its catalogue references.
+const catalogSource = ref<{ title: string; wishlist: boolean } | null>(null)
+const catalogReferences = ref<CoinReferenceInput[]>([])
+const catalogOpened = ref(false)
+const catalogPhotos = ref<RealPhotoChoice>({})
+const catalogPhotoSides = computed(() => [
+  catalogPhotos.value.obverse ? t('common.obverse') : '',
+  catalogPhotos.value.reverse ? t('common.reverse') : '',
+].filter(Boolean).join(', '))
+
+async function applyCatalogSelection(selection: CatalogSelection) {
+  let registry: CatalogRegistry[] = []
+  try {
+    registry = await listCatalogs()
+  } catch {
+    // Without the registry only the Numista reference is saved; others go to notes.
+  }
+  const { fields, references } = buildCatalogPrefill(selection, {
+    categories: categoryOptions.value,
+    eras: eraOptions.value,
+    materials: materialOptions.value,
+    registry,
+  })
+  Object.assign(form, createEmptyForm(defaultCategory.value, defaultMaterial.value), fields)
+  catalogReferences.value = references
+  catalogSource.value = { title: selection.type.title, wishlist: selection.wishlist }
+  catalogPhotos.value = selection.photos ?? {}
+  entryMode.value = 'manual'
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 async function handleManualSubmit() {
   if (saving.value || savedCoinId.value !== null) return
   saving.value = true
   try {
-    const coin = await store.addCoin(buildCoinPayload(form))
+    const payload = buildCoinPayload(form)
+    if (catalogSource.value && catalogReferences.value.length) payload.references = catalogReferences.value
+    const coin = await store.addCoin(payload)
     savedCoinId.value = coin.id
     const formComp = coinFormRef.value
 
@@ -553,6 +628,12 @@ async function handleManualSubmit() {
     }
     if (formComp?.reverseFile) {
       pendingImages.push({ file: formComp.reverseFile, face: 'reverse', primary: false, circleClip: false })
+    }
+    // Real photos from the catalogue fill the sides the user did not photograph.
+    if (catalogSource.value) {
+      const { obverse, reverse } = catalogPhotos.value
+      if (obverse && !formComp?.obverseFile) pendingImages.push({ remote: obverse, face: 'obverse', primary: true, circleClip: false })
+      if (reverse && !formComp?.reverseFile) pendingImages.push({ remote: reverse, face: 'reverse', primary: !formComp?.obverseFile && !obverse, circleClip: false })
     }
 
     pendingCard = formComp?.cardFile ?? null
@@ -576,9 +657,22 @@ async function handleManualSubmit() {
 async function completeSavedCoin() {
   const coinID = savedCoinId.value
   if (coinID === null) return
+  const refusedPhotos: string[] = []
   for (let image = pendingImages[0]; image; image = pendingImages[0]) {
-    await uploadImage(coinID, image.file, image.face, image.primary, image.circleClip)
+    if (image.remote) {
+      try {
+        await importCoinImage(coinID, { url: image.remote.imageUrl, imageType: image.face, isPrimary: image.primary, credit: photoCreditLine(image.face, image.remote) })
+      } catch {
+        // A source refusing a photo should not block the coin; report it below.
+        refusedPhotos.push(image.face === 'obverse' ? t('common.obverse') : t('common.reverse'))
+      }
+    } else {
+      await uploadImage(coinID, image.file, image.face, image.primary, image.circleClip)
+    }
     pendingImages.shift()
+  }
+  if (refusedPhotos.length) {
+    await showAlert(t('photos.importFailed', { sides: refusedPhotos.join(', ') }), { title: t('photos.title') })
   }
   if (pendingCard) {
     const res = await extractText(pendingCard)
@@ -606,6 +700,7 @@ async function retrySavedCoin() {
 
 watch(entryMode, (mode) => {
   if (mode !== 'agentic') captureWizard.value?.stopCamera()
+  if (mode === 'catalog') catalogOpened.value = true
 })
 
 onMounted(async () => {

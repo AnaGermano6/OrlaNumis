@@ -46,6 +46,9 @@ import { appendOptionalFormValue } from '@/api/endpoints/_shared'
 export const getCoins = (params?: {
   category?: string
   era?: string
+  country?: string
+  presentation?: string
+  rarity?: string
   search?: string
   wishlist?: string
   sold?: string
@@ -58,7 +61,7 @@ export const getCoins = (params?: {
   seed?: number
 }) => api.get<CoinListResponse>('/coins', { params })
 
-const NULLABLE_FIELDS: (keyof Coin)[] = ['weightGrams', 'diameterMm', 'purchasePrice', 'currentValue', 'purchaseDate', 'storageLocationId', 'storageSlot', 'romanImperialFigureId', 'mintLocationId']
+const NULLABLE_FIELDS: (keyof Coin)[] = ['weightGrams', 'diameterMm', 'purchasePrice', 'currentValue', 'purchaseDate', 'storageLocationId', 'storageSlot', 'romanImperialFigureId', 'mintLocationId', 'year']
 
 function sanitizeCoin(coin: CoinMutationPayload): CoinMutationPayload {
   const clean: Record<string, unknown> = { ...coin }
@@ -106,6 +109,61 @@ export interface CoinOptionsResponse {
 
 /** Configured category and era choices; readable by every signed-in user. */
 export const getCoinOptions = () => api.get<CoinOptionsResponse>('/coin-options')
+
+export type NumistaDataStatus =
+  | 'ok'
+  | 'not_linked'
+  | 'no_issues'
+  | 'no_prices'
+  | 'unconfigured'
+  | 'unauthorized'
+  | 'quota_limited'
+  | 'unavailable'
+
+/** One issue (year / mint mark variant) of a Numista type. Year is negative for BC. */
+export interface NumistaIssueSummary {
+  id: number
+  year?: number
+  minYear?: number
+  maxYear?: number
+  mintLetter?: string
+  mintage?: number
+  comment?: string
+}
+
+/** Numista's estimated price for one grade: g, vg, f, vf, xf, au or unc. */
+export interface NumistaGradePrice {
+  grade: string
+  price: number
+}
+
+/** A reference photo from the Numista catalogue; always show its credit. */
+export interface NumistaCatalogPhoto {
+  side: 'obverse' | 'reverse'
+  thumbnail: string
+  picture?: string
+  copyright?: string
+  license?: string
+}
+
+export interface CoinMarketValue {
+  status: NumistaDataStatus
+  numistaTypeId?: number
+  numistaUrl?: string
+  issues: NumistaIssueSummary[]
+  selectedIssueId?: number
+  currency: string
+  prices: NumistaGradePrice[]
+  /** When Numista last returned these prices. */
+  fetchedAt?: string
+  /** True when a refresh failed and stored values are shown. */
+  stale: boolean
+  catalogPhotos: NumistaCatalogPhoto[]
+}
+
+/** Numista's estimated price per grade for the coin's linked Numista type (cached server-side for days). */
+export const getCoinMarketValue = (coinId: number, params: { currency: string; issueId?: number; lang?: string }) =>
+  api.get<CoinMarketValue>(`/coins/${coinId}/market-value`, { params })
 
 export async function createIntakeDraft(images: File[], coinCardImage?: File) {
   const formData = new FormData()
@@ -378,3 +436,43 @@ export const syncCoinShipment = (coinId: number) => api.post<ShipmentEnvelopeRes
 
 export const updateListingStatus = (coinId: number, status: string) =>
   api.put(`/coins/${coinId}/listing-status`, { status })
+
+export interface CoinCountryCount {
+  country: string
+  count: number
+}
+
+/** Countries of the collection (not wishlist or sold) with coin counts. */
+export const getCoinCountries = () => api.get<CoinCountryCount[]>('/coins/countries')
+
+export interface CoinCountryFillResult {
+  status: NumistaDataStatus
+  updated: number
+  /** Linked coins still without a country; call again to continue. */
+  remaining: number
+  failed: number
+}
+
+/** Fills missing countries from the coins' Numista types (up to 25 per call). */
+export const fillCountriesFromNumista = (lang: string, coinId?: number) =>
+  api.post<CoinCountryFillResult>('/coins/country-from-numista', null, { params: { lang, coinId } })
+
+export interface CollectionSummary {
+  /** Coins in the collection (not wishlist or sold). */
+  coins: number
+  /** Distinct types: same Numista type, or same name when not linked, count once. */
+  types: number
+  countries: number
+  withoutCountry: number
+  /** Coins whose presentation is "coincard". */
+  coincards: number
+  /** Sum of current values in the app's stored currency (US dollars). */
+  totalValue: number
+  /** Coins without a current value, left out of totalValue. */
+  unvaluedCoins: number
+  /** totalValue in euros at the ECB rate; null when no rate is available. */
+  totalValueEur: number | null
+  exchangeRate?: { usdPerEur: number; date: string }
+}
+
+export const getCollectionSummary = () => api.get<CollectionSummary>('/coins/summary')

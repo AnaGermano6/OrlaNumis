@@ -21,8 +21,12 @@ import (
 const (
 	defaultNumistaBaseURL = "https://api.numista.com/v3"
 	numistaResponseLimit  = 1 << 20
-	numistaRetryMinDelay  = 100 * time.Millisecond
-	numistaRetryMaxDelay  = 300 * time.Millisecond
+	// The issuer list (every country and authority, ~12k entries) is far
+	// larger than any other response.
+	numistaIssuersResponseLimit = 8 << 20
+	numistaIssuersTimeout       = 30 * time.Second
+	numistaRetryMinDelay        = 100 * time.Millisecond
+	numistaRetryMaxDelay        = 300 * time.Millisecond
 )
 
 type NumistaErrorKind string
@@ -183,7 +187,71 @@ func (c *HTTPNumistaClient) Detail(ctx context.Context, id int) (models.NumistaC
 	return candidate, nil
 }
 
+// Issues returns the raw JSON list of a type's issues (years and mint marks).
+func (c *HTTPNumistaClient) Issues(ctx context.Context, typeID int) ([]byte, error) {
+	if typeID <= 0 || typeID > models.NumistaMaxID {
+		return nil, &NumistaError{Kind: NumistaErrorInvalidRequest}
+	}
+	return c.get(ctx, "/types/"+strconv.Itoa(typeID)+"/issues", c.detailTimeout())
+}
+
+// IssuePrices returns the raw JSON of Numista's estimated prices per grade for
+// one issue, in the given ISO 4217 currency.
+func (c *HTTPNumistaClient) IssuePrices(ctx context.Context, typeID, issueID int, currency string) ([]byte, error) {
+	if typeID <= 0 || typeID > models.NumistaMaxID || issueID <= 0 || issueID > models.NumistaMaxID {
+		return nil, &NumistaError{Kind: NumistaErrorInvalidRequest}
+	}
+	path := fmt.Sprintf("/types/%d/issues/%d/prices?currency=%s", typeID, issueID, url.QueryEscape(currency))
+	return c.get(ctx, path, c.detailTimeout())
+}
+
+// NumistaTypeSearch filters a catalogue search. Query or Issuer is required.
+type NumistaTypeSearch struct {
+	Query  string
+	Issuer string
+	Year   int
+	Page   int
+	Count  int
+	Lang   string
+}
+
+// SearchTypes returns the raw JSON of a coin catalogue search.
+func (c *HTTPNumistaClient) SearchTypes(ctx context.Context, search NumistaTypeSearch) ([]byte, error) {
+	values := url.Values{}
+	if search.Query != "" {
+		values.Set("q", search.Query)
+	}
+	if search.Issuer != "" {
+		values.Set("issuer", search.Issuer)
+	}
+	if search.Year != 0 {
+		values.Set("year", strconv.Itoa(search.Year))
+	}
+	values.Set("category", "coin")
+	values.Set("page", strconv.Itoa(max(search.Page, 1)))
+	values.Set("count", strconv.Itoa(search.Count))
+	values.Set("lang", search.Lang)
+	return c.get(ctx, "/types?"+values.Encode(), c.searchTimeout())
+}
+
+// TypeDetail returns the raw JSON of one catalogue type in the given language.
+func (c *HTTPNumistaClient) TypeDetail(ctx context.Context, typeID int, lang string) ([]byte, error) {
+	if typeID <= 0 || typeID > models.NumistaMaxID {
+		return nil, &NumistaError{Kind: NumistaErrorInvalidRequest}
+	}
+	return c.get(ctx, "/types/"+strconv.Itoa(typeID)+"?lang="+url.QueryEscape(lang), c.detailTimeout())
+}
+
+// Issuers returns the raw JSON list of every issuer (country or authority).
+func (c *HTTPNumistaClient) Issuers(ctx context.Context, lang string) ([]byte, error) {
+	return c.getLimited(ctx, "/issuers?lang="+url.QueryEscape(lang), numistaIssuersTimeout, numistaIssuersResponseLimit)
+}
+
 func (c *HTTPNumistaClient) get(ctx context.Context, path string, timeout time.Duration) ([]byte, error) {
+	return c.getLimited(ctx, path, timeout, numistaResponseLimit)
+}
+
+func (c *HTTPNumistaClient) getLimited(ctx context.Context, path string, timeout time.Duration, limit int) ([]byte, error) {
 	apiKey := strings.TrimSpace(c.apiKey())
 	if apiKey == "" {
 		return nil, &NumistaError{Kind: NumistaErrorUnconfigured}
@@ -213,7 +281,7 @@ func (c *HTTPNumistaClient) get(ctx context.Context, path string, timeout time.D
 			return nil, &NumistaError{Kind: NumistaErrorUnavailable}
 		}
 
-		body, readErr := readLimitedNumistaBody(resp.Body)
+		body, readErr := readNumistaBody(resp.Body, limit)
 		resp.Body.Close()
 		if readErr != nil {
 			return nil, &NumistaError{Kind: NumistaErrorMalformedResponse}
@@ -236,13 +304,13 @@ func isRetryableNumistaTransportError(err error) bool {
 	return errors.Is(err, syscall.ECONNRESET)
 }
 
-func readLimitedNumistaBody(body io.Reader) ([]byte, error) {
-	limited := io.LimitReader(body, numistaResponseLimit+1)
+func readNumistaBody(body io.Reader, limit int) ([]byte, error) {
+	limited := io.LimitReader(body, int64(limit)+1)
 	data, err := io.ReadAll(limited)
 	if err != nil {
 		return nil, err
 	}
-	if len(data) > numistaResponseLimit {
+	if len(data) > limit {
 		return nil, errors.New("Numista response exceeded limit")
 	}
 	return data, nil

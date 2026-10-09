@@ -48,6 +48,8 @@
           </div>
         </div>
       </div>
+
+      <slot name="controls" />
     </div>
   </div>
 </template>

@@ -3,8 +3,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 import CoinForm from '../CoinForm.vue'
+import type { Coin } from '@/types'
 
 const apiMocks = vi.hoisted(() => ({
   getStorageLocations: vi.fn(),
@@ -223,5 +224,32 @@ describe('CoinForm', () => {
     expect(form.notes).toBe('Preserved notes')
     expect(form.storageSlot).toBe(1)
     expect(wrapper.get('[aria-label="Row 1, column 1, occupied"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('takes a typed year, clears it to an empty value and shows the year it would read from the date', async () => {
+    apiMocks.getStorageLocations.mockResolvedValue({ data: [] })
+    apiMocks.getMintLocations.mockResolvedValue({ data: [] })
+    const form = reactive<Partial<Coin>>({ name: 'Denarius', category: 'Roman', material: 'Silver', dateRange: 'c. 46-44 BC', year: null })
+    const wrapper = mount(CoinForm, {
+      props: { form, submitLabel: 'Save' },
+      global: { stubs: { RouterLink: { template: '<a><slot /></a>' }, AutocompleteInput: true, ImperialFigurePicker: true, CreateMintModal: true, AuthenticatedImage: true } },
+    })
+    await flushPromises()
+
+    const year = wrapper.get('#coin-year')
+    expect(year.attributes('placeholder')).toBe('Automatic: 46 BC')
+
+    await year.setValue('-44')
+    expect(form.year).toBe(-44)
+    await year.setValue('1968.7')
+    expect(form.year).toBe(1968)
+    await year.setValue('0')
+    expect(form.year).toBeNull()
+    await year.setValue('')
+    expect(form.year).toBeNull()
+
+    form.dateRange = 'Undated'
+    await flushPromises()
+    expect(year.attributes('placeholder')).toBe('e.g. 1968')
   })
 })
