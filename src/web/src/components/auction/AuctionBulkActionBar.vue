@@ -11,16 +11,16 @@
       v-if="selectedCount > 0"
       class="fixed bottom-6 left-1/2 z-[200] flex w-[calc(100%-1.5rem)] max-w-max -translate-x-1/2 flex-col gap-3 rounded-md border border-gold-dim bg-card px-5 py-3 shadow-[0_8px_30px_var(--overlay-50)] md:w-auto md:flex-row md:items-center md:gap-4"
     >
-      <span class="text-body font-medium text-text-secondary">{{ selectedCount }} lot{{ selectedCount === 1 ? '' : 's' }} selected</span>
+      <span class="text-body font-medium text-text-secondary">{{ t('auctions.bulk.selected', { count: selectedCount }) }}</span>
       <div class="flex flex-col gap-2 md:flex-row md:items-center">
         <select v-model="localEventId" class="form-input text-chip md:min-w-40">
-          <option value="">Unlink Event</option>
+          <option value="">{{ t('auctions.bulk.unlinkEvent') }}</option>
           <option v-for="evt in calendarEvents" :key="evt.id" :value="evt.id">
             {{ evt.title }}
           </option>
         </select>
         <button class="inline-flex items-center justify-center gap-[0.35rem] rounded-sm border border-border-subtle bg-surface px-3 py-1.5 text-chip text-text-primary transition hover:border-gold hover:text-gold" @click="$emit('link-event', localEventId)">
-          <CalendarDays :size="16" /> {{ localEventId === '' ? 'Unlink' : 'Link' }}
+          <CalendarDays :size="16" /> {{ localEventId === '' ? t('auctions.bulk.unlink') : t('auctions.bulk.link') }}
         </button>
       </div>
     </div>
@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { CalendarDays } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 defineProps<{
   selectedCount: number

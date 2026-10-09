@@ -1,8 +1,8 @@
 <template>
   <form class="grid gap-3" @submit.prevent="submit">
-    <p class="m-0 text-body text-text-muted">Search Alerts discover acquisition ideas. They do not check saved wishlist item availability. Use Run Now for an immediate, in-app review, or set a cadence below for automatic runs (if enabled by your admin).</p>
+    <p class="m-0 text-body text-text-muted">{{ t('wishlistAlerts.form.intro') }}</p>
     <label class="grid gap-1 text-base text-text-secondary">
-      Name
+      {{ t('coinFields.name') }}
       <input
         v-model.trim="draft.name"
         class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
@@ -12,79 +12,79 @@
     </label>
     <div class="grid gap-3 md:grid-cols-2">
       <label class="grid gap-1 text-base text-text-secondary">
-        Ruler or issuer
+        {{ t('wishlistAlerts.form.rulerOrIssuer') }}
         <input v-model.trim="draft.criteria.rulerOrIssuer" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" maxlength="200" />
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Coin type
+        {{ t('wishlistAlerts.form.coinType') }}
         <input v-model.trim="draft.criteria.coinType" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" maxlength="200" />
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Mint
+        {{ t('coinFields.mint') }}
         <select v-model="mintLocationIdModel" class="form-select focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" :disabled="mintLocationsLoading">
-          <option value="">Unknown</option>
-          <optgroup v-if="myMintLocations.length" label="My Mints">
+          <option value="">{{ t('coinForm.mintUnknown') }}</option>
+          <optgroup v-if="myMintLocations.length" :label="t('coinForm.myMints')">
             <option v-for="location in myMintLocations" :key="location.id" :value="String(location.id)">
               {{ location.displayName }}
             </option>
           </optgroup>
-          <optgroup v-if="globalMintLocations.length" label="Mints">
+          <optgroup v-if="globalMintLocations.length" :label="t('coinForm.mints')">
             <option v-for="location in globalMintLocations" :key="location.id" :value="String(location.id)">
               {{ location.displayName }}
             </option>
           </optgroup>
-          <option value="__create__">+ Create new mint…</option>
+          <option value="__create__">{{ t('coinForm.createMint') }}</option>
         </select>
         <p v-if="mintLocationError" class="mt-1 text-body text-text-secondary">{{ mintLocationError }}</p>
         <p v-else-if="draft.criteria.mint && draft.criteria.mintLocationId == null" class="mt-1 text-body text-text-secondary">
-          Legacy mint text "{{ draft.criteria.mint }}" will be preserved as a free-text filter.
+          {{ t('wishlistAlerts.form.legacyMint', { mint: draft.criteria.mint }) }}
         </p>
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Material
+        {{ t('coinFields.material') }}
         <input v-model.trim="draft.criteria.material" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" maxlength="100" />
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Grade or condition
+        {{ t('wishlistAlerts.form.gradeOrCondition') }}
         <input v-model.trim="draft.criteria.gradeOrCondition" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" maxlength="200" />
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Keywords
+        {{ t('wishlistAlerts.form.keywords') }}
         <input v-model.trim="draft.criteria.keywords" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" maxlength="500" />
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Date from
+        {{ t('wishlistAlerts.form.dateFrom') }}
         <input v-model.number="draft.criteria.dateFrom" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="number" />
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Date to
+        {{ t('wishlistAlerts.form.dateTo') }}
         <input v-model.number="draft.criteria.dateTo" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="number" />
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Price min
+        {{ t('wishlistAlerts.form.priceMin') }}
         <input v-model.number="draft.criteria.priceMin" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="number" min="0" step="0.01" />
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Price max
+        {{ t('wishlistAlerts.form.priceMax') }}
         <input v-model.number="draft.criteria.priceMax" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="number" min="0" step="0.01" />
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Currency
+        {{ t('wishlistAlerts.form.currency') }}
         <input v-model.trim="draft.criteria.currency" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" maxlength="3" />
       </label>
       <label class="grid gap-1 text-base text-text-secondary">
-        Cadence
+        {{ t('wishlistAlerts.form.cadence') }}
         <select v-model="draft.cadence" class="form-select focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]">
-          <option value="manual">Manual</option>
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
+          <option value="manual">{{ alertCadenceLabel('manual') }}</option>
+          <option value="daily">{{ alertCadenceLabel('daily') }}</option>
+          <option value="weekly">{{ alertCadenceLabel('weekly') }}</option>
+          <option value="monthly">{{ alertCadenceLabel('monthly') }}</option>
         </select>
       </label>
     </div>
-    <p class="m-0 text-body text-text-muted">Daily, weekly, and monthly alerts run automatically once due, if your admin has enabled scheduled search alert checks. This does not enable push, email, or digest delivery — new candidates only appear in this in-app review queue.</p>
+    <p class="m-0 text-body text-text-muted">{{ t('wishlistAlerts.form.cadenceHint') }}</p>
     <label class="grid gap-1 text-base text-text-secondary">
-      Source domains
+      {{ t('wishlistAlerts.form.sourceDomains') }}
       <input
         v-model.trim="sourceFiltersText"
         class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
@@ -92,11 +92,11 @@
       />
     </label>
     <label class="grid gap-1 text-base text-text-secondary">
-      Dealer preference
+      {{ t('wishlistAlerts.form.dealerPreference') }}
       <input v-model.trim="draft.criteria.dealerPreference" class="form-input focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" maxlength="500" />
     </label>
     <label class="grid gap-1 text-base text-text-secondary">
-      Notes
+      {{ t('coinFields.notes') }}
       <textarea
         v-model.trim="draft.criteria.notes"
         class="form-input min-h-20 resize-y focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
@@ -109,12 +109,12 @@
         class="h-4 w-4 rounded-sm border border-border-subtle bg-input accent-[var(--accent-gold)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
         type="checkbox"
       />
-      Active
+      {{ t('wishlistAlerts.summary.active') }}
     </label>
     <p v-if="error" class="m-0 text-body text-bronze">{{ error }}</p>
     <div class="flex flex-wrap gap-2">
-      <button class="btn btn-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="submit" :disabled="!!error || saving">{{ saving ? 'Saving...' : 'Save Search Alert' }}</button>
-      <button class="btn btn-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="button" @click="$emit('cancel')">Cancel</button>
+      <button class="btn btn-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="submit" :disabled="!!error || saving">{{ saving ? t('common.saving') : t('wishlistAlerts.form.save') }}</button>
+      <button class="btn btn-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="button" @click="$emit('cancel')">{{ t('common.cancel') }}</button>
     </div>
     <CreateMintModal
       :open="showCreateMintModal"
@@ -130,6 +130,8 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { getMintLocations, type MintLocationsResponse } from '@/api/client'
 import type { MintLocation, WishlistSearchAlert, WishlistSearchAlertInput } from '@/types'
 import CreateMintModal from '@/components/CreateMintModal.vue'
+import { alertCadenceLabel } from '@/utils/format'
+import { t } from '@/i18n'
 
 const props = defineProps<{ alert?: WishlistSearchAlert | null; saving?: boolean }>()
 const emit = defineEmits<{ save: [value: WishlistSearchAlertInput]; cancel: [] }>()
@@ -194,7 +196,7 @@ async function loadMintLocations() {
     mintLocationError.value = ''
   } catch {
     mintLocations.value = []
-    mintLocationError.value = 'Mint locations are unavailable'
+    mintLocationError.value = t('coinForm.mintsUnavailable')
   } finally {
     mintLocationsLoading.value = false
   }
@@ -247,10 +249,10 @@ onMounted(() => {
 const error = computed(() => {
   const c = draft.criteria
   const hasCriteria = [c.rulerOrIssuer, c.coinType, c.mint, c.material, c.gradeOrCondition, c.dealerPreference, c.keywords, sourceFiltersText.value].some(Boolean) || c.dateFrom != null || c.dateTo != null || c.priceMin != null || c.priceMax != null
-  if (!hasCriteria) return 'Add at least one search criterion.'
-  if (c.priceMin != null && c.priceMax != null && c.priceMin > c.priceMax) return 'Price minimum must be less than or equal to maximum.'
-  if (c.dateFrom != null && c.dateTo != null && c.dateFrom > c.dateTo) return 'Date from must be less than or equal to date to.'
-  if (!/^[A-Za-z]{3}$/.test(c.currency)) return 'Currency must be a three-letter code.'
+  if (!hasCriteria) return t('wishlistAlerts.form.needCriterion')
+  if (c.priceMin != null && c.priceMax != null && c.priceMin > c.priceMax) return t('wishlistAlerts.form.priceOrder')
+  if (c.dateFrom != null && c.dateTo != null && c.dateFrom > c.dateTo) return t('wishlistAlerts.form.dateOrder')
+  if (!/^[A-Za-z]{3}$/.test(c.currency)) return t('wishlistAlerts.form.currencyCode')
   return ''
 })
 

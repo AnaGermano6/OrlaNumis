@@ -1,27 +1,27 @@
 <template>
   <div class="container flex flex-col gap-6">
-    <DesktopPageContext title="What to Pursue Next">
+    <DesktopPageContext :title="t('emperors.pursueNext')">
       <template #actions>
-        <AppIconButton to="/sets/emperors" title="Back to Emperors"><ArrowLeft :size="20" /></AppIconButton>
+        <AppIconButton to="/sets/emperors" :title="t('emperors.backToEmperors')"><ArrowLeft :size="20" /></AppIconButton>
       </template>
       <header class="page-header flex flex-nowrap items-center justify-between gap-4">
         <div>
-          <p class="section-label">Emperors</p>
-          <h1>What to Pursue Next</h1>
+          <p class="section-label">{{ t('nav.emperors') }}</p>
+          <h1>{{ t('emperors.pursueNext') }}</h1>
           <p class="mt-[0.35rem] text-base text-text-secondary">
-            Suggested rulers to target next based on your current Emperor tracker progress.
+            {{ t('emperors.pursuitsIntro') }}
           </p>
         </div>
         <router-link
           class="inline-flex shrink-0 items-center justify-center rounded-sm border border-border-subtle bg-transparent p-[0.4rem] text-text-secondary transition hover:border-border-accent hover:bg-gold-glow hover:text-gold"
           to="/sets/emperors"
-          aria-label="Back to Emperors"
+          :aria-label="t('emperors.backToEmperors')"
         >
           <ArrowLeft :size="20" />
         </router-link>
       </header>
       <template #desktop>
-        <p class="text-base text-text-secondary">Suggested rulers to target next based on your current Emperor tracker progress.</p>
+        <p class="text-base text-text-secondary">{{ t('emperors.pursuitsIntro') }}</p>
       </template>
     </DesktopPageContext>
 
@@ -48,10 +48,10 @@
             <button
               type="button"
               class="btn btn-xs btn-ghost whitespace-nowrap"
-              :aria-label="`Ask the agent to search for ${figure.name} coins`"
+              :aria-label="t('emperors.askAgent', { name: figure.name })"
               @click="searchForFigure(figure.name)"
             >
-              Search Agent
+              {{ t('emperors.searchAgent') }}
             </button>
             <span class="rounded-full border border-border-subtle px-2 py-0.5 text-xs text-text-muted">{{ rarityLabel(figure.rarityTier) }}</span>
           </span>
@@ -60,7 +60,7 @@
     </section>
 
     <section v-else class="card px-8 py-12 text-center">
-      <p class="text-text-secondary">No pursuit suggestions are available right now.</p>
+      <p class="text-text-secondary">{{ t('emperors.noPursuits') }}</p>
     </section>
   </div>
 </template>
@@ -72,26 +72,26 @@ import { getApiErrorMessage, getEmperorTrackerProgress } from '@/api/client'
 import type { RarityTier, RomanImperialFigure } from '@/types'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t } from '@/i18n'
 
 const loading = ref(true)
 const errorMessage = ref('')
 const suggestions = ref<RomanImperialFigure[]>([])
 
-const RARITY_LABELS: Record<RarityTier, string> = {
-  common: 'Common',
-  scarce: 'Scarce',
-  rare: 'Rare',
-  very_rare: 'Very Rare',
-}
-
 function rarityLabel(tier: RarityTier): string {
-  return RARITY_LABELS[tier] ?? tier
+  const labels: Record<RarityTier, string> = {
+    common: t('emperors.rarity.common'),
+    scarce: t('emperors.rarity.scarce'),
+    rare: t('emperors.rarity.rare'),
+    very_rare: t('emperors.rarity.veryRare'),
+  }
+  return labels[tier] ?? tier
 }
 
 function searchForFigure(name: string) {
   window.dispatchEvent(new window.CustomEvent('open-agent-chat', {
     detail: {
-      prompt: `Look for available ${name} coins for my collection. Focus on reputable dealer and auction listings, include prices and links, and only show coins that appear available.`,
+      prompt: t('emperors.agentPrompt', { name }),
     },
   }))
 }
@@ -103,7 +103,7 @@ async function load() {
     const res = await getEmperorTrackerProgress()
     suggestions.value = res.data.suggestions ?? []
   } catch (error) {
-    errorMessage.value = getApiErrorMessage(error) || 'Failed to load pursuit suggestions.'
+    errorMessage.value = getApiErrorMessage(error) || t('emperors.pursuitsFailed')
   } finally {
     loading.value = false
   }

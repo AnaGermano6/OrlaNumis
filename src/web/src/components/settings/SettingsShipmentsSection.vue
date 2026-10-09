@@ -2,29 +2,31 @@
   <section class="card">
     <div class="mb-4 flex items-center justify-between gap-3 border-b border-border-subtle pb-3">
       <div>
-        <h2 class="text-xl font-medium">Shipments</h2>
-        <p class="mt-1 text-sm text-text-muted">All shipment statuses except delivered.</p>
+        <h2 class="text-xl font-medium">{{ t('settings.tabs.shipments') }}</h2>
+        <p class="mt-1 text-sm text-text-muted">{{ t('settings.shipments.hint') }}</p>
       </div>
       <button class="btn btn-secondary btn-sm" :disabled="loading" @click="loadShipments">
-        {{ loading ? 'Refreshing...' : 'Refresh' }}
+        {{ loading ? t('common.pull.refreshing') : t('common.refresh') }}
       </button>
     </div>
 
-    <div v-if="loading" class="text-sm text-text-secondary">Loading shipment summary...</div>
+    <div v-if="loading" class="text-sm text-text-secondary">{{ t('settings.shipments.loading') }}</div>
     <p v-else-if="errorMessage" class="text-sm text-loss">{{ errorMessage }}</p>
     <template v-else>
       <p class="mb-3 text-sm text-text-muted">
-        Total active shipments: <strong class="text-text-primary">{{ rows.length }}</strong>
+        <I18nT keypath="settings.shipments.total">
+          <template #count><strong class="text-text-primary">{{ rows.length }}</strong></template>
+        </I18nT>
       </p>
       <div v-if="rows.length" class="overflow-x-auto rounded-sm border border-border-subtle">
         <table class="data-table min-w-full [&_th]:px-3 [&_th]:py-2">
           <thead class="bg-card">
             <tr>
-              <th>Coin</th>
-              <th>Status</th>
-              <th>Carrier</th>
-              <th>Tracking</th>
-              <th>ETA</th>
+              <th>{{ t('availability.coin') }}</th>
+              <th>{{ t('common.status') }}</th>
+              <th>{{ t('settings.shipments.carrier') }}</th>
+              <th>{{ t('settings.shipments.tracking') }}</th>
+              <th>{{ t('settings.shipments.eta') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -47,15 +49,18 @@
           </tbody>
         </table>
       </div>
-      <p v-else class="text-sm text-text-muted">No active shipments right now.</p>
+      <p v-else class="text-sm text-text-muted">{{ t('settings.shipments.empty') }}</p>
     </template>
   </section>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import I18nT from '@/components/I18nT.vue'
 import { getCoinShipment, getCoins } from '@/api/client'
 import type { Coin, Shipment, ShipmentCarrier, ShipmentStatus } from '@/types'
+import { shipmentStatusLabel } from '@/utils/format'
+import { intlLocale, t } from '@/i18n'
 
 type ActiveShipmentRow = Shipment & { coinName: string }
 
@@ -74,7 +79,7 @@ const trackedStatuses: ShipmentStatus[] = [
 ]
 
 function statusLabel(status: string) {
-  return status.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())
+  return shipmentStatusLabel(status)
 }
 
 function carrierLabel(carrier: ShipmentCarrier, manualName: string) {
@@ -84,7 +89,7 @@ function carrierLabel(carrier: ShipmentCarrier, manualName: string) {
 }
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString()
+  return new Date(value).toLocaleDateString(intlLocale())
 }
 
 function apiErrorMessage(err: unknown): string {
@@ -165,7 +170,7 @@ async function loadShipments() {
         return b.id - a.id
       })
   } catch (err: unknown) {
-    errorMessage.value = apiErrorMessage(err) || 'Failed to load shipment summary'
+    errorMessage.value = apiErrorMessage(err) || t('settings.shipments.loadFailed')
   } finally {
     loading.value = false
   }

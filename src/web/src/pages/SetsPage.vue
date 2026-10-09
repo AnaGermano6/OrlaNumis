@@ -1,21 +1,21 @@
 <template>
   <div class="container">
-    <DesktopPageContext title="Sets">
+    <DesktopPageContext :title="t('nav.sets')">
       <template #actions>
-        <AppIconButton title="Create Set" @click="openCreateModal">
+        <AppIconButton :title="t('sets.list.create')" @click="openCreateModal">
           <CirclePlus :size="20" />
         </AppIconButton>
       </template>
       <div class="page-header">
-        <h1>Sets</h1>
+        <h1>{{ t('nav.sets') }}</h1>
         <div v-if="isPwa" class="pwa-actions">
-          <button class="pwa-icon-btn" title="Create Set" @click="openCreateModal">
+          <button class="pwa-icon-btn" :title="t('sets.list.create')" @click="openCreateModal">
             <CirclePlus :size="22" />
           </button>
         </div>
         <div v-else class="header-actions">
           <button class="btn btn-primary" @click="openCreateModal">
-            <Plus :size="16" /> Create Set
+            <Plus :size="16" /> {{ t('sets.list.create') }}
           </button>
         </div>
       </div>
@@ -23,15 +23,15 @@
 
     <div v-if="loading" class="loading-overlay">
       <div class="spinner"></div>
-      <p>Loading sets...</p>
+      <p>{{ t('sets.list.loading') }}</p>
     </div>
 
     <div v-else-if="sets.length === 0" class="empty-state">
       <Layers3 :size="48" />
-      <h3>No sets yet</h3>
-      <p>Create a set to organize your collection by theme, era, or completion goals</p>
+      <h3>{{ t('sets.list.emptyTitle') }}</h3>
+      <p>{{ t('sets.list.emptyBody') }}</p>
       <button class="btn btn-primary mt-4" @click="openCreateModal">
-        <Plus :size="16" /> Create Your First Set
+        <Plus :size="16" /> {{ t('sets.list.createFirst') }}
       </button>
     </div>
 
@@ -48,14 +48,14 @@
       <div v-if="showCreateModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 px-4 py-8" @click.self="showCreateModal = false">
         <div class="card max-h-[85vh] w-full max-w-[520px] overflow-y-auto">
           <div class="mb-6 flex items-center justify-between gap-4">
-            <h2 class="m-0 text-lg text-text-primary">Create New Set</h2>
+            <h2 class="m-0 text-lg text-text-primary">{{ t('sets.list.createNew') }}</h2>
             <button class="inline-flex rounded-sm p-1 text-text-secondary transition-colors hover:text-text-primary" @click="showCreateModal = false">
               <X :size="20" />
             </button>
           </div>
           <SetCreationWizard
             :initial-value="newSet"
-            submit-label="Create"
+            :submit-label="t('common.create')"
             @submit="createSet"
             @cancel="showCreateModal = false"
           />
@@ -78,6 +78,7 @@ import SetCreationWizard from '@/components/sets/SetCreationWizard.vue'
 import { usePwa } from '@/composables/usePwa'
 import { randomSetColor } from '@/utils/setColors'
 import { useDialog } from '@/composables/useDialog'
+import { t } from '@/i18n'
 
 const router = useRouter()
 const { isPwa } = usePwa()
@@ -129,8 +130,8 @@ async function createSet(value: CreateCoinSetRequest, csv?: string) {
       showCreateModal.value = false
       resetNewSet()
       await showAlert(
-        `Your set proposal request has been submitted as run #${res.data.run.id}. The workflow will draft roster slots, estimate matches from your collection where data exists, and notify you when review is ready.`,
-        { title: 'Proposal Request Submitted' },
+        t('sets.list.proposalSubmitted', { id: res.data.run.id }),
+        { title: t('sets.list.proposalSubmittedTitle') },
       )
       return
     }
@@ -144,8 +145,8 @@ async function createSet(value: CreateCoinSetRequest, csv?: string) {
     await loadSets()
   } catch (error) {
     console.error('Failed to create set:', error)
-    const title = value.setType === 'agentic' ? 'Failed to Submit Proposal Request' : 'Failed to Create Set'
-    const message = value.setType === 'agentic' ? formatSetBuilderError(error) : (getApiErrorMessage(error) || 'Request failed.')
+    const title = value.setType === 'agentic' ? t('sets.list.proposalFailedTitle') : t('sets.list.createFailedTitle')
+    const message = value.setType === 'agentic' ? formatSetBuilderError(error) : (getApiErrorMessage(error) || t('common.requestFailed'))
     await showAlert(message, { title })
   }
 }

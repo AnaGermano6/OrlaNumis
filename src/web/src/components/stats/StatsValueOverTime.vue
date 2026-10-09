@@ -2,10 +2,10 @@
   <div v-if="displayHistory.length >= 2" class="stats-section card relative overflow-hidden border-border-accent shadow-card before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_right,var(--color-gold-glow),transparent_35%),linear-gradient(180deg,var(--color-card-hover),var(--color-card))] before:opacity-80 before:content-[''] [&>*]:relative [&>*]:z-[1]">
     <div class="mb-5">
       <div>
-        <p class="section-label">Portfolio Trajectory</p>
-        <h2 class="mt-[0.15rem]">Value Over Time</h2>
+        <p class="section-label">{{ t('stats.overTime.eyebrow') }}</p>
+        <h2 class="mt-[0.15rem]">{{ t('stats.value.overTime') }}</h2>
         <p class="mt-[0.35rem] text-body text-text-secondary">
-          Active collection value movement between the first and latest snapshot in this timeframe.
+          {{ t('stats.overTime.description') }}
         </p>
       </div>
     </div>
@@ -18,7 +18,7 @@
             <span>{{ formatCurrency(chartMaxValue / 2) }}</span>
             <span>$0</span>
           </div>
-          <div class="h-[15rem] min-w-0 flex-1 rounded-md border border-border-subtle bg-input shadow-[inset_0_1px_0_var(--color-border-subtle)] max-md:h-[13rem]" role="img" aria-label="Current value and invested amount over time">
+          <div class="h-[15rem] min-w-0 flex-1 rounded-md border border-border-subtle bg-input shadow-[inset_0_1px_0_var(--color-border-subtle)] max-md:h-[13rem]" role="img" :aria-label="t('stats.overTime.aria')">
             <svg viewBox="0 0 1000 320" preserveAspectRatio="none" class="h-full w-full overflow-visible">
               <defs>
                 <linearGradient id="valueAreaGradient" x1="0" x2="0" y1="0" y2="1">
@@ -108,11 +108,11 @@
           <div class="flex flex-wrap gap-3 text-chip text-text-secondary">
             <span class="flex items-center gap-[0.4rem]">
               <span class="inline-block h-[0.2rem] w-6 rounded-full bg-gold shadow-glow"></span>
-              Current Value
+              {{ t('coinFields.currentValue') }}
             </span>
             <span class="flex items-center gap-[0.4rem]">
               <span class="inline-block h-[0.2rem] w-6 rounded-full bg-[repeating-linear-gradient(90deg,var(--color-text-secondary)_0,var(--color-text-secondary)_0.4rem,transparent_0.4rem,transparent_0.65rem)]"></span>
-              Invested
+              {{ t('stats.timeMachine.invested') }}
             </span>
           </div>
           <div class="flex gap-3 whitespace-nowrap text-label text-text-muted max-[480px]:justify-between">
@@ -124,7 +124,7 @@
 
       <div class="flex w-full flex-wrap items-start gap-3 md:w-[10.5rem] md:flex-shrink-0 md:flex-col md:gap-4">
         <div class="flex min-w-[8rem] flex-1 flex-col gap-[0.2rem] md:flex-none">
-          <p class="section-label">Period Value Change</p>
+          <p class="section-label">{{ t('stats.overTime.periodChange') }}</p>
           <span class="block font-display text-2xl font-semibold leading-[1.1]" :class="changeAmount >= 0 ? 'text-gain' : 'text-loss'">
             <template v-if="changePercent !== null">
               {{ changePercent >= 0 ? '+' : '' }}{{ changePercent.toFixed(1) }}%
@@ -141,15 +141,15 @@
 
         <div class="flex grow basis-[14rem] flex-wrap gap-2 md:basis-auto md:flex-col">
           <div class="flex min-w-[6rem] flex-1 flex-col gap-[0.15rem] rounded-sm border border-border-subtle bg-input px-3 py-[0.6rem] md:min-w-0 md:flex-none">
-            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Latest Snapshot</span>
+            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.overTime.latestSnapshot') }}</span>
             <strong class="overflow-hidden text-body text-text-primary text-ellipsis whitespace-nowrap">{{ formatCurrency(latestValue) }}</strong>
           </div>
           <div class="flex min-w-[6rem] flex-1 flex-col gap-[0.15rem] rounded-sm border border-border-subtle bg-input px-3 py-[0.6rem] md:min-w-0 md:flex-none">
-            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Invested</span>
+            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.timeMachine.invested') }}</span>
             <strong class="overflow-hidden text-body text-text-primary text-ellipsis whitespace-nowrap">{{ formatCurrency(latestInvested) }}</strong>
           </div>
           <div class="flex min-w-[6rem] flex-1 flex-col gap-[0.15rem] rounded-sm border border-border-subtle bg-input px-3 py-[0.6rem] md:min-w-0 md:flex-none">
-            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Period Change</span>
+            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.overTime.periodChangeShort') }}</span>
             <strong class="overflow-hidden text-body text-ellipsis whitespace-nowrap" :class="changeAmount >= 0 ? 'text-gain' : 'text-loss'">
               {{ changeAmount >= 0 ? '+' : '' }}{{ formatCurrency(changeAmount) }}
             </strong>
@@ -165,6 +165,7 @@ import { computed } from 'vue'
 import { useCoinsStore } from '@/stores/coins'
 import type { ValueSnapshot } from '@/types'
 import { formatCurrency } from '@/utils/format'
+import { intlLocale, t } from '@/i18n'
 
 type ChartPoint = { x: number; y: number }
 type LabelPoint = ChartPoint & { value: number }
@@ -267,7 +268,7 @@ function formatShortAmount(v: number): string {
 
 function formatShortDate(dateStr: string) {
   if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString(undefined, {
+  return new Date(dateStr).toLocaleDateString(intlLocale(), {
     month: 'short',
     day: 'numeric',
     year: '2-digit',

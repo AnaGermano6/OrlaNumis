@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col gap-6">
     <div class="flex flex-col gap-2">
-      <h2 class="text-xl font-medium text-heading">Collection Health</h2>
+      <h2 class="text-xl font-medium text-heading">{{ t('admin.health.title') }}</h2>
       <p class="text-base leading-relaxed text-text-secondary">
-        Aggregate quality metrics across all active user collections.
+        {{ t('admin.health.intro') }}
       </p>
     </div>
 
@@ -25,10 +25,10 @@
           <Activity :size="24" />
         </div>
         <div class="flex flex-1 flex-col gap-[0.35rem]">
-          <div class="section-label">Median Score</div>
+          <div class="section-label">{{ t('admin.health.median') }}</div>
           <div class="font-display text-2xl font-bold leading-none text-gold">{{ summary.medianScore }}</div>
           <div class="text-base text-text-secondary">
-            Across {{ summary.eligibleCoinCount }} active coins
+            {{ t('admin.health.across', { count: summary.eligibleCoinCount }) }}
           </div>
         </div>
       </div>
@@ -38,10 +38,10 @@
           <AlertTriangle :size="24" />
         </div>
         <div class="flex flex-1 flex-col gap-[0.35rem]">
-          <div class="section-label">Low-Score Coins</div>
+          <div class="section-label">{{ t('admin.health.lowScore') }}</div>
           <div class="font-display text-2xl font-bold leading-none text-gold">{{ summary.lowScorePercentage.toFixed(1) }}%</div>
           <div class="text-base text-text-secondary">
-            Below {{ summary.lowScoreThreshold }}
+            {{ t('admin.health.below', { value: summary.lowScoreThreshold }) }}
           </div>
         </div>
       </div>
@@ -51,9 +51,9 @@
           <FileWarning :size="24" />
         </div>
         <div class="flex flex-1 flex-col gap-[0.35rem]">
-          <div class="section-label">Top Missing Fields</div>
+          <div class="section-label">{{ t('admin.health.topMissing') }}</div>
           <div v-if="summary.topMissingFields.length === 0" class="text-base italic text-text-muted">
-            No missing fields detected
+            {{ t('admin.health.noMissing') }}
           </div>
           <div v-else class="mt-1 flex flex-col gap-2">
             <div
@@ -62,7 +62,7 @@
               class="flex items-center justify-between gap-3 rounded-sm border border-border-subtle bg-input px-3 py-2"
             >
               <span class="text-base font-medium text-text-primary">{{ field.key }}</span>
-              <span class="chip-sm">{{ field.count }} coins</span>
+              <span class="chip-sm">{{ t('common.coinCount', { count: field.count }) }}</span>
             </div>
           </div>
         </div>
@@ -71,7 +71,7 @@
 
     <div v-else class="flex flex-col items-center gap-4 rounded-md border border-border-subtle bg-card px-8 py-12 text-center text-text-muted">
       <FileQuestion :size="48" />
-      <p class="m-0 text-base text-text-secondary">No collection health data available</p>
+      <p class="m-0 text-base text-text-secondary">{{ t('admin.health.empty') }}</p>
     </div>
   </div>
 </template>
@@ -83,6 +83,7 @@ import { ref, onMounted } from 'vue'
 import { AlertCircle, Activity, AlertTriangle, FileWarning, FileQuestion } from 'lucide-vue-next'
 import * as api from '@/api/client'
 import type { AdminHealthSummaryResponse } from '@/types'
+import { t } from '@/i18n'
 
 const summary = ref<AdminHealthSummaryResponse | null>(null)
 const loading = ref(false)
@@ -99,7 +100,7 @@ async function fetchAdminHealth() {
     const res = await api.getAdminHealthSummary()
     summary.value = res.data
   } catch (err) {
-    error.value = 'Failed to load health metrics'
+    error.value = t('admin.health.loadFailed')
     console.error('Admin health fetch error:', err)
   } finally {
     loading.value = false

@@ -2,14 +2,14 @@
   <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 max-md:mb-4">
     <button class="btn btn-ghost btn-xs justify-self-start whitespace-nowrap" @click="router.push(backTarget)">
       <ArrowLeft :size="14" />
-      Back to Gallery
+      {{ t('coinDetail.backToGallery') }}
     </button>
     <div class="flex min-w-0 items-center justify-end gap-[0.45rem]">
       <AppIconButton
         v-if="showPinButton"
         :disabled="pinBusy"
-        :title="pinBusy ? 'Updating coin Quick Access pin' : pinLabel"
-        :aria-label="pinBusy ? 'Updating coin Quick Access pin' : pinLabel"
+        :title="pinBusy ? t('coinDetail.pin.updating') : pinLabel"
+        :aria-label="pinBusy ? t('coinDetail.pin.updating') : pinLabel"
         :aria-busy="pinBusy"
         :active="coinPinned"
         :aria-pressed="coinPinned"
@@ -20,8 +20,8 @@
       </AppIconButton>
       <AppIconButton
         v-if="showReminderButton"
-        :title="reminderActive ? 'Edit Reminder' : 'Set Reminder'"
-        :aria-label="reminderActive ? 'Edit Reminder' : 'Set Reminder'"
+        :title="reminderActive ? t('coinDetail.reminder.edit') : t('coinDetail.reminder.set')"
+        :aria-label="reminderActive ? t('coinDetail.reminder.edit') : t('coinDetail.reminder.set')"
         :active="reminderActive"
         @click="emit('reminder')"
       >
@@ -30,16 +30,16 @@
       <AppIconButton
         v-if="!collapseSecondaryActions"
         :disabled="sharing"
-        :title="sharing ? 'Sharing...' : 'Share'"
-        :aria-label="sharing ? 'Sharing...' : 'Share'"
+        :title="sharing ? t('common.sharing') : t('common.share')"
+        :aria-label="sharing ? t('common.sharing') : t('common.share')"
         @click="$emit('share')"
       >
         <Share2 :size="24" />
       </AppIconButton>
-      <AppIconButton title="Edit" aria-label="Edit" @click="$emit('edit')">
+      <AppIconButton :title="t('common.edit')" :aria-label="t('common.edit')" @click="$emit('edit')">
         <Pencil :size="24" />
       </AppIconButton>
-      <AppIconButton title="Delete" aria-label="Delete" @click="$emit('delete')">
+      <AppIconButton :title="t('common.delete')" :aria-label="t('common.delete')" @click="$emit('delete')">
         <Trash2 :size="24" />
       </AppIconButton>
       <CoinDetailOverflowMenu
@@ -73,6 +73,7 @@ import CoinDetailOverflowMenu from '@/components/coin/CoinDetailOverflowMenu.vue
 import { usePwa } from '@/composables/usePwa'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import { useToast } from '@/composables/useToast'
+import { t } from '@/i18n'
 
 const props = withDefaults(defineProps<{
   isWishlist: boolean
@@ -106,7 +107,7 @@ const pinned = isPinned('coin', props.coinId)
 const busy = isBusy('coin', props.coinId)
 const coinPinned = computed(() => pinned.value)
 const pinBusy = computed(() => busy.value)
-const pinLabel = computed(() => coinPinned.value ? 'Unpin coin from Quick Access' : 'Pin coin to Quick Access')
+const pinLabel = computed(() => coinPinned.value ? t('coinDetail.pin.unpin') : t('coinDetail.pin.pin'))
 const { isPwa } = usePwa()
 // In the installed PWA the action row keeps only Edit/Delete inline; share, reminder and pin
 // move into the overflow menu. In the browser every action stays on the row.
@@ -120,7 +121,7 @@ async function togglePin() {
     if (coinPinned.value) await unpin('coin', props.coinId)
     else await pin('coin', props.coinId)
   } catch {
-    showToast(error.value || 'Unable to update Quick Access.', 'error')
+    showToast(error.value || t('coinDetail.pin.failed'), 'error')
   }
 }
 </script>

@@ -2,29 +2,29 @@
   <hr class="my-6 border-0 border-t border-border-subtle" />
 
   <!-- Auction Price Alerts and Bid Reminders -->
-  <h3 class="mb-4 text-lg font-medium text-heading">Auction Price Alerts and Bid Reminders</h3>
-  <p class="mb-4 text-base text-text-secondary">Checks watched auction lots for price thresholds and close-time bid reminders.</p>
+  <h3 class="mb-4 text-lg font-medium text-heading">{{ t('admin.schedules.alerts.title') }}</h3>
+  <p class="mb-4 text-base text-text-secondary">{{ t('admin.schedules.alerts.intro') }}</p>
   <div class="mb-4">
     <div class="form-group flex items-center justify-between gap-3">
-      <label class="form-label">Enable Automatic Checks</label>
+      <label class="form-label">{{ t('admin.schedules.enableChecks') }}</label>
       <BaseToggle
         size="sm"
-        label="Enable Automatic Checks"
+        :label="t('admin.schedules.enableChecks')"
         :model-value="settings.AuctionAlertsCheckEnabled === 'true'"
         @update:model-value="settings.AuctionAlertsCheckEnabled = $event ? 'true' : 'false'"
       />
     </div>
     <div class="form-group">
-      <label class="form-label">Start Time (daily anchor)</label>
+      <label class="form-label">{{ t('admin.schedules.startAnchor') }}</label>
       <input
         v-model="settings.AuctionAlertsCheckStartTime"
         class="form-input w-full max-w-[120px]"
         type="time"
       />
-      <span class="form-hint">The first price-alert and reminder check runs at this time each day.</span>
+      <span class="form-hint">{{ t('admin.schedules.alerts.startHint') }}</span>
     </div>
     <div class="form-group">
-      <label class="form-label">Repeat Interval (minutes)</label>
+      <label class="form-label">{{ t('admin.schedules.repeatMinutes') }}</label>
       <input
         v-model="settings.AuctionAlertsCheckInterval"
         class="form-input w-full max-w-[120px]"
@@ -32,37 +32,37 @@
         min="15"
         step="15"
       />
-      <span class="form-hint">How often to re-check price thresholds and bid reminder windows. Default 60 (hourly).</span>
+      <span class="form-hint">{{ t('admin.schedules.alerts.intervalHint') }}</span>
       <AdminScheduleSummary :start-time="settings.AuctionAlertsCheckStartTime" default-start-time="08:00" :interval-minutes="settings.AuctionAlertsCheckInterval" :zone="settings.ScheduleTimezone" />
     </div>
     <div class="mt-4 flex w-full flex-col gap-3 md:flex-row md:items-center">
       <button class="btn btn-primary btn-sm" :disabled="settingsSaving" @click="emit('save')">
-        {{ settingsSaving ? 'Saving...' : 'Save Alert and Reminder Settings' }}
+        {{ settingsSaving ? t('common.saving') : t('admin.schedules.alerts.save') }}
       </button>
       <span v-if="settingsMsg" class="text-body text-gold md:mr-auto" :class="settingsError ? 'text-loss' : ''">{{ settingsMsg }}</span>
       <button class="btn btn-secondary btn-sm md:ml-auto" :disabled="triggerLoading" @click="triggerManualCheck()">
-        {{ triggerLoading ? 'Starting...' : 'Run Now' }}
+        {{ triggerLoading ? t('common.starting') : t('admin.schedules.runNow') }}
       </button>
     </div>
   </div>
 
   <hr class="my-6 border-0 border-t border-border-subtle" />
-  <h3 class="mb-4 text-lg font-medium text-heading">Auction Price Alert and Reminder Run History</h3>
+  <h3 class="mb-4 text-lg font-medium text-heading">{{ t('admin.schedules.alerts.history') }}</h3>
 
   <div v-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
-  <div v-else-if="runs.length === 0" class="px-8 py-8 text-center font-sans text-text-muted">No auction price alert or reminder runs recorded yet.</div>
+  <div v-else-if="runs.length === 0" class="px-8 py-8 text-center font-sans text-text-muted">{{ t('admin.schedules.alerts.empty') }}</div>
   <template v-else>
     <div class="overflow-x-auto">
       <table class="data-table text-chip md:table-fixed [&_th]:px-[0.35rem] [&_th]:py-2 md:[&_th]:px-2 md:[&_th]:py-3 [&_td]:px-[0.35rem] [&_td]:py-2 md:[&_td]:px-2 md:[&_td]:py-3">
         <thead>
           <tr>
-            <th>Date</th>
-            <th class="hidden md:table-cell">Trigger</th>
-            <th>Lots</th>
-            <th>Alerts</th>
-            <th>Reminders</th>
-            <th class="hidden md:table-cell">Status</th>
-            <th>Duration</th>
+            <th>{{ t('common.date') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.trigger') }}</th>
+            <th>{{ t('admin.schedules.lots') }}</th>
+            <th>{{ t('admin.schedules.alerts.alerts') }}</th>
+            <th>{{ t('admin.schedules.alerts.reminders') }}</th>
+            <th class="hidden md:table-cell">{{ t('common.status') }}</th>
+            <th>{{ t('admin.schedules.duration') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -70,7 +70,7 @@
             <td class="text-body text-text-secondary">{{ formatDate(run.startedAt) }}</td>
             <td class="hidden md:table-cell">
               <BaseStatusBadge :tone="run.triggerType === 'manual' ? 'error' : 'warning'">
-                {{ run.triggerType }}
+                {{ runTriggerLabel(run.triggerType) }}
               </BaseStatusBadge>
             </td>
             <td>{{ run.lotsChecked ?? run.alertsChecked ?? 0 }}</td>
@@ -78,7 +78,7 @@
             <td class="font-semibold text-gain">{{ run.bidRemindersSent ?? run.remindersSent ?? run.remindersNotified ?? 0 }}</td>
             <td class="hidden md:table-cell">
               <BaseStatusBadge :tone="run.status === 'error' ? 'error' : (run.status === 'success' ? 'success' : 'warning')">
-                {{ run.status }}
+                {{ runStatusLabel(run.status) }}
               </BaseStatusBadge>
             </td>
             <td>{{ formatDuration(run.durationMs) }}</td>
@@ -88,9 +88,9 @@
     </div>
 
     <div class="mt-4 flex items-center justify-center gap-3">
-      <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="prevPage()">Prev</button>
-      <span class="text-chip text-text-secondary">Page {{ page }}</span>
-      <button class="btn btn-secondary btn-sm" :disabled="runs.length < 5" @click="nextPage()">Next</button>
+      <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="prevPage()">{{ t('common.prev') }}</button>
+      <span class="text-chip text-text-secondary">{{ t('admin.schedules.page', { page }) }}</span>
+      <button class="btn btn-secondary btn-sm" :disabled="runs.length < 5" @click="nextPage()">{{ t('common.next') }}</button>
     </div>
   </template>
 </template>
@@ -102,6 +102,8 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { getAuctionAlertReminderRuns, triggerAuctionAlertReminderCheck } from '@/api/client'
 import { useRunHistoryPagination } from '@/composables/useRunHistoryPagination'
 import type { AppSettings, AuctionAlertReminderRun } from '@/types'
+import { t, intlLocale } from '@/i18n'
+import { runStatusLabel, runTriggerLabel } from '@/utils/format'
 
 defineProps<{
   settings: AppSettings
@@ -139,20 +141,20 @@ async function triggerManualCheck() {
     const res = await triggerAuctionAlertReminderCheck()
     const { message, runId, alertsTriggered, alertsSent, priceAlertsTriggered, remindersNotified, remindersSent, bidRemindersSent, status, durationMs } = res.data
     if (status === 'error') {
-      emit('update:settingsMsg', runId ? `Run #${runId} failed` : 'Alert and reminder check failed')
+      emit('update:settingsMsg', runId ? t('admin.schedules.alerts.runFailed', { id: runId }) : t('admin.schedules.alerts.checkFailed'))
       emit('update:settingsError', true)
     } else if (message) {
       emit('update:settingsMsg', message)
     } else {
       const alertCount = priceAlertsTriggered ?? alertsSent ?? alertsTriggered ?? 0
       const reminderCount = bidRemindersSent ?? remindersSent ?? remindersNotified ?? 0
-      const durationPart = durationMs != null ? ` in ${(durationMs / 1000).toFixed(1)}s` : ''
-      emit('update:settingsMsg', `Run${runId ? ` #${runId}` : ''} completed — ${alertCount} alerts, ${reminderCount} reminders${durationPart}`)
+      const durationPart = durationMs != null ? ` ${t('admin.schedules.inDuration', { value: (durationMs / 1000).toFixed(1) })}` : ''
+      emit('update:settingsMsg', t('admin.schedules.alerts.completed', { run: runId ? ` #${runId}` : '', alerts: alertCount, reminders: reminderCount, duration: durationPart }))
     }
     timers.push(setTimeout(() => { emit('update:settingsMsg', '') }, 10000))
     timers.push(setTimeout(() => { loadRuns() }, 2000))
   } catch {
-    emit('update:settingsMsg', 'Failed to trigger auction price alerts and bid reminders')
+    emit('update:settingsMsg', t('admin.schedules.alerts.triggerFailed'))
     emit('update:settingsError', true)
   } finally {
     triggerLoading.value = false
@@ -160,7 +162,7 @@ async function triggerManualCheck() {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString()
+  return new Date(dateStr).toLocaleDateString(intlLocale())
 }
 
 function formatDuration(ms: number) {

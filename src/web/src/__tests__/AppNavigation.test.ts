@@ -6,6 +6,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import en from '@/i18n/locales/en'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -39,6 +40,7 @@ vi.mock('@/api/client', async (importOriginal) => {
     getSets: (...args: unknown[]) => mockGetSets(...args),
     getQuickAccess: (...args: unknown[]) => mockGetQuickAccess(...args),
     getMe: vi.fn(async () => ({ data: { id: 1, emailMissing: false, createdAt: '2020-01-01T00:00:00Z' } })),
+    getCoinOptions: vi.fn(async () => ({ data: { categories: [], eras: [], labels: {} } })),
     getUnreadNotificationCount: mockGetUnreadCount,
     updateProfile: vi.fn(async () => ({ data: {} })),
   }
@@ -49,8 +51,10 @@ describe('App sidebar navigation', () => {
     const source = fs.readFileSync(appPath, 'utf8')
     const routerSource = fs.readFileSync(path.resolve(__dirname, '../router/index.ts'), 'utf8')
 
-    expect(source).toContain("label: 'Tray', to: '/tray'")
-    expect(source).toContain("label: 'Storage Trays', to: '/storage-trays'")
+    expect(source).toContain("labelKey: 'nav.tray', to: '/tray'")
+    expect(source).toContain("labelKey: 'nav.storageTrays', to: '/storage-trays'")
+    expect(en.nav.tray).toBe('Tray')
+    expect(en.nav.storageTrays).toBe('Storage Trays')
     expect(routerSource).toContain("path: '/tray'")
     expect(routerSource).toContain("path: '/storage-trays'")
   })
@@ -58,15 +62,17 @@ describe('App sidebar navigation', () => {
   it('renders Stats as a collapsible parent with dedicated route children', () => {
     const source = fs.readFileSync(appPath, 'utf8')
 
-    expect(source).toContain("label: 'Stats'")
-    expect(source).toContain("label: 'Timeline', to: '/stats/timeline'")
-    expect(source).toContain("label: 'Map', to: '/stats/mint-map'")
-    expect(source).toContain("label: 'Health', to: '/stats/health'")
-    expect(source).toContain("label: 'Value Details', to: '/stats/value-trends'")
+    expect(source).toContain("labelKey: 'nav.stats'")
+    expect(source).toContain("labelKey: 'nav.timeline', to: '/stats/timeline'")
+    expect(source).toContain("labelKey: 'nav.map', to: '/stats/mint-map'")
+    expect(source).toContain("labelKey: 'nav.health', to: '/stats/health'")
+    expect(source).toContain("labelKey: 'nav.valueDetails', to: '/stats/value-trends'")
+    expect([en.nav.stats, en.nav.timeline, en.nav.map, en.nav.health, en.nav.valueDetails])
+      .toEqual(['Stats', 'Timeline', 'Map', 'Health', 'Value Details'])
     expect(source).not.toContain("id: 'stats-emperors'")
     expect(source).not.toContain("to: '/stats/emperors'")
     expect(source).not.toContain("id: 'timeline'")
-    expect(source).not.toContain("label: 'Collection Distribution'")
+    expect(source).not.toContain("labelKey: 'nav.collectionDistribution'")
     expect(source).not.toContain('#collection-health')
     expect(source).not.toContain('#value-over-time')
   })
@@ -74,9 +80,10 @@ describe('App sidebar navigation', () => {
   it('renders Sets as a collapsible parent with Emperors gated under it', () => {
     const source = fs.readFileSync(appPath, 'utf8')
 
-    expect(source).toContain("label: 'Sets'")
-    expect(source).toContain("label: 'My Sets', to: '/sets'")
-    expect(source).toContain("label: 'Emperors', to: '/sets/emperors'")
+    expect(source).toContain("labelKey: 'nav.sets'")
+    expect(source).toContain("labelKey: 'nav.mySets', to: '/sets'")
+    expect(source).toContain("labelKey: 'nav.emperors', to: '/sets/emperors'")
+    expect([en.nav.sets, en.nav.mySets, en.nav.emperors]).toEqual(['Sets', 'My Sets', 'Emperors'])
     expect(source).toContain("child.id !== 'sets-emperors' || auth.user?.emperorTrackerEnabled")
   })
 
@@ -84,13 +91,14 @@ describe('App sidebar navigation', () => {
     const source = fs.readFileSync(appPath, 'utf8')
 
     expect(source).not.toContain("id: 'quick-capture'")
-    expect(source).not.toContain("label: 'Quick Capture'")
+    expect(source).not.toContain("labelKey: 'nav.quickCapture'")
     expect(source).not.toContain("to: '/quick-capture'")
     expect(source).toContain("id: 'lookup'")
-    expect(source).toContain("label: 'Identify Coin'")
+    expect(source).toContain("labelKey: 'nav.identifyCoin'")
     expect(source).toContain("to: '/lookup'")
     expect(source).toContain("id: 'add-coin'")
-    expect(source).toContain("label: 'Add Coin'")
+    expect(source).toContain("labelKey: 'nav.addCoin'")
+    expect([en.nav.identifyCoin, en.nav.addCoin]).toEqual(['Identify Coin', 'Add Coin'])
   })
 
   it('preserves AI intake identification navigation without adding Quick Capture AI expansion', () => {
@@ -98,7 +106,7 @@ describe('App sidebar navigation', () => {
     const routerSource = fs.readFileSync(path.resolve(__dirname, '../router/index.ts'), 'utf8')
 
     expect(source).toContain("id: 'lookup'")
-    expect(source).toContain("label: 'Identify Coin'")
+    expect(source).toContain("labelKey: 'nav.identifyCoin'")
     expect(source).toContain("to: '/lookup'")
     expect(routerSource).toContain("path: '/lookup'")
     expect(routerSource).not.toContain('/quick-capture/intake')
@@ -116,7 +124,7 @@ describe('App sidebar navigation', () => {
   it('keeps the same app-wide Agent drawer entry points for legacy chat and Coin Copilot', () => {
     const source = fs.readFileSync(appPath, 'utf8')
 
-    expect(source).toContain('{ id: \'agent\', label: \'Agent\'')
+    expect(source).toContain('{ id: \'agent\', labelKey: \'nav.agent\'')
     expect(source).toContain('handleAgentFabClick')
     expect(source).toContain('<CoinSearchChat v-if="showChat"')
     expect(source.match(/<CoinSearchChat v-if="showChat"/g) ?? []).toHaveLength(1)

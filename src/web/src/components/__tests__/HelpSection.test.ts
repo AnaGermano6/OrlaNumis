@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import HelpSection from '../HelpSection.vue'
+import en from '@/i18n/locales/en'
+import { withEnglishCopy } from '@/test/i18nSource'
+import { setLocale } from '@/i18n'
 
 const srcDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -16,6 +19,20 @@ vi.mock('vue-router', () => ({
 }))
 
 describe('HelpSection', () => {
+  it('ships a Portuguese guide with the same structure as the English one', () => {
+    const english = mount(HelpSection)
+    setLocale('pt-PT')
+    try {
+      const portuguese = mount(HelpSection)
+      expect(portuguese.text()).toContain('Guia de iniciação ao colecionismo de moedas')
+      for (const selector of ['details', 'summary', 'h4', 'table', 'tr', 'li', 'pre', 'a', 'code']) {
+        expect(portuguese.findAll(selector).length, selector).toBe(english.findAll(selector).length)
+      }
+    } finally {
+      setLocale('en')
+    }
+  })
+
   it('documents auction provider capability differences', () => {
     const wrapper = mount(HelpSection)
 
@@ -42,7 +59,7 @@ describe('HelpSection', () => {
     const wrapper = mount(HelpSection)
     const copilot = wrapper.get('[data-testid="help-coin-copilot"]')
     const text = wrapper.text()
-    const progress = readSource('components/chat/CopilotRunProgress.vue')
+    const progress = withEnglishCopy(readSource('components/chat/CopilotRunProgress.vue'))
 
     expect(copilot.text()).toBe('Coin Copilot (Beta)')
     expect(progress).toContain('Beta')
@@ -66,8 +83,10 @@ describe('HelpSection', () => {
     const settingsPage = readSource('pages/SettingsPage.vue')
     const backups = readSource('components/settings/SettingsBackupsSection.vue')
 
-    expect(settingsPage).toContain("{ id: 'backups', label: 'Backups' }")
-    expect(backups).toContain('CSV Template')
+    expect(settingsPage).toContain("backups: 'settings.tabs.backups'")
+    expect(en.settings.tabs.backups).toBe('Backups')
+    expect(backups).toContain("t('settings.backups.csvTemplate')")
+    expect(en.settings.backups.csvTemplate).toBe('CSV Template')
     expect(text).toContain('Settings → Backups')
     expect(text).toContain('Import the CSV from Settings → Backups → Import')
     expect(text).not.toContain('Settings → Data → Import')
@@ -78,13 +97,17 @@ describe('HelpSection', () => {
     const settingsPage = readSource('pages/SettingsPage.vue')
     const connections = readSource('components/settings/SettingsConnectionsSection.vue')
 
-    expect(settingsPage).toContain("{ id: 'connections', label: 'Connections' }")
+    expect(settingsPage).toContain("connections: 'settings.tabs.connections'")
+    expect(en.settings.tabs.connections).toBe('Connections')
     // The Account section renders the provider blocks only when it owns them, which it does
     // not on the settings page — so the help must not point at Account for credentials.
     expect(settingsPage).toContain(':show-connections="false"')
-    expect(connections).toContain('NumisBids Integration')
-    expect(connections).toContain('CNG Auctions Integration')
-    expect(connections).toContain('ParcelApp Integration')
+    expect(connections).toContain("t('settings.connections.numisbids.title')")
+    expect(connections).toContain("t('settings.connections.cng.title')")
+    expect(connections).toContain("t('settings.connections.parcel.title')")
+    expect(en.settings.connections.numisbids.title).toBe('NumisBids Integration')
+    expect(en.settings.connections.cng.title).toBe('CNG Auctions Integration')
+    expect(en.settings.connections.parcel.title).toBe('ParcelApp Integration')
     expect(text).toContain('credentials in Settings → Connections')
   })
 
@@ -102,7 +125,7 @@ describe('HelpSection', () => {
     expect(text).toContain('Both intake flows live under Identify Coin')
 
     for (const view of ['Time Machine', 'Analysis History', 'Notes', 'Calendar', 'Showcases']) {
-      expect(app).toContain(`label: '${view}'`)
+      expect(Object.values(en.nav)).toContain(view)
       expect(text).toContain(view)
     }
   })
@@ -111,9 +134,9 @@ describe('HelpSection', () => {
     const text = mount(HelpSection).text()
     const settingsPage = readSource('pages/SettingsPage.vue')
 
-    const tabLabels = [...settingsPage.matchAll(/\{ id: '[a-z]+', label: '([A-Za-z]+)' \}/g)]
-      .map(match => match[1] as string)
-    const documented = new Set(tabLabels.filter(label => label !== 'Admin'))
+    const tabKeys = [...settingsPage.matchAll(/^ {2}([a-z]+): 'settings\.tabs\.[a-z]+',$/gm)]
+      .map(match => match[1] as keyof typeof en.settings.tabs)
+    const documented = new Set(tabKeys.map(key => en.settings.tabs[key]))
 
     expect(documented.size).toBeGreaterThan(5)
     for (const label of documented) {

@@ -1,56 +1,56 @@
 <template>
   <div class="container">
-    <DesktopPageContext title="Availability Run History">
+    <DesktopPageContext :title="t('availability.title')">
       <template #actions>
-        <AppIconButton to="/wishlist" title="Back to Wishlist">
+        <AppIconButton to="/wishlist" :title="t('availability.back')">
           <ArrowLeft :size="20" />
         </AppIconButton>
       </template>
       <header class="page-header">
-        <h1>Availability Run History</h1>
+        <h1>{{ t('availability.title') }}</h1>
         <RouterLink class="btn btn-secondary btn-sm" to="/wishlist">
-          <ArrowLeft :size="16" /> Back to Wishlist
+          <ArrowLeft :size="16" /> {{ t('availability.back') }}
         </RouterLink>
       </header>
     </DesktopPageContext>
 
     <div v-if="unauthorized" class="empty-state card">
-      <h3>Sign in required</h3>
-      <p>Please sign in to view your availability run history.</p>
+      <h3>{{ t('availability.signInTitle') }}</h3>
+      <p>{{ t('availability.signInBody') }}</p>
     </div>
 
     <!-- Deep-linked single-run detail (e.g. from a notification) -->
     <template v-else-if="routeRunId !== null">
       <div v-if="detailLoading" class="loading-overlay"><div class="spinner"></div></div>
       <div v-else-if="detailError" class="empty-state card">
-        <h3>Run not found</h3>
+        <h3>{{ t('availability.runNotFound') }}</h3>
         <p>{{ detailError }}</p>
       </div>
       <section v-else-if="detailRun" class="card">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <span class="section-label mb-1 block">Run #{{ detailRun.id }}</span>
+            <span class="section-label mb-1 block">{{ t('availability.runNumber', { id: detailRun.id }) }}</span>
             <strong class="text-lg text-text-primary">{{ formatDate(detailRun.startedAt) }}</strong>
           </div>
-          <span class="chip-sm" :class="statusClass(detailRun.status)">{{ detailRun.status === 'completed' ? 'done' : detailRun.status }}</span>
+          <span class="chip-sm" :class="statusClass(detailRun.status)">{{ runStatusLabel(detailRun.status) }}</span>
         </div>
 
         <div class="mb-4 flex flex-wrap items-center gap-4 text-body text-text-secondary">
-          <span>{{ detailRun.coinsChecked }} checked</span>
-          <span class="font-semibold text-gain">{{ detailRun.available }} available</span>
-          <span class="font-semibold text-loss">{{ detailRun.unavailable }} unavailable</span>
-          <span class="font-semibold text-warning">{{ detailRun.unknown }} unknown</span>
+          <span>{{ t('wishlist.check.checked', { count: detailRun.coinsChecked }) }}</span>
+          <span class="font-semibold text-gain">{{ t('wishlist.check.available', { count: detailRun.available }) }}</span>
+          <span class="font-semibold text-loss">{{ t('wishlist.check.unavailable', { count: detailRun.unavailable }) }}</span>
+          <span class="font-semibold text-warning">{{ t('wishlist.check.unknown', { count: detailRun.unknown }) }}</span>
           <span v-if="detailRun.failMessage" class="text-loss">{{ detailRun.failMessage }}</span>
         </div>
 
-        <p v-if="!detailRun.results || detailRun.results.length === 0" class="py-4 text-center text-text-muted">No results for this run.</p>
+        <p v-if="!detailRun.results || detailRun.results.length === 0" class="py-4 text-center text-text-muted">{{ t('availability.noResults') }}</p>
         <div v-else class="overflow-x-auto">
           <table class="data-table text-body [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2">
             <thead class="hidden md:table-header-group">
               <tr>
-                <th>Coin</th>
-                <th>Status</th>
-                <th>Reason</th>
+                <th>{{ t('availability.coin') }}</th>
+                <th>{{ t('common.status') }}</th>
+                <th>{{ t('availability.reason') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -62,26 +62,26 @@
                   <span v-else class="block truncate md:inline md:overflow-visible md:whitespace-normal" :title="result.coinName">{{ result.coinName }}</span>
                   <span v-if="resultHost(result.url)" class="mt-0.5 block text-sm text-text-muted">{{ resultHost(result.url) }}</span>
                 </td>
-                <td class="!border-b-0 md:!border-b"><span class="chip-sm" :class="resultStatusClass(result.status)">{{ result.status }}</span></td>
+                <td class="!border-b-0 md:!border-b"><span class="chip-sm" :class="resultStatusClass(result.status)">{{ resultStatusLabel(result.status) }}</span></td>
                 <td class="col-span-2 whitespace-normal italic text-text-secondary md:table-cell md:max-w-[220px] md:overflow-hidden md:text-ellipsis md:not-italic md:whitespace-nowrap">{{ result.reason || '--' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <RouterLink class="btn btn-secondary btn-sm mt-4" to="/wishlist/availability-runs">Back to all runs</RouterLink>
+        <RouterLink class="btn btn-secondary btn-sm mt-4" to="/wishlist/availability-runs">{{ t('availability.backToRuns') }}</RouterLink>
       </section>
     </template>
 
     <template v-else>
       <div v-if="loading" class="loading-overlay"><div class="spinner"></div></div>
       <div v-else-if="loadError" class="empty-state card">
-        <h3>Unable to load run history</h3>
+        <h3>{{ t('availability.loadFailedTitle') }}</h3>
         <p>{{ loadError }}</p>
       </div>
       <div v-else-if="runs.length === 0" class="empty-state card">
-        <h3>No availability runs yet</h3>
-        <p>Runs appear here whenever your wishlist URLs are checked for availability.</p>
+        <h3>{{ t('availability.empty.title') }}</h3>
+        <p>{{ t('availability.empty.body') }}</p>
       </div>
 
       <template v-else>
@@ -94,13 +94,13 @@
           >
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="min-w-0">
-                <span class="section-label mb-0.5 block">{{ run.triggerType }}</span>
+                <span class="section-label mb-0.5 block">{{ triggerLabel(run.triggerType) }}</span>
                 <strong class="text-body text-text-primary">{{ formatDate(run.startedAt) }}</strong>
               </div>
               <div class="flex flex-wrap items-center gap-3 text-body text-text-secondary">
-                <span>{{ run.coinsChecked }} checked</span>
-                <span class="font-semibold text-loss">{{ run.unavailable }} unavail</span>
-                <span class="chip-sm" :class="statusClass(run.status)">{{ run.status === 'completed' ? 'done' : run.status }}</span>
+                <span>{{ t('wishlist.check.checked', { count: run.coinsChecked }) }}</span>
+                <span class="font-semibold text-loss">{{ t('availability.unavailShort', { count: run.unavailable }) }}</span>
+                <span class="chip-sm" :class="statusClass(run.status)">{{ runStatusLabel(run.status) }}</span>
               </div>
             </div>
 
@@ -108,18 +108,18 @@
               <div v-if="expandedLoading" class="flex justify-center py-4"><div class="spinner"></div></div>
               <template v-else>
                 <div class="mb-3 flex flex-wrap items-center gap-4 text-body text-text-secondary">
-                  <span class="font-semibold text-gain">{{ run.available }} available</span>
-                  <span class="font-semibold text-warning">{{ run.unknown }} unknown</span>
+                  <span class="font-semibold text-gain">{{ t('wishlist.check.available', { count: run.available }) }}</span>
+                  <span class="font-semibold text-warning">{{ t('wishlist.check.unknown', { count: run.unknown }) }}</span>
                   <span v-if="run.failMessage" class="text-loss">{{ run.failMessage }}</span>
                 </div>
-                <p v-if="expandedResults.length === 0" class="py-4 text-center text-text-muted">No results for this run.</p>
+                <p v-if="expandedResults.length === 0" class="py-4 text-center text-text-muted">{{ t('availability.noResults') }}</p>
                 <div v-else class="overflow-x-auto">
                   <table class="data-table text-body [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2">
                     <thead class="hidden md:table-header-group">
                       <tr>
-                        <th>Coin</th>
-                        <th>Status</th>
-                        <th>Reason</th>
+                        <th>{{ t('availability.coin') }}</th>
+                        <th>{{ t('common.status') }}</th>
+                        <th>{{ t('availability.reason') }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -131,7 +131,7 @@
                           <span v-else class="block truncate md:inline md:overflow-visible md:whitespace-normal" :title="result.coinName">{{ result.coinName }}</span>
                           <span v-if="resultHost(result.url)" class="mt-0.5 block text-sm text-text-muted">{{ resultHost(result.url) }}</span>
                         </td>
-                        <td class="!border-b-0 md:!border-b"><span class="chip-sm" :class="resultStatusClass(result.status)">{{ result.status }}</span></td>
+                        <td class="!border-b-0 md:!border-b"><span class="chip-sm" :class="resultStatusClass(result.status)">{{ resultStatusLabel(result.status) }}</span></td>
                         <td class="col-span-2 whitespace-normal italic text-text-secondary md:table-cell md:max-w-[220px] md:overflow-hidden md:text-ellipsis md:not-italic md:whitespace-nowrap">{{ result.reason || '--' }}</td>
                       </tr>
                     </tbody>
@@ -143,9 +143,9 @@
         </div>
 
         <div class="mt-6 flex items-center justify-center gap-4">
-          <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="prevPage()">&larr; Previous</button>
-          <span class="text-body text-text-secondary">Page {{ page }}</span>
-          <button class="btn btn-secondary btn-sm" :disabled="page * limit >= total" @click="nextPage()">Next &rarr;</button>
+          <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="prevPage()">&larr; {{ t('common.previous') }}</button>
+          <span class="text-body text-text-secondary">{{ t('availability.page', { page }) }}</span>
+          <button class="btn btn-secondary btn-sm" :disabled="page * limit >= total" @click="nextPage()">{{ t('common.next') }} &rarr;</button>
         </div>
       </template>
     </template>
@@ -162,6 +162,7 @@ import { sanitizeExternalUrl } from '@/composables/useSafeExternalLink'
 import type { AvailabilityResult, AvailabilityRun } from '@/types'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { intlLocale, t } from '@/i18n'
 
 const route = useRoute()
 
@@ -198,6 +199,32 @@ function statusClass(status: string): string {
   return 'text-gain'
 }
 
+function runStatusLabel(status: string): string {
+  switch (status) {
+    case 'completed': return t('availability.runStatus.done')
+    case 'queued': return t('availability.runStatus.queued')
+    case 'running': return t('availability.runStatus.running')
+    case 'failed': return t('availability.runStatus.failed')
+    case 'partial_failure': return t('availability.runStatus.partialFailure')
+    default: return status
+  }
+}
+
+function resultStatusLabel(status: string): string {
+  switch (status) {
+    case 'available': return t('availability.resultStatus.available')
+    case 'unavailable': return t('availability.resultStatus.unavailable')
+    case 'unknown': return t('availability.resultStatus.unknown')
+    default: return status
+  }
+}
+
+function triggerLabel(trigger: string): string {
+  if (trigger === 'scheduled') return t('availability.trigger.scheduled')
+  if (trigger === 'manual') return t('availability.trigger.manual')
+  return trigger
+}
+
 function resultStatusClass(status: string): string {
   if (status === 'available') return 'text-gain'
   if (status === 'unavailable') return 'text-loss'
@@ -219,7 +246,7 @@ function resultHost(url: string | null | undefined): string | null {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString()
+  return new Date(dateStr).toLocaleString(intlLocale())
 }
 
 async function loadRuns() {
@@ -233,7 +260,7 @@ async function loadRuns() {
     if (isUnauthorizedError(err)) {
       unauthorized.value = true
     } else {
-      loadError.value = 'Failed to load availability run history. Please try again.'
+      loadError.value = t('availability.loadFailed')
     }
     runs.value = []
     total.value = 0
@@ -282,7 +309,7 @@ async function loadDetail(runId: number) {
     if (isUnauthorizedError(err)) {
       unauthorized.value = true
     } else {
-      detailError.value = 'This run could not be found or is no longer available.'
+      detailError.value = t('availability.detailFailed')
     }
     detailRun.value = null
   } finally {

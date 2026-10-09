@@ -13,14 +13,14 @@
       <div v-if="!cameraStream" class="camera-placeholder">
         <template v-if="!immersive">
           <Camera :size="48" />
-          <p>Start the camera when you're ready.</p>
+          <p>{{ t('camera.startWhenReady') }}</p>
           <button
             type="button"
             class="btn btn-secondary btn-sm camera-start-btn"
             @click="startCamera"
           >
             <Camera :size="16" />
-            Start Camera
+            {{ t('camera.start') }}
           </button>
         </template>
       </div>
@@ -29,7 +29,7 @@
       <div v-if="cameraStream !== null && !immersive" class="focus-overlay">
         <div class="focus-mask"></div>
         <div class="focus-ring"></div>
-        <p class="focus-instruction">{{ instruction }}</p>
+        <p class="focus-instruction">{{ instruction || t('camera.focusOne') }}</p>
       </div>
     </div>
 
@@ -43,7 +43,7 @@
         @click="startCamera"
       >
         <Camera :size="18" />
-        Use Camera
+        {{ t('camera.use') }}
       </button>
       <button
         v-else
@@ -53,11 +53,11 @@
         @click="captureFromCamera"
       >
         <Camera :size="18" />
-        Take Photo
+        {{ t('camera.takePhoto') }}
       </button>
       <button type="button" class="btn btn-secondary" @click="$emit('upload')">
         <Images :size="18" />
-        Upload Image
+        {{ t('camera.uploadImage') }}
       </button>
     </div>
 
@@ -67,7 +67,7 @@
         class="shutter-btn"
         :disabled="!cameraReady"
         @click="captureFromCamera"
-        aria-label="Capture photo"
+        :aria-label="t('camera.capturePhotoAria')"
       >
         <Camera :size="32" />
       </button>
@@ -75,7 +75,7 @@
         type="button"
         class="upload-icon-btn"
         @click="$emit('upload')"
-        aria-label="Upload from library"
+        :aria-label="t('camera.uploadFromLibrary')"
       >
         <Images :size="20" />
       </button>
@@ -91,6 +91,7 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { Camera, Images } from 'lucide-vue-next'
 import type { CoinLookupImageRole } from '@/types'
+import { t } from '@/i18n'
 
 const props = withDefaults(
   defineProps<{
@@ -107,7 +108,6 @@ const props = withDefaults(
   }>(),
   {
     filenamePrefix: 'capture',
-    instruction: 'Focus one coin in the circle',
     desktopWorkspace: false,
     immersive: false,
   }
@@ -131,7 +131,7 @@ let disposed = false
 async function startCamera() {
   if (disposed || starting.value || cameraStream.value) return
   if (!navigator.mediaDevices?.getUserMedia) {
-    cameraError.value = 'Camera access is unavailable on this device.'
+    cameraError.value = t('camera.errors.unavailableDevice')
     return
   }
 
@@ -162,11 +162,11 @@ async function startCamera() {
     stopCamera()
     const err = error as { name?: string }
     if (err.name === 'NotAllowedError') {
-      cameraError.value = 'Camera permission was denied. You can still upload images.'
+      cameraError.value = t('camera.errors.deniedCanUpload')
     } else if (err.name === 'NotFoundError') {
-      cameraError.value = 'No camera found on this device.'
+      cameraError.value = t('camera.errors.notFound')
     } else {
-      cameraError.value = 'Camera is unavailable. You can still upload images.'
+      cameraError.value = t('camera.errors.unavailableCanUpload')
     }
   } finally {
     if (requestGeneration === generation) starting.value = false
@@ -216,14 +216,14 @@ async function captureFromCamera() {
   if (disposed || capturing.value) return
   const video = cameraVideo.value
   if (!video || !cameraReady.value || video.videoWidth === 0 || video.videoHeight === 0) {
-    cameraError.value = 'Camera is not ready yet. Try again in a moment.'
+    cameraError.value = t('camera.errors.notReady')
     return
   }
 
   const displayWidth = video.clientWidth ?? 0
   const displayHeight = video.clientHeight ?? 0
   if (displayWidth === 0 || displayHeight === 0) {
-    cameraError.value = 'Could not determine video display size.'
+    cameraError.value = t('camera.errors.displaySize')
     return
   }
 
@@ -239,7 +239,7 @@ async function captureFromCamera() {
   canvas.height = sh
   const context = canvas.getContext('2d')
   if (!context) {
-    cameraError.value = 'Could not prepare image capture. You can still upload images.'
+    cameraError.value = t('camera.errors.prepareCanUpload')
     return
   }
 
@@ -252,14 +252,14 @@ async function captureFromCamera() {
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92))
     if (captureGeneration !== generation) return
     if (!blob) {
-      cameraError.value = 'Could not capture image from camera.'
+      cameraError.value = t('camera.errors.captureFailed')
       return
     }
     cameraError.value = ''
     emit('captured', new File([blob], filename, { type: 'image/jpeg' }), role)
   } catch {
     if (captureGeneration === generation) {
-      cameraError.value = 'Could not capture image from camera. You can still upload images.'
+      cameraError.value = t('camera.errors.captureFailedCanUpload')
     }
   } finally {
     if (captureGeneration === generation) capturing.value = false

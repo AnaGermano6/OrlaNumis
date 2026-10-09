@@ -1,28 +1,28 @@
 <template>
   <!-- Wishlist Availability Check -->
-  <h3 class="mb-4 text-lg font-medium text-heading">Wishlist Availability Check</h3>
-  <p class="mb-4 text-base text-text-secondary">Monitors dealer sites for coins on your wishlist and sends alerts when availability changes.</p>
+  <h3 class="mb-4 text-lg font-medium text-heading">{{ t('admin.schedules.availability.title') }}</h3>
+  <p class="mb-4 text-base text-text-secondary">{{ t('admin.schedules.availability.intro') }}</p>
   <div class="mb-4">
     <div class="form-group flex items-center justify-between gap-3">
-      <label class="form-label">Enable Automatic Checks</label>
+      <label class="form-label">{{ t('admin.schedules.enableChecks') }}</label>
       <BaseToggle
         size="sm"
-        label="Enable Automatic Checks"
+        :label="t('admin.schedules.enableChecks')"
         :model-value="settings.WishlistCheckEnabled === 'true'"
         @update:model-value="settings.WishlistCheckEnabled = $event ? 'true' : 'false'"
       />
     </div>
     <div class="form-group">
-      <label class="form-label">Start Time (daily anchor)</label>
+      <label class="form-label">{{ t('admin.schedules.startAnchor') }}</label>
       <input
         v-model="settings.WishlistCheckStartTime"
         class="form-input w-full max-w-[120px]"
         type="time"
       />
-      <span class="form-hint">The first check runs at this time each day. Subsequent checks repeat at the interval below.</span>
+      <span class="form-hint">{{ t('admin.schedules.availability.startHint') }}</span>
     </div>
     <div class="form-group">
-      <label class="form-label">Repeat Interval (minutes)</label>
+      <label class="form-label">{{ t('admin.schedules.repeatMinutes') }}</label>
       <input
         v-model="settings.WishlistCheckInterval"
         class="form-input w-full max-w-[120px]"
@@ -30,47 +30,47 @@
         min="5"
         step="5"
       />
-      <span class="form-hint">How often to repeat after the start time (e.g. 120 = every 2 hours).</span>
+      <span class="form-hint">{{ t('admin.schedules.availability.intervalHint') }}</span>
       <AdminScheduleSummary :start-time="settings.WishlistCheckStartTime" default-start-time="02:00" :interval-minutes="settings.WishlistCheckInterval" :zone="settings.ScheduleTimezone" />
     </div>
     <div class="mt-4 flex w-full flex-col gap-3 md:flex-row md:items-center">
       <button class="btn btn-primary btn-sm" :disabled="settingsSaving" @click="emit('save')">
-        {{ settingsSaving ? 'Saving...' : 'Save Schedule Settings' }}
+        {{ settingsSaving ? t('common.saving') : t('admin.schedules.saveSchedule') }}
       </button>
       <span v-if="settingsMsg" class="text-body text-gold md:mr-auto" :class="settingsError ? 'text-loss' : ''">{{ settingsMsg }}</span>
       <button class="btn btn-secondary btn-sm md:ml-auto" :disabled="triggerLoading" @click="triggerManualAvailabilityCheck()">
-        {{ triggerLoading ? 'Queuing...' : 'Run Now' }}
+        {{ triggerLoading ? t('admin.schedules.availability.queuing') : t('admin.schedules.runNow') }}
       </button>
     </div>
   </div>
 
   <hr class="my-6 border-0 border-t border-border-subtle" />
-  <h3 class="mb-4 text-lg font-medium text-heading">Availability Run History</h3>
+  <h3 class="mb-4 text-lg font-medium text-heading">{{ t('admin.schedules.availability.history') }}</h3>
 
   <div v-if="cyclesLoading" class="flex justify-center py-8"><div class="spinner"></div></div>
-  <div v-else-if="cycles.length === 0" class="px-8 py-8 text-center font-sans text-text-muted">No availability cycles recorded yet.</div>
+  <div v-else-if="cycles.length === 0" class="px-8 py-8 text-center font-sans text-text-muted">{{ t('admin.schedules.availability.empty') }}</div>
   <template v-else>
     <div class="overflow-x-auto">
       <table class="data-table text-chip md:table-fixed [&_th]:px-[0.35rem] [&_th]:py-2 md:[&_th]:px-2 md:[&_th]:py-3 [&_td]:px-[0.35rem] [&_td]:py-2 md:[&_td]:px-2 md:[&_td]:py-3">
         <thead>
           <tr>
-            <th>Date</th>
-            <th class="hidden md:table-cell">Trigger</th>
-            <th>Status</th>
-            <th>Total</th>
-            <th class="hidden md:table-cell">Queued</th>
-            <th class="hidden md:table-cell">Running</th>
-            <th>Done</th>
-            <th>Failed</th>
+            <th>{{ t('common.date') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.trigger') }}</th>
+            <th>{{ t('common.status') }}</th>
+            <th>{{ t('admin.schedules.availability.total') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.availability.queued') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.availability.running') }}</th>
+            <th>{{ t('admin.schedules.availability.done') }}</th>
+            <th>{{ t('admin.schedules.failed') }}</th>
           </tr>
         </thead>
         <tbody>
           <template v-for="cycle in cycles" :key="cycle.id">
             <tr class="cursor-pointer transition-colors hover:bg-surface" :class="{ 'bg-surface': expandedCycleId === cycle.id }" @click="toggleCycleDetail(cycle.id)">
               <td class="text-body text-text-secondary">{{ formatDate(cycle.startedAt) }}</td>
-              <td class="hidden md:table-cell">{{ cycle.triggerType }}</td>
+              <td class="hidden md:table-cell">{{ runTriggerLabel(cycle.triggerType) }}</td>
               <td>
-                <span class="chip-sm" :class="statusClass(cycle.status)">{{ cycle.status === 'completed' ? 'done' : cycle.status }}</span>
+                <span class="chip-sm" :class="statusClass(cycle.status)">{{ availabilityStatusLabel(cycle.status) }}</span>
               </td>
               <td>{{ cycle.totalChildren }}</td>
               <td class="hidden md:table-cell">{{ cycle.queuedChildren }}</td>
@@ -85,20 +85,20 @@
                   <table class="data-table text-chip md:table-fixed [&_th]:px-2 [&_th]:py-[0.4rem] [&_td]:px-2 [&_td]:py-[0.4rem] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap">
                     <thead>
                       <tr>
-                        <th>User</th>
-                        <th>Status</th>
-                        <th>Checked</th>
-                        <th>Avail</th>
-                        <th>Unavail</th>
-                        <th>Unknown</th>
-                        <th>Errors</th>
-                        <th>Failure</th>
+                        <th>{{ t('admin.security.user') }}</th>
+                        <th>{{ t('common.status') }}</th>
+                        <th>{{ t('admin.schedules.valuation.checked') }}</th>
+                        <th>{{ t('admin.schedules.availability.avail') }}</th>
+                        <th>{{ t('admin.schedules.availability.unavail') }}</th>
+                        <th>{{ t('admin.schedules.availability.unknown') }}</th>
+                        <th>{{ t('admin.schedules.errors') }}</th>
+                        <th>{{ t('admin.schedules.availability.failure') }}</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr v-for="child in expandedChildren" :key="child.id">
-                        <td>{{ child.userName ?? `User #${child.userId}` }}</td>
-                        <td><span class="chip-sm" :class="statusClass(child.status)">{{ child.status === 'completed' ? 'done' : child.status }}</span></td>
+                        <td>{{ child.userName ?? t('admin.schedules.wishlist.userNumber', { id: child.userId }) }}</td>
+                        <td><span class="chip-sm" :class="statusClass(child.status)">{{ availabilityStatusLabel(child.status) }}</span></td>
                         <td>{{ child.coinsChecked }}</td>
                         <td>{{ child.available }}</td>
                         <td>{{ child.unavailable }}</td>
@@ -109,7 +109,7 @@
                     </tbody>
                   </table>
                 </div>
-                <p v-else class="px-8 py-8 text-center font-sans text-text-muted">No child runs for this cycle.</p>
+                <p v-else class="px-8 py-8 text-center font-sans text-text-muted">{{ t('admin.schedules.availability.noChildren') }}</p>
               </td>
             </tr>
           </template>
@@ -118,34 +118,34 @@
     </div>
 
     <div class="mt-4 flex items-center justify-center gap-3">
-      <button class="btn btn-secondary btn-sm" :disabled="cyclesPage <= 1" @click="prevCyclesPage()">Prev</button>
-      <span class="text-chip text-text-secondary">Page {{ cyclesPage }}</span>
-      <button class="btn btn-secondary btn-sm" :disabled="cycles.length < 5" @click="nextCyclesPage()">Next</button>
+      <button class="btn btn-secondary btn-sm" :disabled="cyclesPage <= 1" @click="prevCyclesPage()">{{ t('common.prev') }}</button>
+      <span class="text-chip text-text-secondary">{{ t('admin.schedules.page', { page: cyclesPage }) }}</span>
+      <button class="btn btn-secondary btn-sm" :disabled="cycles.length < 5" @click="nextCyclesPage()">{{ t('common.next') }}</button>
     </div>
   </template>
 
   <hr class="my-6 border-0 border-t border-border-subtle" />
   <h4 class="section-label mb-4 flex items-center gap-2">
-    Legacy Runs
-    <span class="chip-sm">Legacy</span>
+    {{ t('admin.schedules.availability.legacyRuns') }}
+    <span class="chip-sm">{{ t('admin.schedules.availability.legacy') }}</span>
   </h4>
 
   <div v-if="legacyLoading" class="flex justify-center py-8"><div class="spinner"></div></div>
-  <div v-else-if="legacyRuns.length === 0" class="px-8 py-8 text-center font-sans text-text-muted">No legacy availability runs recorded.</div>
+  <div v-else-if="legacyRuns.length === 0" class="px-8 py-8 text-center font-sans text-text-muted">{{ t('admin.schedules.availability.noLegacy') }}</div>
   <template v-else>
     <div class="overflow-x-auto">
       <table class="data-table text-chip md:table-fixed [&_th]:px-[0.35rem] [&_th]:py-2 md:[&_th]:px-2 md:[&_th]:py-3 [&_td]:px-[0.35rem] [&_td]:py-2 md:[&_td]:px-2 md:[&_td]:py-3">
         <thead>
           <tr>
-            <th>Date</th>
-            <th class="hidden md:table-cell">Trigger</th>
-            <th class="hidden md:table-cell">Status</th>
-            <th>Checked</th>
-            <th class="hidden md:table-cell">Avail</th>
-            <th>Unavail</th>
-            <th class="hidden md:table-cell">Unknown</th>
-            <th class="hidden md:table-cell">Errors</th>
-            <th>Duration</th>
+            <th>{{ t('common.date') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.trigger') }}</th>
+            <th class="hidden md:table-cell">{{ t('common.status') }}</th>
+            <th>{{ t('admin.schedules.valuation.checked') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.availability.avail') }}</th>
+            <th>{{ t('admin.schedules.availability.unavail') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.availability.unknown') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.errors') }}</th>
+            <th>{{ t('admin.schedules.duration') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -153,11 +153,11 @@
             <tr class="cursor-pointer transition-colors hover:bg-surface" :class="{ 'bg-surface': expandedRunId === run.id }" @click="toggleRunDetail(run.id)">
               <td class="text-body text-text-secondary">
                 {{ formatDate(run.startedAt) }}
-                <span class="chip-sm ml-2">Legacy</span>
+                <span class="chip-sm ml-2">{{ t('admin.schedules.availability.legacy') }}</span>
               </td>
-              <td class="hidden md:table-cell">{{ run.triggerType }}</td>
+              <td class="hidden md:table-cell">{{ runTriggerLabel(run.triggerType) }}</td>
               <td class="hidden md:table-cell">
-                <span class="chip-sm" :class="statusClass(run.status)">{{ run.status === 'completed' ? 'done' : run.status }}</span>
+                <span class="chip-sm" :class="statusClass(run.status)">{{ availabilityStatusLabel(run.status) }}</span>
               </td>
               <td>{{ run.coinsChecked }}</td>
               <td class="hidden font-semibold text-gain md:table-cell">{{ run.available }}</td>
@@ -173,12 +173,12 @@
                   <table class="data-table text-chip md:table-fixed [&_th]:px-2 [&_th]:py-[0.4rem] [&_td]:px-2 [&_td]:py-[0.4rem] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap">
                     <thead>
                       <tr>
-                        <th>Coin</th>
+                        <th>{{ t('admin.schedules.valuation.coin') }}</th>
                         <th>URL</th>
-                        <th>Status</th>
-                        <th>Reason</th>
+                        <th>{{ t('common.status') }}</th>
+                        <th>{{ t('admin.schedules.availability.reason') }}</th>
                         <th>HTTP</th>
-                        <th>Agent</th>
+                        <th>{{ t('admin.schedules.availability.agent') }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -198,16 +198,16 @@
                           <span v-else class="text-text-muted">--</span>
                         </td>
                         <td>
-                          <BaseStatusBadge :tone="result.status === 'available' ? 'success' : result.status === 'unavailable' ? 'error' : 'warning'">{{ result.status }}</BaseStatusBadge>
+                          <BaseStatusBadge :tone="result.status === 'available' ? 'success' : result.status === 'unavailable' ? 'error' : 'warning'">{{ resultStatusLabel(result.status) }}</BaseStatusBadge>
                         </td>
                         <td class="max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">{{ result.reason || '--' }}</td>
                         <td>{{ result.httpStatus ?? '--' }}</td>
-                        <td>{{ result.agentUsed ? 'Yes' : 'No' }}</td>
+                        <td>{{ result.agentUsed ? t('common.yes') : t('common.no') }}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-                <p v-else class="px-8 py-8 text-center font-sans text-text-muted">No results for this run.</p>
+                <p v-else class="px-8 py-8 text-center font-sans text-text-muted">{{ t('admin.schedules.valuation.noResults') }}</p>
               </td>
             </tr>
           </template>
@@ -216,9 +216,9 @@
     </div>
 
     <div class="mt-4 flex items-center justify-center gap-3">
-      <button class="btn btn-secondary btn-sm" :disabled="legacyPage <= 1" @click="prevLegacyPage()">Prev</button>
-      <span class="text-chip text-text-secondary">Page {{ legacyPage }}</span>
-      <button class="btn btn-secondary btn-sm" :disabled="legacyRuns.length < 5" @click="nextLegacyPage()">Next</button>
+      <button class="btn btn-secondary btn-sm" :disabled="legacyPage <= 1" @click="prevLegacyPage()">{{ t('common.prev') }}</button>
+      <span class="text-chip text-text-secondary">{{ t('admin.schedules.page', { page: legacyPage }) }}</span>
+      <button class="btn btn-secondary btn-sm" :disabled="legacyRuns.length < 5" @click="nextLegacyPage()">{{ t('common.next') }}</button>
     </div>
   </template>
 </template>
@@ -237,6 +237,8 @@ import {
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import { sanitizeExternalUrl } from '@/composables/useSafeExternalLink'
 import type { AppSettings, AvailabilityCycle, AvailabilityRun } from '@/types'
+import { t, intlLocale } from '@/i18n'
+import { runStatusLabel, runTriggerLabel } from '@/utils/format'
 
 defineProps<{
   settings: AppSettings
@@ -282,6 +284,17 @@ function safeRunUrl(url: string | null | undefined): string | null {
 
 function onResize() {
   isMobile.value = window.innerWidth <= 600
+}
+
+function availabilityStatusLabel(status: string): string {
+  return runStatusLabel(status === 'completed' ? 'done' : status)
+}
+
+function resultStatusLabel(status: string): string {
+  if (status === 'available') return t('availability.resultStatus.available')
+  if (status === 'unavailable') return t('availability.resultStatus.unavailable')
+  if (status === 'unknown') return t('availability.resultStatus.unknown')
+  return status
 }
 
 function statusClass(status: string): string {
@@ -392,14 +405,14 @@ async function triggerManualAvailabilityCheck() {
   emit('update:settingsError', false)
   try {
     const res = await triggerAvailabilityCheck()
-    emit('update:settingsMsg', `Cycle #${res.data.cycleId} queued — history updates below`)
+    emit('update:settingsMsg', t('admin.schedules.availability.cycleQueued', { id: res.data.cycleId }))
     timers.push(setTimeout(() => { emit('update:settingsMsg', '') }, 12000))
     timers.push(setTimeout(() => { loadHistoryWithPoll() }, 1000))
   } catch (err: unknown) {
     const status = (err as { response?: { status?: number } })?.response?.status
     emit('update:settingsMsg', status === 409
-      ? 'A manual availability run is already in progress'
-      : 'Failed to queue availability check')
+      ? t('admin.schedules.availability.inProgress')
+      : t('admin.schedules.availability.queueFailed'))
     emit('update:settingsError', true)
   } finally {
     triggerLoading.value = false
@@ -407,7 +420,7 @@ async function triggerManualAvailabilityCheck() {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString()
+  return new Date(dateStr).toLocaleDateString(intlLocale())
 }
 
 function formatDuration(ms: number) {

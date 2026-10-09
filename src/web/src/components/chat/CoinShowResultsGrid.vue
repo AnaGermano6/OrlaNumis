@@ -38,7 +38,7 @@
           @click="$emit('save-show', show)"
         >
           <CalendarPlus :size="13" />
-          {{ savedShows.has(showKey(show)) ? 'Saved' : savingShow === showKey(show) ? 'Saving...' : 'Save to Calendar' }}
+          {{ savedShows.has(showKey(show)) ? t('chat.shows.saved') : savingShow === showKey(show) ? t('common.saving') : t('chat.shows.saveToCalendar') }}
         </button>
       </div>
     </div>
@@ -50,6 +50,7 @@ import type { CoinShow } from '@/types'
 import { Calendar, MapPin, Ticket, CalendarPlus, ExternalLink } from 'lucide-vue-next'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import { sanitizeExternalUrl } from '@/composables/useSafeExternalLink'
+import { t } from '@/i18n'
 
 defineProps<{
   shows: CoinShow[]

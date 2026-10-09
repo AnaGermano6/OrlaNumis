@@ -1,0 +1,80 @@
+# Local development stack: builds both images from this checkout instead of
+# pulling the published Docker Hub images used by docker-compose.yaml.
+#
+#   docker compose -f docker-compose.dev.yml up -d --build   # build + start
+#   docker compose -f docker-compose.dev.yml logs -f app      # follow API logs
+#   docker compose -f docker-compose.dev.yml down             # stop (keeps data)
+#   docker compose -f docker-compose.dev.yml down -v          # stop + wipe DB/uploads
+#
+# Secrets come from .env (JWT_SECRET, AGENT_INTERNAL_SERVICE_TOKEN,
+# AUCTION_CREDENTIAL_ENCRYPTION_KEY). GIN_MODE is left unset (debug), so the
+# production-only startup checks are skipped and localhost origins are allowed.
+name: aurearia-dev
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
+    image: aurearia-app:dev
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      DB_PATH: /app/data/ancientcoins.db
+      UPLOAD_DIR: /app/uploads
+      PORT: "8080"
+      AGENT_SERVICE_URL: http://agent:8081
+      AGENT_INTERNAL_SERVICE_TOKEN: ${AGENT_INTERNAL_SERVICE_TOKEN:?Set AGENT_INTERNAL_SERVICE_TOKEN in .env}
+      AGENT_INTERNAL_CALLBACK_URL: http://app:8080
+      AUCTION_CREDENTIAL_ENCRYPTION_KEY: ${AUCTION_CREDENTIAL_ENCRYPTION_KEY:-}
+      WEBAUTHN_RP_ID: localhost
+      WEBAUTHN_ORIGIN: http://localhost:8080
+    ports:
+      # Loopback only: reachable from this Mac, not from the rest of the network.
+      # APP_PORT lets a second stack run alongside, e.g.
+      #   APP_PORT=8090 docker compose -p aurearia-qa -f docker-compose.dev.yml up -d
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+    volumes:
+      - db-data:/app/data
+      - uploads:/app/uploads
+    depends_on:
+      agent:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  agent:
+    build:
+      context: ./src/agent
+      dockerfile: Dockerfile
+    image: aurearia-agent:dev
+    environment:
+      AGENT_INTERNAL_SERVICE_TOKEN: ${AGENT_INTERNAL_SERVICE_TOKEN:?Set AGENT_INTERNAL_SERVICE_TOKEN in .env}
+      AGENT_LOG_LEVEL: ${AGENT_LOG_LEVEL:-INFO}
+      AGENT_DEBUG: "false"
+      AGENT_SEARXNG_URL: ${SEARXNG_URL:-}
+      # app:8080 for collection tools; host.docker.internal:11434 lets the agent
+      # reach an Ollama server running on this Mac, if you choose Ollama in Admin.
+      AGENT_TRUSTED_OUTBOUND_ORIGINS: http://app:8080,http://host.docker.internal:11434
+      AGENT_ALLOW_LOCAL_OUTBOUND: "true"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    expose:
+      - "8081"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/ready')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  uploads:

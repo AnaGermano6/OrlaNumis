@@ -11,6 +11,10 @@ vi.mock('@/api/client', () => ({
   getPublicShowcase: vi.fn(),
 }))
 
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: () => ({ isAuthenticated: false }),
+}))
+
 const showcase = {
   title: 'Featured Set',
   description: 'Coins selected for public viewing',
@@ -47,6 +51,11 @@ describe('PublicShowcasePage', () => {
     vi.clearAllMocks()
     localStorage.clear()
     mockShowcase()
+  })
+
+  it('offers the language switcher to signed-out visitors', async () => {
+    const wrapper = await mountLoaded()
+    expect(wrapper.find('[aria-pressed]').exists()).toBe(true)
   })
 
   it('loads a public showcase and renders coins in the tray layout instead of the old card grid', async () => {

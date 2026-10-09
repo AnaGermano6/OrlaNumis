@@ -2,11 +2,11 @@
   <section class="grid min-w-0 gap-3 overflow-hidden [overflow-wrap:anywhere]" aria-labelledby="numista-lookup-heading">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h3 id="numista-lookup-heading" class="m-0 text-base font-medium text-text-primary">
-        Numista Lookup
+        {{ t('numista.panel.title') }}
       </h3>
       <div class="flex flex-wrap items-center justify-end gap-2">
         <span class="chip-sm border border-border-subtle text-text-secondary">
-          Status: {{ statusGuidance.label }}
+          {{ t('numista.panel.status', { label: statusGuidance.label }) }}
         </span>
         <span v-if="cacheFreshnessText" class="chip-sm border border-border-subtle text-text-secondary">
           {{ cacheFreshnessText }}
@@ -15,7 +15,7 @@
     </div>
 
     <div>
-      <span id="numista-query-label" class="form-label">Search query</span>
+      <span id="numista-query-label" class="form-label">{{ t('numista.panel.query') }}</span>
       <textarea
         id="numista-query"
         v-model="query"
@@ -54,7 +54,7 @@
         class="btn btn-ghost btn-sm min-h-11"
         @click="cancelEnrichment()"
       >
-        Cancel enrichment
+        {{ t('numista.panel.cancelEnrichment') }}
       </button>
       <button
         v-else-if="canRetryEnrichment"
@@ -63,17 +63,17 @@
         :disabled="searching"
         @click="retryEnrichment"
       >
-        Retry details
+        {{ t('numista.panel.retryDetails') }}
       </button>
       <button
         v-if="selected"
         type="button"
         class="btn btn-ghost btn-sm min-h-11"
         :disabled="searching"
-        aria-label="Remove selected Numista reference"
+        :aria-label="t('numista.panel.removeSelectionLabel')"
         @click="clearSelection"
       >
-        Remove selection
+        {{ t('numista.panel.removeSelection') }}
       </button>
     </div>
 
@@ -105,7 +105,7 @@
           :to="statusGuidance.settingsHref"
           class="text-body text-gold"
         >
-          Open Numista settings
+          {{ t('numista.panel.openSettings') }}
         </RouterLink>
       </div>
     </div>
@@ -115,12 +115,12 @@
       class="grid gap-1 rounded-sm border border-border-accent bg-input p-3"
       role="status"
     >
-      <strong class="text-body text-text-primary">Selection retained from an earlier search</strong>
+      <strong class="text-body text-text-primary">{{ t('numista.panel.retained') }}</strong>
       <span class="text-body text-text-secondary">{{ selected.title }}</span>
     </div>
 
     <fieldset v-if="candidates.length" class="m-0 grid min-w-0 gap-3 border-0 p-0">
-      <legend class="section-label mb-2">Ranked candidates</legend>
+      <legend class="section-label mb-2">{{ t('numista.panel.ranked') }}</legend>
       <label
         v-for="candidate in candidates"
         :key="numistaCandidateIdentity(candidate)"
@@ -140,14 +140,14 @@
             v-if="safeHttpsImage(candidate.obverseThumbnail)"
             type="button"
             class="group relative h-20 w-20 shrink-0 cursor-zoom-in overflow-hidden rounded-sm border border-border-subtle bg-input p-1 transition-colors hover:border-border-accent focus-visible:border-gold"
-            :aria-label="`Enlarge obverse image for ${candidate.title}`"
+            :aria-label="t('numista.panel.enlargeObverse', { title: candidate.title })"
             @click.stop.prevent="openCandidateImage($event, candidate, 'obverse', safeHttpsImage(candidate.obverseThumbnail) ?? '')"
             @keydown.enter.stop.prevent="openCandidateImage($event, candidate, 'obverse', safeHttpsImage(candidate.obverseThumbnail) ?? '')"
             @keydown.space.stop.prevent="openCandidateImage($event, candidate, 'obverse', safeHttpsImage(candidate.obverseThumbnail) ?? '')"
           >
             <img
               :src="safeHttpsImage(candidate.obverseThumbnail) ?? ''"
-              :alt="`Obverse thumbnail for ${candidate.title}`"
+              :alt="t('numista.panel.obverseThumb', { title: candidate.title })"
               class="h-full w-full object-contain"
             >
             <ZoomIn
@@ -160,14 +160,14 @@
             v-if="safeHttpsImage(candidate.reverseThumbnail)"
             type="button"
             class="group relative h-20 w-20 shrink-0 cursor-zoom-in overflow-hidden rounded-sm border border-border-subtle bg-input p-1 transition-colors hover:border-border-accent focus-visible:border-gold"
-            :aria-label="`Enlarge reverse image for ${candidate.title}`"
+            :aria-label="t('numista.panel.enlargeReverse', { title: candidate.title })"
             @click.stop.prevent="openCandidateImage($event, candidate, 'reverse', safeHttpsImage(candidate.reverseThumbnail) ?? '')"
             @keydown.enter.stop.prevent="openCandidateImage($event, candidate, 'reverse', safeHttpsImage(candidate.reverseThumbnail) ?? '')"
             @keydown.space.stop.prevent="openCandidateImage($event, candidate, 'reverse', safeHttpsImage(candidate.reverseThumbnail) ?? '')"
           >
             <img
               :src="safeHttpsImage(candidate.reverseThumbnail) ?? ''"
-              :alt="`Reverse thumbnail for ${candidate.title}`"
+              :alt="t('numista.panel.reverseThumb', { title: candidate.title })"
               class="h-full w-full object-contain"
             >
             <ZoomIn
@@ -184,7 +184,7 @@
               <span class="block text-sm text-text-secondary">{{ candidateSummary(candidate) }}</span>
             </span>
             <span class="chip-sm border border-border-subtle text-text-primary">
-              {{ candidate.assessment.score }} · {{ candidate.assessment.band }}
+              {{ candidate.assessment.score }} · {{ bandLabel(candidate.assessment.band) }}
             </span>
           </span>
           <span v-if="candidate.assessment.reasons.length" class="grid gap-1">
@@ -194,10 +194,10 @@
               class="text-sm"
               :class="reason.kind === 'conflict' ? 'text-warning' : 'text-text-secondary'"
             >
-              {{ reason.kind === 'conflict' ? 'Conflict: ' : '' }}{{ reason.label }}
+              {{ reason.kind === 'conflict' ? `${t('numista.panel.conflict')} ` : '' }}{{ reason.label }}
             </span>
           </span>
-          <span v-else class="text-sm text-text-muted">No detailed relevance explanation is available.</span>
+          <span v-else class="text-sm text-text-muted">{{ t('numista.panel.noExplanation') }}</span>
           <span class="flex flex-wrap items-center gap-2">
             <SafeExternalLink
               :href="candidate.canonicalUrl"
@@ -206,7 +206,7 @@
               class="text-sm text-gold"
               @click.stop
             >
-              View catalog entry
+              {{ t('numista.panel.viewEntry') }}
             </SafeExternalLink>
             <span class="text-sm text-text-muted">{{ enrichmentLabel(candidate) }}</span>
           </span>
@@ -216,7 +216,7 @@
 
     <div v-if="selected" class="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-border-accent bg-input p-3">
       <span class="min-w-0 text-body text-text-primary">
-        Selected: <strong class="break-words">{{ selected.title }}</strong>
+        {{ t('numista.panel.selected') }} <strong class="break-words">{{ selected.title }}</strong>
       </span>
       <button
         v-if="showConfirmation"
@@ -225,7 +225,7 @@
         :disabled="searching"
         @click="confirmSelection"
       >
-        {{ confirmationLabel }}
+        {{ confirmationLabel || t('numista.panel.addSelected') }}
       </button>
     </div>
 
@@ -250,7 +250,7 @@
               ref="imageCloseButton"
               type="button"
               class="btn btn-ghost btn-sm shrink-0"
-              aria-label="Close enlarged candidate image"
+              :aria-label="t('numista.panel.closeImage')"
               @click="closeCandidateImage"
             >
               <X :size="20" aria-hidden="true" />
@@ -290,6 +290,7 @@ import type {
   NumistaLookupPath,
   NumistaQuerySource,
 } from '@/types'
+import { t } from '@/i18n'
 
 const QUERY_GENERATION_VERSION = 'numista-query-v2' as const
 
@@ -306,7 +307,7 @@ const props = withDefaults(defineProps<{
   isAdmin: false,
   initialSelection: null,
   showConfirmation: true,
-  confirmationLabel: 'Add selected reference',
+  confirmationLabel: undefined,
 })
 
 const emit = defineEmits<{
@@ -352,14 +353,14 @@ const querySource = computed<NumistaQuerySource>(() => {
   return queryEdited.value || serverDowngraded.value ? 'user-edited' : 'generated'
 })
 const queryHelp = computed(() => {
-  if (!query.value.trim()) return 'Enter at least one search term to enable Numista lookup.'
-  if (querySource.value === 'generated') return 'Generated from catalog evidence. Review or refine it before searching.'
-  return 'Review or refine the attribution evidence before searching.'
+  if (!query.value.trim()) return t('numista.panel.help.empty')
+  if (querySource.value === 'generated') return t('numista.panel.help.generated')
+  return t('numista.panel.help.manual')
 })
 const relaxedQueryDisclosure = computed(() => {
   const result = outcome.value
   if (result?.searchAttempt !== 'relaxed' || result.searchAttemptCount !== 2) return ''
-  return `Numista retried once with the relaxed query “${result.effectiveQuery}”. Your editable query is unchanged.`
+  return t('numista.panel.relaxed', { query: result.effectiveQuery })
 })
 const searchDisabled = computed(() => {
   if (searching.value || !query.value.trim()) return true
@@ -367,12 +368,12 @@ const searchDisabled = computed(() => {
   return false
 })
 const searchButtonLabel = computed(() => {
-  if (searching.value) return 'Searching...'
-  if (!outcome.value) return 'Search Numista'
-  if (outcome.value.status === 'success') return 'Search again'
-  if (outcome.value.status === 'unconfigured' && props.isAdmin) return 'Retry after configuration'
-  if (statusGuidance.value.canRetry) return 'Retry lookup'
-  return 'Search unavailable'
+  if (searching.value) return t('common.searching')
+  if (!outcome.value) return t('numista.panel.searchNumista')
+  if (outcome.value.status === 'success') return t('numista.panel.searchAgain')
+  if (outcome.value.status === 'unconfigured' && props.isAdmin) return t('numista.panel.retryAfterConfig')
+  if (statusGuidance.value.canRetry) return t('numista.panel.retryLookup')
+  return t('numista.panel.searchUnavailable')
 })
 const canRetryEnrichment = computed(() => (
   enrichmentRetryAvailable.value
@@ -459,7 +460,7 @@ async function startEnrichment(request: NumistaEnrichmentRequest) {
   enrichmentController = controller
   enriching.value = true
   enrichmentRetryAvailable.value = false
-  enrichmentMessage.value = 'Enriching leading candidates with catalog details.'
+  enrichmentMessage.value = t('numista.panel.enriching')
 
   try {
     const response = await enrichNumista(request, controller.signal)
@@ -481,15 +482,15 @@ async function startEnrichment(request: NumistaEnrichmentRequest) {
     )).length
     enrichmentRetryAvailable.value = failedCount > 0
     enrichmentMessage.value = failedCount === 0
-      ? 'Candidate details are ready.'
+      ? t('numista.panel.detailsReady')
       : detailedCount === 0
-        ? 'Details could not be loaded. Broad results remain selectable.'
-        : `Details are ready for ${detailedCount} candidates; ${failedCount} remain broad results.`
+        ? t('numista.panel.detailsFailed')
+        : t('numista.panel.detailsPartial', { detailed: detailedCount, failed: failedCount })
   } catch (error) {
     if (enrichmentController !== controller) return
     if (isCancellation(error)) {
       enrichmentRetryAvailable.value = true
-      enrichmentMessage.value = 'Enrichment cancelled. Broad results remain selectable.'
+      enrichmentMessage.value = t('numista.panel.enrichmentCancelled')
       return
     }
 
@@ -504,7 +505,7 @@ async function startEnrichment(request: NumistaEnrichmentRequest) {
     selected.value = retainNumistaSelection(selected.value, retained)
     selectedId.value = selected.value?.id ?? null
     enrichmentRetryAvailable.value = true
-    enrichmentMessage.value = 'Details could not be loaded. Broad results remain selectable.'
+    enrichmentMessage.value = t('numista.panel.detailsFailed')
   } finally {
     if (enrichmentController === controller) {
       enrichmentController = null
@@ -539,7 +540,7 @@ function cancelEnrichment(announce = true) {
   controller.abort()
   enriching.value = false
   enrichmentRetryAvailable.value = announce
-  if (announce) enrichmentMessage.value = 'Enrichment cancelled. Broad results remain selectable.'
+  if (announce) enrichmentMessage.value = t('numista.panel.enrichmentCancelled')
 }
 
 function mergeEnrichedCandidates(
@@ -599,11 +600,18 @@ function candidateSummary(candidate: NumistaCandidate): string {
 
 function enrichmentLabel(candidate: NumistaCandidate): string {
   switch (candidate.enrichmentState) {
-    case 'enriched': return 'Details enriched'
-    case 'cached': return 'Cached details'
-    case 'failed': return 'Detail unavailable'
-    case 'not_requested': return 'Broad result'
+    case 'enriched': return t('numista.panel.enrichment.enriched')
+    case 'cached': return t('numista.panel.enrichment.cached')
+    case 'failed': return t('numista.panel.enrichment.failed')
+    case 'not_requested': return t('numista.panel.enrichment.broad')
   }
+}
+
+function bandLabel(band: string): string {
+  if (band === 'strong') return t('numista.bands.strong')
+  if (band === 'possible') return t('numista.bands.possible')
+  if (band === 'weak') return t('numista.bands.weak')
+  return band
 }
 
 function safeHttpsImage(value: string | undefined): string | null {
@@ -623,11 +631,11 @@ function openCandidateImage(
   url: string,
 ) {
   if (!safeHttpsImage(url)) return
-  const sideLabel = side === 'obverse' ? 'Obverse' : 'Reverse'
+  const sideLabel = side === 'obverse' ? t('common.obverse') : t('common.reverse')
   imageTrigger = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
   activeCandidateImage.value = {
     url,
-    alt: `${sideLabel} image for Numista candidate ${candidate.title}`,
+    alt: t('numista.panel.imageAlt', { side: sideLabel, title: candidate.title }),
     heading: `${sideLabel} · ${candidate.title}`,
   }
   void nextTick(() => imageCloseButton.value?.focus())

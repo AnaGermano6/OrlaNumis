@@ -1,9 +1,9 @@
 <template>
   <PullToRefresh :on-refresh="handleRefresh">
     <div class="container">
-      <DesktopPageContext title="Collection Stats">
+      <DesktopPageContext :title="t('stats.collectionStats')">
         <div class="page-header">
-          <h1>Collection Stats</h1>
+          <h1>{{ t('stats.collectionStats') }}</h1>
         </div>
       </DesktopPageContext>
 
@@ -17,7 +17,7 @@
         </div>
 
         <StatsBarChart
-          title="By Category"
+          :title="t('stats.charts.byCategory')"
           :items="categoryItems"
           :fill-class="(label: string) => label"
         >
@@ -29,37 +29,39 @@
                 color: colorForLabel(item.label),
                 border: `1px solid ${colorForLabelBackground(item.label, 30)}`,
               }"
-            >{{ item.label }}</span>
+            >{{ categoryLabel(item.label) }}</span>
           </template>
         </StatsBarChart>
 
         <StatsBarChart
-          title="By Material"
+          :title="t('stats.charts.byMaterial')"
           :items="materialItems"
           :fill-class="() => 'fill-material'"
         >
           <template #label="{ item }">
-            <span :class="`material-${item.label.toLowerCase()}`">{{ item.label }}</span>
+            <span :class="`material-${item.label.toLowerCase()}`">{{ materialLabel(item.label) }}</span>
           </template>
         </StatsBarChart>
 
         <StatsBarChart
           v-if="stats.byGrade?.length"
-          title="By Grade"
+          :title="t('stats.charts.byGrade')"
           :items="gradeItems"
           :fill-class="() => 'fill-grade'"
         />
 
         <StatsBarChart
           v-if="stats.byEra?.length"
-          title="By Era"
+          :title="t('stats.charts.byEra')"
           :items="eraItems"
           :fill-class="() => 'fill-era'"
-        />
+        >
+          <template #label="{ item }">{{ eraLabel(item.label) }}</template>
+        </StatsBarChart>
 
         <StatsBarChart
           v-if="stats.byRuler?.length"
-          title="Top Rulers"
+          :title="t('stats.charts.topRulers')"
           :items="rulerItems"
           :fill-class="() => 'fill-ruler'"
           :wide="true"
@@ -67,7 +69,7 @@
 
         <StatsBarChart
           v-if="stats.byPriceRange?.length"
-          title="Price Range Distribution"
+          :title="t('stats.charts.priceRanges')"
           :items="priceRangeItems"
           :fill-class="() => 'fill-price'"
         />
@@ -88,6 +90,9 @@ import type { BarItem } from '@/components/stats/StatsBarChart.vue'
 import StatsHeatMap from '@/components/stats/StatsHeatMap.vue'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
+import { materialLabel } from '@/utils/format'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 const store = useCoinsStore()
 const stats = computed(() => store.stats)
@@ -114,7 +119,7 @@ const priceRangeItems = computed<BarItem[]>(() => {
   if (!stats.value?.byPriceRange) return []
   return [...stats.value.byPriceRange]
     .sort((a, b) => priceRangeOrder.indexOf(a.range) - priceRangeOrder.indexOf(b.range))
-    .map((p) => ({ label: p.range, count: p.count }))
+    .map((p) => ({ label: p.range === 'Under $50' ? t('stats.priceRanges.under50') : p.range, count: p.count }))
 })
 
 async function handleRefresh() {

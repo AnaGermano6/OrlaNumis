@@ -2,15 +2,18 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { withEnglishCopy } from '@/test/i18nSource'
+import en from '@/i18n/locales/en'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const source = fs.readFileSync(path.resolve(__dirname, '../QuickCapturePage.vue'), 'utf8')
+const source = withEnglishCopy(fs.readFileSync(path.resolve(__dirname, '../QuickCapturePage.vue'), 'utf8'))
 
 describe('QuickCapturePage', () => {
   it('composes the MVP save workflow and count-exclusion message', () => {
     expect(source).toContain('QuickCaptureForm')
     expect(source).toContain('Draft saved')
-    expect(source).toContain('excluded from collection, wishlist, sold, stats, and health counts')
+    expect(source).toContain("t('quickCapture.draftSavedDetail', { id: lastDraft.id })")
+    expect(en.quickCapture.draftSavedDetail).toContain('excluded from collection, wishlist, sold, stats, and health counts')
   })
 
   it('keeps Quick Capture v1 manual and navigates to drafts without AI intake expansion', () => {

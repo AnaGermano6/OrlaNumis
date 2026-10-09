@@ -11,32 +11,44 @@
           <Download :size="24" />
         </div>
         <div class="min-w-0 flex-1">
-          <h4 class="mb-[0.3rem] text-base text-gold">Aurearia - Coin Collection</h4>
+          <h4 class="mb-[0.3rem] text-base text-gold">{{ t('app.brandFull') }}</h4>
           <p v-if="platform === 'ios-safari'" class="m-0 text-chip leading-6 text-text-secondary">
-            Tap the <strong>Share</strong> button
-            <Share :size="14" class="mx-[0.1rem] inline-block align-middle text-gold" />
-            then <strong>"Add to Home Screen"</strong>
+            <I18nT keypath="pwa.install.iosSafari">
+              <template #share><strong>{{ t('pwa.install.share') }}</strong></template>
+              <template #icon><Share :size="14" class="mx-[0.1rem] inline-block align-middle text-gold" /></template>
+              <template #action><strong>"{{ t('pwa.install.addToHomeScreen') }}"</strong></template>
+            </I18nT>
           </p>
           <p v-else-if="platform === 'ios-edge'" class="m-0 text-chip leading-6 text-text-secondary">
-            Tap the <strong>menu</strong> button
-            <MoreHorizontal :size="14" class="mx-[0.1rem] inline-block align-middle text-gold" />
-            then <strong>"Add to Phone"</strong>
+            <I18nT keypath="pwa.install.iosEdge">
+              <template #menu><strong>{{ t('pwa.install.menu') }}</strong></template>
+              <template #icon><MoreHorizontal :size="14" class="mx-[0.1rem] inline-block align-middle text-gold" /></template>
+              <template #action><strong>"{{ t('pwa.install.addToPhone') }}"</strong></template>
+            </I18nT>
           </p>
           <p v-else-if="platform === 'ios-other'" class="m-0 text-chip leading-6 text-text-secondary">
-            For the best experience, open in <strong>Safari</strong>, tap
-            <Share :size="14" class="mx-[0.1rem] inline-block align-middle text-gold" />
-            then <strong>"Add to Home Screen"</strong>
+            <I18nT keypath="pwa.install.iosOther">
+              <template #safari><strong>Safari</strong></template>
+              <template #icon><Share :size="14" class="mx-[0.1rem] inline-block align-middle text-gold" /></template>
+              <template #action><strong>"{{ t('pwa.install.addToHomeScreen') }}"</strong></template>
+            </I18nT>
           </p>
           <p v-else-if="platform === 'android'" class="m-0 text-chip leading-6 text-text-secondary">
-            Tap the <strong>menu</strong>
-            <MoreVertical :size="14" class="mx-[0.1rem] inline-block align-middle text-gold" />
-            then <strong>"Add to Home Screen"</strong> or <strong>"Install App"</strong>
+            <I18nT keypath="pwa.install.android">
+              <template #menu><strong>{{ t('pwa.install.menu') }}</strong></template>
+              <template #icon><MoreVertical :size="14" class="mx-[0.1rem] inline-block align-middle text-gold" /></template>
+              <template #action><strong>"{{ t('pwa.install.addToHomeScreen') }}"</strong></template>
+              <template #install><strong>"{{ t('pwa.install.installApp') }}"</strong></template>
+            </I18nT>
           </p>
           <p v-else class="m-0 text-chip leading-6 text-text-secondary">
-            Use your browser menu to <strong>"Install"</strong> or <strong>"Add to Home Screen"</strong>
+            <I18nT keypath="pwa.install.otherBrowser">
+              <template #install><strong>"{{ t('pwa.install.install') }}"</strong></template>
+              <template #action><strong>"{{ t('pwa.install.addToHomeScreen') }}"</strong></template>
+            </I18nT>
           </p>
         </div>
-        <button class="shrink-0 rounded-sm p-1 text-text-secondary transition-colors hover:bg-gold-glow hover:text-text-primary" @click="dismiss" aria-label="Dismiss">
+        <button class="shrink-0 rounded-sm p-1 text-text-secondary transition-colors hover:bg-gold-glow hover:text-text-primary" @click="dismiss" :aria-label="t('common.dismiss')">
           <X :size="18" />
         </button>
       </div>
@@ -48,6 +60,8 @@
 import { ref, onMounted } from 'vue'
 import { Download, X, Share, MoreVertical, MoreHorizontal } from 'lucide-vue-next'
 import { usePwa } from '@/composables/usePwa'
+import I18nT from '@/components/I18nT.vue'
+import { t } from '@/i18n'
 
 const DISMISS_KEY = 'pwa-install-dismissed'
 

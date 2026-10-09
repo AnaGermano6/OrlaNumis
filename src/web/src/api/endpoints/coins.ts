@@ -92,6 +92,21 @@ export interface MatchCategoryEraResponse {
 export const matchCategoryEra = (type: 'category' | 'era', value: string) =>
   api.post<MatchCategoryEraResponse>('/coins/match-category-era', { type, value })
 
+export interface CoinOptionLabels {
+  categories: Record<string, string>
+  eras: Record<string, string>
+}
+
+export interface CoinOptionsResponse {
+  categories: string[]
+  eras: string[]
+  /** Admin-defined display names keyed by locale (e.g. `pt-PT`), then by stored value. */
+  labels: Record<string, CoinOptionLabels>
+}
+
+/** Configured category and era choices; readable by every signed-in user. */
+export const getCoinOptions = () => api.get<CoinOptionsResponse>('/coin-options')
+
 export async function createIntakeDraft(images: File[], coinCardImage?: File) {
   const formData = new FormData()
   for (const image of images) {

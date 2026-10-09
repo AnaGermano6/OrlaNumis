@@ -46,6 +46,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.POST("/coins", coinHandler.Create)
 		protected.POST("/coins/:id/duplicate", d.writeRateLimit, coinHandler.Duplicate)
 		protected.POST("/coins/match-category-era", coinHandler.MatchCategoryEra)
+		protected.GET("/coin-options", coinHandler.GetCoinOptions)
 		protected.POST("/coins/intake/draft", d.writeRateLimit, coinIntakeHandler.CreateDraft)
 		protected.POST("/coins/intake/commit", d.writeRateLimit, coinIntakeHandler.CommitDraft)
 		protected.GET("/quick-capture/drafts", quickCaptureHandler.ListDrafts)

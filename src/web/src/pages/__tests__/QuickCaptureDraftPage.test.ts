@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { withEnglishCopy } from '@/test/i18nSource'
 import { createPinia, setActivePinia } from 'pinia'
 import QuickCaptureDraftPage from '../QuickCaptureDraftPage.vue'
 import {
@@ -35,7 +36,7 @@ vi.mock('@/api/client', () => ({
 }))
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const source = fs.readFileSync(path.resolve(__dirname, '../QuickCaptureDraftPage.vue'), 'utf8')
+const source = withEnglishCopy(fs.readFileSync(path.resolve(__dirname, '../QuickCaptureDraftPage.vue'), 'utf8'))
 
 function draft(overrides: Partial<QuickCaptureDraft> = {}): QuickCaptureDraft {
   return {

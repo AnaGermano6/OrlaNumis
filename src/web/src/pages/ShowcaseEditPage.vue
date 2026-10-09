@@ -2,45 +2,45 @@
   <div class="container overflow-x-hidden">
     <div v-if="loading" class="loading-overlay">
       <div class="spinner"></div>
-      <p>Loading showcase...</p>
+      <p>{{ t('showcases.loadingOne') }}</p>
     </div>
 
     <template v-else-if="showcase">
       <DesktopPageContext :title="showcase.title">
         <template #actions>
-          <AppIconButton to="/showcases" title="Back to Showcases"><ArrowLeft :size="20" /></AppIconButton>
-          <AppIconButton :disabled="saving" title="Save Coins" @click="saveCoins"><Save :size="20" /></AppIconButton>
+          <AppIconButton to="/showcases" :title="t('showcases.back')"><ArrowLeft :size="20" /></AppIconButton>
+          <AppIconButton :disabled="saving" :title="t('showcases.saveCoins')" @click="saveCoins"><Save :size="20" /></AppIconButton>
         </template>
         <div class="page-header items-start gap-4">
           <div class="min-w-0 flex-1">
-            <router-link to="/showcases" class="mb-2 inline-flex items-center gap-1 text-body text-text-secondary no-underline transition-colors hover:text-gold"><ArrowLeft :size="16" /> Showcases</router-link>
+            <router-link to="/showcases" class="mb-2 inline-flex items-center gap-1 text-body text-text-secondary no-underline transition-colors hover:text-gold"><ArrowLeft :size="16" /> {{ t('nav.showcases') }}</router-link>
             <div v-if="!editingTitle" class="group flex cursor-pointer items-center gap-2" @click="startEditTitle">
               <h1>{{ showcase.title }}</h1>
               <Pencil :size="14" class="text-text-secondary opacity-40 transition-opacity group-hover:opacity-100" />
             </div>
             <div v-else class="flex flex-wrap items-center gap-2">
               <input ref="titleInput" v-model="editTitle" type="text" class="form-input min-w-0 flex-1 text-lg font-bold" @keyup.enter="saveTitle" @keyup.escape="editingTitle = false" />
-              <button class="btn btn-primary btn-sm" @click="saveTitle">Save</button>
-              <button class="btn btn-secondary btn-sm" @click="editingTitle = false">Cancel</button>
+              <button class="btn btn-primary btn-sm" @click="saveTitle">{{ t('common.save') }}</button>
+              <button class="btn btn-secondary btn-sm" @click="editingTitle = false">{{ t('common.cancel') }}</button>
             </div>
             <div v-if="!editingDesc" class="group mt-1 flex cursor-pointer items-center gap-1.5" @click="startEditDesc">
-              <p class="m-0 text-body text-text-secondary">{{ showcase.description || 'No description' }}</p>
+              <p class="m-0 text-body text-text-secondary">{{ showcase.description || t('showcases.noDescription') }}</p>
               <Pencil :size="12" class="text-text-secondary opacity-40 transition-opacity group-hover:opacity-100" />
             </div>
             <div v-else class="mt-1">
               <textarea v-model="editDesc" rows="2" class="form-input" @keyup.escape="editingDesc = false"></textarea>
               <div class="mt-1.5 flex gap-2">
-                <button class="btn btn-primary btn-sm" @click="saveDesc">Save</button>
-                <button class="btn btn-secondary btn-sm" @click="editingDesc = false">Cancel</button>
+                <button class="btn btn-primary btn-sm" @click="saveDesc">{{ t('common.save') }}</button>
+                <button class="btn btn-secondary btn-sm" @click="editingDesc = false">{{ t('common.cancel') }}</button>
               </div>
             </div>
           </div>
           <button class="btn btn-primary" :disabled="saving" @click="saveCoins">
-            <Save :size="16" /> {{ saving ? 'Saving...' : 'Save Coins' }}
+            <Save :size="16" /> {{ saving ? t('common.saving') : t('showcases.saveCoins') }}
           </button>
         </div>
         <template #desktop>
-          <p class="mb-4 text-body text-text-secondary">{{ showcase.description || 'No description' }}</p>
+          <p class="mb-4 text-body text-text-secondary">{{ showcase.description || t('showcases.noDescription') }}</p>
         </template>
       </DesktopPageContext>
 
@@ -49,12 +49,12 @@
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div class="card flex max-h-[70vh] flex-col overflow-hidden p-4">
           <div class="mb-3 flex items-center justify-between gap-3">
-            <h2 class="m-0 text-md text-text-primary">Your Collection</h2>
-            <span class="text-chip text-text-secondary">{{ availableCoins.length }} coins</span>
+            <h2 class="m-0 text-md text-text-primary">{{ t('showcases.yourCollection') }}</h2>
+            <span class="text-chip text-text-secondary">{{ t('common.coinCount', { count: availableCoins.length }) }}</span>
           </div>
           <div class="mb-3 flex items-center gap-2 rounded-sm border border-border-subtle bg-card px-3 py-2 text-text-secondary">
             <Search :size="16" />
-            <input v-model="search" type="text" placeholder="Search coins..." class="min-w-0 flex-1 bg-transparent text-base text-text-primary outline-none" />
+            <input v-model="search" type="text" :placeholder="t('showcases.searchPlaceholder')" class="min-w-0 flex-1 bg-transparent text-base text-text-primary outline-none" />
           </div>
           <div class="flex flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto">
             <div
@@ -72,19 +72,19 @@
               />
               <div v-else class="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-white/5 text-text-secondary"><Coins :size="16" /></div>
               <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
-                <span class="truncate text-base font-medium text-text-primary">{{ coin.name ?? 'Untitled' }}</span>
-                <span class="truncate text-sm text-text-secondary">{{ [coin.era, coin.category].filter(Boolean).join(' / ') }}</span>
+                <span class="truncate text-base font-medium text-text-primary">{{ coin.name ?? t('showcases.untitled') }}</span>
+                <span class="truncate text-sm text-text-secondary">{{ [eraLabel(coin.era), categoryLabel(coin.category)].filter(Boolean).join(' / ') }}</span>
               </div>
               <Plus :size="16" class="shrink-0 text-text-secondary" />
             </div>
-            <div v-if="!filteredCollection.length" class="py-8 text-center text-base text-text-secondary">No matching coins</div>
+            <div v-if="!filteredCollection.length" class="py-8 text-center text-base text-text-secondary">{{ t('showcases.noMatching') }}</div>
           </div>
         </div>
 
         <div class="card flex max-h-[70vh] flex-col overflow-hidden p-4">
           <div class="mb-3 flex items-center justify-between gap-3">
-            <h2 class="m-0 text-md text-text-primary">Showcase Coins</h2>
-            <span class="text-chip text-text-secondary">{{ selectedCoinIds.length }} selected</span>
+            <h2 class="m-0 text-md text-text-primary">{{ t('showcases.showcaseCoins') }}</h2>
+            <span class="text-chip text-text-secondary">{{ t('showcases.selected', { count: selectedCoinIds.length }) }}</span>
           </div>
           <div class="flex flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto">
             <div
@@ -102,17 +102,17 @@
                 />
                 <div v-else class="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-white/5 text-text-secondary"><Coins :size="16" /></div>
                 <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
-                  <span class="truncate text-base font-medium text-text-primary">{{ coinMap.get(coinId)?.name ?? 'Untitled' }}</span>
-                  <span class="truncate text-sm text-text-secondary">{{ [coinMap.get(coinId)?.era, coinMap.get(coinId)?.category].filter(Boolean).join(' / ') }}</span>
+                  <span class="truncate text-base font-medium text-text-primary">{{ coinMap.get(coinId)?.name ?? t('showcases.untitled') }}</span>
+                  <span class="truncate text-sm text-text-secondary">{{ [eraLabel(coinMap.get(coinId)?.era), categoryLabel(coinMap.get(coinId)?.category)].filter(Boolean).join(' / ') }}</span>
                 </div>
               </template>
-              <span v-else class="min-w-0 flex-1 truncate text-base font-medium text-text-primary">Coin #{{ coinId }}</span>
-              <button class="inline-flex shrink-0 rounded-sm p-1 text-text-secondary transition-colors hover:text-error-bg" @click="removeCoin(coinId)" title="Remove">
+              <span v-else class="min-w-0 flex-1 truncate text-base font-medium text-text-primary">{{ t('showcases.coinNumber', { id: coinId }) }}</span>
+              <button class="inline-flex shrink-0 rounded-sm p-1 text-text-secondary transition-colors hover:text-error-bg" @click="removeCoin(coinId)" :title="t('common.remove')">
                 <X :size="16" />
               </button>
             </div>
             <div v-if="!selectedCoinIds.length" class="py-8 text-center text-base text-text-secondary">
-              Click coins from your collection to add them
+              {{ t('showcases.clickToAdd') }}
             </div>
           </div>
         </div>
@@ -120,8 +120,8 @@
     </template>
 
     <div v-else class="empty-state">
-      <h3>Showcase not found</h3>
-      <router-link to="/showcases" class="btn btn-secondary">Back to Showcases</router-link>
+      <h3>{{ t('showcases.notFound') }}</h3>
+      <router-link to="/showcases" class="btn btn-secondary">{{ t('showcases.back') }}</router-link>
     </div>
   </div>
 </template>
@@ -134,6 +134,8 @@ import { getShowcase, updateShowcase, setShowcaseCoins, getCoins } from '@/api/c
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 interface CoinImage {
   id: number
@@ -247,7 +249,7 @@ async function saveCoins() {
   saving.value = true
   try {
     await setShowcaseCoins(showcase.value.id, selectedCoinIds.value)
-    savedMessage.value = 'Showcase coins saved'
+    savedMessage.value = t('showcases.saved')
     setTimeout(() => { savedMessage.value = '' }, 2000)
   } finally {
     saving.value = false

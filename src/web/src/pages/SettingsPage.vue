@@ -1,13 +1,13 @@
 <template>
   <PullToRefresh :on-refresh="handleRefresh">
     <div class="container">
-      <DesktopPageContext title="Settings">
+      <DesktopPageContext :title="t('nav.settings')">
         <div class="page-header !flex-nowrap !items-center">
-          <h1>Settings</h1>
+          <h1>{{ t('nav.settings') }}</h1>
           <div v-if="isPwa" class="relative">
             <button class="btn btn-secondary btn-sm gap-1.5 text-body" @click="settingsMenuOpen = !settingsMenuOpen">
               <component :is="tabIcons[activeTab]" :size="16" />
-              {{ tabs.find(t => t.id === activeTab)?.label }}
+              {{ tabs.find(tab => tab.id === activeTab)?.label }}
               <Menu :size="16" />
             </button>
             <Transition
@@ -131,6 +131,7 @@ import SettingsConnectionsSection from '@/components/settings/SettingsConnection
 import CollectorProfileSection from '@/components/settings/CollectorProfileSection.vue'
 import { User, Palette, Database, MessageSquare, HelpCircle, Wrench, Menu, ShieldCheck, Archive, KeyRound, Truck, Link } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
+import { t, type MessageKey } from '@/i18n'
 
 const tabIcons: Record<string, Component> = {
   account: User,
@@ -162,36 +163,25 @@ const backupsSection = ref<InstanceType<typeof SettingsBackupsSection> | null>(n
 const apiKeysSection = ref<InstanceType<typeof SettingsApiKeysSection> | null>(null)
 const shipmentsSection = ref<InstanceType<typeof SettingsShipmentsSection> | null>(null)
 
-const baseTabs = [
-  { id: 'account', label: 'Account' },
-  { id: 'connections', label: 'Connections' },
-  { id: 'appearance', label: 'Appearance' },
-  { id: 'data', label: 'Data' },
-  { id: 'apikeys', label: 'Keys' },
-  { id: 'tools', label: 'Tools' },
-  { id: 'conversations', label: 'Conversations' },
-  { id: 'shipments', label: 'Shipments' },
-  { id: 'backups', label: 'Backups' },
-  { id: 'help', label: 'Help' },
-]
-const validTabIds = baseTabs.map(t => t.id).concat('admin')
+const tabLabelKeys: Record<string, MessageKey> = {
+  account: 'settings.tabs.account',
+  connections: 'settings.tabs.connections',
+  appearance: 'settings.tabs.appearance',
+  data: 'settings.tabs.data',
+  apikeys: 'settings.tabs.apikeys',
+  tools: 'settings.tabs.tools',
+  conversations: 'settings.tabs.conversations',
+  shipments: 'settings.tabs.shipments',
+  backups: 'settings.tabs.backups',
+  help: 'settings.tabs.help',
+  admin: 'nav.admin',
+}
+const baseTabIds = ['account', 'connections', 'appearance', 'data', 'apikeys', 'tools', 'conversations', 'shipments', 'backups', 'help']
+const validTabIds = baseTabIds.concat('admin')
+// In the installed app, admins reach Admin through the settings menu, right after Account.
 const tabs = computed(() => {
-  if (isPwa && auth.isAdmin) {
-    return [
-      { id: 'account', label: 'Account' },
-      { id: 'admin', label: 'Admin' },
-      { id: 'connections', label: 'Connections' },
-      { id: 'appearance', label: 'Appearance' },
-      { id: 'data', label: 'Data' },
-      { id: 'apikeys', label: 'Keys' },
-      { id: 'tools', label: 'Tools' },
-      { id: 'conversations', label: 'Conversations' },
-      { id: 'shipments', label: 'Shipments' },
-      { id: 'backups', label: 'Backups' },
-      { id: 'help', label: 'Help' },
-    ]
-  }
-  return baseTabs
+  const ids = isPwa && auth.isAdmin ? ['account', 'admin', ...baseTabIds.slice(1)] : baseTabIds
+  return ids.map((id) => ({ id, label: t(tabLabelKeys[id]!) }))
 })
 
 function applyTabFromRoute(tabValue: unknown) {
@@ -313,17 +303,17 @@ async function openConversation(id: number) {
     }
     showChat.value = true
   } catch {
-    await showAlert('Failed to load conversation', { title: 'Error' })
+    await showAlert(t('settings.conversations.loadFailed'), { title: t('common.error') })
   }
 }
 
 async function handleDeleteConversation(id: number) {
-  if (!await showConfirm('Delete this saved conversation?', { title: 'Delete Conversation', variant: 'danger' })) return
+  if (!await showConfirm(t('settings.conversations.confirmDelete'), { title: t('settings.conversations.deleteTitle'), variant: 'danger' })) return
   try {
     await deleteConversation(id)
     conversations.value = conversations.value.filter(c => c.id !== id)
   } catch {
-    await showAlert('Failed to delete conversation', { title: 'Error' })
+    await showAlert(t('settings.conversations.deleteFailed'), { title: t('common.error') })
   }
 }
 

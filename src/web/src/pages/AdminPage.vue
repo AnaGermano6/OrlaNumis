@@ -1,14 +1,14 @@
 <template>
   <div class="container">
-    <DesktopPageContext title="Admin">
+    <DesktopPageContext :title="t('admin.title')">
       <div class="page-header">
-        <h1>Admin</h1>
+        <h1>{{ t('admin.title') }}</h1>
       </div>
     </DesktopPageContext>
 
     <div v-if="!auth.isAdmin" class="empty-state">
-      <h3>Access Denied</h3>
-      <p>Admin privileges required</p>
+      <h3>{{ t('admin.accessDenied') }}</h3>
+      <p>{{ t('admin.adminRequired') }}</p>
     </div>
 
     <div v-else class="mx-auto grid max-w-[1200px] gap-6 md:grid-cols-[minmax(250px,300px)_minmax(0,1fr)]">
@@ -29,7 +29,7 @@
             >
               <span class="inline-flex items-center gap-[0.65rem]">
                 <component :is="tabIcons[tab.id]" :size="18" />
-                <span>{{ tab.label }}</span>
+                <span>{{ t(tab.labelKey) }}</span>
               </span>
               <ChevronRight :size="18" class="opacity-65" />
             </button>
@@ -139,11 +139,15 @@
           v-if="activeTab === 'properties'"
           :category-options="settings.CoinCategories ?? ''"
           :era-options="settings.CoinEras ?? ''"
+          :category-labels-pt="settings.CoinCategoryLabelsPtPT ?? ''"
+          :era-labels-pt="settings.CoinEraLabelsPtPT ?? ''"
           :saving="settingsSaving"
           :msg="settingsMsg"
           :error="settingsError"
           @update:category-options="settings.CoinCategories = $event"
           @update:era-options="settings.CoinEras = $event"
+          @update:category-labels-pt="settings.CoinCategoryLabelsPtPT = $event"
+          @update:era-labels-pt="settings.CoinEraLabelsPtPT = $event"
           @save="saveSettings"
         />
 
@@ -242,12 +246,13 @@ import AdminSecuritySection from '@/components/admin/AdminSecuritySection.vue'
 import AdminOIDCSection from '@/components/admin/AdminOIDCSection.vue'
 import { Users, Cpu, Wrench, ScrollText, CalendarClock, Activity, ChevronRight, BookMarked, Settings2, ShieldAlert, KeyRound } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
+import { t, type MessageKey, intlLocale } from '@/i18n'
 
 type AdminTabId = 'users' | 'ai' | 'system' | 'properties' | 'catalogs' | 'oidc' | 'security' | 'schedules' | 'health' | 'logs'
 type AdminGroupId = 'configuration' | 'operations'
 type AdminTab = {
   id: AdminTabId
-  label: string
+  labelKey: MessageKey
   group: AdminGroupId
   aliases?: string[]
 }
@@ -266,21 +271,21 @@ const tabIcons: Record<AdminTabId, Component> = {
 }
 
 const tabs: AdminTab[] = [
-  { id: 'users', label: 'Users', group: 'configuration' },
-  { id: 'ai', label: 'AI', group: 'configuration' },
-  { id: 'system', label: 'System', group: 'configuration' },
-  { id: 'properties', label: 'Coin Properties', group: 'configuration' },
-  { id: 'catalogs', label: 'Catalogs', group: 'configuration' },
-  { id: 'oidc', label: 'OIDC Login', group: 'configuration' },
-  { id: 'security', label: 'Security', group: 'operations' },
-  { id: 'schedules', label: 'Schedules', group: 'operations', aliases: ['schedule'] },
-  { id: 'health', label: 'Health', group: 'operations' },
-  { id: 'logs', label: 'Logs', group: 'operations', aliases: ['log'] },
+  { id: 'users', labelKey: 'admin.tabs.users', group: 'configuration' },
+  { id: 'ai', labelKey: 'admin.tabs.ai', group: 'configuration' },
+  { id: 'system', labelKey: 'admin.tabs.system', group: 'configuration' },
+  { id: 'properties', labelKey: 'admin.tabs.properties', group: 'configuration' },
+  { id: 'catalogs', labelKey: 'admin.tabs.catalogs', group: 'configuration' },
+  { id: 'oidc', labelKey: 'admin.tabs.oidc', group: 'configuration' },
+  { id: 'security', labelKey: 'admin.tabs.security', group: 'operations' },
+  { id: 'schedules', labelKey: 'admin.tabs.schedules', group: 'operations', aliases: ['schedule'] },
+  { id: 'health', labelKey: 'admin.tabs.health', group: 'operations' },
+  { id: 'logs', labelKey: 'admin.tabs.logs', group: 'operations', aliases: ['log'] },
 ]
 const DEFAULT_TAB: AdminTabId = 'users'
-const groupLabels: Record<AdminGroupId, string> = {
-  configuration: 'Configuration',
-  operations: 'Operations',
+const groupLabels: Record<AdminGroupId, MessageKey> = {
+  configuration: 'admin.groups.configuration',
+  operations: 'admin.groups.operations',
 }
 const tabAliasMap = new Map<string, AdminTabId>()
 for (const tab of tabs) {
@@ -309,7 +314,7 @@ const buildDate = computed(() => {
   const raw = import.meta.env.VITE_BUILD_DATE
   if (!raw) return ''
   try {
-    return new Date(raw).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+    return new Date(raw).toLocaleDateString(intlLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
   } catch {
     return raw
   }
@@ -319,12 +324,12 @@ const activeTab = ref<AdminTabId>(DEFAULT_TAB)
 const tabGroups = computed(() => ([
   {
     id: 'configuration',
-    label: groupLabels.configuration,
+    label: t(groupLabels.configuration),
     items: tabs.filter(tab => tab.group === 'configuration'),
   },
   {
     id: 'operations',
-    label: groupLabels.operations,
+    label: t(groupLabels.operations),
     items: tabs.filter(tab => tab.group === 'operations'),
   },
 ]))

@@ -12,17 +12,17 @@
         @click="emit('prev')"
       >
         <ChevronLeft :size="16" />
-        Prev
+        {{ t('common.prev') }}
       </button>
       <span class="min-w-[120px] flex-none text-center text-base text-text-primary">
-        Tray {{ drawerIndex + 1 }} of {{ totalDrawers }}
+        {{ t('trays.trayOf', { current: drawerIndex + 1, total: totalDrawers }) }}
       </span>
       <button
         class="inline-flex items-center gap-[0.35rem] whitespace-nowrap rounded-full border border-border-accent bg-card px-5 py-2 text-body text-text-secondary transition-all hover:bg-[var(--accent-gold-dim)] hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30 max-[575px]:px-3 max-[575px]:py-[0.45rem]"
         :disabled="drawerIndex >= totalDrawers - 1"
         @click="emit('next')"
       >
-        Next
+        {{ t('common.next') }}
         <ChevronRight :size="16" />
       </button>
     </div>
@@ -31,6 +31,7 @@
 
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 interface Props {
   drawerIndex: number

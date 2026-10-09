@@ -14,7 +14,7 @@
 
       <div v-if="!providerConfigured" class="shrink-0 flex items-center gap-2 border-b border-status-warning-border bg-status-warning-bg px-4 py-3 text-body text-warning">
         <AlertTriangle :size="16" />
-        <span>AI provider not configured. <a href="/admin" class="font-semibold text-gold underline" @click="$emit('close')">Go to Admin Settings</a> to select Anthropic or Ollama.</span>
+        <span><I18nT keypath="chat.providerMissing"><template #link><a href="/admin" class="font-semibold text-gold underline" @click="$emit('close')">{{ t('chat.goToAdmin') }}</a></template></I18nT></span>
       </div>
 
       <div ref="messagesEl" class="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
@@ -44,7 +44,7 @@
             class="-mt-2 flex max-w-[85%] justify-start self-start"
           >
             <button class="btn btn-xs btn-ghost" @click="openNoteDraft(msg)">
-              Save to Notes
+              {{ t('chat.saveToNotes') }}
             </button>
           </div>
 
@@ -67,7 +67,7 @@
 
           <div v-if="msg.role === 'assistant' && msg.collection" class="-mt-[0.3rem] mb-[0.3rem] flex max-w-[85%] flex-col gap-[0.6rem] self-start rounded-sm border border-border-subtle bg-card p-3">
             <div v-if="msg.collection.kind === 'proposal' && msg.collection.proposal">
-              <div class="section-label">Pending collection update</div>
+              <div class="section-label">{{ t('chat.pendingUpdate') }}</div>
               <div class="text-body text-text-primary">#{{ msg.collection.proposal.coinId }} {{ msg.collection.proposal.coinName }}</div>
               <div class="flex flex-col gap-[0.35rem]">
                 <div v-for="field in msg.collection.proposal.changedFields" :key="field" class="flex justify-between gap-3 text-chip text-text-secondary">
@@ -75,15 +75,15 @@
                   <strong class="font-medium text-gold">{{ formatProposalChange(msg.collection, field) }}</strong>
                 </div>
               </div>
-              <div class="text-sm text-text-muted">Expires {{ formatExpiry(msg.collection.proposal.expiresAt) }}</div>
+              <div class="text-sm text-text-muted">{{ t('chat.expires', { date: formatExpiry(msg.collection.proposal.expiresAt) }) }}</div>
               <div class="flex gap-2">
-                <button class="btn btn-xs btn-primary" @click="confirmCollectionProposal(msg)">Confirm update</button>
-                <button class="btn btn-xs btn-ghost" @click="cancelCollectionProposalMessage(msg)">Cancel</button>
+                <button class="btn btn-xs btn-primary" @click="confirmCollectionProposal(msg)">{{ t('chat.confirmUpdate') }}</button>
+                <button class="btn btn-xs btn-ghost" @click="cancelCollectionProposalMessage(msg)">{{ t('common.cancel') }}</button>
               </div>
             </div>
 
             <div v-else-if="msg.collection.kind === 'disambiguation' && msg.collection.disambiguation">
-              <div class="section-label">Choose a coin</div>
+              <div class="section-label">{{ t('chat.chooseCoin') }}</div>
               <div class="flex flex-wrap gap-[0.35rem]">
                 <button
                   v-for="candidate in msg.collection.disambiguation.candidates"
@@ -98,10 +98,10 @@
 
             <div v-else-if="msg.collection.kind === 'read_result'">
               <div v-if="msg.collection.readResult?.aggregate" class="flex flex-wrap gap-[0.35rem]">
-                <span class="chip-sm">Active: {{ msg.collection.readResult.aggregate.totalCoins }}</span>
-                <span class="chip-sm">Wishlist: {{ msg.collection.readResult.aggregate.totalWishlist }}</span>
-                <span class="chip-sm">Sold: {{ msg.collection.readResult.aggregate.totalSold }}</span>
-                <span class="chip-sm">Value: {{ formatUsd(msg.collection.readResult.aggregate.totalCurrentUsd) }}</span>
+                <span class="chip-sm">{{ t('chat.aggregate.active', { count: msg.collection.readResult.aggregate.totalCoins }) }}</span>
+                <span class="chip-sm">{{ t('chat.aggregate.wishlist', { count: msg.collection.readResult.aggregate.totalWishlist }) }}</span>
+                <span class="chip-sm">{{ t('chat.aggregate.sold', { count: msg.collection.readResult.aggregate.totalSold }) }}</span>
+                <span class="chip-sm">{{ t('chat.aggregate.value', { value: formatUsd(msg.collection.readResult.aggregate.totalCurrentUsd) }) }}</span>
               </div>
               <div v-if="msg.collection.readResult?.coins?.length" class="flex flex-wrap gap-[0.35rem]">
                 <span v-for="coin in msg.collection.readResult.coins" :key="coin.id" class="chip-sm">
@@ -171,29 +171,29 @@
     <div v-if="noteDraftOpen" class="fixed inset-0 z-[1500] flex items-center justify-center bg-black/60 p-4" @click.self="closeNoteDraft">
       <div class="card flex max-h-[88vh] w-full max-w-[760px] flex-col gap-4 overflow-y-auto p-6">
         <div>
-          <span class="section-label">Save markdown note</span>
-          <h2 class="m-0">Review Note</h2>
+          <span class="section-label">{{ t('chat.note.eyebrow') }}</span>
+          <h2 class="m-0">{{ t('chat.note.title') }}</h2>
         </div>
         <form class="flex flex-col gap-4" @submit.prevent="saveNoteDraft">
           <div class="form-group">
-            <label for="noteTitle" class="form-label">Title</label>
+            <label for="noteTitle" class="form-label">{{ t('common.title') }}</label>
             <input id="noteTitle" v-model="noteDraft.title" class="form-input" maxlength="120" required />
           </div>
           <div class="form-group">
-            <label for="noteBody" class="form-label">Markdown</label>
+            <label for="noteBody" class="form-label">{{ t('chat.note.markdown') }}</label>
             <textarea id="noteBody" v-model="noteDraft.body" class="form-input min-h-[220px]" rows="10" required />
           </div>
           <div class="form-group">
-            <span class="form-label">Preview</span>
+            <span class="form-label">{{ t('chat.note.preview') }}</span>
             <div
               class="bubble-content max-h-[260px] overflow-y-auto rounded-sm border border-border-subtle bg-input p-4 text-body leading-[1.7] text-text-secondary"
               v-html="formatMessage(noteDraft.body)"
             ></div>
           </div>
           <div class="flex justify-end gap-2">
-            <button type="button" class="btn btn-secondary" @click="closeNoteDraft">Cancel</button>
+            <button type="button" class="btn btn-secondary" @click="closeNoteDraft">{{ t('common.cancel') }}</button>
             <button type="submit" class="btn btn-primary" :disabled="noteSaving">
-              {{ noteSaving ? 'Saving...' : 'Create Note' }}
+              {{ noteSaving ? t('common.saving') : t('chat.note.create') }}
             </button>
           </div>
         </form>
@@ -211,6 +211,8 @@ import type {
   CoinShow,
 } from '@/types'
 import { AlertTriangle } from 'lucide-vue-next'
+import I18nT from '@/components/I18nT.vue'
+import { t, intlLocale } from '@/i18n'
 import { useCoinSearchChat } from '@/composables/useCoinSearchChat'
 import { createNote, getApiErrorMessage } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
@@ -316,20 +318,20 @@ async function addCopilotDealerToWishlist(
 ) {
   if (disposed || dealerActionPending) return
   if (!isEligibleCopilotDealerListing(capability, item)) {
-    await showAlert('This listing is no longer eligible for Add to Wishlist.')
+    await showAlert(t('chat.listingIneligible'))
     return
   }
   const runId = copilotRun.value?.id
   const uncertainty = copilotDealerListingUncertainty(item)
   dealerActionPending = true
   try {
-    if (uncertainty && !await showConfirm(`${item.title}: ${uncertainty} Save it to your wishlist anyway?`, {
-      title: 'Confirm uncertain listing',
-      confirmLabel: 'Add to Wishlist',
+    if (uncertainty && !await showConfirm(t('chat.uncertainConfirm', { title: item.title, uncertainty }), {
+      title: t('chat.uncertainTitle'),
+      confirmLabel: t('chat.suggestions.addToWishlist'),
     })) return
     if (disposed || copilotRun.value?.id !== runId) return
     if (!isEligibleCopilotDealerListing(capability, item)) {
-      await showAlert('This listing is no longer eligible for Add to Wishlist.')
+      await showAlert(t('chat.listingIneligible'))
       return
     }
     await addToWishlist(copilotDealerListingToSuggestion(item), key)
@@ -357,14 +359,14 @@ function formatProposalChange(collection: { proposal?: { changes: Record<string,
   const value = collection.proposal?.changes?.[field]
   if (typeof value === 'number') return formatUsd(value)
   if (Array.isArray(value)) return value.join(', ')
-  if (value === null || value === undefined) return 'n/a'
+  if (value === null || value === undefined) return t('chat.na')
   return String(value)
 }
 
 function formatExpiry(value: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString()
+  return date.toLocaleString(intlLocale())
 }
 
 function formatUsd(value: number): string {
@@ -390,19 +392,19 @@ function closeNoteDraft() {
 }
 
 async function saveNoteDraft() {
-  const title = noteDraft.value.title.trim() || 'Agentic Agenda Note'
+  const title = noteDraft.value.title.trim() || t('chat.note.defaultTitle')
   const body = noteDraft.value.body.trim()
   if (!body) {
-    await showAlert('Add note content before saving.', { title: 'Note Required' })
+    await showAlert(t('chat.note.required'), { title: t('chat.note.requiredTitle') })
     return
   }
   noteSaving.value = true
   try {
     await createNote({ title, body })
     noteDraftOpen.value = false
-    await showAlert('The agenda result was saved to Notes.', { title: 'Note Created' })
+    await showAlert(t('chat.note.saved'), { title: t('chat.note.savedTitle') })
   } catch (error) {
-    await showAlert(getApiErrorMessage(error) || 'Failed to create note.', { title: 'Save Failed' })
+    await showAlert(getApiErrorMessage(error) || t('chat.note.failed'), { title: t('chat.note.failedTitle') })
   } finally {
     noteSaving.value = false
   }
@@ -410,8 +412,8 @@ async function saveNoteDraft() {
 
 function noteTitleFromBody(body: string): string {
   const firstHeading = body.split('\n').find((line) => line.trim().startsWith('#'))
-  const source = firstHeading?.replace(/^#+\s*/, '') || body.split('\n').find((line) => line.trim()) || 'Agentic Agenda Note'
-  return source.replace(/[*_`[\]()]/g, '').trim().slice(0, 120) || 'Agentic Agenda Note'
+  const source = firstHeading?.replace(/^#+\s*/, '') || body.split('\n').find((line) => line.trim()) || t('chat.note.defaultTitle')
+  return source.replace(/[*_`[\]()]/g, '').trim().slice(0, 120) || t('chat.note.defaultTitle')
 }
 </script>
 

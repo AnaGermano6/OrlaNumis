@@ -1,12 +1,12 @@
 <template>
   <section class="mb-6 rounded-md border border-border-subtle bg-card p-6">
     <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <h2>Value Trend</h2>
+      <h2>{{ t('coinDetail.sections.valuation.title') }}</h2>
       <select :value="range" class="rounded-sm border border-border-subtle bg-input px-[0.6rem] py-[0.4rem] text-base text-text-primary" @change="$emit('update:range', ($event.target as HTMLSelectElement).value)">
-        <option value="1m">1 month</option>
-        <option value="3m">3 months</option>
-        <option value="1y">1 year</option>
-        <option value="all">All</option>
+        <option value="1m">{{ t('sets.trend.range1m') }}</option>
+        <option value="3m">{{ t('sets.trend.range3m') }}</option>
+        <option value="1y">{{ t('sets.trend.range1y') }}</option>
+        <option value="all">{{ t('stats.value.timeframeAll') }}</option>
       </select>
     </div>
     <div v-if="snapshots.length" class="flex flex-col gap-2">
@@ -19,7 +19,7 @@
         <strong class="font-semibold text-gold">${{ snapshot.totalValue.toFixed(2) }}</strong>
       </div>
     </div>
-    <p v-else class="m-0 text-body text-text-secondary">No snapshots yet. Capture one to start tracking trends.</p>
+    <p v-else class="m-0 text-body text-text-secondary">{{ t('sets.trend.empty') }}</p>
     <div v-if="$slots.actions" class="mt-4">
       <slot name="actions" />
     </div>
@@ -28,6 +28,7 @@
 
 <script setup lang="ts">
 import type { CoinSetSnapshot } from '@/types'
+import { t, intlLocale } from '@/i18n'
 
 defineProps<{
   snapshots: CoinSetSnapshot[]
@@ -39,6 +40,6 @@ defineEmits<{
 }>()
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString()
+  return new Date(value).toLocaleDateString(intlLocale())
 }
 </script>

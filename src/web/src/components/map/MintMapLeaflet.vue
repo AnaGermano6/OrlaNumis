@@ -1,5 +1,5 @@
 <template>
-  <section class="mint-map-card card" aria-label="Mint map">
+  <section class="mint-map-card card" :aria-label="t('map.mapLabel')">
     <div ref="mapElement" class="mint-map-leaflet" data-testid="mint-map-leaflet"></div>
   </section>
 </template>
@@ -16,6 +16,7 @@ import 'leaflet/dist/leaflet.css'
 import * as L from 'leaflet'
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { MintGroup } from '@/utils/mintMap'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   groups: MintGroup[]
@@ -31,7 +32,7 @@ let map: L.Map | null = null
 let markerLayer: L.LayerGroup | null = null
 
 function markerLabel(group: MintGroup): string {
-  return `${group.mint.displayName}: ${group.count} ${group.count === 1 ? 'coin' : 'coins'}`
+  return t('map.pinLabel', { name: group.mint.displayName, count: group.count })
 }
 
 function renderMarkers() {

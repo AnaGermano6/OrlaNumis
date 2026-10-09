@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -128,6 +129,62 @@ func (h *CoinHandler) MatchCategoryEra(c *gin.Context) {
 
 	match, matched := services.MatchKnownValue(req.Value, known)
 	c.JSON(http.StatusOK, MatchCategoryEraResponse{Match: match, Matched: matched})
+}
+
+// CoinOptionLabels holds the display names an admin set for stored category
+// and era values in one interface language, keyed by the stored value.
+type CoinOptionLabels struct {
+	Categories map[string]string `json:"categories"`
+	Eras       map[string]string `json:"eras"`
+}
+
+// CoinOptionsResponse lists the admin-configured category and era choices
+// plus their translated display names, keyed by locale (e.g. "pt-PT").
+type CoinOptionsResponse struct {
+	Categories []string                    `json:"categories"`
+	Eras       []string                    `json:"eras"`
+	Labels     map[string]CoinOptionLabels `json:"labels"`
+}
+
+// GetCoinOptions returns the configured category and era choices with their
+// translated display names, so every signed-in user (not only admins, who can
+// read /admin/settings) sees the same vocabulary. Stored values are unchanged;
+// the labels are display-only.
+//
+//	@Summary		Get coin category and era options
+//	@Description	Returns the admin-configured category and era choices with translated display names
+//	@Tags			coins
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	CoinOptionsResponse
+//	@Router			/coin-options [get]
+func (h *CoinHandler) GetCoinOptions(c *gin.Context) {
+	get := func(key string) string {
+		if h.settingsSvc == nil {
+			return ""
+		}
+		return h.settingsSvc.GetSetting(key)
+	}
+	categories := services.SplitSettingList(get(services.SettingCoinCategories))
+	if len(categories) == 0 {
+		categories = services.BuiltInCoinCategoryValues()
+		sort.Strings(categories)
+	}
+	eras := services.SplitSettingList(get(services.SettingCoinEras))
+	if len(eras) == 0 {
+		eras = services.BuiltInCoinEraValues()
+		sort.Strings(eras)
+	}
+	c.JSON(http.StatusOK, CoinOptionsResponse{
+		Categories: categories,
+		Eras:       eras,
+		Labels: map[string]CoinOptionLabels{
+			"pt-PT": {
+				Categories: services.ParseSettingLabelMap(get(services.SettingCoinCategoryLabelsPtPT)),
+				Eras:       services.ParseSettingLabelMap(get(services.SettingCoinEraLabelsPtPT)),
+			},
+		},
+	})
 }
 
 // PurchaseRequest holds optional details when purchasing a wishlist coin.

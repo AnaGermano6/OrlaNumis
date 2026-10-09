@@ -3,47 +3,47 @@
     <div class="flex w-full flex-col items-center gap-3">
       <Bot :size="32" />
       <p class="max-w-[300px] leading-relaxed">
-        Search for coins, find upcoming shows, or get a portfolio analysis -- ask me anything about collecting.
+        {{ t('chat.intro.lead') }}
       </p>
       <p class="m-0 max-w-[340px] text-center text-sm leading-relaxed text-text-muted">
-        Dealer and auction searches use the sources configured by your administrator.
+        {{ t('chat.intro.sources') }}
       </p>
       <div class="mt-2 flex w-full flex-col gap-2">
         <button
           class="w-full rounded-sm border border-border-subtle bg-card px-3 py-2 text-left text-chip text-text-secondary transition-colors hover:border-border-accent hover:text-gold"
-          @click="$emit('send', 'Find current dealer listings and upcoming auctions online for Julius Caesar denarii')"
+          @click="$emit('send', t('chat.intro.caesarPrompt'))"
         >
-          Julius Caesar denarii online
+          {{ t('chat.intro.caesar') }}
         </button>
         <button
           class="w-full rounded-sm border border-border-subtle bg-card px-3 py-2 text-left text-chip text-text-secondary transition-colors hover:border-border-accent hover:text-gold"
-          @click="$emit('send', 'Find current dealer listings for Byzantine gold solidi under $1,000')"
+          @click="$emit('send', t('chat.intro.solidiPrompt'))"
         >
-          Byzantine solidi under $1,000
+          {{ t('chat.intro.solidi') }}
         </button>
         <button
           class="w-full rounded-sm border border-border-subtle bg-card px-3 py-2 text-left text-chip text-text-secondary transition-colors hover:border-border-accent hover:text-gold"
-          @click="$emit('send', 'Which coins in my collection are missing an era?')"
+          @click="$emit('send', t('chat.intro.missingEraPrompt'))"
         >
-          Coins missing an era
+          {{ t('chat.intro.missingEra') }}
         </button>
         <button
           class="w-full rounded-sm border border-border-subtle bg-card px-3 py-2 text-left text-chip text-text-secondary transition-colors hover:border-border-accent hover:text-gold"
-          @click="$emit('send', 'What are the clearest gaps in my coin collection?')"
+          @click="$emit('send', t('chat.intro.gapsPrompt'))"
         >
-          Collection gaps
+          {{ t('chat.intro.gaps') }}
         </button>
         <button
           class="w-full rounded-sm border border-border-subtle bg-card px-3 py-2 text-left text-chip text-text-secondary transition-colors hover:border-border-accent hover:text-gold"
-          @click="$emit('send', 'What is the completed-sale price trend for Athenian owl tetradrachms?')"
+          @click="$emit('send', t('chat.intro.owlPrompt'))"
         >
-          Athenian owl price trend
+          {{ t('chat.intro.owl') }}
         </button>
         <button
           class="w-full rounded-sm border border-border-subtle bg-card px-3 py-2 text-left text-chip text-text-secondary transition-colors hover:border-border-accent hover:text-gold"
           @click="$emit('send-portfolio')"
         >
-          Analyze my portfolio
+          {{ t('chat.intro.portfolio') }}
         </button>
       </div>
     </div>
@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import { Bot } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 defineEmits<{
   send: [message: string]

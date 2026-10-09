@@ -3,8 +3,8 @@
     <div v-if="isOpen" class="camera-modal-overlay" @click="handleBackdropClick">
       <div class="camera-modal" @click.stop>
         <div class="camera-modal-header">
-          <h3>Capture Photo</h3>
-          <button type="button" class="close-btn" @click="handleClose" aria-label="Close">
+          <h3>{{ t('camera.capturePhoto') }}</h3>
+          <button type="button" class="close-btn" @click="handleClose" :aria-label="t('common.close')">
             <X :size="20" />
           </button>
         </div>
@@ -21,7 +21,7 @@
           />
           <div v-if="!cameraStream" class="camera-placeholder">
             <Camera :size="48" />
-            <p>Camera starting...</p>
+            <p>{{ t('camera.starting') }}</p>
           </div>
           <div v-if="cameraError" class="camera-error-banner">{{ cameraError }}</div>
           
@@ -29,7 +29,7 @@
           <div v-if="cameraStream !== null" class="focus-overlay">
             <div class="focus-mask"></div>
             <div class="focus-ring"></div>
-            <p class="focus-instruction">{{ instruction }}</p>
+            <p class="focus-instruction">{{ instruction || t('camera.focusOne') }}</p>
           </div>
         </div>
         
@@ -39,7 +39,7 @@
             class="btn btn-secondary"
             @click="handleClose"
           >
-            Cancel
+            {{ t('common.cancel') }}
           </button>
           <button
             type="button"
@@ -48,7 +48,7 @@
             @click="handleCapture"
           >
             <Camera :size="20" />
-            Capture
+            {{ t('camera.capture') }}
           </button>
         </div>
       </div>
@@ -59,15 +59,14 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { Camera, X } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 const props = withDefaults(
   defineProps<{
     isOpen: boolean
     instruction?: string
   }>(),
-  {
-    instruction: 'Focus one coin in the circle',
-  }
+  {}
 )
 
 const emit = defineEmits<{
@@ -89,7 +88,7 @@ const cameraReady = computed(() => {
 async function startCamera() {
   if (cameraStream.value) return
   if (!navigator.mediaDevices?.getUserMedia) {
-    cameraError.value = 'Camera access is unavailable on this device.'
+    cameraError.value = t('camera.errors.unavailableDevice')
     return
   }
   
@@ -103,7 +102,7 @@ async function startCamera() {
       
       // If denied, show actionable message and don't call getUserMedia
       if (status.state === 'denied') {
-        cameraError.value = 'Camera access is blocked. Please enable it in your browser or site settings.'
+        cameraError.value = t('camera.errors.blocked')
         return
       }
       
@@ -140,11 +139,11 @@ async function startCamera() {
   } catch (error) {
     const err = error as { name?: string }
     if (err.name === 'NotAllowedError') {
-      cameraError.value = 'Camera permission was denied.'
+      cameraError.value = t('camera.errors.denied')
     } else if (err.name === 'NotFoundError') {
-      cameraError.value = 'No camera found on this device.'
+      cameraError.value = t('camera.errors.notFound')
     } else {
-      cameraError.value = 'Camera is unavailable.'
+      cameraError.value = t('camera.errors.unavailable')
     }
   }
 }
@@ -207,7 +206,7 @@ function computeCoverCropRect(
 async function handleCapture() {
   const video = cameraVideo.value
   if (!video || !cameraReady.value || video.videoWidth === 0 || video.videoHeight === 0) {
-    cameraError.value = 'Camera is not ready yet. Try again in a moment.'
+    cameraError.value = t('camera.errors.notReady')
     return
   }
 
@@ -216,7 +215,7 @@ async function handleCapture() {
   const displayHeight = video.clientHeight ?? 0
   
   if (displayWidth === 0 || displayHeight === 0) {
-    cameraError.value = 'Could not determine video display size.'
+    cameraError.value = t('camera.errors.displaySize')
     return
   }
 
@@ -239,7 +238,7 @@ async function handleCapture() {
   
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92))
   if (!blob) {
-    cameraError.value = 'Could not capture image from camera.'
+    cameraError.value = t('camera.errors.captureFailed')
     return
   }
   const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' })

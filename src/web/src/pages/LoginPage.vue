@@ -1,20 +1,21 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-8 bg-[radial-gradient(ellipse_at_top,var(--bg-secondary)_0%,var(--bg-primary)_70%)]">
+  <div class="relative min-h-screen flex items-center justify-center p-8 bg-[radial-gradient(ellipse_at_top,var(--bg-secondary)_0%,var(--bg-primary)_70%)]">
+    <LanguageSwitcher class="absolute top-[calc(1rem+env(safe-area-inset-top))] right-4" />
     <div class="w-full max-w-[400px] text-center">
       <img
         :src="coinLogoSrc"
-        alt="Aurearia - Coin Collection"
+        :alt="t('app.brandFull')"
         class="w-20 h-20 rounded-full object-cover border-[3px] border-gold-dim mb-6 shadow-[0_0_30px_var(--accent-gold-glow)] mx-auto block"
       />
-      <h1 class="mb-1">Aurearia - Coin Collection</h1>
-      <p class="text-text-secondary mb-8 text-base">Sign in to your collection</p>
+      <h1 class="mb-1">{{ t('app.brandFull') }}</h1>
+      <p class="text-text-secondary mb-8 text-base">{{ t('auth.login.subtitle') }}</p>
       <form @submit.prevent="handleLogin" class="text-left">
         <div class="form-group">
-          <label class="form-label">Username</label>
+          <label class="form-label">{{ t('auth.username') }}</label>
           <input v-model="username" class="form-input" required autocomplete="username" @blur="checkBiometric" />
         </div>
         <div class="form-group">
-          <label class="form-label">Password</label>
+          <label class="form-label">{{ t('auth.password') }}</label>
           <input v-model="password" type="password" class="form-input" required autocomplete="current-password" />
         </div>
         <p v-if="error" class="text-loss text-body mb-2">{{ error }}</p>
@@ -23,7 +24,7 @@
           class="btn btn-primary w-full justify-center py-3 mt-2"
           :disabled="loading"
         >
-          {{ loading ? 'Signing in...' : 'Sign In' }}
+          {{ loading ? t('auth.login.signingIn') : t('auth.login.signIn') }}
         </button>
       </form>
       <button
@@ -33,15 +34,15 @@
         @click="handleBiometricLogin"
       >
         <LockKeyhole :size="18" aria-hidden="true" />
-        Sign in with Biometrics
+        {{ t('auth.login.signInBiometrics') }}
       </button>
       <section
         v-if="oidcProviders.length || oidcLoading || oidcError"
         class="mt-4"
-        aria-label="Alternate sign in"
+        :aria-label="t('auth.login.alternateSignIn')"
       >
         <div class="flex items-center gap-3 my-4 mb-2 text-text-muted text-label font-semibold uppercase tracking-[0.08em] before:content-[''] before:flex-1 before:border-t before:border-border-subtle after:content-[''] after:flex-1 after:border-t after:border-border-subtle">
-          <span>or</span>
+          <span>{{ t('common.or') }}</span>
         </div>
         <p v-if="oidcError" class="text-loss text-body mb-2 text-left">{{ oidcError }}</p>
         <button
@@ -55,10 +56,10 @@
           <LogIn :size="18" aria-hidden="true" />
           {{ oidcButtonLabel(provider.displayName) }}
         </button>
-        <p v-if="oidcLoading" class="text-text-muted text-chip mt-2">Loading sign-in providers...</p>
+        <p v-if="oidcLoading" class="text-text-muted text-chip mt-2">{{ t('auth.login.loadingProviders') }}</p>
       </section>
       <p class="mt-6 text-body text-text-secondary">
-        Don't have an account? <router-link to="/register">Create one</router-link>
+        {{ t('auth.login.noAccount') }} <router-link to="/register">{{ t('auth.login.createOne') }}</router-link>
       </p>
     </div>
   </div>
@@ -71,6 +72,8 @@ import { useAuthStore } from '@/stores/auth'
 import { getApiErrorMessage, getOIDCPublicProviders, startOIDCLogin, webauthnCheck } from '@/api/client'
 import type { OIDCPublicProvider } from '@/types'
 import { LockKeyhole, LogIn } from 'lucide-vue-next'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import { t } from '@/i18n'
 
 const router = useRouter()
 const route = useRoute()
@@ -141,7 +144,7 @@ async function handleLogin() {
     router.push('/')
   } catch (err: unknown) {
     if (!handleRateLimitError(err)) {
-      error.value = 'Invalid username or password'
+      error.value = t('auth.login.invalidCredentials')
     }
   } finally {
     loading.value = false
@@ -158,7 +161,7 @@ async function handleOIDCLogin(provider: OIDCPublicProvider) {
     })
     const authorizationUrl = res.data.authorizationUrl
     if (!authorizationUrl) {
-      oidcError.value = 'The sign-in provider did not return an authorization URL. Ask an administrator to check provider configuration.'
+      oidcError.value = t('auth.login.noAuthorizationUrl')
       return
     }
     window.location.assign(authorizationUrl)
@@ -171,7 +174,7 @@ async function handleOIDCLogin(provider: OIDCPublicProvider) {
 
 function oidcButtonLabel(displayName: string) {
   const label = displayName.trim() || 'OIDC'
-  return `Sign in with ${label}`
+  return t('auth.login.signInWith', { provider: label })
 }
 
 function getOIDCCallbackErrorMessage() {
@@ -200,7 +203,7 @@ function getOIDCStartErrorMessage(err: unknown) {
   const response = getErrorResponse(err)
   const message = getApiErrorMessage(err)
   if (response?.status === 409) {
-    return 'This sign-in provider is currently disabled. Ask an administrator to check provider settings.'
+    return t('auth.login.providerDisabled')
   }
   return mapOIDCErrorCategory(message, String(response?.status ?? ''), message)
 }
@@ -208,21 +211,21 @@ function getOIDCStartErrorMessage(err: unknown) {
 function mapOIDCErrorCategory(category: string, status?: string, message?: string) {
   const normalized = category.toLowerCase()
   if (normalized.includes('access_denied') || normalized.includes('denied') || normalized.includes('cancel')) {
-    return 'Sign-in was cancelled or denied at the provider. You can try again or use your local password.'
+    return t('auth.login.oidcCancelled')
   }
   if (normalized.includes('conflict') || status === '409') {
-    return 'This provider account matches an existing local account. Sign in locally, then link the provider from Account Settings.'
+    return t('auth.login.oidcConflict')
   }
   if (normalized.includes('misconfig') || normalized.includes('configuration') || normalized.includes('discovery') || status === '500') {
-    return 'The sign-in provider is not configured correctly. Ask an administrator to test the provider settings.'
+    return t('auth.login.oidcMisconfigured')
   }
   if (normalized.includes('validation') || normalized.includes('state') || normalized.includes('nonce') || normalized.includes('issuer') || normalized.includes('audience') || normalized.includes('signature') || status === '400' || status === '401') {
-    return 'The provider response could not be validated. Try again, or ask an administrator to review the provider setup.'
+    return t('auth.login.oidcValidation')
   }
   if (message?.trim()) {
     return message.trim()
   }
-  return 'OIDC sign-in failed. Try again or use your local password.'
+  return t('auth.login.oidcFailed')
 }
 
 function handleRateLimitError(err: unknown) {
@@ -233,7 +236,7 @@ function handleRateLimitError(err: unknown) {
   if (retryAfter > 0) {
     startRetryCountdown(retryAfter)
   } else {
-    error.value = 'Too many attempts. Try again later.'
+    error.value = t('auth.login.tooManyAttempts')
   }
   return true
 }
@@ -263,7 +266,7 @@ function startRetryCountdown(seconds: number) {
     remaining -= 1
     if (remaining <= 0) {
       clearRetryTimer()
-      error.value = 'Too many attempts. Try again later.'
+      error.value = t('auth.login.tooManyAttempts')
       return
     }
     error.value = formatRateLimitMessage(remaining)
@@ -271,7 +274,7 @@ function startRetryCountdown(seconds: number) {
 }
 
 function formatRateLimitMessage(seconds: number) {
-  return `Too many attempts. Try again later. Retry in ${seconds} second${seconds === 1 ? '' : 's'}.`
+  return t('auth.login.retryIn', { count: seconds })
 }
 
 function clearRetryTimer() {
@@ -295,9 +298,9 @@ async function handleBiometricLogin() {
     } else if (typeof e === 'object' && e !== null && 'response' in e) {
       // Axios error - extract server error message if available
       const axiosError = e as { response?: { data?: { error?: string } } }
-      error.value = axiosError.response?.data?.error || 'Biometric authentication failed'
+      error.value = axiosError.response?.data?.error || t('auth.login.biometricFailed')
     } else {
-      error.value = 'Biometric authentication failed'
+      error.value = t('auth.login.biometricFailed')
     }
   } finally {
     loading.value = false

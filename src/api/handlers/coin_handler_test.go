@@ -117,6 +117,7 @@ func setupCoinHandlerRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	protected.POST("/coins/:id/duplicate", handler.Duplicate)
 	protected.DELETE("/coins/:id", handler.Delete)
 	protected.POST("/coins/match-category-era", handler.MatchCategoryEra)
+	protected.GET("/coin-options", handler.GetCoinOptions)
 
 	return r, db
 }
@@ -534,6 +535,74 @@ func TestCoinHandler_MatchCategoryEra_NoConfidentMatch(t *testing.T) {
 	}
 	if resp.Matched {
 		t.Fatalf("expected no confident match, got %+v", resp)
+	}
+}
+
+// --- GetCoinOptions ---
+
+func getCoinOptions(t *testing.T, router *gin.Engine) CoinOptionsResponse {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, "/api/coin-options", nil)
+	req.Header.Set("Authorization", authHeader(1))
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	var resp CoinOptionsResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal response: %v", err)
+	}
+	return resp
+}
+
+func TestCoinHandler_GetCoinOptions_Defaults(t *testing.T) {
+	router, db := setupCoinHandlerRouter(t)
+	createTestUser(t, db, 1, "options-reader")
+
+	resp := getCoinOptions(t, router)
+
+	if !slices.Equal(resp.Categories, []string{"Roman", "Greek", "Byzantine", "Modern", "Other"}) {
+		t.Fatalf("categories = %v", resp.Categories)
+	}
+	if !slices.Equal(resp.Eras, []string{"ancient", "medieval", "modern"}) {
+		t.Fatalf("eras = %v", resp.Eras)
+	}
+	pt, ok := resp.Labels["pt-PT"]
+	if !ok || len(pt.Categories) != 0 || len(pt.Eras) != 0 {
+		t.Fatalf("expected empty pt-PT labels, got %+v", resp.Labels)
+	}
+}
+
+func TestCoinHandler_GetCoinOptions_ConfiguredListsAndLabels(t *testing.T) {
+	router, db := setupCoinHandlerRouter(t)
+	createTestUser(t, db, 1, "options-reader")
+	settingsRepo := repository.NewSettingsRepository(db)
+	seed := map[string]string{
+		services.SettingCoinCategories:         "Roman\nCeltic",
+		services.SettingCoinEras:               "ancient\nRepublican",
+		services.SettingCoinCategoryLabelsPtPT: "Celtic=Celta",
+		services.SettingCoinEraLabelsPtPT:      "Republican=Republicana",
+	}
+	for key, value := range seed {
+		if err := settingsRepo.Upsert(key, value); err != nil {
+			t.Fatalf("seed %s: %v", key, err)
+		}
+	}
+
+	resp := getCoinOptions(t, router)
+
+	if !slices.Equal(resp.Categories, []string{"Roman", "Celtic"}) {
+		t.Fatalf("categories = %v", resp.Categories)
+	}
+	if !slices.Equal(resp.Eras, []string{"ancient", "Republican"}) {
+		t.Fatalf("eras = %v", resp.Eras)
+	}
+	pt := resp.Labels["pt-PT"]
+	if pt.Categories["Celtic"] != "Celta" || pt.Eras["Republican"] != "Republicana" {
+		t.Fatalf("pt-PT labels = %+v", pt)
 	}
 }
 

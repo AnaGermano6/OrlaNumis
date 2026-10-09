@@ -1,22 +1,22 @@
 <template>
   <div class="container min-w-0 overflow-x-hidden">
     <div class="mx-auto min-w-0 max-w-[900px]">
-      <DesktopPageContext title="Deep Analysis">
+      <DesktopPageContext :title="t('deepAnalysis.title')">
         <template #actions>
-          <AppIconButton to="/deep-analysis/history" title="Analysis History">
+          <AppIconButton to="/deep-analysis/history" :title="t('deepAnalysis.page.history')">
             <History :size="20" />
           </AppIconButton>
-          <AppIconButton to="/lookup" title="Identify Coin">
+          <AppIconButton to="/lookup" :title="t('nav.identifyCoin')">
             <Search :size="20" />
           </AppIconButton>
         </template>
         <div class="page-header">
-          <h1>Deep Analysis</h1>
+          <h1>{{ t('deepAnalysis.title') }}</h1>
           <div class="pwa-actions">
-            <RouterLink class="pwa-icon-btn" to="/deep-analysis/history" title="Analysis History" aria-label="Analysis History">
+            <RouterLink class="pwa-icon-btn" to="/deep-analysis/history" :title="t('deepAnalysis.page.history')" :aria-label="t('deepAnalysis.page.history')">
               <History :size="22" />
             </RouterLink>
-            <RouterLink class="pwa-icon-btn" to="/lookup" title="Identify Coin" aria-label="Identify Coin">
+            <RouterLink class="pwa-icon-btn" to="/lookup" :title="t('nav.identifyCoin')" :aria-label="t('nav.identifyCoin')">
               <Search :size="22" />
             </RouterLink>
           </div>
@@ -24,18 +24,18 @@
       </DesktopPageContext>
 
       <p v-if="!jobId" class="rounded-md border border-border-subtle bg-card p-6 text-base text-text-secondary shadow-[var(--shadow-card)]">
-        Start a Deep Analysis from Identify Coin or an existing saved coin to see progress here.
+        {{ t('deepAnalysis.page.noJob') }}
       </p>
 
       <template v-else>
-        <p v-if="loading" class="text-body text-text-secondary">Loading Deep Analysis job...</p>
+        <p v-if="loading" class="text-body text-text-secondary">{{ t('deepAnalysis.page.loading') }}</p>
         <p v-else-if="loadError" role="alert" class="text-body text-byzantine">{{ loadError }}</p>
 
         <section v-else-if="job" class="card grid min-w-0 gap-4 overflow-hidden">
           <div class="flex min-w-0 flex-wrap items-center justify-between gap-2">
-            <h2 class="m-0 text-lg text-heading">Job #{{ job.id }}</h2>
+            <h2 class="m-0 text-lg text-heading">{{ t('deepAnalysis.jobNumber', { id: job.id }) }}</h2>
             <div class="flex items-center gap-2">
-              <BaseBadge>{{ job.status }}</BaseBadge>
+              <BaseBadge>{{ deepJobStatusLabel(job.status) }}</BaseBadge>
               <BaseButton
                 v-if="canDelete"
                 variant="danger"
@@ -43,17 +43,16 @@
                 class="min-h-[44px]"
                 :loading="deep.deleting.value"
                 :disabled="deep.deleting.value"
-                aria-label="Delete this Deep Analysis run"
+                :aria-label="t('deepAnalysis.page.deleteLabel')"
                 @click="onDelete"
               >
                 <Trash2 v-if="!deep.deleting.value" :size="16" aria-hidden="true" />
-                Delete
+                {{ t('common.delete') }}
               </BaseButton>
             </div>
           </div>
           <p class="m-0 text-body text-text-secondary">
-            Deep Analysis routes eligible reference providers for this coin. NGC remains link-out only and
-            RPC is unavailable. Progress, provider selection, and exact outcomes appear here as the job runs.
+            {{ t('deepAnalysis.page.intro') }}
           </p>
 
           <p v-if="streamError" role="alert" class="text-body text-byzantine">{{ streamError }}</p>
@@ -74,10 +73,10 @@
           <DeepProviderCoverageList
             v-if="!isTerminal && liveProviderCoverage.length"
             :coverage="liveProviderCoverage"
-            title="Live provider coverage"
+            :title="t('deepAnalysis.page.liveCoverage')"
           />
           <p v-if="routerRationale" class="m-0 break-words text-sm text-text-secondary [overflow-wrap:anywhere]">
-            <strong class="text-text-primary">Provider selection:</strong> {{ routerRationale }}
+            <strong class="text-text-primary">{{ t('deepAnalysis.page.providerSelection') }}</strong> {{ routerRationale }}
           </p>
 
           <div v-if="canRetry" class="flex flex-wrap items-center gap-3">
@@ -88,30 +87,30 @@
               :loading="deep.retrying.value"
               :disabled="deep.retrying.value"
               :aria-busy="deep.retrying.value"
-              aria-label="Retry Deep Analysis"
+              :aria-label="t('deepAnalysis.page.retryLabel')"
               @click="onRetry"
             >
               <RefreshCw v-if="!deep.retrying.value" :size="16" aria-hidden="true" />
-              {{ deep.retrying.value ? 'Retrying…' : 'Retry' }}
+              {{ deep.retrying.value ? t('deepAnalysis.page.retrying') : t('common.retry') }}
             </BaseButton>
             <p v-if="retryError" role="alert" class="m-0 text-body text-byzantine">{{ retryError }}</p>
           </div>
 
           <template v-if="isTerminal && deep.report.value">
             <div class="grid gap-1">
-              <h2 class="m-0 text-lg text-heading">Results</h2>
+              <h2 class="m-0 text-lg text-heading">{{ t('deepAnalysis.page.results') }}</h2>
               <p class="m-0 text-body text-text-secondary">
-                Review the report, choose the details you want to keep, then save the result.
+                {{ t('deepAnalysis.page.resultsHint') }}
               </p>
               <div
                 v-if="deep.proposal.value && showProposalEditor"
                 class="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-sm border border-border-accent bg-card p-3"
               >
                 <p class="m-0 text-body text-text-primary">
-                  Nothing has been saved yet. Review and accept the proposed fields before continuing.
+                  {{ t('deepAnalysis.page.notSaved') }}
                 </p>
                 <button type="button" class="btn btn-primary btn-sm" @click="scrollToProposal">
-                  Review fields
+                  {{ t('deepAnalysis.page.reviewFields') }}
                 </button>
               </div>
             </div>
@@ -124,7 +123,7 @@
             class="scroll-mt-4"
           >
             <p v-if="needsReapply" role="status" class="m-0 text-body text-gold">
-              The linked coin was removed from your collection. Apply again to relink these results.
+              {{ t('deepAnalysis.page.reapply') }}
             </p>
             <DeepProposalEditor
               :proposal="deep.proposal.value"
@@ -141,11 +140,11 @@
             v-else-if="isTerminal && deep.report.value && !job.appliedAt"
             class="grid gap-2 rounded-sm border border-border-subtle bg-card p-3"
           >
-            <h3 class="m-0 text-lg text-text-primary">No draft fields were proposed</h3>
+            <h3 class="m-0 text-lg text-text-primary">{{ t('deepAnalysis.page.noFields') }}</h3>
             <p class="m-0 text-body text-text-secondary">
-              The report is still available above. Retry the analysis to gather a new result, or return to Identify Coin.
+              {{ t('deepAnalysis.page.noFieldsHint') }}
             </p>
-            <RouterLink class="btn btn-secondary justify-self-start" to="/lookup">Identify Coin</RouterLink>
+            <RouterLink class="btn btn-secondary justify-self-start" to="/lookup">{{ t('nav.identifyCoin') }}</RouterLink>
           </div>
 
           <p v-else-if="job.appliedAt && !needsReapply" class="text-body text-text-secondary" role="status">
@@ -181,6 +180,8 @@ import type {
   DeepProviderStatus,
   DeepReportCoverage,
 } from '@/types'
+import { t, intlLocale } from '@/i18n'
+import { deepJobStatusLabel } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -336,7 +337,7 @@ async function onRetry() {
   retryError.value = ''
   const newJob = await deep.retry(jobId.value)
   if (!newJob) {
-    retryError.value = deep.error.value || 'Unable to retry Deep Analysis.'
+    retryError.value = deep.error.value || t('deepAnalysis.errors.retryFailed')
     // deep.error is the same ref backing the page-level load error; clear it
     // after capturing so a failed retry surfaces beside the Retry button
     // instead of replacing the whole job view.
@@ -353,12 +354,14 @@ async function onRetry() {
 
 const applyError = ref('')
 const isIntakeJob = computed(() => job.value?.source !== 'saved_coin')
-const proposalActionLabel = computed(() => isIntakeJob.value ? 'Save as Draft' : 'Apply to Coin')
-const proposalApplyingLabel = computed(() => isIntakeJob.value ? 'Saving...' : 'Applying...')
+const proposalActionLabel = computed(() => isIntakeJob.value ? t('deepAnalysis.page.saveAsDraft') : t('deepAnalysis.proposal.applyToCoin'))
+const proposalApplyingLabel = computed(() => isIntakeJob.value ? t('common.saving') : t('deepAnalysis.proposal.applying'))
 const appliedStatusText = computed(() => {
   if (!job.value?.appliedAt) return ''
-  const action = job.value.source === 'saved_coin' ? 'Applied to coin' : 'Saved as draft'
-  return `${action} on ${new Date(job.value.appliedAt).toLocaleString()}.`
+  const date = new Date(job.value.appliedAt).toLocaleString(intlLocale())
+  return job.value.source === 'saved_coin'
+    ? t('deepAnalysis.page.appliedOn', { date })
+    : t('deepAnalysis.page.savedDraftOn', { date })
 })
 
 // Spec 354 FR-007..011: a "coin" target job that was applied but whose
@@ -381,14 +384,14 @@ const canDelete = computed(() => ['completed', 'partial', 'failed', 'cancelled']
 async function onDelete() {
   if (jobId.value === null) return
   const confirmed = await showConfirm(
-    'Delete this Deep Analysis run? The report, images, and history for this run will be permanently removed. Any coin already saved from it is not affected.',
-    { title: 'Delete Deep Analysis Run', variant: 'danger' },
+    t('deepAnalysis.page.confirmDelete'),
+    { title: t('deepAnalysis.page.deleteTitle'), variant: 'danger' },
   )
   if (!confirmed) return
   deleteError.value = ''
   const ok = await deep.deleteJob(jobId.value)
   if (!ok) {
-    deleteError.value = deep.error.value || 'Unable to delete this Deep Analysis run.'
+    deleteError.value = deep.error.value || t('deepAnalysis.errors.deleteFailed')
     return
   }
   stopStreamIntentionally()
@@ -425,7 +428,7 @@ async function onApplyProposal() {
     if (!persisted) {
       // Do not apply a partial proposal silently: a field the owner saw
       // rendered as accepted must not be dropped without being told.
-      applyError.value = deep.error.value || 'Unable to save the confidence-based default acceptances before applying. Nothing was applied.'
+      applyError.value = deep.error.value || t('deepAnalysis.errors.defaultsFailed')
       return
     }
   }
@@ -433,7 +436,7 @@ async function onApplyProposal() {
   const target: DeepApplyTarget = job.value.source === 'saved_coin' ? 'coin' : 'draft'
   const result = await deep.applyProposal(jobId.value, { target })
   if (!result) {
-    applyError.value = deep.error.value || 'Unable to apply the Deep Analysis proposal.'
+    applyError.value = deep.error.value || t('deepAnalysis.errors.applyFailed')
     return
   }
   if (target === 'draft' && result.draftId) {

@@ -1,5 +1,5 @@
 <template>
-  <CoinDetailSectionPageShell section-title="AI Analysis">
+  <CoinDetailSectionPageShell :section-title="t('coinDetail.sections.analysis.title')">
     <template #default="{ coin, refresh }">
       <CoinAIAnalysis
         :coin-id="coin.id"
@@ -17,4 +17,5 @@
 <script setup lang="ts">
 import CoinDetailSectionPageShell from '@/components/coin/CoinDetailSectionPageShell.vue'
 import CoinAIAnalysis from '@/components/coin/CoinAIAnalysis.vue'
+import { t } from '@/i18n'
 </script>

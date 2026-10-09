@@ -2,28 +2,28 @@
   <hr class="my-6 border-0 border-t border-border-subtle" />
 
   <!-- Collection Valuation -->
-  <h3 class="mb-4 text-lg font-medium text-heading">Collection Valuation</h3>
+  <h3 class="mb-4 text-lg font-medium text-heading">{{ t('admin.schedules.valuation.title') }}</h3>
   <div class="mb-4">
     <div class="form-group flex items-center justify-between gap-3">
-      <label class="form-label">Enable Scheduled Valuation</label>
+      <label class="form-label">{{ t('admin.schedules.valuation.enable') }}</label>
       <BaseToggle
         size="sm"
-        label="Enable Scheduled Valuation"
+        :label="t('admin.schedules.valuation.enable')"
         :model-value="settings.ValuationCheckEnabled === 'true'"
         @update:model-value="settings.ValuationCheckEnabled = $event ? 'true' : 'false'"
       />
     </div>
     <div class="form-group">
-      <label class="form-label">Start Time (daily anchor)</label>
+      <label class="form-label">{{ t('admin.schedules.startAnchor') }}</label>
       <input
         v-model="settings.ValuationCheckStartTime"
         class="form-input w-full max-w-[120px]"
         type="time"
       />
-      <span class="form-hint">The valuation cycle starts at this time on scheduled days.</span>
+      <span class="form-hint">{{ t('admin.schedules.valuation.startHint') }}</span>
     </div>
     <div class="form-group">
-      <label class="form-label">Repeat Interval (days)</label>
+      <label class="form-label">{{ t('admin.schedules.valuation.repeatDays') }}</label>
       <input
         v-model="settings.ValuationCheckIntervalDays"
         class="form-input w-full max-w-[120px]"
@@ -31,11 +31,11 @@
         min="1"
         step="1"
       />
-      <span class="form-hint">How often to run (e.g. 7 = weekly). AI valuations are costly so daily runs are not recommended.</span>
+      <span class="form-hint">{{ t('admin.schedules.valuation.repeatHint') }}</span>
       <AdminScheduleSummary :start-time="settings.ValuationCheckStartTime" default-start-time="03:00" :interval-days="settings.ValuationCheckInterval" :zone="settings.ScheduleTimezone" />
     </div>
     <div class="form-group">
-      <label class="form-label">Max Coins Per Run</label>
+      <label class="form-label">{{ t('admin.schedules.valuation.maxCoins') }}</label>
       <input
         v-model="settings.ValuationMaxCoins"
         class="form-input w-full max-w-[120px]"
@@ -43,50 +43,50 @@
         min="1"
         step="10"
       />
-      <span class="form-hint">Limit how many coins are valuated per run to control AI costs.</span>
+      <span class="form-hint">{{ t('admin.schedules.valuation.maxCoinsHint') }}</span>
     </div>
     <div class="mt-4 flex w-full flex-col gap-3 md:flex-row md:items-center">
       <button class="btn btn-primary btn-sm" :disabled="settingsSaving" @click="emit('save')">
-        {{ settingsSaving ? 'Saving...' : 'Save Valuation Settings' }}
+        {{ settingsSaving ? t('common.saving') : t('admin.schedules.valuation.save') }}
       </button>
       <span v-if="settingsMsg" class="text-body text-gold md:mr-auto" :class="settingsError ? 'text-loss' : ''">{{ settingsMsg }}</span>
       <button class="btn btn-secondary btn-sm md:ml-auto" :disabled="triggerLoading" @click="triggerManualValuation()">
-        {{ triggerLoading ? 'Starting...' : 'Run Now' }}
+        {{ triggerLoading ? t('common.starting') : t('admin.schedules.runNow') }}
       </button>
     </div>
   </div>
 
   <hr class="my-6 border-0 border-t border-border-subtle" />
-  <h3 class="mb-4 text-lg font-medium text-heading">Valuation Run History</h3>
+  <h3 class="mb-4 text-lg font-medium text-heading">{{ t('admin.schedules.valuation.history') }}</h3>
 
   <div v-if="loading" class="flex justify-center py-8"><div class="spinner"></div></div>
-  <div v-else-if="runs.length === 0" class="px-8 py-8 text-center font-sans text-text-muted">No valuation runs recorded yet.</div>
+  <div v-else-if="runs.length === 0" class="px-8 py-8 text-center font-sans text-text-muted">{{ t('admin.schedules.valuation.empty') }}</div>
   <template v-else>
     <div class="overflow-x-auto">
       <table class="data-table text-chip md:table-fixed [&_th]:px-[0.35rem] [&_th]:py-2 md:[&_th]:px-2 md:[&_th]:py-3 [&_td]:px-[0.35rem] [&_td]:py-2 md:[&_td]:px-2 md:[&_td]:py-3">
         <thead>
           <tr>
-            <th>Date</th>
-            <th class="hidden md:table-cell">Trigger</th>
-            <th>Status</th>
-            <th>Checked</th>
-            <th class="hidden md:table-cell">Updated</th>
-            <th class="hidden md:table-cell">Skipped</th>
-            <th class="hidden md:table-cell">Errors</th>
-            <th>Duration</th>
+            <th>{{ t('common.date') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.trigger') }}</th>
+            <th>{{ t('common.status') }}</th>
+            <th>{{ t('admin.schedules.valuation.checked') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.valuation.updated') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.skipped') }}</th>
+            <th class="hidden md:table-cell">{{ t('admin.schedules.errors') }}</th>
+            <th>{{ t('admin.schedules.duration') }}</th>
           </tr>
         </thead>
         <tbody>
           <template v-for="run in runs" :key="run.id">
             <tr class="cursor-pointer transition-colors hover:bg-surface" :class="{ 'bg-surface': expandedRunId === run.id }" @click="toggleRunDetail(run.id)">
               <td class="text-body text-text-secondary">{{ formatDate(run.startedAt) }}</td>
-              <td class="hidden md:table-cell">{{ run.triggerType }}</td>
+              <td class="hidden md:table-cell">{{ runTriggerLabel(run.triggerType) }}</td>
               <td>
-                <BaseStatusBadge :tone="run.status === 'running' ? 'info' : run.status === 'completed' ? 'success' : run.status === 'failed' ? 'error' : 'warning'">{{ run.status }}</BaseStatusBadge>
+                <BaseStatusBadge :tone="run.status === 'running' ? 'info' : run.status === 'completed' ? 'success' : run.status === 'failed' ? 'error' : 'warning'">{{ runStatusLabel(run.status) }}</BaseStatusBadge>
                 <span v-if="run.status === 'running' && run.totalCoins > 0" class="ml-[0.35rem] text-label font-medium text-text-secondary">
                   {{ run.coinsChecked + run.coinsSkipped + run.errors }} / {{ run.totalCoins }}
                 </span>
-                <button v-if="run.status === 'running'" class="ml-[0.4rem] rounded-full border border-status-error-border bg-transparent px-[0.4rem] py-[0.1rem] text-micro text-loss transition-colors hover:bg-status-error-bg" @click.stop="cancelRun(run.id)">Cancel</button>
+                <button v-if="run.status === 'running'" class="ml-[0.4rem] rounded-full border border-status-error-border bg-transparent px-[0.4rem] py-[0.1rem] text-micro text-loss transition-colors hover:bg-status-error-bg" @click.stop="cancelRun(run.id)">{{ t('common.cancel') }}</button>
               </td>
               <td>{{ run.coinsChecked }}</td>
               <td class="hidden font-semibold text-gain md:table-cell">{{ run.coinsUpdated }}</td>
@@ -101,12 +101,12 @@
                   <table class="data-table text-chip md:table-fixed [&_th]:px-2 [&_th]:py-[0.4rem] [&_td]:px-2 [&_td]:py-[0.4rem] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap">
                     <thead>
                       <tr>
-                        <th>Coin</th>
-                        <th>Previous</th>
-                        <th>Estimated</th>
-                        <th>Confidence</th>
-                        <th>Status</th>
-                        <th>Explanation</th>
+                        <th>{{ t('admin.schedules.valuation.coin') }}</th>
+                        <th>{{ t('admin.schedules.valuation.previous') }}</th>
+                        <th>{{ t('admin.schedules.valuation.estimated') }}</th>
+                        <th>{{ t('admin.schedules.valuation.confidence') }}</th>
+                        <th>{{ t('common.status') }}</th>
+                        <th>{{ t('admin.schedules.valuation.explanation') }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -115,11 +115,11 @@
                         <td>{{ result.previousValue != null ? `$${result.previousValue.toFixed(2)}` : '--' }}</td>
                         <td class="font-semibold text-gold">{{ result.estimatedValue > 0 ? `$${result.estimatedValue.toFixed(2)}` : '--' }}</td>
                         <td>
-                          <span v-if="result.confidence" class="inline-block rounded-sm px-[0.3rem] py-[0.1rem] text-label font-semibold" :class="result.confidence === 'high' ? 'bg-status-success-bg text-confidence-high' : result.confidence === 'medium' ? 'bg-status-warning-bg text-confidence-medium' : 'bg-status-error-bg text-confidence-low'">{{ result.confidence }}</span>
+                          <span v-if="result.confidence" class="inline-block rounded-sm px-[0.3rem] py-[0.1rem] text-label font-semibold" :class="result.confidence === 'high' ? 'bg-status-success-bg text-confidence-high' : result.confidence === 'medium' ? 'bg-status-warning-bg text-confidence-medium' : 'bg-status-error-bg text-confidence-low'">{{ confidenceLabel(result.confidence) }}</span>
                           <span v-else>--</span>
                         </td>
                         <td>
-                          <BaseStatusBadge :tone="result.status === 'success' ? 'success' : result.status === 'skipped' ? 'neutral' : 'error'">{{ result.status }}</BaseStatusBadge>
+                          <BaseStatusBadge :tone="result.status === 'success' ? 'success' : result.status === 'skipped' ? 'neutral' : 'error'">{{ runStatusLabel(result.status) }}</BaseStatusBadge>
                         </td>
                         <td class="max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">
                           <div v-if="result.changeExplanation" class="mb-[0.35rem] font-medium text-gold">{{ result.changeExplanation }}</div>
@@ -129,7 +129,7 @@
                     </tbody>
                   </table>
                 </div>
-                <p v-else class="px-8 py-8 text-center font-sans text-text-muted">No results for this run.</p>
+                <p v-else class="px-8 py-8 text-center font-sans text-text-muted">{{ t('admin.schedules.valuation.noResults') }}</p>
               </td>
             </tr>
           </template>
@@ -138,9 +138,9 @@
     </div>
 
     <div class="mt-4 flex items-center justify-center gap-3">
-      <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="prevPage()">Prev</button>
-      <span class="text-chip text-text-secondary">Page {{ page }}</span>
-      <button class="btn btn-secondary btn-sm" :disabled="runs.length < 5" @click="nextPage()">Next</button>
+      <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="prevPage()">{{ t('common.prev') }}</button>
+      <span class="text-chip text-text-secondary">{{ t('admin.schedules.page', { page }) }}</span>
+      <button class="btn btn-secondary btn-sm" :disabled="runs.length < 5" @click="nextPage()">{{ t('common.next') }}</button>
     </div>
   </template>
 </template>
@@ -152,6 +152,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { cancelValuationRun, getValuationRunDetail, getValuationRuns, triggerValuation } from '@/api/client'
 import { useRunHistoryPagination } from '@/composables/useRunHistoryPagination'
 import type { AppSettings, ValuationRun } from '@/types'
+import { t, intlLocale } from '@/i18n'
+import { confidenceLabel, runStatusLabel, runTriggerLabel } from '@/utils/format'
 
 defineProps<{
   settings: AppSettings
@@ -229,11 +231,11 @@ async function triggerManualValuation() {
   emit('update:settingsError', false)
   try {
     await triggerValuation()
-    emit('update:settingsMsg', 'Valuation started — progress updates below')
+    emit('update:settingsMsg', t('admin.schedules.valuation.started'))
     timers.push(setTimeout(() => { emit('update:settingsMsg', '') }, 10000))
     timers.push(setTimeout(() => { loadRuns() }, 2000))
   } catch {
-    emit('update:settingsMsg', 'Failed to trigger valuation')
+    emit('update:settingsMsg', t('admin.schedules.valuation.failed'))
     emit('update:settingsError', true)
   } finally {
     triggerLoading.value = false
@@ -243,17 +245,17 @@ async function triggerManualValuation() {
 async function cancelRun(runId: number) {
   try {
     await cancelValuationRun(runId)
-    emit('update:settingsMsg', 'Cancellation requested')
+    emit('update:settingsMsg', t('admin.schedules.valuation.cancelRequested'))
     timers.push(setTimeout(() => { emit('update:settingsMsg', '') }, 5000))
     timers.push(setTimeout(() => { loadRuns() }, 1000))
   } catch {
-    emit('update:settingsMsg', 'Failed to cancel run')
+    emit('update:settingsMsg', t('admin.schedules.valuation.cancelFailed'))
     emit('update:settingsError', true)
   }
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString()
+  return new Date(dateStr).toLocaleDateString(intlLocale())
 }
 
 function formatDuration(ms: number) {

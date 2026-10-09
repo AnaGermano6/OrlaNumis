@@ -1,14 +1,14 @@
 <template>
   <div v-if="loading" class="loading-overlay">
     <div class="spinner"></div>
-    <p>Loading collection...</p>
+    <p>{{ t('collection.loading') }}</p>
   </div>
 
   <template v-else-if="coins.length">
     <div v-if="selectMode" class="mb-3 flex items-center gap-2">
-      <button class="btn btn-sm btn-secondary" @click="$emit('select-all')">Select All</button>
-      <button class="btn btn-sm btn-secondary" @click="$emit('deselect-all')">Deselect All</button>
-      <span class="ml-2 text-body text-text-secondary">{{ selectedCount }} selected</span>
+      <button class="btn btn-sm btn-secondary" @click="$emit('select-all')">{{ t('collection.selectAll') }}</button>
+      <button class="btn btn-sm btn-secondary" @click="$emit('deselect-all')">{{ t('collection.deselectAll') }}</button>
+      <span class="ml-2 text-body text-text-secondary">{{ t('collection.selectedCount', { count: selectedCount }) }}</span>
     </div>
     <SwipeGallery v-if="isPwa && viewMode === 'swipe' && !selectMode" :coins="coins" :total="total" :page="page" :per-page="perPage" @page-change="$emit('page-change', $event)" />
     <div v-else class="coins-grid">
@@ -25,10 +25,10 @@
   </template>
 
   <div v-else class="empty-state">
-    <h3>{{ hasFilters ? 'No coins match your search' : 'Your collection is empty' }}</h3>
-    <p>{{ hasFilters ? 'Try different filters' : 'Add your first coin to get started' }}</p>
+    <h3>{{ hasFilters ? t('collection.empty.noMatchTitle') : t('collection.empty.emptyTitle') }}</h3>
+    <p>{{ hasFilters ? t('collection.empty.noMatchBody') : t('collection.empty.emptyBody') }}</p>
     <router-link v-if="!hasFilters" to="/add" class="btn btn-primary mt-4">
-      Add Your First Coin
+      {{ t('collection.empty.addFirst') }}
     </router-link>
   </div>
 </template>
@@ -37,6 +37,7 @@
 import type { Coin, ImageType } from '@/types'
 import CoinCard from '@/components/CoinCard.vue'
 import SwipeGallery from '@/components/SwipeGallery.vue'
+import { t } from '@/i18n'
 
 defineProps<{
   loading: boolean

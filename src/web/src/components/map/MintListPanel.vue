@@ -1,7 +1,7 @@
 <template>
-  <section class="mint-list-panel" aria-label="Mint locations list">
+  <section class="mint-list-panel" :aria-label="t('map.listLabel')">
     <header class="mint-list-header">
-      <p class="section-label">Locations</p>
+      <p class="section-label">{{ t('map.locations') }}</p>
       <span class="mint-list-total">{{ groups.length }}</span>
     </header>
 
@@ -12,7 +12,7 @@
           :class="{ 'mint-list-item--selected': selectedMintId === group.mint.id }"
           type="button"
           :aria-pressed="selectedMintId === group.mint.id"
-          :aria-label="`${group.mint.displayName}: ${group.count} ${group.count === 1 ? 'coin' : 'coins'}`"
+          :aria-label="t('map.pinLabel', { name: group.mint.displayName, count: group.count })"
           @click="$emit('select-mint', group)"
         >
           <div class="mint-list-item-top">
@@ -29,6 +29,7 @@
 
 <script setup lang="ts">
 import type { MintGroup } from '@/utils/mintMap'
+import { t } from '@/i18n'
 
 const PREVIEW_MAX = 2
 

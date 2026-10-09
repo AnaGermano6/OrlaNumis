@@ -2,9 +2,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { withEnglishCopy } from '@/test/i18nSource'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const source = fs.readFileSync(path.resolve(__dirname, '../QuickCaptureImageSlots.vue'), 'utf8')
+const source = withEnglishCopy(fs.readFileSync(path.resolve(__dirname, '../QuickCaptureImageSlots.vue'), 'utf8'))
 
 describe('QuickCaptureImageSlots', () => {
   it('offers obverse, reverse, detail, camera, and file upload inputs', () => {

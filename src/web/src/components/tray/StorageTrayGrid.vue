@@ -7,7 +7,7 @@
         <TrayFaceToggle v-if="hasAnyFaceImage" :active-face="activeFace" @toggle="toggleFace" />
       </div>
     </header>
-    <div class="tray-scroller" tabindex="0" :aria-label="`${tray.name}, ${tray.columns} columns`">
+    <div class="tray-scroller" tabindex="0" :aria-label="t('trays.columnsLabel', { name: tray.name, columns: tray.columns })">
       <TraySurface :felt-theme="feltTheme" class="physical-surface">
         <div
           class="physical-grid"
@@ -22,7 +22,7 @@
             :key="position.slot"
             class="physical-cell"
             role="gridcell"
-            :aria-label="position.coin ? undefined : `Empty, row ${position.row}, column ${position.column}`"
+            :aria-label="position.coin ? undefined : t('trays.empty', { row: position.row, column: position.column })"
           >
             <MuseumTrayWell
               :coin="position.trayCoin"
@@ -32,7 +32,7 @@
               :show-names="true"
               :preferred-face="activeFace"
               :well-stage-size-px="wellSizePx"
-              :aria-label="position.coin ? `${position.coin.name || 'Untitled'}, row ${position.row}, column ${position.column}` : `Empty, row ${position.row}, column ${position.column}`"
+              :aria-label="position.coin ? t('trays.coinAt', { name: position.coin.name || t('trays.untitled'), row: position.row, column: position.column }) : t('trays.empty', { row: position.row, column: position.column })"
               @coin-clicked="emit('coin-clicked', $event)"
             />
             <span class="coordinate">{{ position.row }},{{ position.column }}</span>
@@ -51,6 +51,7 @@ import type { FeltColor } from '@/composables/useTrayPreference'
 import MuseumTrayWell from './MuseumTrayWell.vue'
 import TraySurface from './TraySurface.vue'
 import TrayFaceToggle from './TrayFaceToggle.vue'
+import { t } from '@/i18n'
 
 const STORAGE_WELL_SIZE_PX = 76
 const props = withDefaults(defineProps<{
@@ -70,7 +71,13 @@ const gridStyle = computed(() => ({
 }))
 const headingId = computed(() => `storage-tray-${props.tray.id}`)
 const gridLabel = computed(() =>
-  `${props.tray.name}, ${props.tray.rows} rows by ${props.tray.columns} columns, ${props.tray.occupied} of ${props.tray.capacity} occupied`
+  t('trays.gridLabel', {
+    name: props.tray.name,
+    rows: props.tray.rows,
+    columns: props.tray.columns,
+    occupied: props.tray.occupied,
+    capacity: props.tray.capacity,
+  })
 )
 const bySlot = computed(() => new Map(props.tray.coins.map((coin) => [coin.storageSlot, coin])))
 const hasAnyFaceImage = computed(() =>
@@ -88,7 +95,7 @@ function adaptCoin(coin: StorageTrayCoin | undefined, slot: number): TrayCoin {
   }
   return {
     id: coin.id,
-    name: coin.name || 'Untitled',
+    name: coin.name || t('trays.untitled'),
     diameterMm: coin.diameterMm ?? null,
     images: coin.images,
   }

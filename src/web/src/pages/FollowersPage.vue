@@ -1,22 +1,22 @@
 <template>
   <PullToRefresh :on-refresh="handleRefresh">
     <div class="container">
-      <DesktopPageContext title="Followers">
+      <DesktopPageContext :title="t('nav.followers')">
         <template #actions>
-          <AppIconButton title="Find Users" @click="showSearchModal = true">
+          <AppIconButton :title="t('social.findUsers')" @click="showSearchModal = true">
             <UserPlus :size="20" />
           </AppIconButton>
         </template>
         <div class="page-header">
-          <h1 class="flex-1">Followers</h1>
+          <h1 class="flex-1">{{ t('nav.followers') }}</h1>
           <div v-if="isPwa" class="pwa-actions">
-            <button class="pwa-icon-btn" @click="showSearchModal = true" title="Find Users">
+            <button class="pwa-icon-btn" @click="showSearchModal = true" :title="t('social.findUsers')">
               <UserPlus :size="22" />
             </button>
           </div>
           <div v-else class="header-actions">
             <button class="btn btn-primary" @click="showSearchModal = true">
-              <UserPlus :size="16" /> Add
+              <UserPlus :size="16" /> {{ t('social.add') }}
             </button>
           </div>
         </div>
@@ -30,7 +30,7 @@
             :class="activeTab === 'following' ? 'bg-[var(--accent-gold-dim)] text-gold' : ''"
             @click="activeTab = 'following'"
           >
-            <UserPlus :size="16" /> Following
+            <UserPlus :size="16" /> {{ t('social.following') }}
             <span
               v-if="following.length"
               class="min-w-[1.3rem] rounded-full bg-border-subtle px-[0.45rem] py-[0.1rem] text-center text-label text-text-secondary"
@@ -44,7 +44,7 @@
             :class="activeTab === 'followers' ? 'bg-[var(--accent-gold-dim)] text-gold' : ''"
             @click="activeTab = 'followers'"
           >
-            <Users :size="16" /> Followers
+            <Users :size="16" /> {{ t('nav.followers') }}
             <span
               v-if="followers.length"
               class="min-w-[1.3rem] rounded-full bg-border-subtle px-[0.45rem] py-[0.1rem] text-center text-label text-text-secondary"
@@ -58,17 +58,17 @@
         <!-- Loading -->
         <div v-if="loading" class="flex flex-col items-center gap-3 px-4 py-12 text-text-secondary">
           <div class="spinner" />
-          <p>Loading...</p>
+          <p>{{ t('common.loading') }}</p>
         </div>
 
         <!-- Following Tab -->
         <div v-else-if="activeTab === 'following'">
           <div v-if="following.length === 0" class="empty-state flex flex-col items-center gap-2 !px-4 !py-12">
             <Users :size="48" />
-            <h3 class="m-0 text-base text-text-primary">Not following anyone yet</h3>
-            <p class="m-0 text-body text-text-muted">Search for users to follow and see their collections.</p>
+            <h3 class="m-0 text-base text-text-primary">{{ t('social.notFollowing') }}</h3>
+            <p class="m-0 text-body text-text-muted">{{ t('social.notFollowingHint') }}</p>
             <button class="btn btn-primary btn-sm mt-2" @click="showSearchModal = true">
-              <UserPlus :size="16" /> Find Users
+              <UserPlus :size="16" /> {{ t('social.findUsers') }}
             </button>
           </div>
           <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -87,7 +87,7 @@
                       v-if="user.isPublic && user.coinCount > 0"
                       class="inline-flex rounded-full bg-[var(--accent-gold-dim)] px-2 py-[0.15rem] text-label font-medium text-gold"
                     >
-                      {{ user.coinCount }} coins
+                      {{ t('common.coinCount', { count: user.coinCount }) }}
                     </span>
                   </div>
                 </div>
@@ -97,14 +97,14 @@
                   :to="`/followers/${user.username}/gallery`"
                   class="btn btn-secondary btn-sm"
                 >
-                  <Eye :size="14" /> View Collection
+                  <Eye :size="14" /> {{ t('social.viewCollection') }}
                 </router-link>
                 <button
                   class="btn btn-danger btn-sm"
                   :disabled="actionLoading === user.id"
                   @click="handleUnfollow(user)"
                 >
-                  Unfollow
+                  {{ t('social.unfollow') }}
                 </button>
               </div>
             </div>
@@ -115,8 +115,8 @@
         <div v-else-if="activeTab === 'followers'">
           <div v-if="followers.length === 0" class="empty-state flex flex-col items-center gap-2 !px-4 !py-12">
             <Users :size="48" />
-            <h3 class="m-0 text-base text-text-primary">No followers yet</h3>
-            <p class="m-0 text-body text-text-muted">When other users follow you, they'll appear here.</p>
+            <h3 class="m-0 text-base text-text-primary">{{ t('social.noFollowers') }}</h3>
+            <p class="m-0 text-body text-text-muted">{{ t('social.noFollowersHint') }}</p>
           </div>
           <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div v-for="user in followers" :key="user.id" class="card flex flex-col gap-3 overflow-hidden !p-4">
@@ -133,13 +133,13 @@
                     v-if="user.status === 'pending'"
                     class="mt-[0.3rem] inline-flex rounded-full bg-[var(--accent-gold-glow)] px-2 py-[0.15rem] text-label font-medium text-gold"
                   >
-                    Pending
+                    {{ t('social.pending') }}
                   </span>
                   <span
                     v-else-if="user.status === 'accepted'"
                     class="mt-[0.3rem] inline-flex rounded-full bg-[var(--accent-gold-glow)] px-2 py-[0.15rem] text-label font-medium text-greek"
                   >
-                    Accepted
+                    {{ t('social.accepted') }}
                   </span>
                 </div>
               </div>
@@ -150,14 +150,14 @@
                   :disabled="actionLoading === user.id"
                   @click="handleAccept(user)"
                 >
-                  <Check :size="14" /> Accept
+                  <Check :size="14" /> {{ t('common.accept') }}
                 </button>
                 <button
                   class="btn btn-danger btn-sm"
                   :disabled="actionLoading === user.id"
                   @click="handleBlock(user)"
                 >
-                  <ShieldOff :size="14" /> Block
+                  <ShieldOff :size="14" /> {{ t('social.block') }}
                 </button>
               </div>
             </div>
@@ -175,13 +175,13 @@
       >
         <div class="card !p-0 flex max-h-[80vh] w-full max-w-[520px] flex-col">
           <div class="flex items-center justify-between border-b border-border-subtle px-5 py-4">
-            <h2 class="m-0 flex items-center gap-2 text-base"><Search :size="20" /> Find Users</h2>
+            <h2 class="m-0 flex items-center gap-2 text-base"><Search :size="20" /> {{ t('social.findUsers') }}</h2>
             <button class="rounded-sm p-1 text-text-secondary transition-colors hover:text-text-primary" @click="closeSearchModal">
               <X :size="20" />
             </button>
           </div>
           <div class="flex flex-col gap-4 overflow-y-auto px-5 py-4">
-            <p class="m-0 text-chip text-text-muted">Only users with public profiles appear in search results.</p>
+            <p class="m-0 text-chip text-text-muted">{{ t('social.publicOnly') }}</p>
             <div class="relative">
               <Search :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
@@ -189,7 +189,7 @@
                 v-model="searchQuery"
                 type="text"
                 class="form-input w-full pl-9"
-                placeholder="Search by username..."
+                :placeholder="t('social.searchPlaceholder')"
                 @input="onSearchInput"
               />
             </div>
@@ -218,19 +218,19 @@
                     v-if="user.followStatus === 'pending'"
                     class="inline-flex rounded-full bg-[var(--accent-gold-glow)] px-2 py-[0.15rem] text-label font-medium text-gold"
                   >
-                    Pending
+                    {{ t('social.pending') }}
                   </span>
                   <span
                     v-else-if="user.followStatus === 'accepted'"
                     class="inline-flex rounded-sm bg-[var(--accent-gold-dim)] px-[0.6rem] py-[0.3rem] text-sm font-medium text-gold"
                   >
-                    Following
+                    {{ t('social.following') }}
                   </span>
                   <span
                     v-else-if="user.followStatus === 'blocked'"
                     class="inline-flex rounded-full bg-[var(--accent-gold-glow)] px-2 py-[0.15rem] text-label font-medium text-error-bg"
                   >
-                    Blocked
+                    {{ t('social.blocked') }}
                   </span>
                   <button
                     v-else
@@ -238,16 +238,16 @@
                     :disabled="actionLoading === user.id"
                     @click="handleFollow(user)"
                   >
-                    <UserPlus :size="14" /> Follow
+                    <UserPlus :size="14" /> {{ t('social.follow') }}
                   </button>
                 </div>
               </div>
             </div>
             <div v-else-if="searchQuery.length >= 2 && !searchLoading" class="empty-state !px-4 !py-6">
-              <p>No users found for "{{ searchQuery }}"</p>
+              <p>{{ t('social.noUsers', { query: searchQuery }) }}</p>
             </div>
             <div v-else class="empty-state !px-4 !py-6">
-              <p>Type at least 2 characters to search</p>
+              <p>{{ t('social.minChars') }}</p>
             </div>
           </div>
         </div>
@@ -269,6 +269,7 @@ import { usePwa } from '@/composables/usePwa'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t } from '@/i18n'
 
 const activeTab = ref<'following' | 'followers'>('following')
 const { isPwa } = usePwa()

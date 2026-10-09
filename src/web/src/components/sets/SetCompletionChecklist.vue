@@ -2,11 +2,11 @@
   <section class="mb-6 rounded-md border border-border-subtle bg-card p-6">
     <div class="mb-4 flex items-center justify-between gap-4">
       <div>
-        <h2>Completion</h2>
+        <h2>{{ t('sets.completion.title') }}</h2>
         <p class="m-0 text-body text-text-secondary">
-          {{ collectionItems }} collection item<span v-if="collectionItems !== 1">s</span> of {{ totalItems }} total item<span v-if="totalItems !== 1">s</span>
+          {{ t('sets.completion.summary', { collection: t('sets.completion.collectionItems', { count: collectionItems }), total: t('sets.completion.totalItems', { count: totalItems }) }) }}
         </p>
-        <p class="m-0 text-chip text-text-muted">{{ wishlistItems }} wishlist item<span v-if="wishlistItems !== 1">s</span></p>
+        <p class="m-0 text-chip text-text-muted">{{ t('sets.completion.wishlistItems', { count: wishlistItems }) }}</p>
       </div>
       <span class="text-xl font-semibold text-gold">{{ completionPercent.toFixed(1) }}%</span>
     </div>
@@ -14,7 +14,7 @@
       <div class="h-full bg-gold transition-[width] duration-300" :style="{ width: `${Math.min(completionPercent, 100)}%` }"></div>
     </div>
     <div v-if="completion.missingTargets.length" class="mt-4">
-      <span class="section-label">Wishlist items still needed</span>
+      <span class="section-label">{{ t('sets.completion.stillNeeded') }}</span>
       <div class="mt-2 flex flex-wrap gap-[0.35rem]">
         <span v-for="target in completion.missingTargets" :key="target.id || target.label" class="chip-sm">
           {{ target.label }}
@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { CoinSetCompletion } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   completion: CoinSetCompletion

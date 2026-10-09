@@ -1,0 +1,37 @@
+import type { Messages } from '../../types'
+
+const messages: Messages['nav'] = {
+  collection: 'Coleção',
+  gallery: 'Galeria',
+  tray: 'Tabuleiro',
+  storageTrays: 'Tabuleiros de arrumação',
+  addCoin: 'Adicionar moeda',
+  identifyCoin: 'Identificar moeda',
+  analysisHistory: 'Histórico de análises',
+  wishlist: 'Lista de desejos',
+  quickAccess: 'Acesso rápido',
+  sold: 'Vendidas',
+  auctions: 'Leilões',
+  followers: 'Seguidores',
+  agent: 'Agente',
+  stats: 'Estatísticas',
+  timeline: 'Cronologia',
+  map: 'Mapa',
+  health: 'Saúde',
+  valueDetails: 'Detalhes de valor',
+  investmentBreakdown: 'Repartição do investimento',
+  timeMachine: 'Máquina do tempo',
+  sets: 'Conjuntos',
+  mySets: 'Os meus conjuntos',
+  emperors: 'Imperadores',
+  notes: 'Notas',
+  calendar: 'Calendário',
+  showcases: 'Vitrinas',
+  notifications: 'Notificações',
+  settings: 'Definições',
+  gettingStarted: 'Primeiros passos',
+  admin: 'Administração',
+  logout: 'Terminar sessão',
+}
+
+export default messages

@@ -2,10 +2,9 @@
   <Teleport to="body">
     <div v-if="request" class="fixed inset-0 z-[1600] flex items-center justify-center bg-overlay-60 px-4" @click="cancel">
       <div class="w-full max-w-[360px] rounded-md border border-border-subtle bg-card p-6 shadow-[0_12px_40px_var(--overlay-50)]" @click.stop>
-        <h3 class="mb-2 text-base text-heading">Confirm {{ request.fieldLabel }}</h3>
+        <h3 class="mb-2 text-base text-heading">{{ t('chat.confirmField', { field: fieldName(request.fieldLabel) }) }}</h3>
         <p class="mb-3 text-body text-text-secondary">
-          The suggested {{ request.fieldLabel.toLowerCase() }} "<strong class="text-text-primary">{{ request.suggestedValue }}</strong>"
-          doesn't match any of your configured values. Use one of yours, or keep it as suggested.
+          <I18nT keypath="chat.confirmFieldBody" :params="{ field: fieldName(request.fieldLabel).toLowerCase() }"><template #value>"<strong class="text-text-primary">{{ request.suggestedValue }}</strong>"</template></I18nT>
         </p>
         <div class="flex max-h-[240px] flex-col gap-1.5 overflow-y-auto">
           <button
@@ -14,16 +13,16 @@
             class="rounded-sm border border-border-subtle bg-surface px-3 py-2 text-left text-body text-text-primary transition-colors hover:border-gold hover:text-gold"
             @click="choose(option)"
           >
-            {{ option }}
+            {{ optionLabel(request.fieldLabel, option) }}
           </button>
         </div>
         <button
           class="btn btn-secondary btn-sm mt-3 w-full"
           @click="choose(request.suggestedValue)"
         >
-          Keep "{{ request.suggestedValue }}"
+          {{ t('chat.keepSuggested', { value: request.suggestedValue }) }}
         </button>
-        <button class="btn btn-ghost btn-sm mt-2 w-full" @click="cancel">Cancel</button>
+        <button class="btn btn-ghost btn-sm mt-2 w-full" @click="cancel">{{ t('common.cancel') }}</button>
       </div>
     </div>
   </Teleport>
@@ -31,6 +30,9 @@
 
 <script setup lang="ts">
 import type { CategoryEraConfirmRequest } from '@/composables/useCoinSearchChat'
+import I18nT from '@/components/I18nT.vue'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 defineProps<{
   request: CategoryEraConfirmRequest | null
@@ -40,6 +42,17 @@ const emit = defineEmits<{
   choose: [value: string]
   cancel: []
 }>()
+
+function fieldName(label: string): string {
+  if (label === 'Category') return t('coinFields.category')
+  if (label === 'Era') return t('coinFields.era')
+  return label
+}
+
+// Options are stored values; show them in the current locale.
+function optionLabel(fieldLabel: string, option: string): string {
+  return fieldLabel === 'Era' ? eraLabel(option) : categoryLabel(option)
+}
 
 function choose(value: string) {
   emit('choose', value)

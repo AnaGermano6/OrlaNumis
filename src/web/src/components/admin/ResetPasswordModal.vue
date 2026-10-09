@@ -1,10 +1,10 @@
 <template>
   <div v-if="user" class="fixed inset-0 bg-overlay-60 flex items-center justify-center z-[200] p-4" @click.self="$emit('close')">
     <div class="card w-full max-w-[400px]">
-      <h3 class="mb-4">Reset Password for {{ user.username }}</h3>
+      <h3 class="mb-4">{{ t('admin.users.resetPasswordFor', { name: user.username }) }}</h3>
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
-          <label class="form-label">New Password</label>
+          <label class="form-label">{{ t('settings.account.newPassword') }}</label>
           <input v-model="password" type="password" class="form-input" required minlength="6" />
         </div>
         <p
@@ -15,9 +15,9 @@
           {{ msg }}
         </p>
         <div class="flex justify-end gap-2 mt-4">
-          <button type="button" class="btn btn-secondary btn-sm" @click="$emit('close')">Cancel</button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="$emit('close')">{{ t('common.cancel') }}</button>
           <button type="submit" class="btn btn-primary btn-sm" :disabled="loading">
-            {{ loading ? 'Resetting...' : 'Reset Password' }}
+            {{ loading ? t('admin.users.resetting') : t('admin.users.resetPassword') }}
           </button>
         </div>
       </form>
@@ -29,6 +29,7 @@
 import { ref, watch, onBeforeUnmount } from 'vue'
 import type { UserInfo } from '@/types'
 import { resetUserPassword } from '@/api/client'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   user: UserInfo | null
@@ -56,10 +57,10 @@ async function handleSubmit() {
   msg.value = ''
   try {
     await resetUserPassword(props.user.id, password.value)
-    msg.value = 'Password reset successfully'
+    msg.value = t('admin.users.passwordReset')
     closeTimer = setTimeout(() => { emit('close') }, 1200)
   } catch {
-    msg.value = 'Failed to reset password'
+    msg.value = t('admin.users.passwordResetFailed')
     error.value = true
   } finally {
     loading.value = false

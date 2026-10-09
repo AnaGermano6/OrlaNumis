@@ -12,8 +12,8 @@ describe('PwaCollectionHeader', () => {
     const source = fs.readFileSync(headerPath, 'utf8')
 
     expect(source).not.toContain('class="pwa-icon-btn"')
-    expect(source).toContain('<span class="section-label mb-0">Selection</span>')
-    expect(source).toContain("{{ selectMode ? 'Exit Selection Mode' : 'Enable Selection Mode' }}")
+    expect(source).toContain(`<span class="section-label mb-0">{{ t('collection.menu.selection') }}</span>`)
+    expect(source).toContain("{{ selectMode ? t('collection.menu.exitSelection') : t('collection.menu.enableSelection') }}")
   })
 
   it('does not launch Mint Map from the PWA collection menu', () => {

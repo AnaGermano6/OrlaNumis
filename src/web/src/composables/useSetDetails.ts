@@ -1,6 +1,7 @@
 import { onScopeDispose, ref, watch, type Ref } from 'vue'
 import { getCoinsInSet, getSet, getSetCompletion } from '@/api/client'
 import { normalizeCoinSetType, type Coin, type CoinSetCompletion, type CoinSetDetail } from '@/types'
+import { t } from '@/i18n'
 
 export function useSetDetails(setId: Ref<number>) {
   const set = ref<CoinSetDetail | null>(null)
@@ -33,7 +34,7 @@ export function useSetDetails(setId: Ref<number>) {
       coins.value = coinsResponse.data.coins
       completion.value = details
     } catch {
-      if (isCurrent()) error.value = 'Unable to load this set. Please try again.'
+      if (isCurrent()) error.value = t('sets.loadFailed')
     } finally {
       if (isCurrent()) loading.value = false
     }

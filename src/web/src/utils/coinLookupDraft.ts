@@ -1,4 +1,5 @@
 import { MATERIALS, type CoinLookupResponse, type CoinMutationPayload, type Material } from '@/types'
+import { t } from '@/i18n'
 
 type NormalizableLookupField =
   | 'name'
@@ -152,8 +153,8 @@ export function deriveAiObservations(lookup: CoinLookupResponse, draft: CoinMuta
   if (!parseJsonLookupFields(lookup.extractedData.rawAnalysis)) {
     appendUniqueObservation(parts, safeRawObservation(lookup.extractedData.rawAnalysis))
   }
-  appendUniqueObservation(parts, draft.obverseDescription, 'Obverse')
-  appendUniqueObservation(parts, draft.reverseDescription, 'Reverse')
+  appendUniqueObservation(parts, draft.obverseDescription, t('common.obverse'))
+  appendUniqueObservation(parts, draft.reverseDescription, t('common.reverse'))
 
   return parts.join('\n\n')
 }

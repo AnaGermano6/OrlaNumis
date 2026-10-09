@@ -2,20 +2,20 @@
   <section class="card p-6">
     <div class="mb-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
       <div>
-        <p class="section-label">Sign-in Providers</p>
-        <h2 class="m-0 text-xl font-medium text-heading">OIDC Login</h2>
+        <p class="section-label">{{ t('admin.oidc.eyebrow') }}</p>
+        <h2 class="m-0 text-xl font-medium text-heading">{{ t('admin.tabs.oidc') }}</h2>
       </div>
       <div class="flex flex-col gap-2 md:flex-row md:flex-wrap md:justify-end">
         <button type="button" class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="openSetupGuide">
-          Setup Guide
+          {{ t('admin.oidc.setupGuide') }}
         </button>
         <button type="button" class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="openCreateForm">
-          Add Provider
+          {{ t('admin.oidc.addProvider') }}
         </button>
       </div>
     </div>
     <p class="mb-6 text-body leading-6 text-text-secondary">
-      Configure Microsoft Entra ID, Pocket ID, or another OpenID Connect provider. Client secrets are write-only and are never shown after saving.
+      {{ t('admin.oidc.intro') }}
     </p>
 
     <div v-if="loading" class="flex items-center justify-center p-12">
@@ -33,7 +33,7 @@
 
     <template v-else>
       <div v-if="providers.length === 0" class="py-8 text-center text-body text-text-muted">
-        No OIDC providers configured yet.
+        {{ t('admin.oidc.empty') }}
       </div>
 
       <div v-else class="flex flex-col gap-3">
@@ -43,14 +43,14 @@
               <h3 class="m-0 text-lg font-medium text-heading">{{ provider.displayName }}</h3>
               <span class="chip-sm">{{ providerTypeLabel(provider.providerType) }}</span>
               <span class="chip-sm" :class="provider.enabled ? 'border-gold bg-[var(--accent-gold-dim)] text-gold' : 'text-text-muted'">
-                {{ provider.enabled ? 'Enabled' : 'Disabled' }}
+                {{ provider.enabled ? t('admin.oidc.enabled') : t('admin.oidc.disabled') }}
               </span>
             </div>
             <p class="mb-2 text-body text-text-secondary [overflow-wrap:anywhere]">{{ provider.name }} · {{ provider.issuerUrl }}</p>
             <div class="flex flex-wrap gap-x-4 gap-y-2 text-sm text-text-muted">
-              <span>Client ID: {{ provider.clientId }}</span>
-              <span>Secret: {{ provider.clientSecretConfigured ? 'Configured' : 'Not configured' }}</span>
-              <span>Scopes: {{ provider.scopes?.join(' ') ?? 'openid profile email' }}</span>
+              <span>{{ t('admin.oidc.clientIdValue', { value: provider.clientId }) }}</span>
+              <span>{{ t('admin.oidc.secretValue', { value: provider.clientSecretConfigured ? t('admin.oidc.configured') : t('admin.oidc.notConfigured') }) }}</span>
+              <span>{{ t('admin.oidc.scopesValue', { value: provider.scopes?.join(' ') ?? 'openid profile email' }) }}</span>
             </div>
           </div>
 
@@ -77,7 +77,7 @@
             <AlertCircle v-else :size="16" />
             <div>
               <strong :class="testResults[provider.id]?.available ? 'text-gain' : 'text-loss'">
-                {{ testResults[provider.id]?.available ? 'Discovery succeeded' : 'Discovery failed' }}
+                {{ testResults[provider.id]?.available ? t('admin.oidc.discoverySucceeded') : t('admin.oidc.discoveryFailed') }}
               </strong>
               <p class="mt-[0.15rem] text-text-secondary">{{ testResults[provider.id]?.message }}</p>
             </div>
@@ -85,22 +85,22 @@
 
           <div class="flex flex-col gap-[0.35rem] md:flex-row md:flex-wrap md:justify-end">
             <button type="button" class="btn btn-secondary btn-xs focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" :disabled="testingProviderId === provider.id" @click="testProvider(provider.id)">
-              {{ testingProviderId === provider.id ? 'Testing discovery...' : 'Test Discovery' }}
+              {{ testingProviderId === provider.id ? t('admin.oidc.testingDiscovery') : t('admin.oidc.testDiscovery') }}
             </button>
             <button type="button" class="btn btn-ghost btn-xs focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" :disabled="savingProviderId === provider.id" @click="toggleProvider(provider)">
-              {{ provider.enabled ? 'Disable' : 'Enable' }}
+              {{ provider.enabled ? t('common.disable') : t('common.enable') }}
             </button>
             <button type="button" class="btn btn-ghost btn-xs focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="openEditForm(provider)">
-              Edit
+              {{ t('common.edit') }}
             </button>
             <button type="button" class="btn btn-danger btn-xs focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" :disabled="deletingProviderId === provider.id" @click="deleteProvider(provider)">
-              {{ deletingProviderId === provider.id ? 'Deleting...' : 'Delete' }}
+              {{ deletingProviderId === provider.id ? t('common.deleting') : t('common.delete') }}
             </button>
           </div>
 
           <div class="flex items-start gap-2 rounded-sm border border-border-accent bg-[var(--accent-gold-glow)] p-[0.8rem] text-sm text-text-secondary">
             <AlertCircle :size="16" />
-            <span>Discovery tests do not validate the client secret. Entra verifies the secret only when a user completes sign-in or account linking.</span>
+            <span>{{ t('admin.oidc.secretNote') }}</span>
           </div>
         </article>
       </div>
@@ -109,11 +109,11 @@
     <div v-if="showForm" class="fixed inset-0 z-[200] flex items-center justify-center bg-overlay-60 p-4" @click.self="closeForm">
       <div class="max-h-[90vh] w-full max-w-[760px] overflow-auto rounded-md border border-border-subtle bg-card shadow-[var(--shadow-card)]">
         <div class="flex items-center justify-between gap-4 border-b border-border-subtle px-6 py-4">
-          <h3 class="m-0 text-lg font-medium text-heading">{{ editingProvider ? 'Edit OIDC Provider' : 'Add OIDC Provider' }}</h3>
+          <h3 class="m-0 text-lg font-medium text-heading">{{ editingProvider ? t('admin.oidc.editTitle') : t('admin.oidc.addTitle') }}</h3>
           <button
             type="button"
             class="inline-flex items-center justify-center rounded-sm p-1 text-text-muted transition-colors hover:text-text-primary focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-            aria-label="Close"
+            :aria-label="t('common.close')"
             @click="closeForm"
           >
             <X :size="20" />
@@ -123,7 +123,7 @@
         <form class="p-6" @submit.prevent="saveProvider">
           <div class="grid gap-4 md:grid-cols-2">
             <div class="form-group">
-              <label class="form-label" for="oidc-name">Provider Key</label>
+              <label class="form-label" for="oidc-name">{{ t('admin.oidc.providerKey') }}</label>
               <input
                 id="oidc-name"
                 v-model.trim="form.name"
@@ -132,11 +132,11 @@
                 placeholder="entra-work"
                 autocomplete="off"
               />
-              <span class="mt-1 block text-sm text-text-muted">Stable admin key used by the API. Use lowercase letters, numbers, and hyphens.</span>
+              <span class="mt-1 block text-sm text-text-muted">{{ t('admin.oidc.providerKeyHint') }}</span>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="oidc-display-name">Display Name</label>
+              <label class="form-label" for="oidc-display-name">{{ t('admin.catalogs.displayName') }}</label>
               <input
                 id="oidc-display-name"
                 v-model.trim="form.displayName"
@@ -148,29 +148,29 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="oidc-provider-type">Provider Type</label>
+              <label class="form-label" for="oidc-provider-type">{{ t('admin.oidc.providerType') }}</label>
               <select id="oidc-provider-type" v-model="form.providerType" class="form-select">
                 <option value="entra">Microsoft Entra ID</option>
                 <option value="pocket_id">Pocket ID</option>
-                <option value="generic">Generic OIDC</option>
+                <option value="generic">{{ t('admin.oidc.generic') }}</option>
               </select>
             </div>
 
             <div class="form-group flex items-center justify-between gap-4">
               <div>
-                <label class="form-label" for="oidc-enabled">Enabled</label>
-                <span class="mt-1 block text-sm text-text-muted">Only enabled providers appear on the login page.</span>
+                <label class="form-label" for="oidc-enabled">{{ t('admin.oidc.enabled') }}</label>
+                <span class="mt-1 block text-sm text-text-muted">{{ t('admin.oidc.enabledHint') }}</span>
               </div>
               <BaseToggle
                 id="oidc-enabled"
                 v-model="form.enabled"
-                label="Enabled"
+                :label="t('admin.oidc.enabled')"
               />
             </div>
           </div>
 
           <div v-if="form.providerType === 'entra'" class="form-group">
-            <label class="form-label" for="oidc-tenant-id">Tenant ID</label>
+            <label class="form-label" for="oidc-tenant-id">{{ t('admin.oidc.tenantId') }}</label>
             <input
               id="oidc-tenant-id"
               v-model.trim="form.tenantId"
@@ -180,14 +180,14 @@
               autocomplete="off"
             />
             <span class="mt-1 block text-sm text-text-muted">
-              Derived issuer URL:
+              {{ t('admin.oidc.derivedIssuer') }}
               <code v-if="derivedEntraIssuerUrl" class="font-mono text-sm text-text-primary [overflow-wrap:anywhere]">{{ derivedEntraIssuerUrl }}</code>
-              <span v-else>enter a tenant ID to generate the Microsoft issuer URL.</span>
+              <span v-else>{{ t('admin.oidc.enterTenant') }}</span>
             </span>
           </div>
 
           <div v-else class="form-group">
-            <label class="form-label" for="oidc-issuer-url">Issuer URL</label>
+            <label class="form-label" for="oidc-issuer-url">{{ t('admin.oidc.issuerUrl') }}</label>
             <input
               id="oidc-issuer-url"
               v-model.trim="form.issuerUrl"
@@ -200,7 +200,7 @@
 
           <div class="grid gap-4 md:grid-cols-2">
             <div class="form-group">
-              <label class="form-label" for="oidc-client-id">Client ID</label>
+              <label class="form-label" for="oidc-client-id">{{ t('admin.oidc.clientId') }}</label>
               <input
                 id="oidc-client-id"
                 v-model.trim="form.clientId"
@@ -211,7 +211,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="oidc-client-secret">Client Secret</label>
+              <label class="form-label" for="oidc-client-secret">{{ t('admin.oidc.clientSecret') }}</label>
               <input
                 id="oidc-client-secret"
                 v-model="form.clientSecret"
@@ -226,12 +226,12 @@
 
           <div class="mb-4 flex items-start gap-2 rounded-sm border border-border-accent bg-[var(--accent-gold-glow)] p-[0.8rem] text-sm text-text-secondary">
             <AlertCircle :size="16" />
-            <span>Discovery tests do not validate the client secret. Entra verifies the secret only when a user completes sign-in or account linking.</span>
+            <span>{{ t('admin.oidc.secretNote') }}</span>
           </div>
 
           <div class="grid gap-4 md:grid-cols-2">
             <div class="form-group">
-              <label class="form-label" for="oidc-scopes">Scopes</label>
+              <label class="form-label" for="oidc-scopes">{{ t('admin.oidc.scopes') }}</label>
               <input
                 id="oidc-scopes"
                 v-model.trim="form.scopesInput"
@@ -239,11 +239,11 @@
                 required
                 placeholder="openid profile email"
               />
-              <span class="mt-1 block text-sm text-text-muted">Space or comma separated. Must include openid.</span>
+              <span class="mt-1 block text-sm text-text-muted">{{ t('admin.oidc.scopesHint') }}</span>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="oidc-callback-path">Callback Path</label>
+              <label class="form-label" for="oidc-callback-path">{{ t('admin.oidc.callbackPath') }}</label>
               <input
                 id="oidc-callback-path"
                 v-model.trim="form.callbackPath"
@@ -251,19 +251,19 @@
                 placeholder="/auth/oidc/callback/1"
                 autocomplete="off"
               />
-              <span class="mt-1 block text-sm text-text-muted">Login and linking use branded frontend callbacks. Leave blank unless you need a fallback override.</span>
+              <span class="mt-1 block text-sm text-text-muted">{{ t('admin.oidc.callbackHint') }}</span>
             </div>
           </div>
 
           <div class="form-group flex items-center justify-between gap-4">
             <div>
-              <label class="form-label" for="oidc-verified-email">Require Verified Email</label>
-              <span class="mt-1 block text-sm text-text-muted">Recommended for matching account emails safely.</span>
+              <label class="form-label" for="oidc-verified-email">{{ t('admin.oidc.requireVerifiedEmail') }}</label>
+              <span class="mt-1 block text-sm text-text-muted">{{ t('admin.oidc.requireVerifiedEmailHint') }}</span>
             </div>
             <BaseToggle
               id="oidc-verified-email"
               v-model="form.requireVerifiedEmail"
-              label="Require Verified Email"
+              :label="t('admin.oidc.requireVerifiedEmail')"
             />
           </div>
 
@@ -279,9 +279,9 @@
           </div>
 
           <div class="mt-6 flex flex-col gap-2 md:flex-row md:justify-end">
-            <button type="button" class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="closeForm">Cancel</button>
+            <button type="button" class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="closeForm">{{ t('common.cancel') }}</button>
             <button type="submit" class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" :disabled="formSaving">
-              {{ formSaving ? 'Saving...' : 'Save Provider' }}
+              {{ formSaving ? t('common.saving') : t('admin.oidc.saveProvider') }}
             </button>
           </div>
         </form>
@@ -311,6 +311,7 @@ import type {
   OIDCProviderType,
 } from '@/types'
 import { useDialog } from '@/composables/useDialog'
+import { t } from '@/i18n'
 
 type ProviderForm = {
   name: string
@@ -368,14 +369,14 @@ const form = reactive<ProviderForm>({
 
 const secretPlaceholder = computed(() =>
   editingProvider.value?.clientSecretConfigured
-    ? 'Configured; leave blank to preserve'
-    : 'Enter client secret'
+    ? t('admin.oidc.secretPreserve')
+    : t('admin.oidc.secretEnter')
 )
 
 const secretHint = computed(() =>
   editingProvider.value
-    ? 'Leave blank to keep the existing secret. Enter a new value only when rotating the secret.'
-    : 'Stored by the API and never returned to the browser.'
+    ? t('admin.oidc.secretKeepHint')
+    : t('admin.oidc.secretStoredHint')
 )
 
 const derivedEntraIssuerUrl = computed(() => {
@@ -390,7 +391,7 @@ async function loadProviders() {
     const response = await getAdminOIDCProviders()
     providers.value = response.data.providers ?? []
   } catch (error: unknown) {
-    loadError.value = getApiErrorMessage(error) || 'Failed to load OIDC providers'
+    loadError.value = getApiErrorMessage(error) || t('admin.oidc.loadFailed')
   } finally {
     loading.value = false
   }
@@ -399,17 +400,17 @@ async function loadProviders() {
 function providerTypeLabel(type: OIDCProviderType) {
   if (type === 'entra') return 'Entra ID'
   if (type === 'pocket_id') return 'Pocket ID'
-  return 'Generic'
+  return t('admin.oidc.genericShort')
 }
 
 function statusLabel(provider: OIDCAdminProvider) {
-  if (provider.lastTestStatus === 'ok') return 'Discovery passed'
-  if (provider.lastTestStatus === 'failed') return 'Discovery failed'
-  return 'Discovery not tested'
+  if (provider.lastTestStatus === 'ok') return t('admin.oidc.discoveryPassed')
+  if (provider.lastTestStatus === 'failed') return t('admin.oidc.discoveryFailed')
+  return t('admin.oidc.discoveryNotTested')
 }
 
 function statusMessage(provider: OIDCAdminProvider) {
-  return provider.lastTestMessage || 'Run a discovery test to verify issuer metadata. Client secrets are verified only during sign-in or account linking.'
+  return provider.lastTestMessage || t('admin.oidc.runTestHint')
 }
 
 function resetForm() {
@@ -501,10 +502,10 @@ function issuerUrlForPayload() {
 
   const tenantId = normalizedTenantId()
   if (!tenantId) {
-    throw new Error('Tenant ID is required for Microsoft Entra ID.')
+    throw new Error(t('admin.oidc.tenantRequired'))
   }
   if (/[\s/\\]/.test(tenantId)) {
-    throw new Error('Tenant ID must not contain spaces or slashes.')
+    throw new Error(t('admin.oidc.tenantInvalid'))
   }
 
   return `https://login.microsoftonline.com/${tenantId}/v2.0`
@@ -513,7 +514,7 @@ function issuerUrlForPayload() {
 function buildPayload(): OIDCAdminProviderInput {
   const scopes = parseScopes()
   if (!scopes.includes('openid')) {
-    throw new Error('Scopes must include openid.')
+    throw new Error(t('admin.oidc.scopesOpenid'))
   }
 
   const payload: OIDCAdminProviderInput = {
@@ -552,7 +553,7 @@ async function saveProvider() {
     await loadProviders()
     closeForm()
   } catch (error: unknown) {
-    formError.value = getApiErrorMessage(error) || (error instanceof Error ? error.message : 'Failed to save OIDC provider')
+    formError.value = getApiErrorMessage(error) || (error instanceof Error ? error.message : t('admin.oidc.saveFailed'))
   } finally {
     formSaving.value = false
   }
@@ -564,7 +565,7 @@ async function toggleProvider(provider: OIDCAdminProvider) {
     await updateAdminOIDCProvider(provider.id, { enabled: !provider.enabled })
     await loadProviders()
   } catch (error: unknown) {
-    await showAlert(getApiErrorMessage(error) || 'Failed to update provider status', { title: 'Provider Update Failed' })
+    await showAlert(getApiErrorMessage(error) || t('admin.oidc.statusFailed'), { title: t('admin.oidc.updateFailedTitle') })
   } finally {
     savingProviderId.value = null
   }
@@ -584,7 +585,7 @@ async function testProvider(providerId: number) {
       ...testResults.value,
       [providerId]: {
         available: false,
-        message: getApiErrorMessage(error) || 'Provider discovery failed',
+        message: getApiErrorMessage(error) || t('admin.oidc.discoveryRequestFailed'),
         issuer: '',
         authorizationEndpoint: '',
         tokenEndpoint: '',
@@ -597,8 +598,8 @@ async function testProvider(providerId: number) {
 
 async function deleteProvider(provider: OIDCAdminProvider) {
   const confirmed = await showConfirm(
-    `Delete ${provider.displayName}? This will fail if any user identities are linked to this provider.`,
-    { title: 'Delete OIDC Provider', variant: 'danger' },
+    t('admin.oidc.confirmDelete', { name: provider.displayName }),
+    { title: t('admin.oidc.deleteTitle'), variant: 'danger' },
   )
   if (!confirmed) return
 
@@ -607,7 +608,7 @@ async function deleteProvider(provider: OIDCAdminProvider) {
     await deleteAdminOIDCProvider(provider.id)
     await loadProviders()
   } catch (error: unknown) {
-    await showAlert(getApiErrorMessage(error) || 'Failed to delete OIDC provider', { title: 'Delete Failed' })
+    await showAlert(getApiErrorMessage(error) || t('admin.oidc.deleteFailed'), { title: t('admin.catalogs.deleteFailedTitle') })
   } finally {
     deletingProviderId.value = null
   }

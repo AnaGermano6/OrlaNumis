@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { getUnreadNotificationCount } from '@/api/client'
+import { t } from '@/i18n'
 
 const unreadCount = ref(0)
 const error = ref('')
@@ -19,7 +20,7 @@ async function refresh() {
     error.value = ''
   } catch {
     if (currentGeneration === generation && currentRequest === request) {
-      error.value = 'Unable to refresh notification count. Retry or wait for the next automatic update.'
+      error.value = t('notifications.errors.refreshCount')
     }
   }
 }

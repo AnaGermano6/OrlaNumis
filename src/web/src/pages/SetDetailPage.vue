@@ -1,12 +1,12 @@
 <template>
   <div class="container pb-4 md:pb-6">
     <div v-if="loading" class="py-12 text-center text-text-secondary">
-      Loading set details...
+      {{ t('sets.detail.loading') }}
     </div>
 
     <div v-else-if="loadError" class="card" role="alert">
       <p>{{ loadError }}</p>
-      <button class="btn btn-secondary" @click="loadSetDetails">Retry</button>
+      <button class="btn btn-secondary" @click="loadSetDetails">{{ t('common.retry') }}</button>
     </div>
     <div v-else-if="set" class="space-y-6">
       <DesktopPageContext :title="set.name">
@@ -15,21 +15,21 @@
             <PinOff v-if="setPinned" :size="20" />
             <Pin v-else :size="20" />
           </AppIconButton>
-          <AppIconButton title="Back to Sets" @click="router.push({ name: 'sets' })"><ArrowLeft :size="20" /></AppIconButton>
+          <AppIconButton :title="t('emperors.backToSets')" @click="router.push({ name: 'sets' })"><ArrowLeft :size="20" /></AppIconButton>
           <div class="relative">
-            <AppIconButton :active="menuOpen" title="Set actions" @click="menuOpen = !menuOpen"><Menu :size="20" /></AppIconButton>
+            <AppIconButton :active="menuOpen" :title="t('sets.detail.setActions')" @click="menuOpen = !menuOpen"><Menu :size="20" /></AppIconButton>
             <div v-if="menuOpen" class="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-[260px] rounded-md border border-border-subtle bg-card p-2 shadow-[0_10px_26px_var(--overlay-45)]" role="menu">
               <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openSetInfoPage">
-                <span class="inline-flex items-center gap-2"><Info :size="15" /> Analytics & Value Trend</span>
+                <span class="inline-flex items-center gap-2"><Info :size="15" /> {{ t('sets.detail.analytics') }}</span>
               </button>
               <button v-if="canManageMembership" class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openAddCoinModal">
-                <span class="inline-flex items-center gap-2"><CirclePlus :size="15" /> Add Coin</span>
+                <span class="inline-flex items-center gap-2"><CirclePlus :size="15" /> {{ t('nav.addCoin') }}</span>
               </button>
               <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openEditModal">
-                <span class="inline-flex items-center gap-2"><Pencil :size="15" /> Edit Set</span>
+                <span class="inline-flex items-center gap-2"><Pencil :size="15" /> {{ t('sets.detail.editSet') }}</span>
               </button>
               <button class="w-full rounded-sm px-3 py-2 text-left text-body text-error-bg transition-all hover:bg-card-hover" role="menuitem" @click="deleteSet">
-                <span class="inline-flex items-center gap-2"><Trash2 :size="15" /> Delete Set</span>
+                <span class="inline-flex items-center gap-2"><Trash2 :size="15" /> {{ t('sets.detail.deleteSet') }}</span>
               </button>
             </div>
           </div>
@@ -48,22 +48,22 @@
               <PinOff v-if="setPinned" :size="22" />
               <Pin v-else :size="22" />
             </button>
-            <button class="pwa-icon-btn" title="Back to Sets" @click="router.push({ name: 'sets' })"><ArrowLeft :size="22" /></button>
-            <button class="pwa-icon-btn" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" title="Set actions" aria-label="Set actions" @click="menuOpen = !menuOpen"><Menu :size="22" /></button>
+            <button class="pwa-icon-btn" :title="t('emperors.backToSets')" @click="router.push({ name: 'sets' })"><ArrowLeft :size="22" /></button>
+            <button class="pwa-icon-btn" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" :title="t('sets.detail.setActions')" :aria-label="t('sets.detail.setActions')" @click="menuOpen = !menuOpen"><Menu :size="22" /></button>
           </div>
           <div v-else class="header-actions">
             <button class="btn btn-ghost" :class="{ 'text-gold': setPinned }" :disabled="pinDisabled" :aria-busy="setPinBusy" :aria-pressed="setPinned" :aria-label="pinButtonLabel" :title="pinButtonLabel" @click="togglePin">
               <PinOff v-if="setPinned" :size="16" />
               <Pin v-else :size="16" />
             </button>
-            <button class="btn btn-ghost" @click="router.push({ name: 'sets' })"><ArrowLeft :size="16" /> Back</button>
-            <button class="btn btn-secondary" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" aria-haspopup="menu" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen"><Menu :size="16" /> Actions</button>
+            <button class="btn btn-ghost" @click="router.push({ name: 'sets' })"><ArrowLeft :size="16" /> {{ t('common.back') }}</button>
+            <button class="btn btn-secondary" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" aria-haspopup="menu" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen"><Menu :size="16" /> {{ t('common.actions') }}</button>
           </div>
           <div v-if="menuOpen" class="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-full max-w-[260px] rounded-md border border-border-subtle bg-card p-2 shadow-[0_10px_26px_var(--overlay-45)]" role="menu">
-            <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openSetInfoPage"><span class="inline-flex items-center gap-2"><Info :size="15" /> Analytics & Value Trend</span></button>
-            <button v-if="canManageMembership" class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openAddCoinModal"><span class="inline-flex items-center gap-2"><CirclePlus :size="15" /> Add Coin</span></button>
-            <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openEditModal"><span class="inline-flex items-center gap-2"><Pencil :size="15" /> Edit Set</span></button>
-            <button class="w-full rounded-sm px-3 py-2 text-left text-body text-error-bg transition-all hover:bg-card-hover" role="menuitem" @click="deleteSet"><span class="inline-flex items-center gap-2"><Trash2 :size="15" /> Delete Set</span></button>
+            <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openSetInfoPage"><span class="inline-flex items-center gap-2"><Info :size="15" /> {{ t('sets.detail.analytics') }}</span></button>
+            <button v-if="canManageMembership" class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openAddCoinModal"><span class="inline-flex items-center gap-2"><CirclePlus :size="15" /> {{ t('nav.addCoin') }}</span></button>
+            <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openEditModal"><span class="inline-flex items-center gap-2"><Pencil :size="15" /> {{ t('sets.detail.editSet') }}</span></button>
+            <button class="w-full rounded-sm px-3 py-2 text-left text-body text-error-bg transition-all hover:bg-card-hover" role="menuitem" @click="deleteSet"><span class="inline-flex items-center gap-2"><Trash2 :size="15" /> {{ t('sets.detail.deleteSet') }}</span></button>
           </div>
         </div>
 
@@ -71,7 +71,7 @@
           <p class="text-base text-text-secondary">{{ set.description }}</p>
         </template>
       </DesktopPageContext>
-      <button v-if="menuOpen" class="fixed inset-0 z-10 bg-transparent" aria-label="Close menu" @click="menuOpen = false"></button>
+      <button v-if="menuOpen" class="fixed inset-0 z-10 bg-transparent" :aria-label="t('common.closeMenu')" @click="menuOpen = false"></button>
 
       <SetCompletionChecklist
         v-if="completion"
@@ -80,27 +80,27 @@
 
       <div class="space-y-4">
         <p v-if="canReorderCoins && coins.length > 1" class="m-0 max-w-none text-left text-body text-text-secondary md:text-right" :class="{ 'text-confidence-low': orderError }" aria-live="polite">
-          <span v-if="savingOrder">Saving order...</span>
+          <span v-if="savingOrder">{{ t('sets.detail.savingOrder') }}</span>
           <span v-else-if="orderError">{{ orderError }}</span>
-          <span v-else>Drag rows or use the arrows to arrange this set.</span>
+          <span v-else>{{ t('sets.detail.dragHint') }}</span>
         </p>
         <p v-if="normalizedSetType === 'agentic'" class="m-0 text-body text-text-secondary">
-          Click any tray slot to assign or replace the coin for that target.
+          {{ t('sets.detail.agenticHint') }}
         </p>
         <div v-if="displayTrayCoins.length === 0" class="card space-y-4 py-8 text-center">
           <p class="m-0 text-base text-text-secondary">{{ emptySetMessage }}</p>
-          <button v-if="canManageMembership" class="btn btn-primary" @click="openAddCoinModal">Add Coins</button>
+          <button v-if="canManageMembership" class="btn btn-primary" @click="openAddCoinModal">{{ t('sets.detail.addCoins') }}</button>
         </div>
         <div
           v-else
           class="space-y-4"
           :class="{ 'opacity-80': savingOrder }"
-          aria-label="Coins in this set"
+          :aria-label="t('sets.detail.coinsInSet')"
         >
           <div class="flex flex-col gap-4">
             <div class="flex justify-center md:justify-center">
               <label class="inline-flex w-full items-center justify-between gap-3 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.04)] px-3 py-2 text-label font-semibold uppercase tracking-[0.08em] text-text-secondary md:w-auto md:justify-start">
-                <span>Coin size</span>
+                <span>{{ t('sets.detail.coinSize') }}</span>
                 <input
                   id="set-tray-size-slider"
                   v-model.number="traySizeScale"
@@ -132,7 +132,7 @@
           <div
             v-if="canManageMembership"
             class="mt-4 flex flex-col gap-2"
-            aria-label="Manage set coin order and membership"
+            :aria-label="t('sets.detail.manageOrder')"
           >
             <div
               v-for="(coin, index) in coins"
@@ -150,20 +150,20 @@
               @drop.prevent="dropCoin(coin.id)"
               @dragend="resetDragState"
             >
-              <span class="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-border-accent text-sm font-semibold text-gold" :aria-label="`Position ${index + 1}`">{{ index + 1 }}</span>
+              <span class="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-border-accent text-sm font-semibold text-gold" :aria-label="t('sets.detail.position', { n: index + 1 })">{{ index + 1 }}</span>
               <button type="button" class="min-w-0 truncate bg-transparent p-0 text-left text-base font-semibold text-text-primary transition-colors hover:text-gold" @click="goToCoin(coin.id)">
                 {{ coin.name }}
               </button>
               <span class="hidden whitespace-nowrap text-chip font-semibold text-gold md:inline">${{ coin.currentValue ?? 0 }}</span>
-              <div class="flex flex-nowrap justify-end gap-1.5" aria-label="Set coin actions">
+              <div class="flex flex-nowrap justify-end gap-1.5" :aria-label="t('sets.detail.coinActions')">
                 <button
                   v-if="canReorderCoins"
                   type="button"
                   class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border-subtle bg-input text-text-secondary transition-all hover:border-border-accent hover:bg-[var(--accent-gold-glow)] hover:text-gold disabled:cursor-not-allowed disabled:opacity-30"
                   :disabled="index === 0 || savingOrder"
                   @click="moveCoinByButton(index, -1)"
-                  title="Move earlier"
-                  :aria-label="`Move ${coin.name} earlier`"
+                  :title="t('sets.detail.moveEarlier')"
+                  :aria-label="t('sets.detail.moveCoinEarlier', { name: coin.name })"
                 >
                   <ChevronUp :size="16" />
                 </button>
@@ -173,8 +173,8 @@
                   class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border-subtle bg-input text-text-secondary transition-all hover:border-border-accent hover:bg-[var(--accent-gold-glow)] hover:text-gold disabled:cursor-not-allowed disabled:opacity-30"
                   :disabled="index === coins.length - 1 || savingOrder"
                   @click="moveCoinByButton(index, 1)"
-                  title="Move later"
-                  :aria-label="`Move ${coin.name} later`"
+                  :title="t('sets.detail.moveLater')"
+                  :aria-label="t('sets.detail.moveCoinLater', { name: coin.name })"
                 >
                   <ChevronDown :size="16" />
                 </button>
@@ -183,8 +183,8 @@
                   type="button"
                   class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border-subtle bg-input text-text-secondary transition-all hover:border-border-accent hover:bg-[var(--accent-gold-glow)] hover:text-gold"
                   @click.stop="removeCoin(coin.id)"
-                  title="Remove from set"
-                  :aria-label="`Remove ${coin.name} from set`"
+                  :title="t('sets.detail.removeFromSet')"
+                  :aria-label="t('sets.detail.removeCoinFromSet', { name: coin.name })"
                 >
                   <X :size="16" />
                 </button>
@@ -197,12 +197,12 @@
 
     <div v-if="showAddCoinModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4" @click.self="showAddCoinModal = false">
       <div class="card w-[90%] max-w-[500px] p-8">
-        <h2 class="mt-0">Add Coin to Set</h2>
+        <h2 class="mt-0">{{ t('sets.detail.addCoinToSet') }}</h2>
         <form @submit.prevent="addCoin">
           <SetCoinPicker v-model="coinIdToAdd" :excluded-ids="coins.map(coin => coin.id)" :allow-wishlist="normalizedSetType === 'goal'" search-id="coinSearch" select-id="coinToAdd" />
           <div class="mt-6 flex justify-end gap-2">
-            <button type="button" class="btn btn-secondary" @click="showAddCoinModal = false">Cancel</button>
-            <button type="submit" class="btn btn-primary" :disabled="!coinIdToAdd">Add Coin</button>
+            <button type="button" class="btn btn-secondary" @click="showAddCoinModal = false">{{ t('common.cancel') }}</button>
+            <button type="submit" class="btn btn-primary" :disabled="!coinIdToAdd">{{ t('nav.addCoin') }}</button>
           </div>
         </form>
       </div>
@@ -210,16 +210,16 @@
 
     <div v-if="showAssignSlotModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4" @click.self="showAssignSlotModal = false">
       <div class="card w-[90%] max-w-[500px] p-8">
-        <h2 class="mt-0">Assign Coin to Slot</h2>
+        <h2 class="mt-0">{{ t('sets.detail.assignToSlot') }}</h2>
         <p class="section-label mb-3">{{ slotTargetLabel }}</p>
         <form @submit.prevent="assignCoinToSlot">
           <SetCoinPicker v-model="slotCoinIdToAssign" :selected-coin="coins.find(coin => coin.id === currentSlotCoinId)" :excluded-ids="assignedToOtherSlots" :allow-wishlist="false" search-id="slotCoinSearch" select-id="slotCoinToAssign" />
           <p v-if="slotAssignmentError" class="mt-2 text-chip text-error-bg" role="alert">{{ slotAssignmentError }}</p>
           <div class="mt-6 flex justify-end gap-2">
-            <button type="button" class="btn btn-ghost" :disabled="slotAssignmentSaving" @click="showAssignSlotModal = false">Cancel</button>
-            <button v-if="currentSlotCoinId" type="button" class="btn btn-danger" :disabled="slotAssignmentSaving" @click="clearSlotAssignment">Clear Slot</button>
+            <button type="button" class="btn btn-ghost" :disabled="slotAssignmentSaving" @click="showAssignSlotModal = false">{{ t('common.cancel') }}</button>
+            <button v-if="currentSlotCoinId" type="button" class="btn btn-danger" :disabled="slotAssignmentSaving" @click="clearSlotAssignment">{{ t('sets.detail.clearSlot') }}</button>
             <button type="submit" class="btn btn-primary" :disabled="!slotCoinIdToAssign || slotAssignmentSaving">
-              {{ currentSlotCoinId ? 'Replace Coin' : 'Assign Coin' }}
+              {{ currentSlotCoinId ? t('sets.detail.replaceCoin') : t('sets.detail.assignCoin') }}
             </button>
           </div>
         </form>
@@ -228,23 +228,23 @@
 
     <div v-if="showEditModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4" @click.self="showEditModal = false">
       <div class="card w-[90%] max-w-[500px] p-8">
-        <h2 class="mt-0">Edit Set</h2>
+        <h2 class="mt-0">{{ t('sets.detail.editSet') }}</h2>
         <form @submit.prevent="updateSet">
           <div class="form-group">
-            <label for="editName" class="form-label">Name</label>
+            <label for="editName" class="form-label">{{ t('common.name') }}</label>
             <input id="editName" v-model="editForm.name" type="text" class="form-input" required maxlength="80" />
           </div>
           <div class="form-group">
-            <label for="editDescription" class="form-label">Description</label>
+            <label for="editDescription" class="form-label">{{ t('common.description') }}</label>
             <textarea id="editDescription" v-model="editForm.description" rows="3" class="form-input" maxlength="2000" />
           </div>
           <div class="form-group">
-            <label for="editColor" class="form-label">Color</label>
+            <label for="editColor" class="form-label">{{ t('common.color') }}</label>
             <input id="editColor" v-model="editForm.color" type="color" class="form-input h-11 cursor-pointer p-1" />
           </div>
           <div class="mt-6 flex justify-end gap-2">
-            <button type="button" class="btn btn-secondary" @click="showEditModal = false">Cancel</button>
-            <button type="submit" class="btn btn-primary">Update</button>
+            <button type="button" class="btn btn-secondary" @click="showEditModal = false">{{ t('common.cancel') }}</button>
+            <button type="submit" class="btn btn-primary">{{ t('common.update') }}</button>
           </div>
         </form>
       </div>
@@ -278,6 +278,7 @@ import { useTrayPreference } from '@/composables/useTrayPreference'
 import { getDrawerCoins, getTotalDrawers, type TrayCoin } from '@/utils/trayLayout'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t } from '@/i18n'
 
 const router = useRouter()
 const route = useRoute()
@@ -330,9 +331,9 @@ const setPinBusy = computed(() => isBusy('coin_set', setId.value).value)
 const pinDisabled = computed(() => setPinBusy.value || (!setPinned.value && pinLimitReached.value))
 const pinButtonLabel = computed(() => {
   if (!set.value) return ''
-  if (setPinBusy.value) return 'Updating set Quick Access pin'
-  if (!setPinned.value && pinLimitReached.value) return 'Pin limit reached (5 sets)'
-  return setPinned.value ? 'Unpin set from Quick Access' : 'Pin set to Quick Access'
+  if (setPinBusy.value) return t('sets.detail.pin.updating')
+  if (!setPinned.value && pinLimitReached.value) return t('sets.detail.pin.limit')
+  return setPinned.value ? t('sets.detail.pin.unpin') : t('sets.detail.pin.pin')
 })
 const canReorderCoins = computed(() => canManageMembership.value && coins.value.length > 1)
 const normalizedSetType = computed(() => set.value ? normalizeCoinSetType(set.value.setType) : null)
@@ -392,10 +393,10 @@ const currentDrawerCoins = computed(() => getDrawerCoins(displayTrayCoins.value,
 const totalDrawers = computed(() => getTotalDrawers(displayTrayCoins.value.length, coinsPerDrawer))
 const emptySetMessage = computed(() => {
   if (normalizedSetType.value === 'agentic' && set.value?.agenticStatus === 'generating') {
-    return 'Aurearia is generating this agentic roster. You will receive a notification when the tray slots are ready.'
+    return t('sets.detail.empty.generating')
   }
-  if (normalizedSetType.value === 'agentic') return 'No agentic tray slots have been generated yet.'
-  return 'No coins in this set yet'
+  if (normalizedSetType.value === 'agentic') return t('sets.detail.empty.noSlots')
+  return t('sets.detail.empty.noCoins')
 })
 
 const assignedToOtherSlots = computed(() => (completion.value?.targetMatches ?? [])
@@ -469,10 +470,10 @@ async function togglePin() {
     if (!resource.isCurrent()) return
     await Promise.all([loadSetDetails(), refreshPinnedSets()])
     if (!resource.isCurrent()) return
-    showToast(nextPinned ? 'Pinned to Quick Access' : 'Unpinned', 'success')
+    showToast(nextPinned ? t('sets.detail.pin.pinned') : t('sets.detail.pin.unpinned'), 'success')
   } catch (error) {
     if (!resource.isCurrent()) return
-    showToast(quickAccessError.value || getErrorMessage(error, 'Failed to update pin'), 'error')
+    showToast(quickAccessError.value || getErrorMessage(error, t('sets.detail.pin.failed')), 'error')
   }
 }
 
@@ -486,7 +487,7 @@ async function updateSet() {
   } catch (error) {
     if (!resource.isCurrent()) return
     console.error('Failed to update set:', error)
-    alert('Failed to update set')
+    alert(t('sets.detail.errors.update'))
   }
 }
 
@@ -508,7 +509,7 @@ async function addCoin() {
   } catch (error) {
     if (!resource.isCurrent()) return
     console.error('Failed to add coin:', error)
-    alert('Failed to add coin')
+    alert(t('sets.detail.errors.addCoin'))
   }
 }
 
@@ -534,7 +535,7 @@ async function assignCoinToSlot() {
   } catch (error) {
     if (!resource.isCurrent()) return
     console.error('Failed to assign coin to slot:', error)
-    slotAssignmentError.value = getErrorMessage(error, 'Unable to assign this coin to the slot.')
+    slotAssignmentError.value = getErrorMessage(error, t('sets.detail.errors.assignSlot'))
   } finally {
     if (resource.isCurrent()) slotAssignmentSaving.value = false
   }
@@ -553,7 +554,7 @@ async function clearSlotAssignment() {
   } catch (error) {
     if (!resource.isCurrent()) return
     console.error('Failed to clear slot assignment:', error)
-    slotAssignmentError.value = getErrorMessage(error, 'Unable to clear this slot.')
+    slotAssignmentError.value = getErrorMessage(error, t('sets.detail.errors.clearSlot'))
   } finally {
     if (resource.isCurrent()) slotAssignmentSaving.value = false
   }
@@ -561,7 +562,7 @@ async function clearSlotAssignment() {
 
 async function deleteSet() {
   menuOpen.value = false
-  if (!confirm('Are you sure you want to delete this set?')) return
+  if (!confirm(t('sets.detail.confirmDelete'))) return
   const resource = capture()
   try {
     await deleteSetApi(resource.id)
@@ -572,12 +573,12 @@ async function deleteSet() {
   } catch (error) {
     if (!resource.isCurrent()) return
     console.error('Failed to delete set:', error)
-    alert('Failed to delete set')
+    alert(t('sets.detail.errors.delete'))
   }
 }
 
 async function removeCoin(coinId: number) {
-  if (!confirm('Remove this coin from the set?')) return
+  if (!confirm(t('sets.detail.confirmRemoveCoin'))) return
   const resource = capture()
   try {
     await removeCoinFromSet(resource.id, coinId)
@@ -586,7 +587,7 @@ async function removeCoin(coinId: number) {
   } catch (error) {
     if (!resource.isCurrent()) return
     console.error('Failed to remove coin:', error)
-    alert('Failed to remove coin')
+    alert(t('sets.detail.errors.removeCoin'))
   }
 }
 
@@ -663,7 +664,7 @@ async function persistCoinOrder(previousCoins: Coin[]) {
     if (!resource.isCurrent()) return
     console.error('Failed to save coin order:', error)
     coins.value = previousCoins
-    orderError.value = getErrorMessage(error, 'Unable to save this order. Please try again.')
+    orderError.value = getErrorMessage(error, t('sets.detail.errors.order'))
   } finally {
     if (resource.isCurrent()) savingOrder.value = false
   }

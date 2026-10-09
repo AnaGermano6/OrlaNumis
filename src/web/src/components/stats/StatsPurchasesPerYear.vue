@@ -2,11 +2,11 @@
   <section class="stats-section card flex flex-col gap-4">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <p class="section-label">Acquisition Trend</p>
-        <h2 class="mt-[0.15rem]">Coins Purchased Per Year</h2>
+        <p class="section-label">{{ t('stats.perYear.eyebrow') }}</p>
+        <h2 class="mt-[0.15rem]">{{ t('stats.perYear.title') }}</h2>
       </div>
       <span v-if="!isLoading && yearlyCounts.length" class="text-chip text-text-muted">
-        {{ totalPurchasedCoins }} purchased coins
+        {{ t('stats.perYear.total', { count: totalPurchasedCoins }) }}
       </span>
     </div>
 
@@ -15,7 +15,7 @@
     </div>
 
     <div v-else-if="!yearlyCounts.length" class="py-6 text-center text-base text-text-muted">
-      Add purchase dates to your coins to see yearly purchase trends.
+      {{ t('stats.perYear.empty') }}
     </div>
 
     <div v-else class="overflow-x-auto pb-1 [scrollbar-width:thin]">
@@ -25,7 +25,7 @@
           class="h-[17rem] w-full"
           preserveAspectRatio="none"
           role="img"
-          aria-label="Line chart of coins purchased per year"
+          :aria-label="t('stats.perYear.aria')"
         >
           <line
             v-for="tick in yTicks"
@@ -72,6 +72,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { getCoins } from '@/api/client'
 import type { Coin } from '@/types'
+import { t } from '@/i18n'
 
 const isLoading = ref(true)
 const coins = ref<Coin[]>([])

@@ -1,7 +1,7 @@
 <template>
-  <AppOverflowMenu backdrop-aria-label="Close overflow menu">
+  <AppOverflowMenu :backdrop-aria-label="t('coinDetail.menu.closeBackdrop')">
     <template #trigger="{ open, toggle }">
-      <AppIconButton title="More actions" aria-label="Open overflow actions" :active="open" @click="toggle">
+      <AppIconButton :title="t('coinDetail.menu.more')" :aria-label="t('coinDetail.menu.open')" :active="open" @click="toggle">
         <Menu :size="24" />
       </AppIconButton>
     </template>
@@ -10,52 +10,52 @@
         v-if="showShare"
         class="inline-flex w-full items-center gap-2 whitespace-nowrap rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-55"
         :disabled="sharing"
-        :aria-label="sharing ? 'Sharing...' : 'Share'"
+        :aria-label="sharing ? t('common.sharing') : t('common.share')"
         @click="handleShare(close)"
       >
         <Share2 :size="16" />
-        {{ sharing ? 'Sharing...' : 'Share' }}
+        {{ sharing ? t('common.sharing') : t('common.share') }}
       </button>
       <button
         v-if="showReminder"
         class="inline-flex w-full items-center gap-2 whitespace-nowrap rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary"
-        :aria-label="reminderActive ? 'Edit Reminder' : 'Set Reminder'"
+        :aria-label="reminderActive ? t('coinDetail.reminder.edit') : t('coinDetail.reminder.set')"
         @click="handleReminder(close)"
       >
         <BellRing :size="16" />
-        {{ reminderActive ? 'Edit Reminder' : 'Set Reminder' }}
+        {{ reminderActive ? t('coinDetail.reminder.edit') : t('coinDetail.reminder.set') }}
       </button>
       <button
         v-if="showPin"
         class="inline-flex w-full items-center gap-2 whitespace-nowrap rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-55"
         :disabled="pinBusy"
-        :aria-label="pinBusy ? 'Updating coin Quick Access pin' : pinLabel"
+        :aria-label="pinBusy ? t('coinDetail.pin.updating') : pinLabel"
         :aria-busy="pinBusy"
         :aria-pressed="pinned"
         @click="handlePin(close)"
       >
         <PinOff v-if="pinned" :size="16" />
         <Pin v-else :size="16" />
-        {{ pinBusy ? 'Updating...' : pinLabel }}
+        {{ pinBusy ? t('common.updating') : pinLabel }}
       </button>
       <div v-if="showShare || showReminder || showPin" class="my-1 border-t border-border-subtle"></div>
       <button
         v-if="!isWishlist && !isSold"
         class="inline-flex w-full items-center gap-2 whitespace-nowrap rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary"
-        aria-label="Sell Coin"
+        :aria-label="t('coinDetail.menu.sell')"
         @click="handleSell(close)"
       >
         <CircleDollarSign :size="16" />
-        Sell Coin
+        {{ t('coinDetail.menu.sell') }}
       </button>
       <button
         class="inline-flex w-full items-center gap-2 whitespace-nowrap rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-55"
         :disabled="duplicating"
-        :aria-label="duplicating ? 'Copying coin...' : 'Copy Coin'"
+        :aria-label="duplicating ? t('coinDetail.menu.copyingCoin') : t('coinDetail.menu.copy')"
         @click="handleDuplicate(close)"
       >
         <Copy :size="16" />
-        {{ duplicating ? 'Copying...' : 'Copy Coin' }}
+        {{ duplicating ? t('coinDetail.menu.copying') : t('coinDetail.menu.copy') }}
       </button>
       <router-link
         v-for="section in sections"
@@ -76,6 +76,7 @@ import { BellRing, CircleDollarSign, Copy, Menu, Pin, PinOff, Share2 } from 'luc
 import { COIN_DETAIL_SECTIONS, SECTION_ORDER, type CoinDetailSection } from '@/constants/coinDetailSections'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import AppOverflowMenu from '@/components/ui/AppOverflowMenu.vue'
+import { t } from '@/i18n'
 
 const props = withDefaults(defineProps<{
   isWishlist: boolean
@@ -110,7 +111,7 @@ const emit = defineEmits<{
 
 const sections: CoinDetailSection[] = SECTION_ORDER.map(id => COIN_DETAIL_SECTIONS[id]) as CoinDetailSection[]
 
-const pinLabel = computed(() => props.pinned ? 'Unpin coin from Quick Access' : 'Pin coin to Quick Access')
+const pinLabel = computed(() => props.pinned ? t('coinDetail.pin.unpin') : t('coinDetail.pin.pin'))
 
 function handleSell(close: () => void) {
   close()

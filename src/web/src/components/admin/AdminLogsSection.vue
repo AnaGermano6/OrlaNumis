@@ -1,37 +1,37 @@
 <template>
   <section class="card">
-    <h2 class="text-xl font-medium mb-5 pb-3 border-b border-border-subtle">Application Logs</h2>
+    <h2 class="text-xl font-medium mb-5 pb-3 border-b border-border-subtle">{{ t('admin.logs.title') }}</h2>
     <div class="mb-4 flex flex-wrap items-center gap-2 sm:flex-nowrap">
       <select
         :value="filter"
         class="form-select min-w-[120px] sm:max-w-56 sm:shrink-0"
         @change="$emit('update:filter', ($event.target as HTMLSelectElement).value); $emit('load')"
       >
-        <option value="">All Levels</option>
+        <option value="">{{ t('admin.logs.allLevels') }}</option>
         <option v-for="level in ['TRACE','DEBUG','INFO','WARN','ERROR']" :key="level" :value="level">{{ level }}</option>
       </select>
       <button class="btn btn-secondary btn-sm shrink-0 whitespace-nowrap" :disabled="loading" @click="$emit('load')">
-        {{ loading ? 'Loading...' : 'Refresh' }}
+        {{ loading ? t('common.loading') : t('admin.logs.refresh') }}
       </button>
       <button
         class="btn btn-sm shrink-0 whitespace-nowrap"
         :class="autoRefresh ? 'btn-primary' : 'btn-secondary'"
         @click="$emit('toggle-auto-refresh')"
       >
-        {{ autoRefresh ? 'Auto ●' : 'Auto ○' }}
+        {{ autoRefresh ? t('admin.logs.autoOn') : t('admin.logs.autoOff') }}
       </button>
       <button
         class="btn btn-secondary btn-sm inline-flex shrink-0 items-center gap-1 whitespace-nowrap"
         :disabled="logs.length === 0"
-        title="Export logs as text file"
+        :title="t('admin.logs.exportTitle')"
         @click="$emit('export')"
       >
-        <Download :size="14" /> Export
+        <Download :size="14" /> {{ t('admin.logs.export') }}
       </button>
     </div>
     <div class="max-h-[500px] overflow-y-auto bg-surface border border-border-subtle rounded-sm p-2 font-mono text-chip leading-relaxed">
       <div v-if="logs.length === 0 && !loading" class="text-center py-8 text-text-muted font-sans">
-        No log entries. Click Refresh to load.
+        {{ t('admin.logs.empty') }}
       </div>
       <div
         v-for="(entry, i) in logs"
@@ -50,6 +50,7 @@
 <script setup lang="ts">
 import type { LogEntry } from '@/types'
 import { Download } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 defineProps<{
   logs: LogEntry[]

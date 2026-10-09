@@ -10,7 +10,7 @@
             :class="{ 'text-gold': lotPinned }"
             :disabled="pinBusy"
             :aria-busy="pinBusy"
-            :aria-label="pinBusy ? 'Updating auction lot Quick Access pin' : pinLabel"
+            :aria-label="pinBusy ? t('auctions.detail.pinUpdating') : pinLabel"
             :title="pinLabel"
             :aria-pressed="lotPinned"
             @click="togglePin"
@@ -18,7 +18,7 @@
             <PinOff v-if="lotPinned" :size="16" />
             <Pin v-else :size="16" />
           </button>
-          <button v-if="!isEditing" class="flex items-center rounded-sm p-[0.35rem] text-text-secondary transition hover:bg-gold-glow hover:text-gold" title="Edit details" @click="startEdit">
+          <button v-if="!isEditing" class="flex items-center rounded-sm p-[0.35rem] text-text-secondary transition hover:bg-gold-glow hover:text-gold" :title="t('auctions.detail.editDetails')" @click="startEdit">
             <Pencil :size="16" />
           </button>
           <button class="flex items-center rounded-sm p-1 text-text-secondary transition hover:text-text-primary" @click="$emit('close')"><X :size="18" /></button>
@@ -31,51 +31,51 @@
 
       <div v-if="!isEditing" class="px-6 py-5">
         <div v-if="lot.auctionHouse" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Auction House</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.detail.auctionHouse') }}</span>
           <span class="min-w-0 text-right [overflow-wrap:anywhere]">{{ lot.auctionHouse }}</span>
         </div>
         <div v-if="lot.saleName" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Sale</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.detail.sale') }}</span>
           <span class="min-w-0 text-right [overflow-wrap:anywhere]">{{ lot.saleName }}</span>
         </div>
         <div v-if="lot.lotNumber" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Lot #</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.detail.lotNumber') }}</span>
           <span class="min-w-0 text-right [overflow-wrap:anywhere]">{{ lot.lotNumber }}</span>
         </div>
         <div v-if="lot.saleDate" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Sale Date</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.detail.saleDate') }}</span>
           <span class="min-w-0 text-right [overflow-wrap:anywhere]">{{ formatDate(lot.saleDate) }}</span>
         </div>
         <div v-if="lot.auctionEndTime" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Ends</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.detail.ends') }}</span>
           <span class="min-w-0 text-right [overflow-wrap:anywhere]">{{ formatDateTime(lot.auctionEndTime) }}</span>
         </div>
         <div v-if="lot.estimate" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Estimate</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.detail.estimate') }}</span>
           <span class="min-w-0 text-right [overflow-wrap:anywhere]">{{ formatCurrency(lot.estimate, lot.currency) }}</span>
         </div>
         <div v-if="lot.initialBid" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Initial Bid</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.detail.initialBid') }}</span>
           <span class="min-w-0 text-right [overflow-wrap:anywhere]">{{ formatCurrency(lot.initialBid, lot.currency) }}</span>
         </div>
         <div v-if="lot.currentBid" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Current Bid</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.detail.currentBid') }}</span>
           <span class="min-w-0 text-right font-semibold text-gold [overflow-wrap:anywhere]">{{ formatCurrency(lot.currentBid, lot.currency) }}</span>
         </div>
         <div v-if="lot.maxBid" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Max Bid</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.card.maxBid') }}</span>
           <span class="min-w-0 text-right font-semibold text-gold/80 [overflow-wrap:anywhere]">{{ formatCurrency(lot.maxBid, lot.currency) }}</span>
         </div>
         <div v-if="lot.winningBid" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">{{ lot.status === 'lost' ? 'Sold For' : 'Winning Bid' }}</span>
+          <span class="text-chip text-text-secondary">{{ lot.status === 'lost' ? t('auctions.card.soldFor') : t('auctions.detail.winningBid') }}</span>
           <span class="min-w-0 text-right font-semibold [overflow-wrap:anywhere]" :class="lot.status === 'lost' ? 'text-text-primary' : 'text-gain'">{{ formatCurrency(lot.winningBid, lot.currency) }}</span>
         </div>
         <div v-if="biddingIndicator" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Bid Status</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.detail.bidStatus') }}</span>
           <span class="min-w-0 text-right font-semibold [overflow-wrap:anywhere]" :class="biddingIndicator.cls">{{ biddingIndicator.label }}</span>
         </div>
         <div class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-base">
-          <span class="text-chip text-text-secondary">Status</span>
+          <span class="text-chip text-text-secondary">{{ t('common.status') }}</span>
           <span
             class="rounded-full px-[0.55rem] py-[0.15rem] text-label font-semibold tracking-[0.08em] uppercase"
             :class="{
@@ -86,45 +86,45 @@
               'bg-status-neutral-bg text-status-neutral-fg': currentStatus === 'passed',
             }"
           >
-            {{ currentStatus }}
+            {{ auctionStatusLabel(currentStatus).toLowerCase() }}
           </span>
         </div>
         <div v-if="statusSourceLabel" class="flex min-w-0 items-center justify-between gap-3 border-b border-border-subtle py-2 text-chip text-text-muted" :title="statusSourceLabel.title">
-          <span class="text-chip text-text-secondary">Confirmed by</span>
+          <span class="text-chip text-text-secondary">{{ t('auctions.detail.confirmedBy') }}</span>
           <span>{{ statusSourceLabel.text }}</span>
         </div>
         <div v-if="needsAttention" class="mt-2 flex items-center gap-1.5 rounded-sm bg-status-warning-bg px-2.5 py-1.5 text-chip font-semibold text-status-warning-fg">
-          <AlertTriangle :size="14" /> This lot's auction has closed but its status hasn't been confirmed yet
+          <AlertTriangle :size="14" /> {{ t('auctions.card.closedUnconfirmed') }}
         </div>
         <div v-if="lot.description" class="mt-3">
-          <span class="text-chip text-text-secondary">Description</span>
+          <span class="text-chip text-text-secondary">{{ t('common.description') }}</span>
           <p class="mt-1.5 text-body leading-6 text-text-secondary [overflow-wrap:anywhere]">{{ lot.description }}</p>
         </div>
         <div v-if="lot.notes" class="mt-3">
-          <span class="text-chip text-text-secondary">Notes</span>
+          <span class="text-chip text-text-secondary">{{ t('coinFields.notes') }}</span>
           <p class="mt-1.5 text-body leading-6 text-text-secondary [overflow-wrap:anywhere]">{{ lot.notes }}</p>
         </div>
 
         <section v-if="canManageAlerts" class="mt-4 grid gap-3 border-t border-border-subtle pt-4">
           <div class="grid gap-2">
             <div class="flex items-center justify-between gap-2">
-              <span class="text-chip text-text-secondary">Price Alerts</span>
+              <span class="text-chip text-text-secondary">{{ t('auctions.detail.priceAlerts') }}</span>
               <span v-if="priceAlerts.length" class="chip-sm">{{ priceAlerts.length }}</span>
             </div>
             <div v-if="priceAlerts.length" class="grid gap-[0.35rem]">
               <div v-for="alert in priceAlerts" :key="alert.id" class="flex items-center justify-between gap-2 rounded-sm border border-border-subtle bg-card-hover p-2">
                 <div class="min-w-0">
-                  <span class="block text-chip font-medium text-text-primary">{{ alert.direction === 'above' ? 'At or above' : 'At or below' }} {{ formatCurrency(alert.targetPrice, lot.currency) }}</span>
-                  <span class="mt-[0.15rem] block text-chip text-text-muted">{{ alert.isTriggered ? `Triggered ${formatOptionalDate(alert.triggeredAt)}` : 'Waiting' }}</span>
+                  <span class="block text-chip font-medium text-text-primary">{{ alert.direction === 'above' ? t('auctions.detail.atOrAbove') : t('auctions.detail.atOrBelow') }} {{ formatCurrency(alert.targetPrice, lot.currency) }}</span>
+                  <span class="mt-[0.15rem] block text-chip text-text-muted">{{ alert.isTriggered ? t('auctions.detail.triggered', { date: formatOptionalDate(alert.triggeredAt) }) : t('common.waiting') }}</span>
                 </div>
-                <button class="btn btn-ghost btn-xs" :disabled="alertBusy" @click="removeAlert(alert.id)">Delete</button>
+                <button class="btn btn-ghost btn-xs" :disabled="alertBusy" @click="removeAlert(alert.id)">{{ t('common.delete') }}</button>
               </div>
             </div>
             <div class="control-row">
               <div class="control-left-group control-left-group--alert">
-                <select v-model="alertForm.direction" class="form-input control-input" aria-label="Price alert direction">
-                  <option value="above">Above current bid</option>
-                  <option value="below">Below current bid</option>
+                <select v-model="alertForm.direction" class="form-input control-input" :aria-label="t('auctions.detail.alertDirection')">
+                  <option value="above">{{ t('auctions.detail.aboveCurrent') }}</option>
+                  <option value="below">{{ t('auctions.detail.belowCurrent') }}</option>
                 </select>
                 <input
                   v-model.number="alertForm.targetPrice"
@@ -132,26 +132,26 @@
                   class="form-input control-input control-number"
                   min="0"
                   step="0.01"
-                  :placeholder="lot.currentBid ? String(lot.currentBid) : 'Target'"
-                  aria-label="Target price"
+                  :placeholder="lot.currentBid ? String(lot.currentBid) : t('auctions.detail.target')"
+                  :aria-label="t('auctions.detail.targetPrice')"
                 />
               </div>
-              <button class="btn btn-secondary btn-sm control-btn control-btn-fixed" :disabled="alertBusy || !canCreateAlert" @click="saveAlert">Add Alert</button>
+              <button class="btn btn-secondary btn-sm control-btn control-btn-fixed" :disabled="alertBusy || !canCreateAlert" @click="saveAlert">{{ t('auctions.detail.addAlert') }}</button>
             </div>
           </div>
 
           <div class="grid gap-2">
             <div class="flex items-center justify-between gap-2">
-              <span class="text-chip text-text-secondary">Bid Reminders</span>
+              <span class="text-chip text-text-secondary">{{ t('auctions.detail.bidReminders') }}</span>
               <span v-if="bidReminders.length" class="chip-sm">{{ bidReminders.length }}</span>
             </div>
             <div v-if="bidReminders.length" class="grid gap-[0.35rem]">
               <div v-for="reminder in bidReminders" :key="reminder.id" class="flex items-center justify-between gap-2 rounded-sm border border-border-subtle bg-card-hover p-2">
                 <div class="min-w-0">
-                  <span class="block text-chip font-medium text-text-primary">{{ reminder.minutesBefore }} minutes before close</span>
-                  <span class="mt-[0.15rem] block text-chip text-text-muted">{{ reminder.isNotified ? `Notified ${formatOptionalDate(reminder.notifiedAt)}` : 'Waiting' }}</span>
+                  <span class="block text-chip font-medium text-text-primary">{{ t('auctions.detail.minutesBefore', { count: reminder.minutesBefore }) }}</span>
+                  <span class="mt-[0.15rem] block text-chip text-text-muted">{{ reminder.isNotified ? t('auctions.detail.notified', { date: formatOptionalDate(reminder.notifiedAt) }) : t('common.waiting') }}</span>
                 </div>
-                <button class="btn btn-ghost btn-xs" :disabled="reminderBusy" @click="removeReminder(reminder.id)">Delete</button>
+                <button class="btn btn-ghost btn-xs" :disabled="reminderBusy" @click="removeReminder(reminder.id)">{{ t('common.delete') }}</button>
               </div>
             </div>
             <div class="control-row">
@@ -161,9 +161,9 @@
                 class="form-input control-input control-number"
                 min="1"
                 step="5"
-                aria-label="Reminder minutes before close"
+                :aria-label="t('auctions.detail.reminderMinutes')"
               />
-              <button class="btn btn-secondary btn-sm control-btn control-btn-fixed" :disabled="reminderBusy || !canCreateReminder" @click="saveReminder">Add Reminder</button>
+              <button class="btn btn-secondary btn-sm control-btn control-btn-fixed" :disabled="reminderBusy || !canCreateReminder" @click="saveReminder">{{ t('auctions.detail.addReminder') }}</button>
             </div>
           </div>
           <p v-if="alertMessage" class="m-0 text-chip" :class="alertError ? 'text-loss' : 'text-gold'">{{ alertMessage }}</p>
@@ -172,61 +172,61 @@
 
       <div v-else class="flex flex-col gap-[0.85rem] px-6 py-5">
         <div class="form-group">
-          <label class="text-chip text-text-secondary">Title</label>
+          <label class="text-chip text-text-secondary">{{ t('common.title') }}</label>
           <input v-model="editForm.title" type="text" class="form-input w-full text-base" />
         </div>
         <div class="form-group">
-          <label class="text-chip text-text-secondary">Auction URL</label>
+          <label class="text-chip text-text-secondary">{{ t('auctions.detail.auctionUrl') }}</label>
           <input v-model="editForm.numisBidsUrl" type="url" class="form-input w-full text-base" placeholder="https://..." />
         </div>
         <div class="grid gap-[0.85rem] md:grid-cols-2">
           <div class="form-group">
-            <label class="text-chip text-text-secondary">Auction House</label>
+            <label class="text-chip text-text-secondary">{{ t('auctions.detail.auctionHouse') }}</label>
             <input v-model="editForm.auctionHouse" type="text" class="form-input w-full text-base" />
           </div>
           <div class="form-group">
-            <label class="text-chip text-text-secondary">Sale Name</label>
+            <label class="text-chip text-text-secondary">{{ t('auctions.detail.saleName') }}</label>
             <input v-model="editForm.saleName" type="text" class="form-input w-full text-base" />
           </div>
         </div>
         <div class="grid gap-[0.85rem] md:grid-cols-2">
           <div class="form-group">
-            <label class="text-chip text-text-secondary">Lot #</label>
+            <label class="text-chip text-text-secondary">{{ t('auctions.detail.lotNumber') }}</label>
             <input v-model.number="editForm.lotNumber" type="number" class="form-input w-full text-base" min="0" />
           </div>
           <div class="form-group">
-            <label class="text-chip text-text-secondary">Estimate</label>
+            <label class="text-chip text-text-secondary">{{ t('auctions.detail.estimate') }}</label>
             <input v-model.number="editForm.estimate" type="number" class="form-input w-full text-base" min="0" step="0.01" />
           </div>
         </div>
         <div class="grid gap-[0.85rem] md:grid-cols-2">
           <div class="form-group">
-            <label class="text-chip text-text-secondary">Sale Date</label>
+            <label class="text-chip text-text-secondary">{{ t('auctions.detail.saleDate') }}</label>
             <input v-model="editForm.saleDate" type="date" class="form-input w-full text-base" />
           </div>
           <div class="form-group">
-            <label class="text-chip text-text-secondary">End Date / Time</label>
+            <label class="text-chip text-text-secondary">{{ t('auctions.detail.endDateTime') }}</label>
             <input v-model="editForm.auctionEndTime" type="datetime-local" class="form-input w-full text-base" />
           </div>
         </div>
         <div class="form-group">
-          <label class="text-chip text-text-secondary">Description</label>
+          <label class="text-chip text-text-secondary">{{ t('common.description') }}</label>
           <textarea v-model="editForm.description" class="form-input w-full resize-y text-base leading-[1.45]" rows="3" />
         </div>
         <div class="form-group">
-          <label class="text-chip text-text-secondary">Notes</label>
+          <label class="text-chip text-text-secondary">{{ t('coinFields.notes') }}</label>
           <textarea
             v-model="editForm.notes"
             class="form-input w-full resize-y text-base leading-[1.45]"
             rows="4"
-            placeholder="Personal notes about this auction lot..."
+            :placeholder="t('auctions.detail.notesPlaceholder')"
           />
         </div>
         <p v-if="editError" class="m-0 text-chip text-loss">{{ editError }}</p>
         <div class="mt-2 flex justify-end gap-2">
-          <button class="btn btn-secondary" :disabled="editSaving" @click="cancelEdit">Cancel</button>
+          <button class="btn btn-secondary" :disabled="editSaving" @click="cancelEdit">{{ t('common.cancel') }}</button>
           <button class="btn btn-primary" :disabled="editSaving" @click="saveEdit">
-            {{ editSaving ? 'Saving...' : 'Save Changes' }}
+            {{ editSaving ? t('common.saving') : t('common.saveChanges') }}
           </button>
         </div>
       </div>
@@ -234,14 +234,14 @@
       <div v-if="!isEditing" class="flex flex-col gap-3 border-t border-border-subtle px-6 py-4">
         <div class="control-row">
           <select v-model="newStatus" class="form-input control-input">
-            <option value="watching">Watching</option>
-            <option value="bidding">Bidding</option>
-            <option value="won">Won</option>
-            <option value="lost">Lost</option>
-            <option value="passed">Passed</option>
+            <option value="watching">{{ auctionStatusLabel('watching') }}</option>
+            <option value="bidding">{{ auctionStatusLabel('bidding') }}</option>
+            <option value="won">{{ auctionStatusLabel('won') }}</option>
+            <option value="lost">{{ auctionStatusLabel('lost') }}</option>
+            <option value="passed">{{ auctionStatusLabel('passed') }}</option>
           </select>
           <button class="btn btn-secondary control-btn control-btn-fixed" @click="changeStatus" :disabled="statusBusy || !hasPendingStatusUpdate">
-            {{ statusBusy ? 'Updating...' : 'Update Status' }}
+            {{ statusBusy ? t('common.updating') : t('auctions.detail.updateStatus') }}
           </button>
         </div>
         <p
@@ -255,12 +255,12 @@
           {{ statusMessage }}
         </p>
         <div v-if="newStatus === 'bidding'" class="grid gap-1.5">
-          <label class="text-chip text-text-secondary">Max Bid</label>
+          <label class="text-chip text-text-secondary">{{ t('auctions.card.maxBid') }}</label>
           <input
             v-model.number="maxBidInput"
             type="number"
             class="form-input bid-input control-input control-number"
-            aria-label="Max bid"
+            :aria-label="t('auctions.detail.maxBidAria')"
             :placeholder="lot.currency || 'USD'"
             min="0"
             step="1"
@@ -274,28 +274,30 @@
               :title="bidRecommendation.rationale"
               @click="maxBidInput = bidRecommendation.suggestedMaxBid"
             >
-              Suggested max bid: {{ formatCurrency(bidRecommendation.suggestedMaxBid, lot.currency) }}
+              {{ t('auctions.detail.suggested', { amount: formatCurrency(bidRecommendation.suggestedMaxBid, lot.currency) }) }}
             </button>
-            <span class="text-text-muted"> ({{ bidRecommendation.confidence }} confidence, based on {{ bidRecommendation.sampleSize }} of your own resolved lots — click to use)</span>
+            <span class="text-text-muted"> ({{ t('auctions.detail.suggestedBasis', { level: confidenceLabel(bidRecommendation.confidence), count: bidRecommendation.sampleSize }) }})</span>
           </template>
           <span v-else-if="bidRecommendation" class="text-text-muted">{{ bidRecommendation.rationale }}</span>
-          <span v-else-if="bidRecommendationError" class="text-text-muted">Couldn't load a bid suggestion.</span>
+          <span v-else-if="bidRecommendationError" class="text-text-muted">{{ t('auctions.detail.suggestionFailed') }}</span>
         </div>
         <div v-if="newStatus === 'bidding'" class="text-chip text-text-secondary">
           <span v-if="!providerConfigured" class="text-warning">
-            AI provider not configured. <a href="/admin" class="font-semibold text-gold underline" @click="$emit('close')">Go to Admin Settings</a> to check current market data for this lot.
+            <I18nT keypath="auctions.detail.providerNotConfigured">
+              <template #link><a href="/admin" class="font-semibold text-gold underline" @click="$emit('close')">{{ t('auctions.detail.goToAdmin') }}</a></template>
+            </I18nT>
           </span>
           <template v-else-if="marketSignalLoading">
-            <span class="text-text-muted">Checking current auction market…</span>
+            <span class="text-text-muted">{{ t('auctions.detail.checkingMarket') }}</span>
           </template>
           <template v-else-if="marketSignal">
             <template v-if="marketSignal.status === 'ok'">
-              <span class="font-medium text-text-primary">Market trend: {{ marketSignal.trendDirection }}</span>
+              <span class="font-medium text-text-primary">{{ t('auctions.detail.marketTrend', { trend: trendLabel(marketSignal.trendDirection) }) }}</span>
               <span v-if="marketSignal.priceLow != null && marketSignal.priceHigh != null" class="text-text-muted">
                 ({{ formatCurrency(marketSignal.priceLow, marketSignal.currency || lot.currency) }}–{{ formatCurrency(marketSignal.priceHigh, marketSignal.currency || lot.currency) }},
-                based on {{ marketSignal.sampleSize }} recent result(s))
+                {{ t('auctions.detail.basedOnRecent', { count: marketSignal.sampleSize ?? 0 }) }}
               </span>
-              <span :title="marketSignal.rationale" class="ml-1 cursor-help text-text-muted underline decoration-dotted underline-offset-2">why?</span>
+              <span :title="marketSignal.rationale" class="ml-1 cursor-help text-text-muted underline decoration-dotted underline-offset-2">{{ t('auctions.detail.why') }}</span>
             </template>
             <span v-else class="text-text-muted">{{ marketSignal.rationale }}</span>
           </template>
@@ -305,9 +307,9 @@
               class="text-gold underline decoration-dotted underline-offset-2"
               @click="fetchMarketSignal"
             >
-              {{ marketSignalError ? 'Try again' : 'Check current market' }}
+              {{ marketSignalError ? t('common.tryAgain') : t('auctions.detail.checkMarket') }}
             </button>
-            <span v-if="marketSignalError" class="ml-1 text-text-muted">Couldn't check the market right now.</span>
+            <span v-if="marketSignalError" class="ml-1 text-text-muted">{{ t('auctions.detail.marketFailed') }}</span>
           </template>
         </div>
         <div v-if="newStatus === 'won' || newStatus === 'lost'" class="grid gap-1.5">
@@ -323,10 +325,10 @@
           />
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="inline-flex items-center gap-[0.35rem] text-chip text-text-secondary"><CalendarDays :size="14" /> Calendar Event</label>
+          <label class="inline-flex items-center gap-[0.35rem] text-chip text-text-secondary"><CalendarDays :size="14" /> {{ t('auctions.detail.calendarEvent') }}</label>
           <div class="control-row">
             <select v-model="selectedEventId" class="form-input control-input">
-              <option value="">None</option>
+              <option value="">{{ t('common.none') }}</option>
               <option v-for="evt in calendarEvents" :key="evt.id" :value="evt.id">
                 {{ evt.title }}
               </option>
@@ -336,30 +338,30 @@
               @click="linkEvent"
               :disabled="(selectedEventId === '' ? null : Number(selectedEventId)) === (lot.eventId ?? null)"
             >
-              Link
+              {{ t('auctions.bulk.link') }}
             </button>
           </div>
         </div>
         <div v-if="lot.status === 'won'" class="rounded-sm border border-border-subtle bg-card-hover p-3">
           <label class="mb-2 inline-flex items-center gap-2 text-chip text-text-secondary">
             <input v-model="attachShipment" type="checkbox" />
-            Add shipment tracking when converting
+            {{ t('auctions.detail.attachShipment') }}
           </label>
           <div v-if="attachShipment" class="grid gap-2 md:grid-cols-2">
-            <p class="m-0 text-chip text-text-muted md:col-span-2">Enter only the tracking number. ParcelApp will use the coin title as the delivery description.</p>
-            <input v-model="shipmentTrackingNumber" class="form-input" placeholder="Tracking number" />
-            <input v-model="shipmentNotes" class="form-input md:col-span-2" placeholder="Shipment notes (optional)" />
+            <p class="m-0 text-chip text-text-muted md:col-span-2">{{ t('purchase.shipmentHint') }}</p>
+            <input v-model="shipmentTrackingNumber" class="form-input" :placeholder="t('shipment.trackingNumber')" />
+            <input v-model="shipmentNotes" class="form-input md:col-span-2" :placeholder="t('purchase.shipmentNotes')" />
           </div>
         </div>
         <div class="flex flex-wrap gap-[0.6rem]">
           <SafeExternalLink v-if="externalUrl" :href="externalUrl" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
-            <ExternalLink :size="14" /> View on {{ providerLabel }}
+            <ExternalLink :size="14" /> {{ t('auctions.card.viewOn', { provider: providerLabel }) }}
           </SafeExternalLink>
           <button v-if="lot.status === 'won'" class="btn btn-primary" :disabled="statusBusy" @click="convertToCoin">
-            <ArrowRightCircle :size="14" /> Add to Collection
+            <ArrowRightCircle :size="14" /> {{ t('addCoin.addToCollection') }}
           </button>
           <button class="btn btn-danger !border-status-error-border !bg-transparent px-[0.9rem] py-2 text-chip !text-status-error-fg hover:!border-status-error-fg hover:!bg-status-error-tint" :disabled="statusBusy" @click="removeLot">
-            <Trash2 :size="14" /> Remove
+            <Trash2 :size="14" /> {{ t('common.remove') }}
           </button>
         </div>
       </div>
@@ -375,7 +377,9 @@ import { useProxiedImage } from '@/composables/useProxiedImage'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import type { AuctionLot, AuctionLotStatus, BidReminder, BidRecommendation, MarketSignal, PriceAlert, PriceAlertDirection, ShipmentUpsertInput } from '@/types'
 import { X, ExternalLink, ArrowRightCircle, Trash2, CalendarDays, Pencil, AlertTriangle, Pin, PinOff } from 'lucide-vue-next'
-import { formatCurrency } from '@/utils/format'
+import { auctionStatusLabel, confidenceLabel, formatCurrency } from '@/utils/format'
+import { t, intlLocale } from '@/i18n'
+import I18nT from '@/components/I18nT.vue'
 import { auctionLotNeedsAttention, auctionLotStatusSourceLabel } from '@/utils/auctionLot'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 
@@ -423,7 +427,7 @@ const normalizedMaxBidInput = computed(() => typeof maxBidInput.value === 'numbe
 const normalizedWinningBidInput = computed(() => typeof winningBidInput.value === 'number' && !Number.isNaN(winningBidInput.value) ? winningBidInput.value : null)
 const maxBidChanged = computed(() => newStatus.value === 'bidding' && normalizedMaxBidInput.value !== null && normalizedMaxBidInput.value !== (props.lot.maxBid ?? null))
 const winningBidChanged = computed(() => (newStatus.value === 'won' || newStatus.value === 'lost') && normalizedWinningBidInput.value !== null && normalizedWinningBidInput.value !== (props.lot.winningBid ?? null))
-const winningBidLabel = computed(() => newStatus.value === 'lost' ? 'Winning Bid (what it sold for)' : 'Winning Bid')
+const winningBidLabel = computed(() => newStatus.value === 'lost' ? t('auctions.detail.winningBidLost') : t('auctions.detail.winningBid'))
 const hasPendingStatusUpdate = computed(() => newStatus.value !== currentStatus.value || maxBidChanged.value || winningBidChanged.value)
 const priceAlerts = computed(() => props.priceAlerts ?? [])
 const bidReminders = computed(() => props.bidReminders ?? [])
@@ -433,13 +437,13 @@ const pinnedState = isPinned('auction_lot', props.lot.id)
 const busyState = isBusy('auction_lot', props.lot.id)
 const lotPinned = computed(() => pinnedState.value)
 const pinBusy = computed(() => busyState.value)
-const pinLabel = computed(() => lotPinned.value ? 'Unpin auction lot from Quick Access' : 'Pin auction lot to Quick Access')
+const pinLabel = computed(() => lotPinned.value ? t('auctions.detail.unpin') : t('auctions.detail.pin'))
 const biddingIndicator = computed(() => {
   if (props.lot.status !== 'bidding' || !props.lot.currentBid || !props.lot.maxBid) return null
   if (props.lot.maxBid >= props.lot.currentBid) {
-    return { label: 'Winning', cls: 'text-gain' }
+    return { label: t('auctions.card.winning'), cls: 'text-gain' }
   }
-  return { label: 'Outbid', cls: 'text-loss' }
+  return { label: t('auctions.card.outbid'), cls: 'text-loss' }
 })
 const needsAttention = computed(() => auctionLotNeedsAttention(props.lot))
 const statusSourceLabel = computed(() => auctionLotStatusSourceLabel(props.lot))
@@ -464,11 +468,21 @@ const shipmentTrackingNumber = ref('')
 const shipmentNotes = ref('')
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  return new Date(dateStr).toLocaleDateString(intlLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+// Market trend values come from the API as English words; unknown ones pass through.
+function trendLabel(trend: string | undefined) {
+  switch (trend) {
+    case 'rising': return t('auctions.detail.trends.rising')
+    case 'falling': return t('auctions.detail.trends.falling')
+    case 'stable': return t('auctions.detail.trends.stable')
+    default: return trend ?? ''
+  }
 }
 
 function formatDateTime(dateStr: string) {
-  return new Date(dateStr).toLocaleString('en-US', {
+  return new Date(dateStr).toLocaleString(intlLocale(), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -504,7 +518,7 @@ async function togglePin() {
     if (lotPinned.value) await unpinQuickAccessItem('auction_lot', props.lot.id)
     else await pinQuickAccessItem('auction_lot', props.lot.id)
   } catch {
-    setStatusMessage(quickAccessError.value || 'Failed to update Quick Access', true)
+    setStatusMessage(quickAccessError.value || t('auctions.detail.pinFailed'), true)
   }
 }
 
@@ -586,15 +600,15 @@ async function saveEdit() {
   const title = editForm.title.trim()
   const url = editForm.numisBidsUrl.trim()
   if (!title) {
-    editError.value = 'Title is required'
+    editError.value = t('auctions.detail.titleRequired')
     return
   }
   if (!url) {
-    editError.value = 'URL is required'
+    editError.value = t('auctions.detail.urlRequired')
     return
   }
   if (!/^https?:\/\//i.test(url)) {
-    editError.value = 'URL must start with http:// or https://'
+    editError.value = t('auctions.detail.urlScheme')
     return
   }
 
@@ -616,7 +630,7 @@ async function saveEdit() {
     isEditing.value = false
     emit('updated')
   } catch {
-    editError.value = 'Failed to save changes'
+    editError.value = t('common.saveChangesFailed')
   } finally {
     editSaving.value = false
   }
@@ -674,7 +688,7 @@ async function linkEvent() {
     await linkAuctionLotEvent(props.lot.id, eventId)
     emit('updated')
   } catch (err) {
-    setStatusMessage(errorMessageFrom(err, 'Failed to update calendar event'), true)
+    setStatusMessage(errorMessageFrom(err, t('auctions.detail.calendarFailed')), true)
   }
 }
 
@@ -689,9 +703,9 @@ async function saveAlert() {
       direction: alertForm.direction,
     })
     emit('alertsUpdated')
-    setAlertMessage('Price alert saved')
+    setAlertMessage(t('auctions.detail.alertSaved'))
   } catch {
-    setAlertMessage('Failed to save price alert', true)
+    setAlertMessage(t('auctions.detail.alertSaveFailed'), true)
   } finally {
     alertBusy.value = false
   }
@@ -703,9 +717,9 @@ async function removeAlert(id: number) {
   try {
     await deleteAlert(id)
     emit('alertsUpdated')
-    setAlertMessage('Price alert deleted')
+    setAlertMessage(t('auctions.detail.alertDeleted'))
   } catch {
-    setAlertMessage('Failed to delete price alert', true)
+    setAlertMessage(t('auctions.detail.alertDeleteFailed'), true)
   } finally {
     alertBusy.value = false
   }
@@ -721,9 +735,9 @@ async function saveReminder() {
       minutesBefore: reminderForm.minutesBefore ?? 30,
     })
     emit('alertsUpdated')
-    setAlertMessage('Bid reminder saved')
+    setAlertMessage(t('auctions.detail.reminderSaved'))
   } catch {
-    setAlertMessage('Failed to save bid reminder', true)
+    setAlertMessage(t('auctions.detail.reminderSaveFailed'), true)
   } finally {
     reminderBusy.value = false
   }
@@ -735,9 +749,9 @@ async function removeReminder(id: number) {
   try {
     await deleteReminder(id)
     emit('alertsUpdated')
-    setAlertMessage('Bid reminder deleted')
+    setAlertMessage(t('auctions.detail.reminderDeleted'))
   } catch {
-    setAlertMessage('Failed to delete bid reminder', true)
+    setAlertMessage(t('auctions.detail.reminderDeleteFailed'), true)
   } finally {
     reminderBusy.value = false
   }
@@ -768,7 +782,7 @@ async function changeStatus() {
         router.push(`/edit/${coinRes.data.id}`)
         return
       } catch (err) {
-        setStatusMessage(errorMessageFrom(err, 'Status updated to Won, but adding it to your collection failed — use "Add to Collection" to retry.'), true)
+        setStatusMessage(errorMessageFrom(err, t('auctions.detail.wonConvertFailed')), true)
         emit('updated')
         return
       }
@@ -776,7 +790,7 @@ async function changeStatus() {
 
     emit('updated')
   } catch (err) {
-    setStatusMessage(errorMessageFrom(err, 'Failed to update status'), true)
+    setStatusMessage(errorMessageFrom(err, t('auctions.detail.statusFailed')), true)
   } finally {
     statusBusy.value = false
   }
@@ -795,7 +809,7 @@ async function convertToCoin() {
     emit('close')
     router.push(`/edit/${coinRes.data.id}`)
   } catch (err) {
-    setStatusMessage(errorMessageFrom(err, 'Failed to add to collection'), true)
+    setStatusMessage(errorMessageFrom(err, t('auctions.detail.convertFailed')), true)
   } finally {
     statusBusy.value = false
   }
@@ -810,7 +824,7 @@ async function removeLot() {
     emit('close')
     emit('updated')
   } catch (err) {
-    setStatusMessage(errorMessageFrom(err, 'Failed to remove lot'), true)
+    setStatusMessage(errorMessageFrom(err, t('auctions.detail.removeFailed')), true)
   } finally {
     statusBusy.value = false
   }
@@ -821,7 +835,7 @@ onMounted(fetchCalendarEvents)
 function buildShipmentInput(): ShipmentUpsertInput | null | undefined {
   if (!attachShipment.value) return undefined
   if (!shipmentTrackingNumber.value.trim()) {
-    setStatusMessage('Tracking number is required when shipment tracking is enabled', true)
+    setStatusMessage(t('purchase.trackingRequired'), true)
     return null
   }
   return {

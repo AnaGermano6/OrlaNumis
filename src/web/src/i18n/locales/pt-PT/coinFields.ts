@@ -1,0 +1,36 @@
+import type { Messages } from '../../types'
+
+const messages: Messages['coinFields'] = {
+  purchasePrice: 'Preço de compra',
+  currentValue: 'Valor atual',
+  purchaseDate: 'Data de compra',
+  vendorSku: 'SKU do vendedor',
+  vendorInvoice: 'Fatura do vendedor',
+  storageLocation: 'Localização de arrumação',
+  denomination: 'Denominação',
+  era: 'Época',
+  mint: 'Casa da moeda',
+  material: 'Material',
+  weight: 'Peso',
+  diameter: 'Diâmetro',
+  grade: 'Grau',
+  inscription: 'Inscrição',
+  inscriptionLabel: 'Inscrição:',
+  ruler: 'Governante',
+  notes: 'Notas',
+  store: 'Loja',
+  name: 'Nome',
+  purchaseLocation: 'Local de compra',
+  weightG: 'Peso (g)',
+  category: 'Categoria',
+  dateRange: 'Intervalo de datas',
+  obverseInscription: 'Legenda do anverso',
+  reverseInscription: 'Legenda do reverso',
+  obverseDescription: 'Descrição do anverso',
+  reverseDescription: 'Descrição do reverso',
+  diameterMm: 'Diâmetro (mm)',
+  coinType: 'Tipo de moeda',
+  rarityRating: 'Raridade',
+}
+
+export default messages

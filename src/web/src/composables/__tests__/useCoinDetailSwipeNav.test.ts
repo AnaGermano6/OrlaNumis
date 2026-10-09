@@ -1043,8 +1043,8 @@ describe('overflow menu -- accessibility unchanged', () => {
       join(process.cwd(), 'src', 'components', 'coin', 'CoinDetailOverflowMenu.vue'),
       'utf-8',
     )
-    expect(source).toContain('Sell Coin')
-    expect(source).toContain('Copy Coin')
+    expect(source).toContain("t('coinDetail.menu.sell')")
+    expect(source).toContain("t('coinDetail.menu.copy')")
   })
 
   it('useCoinDetailSwipeNav adds no aria-hidden, no focus trap, no tabindex', () => {

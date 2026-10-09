@@ -1,5 +1,5 @@
 <template>
-  <CoinDetailSectionPageShell section-title="Notes">
+  <CoinDetailSectionPageShell :section-title="t('coinDetail.sections.notes.title')">
     <template #default="{ coin }">
       <div v-if="coin.notes" class="mt-0">
         <div class="section-content-card">
@@ -7,9 +7,9 @@
         </div>
       </div>
       <div v-else class="empty-state text-center py-12 px-8">
-        <p class="text-text-muted mb-6">No notes recorded for this coin.</p>
+        <p class="text-text-muted mb-6">{{ t('coinDetail.notes.empty') }}</p>
         <router-link :to="`/edit/${coin.id}`" class="btn btn-secondary btn-sm">
-          Add Notes
+          {{ t('coinDetail.notes.add') }}
         </router-link>
       </div>
     </template>
@@ -18,4 +18,5 @@
 
 <script setup lang="ts">
 import CoinDetailSectionPageShell from '@/components/coin/CoinDetailSectionPageShell.vue'
+import { t } from '@/i18n'
 </script>

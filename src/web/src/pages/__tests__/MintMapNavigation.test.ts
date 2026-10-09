@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import en from '@/i18n/locales/en'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -31,13 +32,15 @@ describe('MintMap navigation entry points', () => {
     const appSource = fs.readFileSync(path.resolve(srcRoot, 'App.vue'), 'utf8')
 
     expect(appSource).toContain("id: 'stats'")
-    expect(appSource).toContain("label: 'Stats'")
-    expect(appSource).toContain("label: 'Timeline', to: '/stats/timeline'")
-    expect(appSource).toContain("label: 'Map', to: '/stats/mint-map'")
-    expect(appSource).toContain("label: 'Health', to: '/stats/health'")
-    expect(appSource).toContain("label: 'Value Details', to: '/stats/value-trends'")
+    expect(appSource).toContain("labelKey: 'nav.stats'")
+    expect(appSource).toContain("labelKey: 'nav.timeline', to: '/stats/timeline'")
+    expect(appSource).toContain("labelKey: 'nav.map', to: '/stats/mint-map'")
+    expect(appSource).toContain("labelKey: 'nav.health', to: '/stats/health'")
+    expect(appSource).toContain("labelKey: 'nav.valueDetails', to: '/stats/value-trends'")
+    expect([en.nav.stats, en.nav.timeline, en.nav.map, en.nav.health, en.nav.valueDetails])
+      .toEqual(['Stats', 'Timeline', 'Map', 'Health', 'Value Details'])
     expect(appSource).not.toContain("id: 'timeline'")
-    expect(appSource).not.toContain("label: 'Collection Distribution'")
+    expect(appSource).not.toContain("labelKey: 'nav.collectionDistribution'")
     expect(appSource).not.toContain('#collection-health')
     expect(appSource).not.toContain('#value-over-time')
   })

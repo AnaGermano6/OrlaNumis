@@ -3,28 +3,28 @@
     <div v-if="open" class="fixed inset-0 z-[300] flex items-center justify-center bg-overlay-60 p-4" @click.self="handleClose">
       <div class="flex max-h-[90vh] w-full max-w-[520px] flex-col overflow-hidden rounded-md border border-border-subtle bg-card shadow-[0_12px_40px_var(--overlay-50)]">
         <div class="flex items-center justify-between gap-4 border-b border-border-subtle px-5 py-4">
-          <h3 class="m-0 text-lg font-medium text-heading">Create new mint</h3>
+          <h3 class="m-0 text-lg font-medium text-heading">{{ t('mint.createTitle') }}</h3>
           <button class="inline-flex h-[30px] w-[30px] items-center justify-center p-0 text-text-muted hover:text-text-primary" @click="handleClose">×</button>
         </div>
 
         <div class="flex flex-1 flex-col gap-3 overflow-y-auto p-5">
           <div class="form-group min-w-0">
-            <label class="form-label">Mint name</label>
+            <label class="form-label">{{ t('mint.name') }}</label>
             <div class="flex gap-2">
               <input
                 v-model="name"
                 class="form-input flex-1"
-                placeholder="e.g. Sirmium"
+                :placeholder="t('mint.namePlaceholder')"
                 @keydown.enter.prevent="search"
               />
               <button type="button" class="btn btn-secondary btn-sm" :disabled="searching || !name.trim()" @click="search">
-                {{ searching ? 'Searching…' : 'Search' }}
+                {{ searching ? t('mint.searching') : t('mint.search') }}
               </button>
             </div>
           </div>
 
           <p v-if="searched && candidates.length === 0" class="text-body text-text-secondary">
-            No matches found for "{{ lastSearchedName }}" — click the map below to place a pin manually.
+            {{ t('mint.noMatches', { name: lastSearchedName }) }}
           </p>
 
           <div v-if="candidates.length > 1" class="flex flex-wrap gap-[0.35rem]">
@@ -43,26 +43,26 @@
           <div ref="mapElement" class="mint-pin-picker" data-testid="create-mint-map"></div>
 
           <p class="text-body text-text-secondary">
-            {{ pin ? `Pin set at ${pin.lat.toFixed(4)}, ${pin.lng.toFixed(4)} — drag to adjust.` : 'Click the map to place a pin.' }}
+            {{ pin ? t('mint.pinSet', { lat: pin.lat.toFixed(4), lng: pin.lng.toFixed(4) }) : t('mint.clickMap') }}
           </p>
 
           <div class="form-group min-w-0">
-            <label class="form-label">Region (optional)</label>
-            <input v-model="region" class="form-input" placeholder="e.g. Pannonia" />
+            <label class="form-label">{{ t('mint.region') }}</label>
+            <input v-model="region" class="form-input" :placeholder="t('mint.regionPlaceholder')" />
           </div>
 
           <p v-if="error" class="text-body text-loss">{{ error }}</p>
         </div>
 
         <div class="flex justify-end gap-2 border-t border-border-subtle px-5 py-4">
-          <button type="button" class="btn btn-secondary btn-sm" @click="handleClose">Cancel</button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="handleClose">{{ t('common.cancel') }}</button>
           <button
             type="button"
             class="btn btn-primary btn-sm"
             :disabled="!canSave || saving"
             @click="save"
           >
-            {{ saving ? 'Saving…' : 'Save mint' }}
+            {{ saving ? t('mint.saving') : t('mint.save') }}
           </button>
         </div>
       </div>
@@ -77,6 +77,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { createMintLocation, geocodeMintName } from '@/api/client'
 import type { GeocodeCandidate, MintLocation } from '@/types'
 import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, OSM_ATTRIBUTION, OSM_TILE_URL } from '@/components/map/MintMapLeaflet.vue'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   open: boolean
@@ -178,7 +179,7 @@ async function save() {
     emit('created', res.data)
   } catch (e: unknown) {
     const err = e as { response?: { data?: { error?: string } } }
-    error.value = err.response?.data?.error || 'Failed to save mint'
+    error.value = err.response?.data?.error || t('mint.saveFailed')
   } finally {
     saving.value = false
   }

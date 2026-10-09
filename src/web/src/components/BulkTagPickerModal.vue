@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div v-if="open" class="fixed inset-0 z-[300] flex items-center justify-center bg-overlay-60 px-4" @click="$emit('close')">
       <div class="w-full max-w-[320px] rounded-md border border-border-subtle bg-card p-6 shadow-[0_12px_40px_var(--overlay-50)]" @click.stop>
-        <h3 class="mb-3 text-base text-heading">Apply Set</h3>
+        <h3 class="mb-3 text-base text-heading">{{ t('collection.bulk.applySet') }}</h3>
         <div v-if="tags.length" class="flex max-h-[300px] flex-col gap-1.5 overflow-y-auto">
           <button
             v-for="tag in tags"
@@ -14,8 +14,8 @@
             {{ tag.name }}
           </button>
         </div>
-        <p v-else class="text-body text-text-muted">No sets available. Create sets first.</p>
-        <button class="btn btn-secondary btn-sm mt-3" @click="$emit('close')">Cancel</button>
+        <p v-else class="text-body text-text-muted">{{ t('collection.bulk.noSets') }}</p>
+        <button class="btn btn-secondary btn-sm mt-3" @click="$emit('close')">{{ t('common.cancel') }}</button>
       </div>
     </div>
   </Teleport>
@@ -23,6 +23,7 @@
 
 <script setup lang="ts">
 import type { CollectionSetOption } from '@/types'
+import { t } from '@/i18n'
 
 defineProps<{
   open: boolean

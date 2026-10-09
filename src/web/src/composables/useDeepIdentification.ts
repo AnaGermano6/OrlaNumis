@@ -21,6 +21,7 @@ import type {
   DeepProviderId,
   DeepReport,
 } from '@/types'
+import { t } from '@/i18n'
 
 /**
  * Job-lifecycle composable for Deep Agentic Coin Identification (Feature 344).
@@ -57,8 +58,8 @@ export function useDeepIdentification() {
     } catch (err) {
       errorCode.value = getApiErrorCode(err)
       const fallback = errorCode.value === 'job_at_capacity'
-        ? 'An analysis is already running. Wait for it to finish or cancel it.'
-        : 'Unable to start Deep Analysis.'
+        ? t('deepAnalysis.errors.alreadyRunning')
+        : t('deepAnalysis.errors.startFailed')
       error.value = getApiErrorMessage(err) || fallback
       return null
     } finally {
@@ -76,7 +77,7 @@ export function useDeepIdentification() {
       proposal.value = data.proposal ?? null
       return data
     } catch (err) {
-      error.value = getApiErrorMessage(err) || 'Unable to load Deep Analysis job.'
+      error.value = getApiErrorMessage(err) || t('deepAnalysis.errors.loadFailed')
       return null
     } finally {
       loading.value = false
@@ -98,7 +99,7 @@ export function useDeepIdentification() {
       job.value = data.job
       return data.job
     } catch (err) {
-      error.value = getApiErrorMessage(err) || 'Unable to cancel Deep Analysis.'
+      error.value = getApiErrorMessage(err) || t('deepAnalysis.errors.cancelFailed')
       return null
     } finally {
       cancelling.value = false
@@ -118,7 +119,7 @@ export function useDeepIdentification() {
       job.value = data.job
       return data.job
     } catch (err) {
-      error.value = getApiErrorMessage(err) || 'Unable to retry Deep Analysis.'
+      error.value = getApiErrorMessage(err) || t('deepAnalysis.errors.retryFailed')
       return null
     } finally {
       retrying.value = false
@@ -156,7 +157,7 @@ export function useDeepIdentification() {
       proposal.value = data
       return data
     } catch (err) {
-      error.value = getApiErrorMessage(err) || 'Unable to save your proposal edit.'
+      error.value = getApiErrorMessage(err) || t('deepAnalysis.errors.saveEditFailed')
       return null
     }
   }
@@ -192,7 +193,7 @@ export function useDeepIdentification() {
       proposal.value = data
       return data
     } catch (err) {
-      error.value = getApiErrorMessage(err) || 'Unable to save your proposal edits.'
+      error.value = getApiErrorMessage(err) || t('deepAnalysis.errors.saveEditsFailed')
       return null
     }
   }
@@ -216,7 +217,7 @@ export function useDeepIdentification() {
       }
       return data
     } catch (err) {
-      error.value = getApiErrorMessage(err) || 'Unable to apply the Deep Analysis proposal.'
+      error.value = getApiErrorMessage(err) || t('deepAnalysis.errors.applyFailed')
       return null
     } finally {
       applying.value = false
@@ -240,7 +241,7 @@ export function useDeepIdentification() {
       }
       return true
     } catch (err) {
-      error.value = getApiErrorMessage(err) || 'Unable to delete this Deep Analysis run.'
+      error.value = getApiErrorMessage(err) || t('deepAnalysis.errors.deleteFailed')
       return false
     } finally {
       deleting.value = false

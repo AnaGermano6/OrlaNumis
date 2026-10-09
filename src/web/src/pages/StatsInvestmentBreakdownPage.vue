@@ -1,26 +1,26 @@
 <template>
   <PullToRefresh :on-refresh="handleRefresh">
     <div class="container flex flex-col gap-6">
-      <DesktopPageContext title="Investment Breakdown">
+      <DesktopPageContext :title="t('nav.investmentBreakdown')">
         <template #actions>
-          <AppIconButton to="/stats" title="Back to Stats"><ArrowLeft :size="20" /></AppIconButton>
+          <AppIconButton to="/stats" :title="t('stats.backToStats')"><ArrowLeft :size="20" /></AppIconButton>
         </template>
         <header class="page-header flex flex-nowrap items-center justify-between gap-4">
           <div>
-            <p class="section-label">Collection Insights</p>
-            <h1>Investment Breakdown</h1>
-            <p class="mt-[0.35rem] text-base text-text-secondary">See valuation movement, acquisition-year performance, and material allocation.</p>
+            <p class="section-label">{{ t('stats.insights') }}</p>
+            <h1>{{ t('nav.investmentBreakdown') }}</h1>
+            <p class="mt-[0.35rem] text-base text-text-secondary">{{ t('stats.investment.intro') }}</p>
           </div>
           <router-link
             class="inline-flex shrink-0 items-center justify-center rounded-sm border border-border-subtle bg-transparent p-[0.4rem] text-text-secondary transition hover:border-border-accent hover:bg-gold-glow hover:text-gold"
             to="/stats"
-            aria-label="Back to Stats"
+            :aria-label="t('stats.backToStats')"
           >
             <ArrowLeft :size="20" />
           </router-link>
         </header>
         <template #desktop>
-          <p class="text-base text-text-secondary">See valuation movement, acquisition-year performance, and material allocation.</p>
+          <p class="text-base text-text-secondary">{{ t('stats.investment.intro') }}</p>
         </template>
       </DesktopPageContext>
 
@@ -30,53 +30,53 @@
 
       <div v-else-if="errorMessage" class="card flex flex-col gap-4 text-text-secondary min-[641px]:flex-row min-[641px]:items-center min-[641px]:justify-between" role="alert">
         <p class="m-0">{{ errorMessage }}</p>
-        <button class="btn btn-sm btn-secondary" type="button" @click="handleRefresh">Try Again</button>
+        <button class="btn btn-sm btn-secondary" type="button" @click="handleRefresh">{{ t('common.tryAgain') }}</button>
       </div>
 
       <template v-else>
-        <section class="grid gap-4 min-[641px]:grid-cols-3" aria-label="Investment valuation highlights">
+        <section class="grid gap-4 min-[641px]:grid-cols-3" :aria-label="t('stats.investment.highlights')">
           <article class="card flex flex-col gap-3 p-4">
             <div>
-              <p class="section-label">Top Increases</p>
-              <h2 class="mt-1">Biggest Value Gains</h2>
+              <p class="section-label">{{ t('stats.investment.topIncreases') }}</p>
+              <h2 class="mt-1">{{ t('stats.investment.biggestGains') }}</h2>
             </div>
             <ol v-if="topIncreases.length" class="m-0 flex list-none flex-col gap-3 p-0">
               <li v-for="coin in topIncreases" :key="coin.coinId" class="flex flex-col gap-[0.35rem] rounded-sm border border-border-subtle bg-input p-3">
                 <router-link class="font-semibold text-gold hover:underline" :to="`/coin/${coin.coinId}`">{{ coin.name }}</router-link>
                 <div class="flex flex-wrap items-center gap-[0.35rem] text-body text-text-secondary">
                   <span>{{ formatCurrency(coin.initialValue) }}</span>
-                  <span class="text-text-muted">to</span>
+                  <span class="text-text-muted">{{ t('stats.investment.to') }}</span>
                   <span class="text-gold">{{ formatCurrency(coin.currentValue) }}</span>
                 </div>
                 <p v-if="coin.changeExplanation" class="m-0 text-chip leading-[1.4] text-text-secondary">{{ coin.changeExplanation }}</p>
               </li>
             </ol>
-            <p v-else class="m-0 text-body text-text-muted">No valuation increases are available yet.</p>
+            <p v-else class="m-0 text-body text-text-muted">{{ t('stats.investment.noIncreases') }}</p>
           </article>
 
           <article class="card flex flex-col gap-3 p-4">
             <div>
-              <p class="section-label">Top Drops</p>
-              <h2 class="mt-1">Biggest Value Declines</h2>
+              <p class="section-label">{{ t('stats.investment.topDrops') }}</p>
+              <h2 class="mt-1">{{ t('stats.investment.biggestDeclines') }}</h2>
             </div>
             <ol v-if="topDrops.length" class="m-0 flex list-none flex-col gap-3 p-0">
               <li v-for="coin in topDrops" :key="coin.coinId" class="flex flex-col gap-[0.35rem] rounded-sm border border-border-subtle bg-input p-3">
                 <router-link class="font-semibold text-gold hover:underline" :to="`/coin/${coin.coinId}`">{{ coin.name }}</router-link>
                 <div class="flex flex-wrap items-center gap-[0.35rem] text-body text-text-secondary">
                   <span>{{ formatCurrency(coin.initialValue) }}</span>
-                  <span class="text-text-muted">to</span>
+                  <span class="text-text-muted">{{ t('stats.investment.to') }}</span>
                   <span class="text-byzantine">{{ formatCurrency(coin.currentValue) }}</span>
                 </div>
                 <p v-if="coin.changeExplanation" class="m-0 text-chip leading-[1.4] text-text-secondary">{{ coin.changeExplanation }}</p>
               </li>
             </ol>
-            <p v-else class="m-0 text-body text-text-muted">No valuation declines are available yet.</p>
+            <p v-else class="m-0 text-body text-text-muted">{{ t('stats.investment.noDeclines') }}</p>
           </article>
 
           <article class="card flex flex-col gap-3 p-4">
             <div>
-              <p class="section-label">Stale Valuations</p>
-              <h2 class="mt-1">Needs Refresh</h2>
+              <p class="section-label">{{ t('stats.investment.stale') }}</p>
+              <h2 class="mt-1">{{ t('stats.investment.needsRefresh') }}</h2>
             </div>
             <ol v-if="staleValuations.length" class="m-0 flex list-none flex-col gap-3 p-0">
               <li v-for="coin in staleValuations" :key="coin.coinId" class="flex flex-col gap-[0.35rem] rounded-sm border border-border-subtle bg-input p-3 text-body text-text-secondary">
@@ -84,21 +84,21 @@
                 <span class="text-text-muted">{{ formatLastValuation(coin.lastValuationAt) }}</span>
               </li>
             </ol>
-            <p v-else class="m-0 text-body text-text-muted">No stale valuations are available.</p>
+            <p v-else class="m-0 text-body text-text-muted">{{ t('stats.investment.noStale') }}</p>
           </article>
         </section>
 
         <StatsInvestmentBreakdownChart
-          title="Acquisition Performance by Year"
-          eyebrow="Purchase Timing"
-          description="Compare each purchase year's invested capital, current value, gain/loss, and ROI."
+          :title="t('stats.investment.byYearTitle')"
+          :eyebrow="t('stats.investment.byYearEyebrow')"
+          :description="t('stats.investment.byYearDescription')"
           :rows="purchaseYearRows"
         />
 
         <StatsInvestmentBreakdownChart
-          title="Material"
-          eyebrow="Material Allocation"
-          description="Compare invested capital, current value, gain/loss, and ROI by material."
+          :title="t('coinFields.material')"
+          :eyebrow="t('stats.investment.materialEyebrow')"
+          :description="t('stats.investment.materialDescription')"
           :rows="materialRows"
         />
       </template>
@@ -113,6 +113,7 @@ import { getInvestmentBreakdown } from '@/api/client'
 import PullToRefresh from '@/components/PullToRefresh.vue'
 import StatsInvestmentBreakdownChart from '@/components/stats/StatsInvestmentBreakdownChart.vue'
 import { formatCurrency } from '@/utils/format'
+import { t, intlLocale } from '@/i18n'
 import type {
   InvestmentBreakdownResponse,
   InvestmentBreakdownSegment,
@@ -153,8 +154,8 @@ function applyHighlights(data: InvestmentBreakdownResponse) {
 }
 
 function formatLastValuation(value: string | null): string {
-  if (!value) return 'Never valued'
-  return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  if (!value) return t('stats.investment.neverValued')
+  return new Date(value).toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 async function loadBreakdowns() {
@@ -169,7 +170,7 @@ async function loadBreakdowns() {
     materialRows.value = normalizeBreakdown(materialRes.data)
     applyHighlights(purchaseYearRes.data)
   } catch {
-    errorMessage.value = 'Investment breakdown data could not be loaded.'
+    errorMessage.value = t('stats.investment.loadFailed')
   } finally {
     isLoading.value = false
   }

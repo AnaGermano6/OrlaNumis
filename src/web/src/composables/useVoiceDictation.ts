@@ -1,4 +1,5 @@
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
+import { intlLocale, t } from '@/i18n'
 
 export type VoiceDictationStatus = 'idle' | 'requesting' | 'listening' | 'stopping'
 
@@ -71,15 +72,15 @@ function errorMessage(code: string): string {
   switch (code) {
     case 'not-allowed':
     case 'service-not-allowed':
-      return 'Microphone access is blocked. Allow it in your browser site permissions, then try again.'
+      return t('voice.errors.blocked')
     case 'no-speech':
-      return 'No speech was detected. Try again or continue typing.'
+      return t('voice.errors.noSpeech')
     case 'audio-capture':
-      return 'No microphone is available. You can continue typing your notes.'
+      return t('voice.errors.noMic')
     case 'network':
-      return 'Speech recognition is unavailable. Check your connection or continue typing.'
+      return t('voice.errors.network')
     default:
-      return 'Voice dictation stopped unexpectedly. You can continue typing your notes.'
+      return t('voice.errors.stopped')
   }
 }
 
@@ -91,15 +92,15 @@ function permissionErrorMessage(error: unknown): string {
   switch (name) {
     case 'NotAllowedError':
     case 'SecurityError':
-      return 'Microphone access is blocked. Allow it in your browser site permissions, then try again.'
+      return t('voice.errors.blocked')
     case 'NotFoundError':
     case 'DevicesNotFoundError':
-      return 'No microphone is available. You can continue typing your notes.'
+      return t('voice.errors.noMic')
     case 'NotReadableError':
     case 'TrackStartError':
-      return 'The microphone is being used by another app or could not be started.'
+      return t('voice.errors.inUse')
     default:
-      return 'Microphone access could not be requested. You can continue typing your notes.'
+      return t('voice.errors.requestFailed')
   }
 }
 
@@ -153,7 +154,8 @@ export function useVoiceDictation(options: UseVoiceDictationOptions) {
 
       const active = factory()
       recognition = active
-      active.lang = 'en-US'
+      // Recognition follows the interface language, so pt-PT users dictate in Portuguese.
+      active.lang = intlLocale()
       active.continuous = false
       active.interimResults = true
       active.maxAlternatives = 1
@@ -193,7 +195,7 @@ export function useVoiceDictation(options: UseVoiceDictationOptions) {
       generation += 1
       status.value = 'idle'
       error.value = permissionConfirmed
-        ? 'Voice dictation could not start. You can continue typing your notes.'
+        ? t('voice.errors.startFailed')
         : permissionErrorMessage(caught)
     }
   }

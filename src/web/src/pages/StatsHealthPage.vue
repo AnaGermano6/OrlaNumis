@@ -1,22 +1,22 @@
 <template>
   <PullToRefresh :on-refresh="handleRefresh">
     <div class="container flex flex-col gap-6">
-      <DesktopPageContext title="Health">
+      <DesktopPageContext :title="t('nav.health')">
         <template #actions>
-          <AppIconButton to="/stats" title="Back to Stats"><ArrowLeft :size="20" /></AppIconButton>
+          <AppIconButton to="/stats" :title="t('stats.backToStats')"><ArrowLeft :size="20" /></AppIconButton>
         </template>
         <header class="page-header flex flex-nowrap items-center justify-between gap-4">
           <div>
-            <p class="section-label">Collection Insights</p>
-            <h1>Health</h1>
-            <p class="mt-[0.35rem] text-base text-text-secondary">Track the completeness and quality of your collection data.</p>
+            <p class="section-label">{{ t('stats.insights') }}</p>
+            <h1>{{ t('nav.health') }}</h1>
+            <p class="mt-[0.35rem] text-base text-text-secondary">{{ t('stats.healthIntro') }}</p>
           </div>
-          <router-link class="inline-flex shrink-0 items-center justify-center rounded-sm border border-border-subtle bg-transparent p-[0.4rem] text-text-secondary transition hover:border-border-accent hover:bg-gold-glow hover:text-gold" to="/stats" aria-label="Back to Stats">
+          <router-link class="inline-flex shrink-0 items-center justify-center rounded-sm border border-border-subtle bg-transparent p-[0.4rem] text-text-secondary transition hover:border-border-accent hover:bg-gold-glow hover:text-gold" to="/stats" :aria-label="t('stats.backToStats')">
             <ArrowLeft :size="20" />
           </router-link>
         </header>
         <template #desktop>
-          <p class="text-base text-text-secondary">Track the completeness and quality of your collection data.</p>
+          <p class="text-base text-text-secondary">{{ t('stats.healthIntro') }}</p>
         </template>
       </DesktopPageContext>
 
@@ -44,6 +44,7 @@ import CollectionHealthTrendIndicator from '@/components/stats/CollectionHealthT
 import CollectionHealthEmptyState from '@/components/stats/CollectionHealthEmptyState.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t } from '@/i18n'
 
 const store = useCoinsStore()
 const collectionHealth = computed(() => store.collectionHealth)

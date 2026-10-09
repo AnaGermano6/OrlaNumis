@@ -5,7 +5,7 @@
       <div class="mx-auto flex h-[60px] max-w-[1200px] items-center justify-between gap-2 px-4">
         <div class="flex min-w-0 flex-1 items-center">
           <button class="flex shrink-0 cursor-pointer items-center gap-2 rounded-sm border-0 bg-transparent px-2.5 py-1.5 transition-colors hover:bg-gold-glow" @click="sidebarOpen = !sidebarOpen">
-            <img src="/coin-logo.jpg" alt="Aurearia - Coin Collection" class="h-9 w-9 rounded-full border-2 border-gold-dim object-cover" />
+            <img src="/coin-logo.jpg" :alt="t('app.brandFull')" class="h-9 w-9 rounded-full border-2 border-gold-dim object-cover" />
             <span class="font-display text-lg font-semibold whitespace-nowrap text-gold">Aurearia</span>
           </button>
           <div v-if="!isPwa" class="desktop-page-title-group min-w-0 items-center gap-2">
@@ -23,29 +23,30 @@
               <button
                 class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary transition-colors hover:bg-gold-glow hover:text-gold"
                 :class="{ 'bg-gold-glow text-gold': bulkSelectActive }"
-                :aria-label="bulkSelectActive ? 'Cancel selection mode' : 'Select coins'"
-                :title="bulkSelectActive ? 'Cancel selection mode' : 'Select coins'"
+                :aria-label="bulkSelectActive ? t('app.header.cancelSelection') : t('app.header.selectCoins')"
+                :title="bulkSelectActive ? t('app.header.cancelSelection') : t('app.header.selectCoins')"
                 @click="toggleCollectionSelectMode"
               >
                 <CheckSquare :size="20" />
               </button>
-              <router-link to="/quick-access" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" active-class="bg-gold-glow text-gold" aria-label="Quick Access" title="Quick Access">
+              <router-link to="/quick-access" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" active-class="bg-gold-glow text-gold" :aria-label="t('nav.quickAccess')" :title="t('nav.quickAccess')">
                 <Pin :size="20" />
               </router-link>
-              <router-link to="/add" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" aria-label="Add Coin" title="Add Coin">
+              <router-link to="/add" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" :aria-label="t('nav.addCoin')" :title="t('nav.addCoin')">
                 <CirclePlus :size="20" />
               </router-link>
             </template>
             <div id="desktop-page-actions" class="flex items-center gap-1"></div>
             <span class="mx-1 h-6 w-px bg-border-subtle" aria-hidden="true"></span>
           </div>
-          <router-link v-if="isPwa || !isCollectionPage" to="/quick-access" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" active-class="bg-gold-glow text-gold" aria-label="Quick Access" title="Quick Access">
+          <router-link v-if="isPwa || !isCollectionPage" to="/quick-access" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" active-class="bg-gold-glow text-gold" :aria-label="t('nav.quickAccess')" :title="t('nav.quickAccess')">
             <Pin :size="20" />
           </router-link>
-          <router-link v-if="isPwa" to="/add" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" aria-label="Add Coin">
+          <router-link v-if="isPwa" to="/add" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" :aria-label="t('nav.addCoin')">
             <Plus :size="20" />
           </router-link>
-          <router-link to="/notifications" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" aria-label="Notifications">
+          <LanguageSwitcher class="mx-1" />
+          <router-link to="/notifications" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" :aria-label="t('nav.notifications')">
             <Bell :size="20" />
             <span v-if="unreadCount > 0" class="absolute top-0 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-label font-bold leading-none text-surface">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
           </router-link>
@@ -62,9 +63,9 @@
     <Transition name="sidebar-slide">
       <aside v-if="sidebarOpen" class="fixed inset-y-0 left-0 z-[1300] flex w-[280px] flex-col overflow-y-auto border-r border-border-subtle bg-card">
         <div class="flex items-center gap-3 border-b border-border-subtle px-5 pt-5 pb-4">
-          <img src="/coin-logo.jpg" alt="Aurearia - Coin Collection" class="h-10 w-10 rounded-full border-2 border-gold-dim object-cover" />
-          <span class="flex-1 font-display text-base font-semibold text-gold">Aurearia<span v-if="!isPwa" class="hidden sm:inline"> - Coin Collection</span></span>
-          <button class="rounded-sm border-0 bg-transparent p-[0.3rem] text-text-secondary transition-colors hover:bg-gold-glow hover:text-text-primary" :class="{ 'bg-gold-glow text-gold': editMode }" @click="toggleEditMode" :title="editMode ? 'Done' : 'Reorder menu'">
+          <img src="/coin-logo.jpg" :alt="t('app.brandFull')" class="h-10 w-10 rounded-full border-2 border-gold-dim object-cover" />
+          <span class="flex-1 font-display text-base font-semibold text-gold">Aurearia<span v-if="!isPwa" class="hidden sm:inline"> - {{ t('app.brandTagline') }}</span></span>
+          <button class="rounded-sm border-0 bg-transparent p-[0.3rem] text-text-secondary transition-colors hover:bg-gold-glow hover:text-text-primary" :class="{ 'bg-gold-glow text-gold': editMode }" @click="toggleEditMode" :title="editMode ? t('common.done') : t('app.sidebar.reorderMenu')">
             <GripVertical :size="18" />
           </button>
           <button class="rounded-sm border-0 bg-transparent p-[0.3rem] text-text-secondary transition-colors hover:bg-gold-glow hover:text-text-primary" @click="sidebarOpen = false">
@@ -101,7 +102,7 @@
             <div
               v-if="item.children?.length && !editMode && ((item.id === 'stats' && statsExpanded) || (item.id === 'collection' && collectionExpanded) || (item.id === 'sets' && setsExpanded) || (item.id === 'lookup' && lookupExpanded))"
               class="flex flex-col pt-[0.15rem] pb-[0.35rem]"
-              :aria-label="`${item.label} views`"
+              :aria-label="t('app.sidebar.submenuLabel', { label: item.label })"
             >
               <router-link
                 v-for="child in item.children"
@@ -120,19 +121,19 @@
         <div class="border-t border-border-subtle py-2">
           <router-link to="/settings" class="sidebar-link flex w-full items-center gap-3 border-0 bg-transparent px-5 py-[0.7rem] text-left font-sans text-base text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" active-class="border-r-[3px] border-gold bg-gold-glow text-gold" @click="sidebarOpen = false">
             <Settings :size="20" />
-            <span>Settings</span>
+            <span>{{ t('nav.settings') }}</span>
           </router-link>
           <button class="sidebar-link flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-5 py-[0.7rem] text-left font-sans text-base text-text-secondary transition-colors hover:bg-gold-glow hover:text-gold" @click="openOnboardingGuide">
             <BookOpen :size="20" />
-            <span>Getting Started</span>
+            <span>{{ t('nav.gettingStarted') }}</span>
           </button>
           <router-link v-if="auth.isAdmin" to="/admin" class="sidebar-link flex w-full items-center gap-3 border-0 bg-transparent px-5 py-[0.7rem] text-left font-sans text-base text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" active-class="border-r-[3px] border-gold bg-gold-glow text-gold" @click="sidebarOpen = false">
             <ShieldCheck :size="20" />
-            <span>Admin</span>
+            <span>{{ t('nav.admin') }}</span>
           </router-link>
           <button class="sidebar-link flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-5 py-[0.7rem] text-left font-sans text-base text-text-secondary transition-colors hover:bg-red-400/10 hover:text-red-400" @click="handleLogout">
             <LogOut :size="20" />
-            <span>Logout</span>
+            <span>{{ t('nav.logout') }}</span>
           </button>
         </div>
       </aside>
@@ -141,7 +142,7 @@
     <main class="min-h-screen" :class="{ 'pt-[76px]': auth.isAuthenticated && !immersive }">
       <div v-if="auth.isAuthenticated && notificationError" class="container mb-4 flex items-center justify-between gap-3" role="status">
         <span class="text-chip text-text-secondary">{{ notificationError }}</span>
-        <button class="btn btn-secondary btn-sm" @click="refreshNotifications">Retry</button>
+        <button class="btn btn-secondary btn-sm" @click="refreshNotifications">{{ t('common.retry') }}</button>
       </div>
       <router-view />
     </main>
@@ -157,7 +158,7 @@
         @pointermove="moveAgentFabDrag"
         @pointerup="stopAgentFabDrag"
         @pointercancel="stopAgentFabDrag"
-        aria-label="Open AI Agent"
+        :aria-label="t('app.openAgent')"
       >
         <Bot :size="22" />
       </button>
@@ -169,25 +170,25 @@
     <!-- Email prompt modal for legacy users -->
     <div v-if="showEmailPrompt" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70" @click.self="dismissEmailPrompt">
       <div class="card w-[90%] max-w-[360px] p-8">
-        <h3 class="mb-2">Add Your Email</h3>
-        <p class="mb-0 text-base text-text-secondary">An email address is now required. Please add yours to continue using all features.</p>
+        <h3 class="mb-2">{{ t('app.emailPrompt.title') }}</h3>
+        <p class="mb-0 text-base text-text-secondary">{{ t('app.emailPrompt.body') }}</p>
         <div class="form-group my-4">
-          <input v-model="promptEmail" type="email" class="form-input" placeholder="you@example.com" />
+          <input v-model="promptEmail" type="email" class="form-input" :placeholder="t('common.emailPlaceholder')" />
         </div>
         <div class="mt-6 flex justify-end gap-3">
-          <button class="btn btn-secondary" @click="dismissEmailPrompt">Later</button>
-          <button class="btn btn-primary" @click="savePromptEmail" :disabled="!promptEmail">Save</button>
+          <button class="btn btn-secondary" @click="dismissEmailPrompt">{{ t('common.later') }}</button>
+          <button class="btn btn-primary" @click="savePromptEmail" :disabled="!promptEmail">{{ t('common.save') }}</button>
         </div>
       </div>
     </div>
 
     <div v-if="showOnboardingPrompt" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70" @click.self="dismissOnboardingPrompt">
       <div class="card w-[90%] max-w-[360px] p-8">
-        <h3 class="mb-2">Aurearia - Coin Collection</h3>
-        <p class="mb-0 text-base text-text-secondary">Start with the Getting Started guide to import a CSV, try Quick Capture or Coin Lookup, and review settings that unlock alerts, images, and AI tools.</p>
+        <h3 class="mb-2">{{ t('app.brandFull') }}</h3>
+        <p class="mb-0 text-base text-text-secondary">{{ t('app.onboarding.body') }}</p>
         <div class="mt-6 flex justify-end gap-3">
-          <button class="btn btn-secondary" @click="dismissOnboardingPrompt">Not now</button>
-          <button class="btn btn-primary" @click="openOnboardingGuide">Open Guide</button>
+          <button class="btn btn-secondary" @click="dismissOnboardingPrompt">{{ t('common.notNow') }}</button>
+          <button class="btn btn-primary" @click="openOnboardingGuide">{{ t('app.onboarding.openGuide') }}</button>
         </div>
       </div>
     </div>
@@ -216,11 +217,14 @@ import AppDialog from '@/components/AppDialog.vue'
 import AppToasts from '@/components/AppToasts.vue'
 import PwaInstallPrompt from '@/components/PwaInstallPrompt.vue'
 import PwaUpdateBanner from '@/components/PwaUpdateBanner.vue'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import { t, type MessageKey } from '@/i18n'
+import { loadCoinVocabulary, resetCoinVocabulary } from '@/i18n/coinVocabulary'
 import Sortable from 'sortablejs'
 
 interface NavItem {
   id: string
-  label: string
+  labelKey: MessageKey
   icon: Component
   to?: string
   action?: () => void
@@ -231,9 +235,18 @@ interface NavItem {
 
 interface NavSubItem {
   id: string
+  labelKey: MessageKey
+  to: string
+}
+
+interface NavLink {
+  id: string
   label: string
   to: string
 }
+
+// Nav items with labels translated for the current locale.
+type ResolvedNavItem = Omit<NavItem, 'children'> & { label: string; children?: NavLink[] }
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -283,64 +296,64 @@ const showCollectionActions = computed(() => isCollectionPage.value && !isPwa)
 const defaultNavItems: NavItem[] = [
   {
     id: 'collection',
-    label: 'Collection',
+    labelKey: 'nav.collection',
     icon: markRaw(Landmark),
     to: '/',
     visible: true,
     children: [
-      { id: 'collection-gallery', label: 'Gallery', to: '/' },
-      { id: 'collection-tray', label: 'Tray', to: '/tray' },
-      { id: 'collection-storage-trays', label: 'Storage Trays', to: '/storage-trays' },
+      { id: 'collection-gallery', labelKey: 'nav.gallery', to: '/' },
+      { id: 'collection-tray', labelKey: 'nav.tray', to: '/tray' },
+      { id: 'collection-storage-trays', labelKey: 'nav.storageTrays', to: '/storage-trays' },
     ],
   },
-  { id: 'add-coin', label: 'Add Coin', icon: markRaw(CirclePlus), to: '/add', visible: isPwa },
+  { id: 'add-coin', labelKey: 'nav.addCoin', icon: markRaw(CirclePlus), to: '/add', visible: isPwa },
   {
     id: 'lookup',
-    label: 'Identify Coin',
+    labelKey: 'nav.identifyCoin',
     icon: markRaw(Search),
     to: '/lookup',
     visible: true,
     children: [
-      { id: 'lookup-identify', label: 'Identify Coin', to: '/lookup' },
-      { id: 'lookup-history', label: 'Analysis History', to: '/deep-analysis/history' },
+      { id: 'lookup-identify', labelKey: 'nav.identifyCoin', to: '/lookup' },
+      { id: 'lookup-history', labelKey: 'nav.analysisHistory', to: '/deep-analysis/history' },
     ],
   },
-  { id: 'wishlist', label: 'Wishlist', icon: markRaw(Bookmark), to: '/wishlist', visible: true },
-  { id: 'quick-access', label: 'Quick Access', icon: markRaw(Pin), to: '/quick-access', visible: true },
-  { id: 'sold', label: 'Sold', icon: markRaw(BadgeDollarSign), to: '/sold', visible: true },
-  { id: 'auctions', label: 'Auctions', icon: markRaw(Gavel), to: '/auctions', visible: true },
-  { id: 'followers', label: 'Followers', icon: markRaw(UsersIcon), to: '/followers', visible: true },
-  { id: 'agent', label: 'Agent', icon: markRaw(Bot), action: () => { showChat.value = true; sidebarOpen.value = false }, visible: true },
+  { id: 'wishlist', labelKey: 'nav.wishlist', icon: markRaw(Bookmark), to: '/wishlist', visible: true },
+  { id: 'quick-access', labelKey: 'nav.quickAccess', icon: markRaw(Pin), to: '/quick-access', visible: true },
+  { id: 'sold', labelKey: 'nav.sold', icon: markRaw(BadgeDollarSign), to: '/sold', visible: true },
+  { id: 'auctions', labelKey: 'nav.auctions', icon: markRaw(Gavel), to: '/auctions', visible: true },
+  { id: 'followers', labelKey: 'nav.followers', icon: markRaw(UsersIcon), to: '/followers', visible: true },
+  { id: 'agent', labelKey: 'nav.agent', icon: markRaw(Bot), action: () => { showChat.value = true; sidebarOpen.value = false }, visible: true },
   {
     id: 'stats',
-    label: 'Stats',
+    labelKey: 'nav.stats',
     icon: markRaw(BarChart3),
     to: '/stats',
     visible: true,
     children: [
-      { id: 'stats-timeline', label: 'Timeline', to: '/stats/timeline' },
-      { id: 'stats-map', label: 'Map', to: '/stats/mint-map' },
-      { id: 'stats-health', label: 'Health', to: '/stats/health' },
-      { id: 'stats-value-trends', label: 'Value Details', to: '/stats/value-trends' },
-      { id: 'stats-investment-breakdown', label: 'Investment Breakdown', to: '/stats/investment-breakdown' },
-      { id: 'stats-time-machine', label: 'Time Machine', to: '/stats/time-machine' },
+      { id: 'stats-timeline', labelKey: 'nav.timeline', to: '/stats/timeline' },
+      { id: 'stats-map', labelKey: 'nav.map', to: '/stats/mint-map' },
+      { id: 'stats-health', labelKey: 'nav.health', to: '/stats/health' },
+      { id: 'stats-value-trends', labelKey: 'nav.valueDetails', to: '/stats/value-trends' },
+      { id: 'stats-investment-breakdown', labelKey: 'nav.investmentBreakdown', to: '/stats/investment-breakdown' },
+      { id: 'stats-time-machine', labelKey: 'nav.timeMachine', to: '/stats/time-machine' },
     ],
   },
   {
     id: 'sets',
-    label: 'Sets',
+    labelKey: 'nav.sets',
     icon: markRaw(Layers3),
     to: '/sets',
     visible: true,
     children: [
-      { id: 'sets-list', label: 'My Sets', to: '/sets' },
-      { id: 'sets-emperors', label: 'Emperors', to: '/sets/emperors' },
+      { id: 'sets-list', labelKey: 'nav.mySets', to: '/sets' },
+      { id: 'sets-emperors', labelKey: 'nav.emperors', to: '/sets/emperors' },
     ],
   },
-  { id: 'notes', label: 'Notes', icon: markRaw(NotebookPen), to: '/notes', visible: true },
-  { id: 'calendar', label: 'Calendar', icon: markRaw(CalendarDays), to: '/calendar', visible: true },
-  { id: 'showcases', label: 'Showcases', icon: markRaw(Share2), to: '/showcases', visible: true },
-  { id: 'notifications', label: 'Notifications', icon: markRaw(Bell), to: '/notifications', visible: true, badge: () => unreadCount.value },
+  { id: 'notes', labelKey: 'nav.notes', icon: markRaw(NotebookPen), to: '/notes', visible: true },
+  { id: 'calendar', labelKey: 'nav.calendar', icon: markRaw(CalendarDays), to: '/calendar', visible: true },
+  { id: 'showcases', labelKey: 'nav.showcases', icon: markRaw(Share2), to: '/showcases', visible: true },
+  { id: 'notifications', labelKey: 'nav.notifications', icon: markRaw(Bell), to: '/notifications', visible: true, badge: () => unreadCount.value },
 ]
 
 function getStorageKey() {
@@ -373,16 +386,18 @@ function applyOrder(order: string[]): NavItem[] {
 }
 
 const navOrder = ref<string[]>(loadSavedOrder())
-const orderedNavItems = computed(() => {
+const orderedNavItems = computed<ResolvedNavItem[]>(() => {
   const items = navOrder.value.length ? applyOrder(navOrder.value) : defaultNavItems
   return items
     .filter(item => item.visible)
     .map(item => {
-      if (item.id !== 'sets' || !item.children) return item
+      const children = item.children?.map(child => ({ id: child.id, label: t(child.labelKey), to: child.to }))
+      const resolved = { ...item, label: t(item.labelKey), children }
+      if (item.id !== 'sets' || !children) return resolved
       return {
-        ...item,
+        ...resolved,
         children: [
-          ...item.children.filter(child => child.id !== 'sets-emperors' || auth.user?.emperorTrackerEnabled),
+          ...children.filter(child => child.id !== 'sets-emperors' || auth.user?.emperorTrackerEnabled),
           ...pinnedSets.value.map(s => ({ id: `sets-pinned-${s.id}`, label: s.name, to: `/sets/${s.id}` })),
         ],
       }
@@ -404,7 +419,7 @@ const fullOrder = computed(() => {
   return navOrder.value.length ? applyOrder(navOrder.value).map(i => i.id) : defaultNavItems.map(i => i.id)
 })
 
-function handleNavClick(item: NavItem) {
+function handleNavClick(item: ResolvedNavItem) {
   if (editMode.value) return
   if (item.id === 'collection' && item.children?.length) {
     collectionExpanded.value = !collectionExpanded.value
@@ -587,9 +602,12 @@ watch(() => auth.isAuthenticated ? auth.user?.id : undefined, (userId) => {
   showEmailPrompt.value = false
   showOnboardingPrompt.value = false
   navOrder.value = loadSavedOrder()
+  resetCoinVocabulary()
   if (userId) {
     startPolling()
     void refreshQuickAccess()
+    // Category/era display names are site-wide; every page that shows them reads this.
+    void loadCoinVocabulary()
   }
 }, { immediate: true, flush: 'sync' })
 

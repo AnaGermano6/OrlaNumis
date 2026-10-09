@@ -1,12 +1,12 @@
 <template>
   <div class="card !p-4">
     <div class="mb-4 flex items-center justify-between gap-3">
-      <h4 class="m-0 text-base text-heading">30-Day Trend</h4>
+      <h4 class="m-0 text-base text-heading">{{ t('stats.health.trend30') }}</h4>
       <div
         v-if="trend.direction === 'unavailable'"
         class="inline-flex items-center gap-[0.35rem] rounded-full border border-border-subtle bg-transparent px-[0.7rem] py-[0.2rem] text-label font-semibold uppercase tracking-[0.08em] text-text-muted"
       >
-        Insufficient Data
+        {{ t('stats.health.insufficient') }}
       </div>
       <div
         v-else
@@ -23,12 +23,12 @@
     </div>
     <div v-if="trend.direction !== 'unavailable'" class="flex items-center justify-center gap-3 rounded-sm bg-input p-3">
       <div class="flex flex-col gap-1">
-        <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">Change</span>
+        <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('common.change') }}</span>
         <span class="font-display text-xl font-bold text-gold max-md:text-base">{{ formatDelta() }}</span>
       </div>
     </div>
     <p v-else class="m-0 text-body leading-[1.5] text-text-secondary">
-      Trend data will be available after 30 days of collection tracking.
+      {{ t('stats.health.trendLater') }}
     </p>
   </div>
 </template>
@@ -37,6 +37,7 @@
 import { computed } from 'vue'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-vue-next'
 import type { CollectionHealthTrend } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   trend: CollectionHealthTrend
@@ -56,18 +57,18 @@ const trendIcon = computed(() => {
 function formatTrend(): string {
   switch (props.trend.direction) {
     case 'up':
-      return 'Improving'
+      return t('stats.health.improving')
     case 'down':
-      return 'Declining'
+      return t('stats.health.declining')
     case 'flat':
-      return 'Stable'
+      return t('stats.health.stable')
     default:
-      return 'No Data'
+      return t('stats.health.noData')
   }
 }
 
 function formatDelta(): string {
-  if (props.trend.delta === null) return 'N/A'
+  if (props.trend.delta === null) return t('common.na')
   const sign = props.trend.delta > 0 ? '+' : ''
   return `${sign}${props.trend.delta}`
 }

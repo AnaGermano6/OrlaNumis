@@ -1,11 +1,11 @@
 <template>
   <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-overlay p-4" @click.self="$emit('close')">
     <div class="card w-full max-w-[420px] !p-8">
-      <h3 class="mb-1 text-lg font-medium text-heading">Sell Coin</h3>
+      <h3 class="mb-1 text-lg font-medium text-heading">{{ t('coinDetail.menu.sell') }}</h3>
       <p class="mb-5 truncate text-base text-gold">{{ coin.name }}</p>
 
       <div class="form-group">
-        <label class="form-label">Sale Price</label>
+        <label class="form-label">{{ t('sell.salePrice') }}</label>
         <div class="relative flex items-center">
           <span class="pointer-events-none absolute left-3 text-base text-text-secondary">$</span>
           <input
@@ -21,26 +21,26 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Sold To</label>
+        <label class="form-label">{{ t('sell.soldTo') }}</label>
         <input
           v-model="soldTo"
           type="text"
           class="form-input"
-          placeholder="Buyer name (optional)"
+          :placeholder="t('sell.buyerPlaceholder')"
         />
       </div>
 
       <div v-if="coin.purchasePrice" class="mb-4 flex justify-between rounded-sm bg-surface-secondary px-3 py-2 text-chip">
-        <span class="text-text-secondary">Cost basis:</span>
+        <span class="text-text-secondary">{{ t('sell.costBasis') }}</span>
         <span class="font-semibold text-gold">{{ formatCurrency(coin.purchasePrice) }}</span>
       </div>
 
       <div v-if="error" class="mb-3 text-chip text-loss">{{ error }}</div>
 
       <div class="mt-6 flex justify-end gap-3">
-        <button class="btn btn-secondary" @click="$emit('close')">Cancel</button>
+        <button class="btn btn-secondary" @click="$emit('close')">{{ t('common.cancel') }}</button>
         <button class="btn btn-primary" :disabled="submitting" @click="handleSubmit">
-          {{ submitting ? 'Saving...' : 'Mark as Sold' }}
+          {{ submitting ? t('common.saving') : t('sell.markSold') }}
         </button>
       </div>
     </div>
@@ -51,6 +51,7 @@
 import { ref, onMounted } from 'vue'
 import type { Coin } from '@/types'
 import { formatCurrency } from '@/utils/format'
+import { t } from '@/i18n'
 
 // Props are type-checked but not referenced directly in script
 const _props = defineProps<{
@@ -81,7 +82,7 @@ function handleSubmit() {
   if (priceStr.value) {
     soldPrice = parseFloat(priceStr.value)
     if (isNaN(soldPrice) || soldPrice < 0) {
-      error.value = 'Please enter a valid price'
+      error.value = t('common.validPrice')
       return
     }
   }

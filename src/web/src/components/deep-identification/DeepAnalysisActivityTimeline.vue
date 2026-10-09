@@ -5,7 +5,7 @@
     @toggle="onToggle"
   >
     <summary class="flex min-w-0 cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]">
-      <span class="section-label m-0">Activity timeline</span>
+      <span class="section-label m-0">{{ t('deepAnalysis.activity.title') }}</span>
       <ChevronDown :size="16" class="shrink-0 transition-transform" :class="{ 'rotate-180': open }" aria-hidden="true" />
     </summary>
 
@@ -15,7 +15,7 @@
       style="list-style: none;"
       role="log"
       aria-live="polite"
-      aria-label="Deep Analysis activity"
+      :aria-label="t('deepAnalysis.activity.label')"
     >
       <li
         v-for="step in steps"
@@ -49,7 +49,7 @@
         </div>
       </li>
     </ol>
-    <p v-else class="m-0 text-body text-text-secondary">Waiting for Deep Analysis to begin…</p>
+    <p v-else class="m-0 text-body text-text-secondary">{{ t('deepAnalysis.activity.waiting') }}</p>
   </details>
 </template>
 
@@ -57,6 +57,9 @@
 import { computed, ref, watch } from 'vue'
 import { ChevronDown, Clock, Loader2, CheckCircle2, CircleSlash, XCircle } from 'lucide-vue-next'
 import type { DeepProviderStatus, DeepStreamEvent } from '@/types'
+import type { MessageKey } from '@/i18n'
+import { deepJobStatusLabel } from '@/utils/format'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   events: DeepStreamEvent[]
@@ -99,16 +102,21 @@ watch(() => props.terminalStatus, (status, previous) => {
   }
 })
 
-const providerStatusLabels: Record<DeepProviderStatus, string> = {
-  pending: 'Pending',
-  running: 'Running',
-  contributed: 'Contributed',
-  no_match: 'No match',
-  failed: 'Failed',
-  timed_out: 'Timed out',
-  skipped: 'Skipped',
-  not_automated: 'Manual verification',
-  unavailable: 'Unavailable',
+const providerStatusLabelKeys: Record<DeepProviderStatus, MessageKey> = {
+  pending: 'deepAnalysis.coverageStatus.pending',
+  running: 'deepAnalysis.coverageStatus.running',
+  contributed: 'deepAnalysis.coverageStatus.contributed',
+  no_match: 'deepAnalysis.coverageStatus.noMatch',
+  failed: 'deepAnalysis.coverageStatus.failed',
+  timed_out: 'deepAnalysis.coverageStatus.timedOut',
+  skipped: 'deepAnalysis.coverageStatus.skipped',
+  not_automated: 'deepAnalysis.coverageStatus.notAutomated',
+  unavailable: 'deepAnalysis.coverageStatus.unavailable',
+}
+
+function providerStatusLabel(status: DeepProviderStatus): string {
+  const key = providerStatusLabelKeys[status]
+  return key ? t(key) : status
 }
 
 function providerState(status: DeepProviderStatus): StepState {
@@ -122,19 +130,24 @@ function providerState(status: DeepProviderStatus): StepState {
   return 'skipped'
 }
 
-const knownEventLabels: Record<string, string> = {
-  job_accepted: 'Job accepted',
-  status_changed: 'Status changed',
-  router_selected: 'Providers selected',
-  evaluation: 'Evaluating results',
-  synthesis_started: 'Building report',
+const knownEventLabelKeys: Record<string, MessageKey> = {
+  job_accepted: 'deepAnalysis.activity.events.jobAccepted',
+  status_changed: 'deepAnalysis.activity.events.statusChanged',
+  router_selected: 'deepAnalysis.activity.events.providersSelected',
+  evaluation: 'deepAnalysis.activity.events.evaluating',
+  synthesis_started: 'deepAnalysis.activity.events.buildingReport',
 }
 
-const knownPhaseLabels: Record<string, string> = {
-  image_evidence_ready: 'Image evidence ready',
-  provider_fanout_started: 'Provider fan-out started',
-  evaluation_started: 'Evaluating results',
-  quick_lookup: 'Quick lookup',
+const knownPhaseLabelKeys: Record<string, MessageKey> = {
+  image_evidence_ready: 'deepAnalysis.activity.phases.imageEvidence',
+  provider_fanout_started: 'deepAnalysis.activity.phases.fanoutStarted',
+  evaluation_started: 'deepAnalysis.activity.events.evaluating',
+  quick_lookup: 'deepAnalysis.activity.phases.quickLookup',
+}
+
+function knownLabel(keys: Record<string, MessageKey>, name: string): string | undefined {
+  const key = keys[name]
+  return key ? t(key) : undefined
 }
 
 function titleCase(key: string): string {
@@ -144,7 +157,7 @@ function titleCase(key: string): string {
     .split(' ')
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ') || 'Activity'
+    .join(' ') || t('deepAnalysis.activity.activity')
 }
 
 function parseTs(ts: string): number | null {
@@ -178,7 +191,7 @@ const steps = computed<ActivityStep[]>(() => {
     providerStepIndex = result.length
     result.push({
       key: 'provider-fanout',
-      label: 'Provider fan-out',
+      label: t('deepAnalysis.activity.fanout'),
       detail: '',
       state: 'active',
       providers: [],
@@ -200,7 +213,7 @@ const steps = computed<ActivityStep[]>(() => {
       return {
         provider,
         state,
-        statusLabel: providerStatusLabels[status] ?? status,
+        statusLabel: providerStatusLabel(status),
         elapsedLabel,
       }
     })
@@ -220,7 +233,7 @@ const steps = computed<ActivityStep[]>(() => {
     result[providerStepIndex] = {
       ...existing,
       state: groupState,
-      detail: `${contributedCount} of ${rows.length} provider(s) contributed.`,
+      detail: t('deepAnalysis.activity.contributed', { count: contributedCount, total: rows.length }),
       providers: rows,
     }
   }
@@ -255,20 +268,20 @@ const steps = computed<ActivityStep[]>(() => {
     let detail: string
     if (event.type === 'progress') {
       const phase = typeof payload.phase === 'string' ? payload.phase : ''
-      label = knownPhaseLabels[phase] ?? (phase ? titleCase(phase) : 'Progress')
+      label = knownLabel(knownPhaseLabelKeys, phase) ?? (phase ? titleCase(phase) : t('deepAnalysis.activity.progress'))
       detail = typeof payload.message === 'string' ? payload.message : ''
     } else if (event.type === 'terminal') {
       const status = typeof payload.status === 'string' ? payload.status : ''
-      label = 'Finished'
-      detail = status ? `Job ${status}.` : ''
+      label = t('deepAnalysis.activity.finished')
+      detail = status ? t('deepAnalysis.activity.jobStatus', { status: deepJobStatusLabel(status) }) : ''
     } else if (event.type === 'router_selected') {
-      label = knownEventLabels.router_selected ?? 'Providers selected'
+      label = t('deepAnalysis.activity.events.providersSelected')
       detail = Array.isArray(payload.selectedProviders) ? payload.selectedProviders.join(', ') : ''
     } else if (event.type === 'evaluation') {
-      label = knownEventLabels.evaluation ?? 'Evaluating results'
-      detail = `${payload.disagreementCount ?? 0} disagreement(s), ${payload.resolvedCount ?? 0} resolved`
-    } else if (knownEventLabels[event.type]) {
-      label = knownEventLabels[event.type] ?? titleCase(event.type)
+      label = t('deepAnalysis.activity.events.evaluating')
+      detail = t('deepAnalysis.activity.disagreements', { count: Number(payload.disagreementCount ?? 0), resolved: Number(payload.resolvedCount ?? 0) })
+    } else if (knownEventLabelKeys[event.type]) {
+      label = knownLabel(knownEventLabelKeys, event.type) ?? titleCase(event.type)
       detail = typeof payload.message === 'string' ? payload.message : ''
     } else {
       // Unrecognized event type: never drop it, render it generically so a
@@ -325,11 +338,11 @@ function stateIcon(state: StepState) {
 
 function stateLabel(state: StepState): string {
   switch (state) {
-    case 'pending': return 'Pending'
-    case 'active': return 'In progress'
-    case 'done': return 'Done'
-    case 'failed': return 'Failed'
-    default: return 'No result'
+    case 'pending': return t('deepAnalysis.activity.states.pending')
+    case 'active': return t('deepAnalysis.activity.states.active')
+    case 'done': return t('deepAnalysis.activity.states.done')
+    case 'failed': return t('deepAnalysis.activity.states.failed')
+    default: return t('deepAnalysis.activity.states.noResult')
   }
 }
 

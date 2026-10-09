@@ -1,27 +1,27 @@
 <template>
   <div class="container flex flex-col gap-6">
-    <DesktopPageContext title="Emperor Stats">
+    <DesktopPageContext :title="t('emperors.statsTitle')">
       <template #actions>
-        <AppIconButton to="/sets/emperors" title="Back to Emperors"><ArrowLeft :size="20" /></AppIconButton>
+        <AppIconButton to="/sets/emperors" :title="t('emperors.backToEmperors')"><ArrowLeft :size="20" /></AppIconButton>
       </template>
       <header class="page-header flex flex-nowrap items-center justify-between gap-4">
         <div>
-          <p class="section-label">Emperors</p>
-          <h1>Stats</h1>
+          <p class="section-label">{{ t('nav.emperors') }}</p>
+          <h1>{{ t('nav.stats') }}</h1>
           <p class="mt-[0.35rem] text-base text-text-secondary">
-            Completion and coverage metrics for your Emperor tracker.
+            {{ t('emperors.statsIntro') }}
           </p>
         </div>
         <router-link
           class="inline-flex shrink-0 items-center justify-center rounded-sm border border-border-subtle bg-transparent p-[0.4rem] text-text-secondary transition hover:border-border-accent hover:bg-gold-glow hover:text-gold"
           to="/sets/emperors"
-          aria-label="Back to Emperors"
+          :aria-label="t('emperors.backToEmperors')"
         >
           <ArrowLeft :size="20" />
         </router-link>
       </header>
       <template #desktop>
-        <p class="text-base text-text-secondary">Completion and coverage metrics for your Emperor tracker.</p>
+        <p class="text-base text-text-secondary">{{ t('emperors.statsIntro') }}</p>
       </template>
     </DesktopPageContext>
 
@@ -36,37 +36,37 @@
     <template v-else-if="result">
       <section class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         <article class="card p-4">
-          <p class="section-label mb-1">Overall Completion</p>
+          <p class="section-label mb-1">{{ t('emperors.overall') }}</p>
           <p class="m-0 text-lg font-semibold text-heading">
-            {{ totalOwned }} of {{ totalFigures }}
+            {{ t('emperors.ofTotal', { owned: totalOwned, total: totalFigures }) }}
             <span class="text-base font-normal text-text-secondary">({{ formatPct(totalPct) }}%)</span>
           </p>
         </article>
         <article class="card p-4">
-          <p class="section-label mb-1">Remaining Augustuses</p>
+          <p class="section-label mb-1">{{ t('emperors.remainingAugustuses') }}</p>
           <p class="m-0 text-lg font-semibold text-heading">{{ remainingAugustuses }}</p>
         </article>
         <article class="card p-4">
-          <p class="section-label mb-1">Completed Dynasties</p>
-          <p class="m-0 text-lg font-semibold text-heading">{{ completedDynasties }} of {{ totalDynasties }}</p>
+          <p class="section-label mb-1">{{ t('emperors.completedDynasties') }}</p>
+          <p class="m-0 text-lg font-semibold text-heading">{{ t('emperors.ofTotal', { owned: completedDynasties, total: totalDynasties }) }}</p>
         </article>
         <article class="card p-4">
-          <p class="section-label mb-1">Top Dynasty Progress</p>
+          <p class="section-label mb-1">{{ t('emperors.topDynasty') }}</p>
           <p class="m-0 text-lg font-semibold text-heading">
-            {{ bestDynasty?.dynasty ?? 'N/A' }}
+            {{ bestDynasty?.dynasty ?? t('common.na') }}
             <span v-if="bestDynasty" class="text-base font-normal text-text-secondary">
-              ({{ bestDynasty.owned }} of {{ bestDynasty.total }})
+              ({{ t('emperors.ofTotal', { owned: bestDynasty.owned, total: bestDynasty.total }) }})
             </span>
           </p>
         </article>
         <article class="card p-4">
-          <p class="section-label mb-1">Pursuit Suggestions</p>
+          <p class="section-label mb-1">{{ t('emperors.pursuitSuggestions') }}</p>
           <p class="m-0 text-lg font-semibold text-heading">{{ result.suggestions.length }}</p>
         </article>
       </section>
 
       <section v-if="categoryRows.length" class="card p-5">
-        <h2 class="m-0 mb-3 text-lg text-heading">Category Coverage</h2>
+        <h2 class="m-0 mb-3 text-lg text-heading">{{ t('emperors.categoryCoverage') }}</h2>
         <div class="flex flex-col gap-2">
           <div
             v-for="category in categoryRows"
@@ -75,7 +75,7 @@
           >
             <span class="text-text-secondary">{{ category.label }}</span>
             <span class="font-semibold text-heading">
-              {{ category.owned }} of {{ category.total }}
+              {{ t('emperors.ofTotal', { owned: category.owned, total: category.total }) }}
               <span class="font-normal text-text-secondary">({{ formatPct(category.percentage) }}%)</span>
             </span>
           </div>
@@ -92,6 +92,7 @@ import { getApiErrorMessage, getEmperorTrackerProgress } from '@/api/client'
 import type { CategoryProgress, DynastyProgress, EmperorTrackerResult } from '@/types'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t } from '@/i18n'
 
 const loading = ref(true)
 const errorMessage = ref('')
@@ -100,9 +101,9 @@ const result = ref<EmperorTrackerResult | null>(null)
 const categoryRows = computed(() => {
   if (!result.value) return []
   const rows: Array<{ label: string } & CategoryProgress> = []
-  if (result.value.usurpers) rows.push({ label: 'Usurpers', ...result.value.usurpers })
-  if (result.value.empresses) rows.push({ label: 'Empresses', ...result.value.empresses })
-  if (result.value.other) rows.push({ label: 'Other Figures', ...result.value.other })
+  if (result.value.usurpers) rows.push({ label: t('emperors.usurpers'), ...result.value.usurpers })
+  if (result.value.empresses) rows.push({ label: t('emperors.empresses'), ...result.value.empresses })
+  if (result.value.other) rows.push({ label: t('emperors.otherFigures'), ...result.value.other })
   return rows
 })
 
@@ -134,7 +135,7 @@ async function load() {
     const res = await getEmperorTrackerProgress()
     result.value = res.data
   } catch (error) {
-    errorMessage.value = getApiErrorMessage(error) || 'Failed to load emperor stats.'
+    errorMessage.value = getApiErrorMessage(error) || t('emperors.statsFailed')
   } finally {
     loading.value = false
   }

@@ -1,30 +1,30 @@
 <template>
   <main class="container storage-trays-page">
-    <DesktopPageContext title="Storage Trays">
+    <DesktopPageContext :title="t('nav.storageTrays')">
       <template #actions>
-        <AppIconButton to="/" title="Back to Collection">
+        <AppIconButton to="/" :title="t('trays.backToCollection')">
           <ArrowLeft :size="20" />
         </AppIconButton>
       </template>
       <header class="page-header">
-        <h1>Storage Trays</h1>
-        <router-link class="btn btn-secondary btn-sm" to="/">Back to Collection</router-link>
+        <h1>{{ t('nav.storageTrays') }}</h1>
+        <router-link class="btn btn-secondary btn-sm" to="/">{{ t('trays.backToCollection') }}</router-link>
       </header>
     </DesktopPageContext>
 
-    <p v-if="loading" role="status" class="text-text-secondary">Loading storage trays...</p>
+    <p v-if="loading" role="status" class="text-text-secondary">{{ t('trays.loading') }}</p>
     <div v-else-if="error" class="rounded-md border border-border-subtle bg-card p-5" role="alert">
       <p>{{ error }}</p>
-      <button type="button" class="btn btn-primary btn-sm" @click="load">Retry</button>
+      <button type="button" class="btn btn-primary btn-sm" @click="load">{{ t('common.retry') }}</button>
     </div>
     <div v-else-if="trays.length === 0" class="rounded-md border border-border-subtle bg-card p-5">
-      <p>No coin trays are configured yet.</p>
-      <router-link to="/settings" class="btn btn-primary btn-sm">Open Settings</router-link>
+      <p>{{ t('trays.none') }}</p>
+      <router-link to="/settings" class="btn btn-primary btn-sm">{{ t('trays.openSettings') }}</router-link>
     </div>
     <div v-else class="tray-list">
       <div class="tray-controls-row">
         <label class="tray-size-control" for="storage-tray-size-slider">
-          <span>Coin size</span>
+          <span>{{ t('showcases.coinSize') }}</span>
           <input
             id="storage-tray-size-slider"
             v-model.number="traySizeScale"
@@ -59,6 +59,7 @@ import StorageTrayGrid from '@/components/tray/StorageTrayGrid.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { ArrowLeft } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 const router = useRouter()
 const { feltColor } = useTrayPreference()
@@ -81,7 +82,7 @@ async function load() {
     trays.value = response.data?.trays ?? []
   } catch {
     trays.value = []
-    error.value = 'Storage trays could not be loaded.'
+    error.value = t('trays.loadFailed')
   } finally {
     loading.value = false
   }

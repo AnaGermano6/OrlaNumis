@@ -2,24 +2,24 @@
   <div class="flex shrink-0 items-center justify-between border-b border-border-subtle px-4 py-3">
     <h1 class="m-0 flex items-center gap-2 text-lg text-gold">
       <Bot :size="20" />
-      Coin Agent
+      {{ t('chat.title') }}
     </h1>
     <div class="flex items-center gap-2">
       <button
         class="btn btn-ghost btn-xs"
         :disabled="newChatDisabled"
-        title="Start a new chat"
+        :title="t('chat.newChatTitle')"
         @click="$emit('new-chat')"
       >
         <Plus :size="16" />
-        New Chat
+        {{ t('chat.newChat') }}
       </button>
       <button
         v-if="hasMessages"
         class="btn btn-ghost btn-xs disabled:cursor-default disabled:opacity-50"
         :disabled="saving"
         @click="$emit('save')"
-        :title="conversationId ? 'Update saved conversation' : 'Save conversation'"
+        :title="conversationId ? t('chat.updateSaved') : t('chat.saveConversation')"
       >
         <Save :size="16" />
         {{ saveLabel }}
@@ -36,6 +36,7 @@
 
 <script setup lang="ts">
 import { Bot, Plus, Save, X } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 defineProps<{
   hasMessages: boolean

@@ -1,5 +1,5 @@
 <template>
-  <section class="grid min-w-0 gap-4 overflow-hidden" aria-label="Deep Analysis progress">
+  <section class="grid min-w-0 gap-4 overflow-hidden" :aria-label="t('deepAnalysis.progress.label')">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex min-w-0 flex-wrap items-center gap-2" role="status" aria-live="polite">
         <span
@@ -7,7 +7,7 @@
           :class="connectionClasses"
         >{{ connectionLabel }}</span>
         <span v-if="truncated" class="text-sm text-text-secondary">
-          Some earlier progress details are no longer available, but the job continues below.
+          {{ t('deepAnalysis.progress.truncated') }}
         </span>
       </div>
       <div class="flex items-center gap-2">
@@ -15,20 +15,20 @@
           v-if="showRetry"
           type="button"
           class="btn btn-secondary btn-sm min-h-[44px]"
-          aria-label="Retry Deep Analysis connection"
+          :aria-label="t('deepAnalysis.progress.retryLabel')"
           @click="$emit('retry')"
         >
-          Retry
+          {{ t('common.retry') }}
         </button>
         <button
           v-if="showCancel"
           type="button"
           class="btn btn-danger btn-sm min-h-[44px]"
           :disabled="cancelDisabled"
-          aria-label="Cancel Deep Analysis"
+          :aria-label="t('deepAnalysis.progress.cancelLabel')"
           @click="$emit('cancel')"
         >
-          {{ cancelling ? 'Cancelling…' : 'Cancel' }}
+          {{ cancelling ? t('deepAnalysis.progress.cancelling') : t('common.cancel') }}
         </button>
       </div>
     </div>
@@ -45,6 +45,8 @@
 import { computed } from 'vue'
 import DeepAnalysisActivityTimeline from './DeepAnalysisActivityTimeline.vue'
 import type { DeepStreamEvent } from '@/types'
+import { deepJobStatusLabel } from '@/utils/format'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   events: DeepStreamEvent[]
@@ -89,11 +91,11 @@ const connectionClasses = computed(() => {
 })
 
 const connectionLabel = computed(() => {
-  if (props.terminalStatus) return props.terminalStatus
-  if (props.connected) return 'Live'
-  if (props.reconnecting) return 'Reconnecting…'
-  if (props.streaming) return 'Connecting…'
-  return 'Disconnected'
+  if (props.terminalStatus) return deepJobStatusLabel(props.terminalStatus)
+  if (props.connected) return t('deepAnalysis.progress.live')
+  if (props.reconnecting) return t('deepAnalysis.progress.reconnecting')
+  if (props.streaming) return t('deepAnalysis.progress.connecting')
+  return t('deepAnalysis.progress.disconnected')
 })
 
 </script>

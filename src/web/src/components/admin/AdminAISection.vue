@@ -1,18 +1,18 @@
 <template>
   <section class="admin-section card flex flex-col gap-6">
-    <h2 class="mb-0 border-b border-border-subtle pb-3 text-xl font-medium">AI Configuration</h2>
+    <h2 class="mb-0 border-b border-border-subtle pb-3 text-xl font-medium">{{ t('admin.ai.title') }}</h2>
     <form class="flex flex-col gap-6" @submit.prevent="saveSettings">
       <section class="rounded-sm border border-border-subtle bg-surface p-4" aria-labelledby="external-tool-server-heading">
         <div class="flex items-center justify-between gap-4">
           <div>
-            <h3 id="external-tool-server-heading" class="m-0 text-base font-semibold text-text-primary">External Tool Server</h3>
+            <h3 id="external-tool-server-heading" class="m-0 text-base font-semibold text-text-primary">{{ t('admin.ai.toolServer') }}</h3>
             <p class="mb-0 mt-1 text-sm text-text-muted">
-              Enables the OpenAPI tool surface and native MCP endpoint for clients using scoped API keys. Off by default.
+              {{ t('admin.ai.toolServerHint') }}
             </p>
           </div>
           <BaseToggle
             name="ExternalToolServerEnabled"
-            label="Enable External Tool Server"
+            :label="t('admin.ai.enableToolServer')"
             :model-value="settings.ExternalToolServerEnabled === 'true'"
             @update:model-value="settings.ExternalToolServerEnabled = $event ? 'true' : 'false'"
           />
@@ -20,15 +20,15 @@
       </section>
 
       <div class="form-group">
-        <label class="form-label">AI Provider</label>
+        <label class="form-label">{{ t('admin.ai.provider') }}</label>
         <div class="mt-2 grid gap-4 md:grid-cols-2">
           <label
             class="flex cursor-pointer flex-col gap-1 rounded-sm border-2 border-border-subtle bg-surface px-4 py-4 transition-colors hover:border-gold focus-within:outline-2 focus-within:outline-gold focus-within:outline-offset-2"
             :class="settings.AIProvider === 'anthropic' ? 'border-gold bg-gold/8' : ''"
           >
             <input v-model="settings.AIProvider" class="sr-only" type="radio" value="anthropic" />
-            <span class="text-base font-semibold text-text-primary">Anthropic (Recommended)</span>
-            <span class="text-chip text-text-secondary">Claude models with built-in web search</span>
+            <span class="text-base font-semibold text-text-primary">{{ t('admin.ai.anthropicRecommended') }}</span>
+            <span class="text-chip text-text-secondary">{{ t('admin.ai.anthropicHint') }}</span>
           </label>
           <label
             class="flex cursor-pointer flex-col gap-1 rounded-sm border-2 border-border-subtle bg-surface px-4 py-4 transition-colors hover:border-gold focus-within:outline-2 focus-within:outline-gold focus-within:outline-offset-2"
@@ -36,32 +36,32 @@
           >
             <input v-model="settings.AIProvider" class="sr-only" type="radio" value="ollama" />
             <span class="text-base font-semibold text-text-primary">Ollama</span>
-            <span class="text-chip text-text-secondary">Self-hosted models. Requires SearXNG for web search.</span>
+            <span class="text-chip text-text-secondary">{{ t('admin.ai.ollamaHint') }}</span>
           </label>
         </div>
         <p
           v-if="!settings.AIProvider"
           class="mt-2 rounded-sm border border-status-warning-border bg-status-warning-bg px-3 py-2 text-body text-warning"
         >
-          Please select an AI provider to enable agent features.
+          {{ t('admin.ai.selectProvider') }}
         </p>
       </div>
 
       <template v-if="settings.AIProvider === 'anthropic'">
         <div class="form-group">
-          <label class="form-label">Anthropic API Key</label>
-          <input v-model="settings.AnthropicAPIKey" class="form-input" type="password" placeholder="Enter your Anthropic API key" />
-          <span class="mt-1 block text-sm text-text-muted">Get a key at <a class="text-gold hover:underline" href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a></span>
+          <label class="form-label">{{ t('admin.ai.anthropicKey') }}</label>
+          <input v-model="settings.AnthropicAPIKey" class="form-input" type="password" :placeholder="t('admin.ai.anthropicKeyPlaceholder')" />
+          <span class="mt-1 block text-sm text-text-muted"><I18nT keypath="admin.ai.getKeyAt"><template #link><a class="text-gold hover:underline" href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a></template></I18nT></span>
         </div>
         <div class="form-group">
-          <label class="form-label">Anthropic Model</label>
+          <label class="form-label">{{ t('admin.ai.anthropicModel') }}</label>
           <select v-model="settings.AnthropicModel" class="form-input">
             <option v-for="m in anthropicModels" :key="m.id" :value="m.id">{{ m.name }}</option>
           </select>
         </div>
         <div class="mb-2 mt-3 flex flex-wrap gap-2">
           <button type="button" class="btn btn-secondary btn-sm" :disabled="anthropicTesting" @click="testAnthropicConn">
-            {{ anthropicTesting ? 'Testing...' : 'Test Anthropic API' }}
+            {{ anthropicTesting ? t('common.testing') : t('admin.ai.testAnthropic') }}
           </button>
           <div
             v-if="anthropicTestResult"
@@ -76,36 +76,36 @@
 
       <template v-if="settings.AIProvider === 'ollama'">
         <div class="form-group">
-          <label class="form-label">Ollama URL</label>
+          <label class="form-label">{{ t('admin.ai.ollamaUrl') }}</label>
           <input v-model="settings.OllamaURL" class="form-input" placeholder="http://localhost:11434" />
         </div>
         <div class="form-group">
-          <label class="form-label">Vision Model</label>
+          <label class="form-label">{{ t('admin.ai.visionModel') }}</label>
           <input v-model="settings.OllamaModel" class="form-input" placeholder="llava" />
-          <span class="mt-1 block text-sm text-text-muted">e.g. llava, llama3.2-vision, bakllava</span>
+          <span class="mt-1 block text-sm text-text-muted">{{ t('admin.ai.visionModelHint') }}</span>
         </div>
         <div class="form-group">
-          <label class="form-label">Request Timeout (seconds)</label>
+          <label class="form-label">{{ t('admin.ai.timeout') }}</label>
           <input v-model="settings.OllamaTimeout" class="form-input" type="number" min="10" max="1800" step="10" />
-          <span class="mt-1 block text-sm text-text-muted">Time limit for AI analysis calls. Default: 300 (5 minutes)</span>
+          <span class="mt-1 block text-sm text-text-muted">{{ t('admin.ai.timeoutHint') }}</span>
         </div>
         <div class="form-group">
-          <label class="form-label">SearXNG URL</label>
+          <label class="form-label">{{ t('admin.ai.searxngUrl') }}</label>
           <input v-model="settings.SearXNGURL" class="form-input" placeholder="http://localhost:8888" />
-          <span class="mt-1 block text-sm text-text-muted">Required for web search features (coin search, coin shows, valuations).</span>
+          <span class="mt-1 block text-sm text-text-muted">{{ t('admin.ai.searxngHint') }}</span>
           <p
             v-if="settings.AIProvider === 'ollama' && !settings.SearXNGURL"
             class="mt-2 rounded-sm border border-status-warning-border bg-status-warning-bg px-3 py-2 text-body text-warning"
           >
-            Web search features require a SearXNG instance. Configure the URL or switch to Anthropic.
+            {{ t('admin.ai.searxngRequired') }}
           </p>
         </div>
         <div class="mb-2 mt-3 flex flex-wrap gap-2">
           <button type="button" class="btn btn-secondary btn-sm" :disabled="ollamaTesting" @click="testOllamaConnection">
-            {{ ollamaTesting ? 'Testing...' : 'Test Ollama' }}
+            {{ ollamaTesting ? t('common.testing') : t('admin.ai.testOllama') }}
           </button>
           <button v-if="settings.SearXNGURL" type="button" class="btn btn-secondary btn-sm" :disabled="searxngTesting" @click="testSearxngConn">
-            {{ searxngTesting ? 'Testing...' : 'Test SearXNG' }}
+            {{ searxngTesting ? t('common.testing') : t('admin.ai.testSearxng') }}
           </button>
         </div>
         <div
@@ -128,107 +128,107 @@
 
       <template v-if="settings.AIProvider">
         <p class="mt-1 block text-sm text-text-muted">
-          Provider tests validate the selected AI provider only. Agent chat and image analysis also require the internal agent service to be configured and running.
+          {{ t('admin.ai.providerTestNote') }}
         </p>
         <hr class="my-6 border-0 border-t border-border-subtle" />
-        <h3 class="mb-4 text-base font-semibold text-text-primary">Agent Prompts</h3>
+        <h3 class="mb-4 text-base font-semibold text-text-primary">{{ t('admin.ai.agentPrompts') }}</h3>
         <div class="form-group">
           <div class="mb-1 flex items-center justify-between gap-2">
-            <label class="form-label mb-0">Coin Search Prompt</label>
+            <label class="form-label mb-0">{{ t('admin.ai.coinSearchPrompt') }}</label>
             <button
               type="button"
               class="btn btn-ghost btn-xs"
               :disabled="settings.CoinSearchPrompt === coinSearchPromptDefault"
               @click="settings.CoinSearchPrompt = coinSearchPromptDefault"
             >
-              Revert to Default
+              {{ t('admin.ai.revert') }}
             </button>
           </div>
           <textarea v-model="settings.CoinSearchPrompt" class="form-textarea w-full" rows="8" />
-          <span class="mt-1 block text-sm text-text-muted">Search instructions for the coin search agent (Team 1). Controls which dealer sites to search, availability rules, and search strategy.</span>
+          <span class="mt-1 block text-sm text-text-muted">{{ t('admin.ai.coinSearchHint') }}</span>
         </div>
         <div class="form-group">
           <div class="mb-1 flex items-center justify-between gap-2">
-            <label class="form-label mb-0">Coin Shows Prompt</label>
+            <label class="form-label mb-0">{{ t('admin.ai.coinShowsPrompt') }}</label>
             <button
               type="button"
               class="btn btn-ghost btn-xs"
               :disabled="settings.CoinShowsPrompt === coinShowsPromptDefault"
               @click="settings.CoinShowsPrompt = coinShowsPromptDefault"
             >
-              Revert to Default
+              {{ t('admin.ai.revert') }}
             </button>
           </div>
           <textarea v-model="settings.CoinShowsPrompt" class="form-textarea w-full" rows="8" />
-          <span class="mt-1 block text-sm text-text-muted">Search instructions for the coin shows agent (Team 2). Controls which show directories and organizations to search.</span>
+          <span class="mt-1 block text-sm text-text-muted">{{ t('admin.ai.coinShowsHint') }}</span>
         </div>
         <div class="form-group">
           <div class="mb-1 flex items-center justify-between gap-2">
-            <label class="form-label mb-0">Value Estimator Prompt</label>
+            <label class="form-label mb-0">{{ t('admin.ai.valuationPrompt') }}</label>
             <button
               type="button"
               class="btn btn-ghost btn-xs"
               :disabled="settings.ValuationPrompt === valuationPromptDefault"
               @click="settings.ValuationPrompt = valuationPromptDefault"
             >
-              Revert to Default
+              {{ t('admin.ai.revert') }}
             </button>
           </div>
           <textarea v-model="settings.ValuationPrompt" class="form-textarea w-full" rows="8" />
-          <span class="mt-1 block text-sm text-text-muted">System prompt for the AI value estimator. Controls how it researches and estimates coin values.</span>
+          <span class="mt-1 block text-sm text-text-muted">{{ t('admin.ai.valuationHint') }}</span>
         </div>
-        <h3 class="mb-4 text-base font-semibold text-text-primary">Analysis Prompts</h3>
+        <h3 class="mb-4 text-base font-semibold text-text-primary">{{ t('admin.ai.analysisPrompts') }}</h3>
         <div class="form-group">
           <div class="mb-1 flex items-center justify-between gap-2">
-            <label class="form-label mb-0">Obverse Analysis Prompt</label>
+            <label class="form-label mb-0">{{ t('admin.ai.obversePrompt') }}</label>
             <button
               type="button"
               class="btn btn-ghost btn-xs"
               :disabled="settings.ObversePrompt === settingDefaults.ObversePrompt"
               @click="settings.ObversePrompt = settingDefaults.ObversePrompt"
             >
-              Revert to Default
+              {{ t('admin.ai.revert') }}
             </button>
           </div>
           <textarea v-model="settings.ObversePrompt" class="form-textarea w-full" rows="6" />
-          <span class="mt-1 block text-sm text-text-muted">Prompt for obverse image analysis. Coin context is appended automatically.</span>
+          <span class="mt-1 block text-sm text-text-muted">{{ t('admin.ai.obverseHint') }}</span>
         </div>
         <div class="form-group">
           <div class="mb-1 flex items-center justify-between gap-2">
-            <label class="form-label mb-0">Reverse Analysis Prompt</label>
+            <label class="form-label mb-0">{{ t('admin.ai.reversePrompt') }}</label>
             <button
               type="button"
               class="btn btn-ghost btn-xs"
               :disabled="settings.ReversePrompt === settingDefaults.ReversePrompt"
               @click="settings.ReversePrompt = settingDefaults.ReversePrompt"
             >
-              Revert to Default
+              {{ t('admin.ai.revert') }}
             </button>
           </div>
           <textarea v-model="settings.ReversePrompt" class="form-textarea w-full" rows="6" />
-          <span class="mt-1 block text-sm text-text-muted">Prompt for reverse image analysis. Coin context is appended automatically.</span>
+          <span class="mt-1 block text-sm text-text-muted">{{ t('admin.ai.reverseHint') }}</span>
         </div>
         <div class="form-group">
           <div class="mb-1 flex items-center justify-between gap-2">
-            <label class="form-label mb-0">Text Extraction Prompt</label>
+            <label class="form-label mb-0">{{ t('admin.ai.textPrompt') }}</label>
             <button
               type="button"
               class="btn btn-ghost btn-xs"
               :disabled="settings.TextExtractionPrompt === settingDefaults.TextExtractionPrompt"
               @click="settings.TextExtractionPrompt = settingDefaults.TextExtractionPrompt"
             >
-              Revert to Default
+              {{ t('admin.ai.revert') }}
             </button>
           </div>
           <textarea v-model="settings.TextExtractionPrompt" class="form-textarea w-full" rows="6" />
-          <span class="mt-1 block text-sm text-text-muted">Prompt for extracting text from store card images.</span>
+          <span class="mt-1 block text-sm text-text-muted">{{ t('admin.ai.textHint') }}</span>
         </div>
       </template>
 
       <p v-if="settingsMsg" class="my-2 text-body text-gold" :class="settingsError ? 'text-loss' : ''">{{ settingsMsg }}</p>
       <div class="flex items-center gap-2">
         <button type="submit" class="btn btn-primary btn-sm" :disabled="settingsSaving">
-          {{ settingsSaving ? 'Saving...' : 'Save AI Settings' }}
+          {{ settingsSaving ? t('common.saving') : t('admin.ai.save') }}
         </button>
       </div>
     </form>
@@ -239,6 +239,8 @@
 import type { AppSettings } from '@/types'
 import type { AnthropicModel } from '@/api/client'
 import { BaseToggle } from '@/components/ui'
+import I18nT from '@/components/I18nT.vue'
+import { t } from '@/i18n'
 
 defineProps<{
   settings: AppSettings

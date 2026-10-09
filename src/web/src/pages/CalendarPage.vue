@@ -6,24 +6,24 @@
       :style="`top: ${-50 + pullDistance * 0.6}px; opacity: ${Math.min(pullDistance / 60, 1)}`"
     >
       <div class="h-[18px] w-[18px] rounded-full border-2 border-border-subtle border-t-gold" :class="{ 'animate-spin': refreshing }" :style="refreshing ? '' : `transform: rotate(${pullDistance * 3}deg)`"></div>
-      <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? 'Refreshing...' : pullDistance >= 60 ? 'Release to refresh' : 'Pull to refresh' }}</span>
+      <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? t('common.pull.refreshing') : pullDistance >= 60 ? t('common.pull.release') : t('common.pull.pull') }}</span>
     </div>
-    <DesktopPageContext title="Auction Calendar">
+    <DesktopPageContext :title="t('calendar.title')">
       <template #actions>
-        <AppIconButton title="Add Event" @click="showAddEvent = true">
+        <AppIconButton :title="t('calendar.addEvent')" @click="showAddEvent = true">
           <CirclePlus :size="20" />
         </AppIconButton>
       </template>
       <div class="page-header">
-        <h1>Auction Calendar</h1>
+        <h1>{{ t('calendar.title') }}</h1>
         <div v-if="isPwa" class="pwa-actions">
-          <button class="pwa-icon-btn" title="Add Event" @click="showAddEvent = true">
+          <button class="pwa-icon-btn" :title="t('calendar.addEvent')" @click="showAddEvent = true">
             <CirclePlus :size="22" />
           </button>
         </div>
         <div v-else class="header-actions">
           <button class="btn btn-primary" @click="showAddEvent = true">
-            <Plus :size="16" /> Add Event
+            <Plus :size="16" /> {{ t('calendar.addEvent') }}
           </button>
         </div>
       </div>
@@ -51,13 +51,13 @@
             v-for="n in Math.min(cell.lots?.length ?? 0, 3)"
             :key="'lot-' + n"
             class="h-[7px] w-[7px] rounded-full bg-gold"
-            title="Auction lot"
+            :title="t('calendar.lotDot')"
           ></span>
           <span
             v-for="n in Math.min(cell.events?.length ?? 0, 3)"
             :key="'ev-' + n"
             class="h-[7px] w-[7px] rounded-full bg-modern-cat"
-            title="Event"
+            :title="t('calendar.eventDot')"
           ></span>
         </div>
       </div>
@@ -65,14 +65,14 @@
 
     <!-- Event List -->
     <div class="mt-4">
-      <h2 class="mb-4 text-lg text-text-primary">Events This Month</h2>
+      <h2 class="mb-4 text-lg text-text-primary">{{ t('calendar.thisMonth') }}</h2>
 
-      <div v-if="loading" class="py-8 text-center text-text-secondary">Loading calendar...</div>
+      <div v-if="loading" class="py-8 text-center text-text-secondary">{{ t('calendar.loading') }}</div>
 
       <template v-else>
         <!-- Auction Lots -->
         <div v-if="lots.length" class="mb-6">
-          <h3 class="mb-3 text-label font-semibold uppercase tracking-[0.08em] text-gold">Auction Lots</h3>
+          <h3 class="mb-3 text-label font-semibold uppercase tracking-[0.08em] text-gold">{{ t('calendar.auctionLots') }}</h3>
           <div v-for="lot in lots" :key="'lot-' + lot.id" class="mb-2 rounded-md border border-border-subtle bg-card p-4 shadow-[var(--shadow-card)]">
             <div class="flex items-start gap-4">
               <div v-if="getProxiedImageUrl(lot.imageUrl)" class="h-16 w-16 shrink-0 overflow-hidden rounded-sm">
@@ -83,11 +83,11 @@
                 <div class="flex flex-wrap gap-3 text-chip text-text-secondary">
                   <span v-if="lot.auctionHouse" class="inline-flex items-center gap-1"><Building :size="13" /> {{ lot.auctionHouse }}</span>
                   <span v-if="lot.saleDate" class="inline-flex items-center gap-1"><CalendarIcon :size="13" /> {{ formatDate(lot.saleDate) }}</span>
-                  <span v-if="lot.currentBid" class="text-gold">Current bid: {{ lot.currentBid }}</span>
-                  <span v-if="lot.estimate">Est: {{ lot.estimate }}</span>
+                  <span v-if="lot.currentBid" class="text-gold">{{ t('calendar.currentBid', { value: lot.currentBid }) }}</span>
+                  <span v-if="lot.estimate">{{ t('calendar.estimate', { value: lot.estimate }) }}</span>
                 </div>
                 <SafeExternalLink v-if="auctionLotUrl(lot)" :href="auctionLotUrl(lot) ?? ''" target="_blank" rel="noopener" class="mt-[0.35rem] inline-flex items-center gap-1 text-chip text-gold hover:underline">
-                  <ExternalLink :size="13" /> View on {{ auctionProviderLabel(lot) }}
+                  <ExternalLink :size="13" /> {{ t('calendar.viewOn', { provider: auctionProviderLabel(lot) }) }}
                 </SafeExternalLink>
               </div>
             </div>
@@ -96,7 +96,7 @@
 
         <!-- Manual Events -->
         <div v-if="events.length" class="mb-6">
-          <h3 class="mb-3 text-label font-semibold uppercase tracking-[0.08em] text-modern-cat">Events</h3>
+          <h3 class="mb-3 text-label font-semibold uppercase tracking-[0.08em] text-modern-cat">{{ t('calendar.events') }}</h3>
           <div v-for="ev in events" :key="'ev-' + ev.id" class="mb-2 cursor-pointer rounded-md border border-border-subtle bg-card p-4 shadow-[var(--shadow-card)] transition-colors hover:border-gold-dim" @click="openEvent(ev.id)">
             <div class="flex items-start gap-4">
               <div class="min-w-0 flex-1">
@@ -111,10 +111,10 @@
                 </div>
                 <p v-if="ev.notes" class="mt-[0.35rem] text-body leading-[1.4] text-text-secondary">{{ ev.notes }}</p>
                 <SafeExternalLink v-if="ev.url" :href="ev.url" target="_blank" rel="noopener" class="mt-[0.35rem] inline-flex items-center gap-1 text-chip text-gold hover:underline" @click.stop>
-                  <ExternalLink :size="13" /> Visit
+                  <ExternalLink :size="13" /> {{ t('calendar.visit') }}
                 </SafeExternalLink>
               </div>
-              <button class="shrink-0 rounded-sm p-1 text-text-secondary transition-colors hover:text-error-bg" @click.stop="handleDeleteEvent(ev.id)" title="Delete event">
+              <button class="shrink-0 rounded-sm p-1 text-text-secondary transition-colors hover:text-error-bg" @click.stop="handleDeleteEvent(ev.id)" :title="t('calendar.deleteEvent')">
                 <Trash2 :size="16" />
               </button>
             </div>
@@ -123,8 +123,8 @@
 
         <div v-if="!lots.length && !events.length" class="empty-state">
           <CalendarIcon :size="48" />
-          <h3>Nothing scheduled this month</h3>
-          <p>Auction lots and manually added events will appear here.</p>
+          <h3>{{ t('calendar.nothing') }}</h3>
+          <p>{{ t('calendar.nothingHint') }}</p>
         </div>
       </template>
     </div>
@@ -133,7 +133,7 @@
     <div v-if="selectedEvent" class="fixed inset-0 z-[100] flex items-center justify-center bg-overlay px-4" @click.self="closeEvent">
       <div class="max-h-[90vh] w-[90%] max-w-[520px] overflow-y-auto rounded-md border border-border-subtle bg-card p-6 shadow-[var(--shadow-card)]">
         <div class="mb-4 flex items-center justify-between">
-          <h2 class="m-0 text-xl text-text-primary">Edit Event</h2>
+          <h2 class="m-0 text-xl text-text-primary">{{ t('calendar.editEvent') }}</h2>
           <div class="flex items-center gap-1">
             <button
               v-if="selectedEvent.origin === 'manual'"
@@ -141,7 +141,7 @@
               :class="{ 'text-gold': eventPinned }"
               :disabled="eventPinBusy"
               :aria-busy="eventPinBusy"
-              :aria-label="eventPinBusy ? 'Updating calendar event Quick Access pin' : eventPinLabel"
+              :aria-label="eventPinBusy ? t('calendar.updatingPin') : eventPinLabel"
               :title="eventPinLabel"
               :aria-pressed="eventPinned"
               @click="toggleEventPin"
@@ -149,47 +149,47 @@
               <PinOff v-if="eventPinned" :size="18" />
               <Pin v-else :size="18" />
             </button>
-            <button class="rounded-sm p-1 text-text-secondary transition-colors hover:text-gold" aria-label="Close event" @click="closeEvent"><X :size="18" /></button>
+            <button class="rounded-sm p-1 text-text-secondary transition-colors hover:text-gold" :aria-label="t('calendar.closeEvent')" @click="closeEvent"><X :size="18" /></button>
           </div>
         </div>
         <form @submit.prevent="handleUpdateEvent">
           <div class="form-group">
-            <label for="edit-title" class="form-label">Title</label>
+            <label for="edit-title" class="form-label">{{ t('common.title') }}</label>
             <input id="edit-title" v-model="editEvent.title" class="form-input" type="text" required />
           </div>
           <div class="form-group">
-            <label for="edit-house" class="form-label">Auction House</label>
+            <label for="edit-house" class="form-label">{{ t('calendar.auctionHouse') }}</label>
             <input id="edit-house" v-model="editEvent.auctionHouse" class="form-input" type="text" />
           </div>
           <div class="grid gap-4 md:grid-cols-2">
             <div class="form-group">
-              <label for="edit-start" class="form-label">Start Date</label>
+              <label for="edit-start" class="form-label">{{ t('calendar.startDate') }}</label>
               <input id="edit-start" v-model="editEvent.startDate" class="form-input" type="date" />
             </div>
             <div class="form-group">
-              <label for="edit-end" class="form-label">End Date</label>
+              <label for="edit-end" class="form-label">{{ t('calendar.endDate') }}</label>
               <input id="edit-end" v-model="editEvent.endDate" class="form-input" type="date" />
             </div>
           </div>
           <div class="form-group">
-            <label for="edit-url" class="form-label">URL</label>
+            <label for="edit-url" class="form-label">{{ t('calendar.url') }}</label>
             <input id="edit-url" v-model="editEvent.url" class="form-input" type="url" />
           </div>
           <div class="form-group">
-            <label for="edit-notes" class="form-label">Notes</label>
+            <label for="edit-notes" class="form-label">{{ t('coinFields.notes') }}</label>
             <textarea id="edit-notes" v-model="editEvent.notes" class="form-textarea" rows="3"></textarea>
           </div>
           <div class="mt-5 flex justify-end gap-2">
-            <button type="button" class="btn btn-secondary" @click="closeEvent">Cancel</button>
+            <button type="button" class="btn btn-secondary" @click="closeEvent">{{ t('common.cancel') }}</button>
             <button type="submit" class="btn btn-primary" :disabled="savingEvent">
-              {{ savingEvent ? 'Saving...' : 'Save' }}
+              {{ savingEvent ? t('common.saving') : t('common.save') }}
             </button>
           </div>
         </form>
 
         <!-- Linked Auction Lots -->
         <div class="mt-6 border-t border-border-subtle pt-4">
-          <h3 class="mb-3 flex items-center gap-2 text-base text-text-primary">Linked Auction Lots <span v-if="linkedLots.length" class="rounded-full bg-gold-glow px-2 py-[0.1rem] text-sm font-semibold text-gold">{{ linkedLots.length }}</span></h3>
+          <h3 class="mb-3 flex items-center gap-2 text-base text-text-primary">{{ t('calendar.linkedLots') }} <span v-if="linkedLots.length" class="rounded-full bg-gold-glow px-2 py-[0.1rem] text-sm font-semibold text-gold">{{ linkedLots.length }}</span></h3>
           <div v-if="linkedLots.length" class="flex flex-col gap-2">
             <div v-for="lot in linkedLots" :key="lot.id" class="flex items-center gap-3 rounded-sm border border-border-subtle bg-surface p-[0.6rem]">
               <div v-if="getProxiedImageUrl(lot.imageUrl)" class="h-10 w-10 shrink-0 overflow-hidden rounded-sm">
@@ -198,9 +198,9 @@
               <div class="flex min-w-0 flex-1 flex-col gap-[0.15rem]">
                 <span class="truncate text-body text-text-primary">{{ lot.title }}</span>
                 <span class="flex items-center gap-[0.35rem] text-sm text-text-secondary">
-                  <template v-if="lot.lotNumber">Lot {{ lot.lotNumber }}</template>
+                  <template v-if="lot.lotNumber">{{ t('calendar.lotNumber', { number: lot.lotNumber }) }}</template>
                   <template v-if="lot.lotNumber && lot.status"> · </template>
-                  <span class="rounded-full bg-gold-glow px-2 py-[0.1rem] text-label font-semibold tracking-[0.08em] uppercase" :class="lot.status === 'watching' ? 'text-modern-cat' : lot.status === 'bidding' ? 'text-gold' : lot.status === 'won' ? 'text-greek' : lot.status === 'lost' ? 'text-error-bg' : 'text-text-muted'">{{ lot.status }}</span>
+                  <span class="rounded-full bg-gold-glow px-2 py-[0.1rem] text-label font-semibold tracking-[0.08em] uppercase" :class="lot.status === 'watching' ? 'text-modern-cat' : lot.status === 'bidding' ? 'text-gold' : lot.status === 'won' ? 'text-greek' : lot.status === 'lost' ? 'text-error-bg' : 'text-text-muted'">{{ lot.status ? auctionStatusLabel(lot.status) : '' }}</span>
                 </span>
               </div>
               <SafeExternalLink v-if="auctionLotUrl(lot)" :href="auctionLotUrl(lot) ?? ''" target="_blank" rel="noopener" class="shrink-0 p-1 text-text-secondary transition-colors hover:text-gold" @click.stop>
@@ -208,7 +208,7 @@
               </SafeExternalLink>
             </div>
           </div>
-          <p v-else class="m-0 text-body text-text-secondary">No auction lots linked to this event. Link lots from the Auctions page.</p>
+          <p v-else class="m-0 text-body text-text-secondary">{{ t('calendar.noLinkedLots') }}</p>
         </div>
       </div>
     </div>
@@ -217,40 +217,40 @@
     <div v-if="showAddEvent" class="fixed inset-0 z-[100] flex items-center justify-center bg-overlay px-4" @click.self="showAddEvent = false">
       <div class="max-h-[90vh] w-[90%] max-w-[520px] overflow-y-auto rounded-md border border-border-subtle bg-card p-6 shadow-[var(--shadow-card)]">
         <div class="mb-4 flex items-center justify-between">
-          <h2 class="m-0 text-xl text-text-primary">Add Event</h2>
+          <h2 class="m-0 text-xl text-text-primary">{{ t('calendar.addEvent') }}</h2>
           <button class="rounded-sm p-1 text-text-secondary transition-colors hover:text-gold" @click="showAddEvent = false"><X :size="18" /></button>
         </div>
         <form @submit.prevent="handleCreateEvent">
           <div class="form-group">
-            <label for="ev-title" class="form-label">Title</label>
-            <input id="ev-title" v-model="newEvent.title" class="form-input" type="text" required placeholder="Event title" />
+            <label for="ev-title" class="form-label">{{ t('common.title') }}</label>
+            <input id="ev-title" v-model="newEvent.title" class="form-input" type="text" required :placeholder="t('calendar.titlePlaceholder')" />
           </div>
           <div class="form-group">
-            <label for="ev-house" class="form-label">Auction House (optional)</label>
-            <input id="ev-house" v-model="newEvent.auctionHouse" class="form-input" type="text" placeholder="e.g. Heritage Auctions" />
+            <label for="ev-house" class="form-label">{{ t('calendar.auctionHouseOptional') }}</label>
+            <input id="ev-house" v-model="newEvent.auctionHouse" class="form-input" type="text" :placeholder="t('calendar.auctionHousePlaceholder')" />
           </div>
           <div class="grid gap-4 md:grid-cols-2">
             <div class="form-group">
-              <label for="ev-start" class="form-label">Start Date</label>
+              <label for="ev-start" class="form-label">{{ t('calendar.startDate') }}</label>
               <input id="ev-start" v-model="newEvent.startDate" class="form-input" type="date" />
             </div>
             <div class="form-group">
-              <label for="ev-end" class="form-label">End Date</label>
+              <label for="ev-end" class="form-label">{{ t('calendar.endDate') }}</label>
               <input id="ev-end" v-model="newEvent.endDate" class="form-input" type="date" />
             </div>
           </div>
           <div class="form-group">
-            <label for="ev-url" class="form-label">URL (optional)</label>
+            <label for="ev-url" class="form-label">{{ t('calendar.urlOptional') }}</label>
             <input id="ev-url" v-model="newEvent.url" class="form-input" type="url" placeholder="https://..." />
           </div>
           <div class="form-group">
-            <label for="ev-notes" class="form-label">Notes (optional)</label>
-            <textarea id="ev-notes" v-model="newEvent.notes" class="form-textarea" rows="3" placeholder="Any additional notes"></textarea>
+            <label for="ev-notes" class="form-label">{{ t('calendar.notesOptional') }}</label>
+            <textarea id="ev-notes" v-model="newEvent.notes" class="form-textarea" rows="3" :placeholder="t('calendar.notesPlaceholder')"></textarea>
           </div>
           <div class="mt-5 flex justify-end gap-2">
-            <button type="button" class="btn btn-secondary" @click="showAddEvent = false">Cancel</button>
+            <button type="button" class="btn btn-secondary" @click="showAddEvent = false">{{ t('common.cancel') }}</button>
             <button type="submit" class="btn btn-primary" :disabled="creatingEvent">
-              {{ creatingEvent ? 'Adding...' : 'Add Event' }}
+              {{ creatingEvent ? t('common.adding') : t('calendar.addEvent') }}
             </button>
           </div>
         </form>
@@ -275,6 +275,8 @@ import { useQuickAccess } from '@/composables/useQuickAccess'
 import { useToast } from '@/composables/useToast'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t, intlLocale } from '@/i18n'
+import { auctionStatusLabel } from '@/utils/format'
 
 interface CalendarLot {
   id: number
@@ -321,8 +323,12 @@ interface CalendarCell {
   events?: CalendarEvent[]
 }
 
-const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+// 1 January 2023 was a Sunday, so these seven dates give Sunday-first weekday names.
+// Some locales (pt-PT) spell out "short" weekdays, so keep the grid to three letters.
+const dayNames = computed(() => {
+  const formatter = new Intl.DateTimeFormat(intlLocale(), { weekday: 'short' })
+  return Array.from({ length: 7 }, (_, i) => formatter.format(new Date(2023, 0, 1 + i)).replace(/\.$/, '').slice(0, 3))
+})
 const { isPwa } = usePwa()
 const route = useRoute()
 const router = useRouter()
@@ -362,10 +368,14 @@ const newEvent = ref({
   notes: ''
 })
 
-const monthLabel = computed(() => `${monthNames[currentMonth.value] ?? ''} ${currentYear.value}`)
+const monthLabel = computed(() => {
+  const label = new Intl.DateTimeFormat(intlLocale(), { month: 'long', year: 'numeric' })
+    .format(new Date(currentYear.value, currentMonth.value, 1))
+  return label.charAt(0).toUpperCase() + label.slice(1)
+})
 const eventPinned = computed(() => selectedEvent.value ? isPinned('calendar_event', selectedEvent.value.id).value : false)
 const eventPinBusy = computed(() => selectedEvent.value ? isBusy('calendar_event', selectedEvent.value.id).value : false)
-const eventPinLabel = computed(() => eventPinned.value ? 'Unpin calendar event from Quick Access' : 'Pin calendar event to Quick Access')
+const eventPinLabel = computed(() => eventPinned.value ? t('calendar.unpin') : t('calendar.pin'))
 
 const rangeStart = computed(() => {
   const d = new Date(currentYear.value, currentMonth.value, 1)
@@ -463,7 +473,7 @@ function nextMonth() {
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return ''
   const d = new Date(dateStr)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return d.toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 async function loadCalendar() {
@@ -588,7 +598,7 @@ async function toggleEventPin() {
     if (eventPinned.value) await unpinQuickAccessItem('calendar_event', event.id)
     else await pinQuickAccessItem('calendar_event', event.id)
   } catch {
-    showToast(quickAccessError.value || 'Unable to update Quick Access.', 'error')
+    showToast(quickAccessError.value || t('coinDetail.pin.failed'), 'error')
   }
 }
 

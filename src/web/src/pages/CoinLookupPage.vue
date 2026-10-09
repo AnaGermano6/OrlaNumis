@@ -1,16 +1,16 @@
 <template>
   <div class="container">
     <div class="mx-auto min-w-0 max-w-[900px]">
-      <DesktopPageContext title="Identify Coin">
+      <DesktopPageContext :title="t('nav.identifyCoin')">
         <template #actions>
-          <AppIconButton to="/quick-capture/drafts" title="All drafts">
+          <AppIconButton to="/quick-capture/drafts" :title="t('quickCapture.allDrafts')">
             <List :size="20" />
           </AppIconButton>
         </template>
         <div v-if="!isPwa || state !== 'capture'" class="page-header">
-          <h1>Identify Coin</h1>
+          <h1>{{ t('nav.identifyCoin') }}</h1>
           <div class="pwa-actions">
-            <RouterLink class="pwa-icon-btn" to="/quick-capture/drafts" title="All drafts" aria-label="All drafts">
+            <RouterLink class="pwa-icon-btn" to="/quick-capture/drafts" :title="t('quickCapture.allDrafts')" :aria-label="t('quickCapture.allDrafts')">
               <List :size="22" />
             </RouterLink>
           </div>
@@ -45,8 +45,8 @@
       <div v-if="showDeepAnalysisModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-overlay p-4" @click.self="showDeepAnalysisModal = false">
         <div class="card max-h-[90vh] w-full max-w-[640px] overflow-y-auto p-6">
           <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-lg text-heading">Deep Analysis</h2>
-            <AppIconButton title="Close" @click="showDeepAnalysisModal = false">
+            <h2 class="text-lg text-heading">{{ t('deepAnalysis.title') }}</h2>
+            <AppIconButton :title="t('common.close')" @click="showDeepAnalysisModal = false">
               <X :size="18" />
             </AppIconButton>
           </div>
@@ -71,8 +71,8 @@
         <div class="mb-6">
           <div class="spinner"></div>
         </div>
-        <h3 class="mb-2 text-lg text-text-primary">Analyzing Images...</h3>
-        <p class="text-base text-text-secondary">Extracting minimum draft details and checking for visible NGC data</p>
+        <h3 class="mb-2 text-lg text-text-primary">{{ t('lookup.analyzing') }}</h3>
+        <p class="text-base text-text-secondary">{{ t('lookup.analyzingHint') }}</p>
       </div>
 
       <!-- Results State -->
@@ -85,30 +85,30 @@
         <div v-if="results" class="min-w-0 flex flex-col gap-6">
           <!-- NGC Certification Path -->
           <form v-if="ngcCertNumber" class="card min-w-0 overflow-hidden" @submit.prevent="handleSaveAsDraft">
-            <h3 class="mb-4 text-lg text-text-primary">Review Coin Details</h3>
+            <h3 class="mb-4 text-lg text-text-primary">{{ t('lookup.reviewDetails') }}</h3>
             <div class="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
               <label class="form-group col-span-full">
-                <span class="section-label">Name</span>
+                <span class="section-label">{{ t('coinFields.name') }}</span>
                 <input v-model="reviewForm.name" class="form-input" type="text" required>
               </label>
 
               <label class="form-group">
-                <span class="section-label">Ruler</span>
+                <span class="section-label">{{ t('coinFields.ruler') }}</span>
                 <input v-model="reviewForm.ruler" class="form-input" type="text">
               </label>
 
               <label class="form-group">
-                <span class="section-label">Denomination</span>
+                <span class="section-label">{{ t('coinFields.denomination') }}</span>
                 <input v-model="reviewForm.denomination" class="form-input" type="text">
               </label>
 
               <label class="form-group">
-                <span class="section-label">Category</span>
+                <span class="section-label">{{ t('coinFields.category') }}</span>
                 <input v-model="reviewForm.category" class="form-input" type="text">
               </label>
 
               <label class="form-group">
-                <span class="section-label">Grade</span>
+                <span class="section-label">{{ t('coinFields.grade') }}</span>
                 <input v-model="reviewForm.grade" class="form-input" type="text">
               </label>
             </div>
@@ -116,14 +116,14 @@
             <div class="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-sm border border-border-accent bg-input p-4">
               <div class="flex items-center gap-2 text-base font-medium text-gold">
                 <ShieldCheck :size="20" />
-                <span>NGC Certification: {{ ngcCertNumber }}</span>
+                <span>{{ t('lookup.ngcCertification', { number: ngcCertNumber }) }}</span>
               </div>
               <div v-if="ngcForm.grade" class="flex flex-col gap-1">
-                <label class="section-label mb-0">NGC Grade</label>
+                <label class="section-label mb-0">{{ t('quickCapture.ngcGrade') }}</label>
                 <span class="text-base text-text-primary">{{ ngcForm.grade }}</span>
               </div>
               <label class="form-group min-w-[220px] flex-1">
-                <span class="section-label">NGC Coin Number</span>
+                <span class="section-label">{{ t('quickCapture.ngcNumber') }}</span>
                 <input v-model="ngcForm.certNumber" class="form-input" type="text">
               </label>
               <SafeExternalLink
@@ -131,70 +131,70 @@
                 class="btn btn-secondary btn-sm"
               >
                 <ExternalLink :size="16" />
-                Verify on NGC
+                {{ t('lookup.verifyNgc') }}
               </SafeExternalLink>
             </div>
 
             <!-- Inscriptions -->
             <div v-if="reviewForm.obverseInscription || reviewForm.reverseInscription" class="mt-2">
-              <h4 class="section-label mb-3 block">Inscriptions</h4>
+              <h4 class="section-label mb-3 block">{{ t('lookup.inscriptions') }}</h4>
               <div class="mt-2 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
                 <div v-if="reviewForm.obverseInscription" class="flex flex-col gap-[0.35rem]">
-                  <label class="section-label mb-0">Obverse</label>
+                  <label class="section-label mb-0">{{ t('common.obverse') }}</label>
                   <p class="text-body leading-6 text-text-secondary">{{ reviewForm.obverseInscription }}</p>
                 </div>
                 <div v-if="reviewForm.reverseInscription" class="flex flex-col gap-[0.35rem]">
-                  <label class="section-label mb-0">Reverse</label>
+                  <label class="section-label mb-0">{{ t('common.reverse') }}</label>
                   <p class="text-body leading-6 text-text-secondary">{{ reviewForm.reverseInscription }}</p>
                 </div>
               </div>
             </div>
 
             <div v-if="aiObservations" class="mt-2">
-              <h4 class="section-label mb-3 block">AI Observations</h4>
+              <h4 class="section-label mb-3 block">{{ t('lookup.aiObservations') }}</h4>
               <div class="markdown-rendered min-w-0 overflow-hidden rounded-sm border border-border-subtle bg-input p-3 text-body leading-6 text-text-secondary [overflow-wrap:anywhere] [&_ol]:mb-3 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_strong]:text-gold [&_ul]:mb-3" v-html="renderedAiObservations"></div>
             </div>
           </form>
 
           <!-- Non-NGC Path (editable review form) -->
           <form v-else class="card min-w-0 overflow-hidden" @submit.prevent="handleSaveAsDraft">
-            <h3 class="mb-4 text-lg text-text-primary">Review Coin Details</h3>
+            <h3 class="mb-4 text-lg text-text-primary">{{ t('lookup.reviewDetails') }}</h3>
 
             <div class="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
               <label class="form-group col-span-full">
-                <span class="section-label">Name</span>
+                <span class="section-label">{{ t('coinFields.name') }}</span>
                 <input v-model="reviewForm.name" class="form-input" type="text" required>
               </label>
 
               <label class="form-group">
-                <span class="section-label">Ruler</span>
+                <span class="section-label">{{ t('coinFields.ruler') }}</span>
                 <input v-model="reviewForm.ruler" class="form-input" type="text">
               </label>
 
               <label class="form-group">
-                <span class="section-label">Denomination</span>
+                <span class="section-label">{{ t('coinFields.denomination') }}</span>
                 <input v-model="reviewForm.denomination" class="form-input" type="text">
               </label>
 
               <label class="form-group">
-                <span class="section-label">Category</span>
+                <span class="section-label">{{ t('coinFields.category') }}</span>
                 <input v-model="reviewForm.category" class="form-input" type="text">
               </label>
 
               <label class="form-group">
-                <span class="section-label">Grade</span>
+                <span class="section-label">{{ t('coinFields.grade') }}</span>
                 <input v-model="reviewForm.grade" class="form-input" type="text">
               </label>
 
               <div v-if="aiObservations" class="form-group col-span-full">
-                <span class="section-label">AI Observations</span>
+                <span class="section-label">{{ t('lookup.aiObservations') }}</span>
                 <div class="markdown-rendered min-w-0 overflow-hidden rounded-sm border border-border-subtle bg-input p-3 text-body leading-6 text-text-secondary [overflow-wrap:anywhere] [&_ol]:mb-3 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_strong]:text-gold [&_ul]:mb-3" v-html="renderedAiObservations"></div>
               </div>
             </div>
           </form>
 
           <section v-if="results.priceComparables" class="card min-w-0 overflow-hidden" aria-labelledby="lookup-price-comparables-title">
-            <h3 id="lookup-price-comparables-title" class="section-label mb-2 block">Current Dealer Listings</h3>
+            <h3 id="lookup-price-comparables-title" class="section-label mb-2 block">{{ t('lookup.dealerListings') }}</h3>
             <p class="text-lg text-gold">{{ priceComparablesText }}</p>
             <ul class="mt-2 space-y-1">
               <li v-for="listing in results.priceComparables.listings" :key="listing.url" class="text-body leading-6 [overflow-wrap:anywhere]">
@@ -202,15 +202,15 @@
                 <span class="text-text-secondary"> — {{ formatCurrency(listing.price, listing.currency) }}<template v-if="listing.sourceName"> · {{ listing.sourceName }}</template></span>
               </li>
             </ul>
-            <p class="mt-2 text-sm text-text-muted">Asking prices from configured dealers for "{{ results.priceComparables.query }}", not completed sales. Use Estimate Value on a saved coin for a full comparables valuation.</p>
+            <p class="mt-2 text-sm text-text-muted">{{ t('lookup.dealerListingsHint', { query: results.priceComparables.query ?? '' }) }}</p>
           </section>
           <section v-else-if="results.priceEstimate" class="card min-w-0 overflow-hidden" aria-labelledby="lookup-price-estimate-title">
-            <h3 id="lookup-price-estimate-title" class="section-label mb-2 block">Estimated Price Range</h3>
+            <h3 id="lookup-price-estimate-title" class="section-label mb-2 block">{{ t('lookup.priceRange') }}</h3>
             <p class="text-lg text-gold">{{ priceEstimateText }}</p>
             <p v-if="results.priceEstimate.basis" class="mt-1 text-body leading-6 text-text-secondary">{{ results.priceEstimate.basis }}</p>
-            <p class="mt-2 text-sm text-text-muted">This is an AI estimate from general market knowledge, not live auction or dealer data, because no current dealer listing was available to price against. Use Estimate Value on a saved coin for a comparables-based figure.</p>
+            <p class="mt-2 text-sm text-text-muted">{{ t('lookup.priceRangeHint') }}</p>
           </section>
-          <p v-else-if="requestedPriceEstimate" class="text-body text-text-muted">The AI could not identify this coin confidently enough to suggest a price range.</p>
+          <p v-else-if="requestedPriceEstimate" class="text-body text-text-muted">{{ t('lookup.noPriceRange') }}</p>
 
           <div v-if="ngcCertNumber" class="card min-w-0 overflow-hidden">
             <button
@@ -222,7 +222,7 @@
               @keydown.enter.prevent="toggleNgcNumista"
               @keydown.space.prevent="toggleNgcNumista"
             >
-              Also search Numista
+              {{ t('lookup.alsoSearchNumista') }}
             </button>
             <div v-if="ngcNumistaExpanded" id="ngc-numista-lookup" class="mt-3 min-w-0 overflow-hidden">
               <NumistaLookupPanel
@@ -252,7 +252,7 @@
 
           <!-- Deprecated result compatibility for older API deployments -->
           <div v-else-if="!ngcCertNumber && numistaResults.length > 0" class="card">
-            <h3 class="mb-4 text-lg text-text-primary">Possible Matches</h3>
+            <h3 class="mb-4 text-lg text-text-primary">{{ t('lookup.possibleMatches') }}</h3>
             <div class="flex flex-col gap-3">
               <div v-for="match in numistaResults" :key="match.id" class="flex flex-col gap-4 rounded-md border border-border-subtle bg-card p-4 transition-colors hover:border-border-accent md:flex-row md:items-start">
                 <img
@@ -269,7 +269,7 @@
                     class="mt-1 inline-flex items-center gap-[0.35rem] text-chip text-gold"
                   >
                     <ExternalLink :size="14" />
-                    View on Numista
+                    {{ t('lookup.viewOnNumista') }}
                   </SafeExternalLink>
                 </div>
               </div>
@@ -280,16 +280,16 @@
           <div class="flex flex-col gap-3 pt-2 md:flex-row">
             <button class="btn btn-secondary min-w-[150px] flex-1 justify-center" @click="handleRetake">
               <RotateCcw :size="16" />
-              Retake Photo
+              {{ t('lookup.retakePhoto') }}
             </button>
             <button class="btn btn-secondary min-w-[150px] flex-1 justify-center" @click="handleCancel">
               <X :size="16" />
-              Cancel
+              {{ t('common.cancel') }}
             </button>
             <button class="btn btn-primary min-w-[150px] flex-1 justify-center" :disabled="saving" @click="handleSaveAsDraft">
               <span v-if="saving" class="inline-block h-[14px] w-[14px] animate-spin rounded-full border-2 border-border-subtle border-t-gold"></span>
               <Bookmark v-else :size="16" />
-              {{ saving ? 'Saving...' : 'Save as Draft' }}
+              {{ saving ? t('common.saving') : t('lookup.saveAsDraft') }}
             </button>
           </div>
         </div>
@@ -326,6 +326,7 @@ import { selectedNumistaReferenceFromCandidate } from '@/utils/numistaLookup'
 import { normalizeGalleryImage } from '@/utils/galleryImage'
 import { useAuthStore } from '@/stores/auth'
 import { usePwa } from '@/composables/usePwa'
+import { t } from '@/i18n'
 
 interface CapturedImage {
   role: CoinLookupImageRole
@@ -366,7 +367,7 @@ const deepAnalysisProviders = launcher.deepAnalysisProviders
 const deepIdentification = launcher.deepIdentification
 const deepAnalysisDisabledTitle = computed(() =>
   launcher.activeJobCount.value > 0
-    ? 'You already have an active Deep Analysis job. Wait for it to finish before starting another.'
+    ? t('lookup.activeJob')
     : undefined,
 )
 const deepAnalysisLaunchDisabled = computed(() => Boolean(deepAnalysisDisabledTitle.value))
@@ -420,11 +421,15 @@ const priceEstimateText = computed(() => {
 const priceComparablesText = computed(() => {
   const comparables = results.value?.priceComparables
   if (!comparables) return ''
-  const listingLabel = comparables.count === 1 ? '1 current listing' : `${comparables.count} current listings`
+  const listingLabel = t('lookup.currentListings', { count: comparables.count })
   if (comparables.low === comparables.high) {
-    return `${listingLabel} at ${formatCurrency(comparables.low, comparables.currency)}`
+    return t('lookup.listingsAt', { listings: listingLabel, price: formatCurrency(comparables.low, comparables.currency) })
   }
-  return `${listingLabel} from ${formatCurrency(comparables.low, comparables.currency)} to ${formatCurrency(comparables.high, comparables.currency)}`
+  return t('lookup.listingsRange', {
+    listings: listingLabel,
+    low: formatCurrency(comparables.low, comparables.currency),
+    high: formatCurrency(comparables.high, comparables.currency),
+  })
 })
 
 async function toggleNgcNumista() {
@@ -482,7 +487,7 @@ async function handleGallerySelection(role: CoinLookupImageRole, file: File) {
   try {
     setCapturedImage(role, await normalizeGalleryImage(file))
   } catch (err: unknown) {
-    uploadError.value = getApiErrorMessage(err) || 'The selected image could not be prepared. Try a JPEG or PNG image.'
+    uploadError.value = getApiErrorMessage(err) || t('lookup.prepareFailed')
   } finally {
     preparingImage.value = false
   }
@@ -523,7 +528,7 @@ async function handleSubmit() {
     state.value = 'results'
   } catch (err: unknown) {
     console.error('Lookup failed:', err)
-    error.value = getApiErrorMessage(err) || 'Failed to analyze coin'
+    error.value = getApiErrorMessage(err) || t('lookup.analyzeFailed')
     state.value = 'results'
   } finally {
     submitting.value = false
@@ -561,30 +566,30 @@ function handleCancel() {
 
 function buildDraftNotes() {
   const parts: string[] = []
-  appendUniqueObservation(parts, captureNotes.value, 'Collector notes')
+  appendUniqueObservation(parts, captureNotes.value, t('lookup.notes.collector'))
   if (priceComparablesText.value) {
-    appendUniqueObservation(parts, `${priceComparablesText.value} (dealer asking prices)`, 'Comparable listings')
+    appendUniqueObservation(parts, t('lookup.notes.dealerPrices', { range: priceComparablesText.value }), t('lookup.notes.comparable'))
   } else if (priceEstimateText.value) {
-    appendUniqueObservation(parts, `${priceEstimateText.value} (unverified AI estimate)`, 'AI price range')
+    appendUniqueObservation(parts, t('lookup.notes.aiEstimate', { range: priceEstimateText.value }), t('lookup.notes.aiPriceRange'))
   }
   const extractedFields = [
-    reviewForm.ruler ? `Ruler: ${reviewForm.ruler}` : '',
-    reviewForm.denomination ? `Denomination: ${reviewForm.denomination}` : '',
-    reviewForm.category ? `Category: ${reviewForm.category}` : '',
-    reviewForm.grade ? `Grade: ${reviewForm.grade}` : '',
-    reviewForm.mint ? `Mint: ${reviewForm.mint}` : '',
-    reviewForm.material ? `Material: ${reviewForm.material}` : '',
+    reviewForm.ruler ? `${t('coinFields.ruler')}: ${reviewForm.ruler}` : '',
+    reviewForm.denomination ? `${t('coinFields.denomination')}: ${reviewForm.denomination}` : '',
+    reviewForm.category ? `${t('coinFields.category')}: ${reviewForm.category}` : '',
+    reviewForm.grade ? `${t('coinFields.grade')}: ${reviewForm.grade}` : '',
+    reviewForm.mint ? `${t('coinFields.mint')}: ${reviewForm.mint}` : '',
+    reviewForm.material ? `${t('coinFields.material')}: ${reviewForm.material}` : '',
   ].filter(Boolean)
 
   if (extractedFields.length > 0) {
-    parts.push(`**Extracted fields**\n${extractedFields.join('\n')}`)
+    parts.push(`**${t('lookup.notes.extracted')}**\n${extractedFields.join('\n')}`)
   }
 
   appendUniqueObservation(parts, aiObservations.value)
   if (!aiObservations.value.trim()) {
     appendUniqueObservation(parts, reviewForm.notes)
-    appendUniqueObservation(parts, reviewForm.obverseDescription, 'Obverse')
-    appendUniqueObservation(parts, reviewForm.reverseDescription, 'Reverse')
+    appendUniqueObservation(parts, reviewForm.obverseDescription, t('common.obverse'))
+    appendUniqueObservation(parts, reviewForm.reverseDescription, t('common.reverse'))
   }
 
   return parts.join('\n\n')
@@ -598,7 +603,7 @@ async function handleSaveAsDraft() {
       ? selectedNumistaReferenceFromCandidate(selectedNumistaCandidate.value)
       : null
     const draft = await createQuickCaptureDraft({
-      workingTitle: reviewForm.name || 'Unidentified Coin',
+      workingTitle: reviewForm.name || t('lookup.unidentified'),
       era: normalizedEra(reviewForm.era),
       notes: buildDraftNotes(),
       source: 'find_coin_ai',
@@ -616,7 +621,7 @@ async function handleSaveAsDraft() {
     router.push(`/quick-capture/drafts/${draft.data.id}`)
   } catch (err: unknown) {
     console.error('Failed to save draft:', err)
-    error.value = getApiErrorMessage(err) || 'Failed to save draft'
+    error.value = getApiErrorMessage(err) || t('lookup.saveFailed')
   } finally {
     saving.value = false
   }

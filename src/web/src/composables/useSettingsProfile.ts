@@ -4,6 +4,7 @@ import {
   changePassword, uploadAvatar, deleteAvatar, updateProfile,
   validateNumisBidsCredentials, testPushover,
 } from '@/api/client'
+import { t } from '@/i18n'
 
 export function useSettingsProfile() {
   const auth = useAuthStore()
@@ -103,13 +104,13 @@ export function useSettingsProfile() {
         try {
           const valRes = await validateNumisBidsCredentials(nbUsername.value, nbPassword.value)
           if (!valRes.data.valid) {
-            nbValidationError.value = valRes.data.error || 'Invalid NumisBids credentials'
+            nbValidationError.value = valRes.data.error || t('settings.connections.numisbids.invalid')
             profileSaving.value = false
             nbValidating.value = false
             return
           }
         } catch {
-          nbValidationError.value = 'Could not validate NumisBids credentials. Check your username and password.'
+          nbValidationError.value = t('settings.connections.numisbids.validateFailed')
           profileSaving.value = false
           nbValidating.value = false
           return
@@ -122,13 +123,13 @@ export function useSettingsProfile() {
         try {
           const valRes = await validateNumisBidsCredentials(cngUsername.value, cngPassword.value, 'cng')
           if (!valRes.data.valid) {
-            cngValidationError.value = valRes.data.error || 'Invalid CNG credentials'
+            cngValidationError.value = valRes.data.error || t('settings.connections.cng.invalid')
             profileSaving.value = false
             cngValidating.value = false
             return
           }
         } catch {
-          cngValidationError.value = 'Could not validate CNG credentials. Check your username and password.'
+          cngValidationError.value = t('settings.connections.cng.validateFailed')
           profileSaving.value = false
           cngValidating.value = false
           return
@@ -187,9 +188,9 @@ export function useSettingsProfile() {
       cngPassword.value = ''
       parcelAppAPIKey.value = ''
       pushoverKey.value = ''
-      profileMsg.value = 'Profile saved'
+      profileMsg.value = t('settings.account.profileSaved')
     } catch {
-      profileMsg.value = 'Failed to save profile'
+      profileMsg.value = t('settings.account.profileSaveFailed')
       profileError.value = true
     } finally {
       profileSaving.value = false
@@ -227,7 +228,7 @@ export function useSettingsProfile() {
     passwordError.value = false
 
     if (newPassword.value !== confirmPassword.value) {
-      passwordMsg.value = 'New passwords do not match'
+      passwordMsg.value = t('settings.account.passwordMismatch')
       passwordError.value = true
       return
     }
@@ -235,12 +236,12 @@ export function useSettingsProfile() {
     passwordLoading.value = true
     try {
       await changePassword(currentPassword.value, newPassword.value)
-      passwordMsg.value = 'Password changed successfully'
+      passwordMsg.value = t('settings.account.passwordChanged')
       currentPassword.value = ''
       newPassword.value = ''
       confirmPassword.value = ''
     } catch {
-      passwordMsg.value = 'Failed — check your current password'
+      passwordMsg.value = t('settings.account.passwordChangeFailed')
       passwordError.value = true
     } finally {
       passwordLoading.value = false
@@ -254,9 +255,9 @@ export function useSettingsProfile() {
     pushoverTestError.value = false
     try {
       await testPushover()
-      pushoverTestMsg.value = 'Test notification sent'
+      pushoverTestMsg.value = t('settings.connections.pushover.sent')
     } catch {
-      pushoverTestMsg.value = 'Failed to send test notification'
+      pushoverTestMsg.value = t('settings.connections.pushover.failed')
       pushoverTestError.value = true
     } finally {
       pushoverTesting.value = false

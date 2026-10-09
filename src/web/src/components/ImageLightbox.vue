@@ -1,10 +1,10 @@
 <template>
   <Teleport to="body">
     <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm" @click.self="close" @keydown.esc="close">
-      <div class="flex max-h-[90vh] w-full max-w-[900px] flex-col overflow-hidden rounded-md border border-border-accent bg-card shadow-glow max-md:max-h-screen max-md:max-w-full max-md:rounded-none" role="dialog" :aria-label="`${imageType} image viewer`">
+      <div class="flex max-h-[90vh] w-full max-w-[900px] flex-col overflow-hidden rounded-md border border-border-accent bg-card shadow-glow max-md:max-h-screen max-md:max-w-full max-md:rounded-none" role="dialog" :aria-label="t('lightbox.viewer', { type: formatImageType(imageType) })">
         <div class="flex items-center justify-between border-b border-border-subtle bg-card px-5 py-4">
           <h2 class="m-0 font-display text-lg text-heading">{{ formatImageType(imageType) }}</h2>
-          <button class="flex items-center justify-center rounded-sm p-1 text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary" @click="close" title="Close (Esc)" aria-label="Close">
+          <button class="flex items-center justify-center rounded-sm p-1 text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary" @click="close" :title="t('lightbox.closeEsc')" :aria-label="t('common.close')">
             <X :size="20" />
           </button>
         </div>
@@ -28,8 +28,8 @@
 
             <div v-if="processing" class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4 text-center text-gold">
               <div class="h-10 w-10 animate-spin rounded-full border-[3px] border-border-subtle border-t-gold"></div>
-              <p class="m-0 text-base">Removing background...</p>
-              <p class="m-0 text-chip text-text-muted">This may take 30-60 seconds...</p>
+              <p class="m-0 text-base">{{ t('imageTools.removingBackground') }}</p>
+              <p class="m-0 text-chip text-text-muted">{{ t('imageTools.mayTakeSeconds') }}</p>
             </div>
           </div>
         </div>
@@ -42,7 +42,7 @@
             @click="handleRemoveBackground"
           >
             <Eraser :size="16" />
-            Remove Background
+            {{ t('imageTools.removeBackground') }}
           </button>
 
           <template v-else>
@@ -51,7 +51,7 @@
               @click="resetToOriginal"
             >
               <RotateCcw :size="16" />
-              Reset
+              {{ t('common.reset') }}
             </button>
             <button
               class="btn btn-primary btn-sm inline-flex items-center gap-1.5 max-md:min-w-0 max-md:flex-1"
@@ -59,7 +59,7 @@
               @click="saveProcessedImage"
             >
               <Save :size="16" />
-              {{ saving ? 'Saving...' : 'Save' }}
+              {{ saving ? t('common.saving') : t('common.save') }}
             </button>
           </template>
         </div>
@@ -75,6 +75,8 @@ import { uploadImage, deleteImage } from '@/api/client'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { removeCoinBackground } from '@/utils/backgroundRemoval'
 import { fetchPrivateMediaBlob } from '@/utils/media'
+import { imageTypeLabel } from '@/utils/format'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   coinId: number
@@ -93,8 +95,8 @@ const processedImageUrl = ref<string | null>(null)
 const saving = ref(false)
 
 function formatImageType(type: string) {
-  if (!type) return 'Image'
-  return type.charAt(0).toUpperCase() + type.slice(1)
+  if (!type) return t('common.image')
+  return imageTypeLabel(type)
 }
 
 async function handleRemoveBackground() {
@@ -106,7 +108,7 @@ async function handleRemoveBackground() {
     processedImageUrl.value = URL.createObjectURL(result)
   } catch (err) {
     console.error('Background removal failed:', err)
-    alert('Background removal failed. Please try again.')
+    alert(t('imageTools.bgRemovalFailed'))
   } finally {
     processing.value = false
   }
@@ -134,13 +136,13 @@ async function saveProcessedImage() {
     // original image of this type to avoid duplicate obverse/reverse entries.
     const deletion = await deleteImage(props.coinId, props.imageId)
     if (deletion.data.cleanupPending) {
-      alert('Image saved. Old image files are awaiting cleanup; the API will retry on startup. Do not upload the replacement again.')
+      alert(t('lightbox.cleanupPending'))
     }
     emit('saved')
     close()
   } catch (err) {
     console.error('Save failed:', err)
-    alert('Failed to save image. Please try again.')
+    alert(t('lightbox.saveFailed'))
   } finally {
     saving.value = false
   }

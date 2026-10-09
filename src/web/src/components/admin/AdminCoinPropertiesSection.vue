@@ -2,8 +2,8 @@
   <section class="card p-6">
     <div class="mb-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
       <div>
-        <p class="section-label">Collection metadata</p>
-        <h2 class="m-0 text-xl font-medium text-heading">Coin Properties</h2>
+        <p class="section-label">{{ t('admin.properties.eyebrow') }}</p>
+        <h2 class="m-0 text-xl font-medium text-heading">{{ t('admin.tabs.properties') }}</h2>
       </div>
       <button
         type="submit"
@@ -11,22 +11,22 @@
         class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
         :disabled="saving"
       >
-        {{ saving ? 'Saving...' : 'Save Properties' }}
+        {{ saving ? t('common.saving') : t('admin.properties.save') }}
       </button>
     </div>
 
     <p class="mb-6 text-base text-text-secondary">
-      Configure the category and era choices shown on Add Coin and Edit Coin. Enter one value per line.
+      {{ t('admin.properties.intro') }}
     </p>
 
     <form id="coin-properties-form" class="grid gap-4" @submit.prevent="$emit('save')">
       <div class="rounded-md border border-border-subtle bg-card-hover p-4">
         <div class="mb-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <label class="form-label text-heading" for="category-options">Category Options</label>
-            <p class="mt-1 text-body text-text-secondary">One category per line. Empty lines are ignored.</p>
+            <label class="form-label text-heading" for="category-options">{{ t('admin.properties.categoryOptions') }}</label>
+            <p class="mt-1 text-body text-text-secondary">{{ t('admin.properties.categoryHint') }}</p>
           </div>
-          <span class="chip-sm">{{ categoryPreview.length }} options</span>
+          <span class="chip-sm">{{ t('admin.properties.optionCount', { count: categoryPreview.length }) }}</span>
         </div>
         <textarea
           id="category-options"
@@ -35,18 +35,24 @@
           rows="7"
           placeholder="Roman&#10;Greek&#10;Byzantine&#10;Modern&#10;Other"
         />
-        <div class="mt-3 flex flex-wrap gap-[0.35rem]" aria-label="Category option preview">
+        <div class="mt-3 flex flex-wrap gap-[0.35rem]" :aria-label="t('admin.properties.categoryPreview')">
           <span v-for="option in categoryPreview" :key="option" class="chip-sm">{{ option }}</span>
         </div>
+        <CoinOptionNamesEditor
+          :options="categoryPreview"
+          :model-value="categoryLabelsPt"
+          heading-id="category-pt-names"
+          @update:model-value="$emit('update:categoryLabelsPt', $event)"
+        />
       </div>
 
       <div class="rounded-md border border-border-subtle bg-card-hover p-4">
         <div class="mb-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <label class="form-label text-heading" for="era-options">Era Options</label>
-            <p class="mt-1 text-body text-text-secondary">One era per line. The coin form adds Unspecified automatically.</p>
+            <label class="form-label text-heading" for="era-options">{{ t('admin.properties.eraOptions') }}</label>
+            <p class="mt-1 text-body text-text-secondary">{{ t('admin.properties.eraHint') }}</p>
           </div>
-          <span class="chip-sm">{{ eraPreview.length }} options</span>
+          <span class="chip-sm">{{ t('admin.properties.optionCount', { count: eraPreview.length }) }}</span>
         </div>
         <textarea
           id="era-options"
@@ -55,10 +61,16 @@
           rows="7"
           placeholder="ancient&#10;medieval&#10;modern"
         />
-        <div class="mt-3 flex flex-wrap gap-[0.35rem]" aria-label="Era option preview">
-          <span class="chip-sm">Unspecified</span>
+        <div class="mt-3 flex flex-wrap gap-[0.35rem]" :aria-label="t('admin.properties.eraPreview')">
+          <span class="chip-sm">{{ t('coinForm.eraUnspecified') }}</span>
           <span v-for="option in eraPreview" :key="option" class="chip-sm">{{ option }}</span>
         </div>
+        <CoinOptionNamesEditor
+          :options="eraPreview"
+          :model-value="eraLabelsPt"
+          heading-id="era-pt-names"
+          @update:model-value="$emit('update:eraLabelsPt', $event)"
+        />
       </div>
 
       <p v-if="msg" class="mt-2 text-body text-gold" :class="{ 'text-byzantine': error }">{{ msg }}</p>
@@ -67,19 +79,19 @@
     <section class="mt-4 rounded-md border border-border-subtle bg-card-hover p-4" aria-labelledby="custom-locations-heading">
       <div class="mb-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h3 id="custom-locations-heading" class="m-0 text-lg font-medium text-heading">Custom Locations</h3>
-          <p class="mt-1 text-body text-text-secondary">Global mint coordinates used by the collection map. Aliases can be comma or line separated.</p>
+          <h3 id="custom-locations-heading" class="m-0 text-lg font-medium text-heading">{{ t('admin.properties.customLocations') }}</h3>
+          <p class="mt-1 text-body text-text-secondary">{{ t('admin.properties.customLocationsHint') }}</p>
         </div>
-        <span class="chip-sm">{{ mintLocations.length }} locations</span>
+        <span class="chip-sm">{{ t('settings.data.locationCount', { count: mintLocations.length }) }}</span>
       </div>
 
       <p v-if="mintLocationError" class="mb-2 text-body text-byzantine">{{ mintLocationError }}</p>
-      <p v-if="mintLocationsLoading" class="text-body text-text-secondary">Loading mint locations...</p>
+      <p v-if="mintLocationsLoading" class="text-body text-text-secondary">{{ t('admin.properties.loadingMints') }}</p>
 
       <div v-else class="grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)] md:items-start">
-        <div class="flex max-h-[28rem] min-w-0 flex-col gap-2 overflow-y-auto pr-1 [scrollbar-gutter:stable] md:max-h-[min(34rem,70vh)]" aria-label="Custom mint locations">
+        <div class="flex max-h-[28rem] min-w-0 flex-col gap-2 overflow-y-auto pr-1 [scrollbar-gutter:stable] md:max-h-[min(34rem,70vh)]" :aria-label="t('admin.properties.mintList')">
           <div v-if="!mintLocations.length" class="rounded-sm border border-border-subtle bg-input p-3 text-left text-body text-text-secondary">
-            No mint locations configured yet.
+            {{ t('admin.properties.noMints') }}
           </div>
           <div
             v-for="location in sortedMintLocations"
@@ -96,7 +108,7 @@
                     :disabled="mintLocationSaving"
                     @click="startEditMintLocation(location)"
                   >
-                    Edit
+                    {{ t('common.edit') }}
                   </button>
                   <button
                     type="button"
@@ -104,11 +116,11 @@
                     :disabled="deletingMintLocationId === location.id"
                     @click="deleteMintLocation(location)"
                   >
-                    {{ deletingMintLocationId === location.id ? 'Deleting...' : 'Delete' }}
+                    {{ deletingMintLocationId === location.id ? t('common.deleting') : t('common.delete') }}
                   </button>
                 </div>
               </div>
-              <span class="block text-body text-text-secondary [overflow-wrap:anywhere]">{{ location.region || 'No region' }} · {{ location.lat }}, {{ location.lng }}</span>
+              <span class="block text-body text-text-secondary [overflow-wrap:anywhere]">{{ location.region || t('settings.data.noRegion') }} · {{ location.lat }}, {{ location.lng }}</span>
               <span v-if="location.aliases.length" class="block text-body text-text-secondary [overflow-wrap:anywhere]">{{ location.aliases.join(', ') }}</span>
 
               <div v-if="!location.userId" class="mt-2 flex flex-col gap-2 border-t border-border-subtle pt-2">
@@ -120,7 +132,7 @@
                     :disabled="nomismaLinkingId === location.id"
                     @click="openNomismaSearch(location)"
                   >
-                    {{ location.nomismaUri ? 'Change Nomisma Link' : 'Search Nomisma' }}
+                    {{ location.nomismaUri ? t('admin.properties.changeNomisma') : t('admin.properties.searchNomisma') }}
                   </button>
                   <button
                     v-if="location.nomismaUri"
@@ -129,35 +141,35 @@
                     :disabled="nomismaLinkingId === location.id"
                     @click="unlinkNomisma(location)"
                   >
-                    {{ nomismaLinkingId === location.id ? 'Unlinking...' : 'Unlink' }}
+                    {{ nomismaLinkingId === location.id ? t('settings.account.unlinking') : t('settings.account.unlink') }}
                   </button>
                 </div>
 
                 <div v-if="nomismaSearchLocationId === location.id" class="rounded-sm border border-border-subtle bg-card p-3">
                   <form class="nomisma-search-form flex flex-col gap-2 sm:flex-row sm:items-center" @submit.prevent="searchNomisma(location)">
                     <label class="flex flex-1 flex-col gap-[0.35rem]">
-                      <span class="form-label">Nomisma search query</span>
+                      <span class="form-label">{{ t('admin.properties.nomismaQuery') }}</span>
                       <input v-model="nomismaQuery" class="form-input" type="text" maxlength="200" required />
                     </label>
                     <div class="flex gap-[0.35rem]">
                       <button type="submit" class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" :disabled="nomismaSearching">
-                        {{ nomismaSearching ? 'Searching...' : 'Search' }}
+                        {{ nomismaSearching ? t('common.searching') : t('common.search') }}
                       </button>
                       <button type="button" class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="closeNomismaSearch">
-                        Cancel
+                        {{ t('common.cancel') }}
                       </button>
                     </div>
                   </form>
 
                   <p v-if="nomismaError" class="mt-2 text-body text-byzantine" role="status" aria-live="polite">{{ nomismaError }}</p>
                   <p v-else-if="nomismaSearchStatus === 'no_match'" class="mt-2 text-body text-text-secondary" role="status" aria-live="polite">
-                    No Nomisma candidates found for this query.
+                    {{ t('admin.properties.noCandidates') }}
                   </p>
                   <p v-else-if="nomismaSearchStatus === 'unavailable'" class="mt-2 text-body text-text-secondary" role="status" aria-live="polite">
-                    Nomisma lookup is currently unavailable. Try again later.
+                    {{ t('admin.properties.unavailable') }}
                   </p>
 
-                  <ul v-if="nomismaCandidates.length" class="mt-2 flex list-none flex-col gap-2 p-0" role="list" aria-label="Nomisma candidates">
+                  <ul v-if="nomismaCandidates.length" class="mt-2 flex list-none flex-col gap-2 p-0" role="list" :aria-label="t('admin.properties.candidates')">
                     <li
                       v-for="candidate in nomismaCandidates"
                       :key="candidate.uri"
@@ -165,7 +177,7 @@
                     >
                       <div class="min-w-0 [overflow-wrap:anywhere]">
                         <span class="block font-medium text-text-primary">{{ candidate.label }}</span>
-                        <span class="block text-chip text-text-secondary">Score {{ candidate.score.toFixed(1) }}{{ candidate.match ? ' · exact match' : '' }}</span>
+                        <span class="block text-chip text-text-secondary">{{ t('admin.properties.score', { score: candidate.score.toFixed(1) }) }}{{ candidate.match ? ' · ' + t('admin.properties.exactMatch') : '' }}</span>
                       </div>
                       <button
                         type="button"
@@ -173,7 +185,7 @@
                         :disabled="nomismaLinkingId === location.id"
                         @click="confirmNomismaCandidate(location, candidate)"
                       >
-                        Confirm
+                        {{ t('common.confirm') }}
                       </button>
                     </li>
                   </ul>
@@ -184,37 +196,37 @@
         </div>
 
         <form class="flex min-w-0 flex-col gap-3 self-start rounded-sm border border-border-subtle bg-input p-3" @submit.prevent="saveMintLocation">
-          <h4 class="m-0 text-lg font-medium text-heading">{{ editingMintLocation ? 'Edit Location' : 'Add Location' }}</h4>
+          <h4 class="m-0 text-lg font-medium text-heading">{{ editingMintLocation ? t('settings.data.editLocation') : t('settings.data.addLocation') }}</h4>
           <div class="grid gap-3 md:grid-cols-2">
             <label class="flex flex-col gap-[0.35rem]">
-              <span class="form-label">Display Name</span>
+              <span class="form-label">{{ t('admin.catalogs.displayName') }}</span>
               <input v-model="mintLocationForm.displayName" class="form-input" type="text" maxlength="120" required />
             </label>
             <label class="flex flex-col gap-[0.35rem]">
-              <span class="form-label">Region</span>
+              <span class="form-label">{{ t('settings.data.region') }}</span>
               <input v-model="mintLocationForm.region" class="form-input" type="text" maxlength="120" />
             </label>
             <label class="flex flex-col gap-[0.35rem]">
-              <span class="form-label">Latitude</span>
+              <span class="form-label">{{ t('admin.properties.latitude') }}</span>
               <input v-model="mintLocationForm.lat" class="form-input" type="number" min="-90" max="90" step="0.000001" required />
             </label>
             <label class="flex flex-col gap-[0.35rem]">
-              <span class="form-label">Longitude</span>
+              <span class="form-label">{{ t('admin.properties.longitude') }}</span>
               <input v-model="mintLocationForm.lng" class="form-input" type="number" min="-180" max="180" step="0.000001" required />
             </label>
           </div>
           <label class="flex flex-col gap-[0.35rem]">
-            <span class="form-label">Aliases</span>
+            <span class="form-label">{{ t('settings.data.aliases') }}</span>
             <textarea
               v-model="mintLocationForm.aliases"
               class="form-textarea min-h-24 resize-y bg-card text-body"
               rows="4"
-              placeholder="Roma, Rome mint"
+              :placeholder="t('settings.data.aliasesPlaceholder')"
             />
           </label>
           <div class="flex flex-wrap justify-start gap-[0.35rem] md:justify-end">
             <button type="submit" class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" :disabled="mintLocationSaving">
-              {{ mintLocationSaving ? 'Saving...' : editingMintLocation ? 'Save Location' : 'Add Location' }}
+              {{ mintLocationSaving ? t('common.saving') : editingMintLocation ? t('settings.data.saveLocation') : t('settings.data.addLocation') }}
             </button>
             <button
               v-if="editingMintLocation"
@@ -223,7 +235,7 @@
               :disabled="mintLocationSaving"
               @click="resetMintLocationForm"
             >
-              Cancel
+              {{ t('common.cancel') }}
             </button>
           </div>
         </form>
@@ -250,10 +262,15 @@ import { parseOptionList } from '@/utils/options'
 import { CATEGORIES, COIN_ERAS } from '@/types'
 import type { MintLocation, NomismaCandidate, NomismaSearchStatus } from '@/types'
 import NomismaAttribution from '@/components/mint/NomismaAttribution.vue'
+import CoinOptionNamesEditor from '@/components/admin/CoinOptionNamesEditor.vue'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   categoryOptions: string
   eraOptions: string
+  /** "Value=Name" lines with Portuguese display names (see CoinOptionNamesEditor). */
+  categoryLabelsPt: string
+  eraLabelsPt: string
   saving: boolean
   msg: string
   error: boolean
@@ -263,6 +280,8 @@ const emit = defineEmits<{
   save: []
   'update:categoryOptions': [value: string]
   'update:eraOptions': [value: string]
+  'update:categoryLabelsPt': [value: string]
+  'update:eraLabelsPt': [value: string]
 }>()
 
 const localCategoryOptions = ref(props.categoryOptions)
@@ -326,15 +345,15 @@ function buildMintLocationPayload(): MintLocationInput | null {
   const lat = Number(mintLocationForm.lat)
   const lng = Number(mintLocationForm.lng)
   if (!displayName) {
-    mintLocationError.value = 'Display name is required.'
+    mintLocationError.value = t('settings.data.displayNameRequired')
     return null
   }
   if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
-    mintLocationError.value = 'Latitude must be between -90 and 90.'
+    mintLocationError.value = t('settings.data.latitudeRange')
     return null
   }
   if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
-    mintLocationError.value = 'Longitude must be between -180 and 180.'
+    mintLocationError.value = t('settings.data.longitudeRange')
     return null
   }
   return {
@@ -364,7 +383,7 @@ async function loadMintLocations() {
     mintLocations.value = unwrapMintLocations(res.data)
   } catch (error: unknown) {
     mintLocations.value = []
-    mintLocationError.value = apiErrorText(error, 'Failed to load mint locations.')
+    mintLocationError.value = apiErrorText(error, t('settings.data.loadMintsFailed'))
   } finally {
     mintLocationsLoading.value = false
   }
@@ -394,7 +413,7 @@ async function saveMintLocation() {
     resetMintLocationForm()
     await loadMintLocations()
   } catch (error: unknown) {
-    mintLocationError.value = apiErrorText(error, 'Failed to save mint location.')
+    mintLocationError.value = apiErrorText(error, t('settings.data.saveMintFailed'))
   } finally {
     mintLocationSaving.value = false
   }
@@ -402,8 +421,8 @@ async function saveMintLocation() {
 
 async function deleteMintLocation(location: MintLocation) {
   mintLocationError.value = ''
-  const confirmed = await showConfirm(`Delete mint location "${location.displayName}"? Coins with this mint text will become unmatched on the map until another location or alias matches them.`, {
-    title: 'Delete Mint Location',
+  const confirmed = await showConfirm(t('admin.properties.confirmDeleteMint', { name: location.displayName }), {
+    title: t('settings.data.deleteMintTitle'),
     variant: 'danger',
   })
   if (!confirmed) return
@@ -415,7 +434,7 @@ async function deleteMintLocation(location: MintLocation) {
     }
     await loadMintLocations()
   } catch (error: unknown) {
-    mintLocationError.value = apiErrorText(error, 'Failed to delete mint location.')
+    mintLocationError.value = apiErrorText(error, t('settings.data.deleteMintFailed'))
   } finally {
     deletingMintLocationId.value = null
   }
@@ -449,7 +468,7 @@ async function searchNomisma(location: MintLocation) {
     nomismaSearchStatus.value = res.data.status
     nomismaCandidates.value = res.data.candidates
   } catch (error: unknown) {
-    nomismaError.value = apiErrorText(error, 'Failed to search Nomisma.')
+    nomismaError.value = apiErrorText(error, t('admin.properties.searchFailed'))
   } finally {
     nomismaSearching.value = false
   }
@@ -463,15 +482,15 @@ async function confirmNomismaCandidate(location: MintLocation, candidate: Nomism
     closeNomismaSearch()
     await loadMintLocations()
   } catch (error: unknown) {
-    nomismaError.value = apiErrorText(error, 'Failed to link Nomisma candidate.')
+    nomismaError.value = apiErrorText(error, t('admin.properties.linkFailed'))
   } finally {
     nomismaLinkingId.value = null
   }
 }
 
 async function unlinkNomisma(location: MintLocation) {
-  const confirmed = await showConfirm(`Remove the Nomisma authority link from "${location.displayName}"? The mint's name, coordinates, and aliases will be unchanged.`, {
-    title: 'Unlink Nomisma Authority',
+  const confirmed = await showConfirm(t('admin.properties.confirmUnlink', { name: location.displayName }), {
+    title: t('admin.properties.unlinkTitle'),
     variant: 'danger',
   })
   if (!confirmed) return
@@ -483,7 +502,7 @@ async function unlinkNomisma(location: MintLocation) {
     }
     await loadMintLocations()
   } catch (error: unknown) {
-    mintLocationError.value = apiErrorText(error, 'Failed to unlink Nomisma authority.')
+    mintLocationError.value = apiErrorText(error, t('admin.properties.unlinkFailed'))
   } finally {
     nomismaLinkingId.value = null
   }

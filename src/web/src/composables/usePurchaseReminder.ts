@@ -2,6 +2,7 @@
 import type { Ref } from 'vue'
 import { createOrUpdatePurchaseReminder, getPurchaseReminder, deletePurchaseReminder } from '@/api/client'
 import type { PurchaseReminder } from '@/types/coin'
+import { intlLocale, t } from '@/i18n'
 
 /** Returns the browser's IANA timezone (e.g. "America/Chicago"). */
 export function getBrowserTimezone(): string {
@@ -20,15 +21,15 @@ export function formatReminderBadge(remindDate: string): string {
   tomorrow.setDate(tomorrow.getDate() + 1)
   const tomorrowStr = tomorrow.toISOString().slice(0, 10)
 
-  if (remindDate <= todayStr) return 'Due Today'
-  if (remindDate === tomorrowStr) return 'Due Tomorrow'
+  if (remindDate <= todayStr) return t('coinDetail.reminder.dueToday')
+  if (remindDate === tomorrowStr) return t('coinDetail.reminder.dueTomorrow')
 
-  // Format as "Due Aug 25" using parts split from "YYYY-MM-DD"
+  // Format as "Due Aug 25" (en) using parts split from "YYYY-MM-DD"
   const parts = remindDate.split('-')
   const month = parseInt(parts[1] ?? '1', 10)
   const day = parseInt(parts[2] ?? '1', 10)
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  return `Due ${months[month - 1] ?? '?'} ${day}`
+  const date = new Date(2000, month - 1, day).toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric' })
+  return t('coinDetail.reminder.dueOn', { date })
 }
 
 /**
@@ -41,7 +42,7 @@ export function formatReminderDateValue(remindDate: string): string {
   const y = parseInt(parts[0] ?? '2000', 10)
   const m = parseInt(parts[1] ?? '1', 10)
   const d = parseInt(parts[2] ?? '1', 10)
-  return new Date(y, m - 1, d).toLocaleDateString()
+  return new Date(y, m - 1, d).toLocaleDateString(intlLocale())
 }
 
 /** Returns today's date as YYYY-MM-DD in local time. */
@@ -86,7 +87,7 @@ export function usePurchaseReminder(coinId: Ref<number>): UsePurchaseReminderRet
       if (status === 404) {
         reminder.value = null
       } else {
-        error.value = 'Failed to load reminder'
+        error.value = t('coinDetail.reminder.loadFailed')
       }
     } finally {
       loading.value = false
@@ -105,7 +106,7 @@ export function usePurchaseReminder(coinId: Ref<number>): UsePurchaseReminderRet
       return res.data
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { error?: string } } })?.response?.data
-      error.value = data?.error ?? 'Failed to save reminder'
+      error.value = data?.error ?? t('coinDetail.reminder.saveFailed')
       return null
     } finally {
       saving.value = false
@@ -119,7 +120,7 @@ export function usePurchaseReminder(coinId: Ref<number>): UsePurchaseReminderRet
       await deletePurchaseReminder(coinId.value)
       reminder.value = null
     } catch {
-      error.value = 'Failed to cancel reminder'
+      error.value = t('coinDetail.reminder.cancelFailed')
     } finally {
       saving.value = false
     }

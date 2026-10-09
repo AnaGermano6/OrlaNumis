@@ -1,25 +1,25 @@
 <template>
   <section class="card text-text-primary">
-    <h2 class="mb-5 border-b border-border-subtle pb-3 text-lg text-heading">Connections</h2>
+    <h2 class="mb-5 border-b border-border-subtle pb-3 text-lg text-heading">{{ t('settings.tabs.connections') }}</h2>
 
-    <h3 class="mb-3 text-base text-text-secondary">NumisBids Integration</h3>
+    <h3 class="mb-3 text-base text-text-secondary">{{ t('settings.connections.numisbids.title') }}</h3>
     <p class="mb-3 text-sm text-text-muted">
-      Connect your NumisBids account for watchlist/import tracking. Won/lost outcomes, winning bids, and max bids should be checked on NumisBids and updated manually.
+      {{ t('settings.connections.numisbids.intro') }}
     </p>
     <div class="form-group">
-      <label class="form-label">NumisBids Username</label>
-      <input v-model="nbUsername" class="form-input" placeholder="Your NumisBids username" autocomplete="off" />
+      <label class="form-label">{{ t('settings.connections.numisbids.username') }}</label>
+      <input v-model="nbUsername" class="form-input" :placeholder="t('settings.connections.numisbids.usernamePlaceholder')" autocomplete="off" />
     </div>
     <div class="form-group">
-      <label class="form-label">NumisBids Password</label>
-      <input v-model="nbPassword" type="password" class="form-input" placeholder="Your NumisBids password" autocomplete="new-password" />
-      <span class="mt-1 block text-chip text-text-muted">Encrypted at rest on the server. Used only for NumisBids watchlist/import tracking; legacy stored passwords migrate on next save or sync.</span>
+      <label class="form-label">{{ t('settings.connections.numisbids.password') }}</label>
+      <input v-model="nbPassword" type="password" class="form-input" :placeholder="t('settings.connections.numisbids.passwordPlaceholder')" autocomplete="new-password" />
+      <span class="mt-1 block text-chip text-text-muted">{{ t('settings.connections.numisbids.passwordHint') }}</span>
     </div>
     <div
       v-if="nbValidating"
       class="mt-1 rounded-sm border border-[color-mix(in_srgb,var(--text-warning)_20%,transparent)] bg-[color-mix(in_srgb,var(--text-warning)_10%,transparent)] px-3 py-[0.4rem] text-chip text-warning"
     >
-      Validating NumisBids credentials...
+      {{ t('settings.connections.numisbids.validating') }}
     </div>
     <div
       v-else-if="nbValidationError"
@@ -31,27 +31,27 @@
       v-else-if="auth.user?.numisBidsConfigured"
       class="mt-1 rounded-sm border border-[color-mix(in_srgb,var(--color-positive)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-positive)_10%,transparent)] px-3 py-[0.4rem] text-chip text-gain"
     >
-      NumisBids account connected
+      {{ t('settings.connections.numisbids.connected') }}
     </div>
 
-    <h3 class="mb-3 mt-5 text-base text-text-secondary">CNG Auctions Integration</h3>
+    <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.connections.cng.title') }}</h3>
     <p class="mb-3 text-sm text-text-muted">
-      Connect your CNG Auctions account to sync watched lots and auto-detect hosted-auction outcomes where CNG provides the data.
+      {{ t('settings.connections.cng.intro') }}
     </p>
     <div class="form-group">
-      <label class="form-label">CNG Username</label>
-      <input v-model="cngUsername" class="form-input" placeholder="Your CNG username or email" autocomplete="off" />
+      <label class="form-label">{{ t('settings.connections.cng.username') }}</label>
+      <input v-model="cngUsername" class="form-input" :placeholder="t('settings.connections.cng.usernamePlaceholder')" autocomplete="off" />
     </div>
     <div class="form-group">
-      <label class="form-label">CNG Password</label>
-      <input v-model="cngPassword" type="password" class="form-input" placeholder="Your CNG password" autocomplete="new-password" />
-      <span class="mt-1 block text-chip text-text-muted">Encrypted at rest on the server. Used for CNG watched-lot sync and available hosted bid/outcome data; legacy stored passwords migrate on next save or sync.</span>
+      <label class="form-label">{{ t('settings.connections.cng.password') }}</label>
+      <input v-model="cngPassword" type="password" class="form-input" :placeholder="t('settings.connections.cng.passwordPlaceholder')" autocomplete="new-password" />
+      <span class="mt-1 block text-chip text-text-muted">{{ t('settings.connections.cng.passwordHint') }}</span>
     </div>
     <div
       v-if="cngValidating"
       class="mt-1 rounded-sm border border-[color-mix(in_srgb,var(--text-warning)_20%,transparent)] bg-[color-mix(in_srgb,var(--text-warning)_10%,transparent)] px-3 py-[0.4rem] text-chip text-warning"
     >
-      Validating CNG credentials...
+      {{ t('settings.connections.cng.validating') }}
     </div>
     <div
       v-else-if="cngValidationError"
@@ -63,46 +63,46 @@
       v-else-if="auth.user?.cngConfigured"
       class="mt-1 rounded-sm border border-[color-mix(in_srgb,var(--color-positive)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-positive)_10%,transparent)] px-3 py-[0.4rem] text-chip text-gain"
     >
-      CNG account connected
+      {{ t('settings.connections.cng.connected') }}
     </div>
 
-    <h3 class="mb-3 mt-5 text-base text-text-secondary">ParcelApp Integration</h3>
+    <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.connections.parcel.title') }}</h3>
     <p class="mb-3 text-sm text-text-muted">
-      Connect ParcelApp so shipment tracking can be created from a tracking number and synced automatically when the admin setting is enabled.
+      {{ t('settings.connections.parcel.intro') }}
     </p>
     <div class="form-group">
-      <label class="form-label">ParcelApp API Key</label>
-      <input v-model="parcelAppAPIKey" type="password" class="form-input" placeholder="Your ParcelApp API key" autocomplete="new-password" />
-      <span class="mt-1 block text-chip text-text-muted">Generate this at web.parcelapp.net. The key is encrypted at rest and only used for your shipments.</span>
+      <label class="form-label">{{ t('settings.connections.parcel.key') }}</label>
+      <input v-model="parcelAppAPIKey" type="password" class="form-input" :placeholder="t('settings.connections.parcel.keyPlaceholder')" autocomplete="new-password" />
+      <span class="mt-1 block text-chip text-text-muted">{{ t('settings.connections.parcel.keyHint') }}</span>
     </div>
     <div
       v-if="auth.user?.parcelAppConfigured"
       class="mt-1 rounded-sm border border-[color-mix(in_srgb,var(--color-positive)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-positive)_10%,transparent)] px-3 py-[0.4rem] text-chip text-gain"
     >
-      ParcelApp key connected
+      {{ t('settings.connections.parcel.connected') }}
     </div>
 
-    <h3 class="mb-3 mt-5 text-base text-text-secondary">Pushover Notifications</h3>
+    <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.connections.pushover.title') }}</h3>
     <p class="mb-3 text-sm text-text-muted">
-      Receive push notifications on your phone when wishlist items become unavailable or friends add new coins.
+      {{ t('settings.connections.pushover.intro') }}
     </p>
     <div class="form-group">
-      <label class="form-label">Pushover User Key</label>
-      <input v-model="pushoverKey" type="password" class="form-input" placeholder="Your Pushover User Key" autocomplete="off" />
-      <span class="mt-1 block text-chip text-text-muted">Find your User Key in the Pushover app or dashboard.</span>
+      <label class="form-label">{{ t('settings.connections.pushover.key') }}</label>
+      <input v-model="pushoverKey" type="password" class="form-input" :placeholder="t('settings.connections.pushover.keyPlaceholder')" autocomplete="off" />
+      <span class="mt-1 block text-chip text-text-muted">{{ t('settings.connections.pushover.keyHint') }}</span>
     </div>
     <div
       v-if="auth.user?.pushoverEnabled"
       class="mb-2 mt-1 rounded-sm border border-[color-mix(in_srgb,var(--color-positive)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-positive)_10%,transparent)] px-3 py-[0.4rem] text-chip text-gain"
     >
-      Pushover notifications active
+      {{ t('settings.connections.pushover.active') }}
     </div>
     <button
       class="btn btn-secondary btn-sm mb-1 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
       :disabled="pushoverTesting || !auth.user?.pushoverEnabled"
       @click="handleTestPushover"
     >
-      {{ pushoverTesting ? 'Sending...' : 'Test Notification' }}
+      {{ pushoverTesting ? t('settings.connections.pushover.sending') : t('settings.connections.pushover.test') }}
     </button>
     <p
       v-if="pushoverTestMsg"
@@ -117,7 +117,7 @@
       @click="handleSaveProfile"
       :disabled="profileSaving || nbValidating || cngValidating"
     >
-      {{ nbValidating || cngValidating ? 'Validating...' : profileSaving ? 'Saving...' : 'Save Connections' }}
+      {{ nbValidating || cngValidating ? t('settings.connections.validating') : profileSaving ? t('common.saving') : t('settings.connections.save') }}
     </button>
     <p v-if="profileMsg" class="mt-2 text-body text-gold" :class="{ 'text-loss': profileError }">{{ profileMsg }}</p>
   </section>
@@ -126,6 +126,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsProfile } from '@/composables/useSettingsProfile'
+import { t } from '@/i18n'
 
 const auth = useAuthStore()
 const {

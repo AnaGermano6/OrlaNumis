@@ -6,7 +6,7 @@
       :style="`top: ${-50 + pullDistance * 0.6}px; opacity: ${Math.min(pullDistance / 60, 1)}`"
     >
       <div class="h-[18px] w-[18px] rounded-full border-2 border-border-subtle border-t-gold" :class="{ 'animate-spin': refreshing }" :style="refreshing ? '' : `transform: rotate(${pullDistance * 3}deg)`"></div>
-      <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? 'Refreshing...' : pullDistance >= 60 ? 'Release to refresh' : 'Pull to refresh' }}</span>
+      <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? t('common.pull.refreshing') : pullDistance >= 60 ? t('common.pull.release') : t('common.pull.pull') }}</span>
     </div>
     <slot />
   </div>
@@ -15,6 +15,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { usePullToRefresh } from '@/composables/usePullToRefresh'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   onRefresh: () => Promise<void>

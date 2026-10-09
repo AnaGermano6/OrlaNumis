@@ -6,16 +6,16 @@
       class="card mx-auto mt-12 max-w-[500px] px-8 py-12 text-center max-sm:mt-8 max-sm:px-6 max-sm:py-8"
     >
       <Landmark :size="64" :stroke-width="1" class="mx-auto mb-4 text-text-muted" />
-      <h2 class="mb-2 text-xl text-heading">No Coins in Tray</h2>
+      <h2 class="mb-2 text-xl text-heading">{{ t('trays.noCoins') }}</h2>
       <p class="mb-6 text-text-secondary">{{ trayEmptyMessage }}</p>
       <div class="flex flex-wrap justify-center gap-3">
         <router-link to="/" class="btn btn-secondary">
           <ArrowLeft :size="18" />
-          Back to Collection
+          {{ t('trays.backToCollection') }}
         </router-link>
         <router-link to="/add" class="btn btn-primary">
           <Plus :size="18" />
-          Add Coin
+          {{ t('nav.addCoin') }}
         </router-link>
       </div>
     </div>
@@ -24,7 +24,7 @@
     <div v-else-if="!loading" class="flex flex-col gap-4">
       <div class="tray-controls-row">
         <label class="tray-size-control" for="tray-size-slider">
-          <span>Coin size</span>
+          <span>{{ t('showcases.coinSize') }}</span>
           <input
             id="tray-size-slider"
             v-model.number="traySizeScale"
@@ -59,7 +59,7 @@
     <!-- Loading state -->
     <div v-else class="loading-overlay px-8 py-16">
       <div class="spinner"></div>
-      <p>Loading coins...</p>
+      <p>{{ t('trays.loadingCoins') }}</p>
     </div>
   </div>
 </template>
@@ -75,6 +75,7 @@ import MuseumTray from '@/components/tray/MuseumTray.vue'
 import TrayControls from '@/components/tray/TrayControls.vue'
 import { Landmark, ArrowLeft, Plus } from 'lucide-vue-next'
 import { useSwipeGesture } from '@/composables/useSwipeGesture'
+import { t } from '@/i18n'
 
 const STORAGE_KEY = 'tray:sizeScale'
 const DEFAULT_SIZE_SCALE = 1
@@ -117,9 +118,9 @@ const trayCoins = computed((): TrayCoin[] => {
 const trayEmptyMessage = computed(() => {
   if (errorMessage.value) return errorMessage.value
   if (loadedCoins.value.length > 0 && trayCoins.value.length === 0) {
-    return 'No active collection coins have known diameter values. Add coin size details to display them in the tray.'
+    return t('trays.noDiameters')
   }
-  return 'Your collection is empty or no coins match the current filters.'
+  return t('trays.emptyCollection')
 })
 
 const currentDrawerCoins = computed(() => {
@@ -257,7 +258,7 @@ async function loadTrayCoins() {
     loadedCoins.value = allCoins
   } catch {
     loadedCoins.value = []
-    errorMessage.value = 'Tray coins could not be loaded. Check your connection and try again.'
+    errorMessage.value = t('trays.coinsLoadFailed')
   } finally {
     loading.value = false
   }

@@ -1,3 +1,5 @@
+import { t, type MessageKey } from '@/i18n'
+
 // Friendly Coin Copilot helper names. Must match _TOOL_LABELS in
 // src/agent/app/teams/coin_copilot.py so the checklist and result lines agree;
 // copilotToolLabels.test.ts fails if the two drift.
@@ -15,7 +17,23 @@ export const COPILOT_TOOL_LABELS: Readonly<Record<string, string>> = {
   deep_analysis_handoff: 'Use existing Deep Analysis',
 }
 
-// Unknown helpers get a generic name rather than an internal tool name.
+const COPILOT_TOOL_LABEL_KEYS: Readonly<Record<string, MessageKey>> = {
+  search_my_collection: 'copilot.tools.searchMyCollection',
+  get_coin: 'copilot.tools.getCoin',
+  collection_summary: 'copilot.tools.collectionSummary',
+  top_coins_by_value: 'copilot.tools.topCoinsByValue',
+  portfolio_review: 'copilot.tools.portfolioReview',
+  gap_analysis: 'copilot.tools.gapAnalysis',
+  market_search: 'copilot.tools.marketSearch',
+  auction_search: 'copilot.tools.auctionSearch',
+  price_trends: 'copilot.tools.priceTrends',
+  similar_lots: 'copilot.tools.similarLots',
+  deep_analysis_handoff: 'copilot.tools.deepAnalysisHandoff',
+}
+
+// Unknown helpers get a generic name rather than an internal tool name. The
+// English catalog mirrors COPILOT_TOOL_LABELS; other locales translate it.
 export function copilotToolLabel(name: string): string {
-  return COPILOT_TOOL_LABELS[name] ?? 'Copilot helper'
+  const key = COPILOT_TOOL_LABEL_KEYS[name]
+  return key ? t(key) : t('copilot.tools.fallback')
 }

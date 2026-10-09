@@ -8,16 +8,17 @@
           'bg-status-error-bg text-loss': listingStatus === 'unavailable',
           'bg-status-warning-bg text-warning': listingStatus === 'unknown',
         }"
-      >{{ listingStatus === 'available' ? 'Available' : listingStatus === 'unavailable' ? 'Unavailable' : 'Unknown' }}</span>
-      <button class="btn btn-ghost btn-xs" @click="handleDismiss">Dismiss</button>
+      >{{ listingStatus === 'available' ? t('coinCard.available') : listingStatus === 'unavailable' ? t('coinCard.unavailable') : t('coinCard.unknown') }}</span>
+      <button class="btn btn-ghost btn-xs" @click="handleDismiss">{{ t('common.dismiss') }}</button>
     </div>
     <p v-if="listingCheckReason" class="my-1 text-chip text-text-secondary">{{ listingCheckReason }}</p>
-    <p v-if="listingCheckedAt" class="m-0 text-sm text-text-muted">Last checked: {{ formatDate(listingCheckedAt) }}</p>
+    <p v-if="listingCheckedAt" class="m-0 text-sm text-text-muted">{{ t('coinDetail.listing.lastChecked', { date: formatDate(listingCheckedAt) }) }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { updateListingStatus } from '@/api/client'
+import { intlLocale, t } from '@/i18n'
 
 const props = defineProps<{
   coinId: number
@@ -31,7 +32,7 @@ const emit = defineEmits<{
 }>()
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(undefined, {
+  return new Date(dateStr).toLocaleDateString(intlLocale(), {
     month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 }

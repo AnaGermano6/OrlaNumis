@@ -1,15 +1,15 @@
 <template>
   <div class="container mint-map-page">
-    <DesktopPageContext title="Map of Coins">
+    <DesktopPageContext :title="t('map.title')">
       <template #actions>
-        <AppIconButton to="/stats" title="Back to Stats"><ArrowLeft :size="20" /></AppIconButton>
+        <AppIconButton to="/stats" :title="t('stats.backToStats')"><ArrowLeft :size="20" /></AppIconButton>
       </template>
       <header class="page-header mint-map-header">
         <div>
-          <p class="section-label">Collection Insights</p>
-          <h1>Map of Coins</h1>
+          <p class="section-label">{{ t('stats.insights') }}</p>
+          <h1>{{ t('map.title') }}</h1>
         </div>
-        <router-link class="back-button" to="/stats" aria-label="Back to Stats">
+        <router-link class="back-button" to="/stats" :aria-label="t('stats.backToStats')">
           <ArrowLeft :size="20" />
         </router-link>
       </header>
@@ -17,29 +17,29 @@
 
     <div v-if="loading" class="loading-card card" role="status">
       <div class="spinner"></div>
-      <span>Loading collection mints...</span>
+      <span>{{ t('map.loading') }}</span>
     </div>
 
     <div v-else-if="errorMessage" class="state-card card" role="alert">
-      <h2>Mint map unavailable</h2>
+      <h2>{{ t('map.unavailable') }}</h2>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn-primary" type="button" @click="loadMapData">Try Again</button>
+      <button class="btn btn-primary" type="button" @click="loadMapData">{{ t('common.tryAgain') }}</button>
     </div>
 
     <div v-else-if="!mintLocations.length" class="state-card card" role="alert">
-      <h2>No mint locations configured</h2>
-      <p>Ask an administrator to add global mint locations before using the map.</p>
+      <h2>{{ t('map.noLocations') }}</h2>
+      <p>{{ t('map.noLocationsBody') }}</p>
     </div>
 
     <div v-else-if="!collectionCoins.length" class="state-card card">
-      <h2>No active coins to map</h2>
-      <p>Add coins with mint values, or return after your collection has loaded.</p>
-      <router-link class="btn btn-primary" to="/add">Add Coin</router-link>
+      <h2>{{ t('map.noCoins') }}</h2>
+      <p>{{ t('map.noCoinsBody') }}</p>
+      <router-link class="btn btn-primary" to="/add">{{ t('nav.addCoin') }}</router-link>
     </div>
 
     <template v-else>
-      <section class="summary-row" aria-label="Mint map summary">
-        <span class="summary-label">Mapped Coins:</span>
+      <section class="summary-row" :aria-label="t('map.summary')">
+        <span class="summary-label">{{ t('map.mappedCoins') }}</span>
         <strong class="mapped-count">{{ mappedCoinCount }}</strong>
       </section>
 
@@ -77,6 +77,7 @@ import { UNKNOWN_MINT_ID, groupCoinsByMint, type MintGroup } from '@/utils/mintM
 import type { Coin, MintLocation } from '@/types'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import { t } from '@/i18n'
 
 const MAP_PAGE_LIMIT = 100
 
@@ -97,7 +98,7 @@ const unknownGroup = computed((): MintGroup | null => {
   ]
   if (!allCoins.length) return null
   return {
-    mint: { id: UNKNOWN_MINT_ID, displayName: 'Unknown Mint', lat: 0, lng: 0, aliases: [], region: '' },
+    mint: { id: UNKNOWN_MINT_ID, displayName: t('map.unknownMint'), lat: 0, lng: 0, aliases: [], region: '' },
     coins: allCoins,
     count: allCoins.length,
   }
@@ -157,7 +158,7 @@ async function loadMapData() {
     mintLocations.value = unwrapMintLocations(locationsRes.data)
   } catch {
     mintLocations.value = []
-    errorMessage.value = 'Mint locations could not be loaded. Check your connection and try again.'
+    errorMessage.value = t('map.locationsFailed')
   } finally {
     mintLocationsLoading.value = false
   }
@@ -169,7 +170,7 @@ async function loadMapData() {
     collectionCoins.value = await fetchAllActiveCollectionCoins()
   } catch {
     collectionCoins.value = []
-    errorMessage.value = 'The active collection could not be loaded. Check your connection and try again.'
+    errorMessage.value = t('map.collectionFailed')
   } finally {
     coinsLoading.value = false
   }

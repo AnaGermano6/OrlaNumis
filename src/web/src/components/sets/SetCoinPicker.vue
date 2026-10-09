@@ -1,26 +1,26 @@
 <template>
   <div class="form-group">
-    <label :for="searchId" class="form-label">Search coins</label>
-    <input :id="searchId" v-model="search" type="search" class="form-input" placeholder="Search by name, ruler, denomination, or mint" />
+    <label :for="searchId" class="form-label">{{ t('sets.picker.search') }}</label>
+    <input :id="searchId" v-model="search" type="search" class="form-input" :placeholder="t('sets.picker.searchPlaceholder')" />
   </div>
   <div class="form-group">
-    <label :for="selectId" class="form-label">Coin</label>
+    <label :for="selectId" class="form-label">{{ t('sets.picker.coin') }}</label>
     <select :id="selectId" :value="modelValue ?? ''" class="form-select" required @change="selectCoin">
-      <option value="" disabled>Select a coin...</option>
+      <option value="" disabled>{{ t('sets.picker.select') }}</option>
       <option v-for="coin in options" :key="coin.id" :value="coin.id">
         {{ coin.name }}<template v-if="coin.ruler"> - {{ coin.ruler }}</template>
       </option>
     </select>
-    <p v-if="loading" class="mt-2 text-chip text-text-secondary" role="status">Loading coins...</p>
+    <p v-if="loading" class="mt-2 text-chip text-text-secondary" role="status">{{ t('sets.picker.loading') }}</p>
     <div v-else-if="error" class="mt-2" role="alert">
       <p>{{ error }}</p>
-      <button type="button" class="btn btn-secondary btn-sm" @click="load">Retry</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="load">{{ t('common.retry') }}</button>
     </div>
-    <p v-else-if="pageCoins.length === 0" class="mt-2 text-chip text-text-secondary">No eligible coins on this page.</p>
-    <div class="mt-3 flex items-center justify-between gap-2" aria-label="Coin search pages">
-      <button type="button" class="btn btn-secondary btn-sm" :disabled="loading || page <= 1" @click="page--">&lt; Previous</button>
-      <span class="text-chip text-text-secondary">Page {{ page }} of {{ pages }} ({{ total }} matches)</span>
-      <button type="button" class="btn btn-secondary btn-sm" :disabled="loading || page >= pages" @click="page++">Next &gt;</button>
+    <p v-else-if="pageCoins.length === 0" class="mt-2 text-chip text-text-secondary">{{ t('sets.picker.noneEligible') }}</p>
+    <div class="mt-3 flex items-center justify-between gap-2" :aria-label="t('sets.picker.pages')">
+      <button type="button" class="btn btn-secondary btn-sm" :disabled="loading || page <= 1" @click="page--">&lt; {{ t('common.previous') }}</button>
+      <span class="text-chip text-text-secondary">{{ t('sets.picker.pageOf', { page, pages, total }) }}</span>
+      <button type="button" class="btn btn-secondary btn-sm" :disabled="loading || page >= pages" @click="page++">{{ t('common.next') }} &gt;</button>
     </div>
   </div>
 </template>
@@ -29,6 +29,7 @@
 import { computed, onScopeDispose, ref, watch } from 'vue'
 import { getCoins } from '@/api/client'
 import type { Coin } from '@/types'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   modelValue: number | null
@@ -81,7 +82,7 @@ async function load() {
     results.value = response.data.coins
     total.value = response.data.total
   } catch {
-    if (current === request) error.value = 'Unable to load coins. Please try again.'
+    if (current === request) error.value = t('sets.picker.loadFailed')
   } finally {
     if (current === request) loading.value = false
   }

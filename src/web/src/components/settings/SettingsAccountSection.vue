@@ -1,15 +1,15 @@
 ﻿<template>
   <section class="card text-text-primary">
-    <h2 class="mb-5 border-b border-border-subtle pb-3 text-lg text-heading">Account</h2>
+    <h2 class="mb-5 border-b border-border-subtle pb-3 text-lg text-heading">{{ t('settings.tabs.account') }}</h2>
 
     <!-- Avatar -->
     <div class="flex items-center justify-between gap-4 border-b border-border-subtle py-3 last:border-0">
       <div class="shrink-0">
-        <AuthenticatedImage :media-path="avatarUrl" alt="Avatar" class="h-16 w-16 rounded-full border-2 border-gold-dim object-cover" />
+        <AuthenticatedImage :media-path="avatarUrl" :alt="t('settings.account.avatar')" class="h-16 w-16 rounded-full border-2 border-gold-dim object-cover" />
       </div>
       <div class="flex flex-wrap gap-2">
         <label class="btn btn-secondary btn-sm cursor-pointer focus-within:outline-2 focus-within:outline-gold focus-within:outline-offset-2">
-          Upload Avatar
+          {{ t('settings.account.uploadAvatar') }}
           <input type="file" accept="image/*" hidden @change="handleAvatarUpload" />
         </label>
         <button
@@ -17,61 +17,61 @@
           class="btn btn-danger btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
           @click="handleAvatarDelete"
         >
-          Remove
+          {{ t('common.remove') }}
         </button>
       </div>
     </div>
 
     <div class="flex items-center justify-between gap-4 border-b border-border-subtle py-3 last:border-0">
       <div class="flex flex-col gap-[0.15rem]">
-        <span class="text-base font-medium">Username</span>
+        <span class="text-base font-medium">{{ t('auth.username') }}</span>
         <span class="text-base text-text-secondary">{{ auth.user?.username }}</span>
       </div>
     </div>
     <div class="flex items-center justify-between gap-4 border-b border-border-subtle py-3 last:border-0">
       <div class="flex flex-col gap-[0.15rem]">
-        <span class="text-base font-medium">Role</span>
+        <span class="text-base font-medium">{{ t('settings.account.role') }}</span>
         <span class="badge text-base text-text-secondary" :class="`badge-${auth.user?.role === 'admin' ? 'roman' : 'modern'}`">
-          {{ auth.user?.role }}
+          {{ roleLabel }}
         </span>
       </div>
     </div>
 
     <!-- Profile / Social Settings -->
-    <h3 class="mb-3 mt-5 text-base text-text-secondary">Profile</h3>
+    <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.account.profile') }}</h3>
     <div class="form-group">
-      <label class="form-label">Email</label>
+      <label class="form-label">{{ t('auth.email') }}</label>
       <input v-model="profileEmail" type="email" class="form-input" placeholder="you@example.com" />
     </div>
     <div class="form-group">
-      <label class="form-label">Bio</label>
-      <input v-model="profileBio" class="form-input" placeholder="Tell collectors about yourself..." maxlength="200" />
+      <label class="form-label">{{ t('settings.account.bio') }}</label>
+      <input v-model="profileBio" class="form-input" :placeholder="t('settings.account.bioPlaceholder')" maxlength="200" />
     </div>
     <div class="form-group">
-      <label class="form-label">ZIP Code</label>
-      <input v-model="profileZipCode" class="form-input" placeholder="e.g. 90210" maxlength="10" />
-      <span class="mt-1 block text-chip text-text-muted">Used by the Agent to find nearby coin shows and dealers</span>
+      <label class="form-label">{{ t('settings.account.zip') }}</label>
+      <input v-model="profileZipCode" class="form-input" :placeholder="t('settings.account.zipPlaceholder')" maxlength="10" />
+      <span class="mt-1 block text-chip text-text-muted">{{ t('settings.account.zipHint') }}</span>
     </div>
 
     <template v-if="showConnections">
-      <h3 class="mb-3 mt-5 text-base text-text-secondary">NumisBids Integration</h3>
+      <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.connections.numisbids.title') }}</h3>
       <p class="mb-3 text-sm text-text-muted">
-        Connect your NumisBids account for watchlist/import tracking. Won/lost outcomes, winning bids, and max bids should be checked on NumisBids and updated manually.
+        {{ t('settings.connections.numisbids.intro') }}
       </p>
       <div class="form-group">
-        <label class="form-label">NumisBids Username</label>
-        <input v-model="nbUsername" class="form-input" placeholder="Your NumisBids username" autocomplete="off" />
+        <label class="form-label">{{ t('settings.connections.numisbids.username') }}</label>
+        <input v-model="nbUsername" class="form-input" :placeholder="t('settings.connections.numisbids.usernamePlaceholder')" autocomplete="off" />
       </div>
       <div class="form-group">
-        <label class="form-label">NumisBids Password</label>
-        <input v-model="nbPassword" type="password" class="form-input" placeholder="Your NumisBids password" autocomplete="new-password" />
-        <span class="mt-1 block text-chip text-text-muted">Encrypted at rest on the server. Used only for NumisBids watchlist/import tracking; legacy stored passwords migrate on next save or sync.</span>
+        <label class="form-label">{{ t('settings.connections.numisbids.password') }}</label>
+        <input v-model="nbPassword" type="password" class="form-input" :placeholder="t('settings.connections.numisbids.passwordPlaceholder')" autocomplete="new-password" />
+        <span class="mt-1 block text-chip text-text-muted">{{ t('settings.connections.numisbids.passwordHint') }}</span>
       </div>
       <div
         v-if="nbValidating"
         class="mt-1 rounded-sm border border-[color-mix(in_srgb,var(--text-warning)_20%,transparent)] bg-[color-mix(in_srgb,var(--text-warning)_10%,transparent)] px-3 py-[0.4rem] text-chip text-warning"
       >
-        Validating NumisBids credentials...
+        {{ t('settings.connections.numisbids.validating') }}
       </div>
       <div
         v-else-if="nbValidationError"
@@ -83,27 +83,27 @@
         v-else-if="auth.user?.numisBidsConfigured"
         class="mt-1 rounded-sm border border-[color-mix(in_srgb,var(--color-positive)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-positive)_10%,transparent)] px-3 py-[0.4rem] text-chip text-gain"
       >
-        NumisBids account connected
+        {{ t('settings.connections.numisbids.connected') }}
       </div>
 
-      <h3 class="mb-3 mt-5 text-base text-text-secondary">CNG Auctions Integration</h3>
+      <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.connections.cng.title') }}</h3>
       <p class="mb-3 text-sm text-text-muted">
-        Connect your CNG Auctions account to sync watched lots and auto-detect hosted-auction outcomes where CNG provides the data.
+        {{ t('settings.connections.cng.intro') }}
       </p>
       <div class="form-group">
-        <label class="form-label">CNG Username</label>
-        <input v-model="cngUsername" class="form-input" placeholder="Your CNG username or email" autocomplete="off" />
+        <label class="form-label">{{ t('settings.connections.cng.username') }}</label>
+        <input v-model="cngUsername" class="form-input" :placeholder="t('settings.connections.cng.usernamePlaceholder')" autocomplete="off" />
       </div>
       <div class="form-group">
-        <label class="form-label">CNG Password</label>
-        <input v-model="cngPassword" type="password" class="form-input" placeholder="Your CNG password" autocomplete="new-password" />
-        <span class="mt-1 block text-chip text-text-muted">Encrypted at rest on the server. Used for CNG watched-lot sync and available hosted bid/outcome data; legacy stored passwords migrate on next save or sync.</span>
+        <label class="form-label">{{ t('settings.connections.cng.password') }}</label>
+        <input v-model="cngPassword" type="password" class="form-input" :placeholder="t('settings.connections.cng.passwordPlaceholder')" autocomplete="new-password" />
+        <span class="mt-1 block text-chip text-text-muted">{{ t('settings.connections.cng.passwordHint') }}</span>
       </div>
       <div
         v-if="cngValidating"
         class="mt-1 rounded-sm border border-[color-mix(in_srgb,var(--text-warning)_20%,transparent)] bg-[color-mix(in_srgb,var(--text-warning)_10%,transparent)] px-3 py-[0.4rem] text-chip text-warning"
       >
-        Validating CNG credentials...
+        {{ t('settings.connections.cng.validating') }}
       </div>
       <div
         v-else-if="cngValidationError"
@@ -115,46 +115,46 @@
         v-else-if="auth.user?.cngConfigured"
         class="mt-1 rounded-sm border border-[color-mix(in_srgb,var(--color-positive)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-positive)_10%,transparent)] px-3 py-[0.4rem] text-chip text-gain"
       >
-        CNG account connected
+        {{ t('settings.connections.cng.connected') }}
       </div>
 
-      <h3 class="mb-3 mt-5 text-base text-text-secondary">ParcelApp Integration</h3>
+      <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.connections.parcel.title') }}</h3>
       <p class="mb-3 text-sm text-text-muted">
-        Connect ParcelApp so shipment tracking can be created from a tracking number and synced automatically when the admin setting is enabled.
+        {{ t('settings.connections.parcel.intro') }}
       </p>
       <div class="form-group">
-        <label class="form-label">ParcelApp API Key</label>
-        <input v-model="parcelAppAPIKey" type="password" class="form-input" placeholder="Your ParcelApp API key" autocomplete="new-password" />
-        <span class="mt-1 block text-chip text-text-muted">Generate this at web.parcelapp.net. The key is encrypted at rest and only used for your shipments.</span>
+        <label class="form-label">{{ t('settings.connections.parcel.key') }}</label>
+        <input v-model="parcelAppAPIKey" type="password" class="form-input" :placeholder="t('settings.connections.parcel.keyPlaceholder')" autocomplete="new-password" />
+        <span class="mt-1 block text-chip text-text-muted">{{ t('settings.connections.parcel.keyHint') }}</span>
       </div>
       <div
         v-if="auth.user?.parcelAppConfigured"
         class="mt-1 rounded-sm border border-[color-mix(in_srgb,var(--color-positive)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-positive)_10%,transparent)] px-3 py-[0.4rem] text-chip text-gain"
       >
-        ParcelApp key connected
+        {{ t('settings.connections.parcel.connected') }}
       </div>
 
-      <h3 class="mb-3 mt-5 text-base text-text-secondary">Pushover Notifications</h3>
+      <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.connections.pushover.title') }}</h3>
       <p class="mb-3 text-sm text-text-muted">
-        Receive push notifications on your phone when wishlist items become unavailable or friends add new coins.
+        {{ t('settings.connections.pushover.intro') }}
       </p>
       <div class="form-group">
-        <label class="form-label">Pushover User Key</label>
-        <input v-model="pushoverKey" type="password" class="form-input" placeholder="Your Pushover User Key" autocomplete="off" />
-        <span class="mt-1 block text-chip text-text-muted">Find your User Key in the Pushover app or dashboard.</span>
+        <label class="form-label">{{ t('settings.connections.pushover.key') }}</label>
+        <input v-model="pushoverKey" type="password" class="form-input" :placeholder="t('settings.connections.pushover.keyPlaceholder')" autocomplete="off" />
+        <span class="mt-1 block text-chip text-text-muted">{{ t('settings.connections.pushover.keyHint') }}</span>
       </div>
       <div
         v-if="auth.user?.pushoverEnabled"
         class="mb-2 mt-1 rounded-sm border border-[color-mix(in_srgb,var(--color-positive)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-positive)_10%,transparent)] px-3 py-[0.4rem] text-chip text-gain"
       >
-        Pushover notifications active
+        {{ t('settings.connections.pushover.active') }}
       </div>
       <button
         class="btn btn-secondary btn-sm mb-1 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
         :disabled="pushoverTesting || !auth.user?.pushoverEnabled"
         @click="handleTestPushover"
       >
-        {{ pushoverTesting ? 'Sending...' : 'Test Notification' }}
+        {{ pushoverTesting ? t('settings.connections.pushover.sending') : t('settings.connections.pushover.test') }}
       </button>
       <p
         v-if="pushoverTestMsg"
@@ -166,77 +166,77 @@
     </template>
     <div class="flex items-center justify-between gap-4 border-b border-border-subtle py-3 last:border-0">
       <div class="flex flex-col gap-[0.15rem]">
-        <span class="text-base font-medium">Public Collection</span>
-        <span class="text-sm text-text-muted">Allow other users to follow you and view your coins</span>
+        <span class="text-base font-medium">{{ t('settings.account.publicCollection') }}</span>
+        <span class="text-sm text-text-muted">{{ t('settings.account.publicHint') }}</span>
       </div>
       <BaseToggle
-        label="Public Collection"
+        :label="t('settings.account.publicCollection')"
         :model-value="profilePublic"
         @change="onPublicToggle"
       />
     </div>
     <div class="flex items-center justify-between gap-4 border-b border-border-subtle py-3 last:border-0">
       <div class="flex flex-col gap-[0.15rem]">
-        <span class="text-base font-medium">Coin of the Day</span>
-        <span class="text-sm text-text-muted">Receive a daily featured coin notification from your collection</span>
+        <span class="text-base font-medium">{{ t('featured.title') }}</span>
+        <span class="text-sm text-text-muted">{{ t('settings.account.coinOfDayHint') }}</span>
       </div>
       <BaseToggle
-        label="Coin of the Day"
+        :label="t('featured.title')"
         v-model="coinOfDayEnabled"
       />
     </div>
     <div v-if="coinOfDayEnabled" class="flex items-center justify-between gap-4 border-b border-border-subtle py-3 pl-4 last:border-0">
       <div class="flex flex-col gap-[0.15rem]">
-        <span class="text-sm font-medium">Include wishlist items</span>
-        <span class="text-xs text-text-muted">Coin of the Day may also feature coins from your wishlist, not just owned coins</span>
+        <span class="text-sm font-medium">{{ t('settings.account.includeWishlist') }}</span>
+        <span class="text-xs text-text-muted">{{ t('settings.account.includeWishlistHint') }}</span>
       </div>
       <BaseToggle
         size="sm"
-        label="Include wishlist items"
+        :label="t('settings.account.includeWishlist')"
         v-model="coinOfDayIncludeWishlist"
       />
     </div>
     <div class="flex items-center justify-between gap-4 border-b border-border-subtle py-3 last:border-0">
       <div class="flex flex-col gap-[0.15rem]">
-        <span class="text-base font-medium">Emperor Tracker</span>
-        <span class="text-sm text-text-muted">Track your collection's progress toward every Roman Emperor, under Stats</span>
+        <span class="text-base font-medium">{{ t('coinForm.emperorTracker') }}</span>
+        <span class="text-sm text-text-muted">{{ t('settings.account.emperorHint') }}</span>
       </div>
       <BaseToggle
-        label="Emperor Tracker"
+        :label="t('coinForm.emperorTracker')"
         v-model="emperorTrackerEnabled"
       />
     </div>
     <template v-if="emperorTrackerEnabled">
       <div class="flex items-center justify-between gap-4 border-b border-border-subtle py-3 pl-4 last:border-0">
         <div class="flex flex-col gap-[0.15rem]">
-          <span class="text-sm font-medium">Also track usurpers</span>
-          <span class="text-xs text-text-muted">Track completion of coins from usurpers/pretenders, as a separate goal</span>
+          <span class="text-sm font-medium">{{ t('settings.account.trackUsurpers') }}</span>
+          <span class="text-xs text-text-muted">{{ t('settings.account.trackUsurpersHint') }}</span>
         </div>
         <BaseToggle
           size="sm"
-          label="Also track usurpers"
+          :label="t('settings.account.trackUsurpers')"
           v-model="emperorTrackerShowUsurpers"
         />
       </div>
       <div class="flex items-center justify-between gap-4 border-b border-border-subtle py-3 pl-4 last:border-0">
         <div class="flex flex-col gap-[0.15rem]">
-          <span class="text-sm font-medium">Also track empresses</span>
-          <span class="text-xs text-text-muted">Track completion of coins from empresses, as a separate goal</span>
+          <span class="text-sm font-medium">{{ t('settings.account.trackEmpresses') }}</span>
+          <span class="text-xs text-text-muted">{{ t('settings.account.trackEmpressesHint') }}</span>
         </div>
         <BaseToggle
           size="sm"
-          label="Also track empresses"
+          :label="t('settings.account.trackEmpresses')"
           v-model="emperorTrackerShowEmpresses"
         />
       </div>
       <div class="flex items-center justify-between gap-4 border-b border-border-subtle py-3 pl-4 last:border-0">
         <div class="flex flex-col gap-[0.15rem]">
-          <span class="text-sm font-medium">Also track other figures</span>
-          <span class="text-xs text-text-muted">Track completion of Caesars who never acceded and other precursor figures, as a separate goal</span>
+          <span class="text-sm font-medium">{{ t('settings.account.trackOther') }}</span>
+          <span class="text-xs text-text-muted">{{ t('settings.account.trackOtherHint') }}</span>
         </div>
         <BaseToggle
           size="sm"
-          label="Also track other figures"
+          :label="t('settings.account.trackOther')"
           v-model="emperorTrackerShowOtherFigures"
         />
       </div>
@@ -257,38 +257,39 @@
         <div class="card w-full max-w-[440px]">
           <div class="border-b border-border-subtle px-5 py-4">
             <h2 class="m-0 flex items-center gap-2 text-base text-heading">
-              Make Collection Private?
+              {{ t('settings.account.makePrivateTitle') }}
             </h2>
           </div>
           <div class="p-5">
             <p class="mb-3 mt-0 leading-6 text-text-secondary">
-              Setting your profile to private will <strong class="text-text-primary">permanently remove all your followers</strong>.
-              They will need to send new follow requests if you make your profile public again.
+              <I18nT keypath="settings.account.makePrivateBody">
+                <template #strong><strong class="text-text-primary">{{ t('settings.account.removeFollowers') }}</strong></template>
+              </I18nT>
             </p>
             <p class="mb-4 mt-0 leading-6 text-text-secondary">
-              You will also be hidden from user search results.
+              {{ t('settings.account.hiddenFromSearch') }}
             </p>
             <div class="flex justify-end gap-3">
-              <button class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="cancelGoPrivate">Cancel</button>
-              <button class="btn btn-danger btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="confirmGoPrivate">Make Private</button>
+              <button class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="cancelGoPrivate">{{ t('common.cancel') }}</button>
+              <button class="btn btn-danger btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="confirmGoPrivate">{{ t('settings.account.makePrivate') }}</button>
             </div>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <h3 class="mb-3 mt-5 text-base text-text-secondary">Change Password</h3>
+    <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.account.changePassword') }}</h3>
     <form class="max-w-[350px]" @submit.prevent="handleChangePassword">
       <div class="form-group">
-        <label class="form-label">Current Password</label>
+        <label class="form-label">{{ t('settings.account.currentPassword') }}</label>
         <input v-model="currentPassword" type="password" class="form-input" required />
       </div>
       <div class="form-group">
-        <label class="form-label">New Password</label>
+        <label class="form-label">{{ t('settings.account.newPassword') }}</label>
         <input v-model="newPassword" type="password" class="form-input" required minlength="6" />
       </div>
       <div class="form-group">
-        <label class="form-label">Confirm New Password</label>
+        <label class="form-label">{{ t('settings.account.confirmNewPassword') }}</label>
         <input v-model="confirmPassword" type="password" class="form-input" required />
       </div>
       <p v-if="passwordMsg" class="my-2 text-body text-gold" :class="{ 'text-loss': passwordError }">{{ passwordMsg }}</p>
@@ -297,13 +298,13 @@
         class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
         :disabled="passwordLoading"
       >
-        {{ passwordLoading ? 'Changing...' : 'Change Password' }}
+        {{ passwordLoading ? t('settings.account.changing') : t('settings.account.changePassword') }}
       </button>
     </form>
 
-    <h3 class="mb-3 mt-5 text-base text-text-secondary">Connected Sign-in Providers</h3>
+    <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.account.providers') }}</h3>
     <p class="mt-2 text-sm text-text-muted">
-      Link an external provider after signing in locally. This avoids unsafe automatic account merges.
+      {{ t('settings.account.providersHint') }}
     </p>
 
     <div v-if="oidcMsg" class="my-2 text-body text-gold" :class="{ 'text-loss': oidcError }" role="status">
@@ -311,7 +312,7 @@
     </div>
 
     <div v-if="oidcLoading" class="my-2 text-body text-gold">
-      Loading linked providers...
+      {{ t('settings.account.loadingProviders') }}
     </div>
     <div v-else>
       <div v-if="oidcIdentities.length" class="mt-4 flex flex-col gap-3">
@@ -327,15 +328,15 @@
                 class="chip-sm"
                 :class="identity.emailVerified ? 'border-[var(--color-positive)] text-gain' : 'border-[var(--color-negative)] text-loss'"
               >
-                {{ identity.emailVerified ? 'Email verified' : 'Email unverified' }}
+                {{ identity.emailVerified ? t('settings.account.emailVerified') : t('settings.account.emailUnverified') }}
               </span>
             </div>
-            <span class="text-sm text-text-muted [overflow-wrap:anywhere]">Issuer: {{ identity.issuer }}</span>
-            <span class="text-sm text-text-muted [overflow-wrap:anywhere]">Subject: {{ identity.subjectPreview }}</span>
-            <span class="text-sm text-text-muted [overflow-wrap:anywhere]">Email: {{ identity.email }}</span>
+            <span class="text-sm text-text-muted [overflow-wrap:anywhere]">{{ t('settings.account.issuer', { value: identity.issuer }) }}</span>
+            <span class="text-sm text-text-muted [overflow-wrap:anywhere]">{{ t('settings.account.subject', { value: identity.subjectPreview }) }}</span>
+            <span class="text-sm text-text-muted [overflow-wrap:anywhere]">{{ t('settings.account.emailValue', { value: identity.email }) }}</span>
             <span class="text-sm text-text-muted [overflow-wrap:anywhere]">
-              Linked {{ formatDateTime(identity.createdAt) }}
-              <template v-if="identity.lastLoginAt"> · Last login {{ formatDateTime(identity.lastLoginAt) }}</template>
+              {{ t('settings.account.linked', { date: formatDateTime(identity.createdAt) }) }}
+              <template v-if="identity.lastLoginAt"> · {{ t('settings.account.lastLogin', { date: formatDateTime(identity.lastLoginAt) }) }}</template>
             </span>
           </div>
           <button
@@ -343,11 +344,11 @@
             :disabled="unlinkingIdentityId === identity.id"
             @click="handleUnlinkIdentity(identity.id, identity.providerDisplayName)"
           >
-            {{ unlinkingIdentityId === identity.id ? 'Unlinking...' : 'Unlink' }}
+            {{ unlinkingIdentityId === identity.id ? t('settings.account.unlinking') : t('settings.account.unlink') }}
           </button>
         </div>
       </div>
-      <p v-else class="mt-2 text-sm text-text-muted">No external sign-in providers linked.</p>
+      <p v-else class="mt-2 text-sm text-text-muted">{{ t('settings.account.noProviders') }}</p>
 
       <div v-if="linkableProviders.length" class="mt-3 flex flex-wrap gap-2">
         <button
@@ -359,18 +360,18 @@
           @click="handleLinkProvider(provider.id, provider.displayName)"
         >
           <LinkIcon :size="16" aria-hidden="true" />
-          {{ linkingProviderId === provider.id ? 'Starting...' : `Link ${provider.displayName}` }}
+          {{ linkingProviderId === provider.id ? t('settings.account.starting') : t('settings.account.linkProvider', { name: provider.displayName }) }}
         </button>
       </div>
       <p v-else-if="!oidcProviders.length" class="mt-2 text-sm text-text-muted">
-        No enabled OIDC providers are available for linking.
+        {{ t('settings.account.noOidc') }}
       </p>
     </div>
 
     <template v-if="supportsWebAuthn">
-      <h3 class="mb-3 mt-5 text-base text-text-secondary">Biometric Login</h3>
+      <h3 class="mb-3 mt-5 text-base text-text-secondary">{{ t('settings.account.biometric') }}</h3>
       <p class="mb-3 text-sm text-text-muted">
-        Register Face ID, Touch ID, or fingerprint for quick sign-in on this device.
+        {{ t('settings.account.biometricHint') }}
       </p>
 
       <button
@@ -379,7 +380,7 @@
         @click="handleRegisterCredential"
       >
         <LockKeyhole v-if="!registeringCredential" :size="16" aria-hidden="true" />
-        {{ registeringCredential ? 'Registering...' : 'Register Biometric' }}
+        {{ registeringCredential ? t('settings.account.registering') : t('settings.account.registerBiometric') }}
       </button>
       <p v-if="credentialMsg" class="mt-2 text-body text-gold" :class="{ 'text-loss': credentialError }">{{ credentialMsg }}</p>
 
@@ -391,14 +392,14 @@
         >
           <div class="flex min-w-0 flex-col gap-[0.1rem]">
             <span class="text-base font-medium">{{ cred.name }}</span>
-            <span class="text-sm text-text-muted">Registered {{ formatDate(cred.createdAt) }}</span>
+            <span class="text-sm text-text-muted">{{ t('settings.account.registered', { date: formatDate(cred.createdAt) }) }}</span>
           </div>
           <button class="btn btn-danger btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="handleDeleteCredential(cred.id)">
-            Remove
+            {{ t('common.remove') }}
           </button>
         </div>
       </div>
-      <p v-else-if="!registeringCredential" class="mt-2 text-sm text-text-muted">No biometric credentials registered.</p>
+      <p v-else-if="!registeringCredential" class="mt-2 text-sm text-text-muted">{{ t('settings.account.noBiometric') }}</p>
     </template>
   </section>
 </template>
@@ -415,6 +416,8 @@ import {
 import { useDialog } from '@/composables/useDialog'
 import { useSettingsProfile } from '@/composables/useSettingsProfile'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
+import I18nT from '@/components/I18nT.vue'
+import { t, intlLocale } from '@/i18n'
 import type { OIDCLinkedIdentity, OIDCPublicProvider, WebAuthnCredentialInfo } from '@/types'
 import { Link as LinkIcon, LockKeyhole } from 'lucide-vue-next'
 
@@ -459,11 +462,18 @@ const linkableProviders = computed(() => {
   return oidcProviders.value.filter(provider => !linkedProviderIds.has(provider.id))
 })
 
+const roleLabel = computed(() => {
+  const role = auth.user?.role
+  if (role === 'admin') return t('settings.account.roles.admin')
+  if (role === 'user') return t('settings.account.roles.user')
+  return role
+})
+
 const saveDisabled = computed(() => profileSaving.value || (props.showConnections && (nbValidating.value || cngValidating.value)))
 const saveLabel = computed(() => {
-  if (props.showConnections && (nbValidating.value || cngValidating.value)) return 'Validating...'
-  if (profileSaving.value) return 'Saving...'
-  return 'Save Profile'
+  if (props.showConnections && (nbValidating.value || cngValidating.value)) return t('settings.connections.validating')
+  if (profileSaving.value) return t('common.saving')
+  return t('settings.account.saveProfile')
 })
 
 async function loadOIDCAccounts() {
@@ -476,7 +486,7 @@ async function loadOIDCAccounts() {
     oidcIdentities.value = identitiesResponse.data.identities ?? []
     oidcProviders.value = providersResponse.data.providers ?? []
   } catch (error: unknown) {
-    oidcMsg.value = getApiErrorMessage(error) || 'Failed to load linked sign-in providers.'
+    oidcMsg.value = getApiErrorMessage(error) || t('settings.account.providersLoadFailed')
     oidcError.value = true
   } finally {
     oidcLoading.value = false
@@ -494,7 +504,7 @@ async function handleLinkProvider(providerId: number, displayName: string) {
     })
     const authorizationUrl = response.data.authorizationUrl
     if (!authorizationUrl) {
-      oidcMsg.value = `${displayName} did not return an authorization URL. Ask an administrator to test the provider.`
+      oidcMsg.value = t('settings.account.noAuthUrl', { name: displayName })
       oidcError.value = true
       return
     }
@@ -509,8 +519,8 @@ async function handleLinkProvider(providerId: number, displayName: string) {
 
 async function handleUnlinkIdentity(identityId: number, displayName: string) {
   const confirmed = await showConfirm(
-    `Unlink ${displayName} from your account?`,
-    { title: 'Unlink Sign-in Provider', variant: 'danger' },
+    t('settings.account.confirmUnlink', { name: displayName }),
+    { title: t('settings.account.unlinkTitle'), variant: 'danger' },
   )
   if (!confirmed) return
 
@@ -520,7 +530,7 @@ async function handleUnlinkIdentity(identityId: number, displayName: string) {
   try {
     await deleteOIDCIdentity(identityId)
     await loadOIDCAccounts()
-    oidcMsg.value = `${displayName} unlinked.`
+    oidcMsg.value = t('settings.account.unlinked', { name: displayName })
   } catch (error: unknown) {
     oidcMsg.value = mapOIDCAccountError(error, 'unlink')
     oidcError.value = true
@@ -536,28 +546,28 @@ function mapOIDCAccountError(error: unknown, action: 'link' | 'unlink') {
 
   if (response?.status === 409 && action === 'link') {
     if (normalized.includes('another user') || normalized.includes('already linked')) {
-      return 'This provider account is already linked to another user. Sign in with a different provider account or ask an administrator for help.'
+      return t('settings.account.errors.linkedElsewhere')
     }
-    return 'This provider account cannot be linked automatically. Sign in locally with the intended account, then try linking again.'
+    return t('settings.account.errors.cannotLink')
   }
 
   if (response?.status === 409 && action === 'unlink') {
-    return 'This identity cannot be unlinked because your account would have no usable sign-in method. Add a password or another sign-in method first.'
+    return t('settings.account.errors.lastMethod')
   }
 
   if (response?.status === 404) {
-    return 'That linked identity was not found for your account. Refresh settings and try again.'
+    return t('settings.account.errors.notFound')
   }
 
   if (normalized.includes('state') || normalized.includes('claims') || response?.status === 400) {
-    return 'The provider response could not be validated. Start the linking flow again from Account Settings.'
+    return t('settings.account.errors.validation')
   }
 
   if (normalized.includes('configuration') || normalized.includes('discovery') || response?.status === 500) {
-    return 'The sign-in provider is not configured correctly. Ask an administrator to test the provider settings.'
+    return t('settings.account.errors.misconfigured')
   }
 
-  return message || `Failed to ${action} OIDC identity.`
+  return message || (action === 'link' ? t('settings.account.errors.linkFailed') : t('settings.account.errors.unlinkFailed'))
 }
 
 function getErrorResponse(error: unknown): { status?: number } | null {
@@ -595,7 +605,7 @@ async function handleRegisterCredential() {
     const options = beginRes.data
     const publicKey = options.publicKey
     if (!publicKey?.challenge || !publicKey.user?.id) {
-      throw new Error('Biometric registration is temporarily unavailable. Missing challenge data.')
+      throw new Error(t('settings.account.errors.challenge'))
     }
 
     const publicKeyOptions: PublicKeyCredentialCreationOptions = {
@@ -623,10 +633,10 @@ async function handleRegisterCredential() {
 
     await webauthnRegisterFinish(credential)
 
-    credentialMsg.value = 'Biometric credential registered!'
+    credentialMsg.value = t('settings.account.credentialRegistered')
     await loadCredentials()
   } catch (e: unknown) {
-    credentialMsg.value = e instanceof Error ? e.message : 'Registration failed'
+    credentialMsg.value = e instanceof Error ? e.message : t('settings.account.registrationFailed')
     credentialError.value = true
   } finally {
     registeringCredential.value = false
@@ -634,24 +644,24 @@ async function handleRegisterCredential() {
 }
 
 async function handleDeleteCredential(id: number) {
-  if (!await showConfirm('Remove this biometric credential?', { title: 'Remove Credential' })) return
+  if (!await showConfirm(t('settings.account.confirmRemoveCredential'), { title: t('settings.account.removeCredentialTitle') })) return
   try {
     await webauthnDeleteCredential(id)
     await loadCredentials()
   } catch {
-    credentialMsg.value = 'Failed to remove credential'
+    credentialMsg.value = t('settings.account.removeCredentialFailed')
     credentialError.value = true
   }
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(undefined, {
+  return new Date(dateStr).toLocaleDateString(intlLocale(), {
     year: 'numeric', month: 'short', day: 'numeric',
   })
 }
 
 function formatDateTime(dateStr: string) {
-  return new Date(dateStr).toLocaleString(undefined, {
+  return new Date(dateStr).toLocaleString(intlLocale(), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

@@ -14,12 +14,12 @@
     >
       <div class="mb-4 flex items-center justify-between">
         <h3 :id="titleId" class="m-0 font-display text-lg font-medium text-heading">
-          {{ existingReminder ? 'Edit Reminder' : 'Set Reminder' }}
+          {{ existingReminder ? t('coinDetail.reminder.edit') : t('coinDetail.reminder.set') }}
         </h3>
         <button
           class="inline-flex h-8 w-8 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary"
-          title="Close"
-          aria-label="Close"
+          :title="t('common.close')"
+          :aria-label="t('common.close')"
           @click="handleClose"
         >
           <X :size="18" />
@@ -29,7 +29,7 @@
       <p class="mb-4 truncate text-base text-gold">{{ coinName }}</p>
 
       <div class="form-group">
-        <label :for="dateInputId" class="form-label">Remind Date</label>
+        <label :for="dateInputId" class="form-label">{{ t('coinDetail.reminder.remindDate') }}</label>
         <input
           :id="dateInputId"
           ref="dateInputEl"
@@ -54,15 +54,15 @@
           :disabled="saving"
           @click="handleCancel"
         >
-          Remove Reminder
+          {{ t('coinDetail.reminder.remove') }}
         </button>
-        <button class="btn btn-secondary btn-sm ml-auto" @click="handleClose">Close</button>
+        <button class="btn btn-secondary btn-sm ml-auto" @click="handleClose">{{ t('common.close') }}</button>
         <button
           class="btn btn-primary btn-sm"
           :disabled="saving || !selectedDate"
           @click="handleSubmit"
         >
-          {{ saving ? 'Saving...' : existingReminder ? 'Save Changes' : 'Set Reminder' }}
+          {{ saving ? t('common.saving') : existingReminder ? t('common.saveChanges') : t('coinDetail.reminder.set') }}
         </button>
       </div>
     </div>
@@ -74,6 +74,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { X } from 'lucide-vue-next'
 import type { PurchaseReminder } from '@/types/coin'
 import { todayDateString } from '@/composables/usePurchaseReminder'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   coinId: number
@@ -105,11 +106,11 @@ const saveError = computed(() => props.saveError ?? '')
 
 function validateDate(): boolean {
   if (!selectedDate.value) {
-    validationError.value = 'Please select a date.'
+    validationError.value = t('coinDetail.reminder.selectDate')
     return false
   }
   if (selectedDate.value < today) {
-    validationError.value = 'Reminder date must be today or in the future.'
+    validationError.value = t('coinDetail.reminder.futureDate')
     return false
   }
   validationError.value = ''

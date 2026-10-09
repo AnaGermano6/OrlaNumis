@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 const MAX_GALLERY_IMAGE_DIMENSION = 1920
 const GALLERY_JPEG_QUALITY = 0.85
 
@@ -5,7 +6,7 @@ function loadImage(source: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image()
     image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('The selected image could not be opened.'))
+    image.onerror = () => reject(new Error(t('imageErrors.open')))
     image.src = source
   })
 }
@@ -17,7 +18,7 @@ function canvasToJPEG(canvas: HTMLCanvasElement): Promise<Blob> {
         resolve(blob)
         return
       }
-      reject(new Error('The selected image could not be converted to JPEG.'))
+      reject(new Error(t('imageErrors.jpeg')))
     }, 'image/jpeg', GALLERY_JPEG_QUALITY)
   })
 }

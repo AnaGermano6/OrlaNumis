@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { withEnglishCopy } from '@/test/i18nSource'
 import PromotionReadinessPanel from '../PromotionReadinessPanel.vue'
 import { promoteQuickCaptureDraft } from '@/api/client'
 import type { QuickCaptureDraft, QuickCapturePromoteOverrides } from '@/types'
@@ -13,7 +14,7 @@ vi.mock('@/api/client', () => ({
 }))
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const source = fs.readFileSync(path.resolve(__dirname, '../PromotionReadinessPanel.vue'), 'utf8')
+const source = withEnglishCopy(fs.readFileSync(path.resolve(__dirname, '../PromotionReadinessPanel.vue'), 'utf8'))
 
 function draft(overrides: Partial<QuickCaptureDraft> = {}): QuickCaptureDraft {
   return {
@@ -73,7 +74,7 @@ describe('PromotionReadinessPanel', () => {
     expect(source).toContain('value="wishlist"')
     expect(source).toContain('target: target.value')
     expect(source).toContain('fieldErrors.target')
-    expect(source).toContain('Promote to ${destinationLabel}')
+    expect(source).toContain("t('quickCapture.promote.promoteToDestination', { destination: destinationLabel })")
   })
 
   it('does not duplicate editable draft fields in the promotion panel', () => {

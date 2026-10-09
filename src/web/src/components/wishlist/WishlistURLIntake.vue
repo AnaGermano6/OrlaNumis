@@ -7,26 +7,26 @@
       :aria-expanded="expanded"
       @click="expanded = !expanded"
     >
-      <Link :size="16" /> Add from URL
+      <Link :size="16" /> {{ t('wishlist.add.fromUrl') }}
     </button>
 
     <div v-if="expanded" class="url-intake-panel" :class="{ embedded }">
       <form class="url-row" @submit.prevent="analyze">
-        <label for="wishlist-url" class="sr-only">Public coin listing URL</label>
+        <label for="wishlist-url" class="sr-only">{{ t('wishlistUrl.listingUrl') }}</label>
         <input
           id="wishlist-url"
           v-model.trim="sourceURL"
           type="url"
           class="form-input min-w-0 flex-1"
-          placeholder="https://dealer.example/coin"
+          :placeholder="t('wishlistUrl.placeholder')"
           required
           :disabled="status === 'pending'"
         />
         <button type="submit" class="btn btn-primary btn-sm" :disabled="status === 'pending' || !sourceURL">
-          {{ status === 'pending' ? 'Analyzing...' : 'Analyze' }}
+          {{ status === 'pending' ? t('wishlistUrl.analyzing') : t('wishlistUrl.analyze') }}
         </button>
         <button v-if="status === 'pending'" type="button" class="btn btn-ghost btn-sm" @click="cancel">
-          Cancel
+          {{ t('common.cancel') }}
         </button>
       </form>
 
@@ -34,15 +34,15 @@
 
       <div v-if="analysis?.outcome === 'duplicate' && analysis.existingCoinId" class="review-actions">
         <router-link :to="`/coin/${analysis.existingCoinId}`" class="btn btn-secondary btn-sm">
-          View existing wishlist coin
+          {{ t('wishlistUrl.viewExisting') }}
         </router-link>
       </div>
 
       <form v-else-if="analysis?.hypothesis" class="proposal" @submit.prevent="confirmCreate">
         <div class="proposal-heading">
           <div>
-            <span class="section-label">Review proposal</span>
-            <p>Verify and edit every field before adding it to your wishlist.</p>
+            <span class="section-label">{{ t('wishlistUrl.reviewProposal') }}</span>
+            <p>{{ t('wishlistUrl.reviewHint') }}</p>
           </div>
           <span v-if="analysis.hypothesis.listingStatus" class="chip-sm">
             {{ analysis.hypothesis.listingStatus.value }}
@@ -51,81 +51,81 @@
 
         <div class="proposal-grid">
           <label class="form-group proposal-wide">
-            <span>Name *</span>
+            <span>{{ t('coinForm.name') }}</span>
             <input v-model.trim="draft.name" class="form-input" maxlength="200" required />
           </label>
           <label class="form-group">
-            <span>Category</span>
+            <span>{{ t('collection.menu.category') }}</span>
             <select v-model="draft.category" class="form-input">
-              <option v-for="category in categoryOptions" :key="category" :value="category">{{ category }}</option>
+              <option v-for="category in categoryOptions" :key="category" :value="category">{{ categoryLabel(category) }}</option>
             </select>
           </label>
           <label class="form-group">
-            <span>Era</span>
+            <span>{{ t('coinFields.era') }}</span>
             <select v-model="draft.era" class="form-input">
-              <option value="">Unknown</option>
-              <option v-for="era in eraOptions" :key="era" :value="era">{{ era }}</option>
+              <option value="">{{ t('addCoin.eraUnknown') }}</option>
+              <option v-for="era in eraOptions" :key="era" :value="era">{{ eraLabel(era) }}</option>
             </select>
           </label>
           <label class="form-group">
-            <span>Material</span>
+            <span>{{ t('coinFields.material') }}</span>
             <select v-model="draft.material" class="form-input">
-              <option v-for="material in materialOptions" :key="material" :value="material">{{ material }}</option>
+              <option v-for="material in materialOptions" :key="material" :value="material">{{ materialLabel(material) }}</option>
             </select>
           </label>
           <label v-for="field in textFields" :key="field.key" class="form-group">
-            <span>{{ field.label }}</span>
+            <span>{{ t(field.labelKey) }}</span>
             <input v-model.trim="draft[field.key]" class="form-input" :maxlength="field.maxlength" />
           </label>
           <label class="form-group">
-            <span>Weight (g)</span>
+            <span>{{ t('coinFields.weightG') }}</span>
             <input v-model="draft.weightGrams" class="form-input" type="number" min="0" step="0.01" />
           </label>
           <label class="form-group">
-            <span>Diameter (mm)</span>
+            <span>{{ t('coinForm.diameterMm') }}</span>
             <input v-model="draft.diameterMm" class="form-input" type="number" min="0" step="0.01" />
           </label>
           <label class="form-group">
-            <span>Listed value</span>
+            <span>{{ t('wishlistUrl.listedValue') }}</span>
             <input v-model="draft.currentValue" class="form-input" type="number" min="0" step="0.01" />
           </label>
           <label class="form-group">
-            <span>Listing status</span>
+            <span>{{ t('wishlistUrl.listingStatus') }}</span>
             <select v-model="draft.listingStatus" class="form-input">
-              <option value="">Unknown</option>
-              <option value="available">Available</option>
-              <option value="sold">Sold</option>
-              <option value="reserved">Reserved</option>
-              <option value="withdrawn">Withdrawn</option>
+              <option value="">{{ t('common.unknown') }}</option>
+              <option value="available">{{ t('wishlistUrl.statuses.available') }}</option>
+              <option value="sold">{{ t('wishlistUrl.statuses.sold') }}</option>
+              <option value="reserved">{{ t('wishlistUrl.statuses.reserved') }}</option>
+              <option value="withdrawn">{{ t('wishlistUrl.statuses.withdrawn') }}</option>
             </select>
           </label>
           <label class="form-group proposal-wide">
-            <span>Obverse legend</span>
+            <span>{{ t('wishlistUrl.obverseLegend') }}</span>
             <input v-model.trim="draft.obverseInscription" class="form-input" maxlength="1000" />
           </label>
           <label class="form-group proposal-wide">
-            <span>Obverse description</span>
+            <span>{{ t('wishlistUrl.obverseDescription') }}</span>
             <textarea v-model.trim="draft.obverseDescription" class="form-input" rows="2" maxlength="2000"></textarea>
           </label>
           <label class="form-group proposal-wide">
-            <span>Reverse legend</span>
+            <span>{{ t('wishlistUrl.reverseLegend') }}</span>
             <input v-model.trim="draft.reverseInscription" class="form-input" maxlength="1000" />
           </label>
           <label class="form-group proposal-wide">
-            <span>Reverse description</span>
+            <span>{{ t('wishlistUrl.reverseDescription') }}</span>
             <textarea v-model.trim="draft.reverseDescription" class="form-input" rows="2" maxlength="2000"></textarea>
           </label>
           <label class="form-group proposal-wide">
-            <span>Notes</span>
+            <span>{{ t('coinFields.notes') }}</span>
             <textarea v-model.trim="draft.notes" class="form-input" rows="3" maxlength="10000"></textarea>
           </label>
         </div>
 
         <div v-if="previewURL" class="image-review">
-          <img :src="previewURL" alt="Listing image preview" />
+          <img :src="previewURL" :alt="t('wishlistUrl.imagePreviewAlt')" />
           <label class="image-choice">
             <input v-model="attachImage" type="checkbox" />
-            Attach this image as the obverse
+            {{ t('wishlistUrl.attachImage') }}
           </label>
         </div>
 
@@ -135,10 +135,10 @@
 
         <div class="review-actions">
           <button type="submit" class="btn btn-primary btn-sm" :disabled="status === 'creating' || !draft.name">
-            {{ status === 'creating' ? 'Adding...' : 'Confirm and add' }}
+            {{ status === 'creating' ? t('common.adding') : t('wishlistUrl.confirmAdd') }}
           </button>
           <button type="button" class="btn btn-ghost btn-sm" :disabled="status === 'creating'" @click="resetProposal">
-            Cancel
+            {{ t('common.cancel') }}
           </button>
         </div>
       </form>
@@ -152,6 +152,9 @@ import { Link } from 'lucide-vue-next'
 import { analyzeWishlistURL, createCoin, getApiErrorMessage, proxyImage, uploadImage } from '@/api/client'
 import type { Category, CoinMutationPayload, Material, WishlistURLAnalysis, WishlistURLHypothesis } from '@/types'
 import { useCoinOptions } from '@/composables/useCoinOptions'
+import { materialLabel } from '@/utils/format'
+import { t } from '@/i18n'
+import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 const props = withDefaults(defineProps<{
   embedded?: boolean
@@ -162,13 +165,13 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ created: [] }>()
 
 const textFields = [
-  { key: 'ruler', label: 'Ruler or issuer', maxlength: 200 },
-  { key: 'denomination', label: 'Denomination', maxlength: 200 },
-  { key: 'mint', label: 'Mint', maxlength: 200 },
-  { key: 'dateRange', label: 'Date range', maxlength: 100 },
-  { key: 'grade', label: 'Grade', maxlength: 100 },
-  { key: 'rarityRating', label: 'Rarity', maxlength: 100 },
-  { key: 'references', label: 'References', maxlength: 1000 },
+  { key: 'ruler', labelKey: 'wishlistUrl.fields.ruler', maxlength: 200 },
+  { key: 'denomination', labelKey: 'coinFields.denomination', maxlength: 200 },
+  { key: 'mint', labelKey: 'coinFields.mint', maxlength: 200 },
+  { key: 'dateRange', labelKey: 'wishlistUrl.fields.dateRange', maxlength: 100 },
+  { key: 'grade', labelKey: 'coinFields.grade', maxlength: 100 },
+  { key: 'rarityRating', labelKey: 'wishlistUrl.fields.rarity', maxlength: 100 },
+  { key: 'references', labelKey: 'wishlistUrl.fields.references', maxlength: 1000 },
 ] as const
 
 type DraftKey = typeof textFields[number]['key']
@@ -260,7 +263,7 @@ async function loadPreview(imageURL: string) {
     previewFile.value = new File([blob], `listing${extension}`, { type: blob.type || 'image/jpeg' })
     previewURL.value = URL.createObjectURL(blob)
   } catch {
-    message.value = 'Proposal is ready, but the listing image could not be previewed.'
+    message.value = t('wishlistUrl.messages.previewFailed')
   }
 }
 
@@ -275,24 +278,24 @@ async function analyze() {
     const response = await analyzeWishlistURL(sourceURL.value, controller.signal)
     analysis.value = response.data
     if (response.data.outcome === 'duplicate') {
-      message.value = 'This listing is already on your wishlist.'
+      message.value = t('wishlistUrl.messages.duplicate')
       status.value = 'idle'
       return
     }
-    if (!response.data.hypothesis) throw new Error('The listing did not return a proposal.')
+    if (!response.data.hypothesis) throw new Error(t('wishlistUrl.messages.noProposal'))
     fillDraft(response.data.hypothesis)
     status.value = 'idle'
     message.value = response.data.outcome === 'ready'
-      ? 'Proposal ready for review.'
-      : 'The listing needs more review before it can be added.'
+      ? t('wishlistUrl.messages.ready')
+      : t('wishlistUrl.messages.needsReview')
     await loadPreview(response.data.imageUrl ?? '')
   } catch (error) {
     if (controller?.signal.aborted) {
       status.value = 'cancelled'
-      message.value = 'Analysis cancelled.'
+      message.value = t('wishlistUrl.messages.cancelled')
     } else {
       status.value = 'failed'
-      message.value = getApiErrorMessage(error) || 'Unable to analyze this listing.'
+      message.value = getApiErrorMessage(error) || t('wishlistUrl.messages.analyzeFailed')
     }
   } finally {
     controller = null
@@ -353,14 +356,14 @@ async function confirmCreate() {
     }
     status.value = imageWarning ? 'image-warning' : 'created'
     message.value = imageWarning
-      ? 'Wishlist coin added, but the optional image could not be attached.'
-      : 'Wishlist coin added.'
+      ? t('wishlistUrl.messages.addedNoImage')
+      : t('wishlistUrl.messages.added')
     analysis.value = null
     clearPreview()
     emit('created')
   } catch (error) {
     status.value = 'failed'
-    message.value = getApiErrorMessage(error) || 'Unable to add this wishlist coin.'
+    message.value = getApiErrorMessage(error) || t('wishlistUrl.messages.addFailed')
   }
 }
 

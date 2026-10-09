@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <h3 class="mb-4 text-base font-medium text-heading">Load Image</h3>
+    <h3 class="mb-4 text-base font-medium text-heading">{{ t('imageTools.loadImage') }}</h3>
     <div class="flex flex-col gap-4">
       <label
         class="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-md border-2 border-dashed border-border-subtle px-6 py-10 text-center text-text-muted transition-colors hover:border-gold hover:bg-gold-glow hover:text-gold"
@@ -10,7 +10,7 @@
         @drop.prevent="onDrop"
       >
         <Upload :size="32" />
-        <span class="text-base">Drop an image here or click to browse</span>
+        <span class="text-base">{{ t('imageTools.dropHere') }}</span>
         <input type="file" accept="image/*" hidden @change="onFileSelect" />
       </label>
       <div class="flex gap-2 max-sm:flex-col">
@@ -18,11 +18,11 @@
           v-model="url"
           type="url"
           class="form-input flex-1"
-          placeholder="Or paste an image URL..."
+          :placeholder="t('coinDetail.actions.urlPlaceholder')"
           @keydown.enter="onUrlLoad"
         />
         <button class="btn btn-primary btn-sm" :disabled="!url || urlLoading" @click="onUrlLoad">
-          {{ urlLoading ? 'Loading...' : 'Fetch' }}
+          {{ urlLoading ? t('common.loading') : t('coinDetail.actions.fetch') }}
         </button>
       </div>
       <p v-if="inputError" class="text-body text-loss">{{ inputError }}</p>
@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Upload } from 'lucide-vue-next'
+import { t } from '@/i18n'
 
 // Props are type-checked but not referenced directly in script
 const _props = defineProps<{

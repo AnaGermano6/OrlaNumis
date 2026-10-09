@@ -1,4 +1,5 @@
 import { ref, readonly } from 'vue'
+import { t } from '@/i18n'
 
 export type DialogType = 'confirm' | 'alert'
 export type DialogVariant = 'default' | 'danger'
@@ -20,8 +21,8 @@ const state = ref<DialogState>({
   variant: 'default',
   title: '',
   message: '',
-  confirmLabel: 'OK',
-  cancelLabel: 'Cancel',
+  confirmLabel: t('common.ok'),
+  cancelLabel: t('common.cancel'),
   resolve: null,
 })
 
@@ -34,10 +35,10 @@ function showConfirm(
       visible: true,
       type: 'confirm',
       variant: options?.variant ?? 'default',
-      title: options?.title ?? 'Confirm',
+      title: options?.title ?? t('common.confirm'),
       message,
-      confirmLabel: options?.confirmLabel ?? 'Confirm',
-      cancelLabel: options?.cancelLabel ?? 'Cancel',
+      confirmLabel: options?.confirmLabel ?? t('common.confirm'),
+      cancelLabel: options?.cancelLabel ?? t('common.cancel'),
       resolve,
     }
   })
@@ -54,8 +55,8 @@ function showAlert(
       variant: options?.variant ?? 'default',
       title: options?.title ?? '',
       message,
-      confirmLabel: options?.confirmLabel ?? 'OK',
-      cancelLabel: 'Cancel',
+      confirmLabel: options?.confirmLabel ?? t('common.ok'),
+      cancelLabel: t('common.cancel'),
       resolve,
     }
   })

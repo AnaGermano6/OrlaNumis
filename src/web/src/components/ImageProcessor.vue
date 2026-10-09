@@ -12,28 +12,28 @@
 
     <div v-if="sourceImage">
       <div class="mb-5 flex items-center justify-between gap-3 max-sm:flex-col max-sm:items-stretch">
-        <button class="btn btn-secondary btn-sm" @click="reset">← Start Over</button>
+        <button class="btn btn-secondary btn-sm" @click="reset">{{ t('imageTools.startOver') }}</button>
         <div class="flex gap-2 max-sm:justify-center">
-          <span class="rounded-full border px-[0.6rem] py-[0.3rem] text-sm" :class="step === 'preview' ? 'border-gold bg-gold-glow text-gold' : 'border-border-subtle bg-card text-text-muted'">1. Original</span>
-          <span class="rounded-full border px-[0.6rem] py-[0.3rem] text-sm" :class="step === 'removing' ? 'border-gold bg-gold-glow text-gold' : step === 'crop' || step === 'done' ? 'border-gold-dim bg-card text-text-secondary' : 'border-border-subtle bg-card text-text-muted'">2. Remove BG</span>
-          <span class="rounded-full border px-[0.6rem] py-[0.3rem] text-sm" :class="step === 'crop' ? 'border-gold bg-gold-glow text-gold' : step === 'done' ? 'border-gold-dim bg-card text-text-secondary' : 'border-border-subtle bg-card text-text-muted'">3. Crop</span>
+          <span class="rounded-full border px-[0.6rem] py-[0.3rem] text-sm" :class="step === 'preview' ? 'border-gold bg-gold-glow text-gold' : 'border-border-subtle bg-card text-text-muted'">{{ t('imageTools.stepOriginal') }}</span>
+          <span class="rounded-full border px-[0.6rem] py-[0.3rem] text-sm" :class="step === 'removing' ? 'border-gold bg-gold-glow text-gold' : step === 'crop' || step === 'done' ? 'border-gold-dim bg-card text-text-secondary' : 'border-border-subtle bg-card text-text-muted'">{{ t('imageTools.stepRemoveBg') }}</span>
+          <span class="rounded-full border px-[0.6rem] py-[0.3rem] text-sm" :class="step === 'crop' ? 'border-gold bg-gold-glow text-gold' : step === 'done' ? 'border-gold-dim bg-card text-text-secondary' : 'border-border-subtle bg-card text-text-muted'">{{ t('imageTools.stepCrop') }}</span>
         </div>
       </div>
 
       <div v-if="step === 'preview'" class="flex flex-col items-center gap-4">
         <div class="relative w-full max-w-[500px] overflow-hidden rounded-md border border-border-subtle">
-          <img :src="sourceImage" alt="Original" class="block w-full" />
+          <img :src="sourceImage" :alt="t('imageTools.original')" class="block w-full" />
         </div>
-        <button class="btn btn-primary" @click="removeBackground">Remove Background</button>
+        <button class="btn btn-primary" @click="removeBackground">{{ t('imageTools.removeBackground') }}</button>
       </div>
 
       <div v-if="step === 'removing'" class="flex flex-col items-center gap-4">
         <div class="relative w-full max-w-[500px] overflow-hidden rounded-md border border-border-subtle">
-          <img :src="sourceImage" alt="Processing" class="block w-full opacity-30 blur-[2px]" />
+          <img :src="sourceImage" :alt="t('imageTools.processing')" class="block w-full opacity-30 blur-[2px]" />
           <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gold">
             <div class="spinner"></div>
-            <p class="text-base">Removing background...</p>
-            <p class="text-sm text-text-muted">First run downloads the ML model (~40MB)</p>
+            <p class="text-base">{{ t('imageTools.removingBackground') }}</p>
+            <p class="text-sm text-text-muted">{{ t('imageTools.firstRunModel') }}</p>
           </div>
         </div>
       </div>
@@ -49,10 +49,10 @@
           />
         </div>
         <div class="flex flex-wrap items-center gap-3">
-          <button class="btn btn-secondary btn-sm" @click="autoCrop">Auto Crop</button>
-          <button class="btn btn-secondary btn-sm" @click="resetCrop">Reset Crop</button>
+          <button class="btn btn-secondary btn-sm" @click="autoCrop">{{ t('imageTools.autoCrop') }}</button>
+          <button class="btn btn-secondary btn-sm" @click="resetCrop">{{ t('imageTools.resetCrop') }}</button>
           <label class="ml-auto flex items-center gap-2 text-chip text-text-secondary">
-            <span>Padding</span>
+            <span>{{ t('imageTools.padding') }}</span>
             <input v-model.number="cropPadding" type="range" min="0" max="50" class="w-[100px] accent-gold" />
             <span class="min-w-8 text-right">{{ cropPadding }}px</span>
           </label>
@@ -60,55 +60,55 @@
 
         <div class="flex gap-6 rounded-md border border-border-subtle bg-card p-4 max-sm:flex-col">
           <div class="flex flex-col items-center gap-2">
-            <h4 class="text-body text-text-secondary">Result</h4>
+            <h4 class="text-body text-text-secondary">{{ t('imageTools.result') }}</h4>
             <canvas ref="resultCanvas" class="rounded-sm border border-border-subtle" />
           </div>
           <div class="flex min-w-0 flex-1 flex-col gap-3">
             <div class="flex gap-[2px] rounded-sm bg-surface p-[2px]">
-              <button class="flex-1 whitespace-nowrap rounded-sm px-2 py-1.5 text-sm transition-colors" :class="saveTab === 'existing' ? 'bg-card text-gold' : 'text-text-muted hover:text-text-secondary'" @click="saveTab = 'existing'">Existing Coin</button>
-              <button class="flex-1 whitespace-nowrap rounded-sm px-2 py-1.5 text-sm transition-colors" :class="saveTab === 'new' ? 'bg-card text-gold' : 'text-text-muted hover:text-text-secondary'" @click="saveTab = 'new'">New Coin</button>
-              <button class="flex-1 whitespace-nowrap rounded-sm px-2 py-1.5 text-sm transition-colors" :class="saveTab === 'download' ? 'bg-card text-gold' : 'text-text-muted hover:text-text-secondary'" @click="saveTab = 'download'">Download</button>
+              <button class="flex-1 whitespace-nowrap rounded-sm px-2 py-1.5 text-sm transition-colors" :class="saveTab === 'existing' ? 'bg-card text-gold' : 'text-text-muted hover:text-text-secondary'" @click="saveTab = 'existing'">{{ t('imageTools.existingCoin') }}</button>
+              <button class="flex-1 whitespace-nowrap rounded-sm px-2 py-1.5 text-sm transition-colors" :class="saveTab === 'new' ? 'bg-card text-gold' : 'text-text-muted hover:text-text-secondary'" @click="saveTab = 'new'">{{ t('imageTools.newCoin') }}</button>
+              <button class="flex-1 whitespace-nowrap rounded-sm px-2 py-1.5 text-sm transition-colors" :class="saveTab === 'download' ? 'bg-card text-gold' : 'text-text-muted hover:text-text-secondary'" @click="saveTab = 'download'">{{ t('common.download') }}</button>
             </div>
 
             <div v-if="saveTab === 'existing'" class="flex flex-col gap-2">
               <div>
-                <input v-model="coinSearch" type="text" class="form-input w-full text-body" placeholder="Search coins..." @input="searchCoins" />
+                <input v-model="coinSearch" type="text" class="form-input w-full text-body" :placeholder="t('imageTools.searchCoins')" @input="searchCoins" />
               </div>
               <div v-if="coinOptions.length" class="flex max-h-[140px] flex-col gap-[2px] overflow-y-auto rounded-sm border border-border-subtle p-[2px]">
                 <button v-for="c in coinOptions" :key="c.id" class="flex flex-col items-start gap-[0.1rem] rounded-sm px-2.5 py-1.5 text-left transition-colors hover:bg-gold-glow" :class="selectedCoinId === c.id ? 'bg-gold-glow outline outline-1 outline-gold-dim' : ''" @click="selectedCoinId = c.id">
                   <span class="text-chip text-text-primary">{{ c.name }}</span>
-                  <span class="text-label text-text-muted">{{ [c.ruler, c.era].filter(Boolean).join(' · ') }}</span>
+                  <span class="text-label text-text-muted">{{ [c.ruler, eraLabel(c.era)].filter(Boolean).join(' · ') }}</span>
                 </button>
               </div>
-              <p v-else-if="coinSearch && !coinsLoading" class="text-sm text-text-muted">No coins found</p>
-              <p v-else-if="coinsLoading" class="text-sm text-text-muted">Searching...</p>
-              <p v-else class="text-sm text-text-muted">Type to search your collection</p>
+              <p v-else-if="coinSearch && !coinsLoading" class="text-sm text-text-muted">{{ t('imageTools.noCoins') }}</p>
+              <p v-else-if="coinsLoading" class="text-sm text-text-muted">{{ t('common.searching') }}</p>
+              <p v-else class="text-sm text-text-muted">{{ t('imageTools.typeToSearch') }}</p>
               <div v-if="selectedCoinId" class="flex gap-4">
                 <label class="flex cursor-pointer items-center gap-1 text-body text-text-secondary">
                   <input v-model="saveImageType" type="radio" value="obverse" name="imgType" class="accent-gold" />
-                  <span>Obverse</span>
+                  <span>{{ t('common.obverse') }}</span>
                 </label>
                 <label class="flex cursor-pointer items-center gap-1 text-body text-text-secondary">
                   <input v-model="saveImageType" type="radio" value="reverse" name="imgType" class="accent-gold" />
-                  <span>Reverse</span>
+                  <span>{{ t('common.reverse') }}</span>
                 </label>
               </div>
               <button class="btn btn-primary" :disabled="!selectedCoinId || saving" @click="saveToExisting">
-                {{ saving ? 'Saving...' : 'Upload to Coin' }}
+                {{ saving ? t('common.saving') : t('imageTools.uploadToCoin') }}
               </button>
             </div>
 
             <div v-if="saveTab === 'new'" class="flex flex-col gap-2">
-              <label class="text-chip text-text-muted">Coin Name</label>
-              <input v-model="newCoinName" type="text" class="form-input" placeholder="e.g. Augustus Denarius" />
+              <label class="text-chip text-text-muted">{{ t('imageTools.coinName') }}</label>
+              <input v-model="newCoinName" type="text" class="form-input" :placeholder="t('coinForm.namePlaceholder')" />
               <button class="btn btn-primary" :disabled="!newCoinName.trim() || saving" @click="saveToNewCoin">
-                {{ saving ? 'Creating...' : 'Create Coin & Upload' }}
+                {{ saving ? t('common.creating') : t('imageTools.createAndUpload') }}
               </button>
-              <p class="text-sm text-text-muted">Image will be saved as the obverse</p>
+              <p class="text-sm text-text-muted">{{ t('imageTools.savedAsObverse') }}</p>
             </div>
 
             <div v-if="saveTab === 'download'" class="flex flex-col gap-2">
-              <button class="btn btn-secondary" @click="downloadResult">Download PNG</button>
+              <button class="btn btn-secondary" @click="downloadResult">{{ t('imageTools.downloadPng') }}</button>
             </div>
 
             <p v-if="saveMsg" class="text-body" :class="saveError ? 'text-red-400' : 'text-gold'">{{ saveMsg }}</p>
@@ -123,6 +123,8 @@
 import { ref } from 'vue'
 import { useImageProcessor } from '@/composables/useImageProcessor'
 import ImageInputPanel from '@/components/ImageInputPanel.vue'
+import { t } from '@/i18n'
+import { eraLabel } from '@/i18n/coinVocabulary'
 
 const props = defineProps<{
   coinId?: number
