@@ -528,3 +528,33 @@ func TestSetSetting_DeepIdentificationRoundTrip(t *testing.T) {
 		}
 	}
 }
+
+func TestParseSettingLabelMap(t *testing.T) {
+	got := ParseSettingLabelMap("Roman = Romana\n\nCeltic=Celta\nno-separator\n=Orphan\nBlank=  \n Byzantine=Bizantina=Oriental ")
+	want := map[string]string{
+		"Roman":     "Romana",
+		"Celtic":    "Celta",
+		"Byzantine": "Bizantina=Oriental",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("ParseSettingLabelMap() = %#v, want %#v", got, want)
+	}
+	for key, label := range want {
+		if got[key] != label {
+			t.Errorf("ParseSettingLabelMap()[%q] = %q, want %q", key, got[key], label)
+		}
+	}
+}
+
+func TestGetSetting_CoinOptionLabelsDefaultEmpty(t *testing.T) {
+	svc, _ := newTestSettingsService(t)
+
+	for _, key := range []string{SettingCoinCategoryLabelsPtPT, SettingCoinEraLabelsPtPT} {
+		if got := svc.GetSetting(key); got != "" {
+			t.Errorf("GetSetting(%s) = %q, want empty default", key, got)
+		}
+		if _, ok := svc.GetSettingDefaults()[key]; !ok {
+			t.Errorf("GetSettingDefaults() missing %s", key)
+		}
+	}
+}

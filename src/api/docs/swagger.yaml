@@ -359,6 +359,32 @@ definitions:
       proposedNumistaQuery:
         type: string
     type: object
+  handlers.CoinOptionLabels:
+    properties:
+      categories:
+        additionalProperties:
+          type: string
+        type: object
+      eras:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  handlers.CoinOptionsResponse:
+    properties:
+      categories:
+        items:
+          type: string
+        type: array
+      eras:
+        items:
+          type: string
+        type: array
+      labels:
+        additionalProperties:
+          $ref: '#/definitions/handlers.CoinOptionLabels'
+        type: object
+    type: object
   handlers.CoinReferenceDTO:
     properties:
       catalog:
@@ -9497,6 +9523,22 @@ paths:
       summary: List catalogs
       tags:
       - Catalogs
+  /coin-options:
+    get:
+      description: Returns the admin-configured category and era choices with translated
+        display names
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CoinOptionsResponse'
+      security:
+      - BearerAuth: []
+      summary: Get coin category and era options
+      tags:
+      - coins
   /coins:
     get:
       description: Returns a paginated, filterable list of coins belonging to the

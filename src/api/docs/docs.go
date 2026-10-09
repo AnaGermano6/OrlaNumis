@@ -6498,6 +6498,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/coin-options": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the admin-configured category and era choices with translated display names",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coins"
+                ],
+                "summary": "Get coin category and era options",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CoinOptionsResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/coins": {
             "get": {
                 "security": [
@@ -19591,6 +19616,46 @@ const docTemplate = `{
                 },
                 "proposedNumistaQuery": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.CoinOptionLabels": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "eras": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "handlers.CoinOptionsResponse": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "eras": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "labels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/handlers.CoinOptionLabels"
+                    }
                 }
             }
         },

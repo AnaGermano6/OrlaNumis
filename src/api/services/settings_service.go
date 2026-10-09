@@ -94,6 +94,8 @@ const (
 	SettingSetSnapshotStartTime               = "SetSnapshotStartTime"
 	SettingCoinCategories                     = "CoinCategories"
 	SettingCoinEras                           = "CoinEras"
+	SettingCoinCategoryLabelsPtPT             = "CoinCategoryLabelsPtPT"
+	SettingCoinEraLabelsPtPT                  = "CoinEraLabelsPtPT"
 	SettingUSPSAPIBaseURL                     = "USPSAPIBaseURL"
 	SettingUSPSAPIKey                         = "USPSAPIKey"
 	SettingUSPSAPIKeyHeader                   = "USPSAPIKeyHeader"
@@ -231,6 +233,8 @@ var settingDefaults = map[string]string{
 	SettingSetSnapshotStartTime:               "04:00",
 	SettingCoinCategories:                     "Roman\nGreek\nByzantine\nModern\nOther",
 	SettingCoinEras:                           "ancient\nmedieval\nmodern",
+	SettingCoinCategoryLabelsPtPT:             "",
+	SettingCoinEraLabelsPtPT:                  "",
 	SettingUSPSAPIBaseURL:                     "",
 	SettingUSPSAPIKey:                         "",
 	SettingUSPSAPIKeyHeader:                   "X-API-Key",
@@ -615,6 +619,27 @@ func SplitSettingList(value string) []string {
 		if trimmed != "" {
 			out = append(out, trimmed)
 		}
+	}
+	return out
+}
+
+// ParseSettingLabelMap parses a newline-delimited "Value=Label" AppSetting (the
+// shape of CoinCategoryLabelsPtPT/CoinEraLabelsPtPT) into a map keyed by the
+// stored value. Only the first "=" separates value from label, blank or
+// malformed lines are skipped, and a later line for the same value wins.
+func ParseSettingLabelMap(value string) map[string]string {
+	out := map[string]string{}
+	for _, line := range strings.Split(value, "\n") {
+		key, label, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		label = strings.TrimSpace(label)
+		if key == "" || label == "" {
+			continue
+		}
+		out[key] = label
 	}
 	return out
 }
