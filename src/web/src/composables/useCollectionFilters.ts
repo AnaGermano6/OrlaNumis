@@ -273,6 +273,7 @@ export function useCollectionFilters() {
     fillingCountries,
     fetchUserTags,
     loadCoins,
+    loadCountryOptions,
     fillCountriesOnce,
   }
 }

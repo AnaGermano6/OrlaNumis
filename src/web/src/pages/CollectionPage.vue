@@ -14,6 +14,8 @@
     </div>
 
     <CollectionKpis :summary="summary" @show-coincards="selectedPresentation = 'coincard'" />
+    <CollectionHighlights :summary="summary" />
+    <CollectionWorldMap :countries="countryOptions" :selected-country="selectedCountry" @select="selectCountry" />
 
     <PwaCollectionHeader
       v-if="isPwa"
@@ -82,6 +84,7 @@
       />
     </div>
 
+    <div ref="coinsAnchor" class="scroll-mt-28" aria-hidden="true"></div>
     <CollectionContent
       :loading="store.loading"
       :coins="store.coins"
@@ -140,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCoinsStore } from '@/stores/coins'
 import type { ImageType, HealthQuickAction, StorageLocation } from '@/types'
@@ -151,6 +154,8 @@ import { usePwa } from '@/composables/usePwa'
 import { useCollectionFilters } from '@/composables/useCollectionFilters'
 import CollectionViewControls, { type CollectionLayout } from '@/components/collection/CollectionViewControls.vue'
 import CollectionKpis from '@/components/collection/CollectionKpis.vue'
+import CollectionHighlights from '@/components/collection/CollectionHighlights.vue'
+import CollectionWorldMap from '@/components/collection/CollectionWorldMap.vue'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import PwaCollectionHeader from '@/components/collection/PwaCollectionHeader.vue'
 import DesktopCollectionHeader from '@/components/collection/DesktopCollectionHeader.vue'
@@ -170,7 +175,7 @@ const {
   selectedCategory, search, page, sortKey, selectedTag, userTags,
   selectedEra, eraOptions,
   selectedCountry, selectedPresentation, selectedRarity, groupBy, countryOptions, fillingCountries,
-  fetchUserTags, loadCoins, fillCountriesOnce,
+  fetchUserTags, loadCoins, loadCountryOptions, fillCountriesOnce,
 } = useCollectionFilters()
 
 // Collection-wide KPIs, refreshed whenever the coin list reloads (filters,
@@ -183,6 +188,17 @@ async function loadSummary() {
   } catch {
     // Keep the last numbers; the gallery itself still works.
   }
+  // Countries feed the map and the country filter; they change with the collection too.
+  void loadCountryOptions()
+}
+
+// Choosing a country on the map filters the gallery and brings the coins into view.
+const coinsAnchor = ref<HTMLElement | null>(null)
+function selectCountry(country: string) {
+  selectedCountry.value = country
+  if (!country) return
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  void nextTick(() => coinsAnchor.value?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }))
 }
 watch(() => store.coins, () => {
   clearTimeout(summaryTimer)

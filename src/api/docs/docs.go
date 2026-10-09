@@ -7251,7 +7251,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Counts the user's collection coins (excluding wishlist and sold), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries, how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (stored in US dollars) and converts the total to euros with the ECB daily reference rate (cached; null when unavailable).",
+                "description": "Counts the user's collection coins (excluding wishlist and sold), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries, how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (stored in US dollars) and converts the total to euros with the ECB daily reference rate (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins.",
                 "produces": [
                     "application/json"
                 ],
@@ -20563,6 +20563,9 @@ const docTemplate = `{
                 "exchangeRate": {
                     "$ref": "#/definitions/services.ExchangeRate"
                 },
+                "highlights": {
+                    "$ref": "#/definitions/repository.CollectionHighlights"
+                },
                 "totalValue": {
                     "description": "TotalValue sums the coins' current values, in the app's stored currency (US dollars).",
                     "type": "number"
@@ -26424,6 +26427,53 @@ const docTemplate = `{
                 },
                 "userId": {
                     "type": "integer"
+                }
+            }
+        },
+        "repository.CoinHighlight": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "type": "string"
+                },
+                "currentValue": {
+                    "type": "number"
+                },
+                "dateRange": {
+                    "type": "string"
+                },
+                "grade": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "imagePath": {
+                    "description": "ImagePath is the primary (or obverse, or first) image, if any.",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rarity": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "repository.CollectionHighlights": {
+            "type": "object",
+            "properties": {
+                "mostValuable": {
+                    "$ref": "#/definitions/repository.CoinHighlight"
+                },
+                "oldest": {
+                    "$ref": "#/definitions/repository.CoinHighlight"
+                },
+                "rarest": {
+                    "$ref": "#/definitions/repository.CoinHighlight"
                 }
             }
         },
