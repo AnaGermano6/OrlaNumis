@@ -45,8 +45,9 @@ func TestContentSecurityPolicyIsSetOnAppRoutes(t *testing.T) {
 		// @imgly/background-removal compiles an ONNX model to WASM and
 		// dynamically imports its worker/WASM glue as a blob: module.
 		"script-src 'self' 'wasm-unsafe-eval' blob:",
-		// Proxied auction images arrive as blob: URLs; the mint map needs OSM tiles.
-		"img-src 'self' data: blob: " + OSMTileHost,
+		// Proxied auction images arrive as blob: URLs; the mint map needs OSM
+		// tiles; Numista catalogue photos load directly from Numista.
+		"img-src 'self' data: blob: " + OSMTileHost + " " + NumistaPhotoHost,
 		"worker-src 'self' blob:",
 	}
 	for _, directive := range required {

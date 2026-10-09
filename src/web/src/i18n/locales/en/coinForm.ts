@@ -73,4 +73,10 @@ export default {
   chooseSlotBeforeSave: 'Choose an exact tray slot before saving.',
   mintsUnavailable: 'Mint locations are unavailable',
   storageUnavailable: 'Storage locations are unavailable',
+  countryPlaceholder: 'e.g. Portugal',
+  notSpecified: 'Not specified',
+  year: 'Year',
+  yearPlaceholder: 'e.g. 1968',
+  yearAuto: 'Automatic: {year}',
+  yearHint: 'Use a negative year for BC (e.g. -44). Left empty, the year is read from the date or range.',
 }

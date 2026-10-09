@@ -31,6 +31,9 @@ const messages: Messages['coinFields'] = {
   diameterMm: 'Diâmetro (mm)',
   coinType: 'Tipo de moeda',
   rarityRating: 'Raridade',
+  country: 'País',
+  presentation: 'Apresentação',
+  rarity: 'Raridade',
 }
 
 export default messages

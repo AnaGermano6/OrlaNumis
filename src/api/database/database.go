@@ -98,6 +98,14 @@ func Connect(dbPath string) {
 	if err := DB.AutoMigrate(&models.ImageCleanup{}); err != nil {
 		log.Fatalf("Failed to migrate image cleanup records: %v", err)
 	}
+	if err := backfillCoinYears(DB); err != nil {
+		log.Fatalf("Failed to backfill coin years: %v", err)
+	}
+
+	// Numista market-value cache: a new standalone table, purely additive.
+	if err := DB.AutoMigrate(&models.NumistaCacheEntry{}); err != nil {
+		log.Fatalf("Failed to migrate Numista cache: %v", err)
+	}
 	if err := migrateFeature362(DB); err != nil {
 		log.Fatalf("Failed to migrate Feature 362 schema: %v", err)
 	}
@@ -664,5 +672,23 @@ func seedCatalogRegistry(db *gorm.DB) error {
 		}
 	}
 
+	return nil
+}
+
+// backfillCoinYears fills Coin.Year from DateRange for coins saved before the
+// column existed (or whose date could not be read before). Idempotent: rows
+// whose date has no readable year are simply left NULL.
+func backfillCoinYears(db *gorm.DB) error {
+	var coins []models.Coin
+	if err := db.Select("id", "date_range").Where("year IS NULL AND date_range <> ''").Find(&coins).Error; err != nil {
+		return err
+	}
+	for _, coin := range coins {
+		if year := models.DeriveCoinYear(coin.DateRange); year != nil {
+			if err := db.Model(&models.Coin{}).Where("id = ?", coin.ID).Update("year", *year).Error; err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }

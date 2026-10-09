@@ -14,6 +14,8 @@ import (
 var (
 	ErrCoinInvalidEra             = errors.New("era is not supported")
 	ErrCoinInvalidCategory        = errors.New("category is not supported")
+	ErrCoinInvalidPresentation    = errors.New("presentation is not supported")
+	ErrCoinInvalidRarity          = errors.New("rarity is not supported")
 	ErrStorageSlotRequired        = errors.New("a tray slot is required")
 	ErrStorageSlotInvalid         = errors.New("storage slot is invalid for this location")
 	ErrStorageSlotOccupied        = errors.New("storage slot is occupied")
@@ -183,6 +185,31 @@ func (s *CoinService) prepareCoinForCreate(coin *models.Coin) error {
 		return err
 	}
 	coin.ReferenceURL = strings.TrimSpace(coin.ReferenceURL)
+	if err := normalizeCoinAttributes(coin); err != nil {
+		return err
+	}
+	// A year typed by the user wins; otherwise it is read from the date.
+	if coin.Year == nil {
+		coin.Year = models.DeriveCoinYear(coin.DateRange)
+	}
+	return nil
+}
+
+// normalizeCoinAttributes tidies the country and year and checks presentation and rarity.
+func normalizeCoinAttributes(coin *models.Coin) error {
+	// There is no year 0 between 1 BC and AD 1; treat it as "not given".
+	if coin.Year != nil && *coin.Year == 0 {
+		coin.Year = nil
+	}
+	coin.Country = models.NormalizeCoinCountry(coin.Country)
+	coin.Presentation = strings.TrimSpace(coin.Presentation)
+	if !models.ValidCoinPresentation(coin.Presentation) {
+		return ErrCoinInvalidPresentation
+	}
+	coin.Rarity = strings.TrimSpace(coin.Rarity)
+	if !models.ValidCoinRarity(coin.Rarity) {
+		return ErrCoinInvalidRarity
+	}
 	return nil
 }
 
@@ -286,6 +313,24 @@ func (s *CoinService) updateCoin(existing *models.Coin, updates *models.Coin, up
 		if err := s.validateCoinEra(updates.Era); err != nil {
 			return err
 		}
+	}
+	if err := normalizeCoinAttributes(updates); err != nil {
+		return err
+	}
+	yearProvided := updateFields == nil || containsString(updateFields, "Year")
+	dateProvided := updateFields == nil || containsString(updateFields, "DateRange")
+	switch {
+	case yearProvided && updates.Year == nil:
+		// An empty year means "read it from the date".
+		dateRange := existing.DateRange
+		if dateProvided {
+			dateRange = updates.DateRange
+		}
+		updates.Year = models.DeriveCoinYear(dateRange)
+	case !yearProvided && dateProvided:
+		// The date changed without a year: keep the year in step with it.
+		updates.Year = models.DeriveCoinYear(updates.DateRange)
+		updateFields = append(updateFields, "Year")
 	}
 	categoryProvided := updateFields == nil || containsString(updateFields, "Category")
 	if categoryProvided {

@@ -199,6 +199,28 @@ const messages: Messages['coinDetail'] = {
     added: 'Referência do Numista adicionada.',
     addFailed: 'Não foi possível adicionar a referência do Numista.',
   },
+  marketValue: {
+    title: 'Valor de mercado (Numista)',
+    currency: 'Divisa',
+    issue: 'Emissão',
+    undated: 'Sem data',
+    yearBC: '{year} a.C.',
+    mintage: '{count} exemplares',
+    pricesLabel: 'Preço estimado por grau',
+    yourGrade: 'O seu grau',
+    loading: 'A carregar o valor de mercado...',
+    loadFailed: 'Não foi possível carregar o valor de mercado.',
+    notLinked: 'Associe esta moeda a um tipo do Numista nas Referências de catálogo, acima, para ver o valor de mercado estimado.',
+    noPrices: 'O Numista ainda não tem preços para esta emissão.',
+    noIssues: 'O Numista não indica emissões para este tipo.',
+    unconfigured: 'Adicione uma chave da API do Numista em Administração para ver valores de mercado.',
+    unauthorized: 'O Numista recusou a chave da API. Verifique-a em Administração.',
+    quotaLimited: 'Foi atingido o limite mensal de pedidos ao Numista. Tente mais tarde.',
+    unavailable: 'O Numista não está disponível de momento. Tente mais tarde.',
+    source: 'Estimativas da comunidade do Numista, atualizadas a {date}.',
+    stale: 'Não foi possível atualizar; a mostrar os últimos valores guardados.',
+    viewOnNumista: 'Ver no Numista',
+  },
 }
 
 export default messages

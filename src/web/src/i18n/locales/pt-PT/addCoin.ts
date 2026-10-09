@@ -23,6 +23,12 @@ const messages: Messages['addCoin'] = {
   slotUnavailable: 'Posição indisponível',
   addFailed: 'Não foi possível adicionar a moeda',
   retryFailed: 'O carregamento falhou. A sua moeda já está guardada; repita os carregamentos em falta.',
+  catalogMode: 'Catálogo',
+  addToWishlist: 'Adicionar à lista de desejos',
+  fromCatalog: 'Preenchido a partir do catálogo Numista: {title}.',
+  fromCatalogHint: 'Confirme os dados, acrescente o preço, a data e a arrumação, e guarde.',
+  fromCatalogWishlistHint: 'Vai ser guardada na lista de desejos.',
+  chooseAnother: 'Escolher outra moeda',
 }
 
 export default messages

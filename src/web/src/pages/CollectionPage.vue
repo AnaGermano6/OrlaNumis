@@ -13,6 +13,8 @@
       <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? t('common.pull.refreshing') : pullDistance >= 60 ? t('common.pull.release') : t('common.pull.pull') }}</span>
     </div>
 
+    <CollectionKpis :summary="summary" @show-coincards="selectedPresentation = 'coincard'" />
+
     <PwaCollectionHeader
       v-if="isPwa"
       v-model:search="search"
@@ -27,7 +29,21 @@
       :user-tags="userTags"
       :era-options="eraOptions"
       @toggle-select-mode="toggleSelectMode"
-    />
+    >
+      <template #controls>
+        <CollectionViewControls
+          v-model:group-by="groupBy"
+          v-model:layout="layout"
+          v-model:country="selectedCountry"
+          v-model:presentation="selectedPresentation"
+          v-model:rarity="selectedRarity"
+          :country-options="countryOptions"
+          :show-layout="viewMode === 'grid'"
+          :filling-countries="fillingCountries"
+          stacked
+        />
+      </template>
+    </PwaCollectionHeader>
 
     <DesktopCollectionHeader
       v-if="!isPwa"
@@ -39,7 +55,19 @@
       v-model:grid-side="gridSide"
       :user-tags="userTags"
       :era-options="eraOptions"
-    />
+    >
+      <template #controls>
+        <CollectionViewControls
+          v-model:group-by="groupBy"
+          v-model:layout="layout"
+          v-model:country="selectedCountry"
+          v-model:presentation="selectedPresentation"
+          v-model:rarity="selectedRarity"
+          :country-options="countryOptions"
+          :filling-countries="fillingCountries"
+        />
+      </template>
+    </DesktopCollectionHeader>
 
     <!-- Needs Attention Queue (when filter is active) -->
     <div v-if="showNeedsAttention && !selectMode" class="mb-6">
@@ -63,10 +91,13 @@
       :is-pwa="isPwa"
       :view-mode="viewMode"
       :grid-side="gridSide"
-      :has-filters="!!(search || selectedCategory || selectedEra || selectedTag)"
+      :has-filters="!!(search || selectedCategory || selectedEra || selectedTag || selectedCountry || selectedPresentation || selectedRarity)"
       :total="store.total"
       :page="page"
       :per-page="COINS_PER_PAGE"
+      :group-by="groupBy"
+      :layout="layout"
+      :truncated="store.truncated"
       @select-all="selectAll"
       @deselect-all="deselectAll"
       @toggle-coin-select="toggleCoinSelect"
@@ -74,6 +105,7 @@
     />
 
     <CollectionPagination
+      v-if="groupBy === 'none'"
       :page="page"
       :total="store.total"
       :per-page="COINS_PER_PAGE"
@@ -112,11 +144,13 @@ import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCoinsStore } from '@/stores/coins'
 import type { ImageType, HealthQuickAction, StorageLocation } from '@/types'
-import { bulkAction, getStorageLocations } from '@/api/client'
+import { bulkAction, getCollectionSummary, getStorageLocations, type CollectionSummary } from '@/api/client'
 import { usePullToRefresh } from '@/composables/usePullToRefresh'
 import { useBulkSelect } from '@/composables/useBulkSelect'
 import { usePwa } from '@/composables/usePwa'
 import { useCollectionFilters } from '@/composables/useCollectionFilters'
+import CollectionViewControls, { type CollectionLayout } from '@/components/collection/CollectionViewControls.vue'
+import CollectionKpis from '@/components/collection/CollectionKpis.vue'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import PwaCollectionHeader from '@/components/collection/PwaCollectionHeader.vue'
 import DesktopCollectionHeader from '@/components/collection/DesktopCollectionHeader.vue'
@@ -135,14 +169,51 @@ const { refresh: refreshQuickAccess } = useQuickAccess()
 const {
   selectedCategory, search, page, sortKey, selectedTag, userTags,
   selectedEra, eraOptions,
-  fetchUserTags, loadCoins,
+  selectedCountry, selectedPresentation, selectedRarity, groupBy, countryOptions, fillingCountries,
+  fetchUserTags, loadCoins, fillCountriesOnce,
 } = useCollectionFilters()
+
+// Collection-wide KPIs, refreshed whenever the coin list reloads (filters,
+// deletions, sales, country fill), so they never go stale.
+const summary = ref<CollectionSummary | null>(null)
+let summaryTimer: ReturnType<typeof setTimeout> | undefined
+async function loadSummary() {
+  try {
+    summary.value = (await getCollectionSummary()).data
+  } catch {
+    // Keep the last numbers; the gallery itself still works.
+  }
+}
+watch(() => store.coins, () => {
+  clearTimeout(summaryTimer)
+  summaryTimer = setTimeout(() => void loadSummary(), 300)
+})
+onUnmounted(() => clearTimeout(summaryTimer))
+
+const LAYOUT_KEY = 'collection:layout'
+function readLayout(): CollectionLayout {
+  try {
+    return localStorage.getItem(LAYOUT_KEY) === 'list' ? 'list' : 'grid'
+  } catch {
+    return 'grid'
+  }
+}
+const layout = ref<CollectionLayout>(readLayout())
+watch(layout, (value) => {
+  try {
+    localStorage.setItem(LAYOUT_KEY, value)
+  } catch {
+    // The choice still applies for this visit.
+  }
+})
 
 const menuOpen = ref(false)
 const COINS_PER_PAGE = 50
 
 onMounted(() => {
+  void loadSummary()
   fetchUserTags()
+  if (groupBy.value === 'country') void fillCountriesOnce()
   fetchStorageLocations()
   // Reset bulkSelectActive on mount to prevent stale state from previous navigation
   bulkSelectActive.value = false

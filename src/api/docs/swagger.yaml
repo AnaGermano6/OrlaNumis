@@ -211,6 +211,9 @@ definitions:
         allOf:
         - $ref: '#/definitions/models.Category'
         maxLength: 64
+      country:
+        maxLength: 120
+        type: string
       currentValue:
         type: number
       dateRange:
@@ -253,6 +256,17 @@ definitions:
       obverseInscription:
         maxLength: 1000
         type: string
+      presentation:
+        enum:
+        - loose
+        - coincard
+        - capsule
+        - flip
+        - proof_set
+        - blister
+        - slab
+        maxLength: 20
+        type: string
       purchaseDate:
         type: string
       purchaseLocation:
@@ -260,6 +274,16 @@ definitions:
         type: string
       purchasePrice:
         type: number
+      rarity:
+        enum:
+        - common
+        - uncommon
+        - scarce
+        - rare
+        - very_rare
+        - extremely_rare
+        maxLength: 20
+        type: string
       rarityRating:
         maxLength: 100
         type: string
@@ -308,6 +332,12 @@ definitions:
         type: string
       weightGrams:
         type: number
+      year:
+        description: Year is the coin's year (negative for BC); when omitted it is
+          read from dateRange.
+        maximum: 3000
+        minimum: -5000
+        type: integer
     type: object
   handlers.CoinDeletedResponse:
     properties:
@@ -477,6 +507,9 @@ definitions:
         allOf:
         - $ref: '#/definitions/models.Category'
         maxLength: 64
+      country:
+        maxLength: 120
+        type: string
       currentValue:
         type: number
       dateRange:
@@ -519,6 +552,17 @@ definitions:
       obverseInscription:
         maxLength: 1000
         type: string
+      presentation:
+        enum:
+        - loose
+        - coincard
+        - capsule
+        - flip
+        - proof_set
+        - blister
+        - slab
+        maxLength: 20
+        type: string
       purchaseDate:
         type: string
       purchaseLocation:
@@ -526,6 +570,16 @@ definitions:
         type: string
       purchasePrice:
         type: number
+      rarity:
+        enum:
+        - common
+        - uncommon
+        - scarce
+        - rare
+        - very_rare
+        - extremely_rare
+        maxLength: 20
+        type: string
       rarityRating:
         maxLength: 100
         type: string
@@ -574,6 +628,41 @@ definitions:
         type: string
       weightGrams:
         type: number
+      year:
+        description: Year (negative for BC); null means "read it from dateRange".
+        maximum: 3000
+        minimum: -5000
+        type: integer
+    type: object
+  handlers.CollectionSummaryResponse:
+    properties:
+      coincards:
+        description: Coincards counts coins whose presentation is "coincard".
+        type: integer
+      coins:
+        type: integer
+      countries:
+        type: integer
+      exchangeRate:
+        $ref: '#/definitions/services.ExchangeRate'
+      totalValue:
+        description: TotalValue sums the coins' current values, in the app's stored
+          currency (US dollars).
+        type: number
+      totalValueEur:
+        description: TotalValueEUR is TotalValue converted with ExchangeRate; null
+          when no rate is available.
+        type: number
+      types:
+        description: |-
+          Types counts distinct coin types: coins linked to the same Numista type
+          count once; other coins count once per distinct name.
+        type: integer
+      unvaluedCoins:
+        description: UnvaluedCoins have no current value and are left out of TotalValue.
+        type: integer
+      withoutCountry:
+        type: integer
     type: object
   handlers.CommitCollectionProposalRequest:
     properties:
@@ -2144,6 +2233,27 @@ definitions:
           $ref: '#/definitions/services.GeocodeCandidate'
         type: array
     type: object
+  handlers.importImageRequest:
+    properties:
+      credit:
+        description: Credit is appended to the coin's notes after a successful import.
+        example: 'Obverse photo: Jane Doe, CC BY-SA 4.0 (Wikimedia Commons)'
+        maxLength: 500
+        type: string
+      imageType:
+        example: obverse
+        type: string
+      isPrimary:
+        example: true
+        type: boolean
+      url:
+        example: https://upload.wikimedia.org/wikipedia/commons/5/54/Coin.jpg
+        maxLength: 2000
+        type: string
+    required:
+    - imageType
+    - url
+    type: object
   handlers.loginRequest:
     properties:
       password:
@@ -2829,6 +2939,11 @@ definitions:
         allOf:
         - $ref: '#/definitions/models.Category'
         maxLength: 64
+      country:
+        description: Country is the issuing country or authority (e.g. from the Numista
+          issuer).
+        maxLength: 120
+        type: string
       createdAt:
         type: string
       currentValue:
@@ -2891,6 +3006,9 @@ definitions:
       obverseInscription:
         maxLength: 1000
         type: string
+      presentation:
+        description: Presentation is how the coin is kept or was issued (see CoinPresentations).
+        type: string
       purchaseDate:
         type: string
       purchaseLocation:
@@ -2898,6 +3016,10 @@ definitions:
         type: string
       purchasePrice:
         type: number
+      rarity:
+        description: Rarity is a fixed scale (see CoinRarities). RarityRating is a
+          legacy free-text field.
+        type: string
       rarityRating:
         maxLength: 100
         type: string
@@ -2965,6 +3087,24 @@ definitions:
         type: string
       weightGrams:
         type: number
+      year:
+        description: Year is derived from DateRange (first year, negative for BC)
+          for sorting and grouping.
+        type: integer
+    type: object
+  models.CoinCountryFillResult:
+    properties:
+      failed:
+        description: Failed coins could not be resolved (e.g. Numista did not answer).
+        type: integer
+      remaining:
+        description: Remaining linked coins still have no country (call again to continue).
+        type: integer
+      status:
+        type: string
+      updated:
+        description: Updated coins got a country in this call.
+        type: integer
     type: object
   models.CoinImage:
     properties:
@@ -2993,6 +3133,40 @@ definitions:
         type: integer
       userId:
         type: integer
+    type: object
+  models.CoinMarketValue:
+    properties:
+      catalogPhotos:
+        description: CatalogPhotos are Numista's reference photos of the type, with
+          credit.
+        items:
+          $ref: '#/definitions/models.NumistaCatalogPhoto'
+        type: array
+      currency:
+        type: string
+      fetchedAt:
+        description: FetchedAt is when Numista last returned these prices.
+        type: string
+      issues:
+        items:
+          $ref: '#/definitions/models.NumistaIssueSummary'
+        type: array
+      numistaTypeId:
+        type: integer
+      numistaUrl:
+        type: string
+      prices:
+        items:
+          $ref: '#/definitions/models.NumistaGradePrice'
+        type: array
+      selectedIssueId:
+        type: integer
+      stale:
+        description: Stale is true when a refresh failed and stored values are being
+          shown.
+        type: boolean
+      status:
+        type: string
     type: object
   models.CoinOfDayRun:
     properties:
@@ -3041,6 +3215,38 @@ definitions:
     x-enum-varnames:
     - CoinOfDayRunTriggerManual
     - CoinOfDayRunTriggerScheduled
+  models.CoinPhotoCandidate:
+    properties:
+      author:
+        type: string
+      imageUrl:
+        description: ImageURL is the full-size photo to import into a coin.
+        type: string
+      license:
+        type: string
+      pageUrl:
+        type: string
+      side:
+        description: Side is "obverse" or "reverse" when the source states it.
+        type: string
+      source:
+        type: string
+      thumbnail:
+        type: string
+      title:
+        type: string
+    type: object
+  models.CoinPhotoSearchResult:
+    properties:
+      photos:
+        items:
+          $ref: '#/definitions/models.CoinPhotoCandidate'
+        type: array
+      query:
+        type: string
+      status:
+        type: string
+    type: object
   models.CoinReference:
     properties:
       catalog:
@@ -3449,6 +3655,145 @@ definitions:
       yearDisplay:
         type: string
     type: object
+  models.NumistaCatalogIssuer:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+      parent:
+        type: string
+    type: object
+  models.NumistaCatalogIssuersResult:
+    properties:
+      issuers:
+        items:
+          $ref: '#/definitions/models.NumistaCatalogIssuer'
+        type: array
+      status:
+        type: string
+    type: object
+  models.NumistaCatalogPhoto:
+    properties:
+      copyright:
+        type: string
+      license:
+        type: string
+      picture:
+        type: string
+      side:
+        type: string
+      thumbnail:
+        type: string
+    type: object
+  models.NumistaCatalogReference:
+    properties:
+      catalogue:
+        type: string
+      number:
+        type: string
+    type: object
+  models.NumistaCatalogSearchItem:
+    properties:
+      id:
+        type: integer
+      issuer:
+        $ref: '#/definitions/models.NumistaCatalogIssuer'
+      maxYear:
+        type: integer
+      minYear:
+        type: integer
+      obverseThumbnail:
+        type: string
+      reverseThumbnail:
+        type: string
+      title:
+        type: string
+    type: object
+  models.NumistaCatalogSearchResult:
+    properties:
+      count:
+        type: integer
+      page:
+        type: integer
+      status:
+        type: string
+      types:
+        items:
+          $ref: '#/definitions/models.NumistaCatalogSearchItem'
+        type: array
+    type: object
+  models.NumistaCatalogSide:
+    properties:
+      description:
+        type: string
+      lettering:
+        type: string
+    type: object
+  models.NumistaCatalogType:
+    properties:
+      composition:
+        type: string
+      currency:
+        type: string
+      denomination:
+        type: string
+      diameterMm:
+        type: number
+      edge:
+        $ref: '#/definitions/models.NumistaCatalogSide'
+      id:
+        type: integer
+      issuer:
+        $ref: '#/definitions/models.NumistaCatalogIssuer'
+      maxYear:
+        type: integer
+      minYear:
+        type: integer
+      mints:
+        items:
+          type: string
+        type: array
+      obverse:
+        $ref: '#/definitions/models.NumistaCatalogSide'
+      photos:
+        items:
+          $ref: '#/definitions/models.NumistaCatalogPhoto'
+        type: array
+      references:
+        items:
+          $ref: '#/definitions/models.NumistaCatalogReference'
+        type: array
+      reverse:
+        $ref: '#/definitions/models.NumistaCatalogSide'
+      rulers:
+        items:
+          type: string
+        type: array
+      shape:
+        type: string
+      technique:
+        type: string
+      thicknessMm:
+        type: number
+      title:
+        type: string
+      url:
+        type: string
+      weightGrams:
+        type: number
+    type: object
+  models.NumistaCatalogTypeResult:
+    properties:
+      issues:
+        items:
+          $ref: '#/definitions/models.NumistaIssueSummary'
+        type: array
+      status:
+        type: string
+      type:
+        $ref: '#/definitions/models.NumistaCatalogType'
+    type: object
   models.NumistaEnrichmentState:
     enum:
     - not_requested
@@ -3485,6 +3830,13 @@ definitions:
         type: string
       visibleText:
         type: string
+    type: object
+  models.NumistaGradePrice:
+    properties:
+      grade:
+        type: string
+      price:
+        type: number
     type: object
   models.NumistaHealthSummary:
     properties:
@@ -3540,6 +3892,24 @@ definitions:
         description: Sparse rolling counts; absent statuses have zero events.
         type: object
       userEditedQueryCount:
+        type: integer
+    type: object
+  models.NumistaIssueSummary:
+    properties:
+      comment:
+        type: string
+      id:
+        type: integer
+      maxYear:
+        type: integer
+      minYear:
+        type: integer
+      mintLetter:
+        type: string
+      mintage:
+        type: integer
+      year:
+        description: Year is the Gregorian year for dated issues (negative for BC).
         type: integer
     type: object
   models.NumistaLookupOutcome:
@@ -4327,6 +4697,13 @@ definitions:
       userId:
         type: integer
     type: object
+  repository.CountryCount:
+    properties:
+      count:
+        type: integer
+      country:
+        type: string
+    type: object
   repository.DistributionCell:
     properties:
       category:
@@ -4756,6 +5133,15 @@ definitions:
         type: string
       lotId:
         type: integer
+    type: object
+  services.ExchangeRate:
+    properties:
+      date:
+        description: Date is the ECB reference date, YYYY-MM-DD.
+        type: string
+      usdPerEur:
+        description: USDPerEUR is how many US dollars one euro buys (e.g. 1.1206).
+        type: number
     type: object
   services.GeocodeCandidate:
     properties:
@@ -9538,7 +9924,44 @@ paths:
       - BearerAuth: []
       summary: Get coin category and era options
       tags:
-      - coins
+      - Coins
+  /coin-photos/search:
+    get:
+      description: 'Returns real photos of a coin with their author and license: the
+        Numista catalogue photos of numistaTypeId, then Wikimedia Commons files matching
+        q. Commons searches are cached for a week. Import a chosen photo with POST
+        /coins/{id}/images/import.'
+      parameters:
+      - description: Search text, e.g. title and year (required unless numistaTypeId
+          is set)
+        in: query
+        name: q
+        type: string
+      - description: Numista type whose catalogue photos to include
+        in: query
+        name: numistaTypeId
+        type: integer
+      - default: en
+        description: Language of catalogue data
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.CoinPhotoSearchResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Search real coin photos
+      tags:
+      - Coins
   /coins:
     get:
       description: Returns a paginated, filterable list of coins belonging to the
@@ -9551,6 +9974,33 @@ paths:
       - description: Filter by era (ancient, medieval, modern)
         in: query
         name: era
+        type: string
+      - description: Filter by country (exact)
+        in: query
+        name: country
+        type: string
+      - description: Filter by presentation
+        enum:
+        - loose
+        - coincard
+        - capsule
+        - flip
+        - proof_set
+        - blister
+        - slab
+        in: query
+        name: presentation
+        type: string
+      - description: Filter by rarity
+        enum:
+        - common
+        - uncommon
+        - scarce
+        - rare
+        - very_rare
+        - extremely_rare
+        in: query
+        name: rarity
         type: string
       - description: Search across name, denomination, ruler, era, mint, inscriptions,
           notes
@@ -10242,6 +10692,50 @@ paths:
       summary: Upload a coin image (base64)
       tags:
       - Images
+  /coins/{id}/images/import:
+    post:
+      consumes:
+      - application/json
+      description: Downloads a photo from Wikimedia Commons or the Numista catalogue
+        (as returned by GET /coin-photos/search) and saves it as a coin image, with
+        thumbnails. The credit, if given, is appended to the coin's notes. A source
+        that refuses the download (e.g. bot protection) returns 502 with code source_refused.
+      parameters:
+      - description: Coin ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo to import
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.importImageRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.CoinImage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Import a real coin photo
+      tags:
+      - Coins
   /coins/{id}/journal:
     get:
       description: Returns all activity log entries for a coin, newest first.
@@ -10387,6 +10881,55 @@ paths:
       summary: Update coin listing status
       tags:
       - Wishlist
+  /coins/{id}/market-value:
+    get:
+      description: Returns Numista's estimated price per grade for the issue of the
+        coin's linked Numista type (from its "Numista" catalogue reference), plus
+        the type's catalogue photos with credit. Responses are cached for days to
+        stay inside Numista's free plan; when Numista cannot be reached the last stored
+        values are returned with stale=true. Provider problems are reported in status,
+        not as HTTP errors.
+      parameters:
+      - description: Coin ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Numista issue ID; defaults to the issue matching the coin's date,
+          else the first
+        in: query
+        name: issueId
+        type: integer
+      - default: EUR
+        description: ISO 4217 currency code
+        in: query
+        name: currency
+        type: string
+      - default: en
+        description: Language of catalogue data
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.CoinMarketValue'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a coin's Numista market value
+      tags:
+      - Coins
   /coins/{id}/purchase:
     post:
       consumes:
@@ -11230,6 +11773,60 @@ paths:
       summary: Bulk coin action
       tags:
       - Coins
+  /coins/countries:
+    get:
+      description: Returns each country of the user's collection coins (excluding
+        wishlist and sold) with how many coins it has, alphabetically.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.CountryCount'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List collection countries
+      tags:
+      - Coins
+  /coins/country-from-numista:
+    post:
+      description: For the user's coins that have no country but are linked to a Numista
+        type, sets the country from the type's issuer. Handles up to 25 coins per
+        call (issuer details are cached for 30 days); call again while remaining >
+        0. Stops early when Numista is not configured or the quota is spent (see status).
+      parameters:
+      - description: Only this coin
+        in: query
+        name: coinId
+        type: integer
+      - default: en
+        description: Language of country names
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.CoinCountryFillResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Fill coin countries from Numista
+      tags:
+      - Coins
   /coins/health:
     get:
       description: Returns paginated per-coin metadata health scores for the authenticated
@@ -11443,6 +12040,30 @@ paths:
       summary: Match a category/era candidate against known values
       tags:
       - coins
+  /coins/summary:
+    get:
+      description: Counts the user's collection coins (excluding wishlist and sold),
+        their distinct types (coins linked to the same Numista type count once; other
+        coins once per distinct name), their distinct countries, how many coins have
+        no country, and how many coins are in a coincard. Also sums the coins' current
+        values (stored in US dollars) and converts the total to euros with the ECB
+        daily reference rate (cached; null when unavailable).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CollectionSummaryResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get collection summary
+      tags:
+      - Coins
   /collector-profile:
     get:
       description: Returns the authenticated owner's saved collector profile or neutral
@@ -12931,6 +13552,153 @@ paths:
       summary: Unread notification count
       tags:
       - Notifications
+  /numista/catalog/issuers:
+    get:
+      description: Returns up to 20 Numista issuers (countries and authorities) whose
+        name matches q, best matches first. The issuer list is cached for 30 days.
+      parameters:
+      - description: Part of the issuer name
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: en
+        description: Language of issuer names
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.NumistaCatalogIssuersResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Search Numista issuers
+      tags:
+      - Numista
+  /numista/catalog/search:
+    get:
+      description: Returns one page (20 types) of Numista coin types matching the
+        text and/or issuer, optionally limited to a year. Searches are cached for
+        a day.
+      parameters:
+      - description: Search text (required unless issuer is set)
+        in: query
+        name: q
+        type: string
+      - description: Numista issuer code, e.g. portugal
+        in: query
+        name: issuer
+        type: string
+      - description: Year the type was issued (negative for BC)
+        in: query
+        name: year
+        type: integer
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: en
+        description: Language of results
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.NumistaCatalogSearchResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Search the Numista coin catalogue
+      tags:
+      - Numista
+  /numista/catalog/types/{id}:
+    get:
+      description: Returns a Numista coin type's catalogue details (denomination,
+        rulers, composition, weight, size, mints, designs, references, reference photos
+        with credit) and its issues. Cached for 30 days.
+      parameters:
+      - description: Numista type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: en
+        description: Language of catalogue data
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.NumistaCatalogTypeResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a Numista coin type
+      tags:
+      - Numista
+  /numista/catalog/types/{id}/market-value:
+    get:
+      description: Returns Numista's estimated price per grade for an issue of a coin
+        type, before a coin exists. Same caching and status rules as the coin market
+        value.
+      parameters:
+      - description: Numista type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Numista issue ID; defaults to the issue of year, else the first
+        in: query
+        name: issueId
+        type: integer
+      - description: Year used to pick the default issue (negative for BC)
+        in: query
+        name: year
+        type: integer
+      - default: EUR
+        description: ISO 4217 currency code
+        in: query
+        name: currency
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.CoinMarketValue'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a Numista type's market value
+      tags:
+      - Numista
   /numista/enrich:
     post:
       consumes:

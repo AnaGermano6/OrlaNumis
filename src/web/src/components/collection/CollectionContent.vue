@@ -10,18 +10,40 @@
       <button class="btn btn-sm btn-secondary" @click="$emit('deselect-all')">{{ t('collection.deselectAll') }}</button>
       <span class="ml-2 text-body text-text-secondary">{{ t('collection.selectedCount', { count: selectedCount }) }}</span>
     </div>
-    <SwipeGallery v-if="isPwa && viewMode === 'swipe' && !selectMode" :coins="coins" :total="total" :page="page" :per-page="perPage" @page-change="$emit('page-change', $event)" />
-    <div v-else class="coins-grid">
-      <CoinCard
-        v-for="coin in coins"
-        :key="coin.id"
-        :coin="coin"
-        :image-side="gridSide"
-        :selectable="selectMode"
-        :selected="selectedCoinIds.has(coin.id)"
-        @toggle-select="$emit('toggle-coin-select', $event)"
-      />
-    </div>
+    <SwipeGallery v-if="isPwa && viewMode === 'swipe' && !selectMode && groupBy === 'none'" :coins="coins" :total="total" :page="page" :per-page="perPage" @page-change="$emit('page-change', $event)" />
+    <template v-else>
+      <p v-if="truncated" class="mb-3 text-body text-text-secondary" role="status">{{ t('collection.groups.truncated', { shown: coins.length, total }) }}</p>
+      <section
+        v-for="group in groups"
+        :key="group.key"
+        class="mb-8 last:mb-0"
+        :aria-label="groupBy === 'none' ? undefined : group.label"
+      >
+        <h2 v-if="groupBy !== 'none'" class="mb-3 flex items-baseline gap-2 border-b border-border-subtle pb-1 font-display text-lg font-medium text-heading">
+          {{ group.label }}
+          <span class="font-sans text-chip font-normal text-text-muted">{{ t('collection.groups.count', { count: group.coins.length }) }}</span>
+        </h2>
+        <CoinListTable
+          v-if="layout === 'list'"
+          :coins="group.coins"
+          :image-side="gridSide"
+          :selectable="selectMode"
+          :selected-ids="selectedCoinIds"
+          @toggle-select="$emit('toggle-coin-select', $event)"
+        />
+        <div v-else class="coins-grid">
+          <CoinCard
+            v-for="coin in group.coins"
+            :key="coin.id"
+            :coin="coin"
+            :image-side="gridSide"
+            :selectable="selectMode"
+            :selected="selectedCoinIds.has(coin.id)"
+            @toggle-select="$emit('toggle-coin-select', $event)"
+          />
+        </div>
+      </section>
+    </template>
   </template>
 
   <div v-else class="empty-state">
@@ -34,12 +56,15 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Coin, ImageType } from '@/types'
 import CoinCard from '@/components/CoinCard.vue'
 import SwipeGallery from '@/components/SwipeGallery.vue'
+import CoinListTable from '@/components/collection/CoinListTable.vue'
+import { groupCoins, type CoinGroupBy } from '@/utils/coinAttributes'
 import { t } from '@/i18n'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   loading: boolean
   coins: Coin[]
   selectMode: boolean
@@ -52,7 +77,13 @@ defineProps<{
   total: number
   page: number
   perPage: number
-}>()
+  groupBy?: CoinGroupBy
+  layout?: 'grid' | 'list'
+  /** The grouped view hit the load limit and shows part of the collection. */
+  truncated?: boolean
+}>(), { groupBy: 'none', layout: 'grid', truncated: false })
+
+const groups = computed(() => groupCoins(props.coins, props.groupBy))
 
 defineEmits<{
   'select-all': []

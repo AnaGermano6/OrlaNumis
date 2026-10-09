@@ -54,6 +54,14 @@
               </div>
             </div>
           </div>
+          <button
+            v-if="!obverseImage || !reverseImage"
+            type="button"
+            class="btn btn-secondary btn-sm mt-3 w-full justify-center"
+            @click="showRealPhotos = true"
+          >
+            {{ t('photos.findReal') }}
+          </button>
           <div v-if="coin.isWishlist" class="mt-3">
             <button class="btn btn-primary w-full justify-center" @click="showPurchaseModal = true">
               {{ t('coinDetail.markPurchased') }}
@@ -125,6 +133,12 @@
             @changed="refreshCoin"
           />
 
+          <CoinMarketValueSection
+            :coin-id="coin.id"
+            :numista-type-id="numistaTypeId"
+            :coin-grade="coin.grade"
+          />
+
           <CoinTagsSection
             :tags="coin.tags ?? []"
             :sets="coin.sets ?? []"
@@ -144,6 +158,15 @@
     </div>
 
     <SellModal v-if="showSellModal && coin" :coin="coin" @close="showSellModal = false" @confirm="confirmSell" />
+    <RealPhotosModal
+      v-if="showRealPhotos && coin"
+      :coin-id="coin.id"
+      :coin-name="coin.name"
+      :numista-type-id="numistaTypeId"
+      :has-primary-image="Boolean(coin.images?.some((image) => image.isPrimary))"
+      @close="showRealPhotos = false"
+      @saved="refreshCoin"
+    />
     <PurchaseModal v-if="showPurchaseModal && coin" :coin="coin" @close="showPurchaseModal = false" @confirm="confirmPurchase" />
     <PurchaseReminderModal
       v-if="showReminderModal && coin"
@@ -182,6 +205,8 @@ import CoinTagsSection from '@/components/coin/CoinTagsSection.vue'
 import CoinDetailMetadataTable from '@/components/coin/CoinDetailMetadataTable.vue'
 import CoinListingStatus from '@/components/coin/CoinListingStatus.vue'
 import CoinReferencesSection from '@/components/coin/CoinReferencesSection.vue'
+import CoinMarketValueSection from '@/components/coin/CoinMarketValueSection.vue'
+import RealPhotosModal from '@/components/photos/RealPhotosModal.vue'
 import { deleteCoin, duplicateCoin, purchaseCoin, sellCoin } from '@/api/client'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import { useDialog } from '@/composables/useDialog'
@@ -213,6 +238,12 @@ const swipeEnabled = computed(() => !showSellModal.value && !showPurchaseModal.v
 useCoinDetailSwipeNav(containerRef, { enabled: swipeEnabled })
 
 const coin = computed(() => store.currentCoin)
+// Numista type linked through a "Numista" catalogue reference, if any.
+const numistaTypeId = computed(() => {
+  const reference = coin.value?.references?.find((item) => item.catalog.trim().toLowerCase() === 'numista')
+  const id = Number(reference?.number)
+  return Number.isInteger(id) && id > 0 ? id : null
+})
 
 // Feature 355: per-coin reminder state, coinId derived reactively from the loaded coin
 const coinIdRef = computed(() => coin.value?.id ?? 0)
@@ -270,6 +301,8 @@ function refreshCoin() {
     store.fetchCoin(coin.value.id)
   }
 }
+
+const showRealPhotos = ref(false)
 
 async function handleReminderSave(date: string) {
   const saved = await saveReminder(date)

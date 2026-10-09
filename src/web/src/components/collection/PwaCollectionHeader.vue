@@ -39,6 +39,7 @@
             <span class="section-label mb-0">{{ t('collection.menu.sort') }}</span>
             <SortSelect :model-value="sortKey" @update:model-value="$emit('update:sortKey', $event)" />
           </div>
+          <slot name="controls" />
           <div class="flex flex-col gap-[0.4rem]">
             <span class="section-label mb-0">{{ t('collection.menu.view') }}</span>
             <div class="flex flex-wrap items-center gap-2">

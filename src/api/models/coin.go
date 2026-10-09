@@ -41,14 +41,22 @@ const (
 )
 
 type Coin struct {
-	ID                    uint          `gorm:"primaryKey" json:"id"`
-	Name                  string        `gorm:"not null" json:"name" binding:"max=200"`
-	Category              Category      `gorm:"type:varchar(20);not null;default:'Other'" json:"category" binding:"omitempty,max=64"`
-	Denomination          string        `json:"denomination" binding:"max=200"`
-	Ruler                 string        `json:"ruler" binding:"max=200"`
-	RomanImperialFigureID *uint         `gorm:"index" json:"romanImperialFigureId"`
-	Era                   Era           `gorm:"type:varchar(64)" json:"era" binding:"omitempty,max=64"`
-	DateRange             string        `gorm:"type:varchar(200)" json:"dateRange" binding:"max=200"`
+	ID                    uint     `gorm:"primaryKey" json:"id"`
+	Name                  string   `gorm:"not null" json:"name" binding:"max=200"`
+	Category              Category `gorm:"type:varchar(20);not null;default:'Other'" json:"category" binding:"omitempty,max=64"`
+	Denomination          string   `json:"denomination" binding:"max=200"`
+	Ruler                 string   `json:"ruler" binding:"max=200"`
+	RomanImperialFigureID *uint    `gorm:"index" json:"romanImperialFigureId"`
+	Era                   Era      `gorm:"type:varchar(64)" json:"era" binding:"omitempty,max=64"`
+	DateRange             string   `gorm:"type:varchar(200)" json:"dateRange" binding:"max=200"`
+	// Year is derived from DateRange (first year, negative for BC) for sorting and grouping.
+	Year *int `gorm:"index" json:"year"`
+	// Country is the issuing country or authority (e.g. from the Numista issuer).
+	Country string `gorm:"type:varchar(120);index" json:"country" binding:"max=120"`
+	// Presentation is how the coin is kept or was issued (see CoinPresentations).
+	Presentation string `gorm:"type:varchar(20);default:''" json:"presentation"`
+	// Rarity is a fixed scale (see CoinRarities). RarityRating is a legacy free-text field.
+	Rarity                string        `gorm:"type:varchar(20);default:''" json:"rarity"`
 	Mint                  string        `json:"mint" binding:"max=200"`
 	MintLocationID        *uint         `json:"mintLocationId"`
 	MintLocation          *MintLocation `gorm:"foreignKey:MintLocationID;constraint:-" json:"mintLocation"`

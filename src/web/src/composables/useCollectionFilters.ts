@@ -1,12 +1,26 @@
 import { ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useCoinsStore } from '@/stores/coins'
-import { getSets, getTags } from '@/api/client'
+import { fillCountriesFromNumista, getCoinCountries, getSets, getTags, type CoinCountryCount } from '@/api/client'
+import { COIN_GROUPINGS, type CoinGroupBy } from '@/utils/coinAttributes'
+import { numistaLang } from '@/utils/numistaCatalog'
 import { coinVocabulary, loadCoinVocabulary } from '@/i18n/coinVocabulary'
 import { usePwa } from '@/composables/usePwa'
 import { COIN_ERAS, normalizeCoinSetType } from '@/types'
 import type { CollectionSetOption } from '@/types'
 
 const RANDOM_SEED_KEY = 'coins:randomSeed'
+const GROUP_BY_KEY = 'collection:groupBy'
+const COUNTRY_FILL_KEY = 'coins:countryFillDone'
+
+function readGroupBy(): CoinGroupBy {
+  try {
+    const saved = localStorage.getItem(GROUP_BY_KEY) as CoinGroupBy | null
+    if (saved && COIN_GROUPINGS.includes(saved)) return saved
+  } catch {
+    // Storage unavailable: no grouping.
+  }
+  return 'none'
+}
 const PWA_RESUME_THRESHOLD_MS = 30_000
 
 function generateRandomSeed(): number {
@@ -38,13 +52,19 @@ export function useCollectionFilters() {
   const selectedTag = ref('')
   const userTags = ref<CollectionSetOption[]>([])
   const eraOptions = ref<string[]>([...COIN_ERAS])
+  const selectedCountry = ref(store.selectedCountry)
+  const selectedPresentation = ref(store.selectedPresentation)
+  const selectedRarity = ref(store.selectedRarity)
+  const groupBy = ref<CoinGroupBy>(readGroupBy())
+  const countryOptions = ref<CoinCountryCount[]>([])
+  const fillingCountries = ref(false)
 
   let debounceTimer: ReturnType<typeof setTimeout>
   let hiddenAt = 0
 
   async function fetchUserTags() {
     try {
-      const [tagRes, setRes] = await Promise.all([getTags(), getSets(), loadCoinVocabulary()])
+      const [tagRes, setRes] = await Promise.all([getTags(), getSets(), loadCoinVocabulary(), loadCountryOptions()])
       const tagOptions = (tagRes.data?.tags ?? []).map((tag) => ({
         id: tag.id,
         name: tag.name,
@@ -67,12 +87,53 @@ export function useCollectionFilters() {
     } catch { /* ignore */ }
   }
 
+  async function loadCountryOptions() {
+    try {
+      const res = await getCoinCountries()
+      countryOptions.value = res.data ?? []
+    } catch {
+      countryOptions.value = []
+    }
+  }
+
+  // Coins linked to Numista but saved without a country get it from their
+  // Numista type the first time the collection is grouped by country in a
+  // browser session (a few Numista requests, cached server-side for 30 days).
+  async function fillCountriesOnce() {
+    try {
+      if (sessionStorage.getItem(COUNTRY_FILL_KEY)) return
+      sessionStorage.setItem(COUNTRY_FILL_KEY, '1')
+    } catch {
+      // Without session storage the fill may run again on a later visit; it is cheap.
+    }
+    fillingCountries.value = true
+    let updated = 0
+    try {
+      for (let round = 0; round < 8; round += 1) {
+        const res = await fillCountriesFromNumista(numistaLang())
+        updated += res.data.updated
+        if (res.data.status !== 'ok' || res.data.remaining === 0 || res.data.updated === 0) break
+      }
+    } catch {
+      // Countries stay as they are; the user can still set them by hand.
+    } finally {
+      fillingCountries.value = false
+    }
+    if (updated > 0) {
+      await loadCountryOptions()
+      loadCoins()
+    }
+  }
+
   function loadCoins() {
     const [sort, order] = sortKey.value.split('_').length === 3
       ? [sortKey.value.split('_').slice(0, 2).join('_'), sortKey.value.split('_')[2]]
       : [sortKey.value.split('_')[0], sortKey.value.split('_')[1]]
     store.selectedCategory = selectedCategory.value
     store.selectedEra = selectedEra.value
+    store.selectedCountry = selectedCountry.value
+    store.selectedPresentation = selectedPresentation.value
+    store.selectedRarity = selectedRarity.value
     store.searchQuery = search.value
 
     // For random sort, generate a per-session seed (stable across pagination within a session)
@@ -92,20 +153,41 @@ export function useCollectionFilters() {
       ? selectedTag.value.slice(4)
       : selectedSetFilter ? undefined : selectedTag.value || undefined
 
-    store.fetchCoins({
+    const params = {
       category: selectedCategory.value || undefined,
       era: selectedEra.value || undefined,
+      country: selectedCountry.value || undefined,
+      presentation: selectedPresentation.value || undefined,
+      rarity: selectedRarity.value || undefined,
       search: search.value || undefined,
       tag: selectedTagFilter,
       set: selectedSetFilter,
       wishlist: 'false',
       sold: 'false',
-      page: page.value,
       sort,
       order,
       seed,
-    })
+    }
+    // Grouped views show every matching coin in sections, so they load all pages.
+    if (groupBy.value !== 'none') void store.fetchAllCoins(params)
+    else void store.fetchCoins({ ...params, page: page.value })
   }
+
+  watch([selectedCountry, selectedPresentation, selectedRarity], () => {
+    page.value = 1
+    loadCoins()
+  })
+
+  watch(groupBy, (value) => {
+    try {
+      localStorage.setItem(GROUP_BY_KEY, value)
+    } catch {
+      // The choice still applies for this visit.
+    }
+    page.value = 1
+    loadCoins()
+    if (value === 'country') void fillCountriesOnce()
+  })
 
   watch(selectedCategory, () => {
     page.value = 1
@@ -183,7 +265,14 @@ export function useCollectionFilters() {
     selectedTag,
     userTags,
     eraOptions,
+    selectedCountry,
+    selectedPresentation,
+    selectedRarity,
+    groupBy,
+    countryOptions,
+    fillingCountries,
     fetchUserTags,
     loadCoins,
+    fillCountriesOnce,
   }
 }

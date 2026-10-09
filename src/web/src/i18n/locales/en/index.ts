@@ -7,7 +7,9 @@ import auth from './auth'
 import availability from './availability'
 import calendar from './calendar'
 import camera from './camera'
+import catalog from './catalog'
 import chat from './chat'
+import coinAttributes from './coinAttributes'
 import coinCard from './coinCard'
 import coinDetail from './coinDetail'
 import coinFields from './coinFields'
@@ -38,7 +40,9 @@ import nav from './nav'
 import notes from './notes'
 import notifications from './notifications'
 import numista from './numista'
+import numistaGrades from './numistaGrades'
 import oidc from './oidc'
+import photos from './photos'
 import purchase from './purchase'
 import pwa from './pwa'
 import quickAccess from './quickAccess'
@@ -74,7 +78,9 @@ export default {
   availability,
   calendar,
   camera,
+  catalog,
   chat,
+  coinAttributes,
   coinCard,
   coinDetail,
   coinFields,
@@ -105,7 +111,9 @@ export default {
   notes,
   notifications,
   numista,
+  numistaGrades,
   oidc,
+  photos,
   purchase,
   pwa,
   quickAccess,

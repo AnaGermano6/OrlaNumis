@@ -427,8 +427,15 @@ func (h *ImageHandler) ProxyImage(c *gin.Context) {
 	req.Header.Set("Accept", "image/*, */*")
 
 	client := outboundHTTPClientFactory()
-	// lgtm [go/request-forgery] URL is validated by validateOutboundURL, and outboundHTTPClientFactory blocks private/loopback DNS targets, redirects, and connect-time rebinding.
-	resp, err := client.Do(req)
+	var resp *http.Response
+	if isWikimediaHost(parsedImageURL.Hostname()) {
+		// Wikimedia throttles browser-like agents; identify the app and retry a 429 once.
+		req.Header.Set("User-Agent", services.CommonsUserAgent)
+		resp, err = doWithRateLimitRetry(client, req)
+	} else {
+		// lgtm [go/request-forgery] URL is validated by validateOutboundURL, and outboundHTTPClientFactory blocks private/loopback DNS targets, redirects, and connect-time rebinding.
+		resp, err = client.Do(req)
+	}
 	if err != nil {
 		if isOutboundTargetBlockedError(err) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "URL target is not allowed"})

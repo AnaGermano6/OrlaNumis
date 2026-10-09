@@ -15,18 +15,21 @@ var ErrStorageSlotOccupied = errors.New("storage slot is occupied")
 
 // CoinListFilters holds optional filters for listing coins.
 type CoinListFilters struct {
-	Category  string
-	Era       string
-	Search    string
-	Wishlist  *bool
-	Sold      *bool
-	TagID     *uint
-	SetID     *uint
-	SortField string
-	SortOrder string
-	Seed      *int // for SortField == "random"; deterministic per-seed shuffle
-	Page      int
-	Limit     int
+	Category     string
+	Era          string
+	Country      string
+	Presentation string
+	Rarity       string
+	Search       string
+	Wishlist     *bool
+	Sold         *bool
+	TagID        *uint
+	SetID        *uint
+	SortField    string
+	SortOrder    string
+	Seed         *int // for SortField == "random"; deterministic per-seed shuffle
+	Page         int
+	Limit        int
 }
 
 // OwnedCoinFilters are lightweight scoped filters used by collection chat tools.
@@ -240,7 +243,7 @@ var allowedSortFields = map[string]string{
 
 var searchFields = []string{
 	"name", "denomination", "ruler", "era", "mint",
-	"obverse_inscription", "reverse_inscription", "notes", "rarity_rating",
+	"obverse_inscription", "reverse_inscription", "notes", "rarity_rating", "country",
 }
 
 // List returns a paginated, filtered list of coins for a user.
@@ -249,6 +252,15 @@ func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Co
 
 	if filters.Category != "" {
 		query = query.Where("category = ?", filters.Category)
+	}
+	if filters.Country != "" {
+		query = query.Where("country = ?", filters.Country)
+	}
+	if filters.Presentation != "" {
+		query = query.Where("presentation = ?", filters.Presentation)
+	}
+	if filters.Rarity != "" {
+		query = query.Where("rarity = ?", filters.Rarity)
 	}
 	if filters.Era != "" {
 		query = query.Where("era = ?", filters.Era)
@@ -459,6 +471,10 @@ func (r *CoinRepository) Duplicate(id uint, userID uint) (*models.Coin, error) {
 		ObverseDescription:    source.ObverseDescription,
 		ReverseDescription:    source.ReverseDescription,
 		RarityRating:          source.RarityRating,
+		Year:                  source.Year,
+		Country:               source.Country,
+		Presentation:          source.Presentation,
+		Rarity:                source.Rarity,
 		PurchasePrice:         source.PurchasePrice,
 		CurrentValue:          source.CurrentValue,
 		CurrentValueUpdatedAt: source.CurrentValueUpdatedAt,
@@ -831,8 +847,9 @@ func (r *CoinRepository) getInvestmentBreakdownByPurchaseYear(userID uint) ([]In
 			SUM(CASE WHEN purchase_price IS NULL THEN 1 ELSE 0 END) AS missing_purchase_price_count`).
 		Scopes(ActiveCollection(userID)).
 		Where("purchase_date IS NOT NULL").
-		Group("year").
-		Order("year ASC").
+		// Group by the expression, not the "year" alias: coins have their own year column.
+		Group("CAST(strftime('%Y', purchase_date) AS INTEGER)").
+		Order("CAST(strftime('%Y', purchase_date) AS INTEGER) ASC").
 		Scan(&segments).Error
 	if err != nil {
 		return nil, err
@@ -1103,4 +1120,81 @@ func recordActiveCollectionValueSnapshot(db *gorm.DB, userID uint) error {
 		RecordedAt:    time.Now(),
 	}
 	return db.Create(&snapshot).Error
+}
+
+// FindMissingCountryWithNumista returns up to limit of the user's coins (or
+// just coinID when non-zero) that have no country but are linked to a Numista
+// type, plus how many such coins there are in total.
+func (r *CoinRepository) FindMissingCountryWithNumista(userID, coinID uint, limit int) ([]models.Coin, int64, error) {
+	query := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID)).
+		Where("(country IS NULL OR country = '')").
+		Where("id IN (SELECT coin_id FROM coin_references WHERE LOWER(catalog) = 'numista')")
+	if coinID != 0 {
+		query = query.Where("id = ?", coinID)
+	}
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var coins []models.Coin
+	err := query.Preload("References").Order("id").Limit(limit).Find(&coins).Error
+	return coins, total, err
+}
+
+// UpdateCountry sets one coin's country.
+func (r *CoinRepository) UpdateCountry(coinID uint, country string) error {
+	return r.db.Model(&models.Coin{}).Where("id = ?", coinID).Update("country", country).Error
+}
+
+// CountryCount is how many coins the user has from one country.
+type CountryCount struct {
+	Country string `json:"country"`
+	Count   int64  `json:"count"`
+}
+
+// CountryCounts lists the countries of the user's collection coins (not
+// wishlist or sold) with how many coins each has, alphabetically.
+func (r *CoinRepository) CountryCounts(userID uint) ([]CountryCount, error) {
+	var counts []CountryCount
+	err := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID)).
+		Select("country, COUNT(*) AS count").
+		Where("country IS NOT NULL AND country <> '' AND is_wishlist = ? AND is_sold = ?", false, false).
+		Group("country").Order("country").Scan(&counts).Error
+	return counts, err
+}
+
+// CollectionSummary holds the headline numbers of the user's collection
+// (coins not on the wishlist and not sold).
+type CollectionSummary struct {
+	Coins int64 `json:"coins"`
+	// Types counts distinct coin types: coins linked to the same Numista type
+	// count once; other coins count once per distinct name.
+	Types          int64 `json:"types"`
+	Countries      int64 `json:"countries"`
+	WithoutCountry int64 `json:"withoutCountry"`
+	// Coincards counts coins whose presentation is "coincard".
+	Coincards int64 `json:"coincards"`
+	// TotalValue sums the coins' current values, in the app's stored currency (US dollars).
+	TotalValue float64 `json:"totalValue"`
+	// UnvaluedCoins have no current value and are left out of TotalValue.
+	UnvaluedCoins int64 `json:"unvaluedCoins"`
+}
+
+// CollectionSummary returns the collection's coin, type, country and coincard counts.
+func (r *CoinRepository) CollectionSummary(userID uint) (CollectionSummary, error) {
+	var summary CollectionSummary
+	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID)).Select(`
+		COUNT(*) AS coins,
+		COUNT(DISTINCT COALESCE(
+			(SELECT 'numista:' || TRIM(r.number) FROM coin_references r
+				WHERE r.coin_id = coins.id AND LOWER(r.catalog) = 'numista' ORDER BY r.id LIMIT 1),
+			'name:' || LOWER(TRIM(coins.name))
+		)) AS types,
+		COUNT(DISTINCT CASE WHEN TRIM(COALESCE(country, '')) <> '' THEN TRIM(country) END) AS countries,
+		COALESCE(SUM(CASE WHEN TRIM(COALESCE(country, '')) = '' THEN 1 ELSE 0 END), 0) AS without_country,
+		COALESCE(SUM(CASE WHEN presentation = 'coincard' THEN 1 ELSE 0 END), 0) AS coincards,
+		COALESCE(SUM(current_value), 0) AS total_value,
+		COALESCE(SUM(CASE WHEN current_value IS NULL THEN 1 ELSE 0 END), 0) AS unvalued_coins`).
+		Scan(&summary).Error
+	return summary, err
 }

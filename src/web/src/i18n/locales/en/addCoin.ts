@@ -21,4 +21,10 @@ export default {
   slotUnavailable: 'Slot unavailable',
   addFailed: 'Failed to add coin',
   retryFailed: 'Upload failed. Your coin is already saved; retry the remaining uploads.',
+  catalogMode: 'Catalog',
+  addToWishlist: 'Add to Wishlist',
+  fromCatalog: 'Filled in from the Numista catalog: {title}.',
+  fromCatalogHint: 'Check the details, add your price, date and storage, and save.',
+  fromCatalogWishlistHint: 'It will be saved to your wishlist.',
+  chooseAnother: 'Choose another coin',
 }

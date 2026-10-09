@@ -7,6 +7,7 @@ import { formatCurrency, materialLabel } from '@/utils/format'
 import { sanitizeExternalUrl } from '@/composables/useSafeExternalLink'
 import { intlLocale, t } from '@/i18n'
 import { eraLabel } from '@/i18n/coinVocabulary'
+import { presentationLabel, rarityLabel } from '@/utils/coinAttributes'
 
 export function useCoinDetailMetadataRows(coin: Coin | null) {
   const rows = computed<CoinDetailMetadataRow[]>(() => {
@@ -61,6 +62,18 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
       label: t('coinFields.storageLocation'),
       value: coin.storageLocation?.name ?? '—',
     })
+
+    if (coin.country) {
+      result.push({ key: 'country', label: t('coinFields.country'), value: coin.country })
+    }
+
+    if (coin.presentation) {
+      result.push({ key: 'presentation', label: t('coinFields.presentation'), value: presentationLabel(coin.presentation) })
+    }
+
+    if (coin.rarity) {
+      result.push({ key: 'rarity', label: t('coinFields.rarity'), value: rarityLabel(coin.rarity) })
+    }
 
     // Physical attributes
     if (coin.denomination) {
