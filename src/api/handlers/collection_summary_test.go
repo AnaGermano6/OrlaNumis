@@ -61,6 +61,19 @@ func TestCollectionSummaryHandler_ConvertsTheTotalToEuros(t *testing.T) {
 	if got.Coins != 2 || got.TotalValue != 50 || got.TotalValueEUR == nil || *got.TotalValueEUR != 40 || got.ExchangeRate == nil || got.ExchangeRate.Date != "2026-10-09" {
 		t.Fatalf("summary = %+v (rate %+v)", got, got.ExchangeRate)
 	}
+	var withHighlights struct {
+		Highlights struct {
+			Rarest       *struct{ Name string } `json:"rarest"`
+			MostValuable *struct {
+				Name         string   `json:"name"`
+				CurrentValue *float64 `json:"currentValue"`
+			} `json:"mostValuable"`
+		} `json:"highlights"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &withHighlights); err != nil || withHighlights.Highlights.Rarest != nil ||
+		withHighlights.Highlights.MostValuable == nil || *withHighlights.Highlights.MostValuable.CurrentValue != 26.19 {
+		t.Fatalf("highlights = %+v (%v)", withHighlights.Highlights, err)
+	}
 }
 
 func TestCollectionSummaryHandler_LeavesEurosEmptyWithoutARate(t *testing.T) {

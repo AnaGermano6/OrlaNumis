@@ -115,6 +115,28 @@ const messages: Messages['collection'] = {
     rateUnavailable: 'Taxa de câmbio indisponível',
     unvalued: { one: '{count} sem valor', other: '{count} sem valor' },
   },
+  highlights: {
+    title: 'Destaques da coleção',
+    rarest: 'Mais rara',
+    oldest: 'Mais antiga',
+    mostValuable: 'Mais valiosa',
+    noRarity: 'Ainda nenhuma moeda tem raridade. Defina-a ao adicionar ou editar uma moeda.',
+    noYear: 'Ainda nenhuma moeda tem ano.',
+    noValue: 'Ainda nenhuma moeda tem valor atual.',
+  },
+  worldMap: {
+    title: 'Distribuição geográfica',
+    hint: 'Toque num país no mapa ou na lista para ver só as moedas desse país.',
+    showing: 'A mostrar as moedas de {country}.',
+    showAll: 'Mostrar todos os países',
+    countryCoins: { one: '{country}: {count} moeda', other: '{country}: {count} moedas' },
+    mapLabel: 'Mapa-mundo das moedas da coleção por país',
+    legend: 'Moedas por país',
+    countries: 'Países da coleção',
+    notOnMap: 'Fora do mapa: emissores históricos ou nomes que não correspondem a um país atual.',
+    loadFailed: 'Não foi possível carregar o mapa.',
+    attribution: 'Dados do mapa: Natural Earth (domínio público).',
+  },
 }
 
 export default messages

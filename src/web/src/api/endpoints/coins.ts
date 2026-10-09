@@ -473,6 +473,27 @@ export interface CollectionSummary {
   /** totalValue in euros at the ECB rate; null when no rate is available. */
   totalValueEur: number | null
   exchangeRate?: { usdPerEur: number; date: string }
+  highlights?: CollectionHighlights
+}
+
+/** A notable coin of the collection, shown under the gallery KPIs. */
+export interface CoinHighlight {
+  id: number
+  name: string
+  country: string
+  year: number | null
+  dateRange: string
+  rarity: string
+  grade: string
+  /** In US dollars, like every stored value. */
+  currentValue: number | null
+  imagePath?: string
+}
+
+export interface CollectionHighlights {
+  rarest: CoinHighlight | null
+  oldest: CoinHighlight | null
+  mostValuable: CoinHighlight | null
 }
 
 export const getCollectionSummary = () => api.get<CollectionSummary>('/coins/summary')

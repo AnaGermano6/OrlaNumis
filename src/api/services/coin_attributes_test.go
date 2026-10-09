@@ -230,3 +230,49 @@ func TestCoinYear_TypedYearWinsAndEmptyYearFollowsTheDate(t *testing.T) {
 		t.Fatalf("typed year on update not kept: %v", got)
 	}
 }
+
+func TestCollectionHighlights_PicksRarestOldestAndMostValuable(t *testing.T) {
+	db := setupTestDB(t)
+	svc := newTestCoinService(db)
+	year := func(v int) *int { return &v }
+	coins := map[string]*models.Coin{
+		"rare cheap":   {Name: "Rare cheap", Category: models.CategoryModern, UserID: 1, Rarity: "very_rare", CurrentValue: ptrFloat(10), Year: year(1900)},
+		"rare dear":    {Name: "Rare dear", Category: models.CategoryModern, UserID: 1, Rarity: "very_rare", CurrentValue: ptrFloat(90), Year: year(1950)},
+		"common":       {Name: "Common", Category: models.CategoryModern, UserID: 1, Rarity: "common", CurrentValue: ptrFloat(5), Year: year(1968)},
+		"denarius":     {Name: "Denarius", Category: models.CategoryRoman, UserID: 1, Year: year(-44), CurrentValue: ptrFloat(300)},
+		"dateless":     {Name: "Dateless gold", Category: models.CategoryModern, UserID: 1, CurrentValue: ptrFloat(1200)},
+		"wishlist":     {Name: "Wanted", Category: models.CategoryModern, UserID: 1, Rarity: "extremely_rare", Year: year(-500), CurrentValue: ptrFloat(9000), IsWishlist: true},
+		"sold":         {Name: "Sold", Category: models.CategoryModern, UserID: 1, Rarity: "extremely_rare", CurrentValue: ptrFloat(5000), IsSold: true},
+		"another user": {Name: "Not mine", Category: models.CategoryModern, UserID: 2, Rarity: "extremely_rare", Year: year(-600), CurrentValue: ptrFloat(8000)},
+	}
+	for _, coin := range coins {
+		if err := svc.CreateCoin(coin); err != nil {
+			t.Fatalf("CreateCoin: %v", err)
+		}
+	}
+	if err := db.Create(&models.CoinImage{CoinID: coins["denarius"].ID, FilePath: "coin-4/obverse.jpg", ImageType: models.ImageTypeObverse}).Error; err != nil {
+		t.Fatalf("image: %v", err)
+	}
+	if err := db.Create(&models.CoinImage{CoinID: coins["denarius"].ID, FilePath: "coin-4/reverse.jpg", ImageType: "reverse"}).Error; err != nil {
+		t.Fatalf("image: %v", err)
+	}
+
+	got, err := repository.NewCoinRepository(db).CollectionHighlights(1)
+	if err != nil {
+		t.Fatalf("CollectionHighlights: %v", err)
+	}
+	if got.Rarest == nil || got.Rarest.Name != "Rare dear" {
+		t.Fatalf("rarest = %+v (ties go to the more valuable coin)", got.Rarest)
+	}
+	if got.Oldest == nil || got.Oldest.Name != "Denarius" || got.Oldest.ImagePath != "coin-4/obverse.jpg" {
+		t.Fatalf("oldest = %+v", got.Oldest)
+	}
+	if got.MostValuable == nil || got.MostValuable.Name != "Dateless gold" || *got.MostValuable.CurrentValue != 1200 {
+		t.Fatalf("most valuable = %+v", got.MostValuable)
+	}
+
+	empty, err := repository.NewCoinRepository(db).CollectionHighlights(99)
+	if err != nil || empty.Rarest != nil || empty.Oldest != nil || empty.MostValuable != nil {
+		t.Fatalf("empty collection = %+v (%v)", empty, err)
+	}
+}

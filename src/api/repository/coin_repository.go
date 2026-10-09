@@ -1198,3 +1198,84 @@ func (r *CoinRepository) CollectionSummary(userID uint) (CollectionSummary, erro
 		Scan(&summary).Error
 	return summary, err
 }
+
+// CoinHighlight is a short description of a notable coin of the collection.
+type CoinHighlight struct {
+	ID           uint     `json:"id"`
+	Name         string   `json:"name"`
+	Country      string   `json:"country"`
+	Year         *int     `json:"year"`
+	DateRange    string   `json:"dateRange"`
+	Rarity       string   `json:"rarity"`
+	Grade        string   `json:"grade"`
+	CurrentValue *float64 `json:"currentValue"`
+	// ImagePath is the primary (or obverse, or first) image, if any.
+	ImagePath string `json:"imagePath,omitempty"`
+}
+
+// CollectionHighlights names the rarest, oldest and most valuable coins of the
+// collection (not wishlist or sold); each is nil when no coin qualifies.
+type CollectionHighlights struct {
+	Rarest       *CoinHighlight `json:"rarest"`
+	Oldest       *CoinHighlight `json:"oldest"`
+	MostValuable *CoinHighlight `json:"mostValuable"`
+}
+
+// rarityRankSQL orders the fixed rarity scale, highest = rarest.
+const rarityRankSQL = `CASE rarity
+	WHEN 'extremely_rare' THEN 6 WHEN 'very_rare' THEN 5 WHEN 'rare' THEN 4
+	WHEN 'scarce' THEN 3 WHEN 'uncommon' THEN 2 WHEN 'common' THEN 1 ELSE 0 END`
+
+// Ties go to the more valuable coin (coins without a value last), then the older one.
+const highlightTieBreakSQL = "current_value IS NULL, current_value DESC, year IS NULL, year ASC, id ASC"
+
+// CollectionHighlights finds the rarest, oldest and most valuable coins.
+func (r *CoinRepository) CollectionHighlights(userID uint) (CollectionHighlights, error) {
+	pick := func(where, order string) (*CoinHighlight, error) {
+		var coins []models.Coin
+		err := r.db.Scopes(ActiveCollection(userID)).Where(where).Order(order).Limit(1).
+			Preload("Images").Find(&coins).Error
+		if err != nil || len(coins) == 0 {
+			return nil, err
+		}
+		return newCoinHighlight(&coins[0]), nil
+	}
+	var highlights CollectionHighlights
+	var err error
+	if highlights.Rarest, err = pick(rarityRankSQL+" > 0", rarityRankSQL+" DESC, "+highlightTieBreakSQL); err != nil {
+		return highlights, err
+	}
+	if highlights.Oldest, err = pick("year IS NOT NULL", "year ASC, current_value IS NULL, current_value DESC, id ASC"); err != nil {
+		return highlights, err
+	}
+	if highlights.MostValuable, err = pick("current_value IS NOT NULL AND current_value > 0", "current_value DESC, id ASC"); err != nil {
+		return highlights, err
+	}
+	return highlights, nil
+}
+
+func newCoinHighlight(coin *models.Coin) *CoinHighlight {
+	highlight := &CoinHighlight{
+		ID: coin.ID, Name: coin.Name, Country: coin.Country, Year: coin.Year, DateRange: coin.DateRange,
+		Rarity: coin.Rarity, Grade: coin.Grade, CurrentValue: coin.CurrentValue,
+	}
+	var obverse, first string
+	for _, image := range coin.Images {
+		if image.IsPrimary {
+			highlight.ImagePath = image.FilePath
+			return highlight
+		}
+		if obverse == "" && image.ImageType == models.ImageTypeObverse {
+			obverse = image.FilePath
+		}
+		if first == "" {
+			first = image.FilePath
+		}
+	}
+	if obverse != "" {
+		highlight.ImagePath = obverse
+	} else {
+		highlight.ImagePath = first
+	}
+	return highlight
+}
