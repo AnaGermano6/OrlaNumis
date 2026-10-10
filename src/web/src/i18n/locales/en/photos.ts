@@ -16,4 +16,10 @@ export default {
   importFailed: 'The source refused the photo ({sides}). Choose another photo or add your own.',
   save: 'Save photos',
   findReal: 'Find real photos',
+  sources: {
+    ecb: 'European Central Bank',
+    incm: 'Portuguese Mint (INCM)',
+  },
+  swapSides: 'Swap obverse and reverse',
+  swapSidesFailed: 'Could not swap the images. Try again.',
 }

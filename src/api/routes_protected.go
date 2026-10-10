@@ -203,6 +203,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.POST("/coins/:id/images/base64", d.writeRateLimit, d.imageHandler.UploadBase64)
 		protected.POST("/coins/:id/images/import", d.writeRateLimit, d.imageHandler.ImportRemote)
 		protected.DELETE("/coins/:id/images/:imageId", d.imageHandler.Delete)
+		protected.POST("/coins/:id/images/swap-sides", d.writeRateLimit, d.imageHandler.SwapSides)
 		protected.GET("/uploads/*filepath", d.imageHandler.ServeUpload)
 		protected.GET("/proxy-image", d.imageHandler.ProxyImage)
 		protected.GET("/scrape-image", d.imageHandler.ScrapeImage)
@@ -245,7 +246,10 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 
 		// Numista catalogue browsing and market values share one database cache.
 		numistaResponseCache := services.NewNumistaResponseCache(repository.NewNumistaCacheRepository(database.DB), services.NewSystemNumistaClock(), d.logger)
-		numistaCatalogSvc := services.NewNumistaCatalogService(d.numistaClient, numistaResponseCache)
+		ecbCoinPhotos := services.NewEcbCoinPhotoService(services.NewHTTPECBCoinsClient(nil), numistaResponseCache)
+		incmCoinPhotos := services.NewIncmCoinPhotoService(services.NewHTTPINCMShopClient(nil), numistaResponseCache)
+		mdpCoinPhotos := services.NewMdpCoinPhotoService(services.NewHTTPMDPShopClient(nil), numistaResponseCache)
+		numistaCatalogSvc := services.NewNumistaCatalogService(d.numistaClient, numistaResponseCache).WithECB(ecbCoinPhotos).WithMint(incmCoinPhotos).WithMint(mdpCoinPhotos)
 		numistaMarketValueSvc := services.NewNumistaMarketValueService(d.numistaClient, numistaResponseCache).WithCatalog(numistaCatalogSvc)
 		coinMarketValueHandler := handlers.NewCoinMarketValueHandler(d.coinRepo, numistaMarketValueSvc)
 		protected.GET("/coins/:id/market-value", coinMarketValueHandler.MarketValue)
@@ -254,12 +258,14 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/numista/catalog/search", numistaCatalogHandler.Search)
 		protected.GET("/numista/catalog/types/:id", numistaCatalogHandler.Type)
 		protected.GET("/numista/catalog/types/:id/market-value", numistaCatalogHandler.MarketValue)
-		coinPhotoHandler := handlers.NewCoinPhotoHandler(services.NewCoinPhotoSearchService(numistaCatalogSvc, services.NewHTTPCommonsClient(nil), numistaResponseCache))
-		protected.GET("/coin-photos/search", coinPhotoHandler.Search)
+		coinPhotoSearch := services.NewCoinPhotoSearchService(numistaCatalogSvc, services.NewHTTPCommonsClient(nil), numistaResponseCache).WithECB(ecbCoinPhotos).WithMint(incmCoinPhotos).WithMint(mdpCoinPhotos)
+		protected.GET("/coin-photos/search", handlers.NewCoinPhotoHandler(coinPhotoSearch).Search)
+		// The add-coin page fills the sides the user has no photo of with the
+		// coin's official images.
+		protected.POST("/coins/:id/official-photos", d.writeRateLimit, handlers.NewOfficialPhotoHandler(d.coinRepo, d.imageHandler, coinPhotoSearch, d.logger).Add)
 		coinCountryHandler := handlers.NewCoinCountryHandler(d.coinRepo, services.NewCoinCountryService(d.coinRepo, numistaCatalogSvc))
 		protected.GET("/coins/countries", coinCountryHandler.Countries)
-		exchangeRates := services.NewExchangeRateService(services.NewHTTPECBClient(nil), numistaResponseCache)
-		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(exchangeRates).Summary)
+		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(d.exchangeRates).WithSettings(d.settingsSvc).Summary)
 		protected.POST("/coins/country-from-numista", d.writeRateLimit, coinCountryHandler.FillFromNumista)
 
 		auctionLotSvc := services.NewAuctionLotService(d.auctionLotRepo, d.coinRepo).

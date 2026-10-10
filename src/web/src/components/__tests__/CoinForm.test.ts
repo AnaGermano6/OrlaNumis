@@ -124,6 +124,34 @@ describe('CoinForm', () => {
     expect(source).toContain('props.form.mintLocationId = mintLocation.id')
   })
 
+  // Catalogue measurements have more decimals than a fixed step allows
+  // (25.75 mm for a 2 euro coin, 7.128 g), and the browser would refuse to save.
+  it('accepts weights and diameters with any number of decimals', async () => {
+    const form = { name: 'Coin', category: 'Roman', material: 'Silver', weightGrams: 7.128, diameterMm: 25.75 }
+    const wrapper = mount(CoinForm, {
+      props: { form, submitLabel: 'Save' },
+      global: {
+        stubs: {
+          RouterLink: { template: '<a><slot /></a>' },
+          AutocompleteInput: true,
+          ImperialFigurePicker: true,
+          CreateMintModal: true,
+          AuthenticatedImage: true,
+          X: true,
+          Camera: true,
+        },
+      },
+    })
+    await flushPromises()
+
+    const inputs = ['weightGrams', 'diameterMm'].map((field) =>
+      wrapper.findAll('input[type="number"]').find((input) => (input.element as HTMLInputElement).valueAsNumber === form[field as 'weightGrams' | 'diameterMm'])!)
+    for (const input of inputs) {
+      expect(input.attributes('step')).toBe('any')
+      expect((input.element as HTMLInputElement).validity.valid).toBe(true)
+    }
+  })
+
   it('shows exact coordinates only for trays and keeps the current coin slot available', async () => {
     const form = { name: 'Coin', category: 'Roman', material: 'Silver', storageLocationId: 2, storageSlot: 4 }
     const wrapper = mount(CoinForm, {

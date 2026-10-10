@@ -63,6 +63,11 @@ func TestNumistaCatalogHandler_ValidatesInput(t *testing.T) {
 		"/api/numista/catalog/search?q=escudo&lang=portuguese",
 		"/api/numista/catalog/search?q=escudo&year=abc",
 		"/api/numista/catalog/search?q=escudo&page=0",
+		"/api/numista/catalog/search?q=escudo&count=51",
+		"/api/numista/catalog/search?catalogue=KM",
+		"/api/numista/catalog/search?number=84",
+		"/api/numista/catalog/search?catalogue=Schon&number=84",
+		"/api/numista/catalog/search?catalogue=KM&number=84%20OR%201",
 		"/api/numista/catalog/types/0",
 		"/api/numista/catalog/types/5/market-value?currency=euros",
 		"/api/numista/catalog/types/5/market-value?issueId=-1",
@@ -104,5 +109,29 @@ func TestNumistaCatalogHandler_ServesSearchTypeAndIssuers(t *testing.T) {
 	var value models.CoinMarketValue
 	if err := json.Unmarshal(w.Body.Bytes(), &value); err != nil || value.Status != models.NumistaDataStatusOK || value.Currency != "USD" {
 		t.Fatalf("market value: %d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestNumistaCatalogHandler_SearchesByCatalogueReference(t *testing.T) {
+	router, client := setupNumistaCatalogRouter(t)
+
+	w := getMarketValue(router, "/api/numista/catalog/search?catalogue=km&number=329.1&year=1993&count=50&lang=pt", 1)
+	if w.Code != http.StatusOK {
+		t.Fatalf("search: %d %s", w.Code, w.Body.String())
+	}
+	sent := client.lastSearch
+	if sent.Catalogue != 3 || sent.Number != "329.1" || sent.Year != 1993 || sent.Count != 50 || sent.Query != "" || sent.Issuer != "" {
+		t.Fatalf("sent %+v", sent)
+	}
+
+	// The same search with another page size is a separate cache entry.
+	calls := client.calls
+	getMarketValue(router, "/api/numista/catalog/search?catalogue=KM&number=329.1&year=1993&count=50&lang=pt", 1)
+	if client.calls != calls {
+		t.Fatalf("repeated search should be served from cache")
+	}
+	getMarketValue(router, "/api/numista/catalog/search?catalogue=KM&number=329.1&year=1993&lang=pt", 1)
+	if client.calls != calls+1 || client.lastSearch.Count != services.NumistaCatalogPageSize {
+		t.Fatalf("default page size search: calls %d sent %+v", client.calls-calls, client.lastSearch)
 	}
 }

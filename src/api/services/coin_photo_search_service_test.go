@@ -99,3 +99,27 @@ func TestPlainText(t *testing.T) {
 		t.Fatalf("plainText truncation = %q", got)
 	}
 }
+
+// A €2 commemorative's ECB image comes first; a regular €2 coin, a coin of
+// another denomination or one without a year gets none.
+func TestCoinPhotoSearch_AddsTheECBImageOfACommemorative(t *testing.T) {
+	svc, _, _ := newPhotoSearchFixture()
+	ecb := newTestEcbService(t, &fakeECBCoinsClient{page: ecb2022Page(t)})
+	svc.WithECB(ecb)
+	ctx := context.Background()
+
+	got := svc.SearchCoin(ctx, CoinPhotoQuery{Year: 2022, Country: "Alemanha", Denomination: "2 euro", Subject: "Bundesländer – Thuringia", Lang: "pt"})
+	if len(got.Photos) != 1 || got.Photos[0].Source != models.CoinPhotoSourceECB || got.Photos[0].Match != models.CoinPhotoMatchExact {
+		t.Fatalf("commemorative = %+v", got.Photos)
+	}
+	for _, query := range []CoinPhotoQuery{
+		{Year: 2022, Country: "Alemanha", Denomination: "2 euro"},
+		{Year: 2022, Country: "Alemanha", Denomination: "5 euro", Subject: "Turíngia"},
+		{Year: 2022, Country: "Alemanha", Denomination: "2 cêntimos de euro", Subject: "Turíngia"},
+		{Country: "Alemanha", Denomination: "2 euro", Subject: "Turíngia"},
+	} {
+		if got := svc.SearchCoin(ctx, query); len(got.Photos) != 0 {
+			t.Fatalf("%+v = %+v", query, got.Photos)
+		}
+	}
+}

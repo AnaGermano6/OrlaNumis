@@ -51,8 +51,11 @@ interface HighlightItem {
   empty: string
 }
 
+// Shown in euros like the value KPI: a dollar collection's values are
+// converted with the ECB rate.
 function valueText(value: number | null): string {
   if (value == null) return ''
+  if (props.summary?.currency === 'EUR') return formatCurrency(value, 'EUR')
   const rate = props.summary?.exchangeRate
   return rate ? formatCurrency(value / rate.usdPerEur, 'EUR') : formatCurrency(value, 'USD')
 }

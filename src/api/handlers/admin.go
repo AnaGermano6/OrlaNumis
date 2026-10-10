@@ -278,6 +278,20 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 	}
 
 	for _, s := range settings {
+		// The collection currency changes only with its stored values
+		// (POST /admin/collection-currency); resending the current one is fine.
+		if s.Key == services.SettingCollectionCurrency {
+			if currency, ok := services.NormalizeCollectionCurrency(s.Value); !ok || currency != h.settingsSvc.CollectionCurrency() {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Change the collection currency with POST /admin/collection-currency, which converts stored values"})
+				return
+			}
+			continue
+		}
+	}
+	for _, s := range settings {
+		if s.Key == services.SettingCollectionCurrency {
+			continue
+		}
 		if err := h.settingsSvc.SetSetting(s.Key, s.Value); err != nil {
 			if s.Key == services.SettingDealerSearchSources || s.Key == services.SettingAuctionSearchSources {
 				respondError(c, http.StatusBadRequest, "Invalid search source setting: "+s.Key, err)

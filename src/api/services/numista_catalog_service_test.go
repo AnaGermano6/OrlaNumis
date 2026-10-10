@@ -212,3 +212,71 @@ func TestFoldForSearch(t *testing.T) {
 		t.Fatalf("foldForSearch = %q", got)
 	}
 }
+
+// Numista's photos cannot be loaded, so a €2 commemorative's search result and
+// type details show the ECB's official image instead.
+func TestNumistaCatalog_ShowsTheECBImageOfACommemorative(t *testing.T) {
+	catalog, _, client, _ := newCatalogFixture()
+	catalog.WithECB(newTestEcbService(t, &fakeECBCoinsClient{page: ecb2022Page(t)}))
+	client.searchBody = `{"count": 2, "types": [
+		{"id": 1, "title": "2 Euros (Bundesländer - \"Thüringen\")", "issuer": {"code": "allemagne", "name": "Alemanha, República Federal da"}, "min_year": 2022, "max_year": 2022, "obverse_thumbnail": "https://en.numista.com/photos/t-180.jpg"},
+		{"id": 2, "title": "2 Euros (2nd map)", "issuer": {"code": "allemagne", "name": "Alemanha, República Federal da"}, "min_year": 2008, "max_year": 2026, "obverse_thumbnail": "https://en.numista.com/photos/m-180.jpg"}
+	]}`
+	got := catalog.Search(context.Background(), NumistaTypeSearch{Issuer: "allemagne", Year: 2022, Lang: "pt"})
+	const img = "https://www.ecb.europa.eu/euro/coins/common/shared/img/"
+	if len(got.Types) != 2 || got.Types[0].ObverseThumbnail != "https://www.ecb.europa.eu/euro/coins/comm/html/comm_2022/DE-thueringen.jpg" ||
+		got.Types[0].ReverseThumbnail != img+"newcommon_2euro_800.jpg" ||
+		got.Types[1].ObverseThumbnail != img+"de/Germany_2euro.jpg" || got.Types[1].ReverseThumbnail != img+"newcommon_2euro_800.jpg" {
+		t.Fatalf("types = %+v", got.Types)
+	}
+
+	client.detailBody = `{"id": 7, "url": "https://en.numista.com/7", "title": "2 Euros (Bundesländer - \"Thüringen\")", "category": "coin",
+		"issuer": {"code": "allemagne", "name": "Alemanha"}, "min_year": 2022, "max_year": 2022,
+		"obverse": {"picture": "https://en.numista.com/photos/o.jpg", "thumbnail": "https://en.numista.com/photos/o-180.jpg"}}`
+	detail := catalog.Type(context.Background(), 7, "pt")
+	if detail.Type == nil || len(detail.Type.Photos) != 2 || detail.Type.Photos[0].Picture != "https://www.ecb.europa.eu/euro/coins/comm/html/comm_2022/DE-thueringen.jpg" ||
+		detail.Type.Photos[0].Copyright != "European Central Bank" || detail.Type.Photos[1].Side != "reverse" || detail.Type.Photos[1].Picture != img+"newcommon_2euro_800.jpg" {
+		t.Fatalf("type photos = %+v", detail.Type)
+	}
+
+	// Coins that are not euro coins keep Numista's photos.
+	client.searchBody = `{"count": 1, "types": [
+		{"id": 3, "title": "50 Escudos", "issuer": {"code": "portugal", "name": "Portugal"}, "min_year": 1968, "max_year": 1968, "obverse_thumbnail": "https://en.numista.com/photos/e-180.jpg"}
+	]}`
+	got = catalog.Search(context.Background(), NumistaTypeSearch{Query: "escudos", Lang: "pt"})
+	if len(got.Types) != 1 || got.Types[0].ObverseThumbnail != "https://en.numista.com/photos/e-180.jpg" || got.Types[0].ReverseThumbnail != "" {
+		t.Fatalf("types = %+v", got.Types)
+	}
+}
+
+func TestNumistaCatalog_ShowsTheINCMPhotosOfAPortugueseCollectorCoin(t *testing.T) {
+	catalog, _, client, _ := newCatalogFixture()
+	incm, _ := newTestIncmService(t)
+	catalog.WithECB(newTestEcbService(t, &fakeECBCoinsClient{page: ecb2022Page(t)})).WithMint(incm)
+	client.searchBody = `{"count": 2, "types": [
+		{"id": 1, "title": "5 Euro (Ulysses)", "issuer": {"code": "portugal", "name": "Portugal"}, "min_year": 2024, "max_year": 2024, "obverse_thumbnail": "https://en.numista.com/photos/u-180.jpg"},
+		{"id": 2, "title": "5 Euro (The knowledge, cupronickel)", "issuer": {"code": "portugal", "name": "Portugal"}, "min_year": 2024, "max_year": 2024, "obverse_thumbnail": "https://en.numista.com/photos/k-180.jpg"}
+	]}`
+	got := catalog.Search(context.Background(), NumistaTypeSearch{Issuer: "portugal", Year: 2024, Lang: "pt"})
+	if len(got.Types) != 2 || !strings.Contains(got.Types[0].ObverseThumbnail, incmFiles+"files/Ulises_CU_A.jpg") || !strings.HasSuffix(got.Types[0].ObverseThumbnail, "&width=400") ||
+		!strings.Contains(got.Types[0].ReverseThumbnail, "Ulises_CU_B.jpg") {
+		t.Fatalf("types = %+v", got.Types)
+	}
+	// The shop's English title matches Numista's.
+	if !strings.Contains(got.Types[1].ObverseThumbnail, "Conhecimento_CU_A.jpg") {
+		t.Fatalf("types = %+v", got.Types)
+	}
+
+	client.detailBody = `{"id": 2, "url": "https://en.numista.com/2", "title": "5 Euro (The knowledge, cupronickel)", "category": "coin",
+		"issuer": {"code": "portugal", "name": "Portugal"}, "min_year": 2024, "max_year": 2024,
+		"value": {"text": "5 Euros", "numeric_value": 5, "currency": {"name": "Euro"}}, "composition": {"text": "Cuproníquel"},
+		"series": "Desenhe uma moeda", "commemorated_topic": "O conhecimento",
+		"obverse": {"lettering": "PORTUGAL 5 €", "designers": ["Antonio Cerqueira"], "thumbnail": "https://en.numista.com/photos/o-180.jpg"},
+		"reverse": {"description": "Um frasco e as palavras Educação e Tecnológica", "designers": ["Antonio Cerqueira"]}}`
+	detail := catalog.Type(context.Background(), 2, "pt")
+	if detail.Type == nil || detail.Type.CommemoratedTopic != "O conhecimento" || len(detail.Type.Photos) != 2 ||
+		!strings.Contains(detail.Type.Photos[0].Picture, "Conhecimento_CU_A.jpg") || detail.Type.Photos[0].Copyright != "INCM" ||
+		detail.Type.Photos[1].Side != "reverse" || !strings.Contains(detail.Type.Photos[1].Thumbnail, "Conhecimento_CU_B.jpg") {
+		t.Fatalf("type = %+v", detail.Type)
+	}
+}

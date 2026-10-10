@@ -94,6 +94,35 @@ type CoinPhotoSearchService struct {
 	catalog *NumistaCatalogService
 	commons CommonsClient
 	cache   *NumistaResponseCache
+	ecb     *EcbCoinPhotoService
+	mints   []MintPhotoSource
+}
+
+// WithECB adds the ECB's images of €2 commemorative coins.
+func (s *CoinPhotoSearchService) WithECB(ecb *EcbCoinPhotoService) *CoinPhotoSearchService {
+	s.ecb = ecb
+	return s
+}
+
+// WithMint adds a national mint's photos of the collector coins it sells.
+func (s *CoinPhotoSearchService) WithMint(mint MintPhotoSource) *CoinPhotoSearchService {
+	s.mints = append(s.mints, mint)
+	return s
+}
+
+// CoinPhotoQuery describes the coin whose photos to find.
+type CoinPhotoQuery struct {
+	Query         string
+	NumistaTypeID int
+	Lang          string
+	// Year, Country, Denomination and Subject identify a €2 commemorative
+	// coin on the ECB site; without a year the ECB is not searched.
+	Year         int
+	Country      string
+	Denomination string
+	Subject      string
+	// Material helps tell a coin's silver version from its base-metal one.
+	Material string
 }
 
 // NewCoinPhotoSearchService creates the service. catalog may be nil.
@@ -104,7 +133,13 @@ func NewCoinPhotoSearchService(catalog *NumistaCatalogService, commons CommonsCl
 // Search returns photos for a Numista type (when numistaTypeID > 0) and for
 // the text query. Commons searches are cached for a week.
 func (s *CoinPhotoSearchService) Search(ctx context.Context, query string, numistaTypeID int, lang string) models.CoinPhotoSearchResult {
-	query = strings.Join(strings.Fields(query), " ")
+	return s.SearchCoin(ctx, CoinPhotoQuery{Query: query, NumistaTypeID: numistaTypeID, Lang: lang})
+}
+
+// SearchCoin returns the ECB image of a €2 commemorative coin first, then the
+// Numista catalogue photos of its type and matching Wikimedia Commons files.
+func (s *CoinPhotoSearchService) SearchCoin(ctx context.Context, coin CoinPhotoQuery) models.CoinPhotoSearchResult {
+	query, numistaTypeID, lang := strings.Join(strings.Fields(coin.Query), " "), coin.NumistaTypeID, coin.Lang
 	result := models.CoinPhotoSearchResult{Status: models.NumistaDataStatusOK, Query: query, Photos: []models.CoinPhotoCandidate{}}
 	seen := map[string]bool{}
 	add := func(photo models.CoinPhotoCandidate) {
@@ -113,6 +148,19 @@ func (s *CoinPhotoSearchService) Search(ctx context.Context, query string, numis
 		}
 		seen[photo.ImageURL] = true
 		result.Photos = append(result.Photos, photo)
+	}
+
+	ecbPhotos := s.ecbPhotos(ctx, coin)
+	for _, photo := range ecbPhotos {
+		add(photo)
+	}
+	if len(ecbPhotos) == 0 {
+		obverse, reverse := mintCandidates(s.mintPhoto(ctx, coin, s.numistaType(ctx, coin)))
+		for _, photo := range []*models.CoinPhotoCandidate{obverse, reverse} {
+			if photo != nil {
+				add(*photo)
+			}
+		}
 	}
 
 	if numistaTypeID > 0 && s.catalog != nil {
@@ -261,4 +309,129 @@ func httpsURL(value string) string {
 // miss, e.g. "Semis - Augustus (Gaius Caesar)" → "Semis Augustus Gaius Caesar".
 func simplifyPhotoQuery(query string) string {
 	return strings.Join(strings.Fields(photoQueryNoise.ReplaceAllString(query, " ")), " ")
+}
+
+var twoEuroDenomination = regexp.MustCompile(`(?i)^\s*2\s*(€|eur|euro|euros)\b`)
+
+// ecbPhotos finds the coin on the ECB's €2 commemorative pages. Only €2
+// coins of a single year with a subject qualify, so a regular €2 coin never
+// gets a commemorative's image.
+func (s *CoinPhotoSearchService) ecbPhotos(ctx context.Context, coin CoinPhotoQuery) []models.CoinPhotoCandidate {
+	if s.ecb == nil || coin.Year == 0 {
+		return nil
+	}
+	query := EcbPhotoQuery{Year: coin.Year, Country: coin.Country, Subject: coin.Subject}
+	commemorative := strings.TrimSpace(coin.Subject) != ""
+	denomination := coin.Denomination
+	if coin.NumistaTypeID > 0 && s.catalog != nil {
+		if numistaType, err := s.catalog.knownTypeDetail(ctx, coin.NumistaTypeID, coin.Lang); err == nil {
+			query.Title = numistaType.Title
+			if query.Country == "" {
+				query.Country = numistaType.Issuer.Code
+			}
+			if denomination == "" {
+				denomination = numistaType.Title
+			}
+			commemorative = numistaType.MinYear != nil && numistaType.MaxYear != nil && *numistaType.MinYear == *numistaType.MaxYear
+		}
+	}
+	if !commemorative || !twoEuroDenomination.MatchString(denomination) {
+		return nil
+	}
+	photos, err := s.ecb.Match(ctx, query)
+	if err != nil {
+		return nil
+	}
+	return photos
+}
+
+// ExactPhoto returns the photo a source identifies as this very coin (the
+// ECB's image of a €2 commemorative), or nil.
+func (s *CoinPhotoSearchService) ExactPhoto(ctx context.Context, coin CoinPhotoQuery) *models.CoinPhotoCandidate {
+	for _, photo := range s.ecbPhotos(ctx, coin) {
+		if photo.Match == models.CoinPhotoMatchExact {
+			return &photo
+		}
+	}
+	return nil
+}
+
+// OfficialPhotos returns the ECB's images of a euro coin: its obverse (the
+// €2 commemorative it is, or its country's regular design) and its common
+// reverse; nil for a side the ECB has no image of.
+func (s *CoinPhotoSearchService) OfficialPhotos(ctx context.Context, coin CoinPhotoQuery) (obverse, reverse *models.CoinPhotoCandidate) {
+	if coin.Year == 0 {
+		return nil, nil
+	}
+	country, denomination := coin.Country, coin.Denomination
+	// A coin named after its country only, or of a value with no
+	// commemoratives, has the regular design.
+	regular := strings.TrimSpace(coin.Subject) == "" || !twoEuroDenomination.MatchString(denomination)
+	numistaType := s.numistaType(ctx, coin)
+	if numistaType != nil {
+		regular = RegularEuroType(numistaType.Title, numistaType.MinYear, numistaType.MaxYear)
+		if denomination == "" {
+			denomination = numistaType.Title
+		}
+		if country == "" {
+			country = numistaType.Issuer.Name
+		}
+	}
+	if regular {
+		if image, page := EcbNationalSideImage(denomination, coin.Year, country); image != "" {
+			obverse = ecbOfficialPhoto(models.ImageTypeObverse, image, page)
+		}
+	} else {
+		obverse = s.ExactPhoto(ctx, coin)
+	}
+	if image, page := EcbCommonSideImage(denomination, coin.Year, country); image != "" {
+		reverse = ecbOfficialPhoto(models.ImageTypeReverse, image, page)
+	}
+	// Recent collector coins: their mint's own photos.
+	if obverse == nil {
+		if mintObverse, mintReverse := mintCandidates(s.mintPhoto(ctx, coin, numistaType)); mintObverse != nil {
+			obverse, reverse = mintObverse, mintReverse
+		}
+	}
+	return obverse, reverse
+}
+
+// numistaType returns the coin's Numista type, from the cache when it can.
+func (s *CoinPhotoSearchService) numistaType(ctx context.Context, coin CoinPhotoQuery) *models.NumistaCatalogType {
+	if coin.NumistaTypeID <= 0 || s.catalog == nil {
+		return nil
+	}
+	numistaType, err := s.catalog.knownTypeDetail(ctx, coin.NumistaTypeID, coin.Lang)
+	if err != nil {
+		return nil
+	}
+	return numistaType
+}
+
+// mintPhoto finds a coin in its mint's catalogue, by its Numista type when
+// it has one, else by its own fields.
+func (s *CoinPhotoSearchService) mintPhoto(ctx context.Context, coin CoinPhotoQuery, numistaType *models.NumistaCatalogType) (MintPhotoSource, *MintPhoto) {
+	query, ok := mintQueryForType(numistaType)
+	mint := mintSourceFor(s.mints, coin.Country)
+	if numistaType != nil {
+		mint = mintSourceFor(s.mints, numistaType.Issuer.Code, numistaType.Issuer.Name)
+	} else {
+		query = MintPhotoQuery{Year: coin.Year, Value: MintFaceValue(coin.Denomination), Metal: coin.Material, Topic: coin.Subject}
+		ok = query.Value > 0
+	}
+	if mint == nil || !ok {
+		return nil, nil
+	}
+	photo, _ := mint.Match(ctx, query)
+	if photo == nil {
+		return nil, nil
+	}
+	return mint, mint.Confirm(ctx, photo)
+}
+
+func ecbOfficialPhoto(side models.ImageType, image, page string) *models.CoinPhotoCandidate {
+	return &models.CoinPhotoCandidate{
+		Source: models.CoinPhotoSourceECB, Side: string(side), Thumbnail: image, ImageURL: image, PageURL: page,
+		Author: "European Central Bank", Match: models.CoinPhotoMatchExact,
+	}
 }

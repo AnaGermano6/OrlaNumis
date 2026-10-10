@@ -42,6 +42,18 @@ describe('CollectionKpis', () => {
     expect(wrapper.emitted('show-coincards')).toHaveLength(1)
   })
 
+  it('shows a euro collection\'s total as is, with no exchange rate', () => {
+    setLocale('pt-PT')
+    const wrapper = mount(CollectionKpis, {
+      props: { summary: { coins: 2, types: 2, countries: 1, withoutCountry: 0, coincards: 0, currency: 'EUR', totalValue: 3.01, unvaluedCoins: 0, totalValueEur: 3.01, exchangeRate: { usdPerEur: 1.12, date: '2026-10-09' } } },
+    })
+
+    const value = wrapper.findAll('section > *')[4]!
+    expect(value.find('span').text().replace(/\s/g, ' ')).toBe('3,01 €')
+    expect(value.text()).not.toContain('BCE')
+    expect(value.attributes('title')).toBe('Soma do valor atual das moedas, em euros.')
+  })
+
   it('explains a missing rate and coins without a value', () => {
     const wrapper = mount(CollectionKpis, { props: { summary: { coins: 5, types: 5, countries: 2, withoutCountry: 0, coincards: 0, totalValue: 120, unvaluedCoins: 2, totalValueEur: null } } })
 

@@ -56,6 +56,23 @@ describe('RealPhotoPicker', () => {
     expect(updates.at(-1)).toEqual({ reverse: COMMONS })
   })
 
+  it('chooses the photos identified as this very coin', async () => {
+    const official = (side: 'obverse' | 'reverse'): CoinPhotoCandidate => ({
+      source: 'incm', side, match: 'exact', author: 'INCM',
+      thumbnail: `https://cdn.shopify.com/s/files/1/0525/1910/8762/files/${side}.jpg?width=400`,
+      imageUrl: `https://cdn.shopify.com/s/files/1/0525/1910/8762/files/${side}.jpg`,
+    })
+    mocks.searchCoinPhotos.mockResolvedValue({ data: { status: 'ok', query: 'q', photos: [official('obverse'), official('reverse'), COMMONS] } })
+    const updates: RealPhotoChoice[] = []
+    mount(RealPhotoPicker, {
+      props: { initialQuery: 'q', modelValue: { reverse: COMMONS }, 'onUpdate:modelValue': (value: RealPhotoChoice) => { updates.push(value) } },
+    })
+    await flushPromises()
+
+    // A side already chosen stays as it is.
+    expect(updates).toEqual([{ obverse: official('obverse'), reverse: COMMONS }])
+  })
+
   it('drops photos that cannot be shown and unselects them', async () => {
     mocks.searchCoinPhotos.mockResolvedValue({ data: { status: 'ok', query: 'q', photos: [COMMONS] } })
     mocks.loadCatalogPhoto.mockResolvedValue(null)

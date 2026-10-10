@@ -42,6 +42,7 @@ type appDeps struct {
 	credentialEncryptionSvc        *services.CredentialEncryptionService
 	numistaLookupSvc               *services.NumistaLookupService
 	numistaTelemetry               *services.NumistaTelemetry
+	exchangeRates                  *services.ExchangeRateService
 	authRateLimit                  gin.HandlerFunc
 	apiRateLimit                   gin.HandlerFunc
 	writeRateLimit                 gin.HandlerFunc
@@ -115,6 +116,9 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	numistaClock := services.NewSystemNumistaClock()
 	numistaCache := services.NewNumistaCache(numistaClock, 500, 5000)
 	numistaTelemetry := services.NewNumistaTelemetry(500)
+	// ECB euro rate for collection values; cached alongside Numista responses.
+	exchangeRates := services.NewExchangeRateService(services.NewHTTPECBClient(nil),
+		services.NewNumistaResponseCache(repository.NewNumistaCacheRepository(database.DB), services.NewSystemNumistaClock(), logger))
 	numistaQueryBuilder := services.NewNumistaQueryBuilder()
 	numistaClient, err := services.NewHTTPNumistaClient(services.NumistaClientConfig{
 		APIKey:        func() string { return settingsSvc.GetSetting(services.SettingNumistaAPIKey) },
@@ -319,6 +323,7 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 		credentialEncryptionSvc:        credentialEncryptionSvc,
 		numistaLookupSvc:               numistaLookupSvc,
 		numistaTelemetry:               numistaTelemetry,
+		exchangeRates:                  exchangeRates,
 		authRateLimit:                  authRateLimit,
 		apiRateLimit:                   apiRateLimit,
 		writeRateLimit:                 writeRateLimit,

@@ -105,6 +105,8 @@ export interface CoinOptionsResponse {
   eras: string[]
   /** Admin-defined display names keyed by locale (e.g. `pt-PT`), then by stored value. */
   labels: Record<string, CoinOptionLabels>
+  /** Collection currency coin prices and values are kept in. */
+  currency?: 'USD' | 'EUR'
 }
 
 /** Configured category and era choices; readable by every signed-in user. */
@@ -379,6 +381,9 @@ export const uploadImage = (coinId: number, file: File, imageType: string, isPri
 export const deleteImage = (coinId: number, imageId: number) =>
   api.delete<{ message: string; cleanupPending?: boolean }>(`/coins/${coinId}/images/${imageId}`)
 
+/** Swaps the coin's obverse and reverse images; returns its images. */
+export const swapCoinImageSides = (coinId: number) => api.post<CoinImage[]>(`/coins/${coinId}/images/swap-sides`)
+
 // Analysis
 export const analyzeCoin = (coinId: number, side?: 'obverse' | 'reverse') => {
   const params = side ? `?side=${side}` : ''
@@ -466,11 +471,13 @@ export interface CollectionSummary {
   withoutCountry: number
   /** Coins whose presentation is "coincard". */
   coincards: number
-  /** Sum of current values in the app's stored currency (US dollars). */
+  /** Collection currency: totalValue and the highlights' values are in it. */
+  currency?: 'USD' | 'EUR'
+  /** Sum of current values in the collection currency. */
   totalValue: number
   /** Coins without a current value, left out of totalValue. */
   unvaluedCoins: number
-  /** totalValue in euros at the ECB rate; null when no rate is available. */
+  /** totalValue in euros (converted at the ECB rate for a dollar collection); null when no rate is available. */
   totalValueEur: number | null
   exchangeRate?: { usdPerEur: number; date: string }
   highlights?: CollectionHighlights

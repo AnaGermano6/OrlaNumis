@@ -150,6 +150,7 @@
           @update:era-labels-pt="settings.CoinEraLabelsPtPT = $event"
           @save="saveSettings"
         />
+        <AdminCollectionCurrencySection v-if="activeTab === 'properties'" class="mt-4" />
 
         <!-- Catalogs Tab -->
         <AdminCatalogsSection v-if="activeTab === 'catalogs'" />
@@ -242,6 +243,7 @@ import AdminSchedulesSection from '@/components/admin/AdminSchedulesSection.vue'
 import AdminHealthSection from '@/components/admin/AdminHealthSection.vue'
 import AdminCatalogsSection from '@/components/admin/AdminCatalogsSection.vue'
 import AdminCoinPropertiesSection from '@/components/admin/AdminCoinPropertiesSection.vue'
+import AdminCollectionCurrencySection from '@/components/admin/AdminCollectionCurrencySection.vue'
 import AdminSecuritySection from '@/components/admin/AdminSecuritySection.vue'
 import AdminOIDCSection from '@/components/admin/AdminOIDCSection.vue'
 import { Users, Cpu, Wrench, ScrollText, CalendarClock, Activity, ChevronRight, BookMarked, Settings2, ShieldAlert, KeyRound } from 'lucide-vue-next'

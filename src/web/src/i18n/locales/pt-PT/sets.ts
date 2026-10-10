@@ -156,8 +156,8 @@ const messages: Messages['sets'] = {
     fields: {
       rulerIssuer: 'Governante / emissor',
       storageLocation: 'Localização de arrumação',
-      currentValue: 'Valor atual ($)',
-      purchasePrice: 'Preço de compra ($)',
+      currentValue: 'Valor atual ({currency})',
+      purchasePrice: 'Preço de compra ({currency})',
       purchaseDate: 'Data de compra',
       dateAdded: 'Data de adição',
       wishlist: 'Lista de desejos',

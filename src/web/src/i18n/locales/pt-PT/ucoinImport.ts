@@ -1,0 +1,52 @@
+import type { Messages } from '../../types'
+
+const messages: Messages['ucoinImport'] = {
+  title: 'Importar do uCoin',
+  intro: 'Escolha o ficheiro CSV exportado do uCoin.net (Minha coleção → Exportar). As moedas são adicionadas com os dados do ficheiro (país, ano, marca da casa da moeda, número de catálogo, conservação, preço) e depois completadas com o catálogo Numista: metal, peso, raridade pela tiragem e valor atual pela conservação de cada moeda.',
+  chooseFile: 'Escolher ficheiro CSV',
+  errors: {
+    empty: 'O ficheiro não tem moedas.',
+    columns: 'Este ficheiro não parece uma exportação do uCoin: faltam as colunas País, Denominação e Ano.',
+  },
+  loadFailed: 'Não foi possível carregar a sua coleção. Tente de novo.',
+  summary: {
+    inFile: { one: '{count} moeda no ficheiro', other: '{count} moedas no ficheiro' },
+    countries: { one: '{count} país', other: '{count} países' },
+    already: { one: '{count} já está na coleção e será ignorada', other: '{count} já estão na coleção e serão ignoradas' },
+    toAdd: { one: '{count} moeda nova a adicionar', other: '{count} moedas novas a adicionar' },
+  },
+  withNumista: 'Completar com o Numista (metal, peso, raridade, valor atual)',
+  estimate: 'Até cerca de {count} pedidos ao Numista (os que já estão em cache não contam); o plano gratuito permite 2000 por mês. Se se esgotarem, a importação para e pode continuar no mês seguinte nesta página.',
+  import: { one: 'Importar {count} moeda', other: 'Importar {count} moedas' },
+  nothingNew: 'Todas as moedas do ficheiro já estão na coleção.',
+  awaiting: { one: '{count} moeda importada ainda não tem dados do Numista.', other: '{count} moedas importadas ainda não têm dados do Numista.' },
+  complete: 'Completar com o Numista',
+  creating: 'A adicionar moedas… {done} de {total}',
+  enriching: 'A procurar no Numista… {done} de {total}',
+  keepOpen: 'Mantenha esta página aberta até terminar.',
+  stop: 'Parar',
+  leaveConfirm: 'A importação ainda está a decorrer. Sair e pará-la?',
+  done: {
+    title: 'Importação concluída',
+    stoppedTitle: 'Importação interrompida',
+    stoppedByUser: 'Parada. O resto pode ser completado mais tarde nesta página.',
+    created: { one: '{count} moeda adicionada', other: '{count} moedas adicionadas' },
+    createFailed: { one: '{count} linha não pôde ser adicionada (linha {lines}).', other: '{count} linhas não puderam ser adicionadas (linhas {lines}).' },
+    enriched: { one: '{count} moeda completada com o Numista', other: '{count} moedas completadas com o Numista' },
+    failed: { one: '{count} moeda não pôde ser completada (erro de ligação); volte a correr para tentar de novo.', other: '{count} moedas não puderam ser completadas (erro de ligação); volte a correr para tentar de novo.' },
+    notFound: { one: '{count} moeda não foi encontrada no Numista; fica com os dados do ficheiro e pode completá-la à mão.', other: '{count} moedas não foram encontradas no Numista; ficam com os dados do ficheiro e pode completá-las à mão.' },
+    notFoundList: 'Moedas não encontradas no Numista',
+    retryNotFound: 'Tentar de novo as não encontradas',
+    viewGallery: 'Ver a galeria',
+    valueNote: 'Os valores são estimativas do Numista para a conservação de cada moeda (MBC quando o ficheiro não indica a conservação).',
+  },
+  notes: {
+    source: 'Importada do uCoin ({reference}).',
+    period: 'Período: {value}',
+    variety: 'Variante: {value}',
+    price: 'Preço no uCoin: {value}',
+    comment: 'Comentário no uCoin: {value}',
+  },
+}
+
+export default messages

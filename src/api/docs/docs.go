@@ -1186,6 +1186,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/collection-currency": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Switches the currency coin prices and values are kept in (USD or EUR) and converts every stored price, value, value history and snapshot with the ECB reference rate, in one transaction. Switching to the current currency changes nothing. Admin only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Change the collection currency",
+                "parameters": [
+                    {
+                        "description": "New currency",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CollectionCurrencyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.CollectionCurrencyChange"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/collection-health-snapshot-runs": {
             "get": {
                 "security": [
@@ -6505,7 +6562,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns the admin-configured category and era choices with translated display names",
+                "description": "Returns the admin-configured category and era choices with translated display names, and the collection currency (USD or EUR) coin prices and values are kept in",
                 "produces": [
                     "application/json"
                 ],
@@ -6530,7 +6587,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns real photos of a coin with their author and license: the Numista catalogue photos of numistaTypeId, then Wikimedia Commons files matching q. Commons searches are cached for a week. Import a chosen photo with POST /coins/{id}/images/import.",
+                "description": "Returns real photos of a coin with their author and license: the ECB's image of a €2 commemorative coin (when year is given and the coin is one; match=exact when the ECB lists exactly this coin), the Numista catalogue photos of numistaTypeId, then Wikimedia Commons files matching q. Commons searches are cached for a week, ECB pages for longer. Import a chosen photo with POST /coins/{id}/images/import.",
                 "produces": [
                     "application/json"
                 ],
@@ -6541,7 +6598,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search text, e.g. title and year (required unless numistaTypeId is set)",
+                        "description": "Search text, e.g. title and year (required unless numistaTypeId, or year and country, are set)",
                         "name": "q",
                         "in": "query"
                     },
@@ -6556,6 +6613,30 @@ const docTemplate = `{
                         "default": "en",
                         "description": "Language of catalogue data",
                         "name": "lang",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Coin year, to look for a €2 commemorative on the ECB site",
+                        "name": "year",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Coin country (English or Portuguese name)",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Coin denomination, e.g. 2 euro",
+                        "name": "denomination",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Coin subject, for a coin not linked to Numista",
+                        "name": "subject",
                         "in": "query"
                     }
                 ],
@@ -7251,7 +7332,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Counts the user's collection coins (excluding wishlist and sold), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries, how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (stored in US dollars) and converts the total to euros with the ECB daily reference rate (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins.",
+                "description": "Counts the user's collection coins (excluding wishlist and sold), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries, how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency, USD or EUR) and gives the total in euros, converted from dollars with the ECB daily reference rate (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins.",
                 "produces": [
                     "application/json"
                 ],
@@ -8128,6 +8209,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/coins/{id}/images/swap-sides": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Swaps the obverse and reverse labels of a coin's images (e.g. official photos whose source names the sides the other way round) and returns the coin's images. The primary image stays the same.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Images"
+                ],
+                "summary": "Swap a coin's obverse and reverse images",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Coin ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.CoinImage"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/coins/{id}/images/{imageId}": {
             "delete": {
                 "security": [
@@ -8471,6 +8607,64 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.CoinMarketValue"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/{id}/official-photos": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Adds a coin's official images to the sides asked for that have no image yet: the European Central Bank's images of a euro coin's national side (obverse) and common side (reverse), or, for a recent Portuguese or French collector coin, the photos of its mint's shop (INCM, Monnaie de Paris). Their credit is appended to the coin's notes. A coin neither has an image of (older collector coins, other currencies) gets none.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Add a coin's official images",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Coin ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Sides to fill",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.OfficialPhotosRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.OfficialPhotosResponse"
                         }
                     },
                     "400": {
@@ -12055,7 +12249,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns one page (20 types) of Numista coin types matching the text and/or issuer, optionally limited to a year. Searches are cached for a day.",
+                "description": "Returns one page (20 types unless count is set) of Numista coin types matching the text, issuer and/or catalogue reference (e.g. catalogue=KM, number=84), optionally limited to a year. Searches are cached for a day.",
                 "produces": [
                     "application/json"
                 ],
@@ -12066,7 +12260,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search text (required unless issuer is set)",
+                        "description": "Search text (required unless issuer or catalogue is set)",
                         "name": "q",
                         "in": "query"
                     },
@@ -12074,6 +12268,22 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Numista issuer code, e.g. portugal",
                         "name": "issuer",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "KM",
+                            "Y"
+                        ],
+                        "type": "string",
+                        "description": "Reference catalogue code (KM or Y); requires number",
+                        "name": "catalogue",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Number in the reference catalogue, e.g. 84",
+                        "name": "number",
                         "in": "query"
                     },
                     {
@@ -12087,6 +12297,13 @@ const docTemplate = `{
                         "default": 1,
                         "description": "Page number",
                         "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Types per page (1-50)",
+                        "name": "count",
                         "in": "query"
                     },
                     {
@@ -20226,6 +20443,14 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "currency": {
+                    "description": "Currency is the collection currency coin prices and values are kept in.",
+                    "type": "string",
+                    "enum": [
+                        "USD",
+                        "EUR"
+                    ]
+                },
                 "eras": {
                     "type": "array",
                     "items": {
@@ -20547,6 +20772,21 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CollectionCurrencyRequest": {
+            "type": "object",
+            "required": [
+                "currency"
+            ],
+            "properties": {
+                "currency": {
+                    "type": "string",
+                    "enum": [
+                        "USD",
+                        "EUR"
+                    ]
+                }
+            }
+        },
         "handlers.CollectionSummaryResponse": {
             "type": "object",
             "properties": {
@@ -20560,8 +20800,21 @@ const docTemplate = `{
                 "countries": {
                     "type": "integer"
                 },
+                "currency": {
+                    "description": "Currency is the collection currency (USD or EUR): TotalValue and the\nhighlights' values are in it.",
+                    "type": "string",
+                    "enum": [
+                        "USD",
+                        "EUR"
+                    ]
+                },
                 "exchangeRate": {
-                    "$ref": "#/definitions/services.ExchangeRate"
+                    "description": "ExchangeRate is the latest ECB rate, when available.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/services.ExchangeRate"
+                        }
+                    ]
                 },
                 "highlights": {
                     "$ref": "#/definitions/repository.CollectionHighlights"
@@ -20571,7 +20824,7 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "totalValueEur": {
-                    "description": "TotalValueEUR is TotalValue converted with ExchangeRate; null when no rate is available.",
+                    "description": "TotalValueEUR is TotalValue in euros: as is for a euro collection, else\nconverted with ExchangeRate; null when no rate is available.",
                     "type": "number"
                 },
                 "types": {
@@ -21518,6 +21771,37 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.OfficialPhotosRequest": {
+            "type": "object",
+            "required": [
+                "sides"
+            ],
+            "properties": {
+                "sides": {
+                    "type": "array",
+                    "maxItems": 2,
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "obverse",
+                        "reverse"
+                    ]
+                }
+            }
+        },
+        "handlers.OfficialPhotosResponse": {
+            "type": "object",
+            "properties": {
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CoinImage"
+                    }
                 }
             }
         },
@@ -24329,6 +24613,13 @@ const docTemplate = `{
                 "license": {
                     "type": "string"
                 },
+                "match": {
+                    "description": "Match is \"exact\" when the source identified this very coin, so the\nphoto can be added without asking.",
+                    "type": "string",
+                    "enum": [
+                        "exact"
+                    ]
+                },
                 "pageUrl": {
                     "type": "string"
                 },
@@ -24337,7 +24628,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "source": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "numista",
+                        "wikimedia",
+                        "ecb",
+                        "incm",
+                        "mdp"
+                    ]
                 },
                 "thumbnail": {
                     "type": "string"
@@ -25045,6 +25343,18 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "designers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "engravers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "lettering": {
                     "type": "string"
                 }
@@ -25053,6 +25363,10 @@ const docTemplate = `{
         "models.NumistaCatalogType": {
             "type": "object",
             "properties": {
+                "commemoratedTopic": {
+                    "description": "CommemoratedTopic is what a commemorative coin celebrates, in the\nlanguage asked for when Numista has it (e.g. \"O conhecimento\").",
+                    "type": "string"
+                },
                 "composition": {
                     "type": "string"
                 },
@@ -25067,6 +25381,10 @@ const docTemplate = `{
                 },
                 "edge": {
                     "$ref": "#/definitions/models.NumistaCatalogSide"
+                },
+                "faceValue": {
+                    "description": "FaceValue is the denomination as a number (5 for \"5 Euros\").",
+                    "type": "number"
                 },
                 "id": {
                     "type": "integer"
@@ -25109,6 +25427,9 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "series": {
+                    "type": "string"
                 },
                 "shape": {
                     "type": "string"
@@ -26967,6 +27288,29 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "route": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.CollectionCurrencyChange": {
+            "type": "object",
+            "properties": {
+                "coinsConverted": {
+                    "description": "CoinsConverted counts coins with a price or value that was converted.",
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "exchangeRate": {
+                    "description": "ExchangeRate is the ECB rate used; nil when nothing was converted.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/services.ExchangeRate"
+                        }
+                    ]
+                },
+                "previous": {
                     "type": "string"
                 }
             }

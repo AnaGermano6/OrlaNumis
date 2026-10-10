@@ -62,6 +62,16 @@
           >
             {{ t('photos.findReal') }}
           </button>
+          <!-- Official photos sometimes name the sides the other way round. -->
+          <button
+            v-else
+            type="button"
+            class="btn btn-ghost btn-sm mt-3 w-full justify-center"
+            :disabled="swappingSides"
+            @click="swapSides"
+          >
+            {{ t('photos.swapSides') }}
+          </button>
           <div v-if="coin.isWishlist" class="mt-3">
             <button class="btn btn-primary w-full justify-center" @click="showPurchaseModal = true">
               {{ t('coinDetail.markPurchased') }}
@@ -163,6 +173,7 @@
       :coin-id="coin.id"
       :coin-name="coin.name"
       :numista-type-id="numistaTypeId"
+      :details="coinPhotoDetails(coin)"
       :has-primary-image="Boolean(coin.images?.some((image) => image.isPrimary))"
       @close="showRealPhotos = false"
       @saved="refreshCoin"
@@ -207,7 +218,8 @@ import CoinListingStatus from '@/components/coin/CoinListingStatus.vue'
 import CoinReferencesSection from '@/components/coin/CoinReferencesSection.vue'
 import CoinMarketValueSection from '@/components/coin/CoinMarketValueSection.vue'
 import RealPhotosModal from '@/components/photos/RealPhotosModal.vue'
-import { deleteCoin, duplicateCoin, purchaseCoin, sellCoin } from '@/api/client'
+import { coinPhotoDetails } from '@/utils/coinPhotos'
+import { deleteCoin, duplicateCoin, purchaseCoin, sellCoin, swapCoinImageSides } from '@/api/client'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import { useDialog } from '@/composables/useDialog'
 import { useCoinDetailMetadataRows } from '@/composables/useCoinDetailMetadataRows'
@@ -303,6 +315,20 @@ function refreshCoin() {
 }
 
 const showRealPhotos = ref(false)
+const swappingSides = ref(false)
+
+async function swapSides() {
+  if (!coin.value || swappingSides.value) return
+  swappingSides.value = true
+  try {
+    await swapCoinImageSides(coin.value.id)
+    await store.fetchCoin(coin.value.id)
+  } catch {
+    await showAlert(t('photos.swapSidesFailed'), { title: t('common.error') })
+  } finally {
+    swappingSides.value = false
+  }
+}
 
 async function handleReminderSave(date: string) {
   const saved = await saveReminder(date)

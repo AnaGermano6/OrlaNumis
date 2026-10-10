@@ -80,6 +80,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/import/ucoin',
+      name: 'ucoin-import',
+      component: () => import('@/pages/UcoinImportPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/quick-capture',
       name: 'quick-capture',
       component: () => import('@/pages/QuickCapturePage.vue'),
@@ -151,18 +157,10 @@ const router = createRouter({
       component: () => import('@/pages/WishlistAvailabilityHistoryPage.vue'),
       meta: { requiresAuth: true },
     },
-    {
-      path: '/sold',
-      name: 'sold',
-      component: () => import('@/pages/SoldPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/auctions',
-      name: 'auctions',
-      component: () => import('@/pages/AuctionsPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    // Sold, Auctions, Followers, Calendar and Showcases are not used in this
+    // collection; their addresses (and links to them) lead to the gallery.
+    { path: '/sold', name: 'sold', redirect: '/' },
+    { path: '/auctions', name: 'auctions', redirect: '/' },
     {
       path: '/stats',
       name: 'stats',
@@ -260,53 +258,23 @@ const router = createRouter({
       name: 'process-image',
       redirect: { path: '/settings', query: { tab: 'process' } },
     },
-    {
-      path: '/followers',
-      name: 'followers',
-      component: () => import('@/pages/FollowersPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/followers/:username/gallery',
-      name: 'follower-gallery',
-      component: () => import('@/pages/FollowerGalleryPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/followers/:username/coins/:coinId',
-      name: 'follower-coin-detail',
-      component: () => import('@/pages/FollowerCoinDetailPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    { path: '/followers', name: 'followers', redirect: '/' },
+    { path: '/followers/:username/gallery', name: 'follower-gallery', redirect: '/' },
+    { path: '/followers/:username/coins/:coinId', name: 'follower-coin-detail', redirect: '/' },
     {
       path: '/notifications',
       name: 'notifications',
       component: () => import('@/pages/NotificationsPage.vue'),
       meta: { requiresAuth: true },
     },
-    {
-      path: '/showcases',
-      name: 'showcases',
-      component: () => import('@/pages/ShowcasesPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/showcases/:id/edit',
-      name: 'showcase-edit',
-      component: () => import('@/pages/ShowcaseEditPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    { path: '/showcases', name: 'showcases', redirect: '/' },
+    { path: '/showcases/:id/edit', name: 'showcase-edit', redirect: '/' },
     {
       path: '/s/:slug',
       name: 'public-showcase',
       component: () => import('@/pages/PublicShowcasePage.vue'),
     },
-    {
-      path: '/calendar',
-      name: 'calendar',
-      component: () => import('@/pages/CalendarPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    { path: '/calendar', name: 'calendar', redirect: '/' },
     {
       path: '/tray',
       name: 'tray',

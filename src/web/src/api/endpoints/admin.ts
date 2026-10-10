@@ -246,3 +246,16 @@ export const getCoinOfDayRuns = (page = 1, limit = 20) =>
 
 export const getCoinOfDayRunDetail = (runId: number) =>
   api.get<CoinOfDayRun>(`/admin/coin-of-day-runs/${runId}`)
+
+/** Result of switching the collection currency. */
+export interface CollectionCurrencyChange {
+  currency: 'USD' | 'EUR'
+  previous: 'USD' | 'EUR'
+  /** ECB rate used; absent when nothing was converted. */
+  exchangeRate?: { usdPerEur: number; date: string }
+  coinsConverted: number
+}
+
+/** Switches the collection currency, converting every stored price and value. */
+export const changeCollectionCurrency = (currency: 'USD' | 'EUR') =>
+  api.post<CollectionCurrencyChange>('/admin/collection-currency', { currency })

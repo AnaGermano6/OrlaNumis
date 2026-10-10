@@ -4,13 +4,22 @@ package models
 const (
 	CoinPhotoSourceNumista   = "numista"
 	CoinPhotoSourceWikimedia = "wikimedia"
+	// CoinPhotoSourceECB is the European Central Bank's image of a euro coin.
+	CoinPhotoSourceECB = "ecb"
+	// CoinPhotoSourceINCM is the Portuguese mint's (INCM) photo of a coin it sells.
+	CoinPhotoSourceINCM = "incm"
+	// CoinPhotoSourceMDP is the French mint's (Monnaie de Paris) photo of a coin it sells.
+	CoinPhotoSourceMDP = "mdp"
 )
+
+// CoinPhotoMatchExact marks the one photo known to show the coin itself.
+const CoinPhotoMatchExact = "exact"
 
 // CoinPhotoCandidate is a real photo of a coin type found in a public source.
 // Photos belong to their authors: Author and License must be shown and kept
 // with the photo when it is saved.
 type CoinPhotoCandidate struct {
-	Source string `json:"source"`
+	Source string `json:"source" enums:"numista,wikimedia,ecb,incm,mdp"`
 	// Side is "obverse" or "reverse" when the source states it.
 	Side      string `json:"side,omitempty"`
 	Thumbnail string `json:"thumbnail"`
@@ -20,6 +29,9 @@ type CoinPhotoCandidate struct {
 	Title    string `json:"title,omitempty"`
 	Author   string `json:"author,omitempty"`
 	License  string `json:"license,omitempty"`
+	// Match is "exact" when the source identified this very coin, so the
+	// photo can be added without asking.
+	Match string `json:"match,omitempty" enums:"exact"`
 }
 
 // CoinPhotoSearchResult lists real photos found for a coin.

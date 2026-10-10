@@ -46,8 +46,9 @@ func TestContentSecurityPolicyIsSetOnAppRoutes(t *testing.T) {
 		// dynamically imports its worker/WASM glue as a blob: module.
 		"script-src 'self' 'wasm-unsafe-eval' blob:",
 		// Proxied auction images arrive as blob: URLs; the mint map needs OSM
-		// tiles; Numista catalogue photos load directly from Numista.
-		"img-src 'self' data: blob: " + OSMTileHost + " " + NumistaPhotoHost,
+		// tiles; catalogue photos load directly from Numista, the ECB and the
+		// Portuguese mint's shop folder on Shopify's CDN (not all of it).
+		"img-src 'self' data: blob: " + OSMTileHost + " " + NumistaPhotoHost + " " + EcbPhotoHost + " https://cdn.shopify.com/s/files/1/0525/1910/8762/ https://www.monnaiedeparis.fr/media/catalog/product/",
 		"worker-src 'self' blob:",
 	}
 	for _, directive := range required {

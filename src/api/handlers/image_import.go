@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"mime"
@@ -79,6 +80,20 @@ func importablePhotoURL(raw string) (*url.URL, bool) {
 		return parsed, strings.HasPrefix(parsed.Path, "/wikipedia/commons/")
 	case "en.numista.com":
 		return parsed, strings.HasPrefix(parsed.Path, "/catalogue/photos/")
+	case services.MdpImageHost:
+		// Only the Monnaie de Paris shop's product photos.
+		lower := strings.ToLower(parsed.Path)
+		image := strings.HasSuffix(lower, ".jpg") || strings.HasSuffix(lower, ".jpeg") || strings.HasSuffix(lower, ".png") || strings.HasSuffix(lower, ".webp")
+		return parsed, strings.HasPrefix(parsed.Path, services.MdpImagePath) && image
+	case services.IncmImageHost:
+		// Only the Portuguese mint's (INCM) shop photos, not any Shopify store.
+		lower := strings.ToLower(parsed.Path)
+		image := strings.HasSuffix(lower, ".jpg") || strings.HasSuffix(lower, ".jpeg") || strings.HasSuffix(lower, ".png") || strings.HasSuffix(lower, ".webp")
+		return parsed, strings.HasPrefix(parsed.Path, services.IncmImagePath) && image
+	case "www.ecb.europa.eu":
+		lower := strings.ToLower(parsed.Path)
+		image := strings.HasSuffix(lower, ".jpg") || strings.HasSuffix(lower, ".jpeg") || strings.HasSuffix(lower, ".png") || strings.HasSuffix(lower, ".gif")
+		return parsed, (strings.HasPrefix(parsed.Path, "/euro/coins/comm/html/") || strings.HasPrefix(parsed.Path, "/euro/coins/common/shared/img/")) && image
 	default:
 		return nil, false
 	}
@@ -127,7 +142,7 @@ func (h *ImageHandler) ImportRemote(c *gin.Context) {
 		return
 	}
 
-	data, ext, status, err := h.downloadPhoto(c, source)
+	data, ext, status, err := h.downloadPhoto(c.Request.Context(), source)
 	if err != nil {
 		h.logger.Warn("images", "Photo import for coin %d from %s failed: %v", coinID, source.Host, err)
 		code := "source_failed"
@@ -164,11 +179,11 @@ func (h *ImageHandler) ImportRemote(c *gin.Context) {
 
 // downloadPhoto fetches an image through the restricted outbound client and
 // returns its bytes and file extension, or the HTTP status that refused it.
-func (h *ImageHandler) downloadPhoto(c *gin.Context, source *url.URL) ([]byte, string, int, error) {
+func (h *ImageHandler) downloadPhoto(ctx context.Context, source *url.URL) ([]byte, string, int, error) {
 	if _, err := validateOutboundURL(source.String()); err != nil {
 		return nil, "", 0, err
 	}
-	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, source.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, source.String(), nil)
 	if err != nil {
 		return nil, "", 0, err
 	}

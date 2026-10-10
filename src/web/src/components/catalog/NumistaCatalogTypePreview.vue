@@ -73,7 +73,7 @@
       <div class="grid gap-2">
         <h3 class="m-0 text-base font-medium text-text-primary">{{ t('photos.title') }}</h3>
         <p class="m-0 text-chip text-text-muted">{{ t('photos.chooseHint') }}</p>
-        <RealPhotoPicker v-model="photos" :initial-query="photoQuery" :numista-type-id="type.id" />
+        <RealPhotoPicker v-model="photos" :initial-query="photoQuery" :numista-type-id="type.id" :details="photoDetails" />
       </div>
 
       <div class="flex flex-wrap justify-end gap-2 border-t border-border-subtle pt-3">
@@ -103,6 +103,7 @@ import { catalogPhotoCredit, numistaIssueLabel, numistaLang, numistaYearRange } 
 import type { CatalogSelection } from '@/utils/numistaCatalogPrefill'
 import type { NumistaGrade } from '@/utils/numistaGrades'
 import { NUMISTA_CURRENCIES, numistaStatusMessage, readPreferredCurrency, savePreferredCurrency } from '@/utils/numistaMarketValue'
+import { collectionCurrency } from '@/utils/collectionCurrency'
 
 const props = defineProps<{
   typeId: number
@@ -132,13 +133,24 @@ const type = computed(() => (result.value?.status === 'ok' ? result.value.type ?
 const issues = computed(() => result.value?.issues ?? [])
 const selectedIssue = computed(() => issues.value.find((issue) => issue.id === issueId.value))
 const selectedPrice = computed(() => marketValue.value?.prices.find((price) => price.grade === grade.value))
+// The coin's year: the one asked for, else the type's when struck in a single year.
+const photoYear = computed(() => {
+  const detail = type.value
+  return props.yearHint ?? (detail?.minYear !== undefined && detail.minYear === detail.maxYear ? detail.minYear : undefined)
+})
 // Title plus the year when it is known, e.g. "50 Escudos (Pedro Alvares Cabral) 1968".
 const photoQuery = computed(() => {
   const detail = type.value
   if (!detail) return ''
-  const year = props.yearHint ?? (detail.minYear !== undefined && detail.minYear === detail.maxYear ? detail.minYear : undefined)
+  const year = photoYear.value
   return [detail.title, year !== undefined && year > 0 ? String(year) : ''].filter(Boolean).join(' ')
 })
+// Lets the search find a €2 commemorative's ECB image.
+const photoDetails = computed(() => ({
+  year: photoYear.value,
+  country: type.value?.issuer.name,
+  denomination: type.value?.denomination ?? type.value?.title,
+}))
 
 function measure(value: number | undefined, unit: string): string {
   return value ? `${new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 2 }).format(value)} ${unit}` : ''
@@ -213,12 +225,12 @@ function selectCurrency(code: string) {
   void loadMarketValue()
 }
 
-// The coin form stores current value in USD, so the price used for it is
-// Numista's USD estimate whatever currency is being viewed.
-async function usdPrice(forGrade: NumistaGrade): Promise<number | undefined> {
-  if (marketValue.value?.currency === 'USD') return selectedPrice.value?.price
+// The coin form stores current value in the collection currency, so the price
+// used for it is Numista's estimate in that currency whatever currency is being viewed.
+async function collectionPrice(forGrade: NumistaGrade): Promise<number | undefined> {
+  if (marketValue.value?.currency === collectionCurrency.value) return selectedPrice.value?.price
   try {
-    const res = await getNumistaTypeMarketValue(props.typeId, { currency: 'USD', issueId: issueId.value })
+    const res = await getNumistaTypeMarketValue(props.typeId, { currency: collectionCurrency.value, issueId: issueId.value })
     return res.data.prices.find((price) => price.grade === forGrade)?.price
   } catch {
     return undefined
@@ -229,7 +241,7 @@ async function use(wishlist: boolean) {
   if (!type.value || using.value) return
   using.value = true
   try {
-    const currentValue = fillCurrentValue.value && grade.value && selectedPrice.value ? await usdPrice(grade.value) : undefined
+    const currentValue = fillCurrentValue.value && grade.value && selectedPrice.value ? await collectionPrice(grade.value) : undefined
     emit('use', {
       type: type.value,
       issue: selectedIssue.value,

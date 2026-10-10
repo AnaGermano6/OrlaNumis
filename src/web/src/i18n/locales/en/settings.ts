@@ -296,6 +296,9 @@ export default {
     imported: { one: 'Imported {count} coin', other: 'Imported {count} coins' },
     skippedRows: { one: '{count} skipped row missing a name', other: '{count} skipped rows missing a name' },
     importFailed: 'Import failed — ensure the file is valid JSON or CSV',
+    ucoinTitle: 'Import from uCoin',
+    ucoinHint: 'Add a collection exported from uCoin.net and complete it from Numista.',
+    ucoinOpen: 'Import from uCoin',
   },
   collector: {
     title: 'Collector Profile',

@@ -17,12 +17,24 @@ import (
 // Catalogue data changes rarely; searches are kept for a day so repeating a
 // search while adding several coins costs nothing.
 const (
-	numistaIssuersCacheTTL  = 30 * 24 * time.Hour
-	numistaTypeCacheTTL     = 30 * 24 * time.Hour
-	numistaSearchCacheTTL   = 24 * time.Hour
-	NumistaCatalogPageSize  = 20
-	numistaIssuerMatchLimit = 20
+	numistaIssuersCacheTTL = 30 * 24 * time.Hour
+	numistaTypeCacheTTL    = 30 * 24 * time.Hour
+	numistaSearchCacheTTL  = 24 * time.Hour
+	NumistaCatalogPageSize = 20
+	// NumistaCatalogMaxPageSize is the most types Numista returns per page.
+	NumistaCatalogMaxPageSize = 50
+	numistaIssuerMatchLimit   = 20
 )
+
+// numistaCatalogueIDs maps reference catalogue codes, as collectors write them
+// ("KM# 84"), to Numista's catalogue IDs (from GET /catalogues).
+var numistaCatalogueIDs = map[string]int{"KM": 3, "Y": 9}
+
+// NumistaCatalogueID returns Numista's ID for a catalogue code such as "KM".
+func NumistaCatalogueID(code string) (int, bool) {
+	id, ok := numistaCatalogueIDs[strings.ToUpper(strings.TrimSpace(code))]
+	return id, ok
+}
 
 // NumistaCatalogClient is the part of the Numista API the catalogue browser uses.
 type NumistaCatalogClient interface {
@@ -37,6 +49,11 @@ type NumistaCatalogClient interface {
 type NumistaCatalogService struct {
 	client NumistaCatalogClient
 	cache  *NumistaResponseCache
+
+	// ecb adds the ECB's image of a €2 commemorative to search results and types.
+	ecb *EcbCoinPhotoService
+	// mints add the national mints' photos of the collector coins they sell.
+	mints []MintPhotoSource
 
 	// The issuer list is ~1 MB even trimmed; keep the parsed copy per language
 	// for as long as the stored payload is unchanged.
@@ -177,10 +194,14 @@ func trimNumistaIssuers(raw []byte) ([]byte, error) {
 // Search returns one page of coin types matching the filters.
 func (s *NumistaCatalogService) Search(ctx context.Context, search NumistaTypeSearch) models.NumistaCatalogSearchResult {
 	search.Page = max(search.Page, 1)
-	search.Count = NumistaCatalogPageSize
+	if search.Count <= 0 {
+		search.Count = NumistaCatalogPageSize
+	}
+	search.Count = min(search.Count, NumistaCatalogMaxPageSize)
+	search.Number = strings.TrimSpace(search.Number)
 	result := models.NumistaCatalogSearchResult{Status: models.NumistaDataStatusOK, Page: search.Page, Types: []models.NumistaCatalogSearchItem{}}
 
-	digest := sha256.Sum256([]byte(fmt.Sprintf("%s|%s|%d|%d|%s", search.Lang, search.Issuer, search.Year, search.Page, strings.ToLower(strings.TrimSpace(search.Query)))))
+	digest := sha256.Sum256([]byte(fmt.Sprintf("%s|%s|%d|%d|%s|%d|%s|%d", search.Lang, search.Issuer, search.Year, search.Page, strings.ToLower(strings.TrimSpace(search.Query)), search.Catalogue, strings.ToLower(search.Number), search.Count)))
 	body, _, _, err := s.cache.Get(ctx, "search:"+hex.EncodeToString(digest[:]), numistaSearchCacheTTL, func(ctx context.Context) ([]byte, error) {
 		return s.client.SearchTypes(ctx, search)
 	})
@@ -222,6 +243,31 @@ func (s *NumistaCatalogService) Search(ctx context.Context, search NumistaTypeSe
 			ReverseThumbnail: httpsOnly(item.ReverseThumbnail),
 		})
 	}
+	// Numista's photos are refused to the app; euro coins show the ECB's, and
+	// recent collector coins their mint's (Portugal's INCM, Monnaie de Paris).
+	for i := range result.Types {
+		item := &result.Types[i]
+		obverse, reverse := s.ecbSides(ctx, item.Title, item.Issuer, item.MinYear, item.MaxYear)
+		if obverse == "" {
+			// A type looked at before is matched on its full details.
+			query, ok := mintQueryForTitle(item.Title, item.MinYear)
+			if detail := s.cachedTypeDetail(item.ID); detail != nil {
+				query, ok = mintQueryForType(detail)
+			}
+			if mint, photo := s.mintPhoto(ctx, item.Issuer, query, ok); photo != nil {
+				obverse, reverse = mint.Thumbnail(photo.Obverse), ""
+				if photo.Reverse != "" {
+					reverse = mint.Thumbnail(photo.Reverse)
+				}
+			}
+		}
+		if obverse != "" {
+			item.ObverseThumbnail = obverse
+		}
+		if reverse != "" {
+			item.ReverseThumbnail = reverse
+		}
+	}
 	return result
 }
 
@@ -232,6 +278,33 @@ func (s *NumistaCatalogService) Type(ctx context.Context, typeID int, lang strin
 	if err != nil {
 		result.Status = numistaStatusForError(err)
 		return result
+	}
+	// Numista's photos are refused to the app; euro coins show the ECB's
+	// instead, and recent collector coins their mint's.
+	obverse, reverse := s.ecbSides(ctx, detail.Title, detail.Issuer, detail.MinYear, detail.MaxYear)
+	copyright, thumbnail := "European Central Bank", func(image string) string { return image }
+	if obverse == "" {
+		query, ok := mintQueryForType(detail)
+		if mint, photo := s.mintPhoto(ctx, detail.Issuer, query, ok); photo != nil {
+			photo = mint.Confirm(ctx, photo)
+			obverse, reverse, copyright, thumbnail = photo.Obverse, photo.Reverse, mint.Credit(), mint.Thumbnail
+		}
+	}
+	if obverse != "" || reverse != "" {
+		withECB := *detail
+		withECB.Photos = nil
+		for _, side := range []struct{ name, image string }{{"obverse", obverse}, {"reverse", reverse}} {
+			if side.image != "" {
+				withECB.Photos = append(withECB.Photos, models.NumistaCatalogPhoto{Side: side.name, Thumbnail: thumbnail(side.image), Picture: side.image, Copyright: copyright})
+				continue
+			}
+			for _, photo := range detail.Photos {
+				if photo.Side == side.name {
+					withECB.Photos = append(withECB.Photos, photo)
+				}
+			}
+		}
+		detail = &withECB
 	}
 	result.Type = detail
 	// Issues are optional for prefilling; a failure leaves the list empty.
@@ -250,6 +323,89 @@ func (s *NumistaCatalogService) Photos(ctx context.Context, typeID int, lang str
 	return detail.Photos
 }
 
+// WithMint shows a national mint's photos of the collector coins it sells in
+// search results and type details.
+func (s *NumistaCatalogService) WithMint(mint MintPhotoSource) *NumistaCatalogService {
+	s.mints = append(s.mints, mint)
+	return s
+}
+
+// WithECB shows the ECB's official images of euro coins in search results and
+// type details, where Numista's own photos cannot be loaded.
+func (s *NumistaCatalogService) WithECB(ecb *EcbCoinPhotoService) *NumistaCatalogService {
+	s.ecb = ecb
+	return s
+}
+
+// ecbSides returns the ECB's images of a euro coin type: its obverse (a €2
+// commemorative's design, or the country's regular one) and its common
+// reverse; "" for a side the ECB has no image of.
+func (s *NumistaCatalogService) ecbSides(ctx context.Context, title string, issuer models.NumistaCatalogIssuer, minYear, maxYear *int) (string, string) {
+	if s.ecb == nil || minYear == nil {
+		return "", ""
+	}
+	country := issuer.Code
+	if EcbCountryName(country) == "" {
+		country = issuer.Name
+	}
+	var obverse string
+	if RegularEuroType(title, minYear, maxYear) {
+		obverse, _ = EcbNationalSideImage(title, *minYear, country)
+	} else {
+		obverse, _ = s.ecbImage(ctx, title, issuer, minYear, maxYear)
+	}
+	reverse, _ := EcbCommonSideImage(title, *minYear, country)
+	return obverse, reverse
+}
+
+// ecbImage returns the ECB image of a single-year €2 type, or "".
+func (s *NumistaCatalogService) ecbImage(ctx context.Context, title string, issuer models.NumistaCatalogIssuer, minYear, maxYear *int) (string, string) {
+	if s.ecb == nil || minYear == nil || maxYear == nil || *minYear != *maxYear || !twoEuroDenomination.MatchString(title) {
+		return "", ""
+	}
+	country := issuer.Code
+	if EcbCountryName(country) == "" {
+		country = issuer.Name
+	}
+	photos, err := s.ecb.Match(ctx, EcbPhotoQuery{Year: *minYear, Country: country, Title: title})
+	if err != nil || len(photos) != 1 || photos[0].Match != models.CoinPhotoMatchExact {
+		return "", ""
+	}
+	return photos[0].ImageURL, photos[0].PageURL
+}
+
+// knownTypeDetail returns a type from the cache in any language, so looking
+// up a coin's ECB image costs no Numista request; only an uncached type is fetched.
+func (s *NumistaCatalogService) knownTypeDetail(ctx context.Context, typeID int, lang string) (*models.NumistaCatalogType, error) {
+	if detail := s.cachedTypeDetail(typeID, lang); detail != nil {
+		return detail, nil
+	}
+	return s.typeDetail(ctx, typeID, lang)
+}
+
+// cachedTypeDetail returns a type from the cache, preferring the given
+// languages and then Portuguese and English; nil when it is not there.
+func (s *NumistaCatalogService) cachedTypeDetail(typeID int, langs ...string) *models.NumistaCatalogType {
+	for _, cachedLang := range append(langs, "pt", "en") {
+		if entry := s.cache.find(fmt.Sprintf("type:%d:%s", typeID, cachedLang)); entry != nil {
+			if detail, err := parseNumistaCatalogType([]byte(entry.Payload)); err == nil && detail.ID == typeID {
+				return detail
+			}
+		}
+	}
+	return nil
+}
+
+// mintPhoto returns the photos of a coin by the mint of its issuer, or nil.
+func (s *NumistaCatalogService) mintPhoto(ctx context.Context, issuer models.NumistaCatalogIssuer, query MintPhotoQuery, ok bool) (MintPhotoSource, *MintPhoto) {
+	mint := mintSourceFor(s.mints, issuer.Code, issuer.Name)
+	if mint == nil || !ok {
+		return nil, nil
+	}
+	photo, _ := mint.Match(ctx, query)
+	return mint, photo
+}
+
 func (s *NumistaCatalogService) typeDetail(ctx context.Context, typeID int, lang string) (*models.NumistaCatalogType, error) {
 	body, _, _, err := s.cache.Get(ctx, fmt.Sprintf("type:%d:%s", typeID, lang), numistaTypeCacheTTL, func(ctx context.Context) ([]byte, error) {
 		return s.client.TypeDetail(ctx, typeID, lang)
@@ -265,12 +421,14 @@ func (s *NumistaCatalogService) typeDetail(ctx context.Context, typeID int, lang
 }
 
 type providerCatalogSide struct {
-	Description        string `json:"description"`
-	Lettering          string `json:"lettering"`
-	Picture            string `json:"picture"`
-	Thumbnail          string `json:"thumbnail"`
-	PictureCopyright   string `json:"picture_copyright"`
-	PictureLicenseName string `json:"picture_license_name"`
+	Description        string   `json:"description"`
+	Lettering          string   `json:"lettering"`
+	Designers          []string `json:"designers"`
+	Engravers          []string `json:"engravers"`
+	Picture            string   `json:"picture"`
+	Thumbnail          string   `json:"thumbnail"`
+	PictureCopyright   string   `json:"picture_copyright"`
+	PictureLicenseName string   `json:"picture_license_name"`
 }
 
 type providerCatalogType struct {
@@ -283,8 +441,9 @@ type providerCatalogType struct {
 	MinYear *int `json:"min_year"`
 	MaxYear *int `json:"max_year"`
 	Value   struct {
-		Text     string `json:"text"`
-		Currency struct {
+		Text         string   `json:"text"`
+		NumericValue *float64 `json:"numeric_value"`
+		Currency     struct {
 			Name string `json:"name"`
 		} `json:"currency"`
 	} `json:"value"`
@@ -304,10 +463,12 @@ type providerCatalogType struct {
 	Mints     []struct {
 		Name string `json:"name"`
 	} `json:"mints"`
-	Obverse    providerCatalogSide `json:"obverse"`
-	Reverse    providerCatalogSide `json:"reverse"`
-	Edge       providerCatalogSide `json:"edge"`
-	References []struct {
+	Series            string              `json:"series"`
+	CommemoratedTopic string              `json:"commemorated_topic"`
+	Obverse           providerCatalogSide `json:"obverse"`
+	Reverse           providerCatalogSide `json:"reverse"`
+	Edge              providerCatalogSide `json:"edge"`
+	References        []struct {
 		Catalogue struct {
 			Code string `json:"code"`
 		} `json:"catalogue"`
@@ -325,27 +486,30 @@ func parseNumistaCatalogType(body []byte) (*models.NumistaCatalogType, error) {
 		return nil, err
 	}
 	detail := &models.NumistaCatalogType{
-		ID:           raw.ID,
-		URL:          canonical,
-		Title:        strings.TrimSpace(raw.Title),
-		Issuer:       models.NumistaCatalogIssuer{Code: raw.Issuer.Code, Name: strings.TrimSpace(raw.Issuer.Name)},
-		MinYear:      raw.MinYear,
-		MaxYear:      raw.MaxYear,
-		Denomination: strings.TrimSpace(raw.Value.Text),
-		Currency:     strings.TrimSpace(raw.Value.Currency.Name),
-		Rulers:       []string{},
-		Composition:  strings.TrimSpace(raw.Composition.Text),
-		Technique:    strings.TrimSpace(raw.Technique.Text),
-		WeightGrams:  positive(raw.Weight),
-		DiameterMm:   positive(raw.Size),
-		ThicknessMm:  positive(raw.Thickness),
-		Shape:        strings.TrimSpace(raw.Shape),
-		Mints:        []string{},
-		Obverse:      catalogSide(raw.Obverse),
-		Reverse:      catalogSide(raw.Reverse),
-		Edge:         catalogSide(raw.Edge),
-		References:   []models.NumistaCatalogReference{},
-		Photos:       []models.NumistaCatalogPhoto{},
+		ID:                raw.ID,
+		URL:               canonical,
+		Title:             strings.TrimSpace(raw.Title),
+		Issuer:            models.NumistaCatalogIssuer{Code: raw.Issuer.Code, Name: strings.TrimSpace(raw.Issuer.Name)},
+		MinYear:           raw.MinYear,
+		MaxYear:           raw.MaxYear,
+		Denomination:      strings.TrimSpace(raw.Value.Text),
+		FaceValue:         positive(raw.Value.NumericValue),
+		Currency:          strings.TrimSpace(raw.Value.Currency.Name),
+		CommemoratedTopic: strings.TrimSpace(raw.CommemoratedTopic),
+		Series:            strings.TrimSpace(raw.Series),
+		Rulers:            []string{},
+		Composition:       strings.TrimSpace(raw.Composition.Text),
+		Technique:         strings.TrimSpace(raw.Technique.Text),
+		WeightGrams:       positive(raw.Weight),
+		DiameterMm:        positive(raw.Size),
+		ThicknessMm:       positive(raw.Thickness),
+		Shape:             strings.TrimSpace(raw.Shape),
+		Mints:             []string{},
+		Obverse:           catalogSide(raw.Obverse),
+		Reverse:           catalogSide(raw.Reverse),
+		Edge:              catalogSide(raw.Edge),
+		References:        []models.NumistaCatalogReference{},
+		Photos:            []models.NumistaCatalogPhoto{},
 	}
 	for _, ruler := range raw.Ruler {
 		if name := strings.TrimSpace(ruler.Name); name != "" {
@@ -374,7 +538,17 @@ func parseNumistaCatalogType(body []byte) (*models.NumistaCatalogType, error) {
 
 func catalogSide(side providerCatalogSide) models.NumistaCatalogSide {
 	lettering := strings.ReplaceAll(strings.TrimSpace(side.Lettering), "\r\n", "\n")
-	return models.NumistaCatalogSide{Description: strings.TrimSpace(side.Description), Lettering: lettering}
+	return models.NumistaCatalogSide{Description: strings.TrimSpace(side.Description), Lettering: lettering, Designers: trimmedNames(side.Designers), Engravers: trimmedNames(side.Engravers)}
+}
+
+func trimmedNames(names []string) []string {
+	var trimmed []string
+	for _, name := range names {
+		if name = strings.TrimSpace(name); name != "" {
+			trimmed = append(trimmed, name)
+		}
+	}
+	return trimmed
 }
 
 func catalogPhoto(side string, source providerCatalogSide) (models.NumistaCatalogPhoto, bool) {

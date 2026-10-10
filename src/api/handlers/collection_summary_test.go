@@ -22,7 +22,7 @@ func (s stubECBClient) DailyRates(context.Context) ([]byte, error) {
 	return []byte(`<Envelope><Cube><Cube time='2026-10-09'><Cube currency='USD' rate='1.25'/></Cube></Cube></Envelope>`), nil
 }
 
-func summaryRouter(t *testing.T, ecb stubECBClient) *gin.Engine {
+func summaryRouter(t *testing.T, ecb stubECBClient, currency string) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	router, db := setupCoinHandlerRouter(t)
@@ -37,7 +37,11 @@ func summaryRouter(t *testing.T, ecb stubECBClient) *gin.Engine {
 		}
 	}
 	rates := services.NewExchangeRateService(ecb, services.NewNumistaResponseCache(repository.NewNumistaCacheRepository(db), nil, nil))
-	handler := NewCollectionSummaryHandler(repository.NewCoinRepository(db)).WithExchangeRates(rates)
+	settingsRepo := repository.NewSettingsRepository(db)
+	if err := settingsRepo.Upsert(services.SettingCollectionCurrency, currency); err != nil {
+		t.Fatalf("seed currency: %v", err)
+	}
+	handler := NewCollectionSummaryHandler(repository.NewCoinRepository(db)).WithExchangeRates(rates).WithSettings(services.NewSettingsService(settingsRepo))
 	group := router.Group("/api/summary-test")
 	group.Use(coinTestAuthMiddleware())
 	group.GET("", handler.Summary)
@@ -45,7 +49,7 @@ func summaryRouter(t *testing.T, ecb stubECBClient) *gin.Engine {
 }
 
 func TestCollectionSummaryHandler_ConvertsTheTotalToEuros(t *testing.T) {
-	w := coinRequest(summaryRouter(t, stubECBClient{}), http.MethodGet, "/api/summary-test", nil)
+	w := coinRequest(summaryRouter(t, stubECBClient{}, "USD"), http.MethodGet, "/api/summary-test", nil)
 	var got struct {
 		Coins         int64    `json:"coins"`
 		TotalValue    float64  `json:"totalValue"`
@@ -77,12 +81,25 @@ func TestCollectionSummaryHandler_ConvertsTheTotalToEuros(t *testing.T) {
 }
 
 func TestCollectionSummaryHandler_LeavesEurosEmptyWithoutARate(t *testing.T) {
-	w := coinRequest(summaryRouter(t, stubECBClient{err: errors.New("offline")}), http.MethodGet, "/api/summary-test", nil)
+	w := coinRequest(summaryRouter(t, stubECBClient{err: errors.New("offline")}, "USD"), http.MethodGet, "/api/summary-test", nil)
 	var got map[string]any
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || w.Code != http.StatusOK {
 		t.Fatalf("summary: %d %s", w.Code, w.Body.String())
 	}
 	if got["totalValueEur"] != nil || got["exchangeRate"] != nil || got["totalValue"] != 50.0 {
 		t.Fatalf("summary without a rate = %v", got)
+	}
+}
+
+// In a euro collection the values already are euros: no conversion, even
+// when the ECB cannot be reached.
+func TestCollectionSummaryHandler_EuroCollectionNeedsNoConversion(t *testing.T) {
+	w := coinRequest(summaryRouter(t, stubECBClient{err: errors.New("offline")}, "EUR"), http.MethodGet, "/api/summary-test", nil)
+	var got map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || w.Code != http.StatusOK {
+		t.Fatalf("summary: %d %s", w.Code, w.Body.String())
+	}
+	if got["currency"] != "EUR" || got["totalValue"] != 50.0 || got["totalValueEur"] != 50.0 || got["exchangeRate"] != nil {
+		t.Fatalf("euro summary = %v", got)
 	}
 }

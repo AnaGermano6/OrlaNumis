@@ -63,8 +63,9 @@ func NewValuationService(
 
 // (ResolveLLMConfig moved to SettingsService.ResolveLLMConfig)
 
-// BuildCoinDescription constructs a text description of a coin for AI valuation.
-func BuildCoinDescription(coin *models.Coin) string {
+// BuildCoinDescription constructs a text description of a coin for AI
+// valuation; amounts are in the collection currency.
+func BuildCoinDescription(coin *models.Coin, currency string) string {
 	var parts []string
 	if coin.Name != "" {
 		parts = append(parts, fmt.Sprintf("Name: %s", coin.Name))
@@ -100,16 +101,34 @@ func BuildCoinDescription(coin *models.Coin) string {
 		parts = append(parts, fmt.Sprintf("Mint: %s", coin.Mint))
 	}
 	if coin.PurchasePrice != nil {
-		parts = append(parts, fmt.Sprintf("Purchase Price: $%.2f", *coin.PurchasePrice))
+		parts = append(parts, "Purchase Price: "+FormatMoney(*coin.PurchasePrice, currency))
 	}
 	return strings.Join(parts, "\n")
 }
 
-func valuationChangeContext(previousValue *float64) string {
+func valuationChangeContext(previousValue *float64, currency string) string {
 	if previousValue == nil || *previousValue <= 0 {
 		return ""
 	}
-	return fmt.Sprintf("\n\nPrevious valuation context:\nPrevious value: $%.2f\nIf your estimate changes from this value, include changeExplanation as one concise sentence.", *previousValue)
+	return fmt.Sprintf("\n\nPrevious valuation context:\nPrevious value: %s\nIf your estimate changes from this value, include changeExplanation as one concise sentence.", FormatMoney(*previousValue, currency))
+}
+
+// FormatMoney writes an amount for an AI prompt: "$275.00" or "€275.00".
+func FormatMoney(amount float64, currency string) string {
+	if currency == CurrencyEUR {
+		return fmt.Sprintf("€%.2f", amount)
+	}
+	return fmt.Sprintf("$%.2f", amount)
+}
+
+// valuationRequestMessage asks for a coin's value in the collection currency.
+func valuationRequestMessage(coin *models.Coin, currency string) string {
+	message := fmt.Sprintf("Estimate the current market value of this coin:\n\n%s%s\n\n"+
+		"Return ONLY the JSON block as specified in your instructions. No preamble or extra text.", BuildCoinDescription(coin, currency), valuationChangeContext(coin.CurrentValue, currency))
+	if instruction := CurrencyInstruction(currency); instruction != "" {
+		message += "\n" + instruction
+	}
+	return message
 }
 
 func changeExplanationForResult(previousValue *float64, estimatedValue float64, explanation string) *string {
@@ -235,6 +254,7 @@ func (s *ValuationService) ValuateCollectionForUser(
 
 	// Get valuation prompt
 	valuationPrompt := s.settingsSvc.GetSetting(SettingValuationPrompt)
+	currency := s.settingsSvc.CollectionCurrency()
 
 	s.logger.Info("valuation", "Starting bulk valuation for user %d: %d coins (max %d)", userID, len(coins), maxCoins)
 
@@ -287,9 +307,7 @@ func (s *ValuationService) ValuateCollectionForUser(
 
 		checked++
 		batchCount++
-		description := BuildCoinDescription(&coin)
-		userMessage := fmt.Sprintf("Estimate the current market value of this coin:\n\n%s%s\n\n"+
-			"Return ONLY the JSON block as specified in your instructions. No preamble or extra text.", description, valuationChangeContext(coin.CurrentValue))
+		userMessage := valuationRequestMessage(&coin, currency)
 
 		proxyReq := PortfolioReviewProxyRequest{
 			LLM: llmCfg,

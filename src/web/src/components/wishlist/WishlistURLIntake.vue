@@ -79,11 +79,11 @@
           </label>
           <label class="form-group">
             <span>{{ t('coinFields.weightG') }}</span>
-            <input v-model="draft.weightGrams" class="form-input" type="number" min="0" step="0.01" />
+            <input v-model="draft.weightGrams" class="form-input" type="number" min="0" step="any" />
           </label>
           <label class="form-group">
             <span>{{ t('coinForm.diameterMm') }}</span>
-            <input v-model="draft.diameterMm" class="form-input" type="number" min="0" step="0.01" />
+            <input v-model="draft.diameterMm" class="form-input" type="number" min="0" step="any" />
           </label>
           <label class="form-group">
             <span>{{ t('wishlistUrl.listedValue') }}</span>

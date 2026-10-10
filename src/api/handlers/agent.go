@@ -213,6 +213,7 @@ func (h *AgentHandler) ChatStream(c *gin.Context) {
 	var portfolio *services.PortfolioData
 	if summary, err := h.repo.GetPortfolioSummary(userID); err == nil && summary.TotalCoins > 0 {
 		portfolio = buildPortfolioData(summary)
+		portfolio.Currency = h.settingsSvc.CollectionCurrency()
 	}
 
 	proxyReq := services.AgentChatProxyRequest{

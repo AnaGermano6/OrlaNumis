@@ -136,7 +136,8 @@ describe('NumistaCatalogBrowser', () => {
 
     const [selection] = wrapper.emitted('use')![0] as [Record<string, unknown>]
     expect(selection).toMatchObject({ grade: 'vf', currentValue: 30, wishlist: false, issue: { id: 102 }, photos: {} })
-    expect(mocks.searchCoinPhotos).toHaveBeenCalledWith({ q: '50 Escudos 1968', numistaTypeId: 5, lang: 'en' })
+    // Year, country and denomination let the search find a €2 commemorative's ECB image.
+    expect(mocks.searchCoinPhotos).toHaveBeenCalledWith({ q: '50 Escudos 1968', numistaTypeId: 5, lang: 'en', year: 1968, country: 'Portugal', denomination: '50 Escudos' })
     expect((selection.type as NumistaCatalogType).id).toBe(5)
   })
 

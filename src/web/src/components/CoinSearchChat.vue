@@ -101,7 +101,7 @@
                 <span class="chip-sm">{{ t('chat.aggregate.active', { count: msg.collection.readResult.aggregate.totalCoins }) }}</span>
                 <span class="chip-sm">{{ t('chat.aggregate.wishlist', { count: msg.collection.readResult.aggregate.totalWishlist }) }}</span>
                 <span class="chip-sm">{{ t('chat.aggregate.sold', { count: msg.collection.readResult.aggregate.totalSold }) }}</span>
-                <span class="chip-sm">{{ t('chat.aggregate.value', { value: formatUsd(msg.collection.readResult.aggregate.totalCurrentUsd) }) }}</span>
+                <span class="chip-sm">{{ t('chat.aggregate.value', { value: formatCurrency(msg.collection.readResult.aggregate.totalCurrentUsd) }) }}</span>
               </div>
               <div v-if="msg.collection.readResult?.coins?.length" class="flex flex-wrap gap-[0.35rem]">
                 <span v-for="coin in msg.collection.readResult.coins" :key="coin.id" class="chip-sm">
@@ -203,6 +203,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatCurrency } from '@/utils/format'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type {
   CoinCopilotSpecialistCapability,
@@ -357,7 +358,7 @@ watch(() => props.initialPrompt, (prompt) => {
 
 function formatProposalChange(collection: { proposal?: { changes: Record<string, unknown> } }, field: string): string {
   const value = collection.proposal?.changes?.[field]
-  if (typeof value === 'number') return formatUsd(value)
+  if (typeof value === 'number') return formatCurrency(value)
   if (Array.isArray(value)) return value.join(', ')
   if (value === null || value === undefined) return t('chat.na')
   return String(value)
@@ -367,10 +368,6 @@ function formatExpiry(value: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleString(intlLocale())
-}
-
-function formatUsd(value: number): string {
-  return `$${value.toFixed(2)}`
 }
 
 function canSaveMessageToNote(msg: { role: string; content: string; streaming?: boolean }): boolean {

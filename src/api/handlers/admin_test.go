@@ -230,3 +230,37 @@ func TestUpdateSettingsRejectsUnknownTimezones(t *testing.T) {
 		}
 	}
 }
+
+// The collection currency only changes together with the stored amounts, so the
+// generic settings update refuses a new value but accepts the current one.
+func TestUpdateSettingsLeavesTheCollectionCurrencyToItsOwnEndpoint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormlogger.Default.LogMode(gormlogger.Silent)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&models.AppSetting{}); err != nil {
+		t.Fatal(err)
+	}
+	settingsSvc := services.NewSettingsService(repository.NewSettingsRepository(db))
+	handler := NewAdminHandler("", nil, nil, nil, settingsSvc, services.NewLogger(10))
+	router := gin.New()
+	router.PUT("/admin/settings", handler.UpdateSettings)
+	put := func(settings []map[string]string) *httptest.ResponseRecorder {
+		body, _ := json.Marshal(settings)
+		req := httptest.NewRequest(http.MethodPut, "/admin/settings", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		return rec
+	}
+
+	rec := put([]map[string]string{{"key": services.SettingLogLevel, "value": "debug"}, {"key": services.SettingCollectionCurrency, "value": "EUR"}})
+	if rec.Code != http.StatusBadRequest || settingsSvc.CollectionCurrency() != services.CurrencyUSD || settingsSvc.GetSetting(services.SettingLogLevel) == "debug" {
+		t.Fatalf("switching currency through settings: %d %s", rec.Code, rec.Body.String())
+	}
+	rec = put([]map[string]string{{"key": services.SettingLogLevel, "value": "debug"}, {"key": services.SettingCollectionCurrency, "value": "usd"}})
+	if rec.Code != http.StatusOK || settingsSvc.GetSetting(services.SettingLogLevel) != "debug" {
+		t.Fatalf("resending the current currency: %d %s", rec.Code, rec.Body.String())
+	}
+}

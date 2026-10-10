@@ -48,11 +48,11 @@
             <span class="section-label">{{ t('timeline.yearSpan') }}</span>
           </div>
           <div class="flex flex-col items-center gap-1">
-            <span class="font-display text-lg font-bold text-gold">${{ totalInvested.toLocaleString(intlLocale()) }}</span>
+            <span class="font-display text-lg font-bold text-gold">{{ formatCurrency(totalInvested) }}</span>
             <span class="section-label">{{ t('stats.timeMachine.invested') }}</span>
           </div>
           <div class="flex flex-col items-center gap-1">
-            <span class="font-display text-lg font-bold text-gold">${{ totalValue.toLocaleString(intlLocale()) }}</span>
+            <span class="font-display text-lg font-bold text-gold">{{ formatCurrency(totalValue) }}</span>
             <span class="section-label">{{ t('coinFields.currentValue') }}</span>
           </div>
         </div>
@@ -112,6 +112,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatCurrency } from '@/utils/format'
 import { ref, computed, onMounted } from 'vue'
 import { Clock, Image as ImageIcon } from 'lucide-vue-next'
 import { t, intlLocale } from '@/i18n'

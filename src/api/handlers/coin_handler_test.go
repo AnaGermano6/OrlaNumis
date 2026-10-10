@@ -574,6 +574,9 @@ func TestCoinHandler_GetCoinOptions_Defaults(t *testing.T) {
 	if !ok || len(pt.Categories) != 0 || len(pt.Eras) != 0 {
 		t.Fatalf("expected empty pt-PT labels, got %+v", resp.Labels)
 	}
+	if resp.Currency != "USD" {
+		t.Fatalf("currency = %q", resp.Currency)
+	}
 }
 
 func TestCoinHandler_GetCoinOptions_ConfiguredListsAndLabels(t *testing.T) {
@@ -585,6 +588,7 @@ func TestCoinHandler_GetCoinOptions_ConfiguredListsAndLabels(t *testing.T) {
 		services.SettingCoinEras:               "ancient\nRepublican",
 		services.SettingCoinCategoryLabelsPtPT: "Celtic=Celta",
 		services.SettingCoinEraLabelsPtPT:      "Republican=Republicana",
+		services.SettingCollectionCurrency:     "EUR",
 	}
 	for key, value := range seed {
 		if err := settingsRepo.Upsert(key, value); err != nil {
@@ -603,6 +607,9 @@ func TestCoinHandler_GetCoinOptions_ConfiguredListsAndLabels(t *testing.T) {
 	pt := resp.Labels["pt-PT"]
 	if pt.Categories["Celtic"] != "Celta" || pt.Eras["Republican"] != "Republicana" {
 		t.Fatalf("pt-PT labels = %+v", pt)
+	}
+	if resp.Currency != "EUR" {
+		t.Fatalf("currency = %q", resp.Currency)
 	}
 }
 

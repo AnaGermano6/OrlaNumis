@@ -124,8 +124,10 @@ class CollectionSummary(StrictToolModel):
     totalCoins: int = Field(ge=0)
     totalWishlist: int = Field(ge=0)
     totalSold: int = Field(ge=0)
+    # Totals are in `currency`, the collection currency; the names predate euro collections.
     totalCurrentUsd: float
     totalPurchaseUsd: float
+    currency: Literal["USD", "EUR"] = "USD"
     missingFields: dict[str, int] = Field(default_factory=dict, max_length=100)
 
 

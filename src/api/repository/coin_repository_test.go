@@ -190,6 +190,54 @@ func TestCoinRepository_Delete(t *testing.T) {
 	}
 }
 
+// SQLite enforces the foreign keys of images and catalogue references (the app
+// turns them on), so a coin that has them must still delete, alone or in bulk.
+func TestCoinRepository_DeleteCoinWithReferencesAndImagesUnderForeignKeys(t *testing.T) {
+	db := setupTestDB(t)
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// One connection, so the pragma applies to every statement below.
+	sqlDB.SetMaxOpenConns(1)
+	if err := db.Exec("PRAGMA foreign_keys=ON").Error; err != nil {
+		t.Fatal(err)
+	}
+	repo := NewCoinRepository(db)
+	db.Create(&models.User{Username: "fk-owner"})
+	newCoin := func(name string) *models.Coin {
+		coin := &models.Coin{Name: name, Category: models.CategoryModern, UserID: 1}
+		if err := repo.Create(coin); err != nil {
+			t.Fatalf("create: %v", err)
+		}
+		db.Create(&models.CoinReference{CoinID: coin.ID, Catalog: "KM", Number: "84"})
+		db.Create(&models.CoinImage{CoinID: coin.ID, FilePath: name + ".jpg"})
+		return coin
+	}
+
+	single := newCoin("single")
+	if rows, err := repo.Delete(single.ID, 1); err != nil || rows != 1 {
+		t.Fatalf("Delete: rows=%d err=%v", rows, err)
+	}
+	// Another user's coin is left alone, references included.
+	other := newCoin("other")
+	if rows, err := repo.Delete(other.ID, 2); err != nil || rows != 0 {
+		t.Fatalf("Delete by non-owner: rows=%d err=%v", rows, err)
+	}
+	first, second := newCoin("first"), newCoin("second")
+	if rows, err := repo.BulkDelete([]uint{first.ID, second.ID}, 1); err != nil || rows != 2 {
+		t.Fatalf("BulkDelete: rows=%d err=%v", rows, err)
+	}
+
+	var coins, refs, images int64
+	db.Model(&models.Coin{}).Count(&coins)
+	db.Model(&models.CoinReference{}).Count(&refs)
+	db.Model(&models.CoinImage{}).Count(&images)
+	if coins != 1 || refs != 1 || images != 1 {
+		t.Fatalf("left coins=%d references=%d images=%d, want only the other user's coin", coins, refs, images)
+	}
+}
+
 func TestCoinRepository_CoinExists(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewCoinRepository(db)

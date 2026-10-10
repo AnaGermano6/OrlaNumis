@@ -406,6 +406,13 @@ definitions:
         items:
           type: string
         type: array
+      currency:
+        description: Currency is the collection currency coin prices and values are
+          kept in.
+        enum:
+        - USD
+        - EUR
+        type: string
       eras:
         items:
           type: string
@@ -634,6 +641,16 @@ definitions:
         minimum: -5000
         type: integer
     type: object
+  handlers.CollectionCurrencyRequest:
+    properties:
+      currency:
+        enum:
+        - USD
+        - EUR
+        type: string
+    required:
+    - currency
+    type: object
   handlers.CollectionSummaryResponse:
     properties:
       coincards:
@@ -643,8 +660,18 @@ definitions:
         type: integer
       countries:
         type: integer
+      currency:
+        description: |-
+          Currency is the collection currency (USD or EUR): TotalValue and the
+          highlights' values are in it.
+        enum:
+        - USD
+        - EUR
+        type: string
       exchangeRate:
-        $ref: '#/definitions/services.ExchangeRate'
+        allOf:
+        - $ref: '#/definitions/services.ExchangeRate'
+        description: ExchangeRate is the latest ECB rate, when available.
       highlights:
         $ref: '#/definitions/repository.CollectionHighlights'
       totalValue:
@@ -652,8 +679,9 @@ definitions:
           currency (US dollars).
         type: number
       totalValueEur:
-        description: TotalValueEUR is TotalValue converted with ExchangeRate; null
-          when no rate is available.
+        description: |-
+          TotalValueEUR is TotalValue in euros: as is for a euro collection, else
+          converted with ExchangeRate; null when no rate is available.
         type: number
       types:
         description: |-
@@ -1302,6 +1330,27 @@ definitions:
         type: array
       status:
         type: string
+    type: object
+  handlers.OfficialPhotosRequest:
+    properties:
+      sides:
+        example:
+        - obverse
+        - reverse
+        items:
+          type: string
+        maxItems: 2
+        minItems: 1
+        type: array
+    required:
+    - sides
+    type: object
+  handlers.OfficialPhotosResponse:
+    properties:
+      images:
+        items:
+          $ref: '#/definitions/models.CoinImage'
+        type: array
     type: object
   handlers.OllamaStatusResponse:
     properties:
@@ -3226,12 +3275,25 @@ definitions:
         type: string
       license:
         type: string
+      match:
+        description: |-
+          Match is "exact" when the source identified this very coin, so the
+          photo can be added without asking.
+        enum:
+        - exact
+        type: string
       pageUrl:
         type: string
       side:
         description: Side is "obverse" or "reverse" when the source states it.
         type: string
       source:
+        enum:
+        - numista
+        - wikimedia
+        - ecb
+        - incm
+        - mdp
         type: string
       thumbnail:
         type: string
@@ -3729,11 +3791,24 @@ definitions:
     properties:
       description:
         type: string
+      designers:
+        items:
+          type: string
+        type: array
+      engravers:
+        items:
+          type: string
+        type: array
       lettering:
         type: string
     type: object
   models.NumistaCatalogType:
     properties:
+      commemoratedTopic:
+        description: |-
+          CommemoratedTopic is what a commemorative coin celebrates, in the
+          language asked for when Numista has it (e.g. "O conhecimento").
+        type: string
       composition:
         type: string
       currency:
@@ -3744,6 +3819,9 @@ definitions:
         type: number
       edge:
         $ref: '#/definitions/models.NumistaCatalogSide'
+      faceValue:
+        description: FaceValue is the denomination as a number (5 for "5 Euros").
+        type: number
       id:
         type: integer
       issuer:
@@ -3772,6 +3850,8 @@ definitions:
         items:
           type: string
         type: array
+      series:
+        type: string
       shape:
         type: string
       technique:
@@ -5063,6 +5143,20 @@ definitions:
       activeDraftId:
         type: integer
       route:
+        type: string
+    type: object
+  services.CollectionCurrencyChange:
+    properties:
+      coinsConverted:
+        description: CoinsConverted counts coins with a price or value that was converted.
+        type: integer
+      currency:
+        type: string
+      exchangeRate:
+        allOf:
+        - $ref: '#/definitions/services.ExchangeRate'
+        description: ExchangeRate is the ECB rate used; nil when nothing was converted.
+      previous:
         type: string
     type: object
   services.CollectionHealthSummary:
@@ -6496,6 +6590,45 @@ paths:
       security:
       - BearerAuth: []
       summary: Trigger manual coin-of-the-day pick
+      tags:
+      - Admin
+  /admin/collection-currency:
+    post:
+      consumes:
+      - application/json
+      description: Switches the currency coin prices and values are kept in (USD or
+        EUR) and converts every stored price, value, value history and snapshot with
+        the ECB reference rate, in one transaction. Switching to the current currency
+        changes nothing. Admin only.
+      parameters:
+      - description: New currency
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CollectionCurrencyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.CollectionCurrencyChange'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Change the collection currency
       tags:
       - Admin
   /admin/collection-health-snapshot-runs:
@@ -9945,7 +10078,8 @@ paths:
   /coin-options:
     get:
       description: Returns the admin-configured category and era choices with translated
-        display names
+        display names, and the collection currency (USD or EUR) coin prices and values
+        are kept in
       produces:
       - application/json
       responses:
@@ -9961,12 +10095,14 @@ paths:
   /coin-photos/search:
     get:
       description: 'Returns real photos of a coin with their author and license: the
-        Numista catalogue photos of numistaTypeId, then Wikimedia Commons files matching
-        q. Commons searches are cached for a week. Import a chosen photo with POST
-        /coins/{id}/images/import.'
+        ECB''s image of a €2 commemorative coin (when year is given and the coin is
+        one; match=exact when the ECB lists exactly this coin), the Numista catalogue
+        photos of numistaTypeId, then Wikimedia Commons files matching q. Commons
+        searches are cached for a week, ECB pages for longer. Import a chosen photo
+        with POST /coins/{id}/images/import.'
       parameters:
-      - description: Search text, e.g. title and year (required unless numistaTypeId
-          is set)
+      - description: Search text, e.g. title and year (required unless numistaTypeId,
+          or year and country, are set)
         in: query
         name: q
         type: string
@@ -9978,6 +10114,22 @@ paths:
         description: Language of catalogue data
         in: query
         name: lang
+        type: string
+      - description: Coin year, to look for a €2 commemorative on the ECB site
+        in: query
+        name: year
+        type: integer
+      - description: Coin country (English or Portuguese name)
+        in: query
+        name: country
+        type: string
+      - description: Coin denomination, e.g. 2 euro
+        in: query
+        name: denomination
+        type: string
+      - description: Coin subject, for a coin not linked to Numista
+        in: query
+        name: subject
         type: string
       produces:
       - application/json
@@ -10769,6 +10921,43 @@ paths:
       summary: Import a real coin photo
       tags:
       - Coins
+  /coins/{id}/images/swap-sides:
+    post:
+      description: Swaps the obverse and reverse labels of a coin's images (e.g. official
+        photos whose source names the sides the other way round) and returns the coin's
+        images. The primary image stays the same.
+      parameters:
+      - description: Coin ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.CoinImage'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Swap a coin's obverse and reverse images
+      tags:
+      - Images
   /coins/{id}/journal:
     get:
       description: Returns all activity log entries for a coin, newest first.
@@ -10961,6 +11150,48 @@ paths:
       security:
       - BearerAuth: []
       summary: Get a coin's Numista market value
+      tags:
+      - Coins
+  /coins/{id}/official-photos:
+    post:
+      consumes:
+      - application/json
+      description: 'Adds a coin''s official images to the sides asked for that have
+        no image yet: the European Central Bank''s images of a euro coin''s national
+        side (obverse) and common side (reverse), or, for a recent Portuguese or French
+        collector coin, the photos of its mint''s shop (INCM, Monnaie de Paris). Their
+        credit is appended to the coin''s notes. A coin neither has an image of (older
+        collector coins, other currencies) gets none.'
+      parameters:
+      - description: Coin ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Sides to fill
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.OfficialPhotosRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.OfficialPhotosResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Add a coin's official images
       tags:
       - Coins
   /coins/{id}/purchase:
@@ -12079,10 +12310,10 @@ paths:
         their distinct types (coins linked to the same Numista type count once; other
         coins once per distinct name), their distinct countries, how many coins have
         no country, and how many coins are in a coincard. Also sums the coins' current
-        values (stored in US dollars) and converts the total to euros with the ECB
-        daily reference rate (cached; null when unavailable), and names the rarest
-        (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and
-        most valuable (current value) coins.
+        values (kept in the collection currency, USD or EUR) and gives the total in
+        euros, converted from dollars with the ECB daily reference rate (cached; null
+        when unavailable), and names the rarest (fixed rarity scale; ties go to the
+        more valuable), oldest (lowest year) and most valuable (current value) coins.
       produces:
       - application/json
       responses:
@@ -13620,17 +13851,28 @@ paths:
       - Numista
   /numista/catalog/search:
     get:
-      description: Returns one page (20 types) of Numista coin types matching the
-        text and/or issuer, optionally limited to a year. Searches are cached for
-        a day.
+      description: Returns one page (20 types unless count is set) of Numista coin
+        types matching the text, issuer and/or catalogue reference (e.g. catalogue=KM,
+        number=84), optionally limited to a year. Searches are cached for a day.
       parameters:
-      - description: Search text (required unless issuer is set)
+      - description: Search text (required unless issuer or catalogue is set)
         in: query
         name: q
         type: string
       - description: Numista issuer code, e.g. portugal
         in: query
         name: issuer
+        type: string
+      - description: Reference catalogue code (KM or Y); requires number
+        enum:
+        - KM
+        - "Y"
+        in: query
+        name: catalogue
+        type: string
+      - description: Number in the reference catalogue, e.g. 84
+        in: query
+        name: number
         type: string
       - description: Year the type was issued (negative for BC)
         in: query
@@ -13640,6 +13882,11 @@ paths:
         description: Page number
         in: query
         name: page
+        type: integer
+      - default: 20
+        description: Types per page (1-50)
+        in: query
+        name: count
         type: integer
       - default: en
         description: Language of results

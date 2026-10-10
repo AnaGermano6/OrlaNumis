@@ -38,29 +38,33 @@ func (s *SettingsService) GetCoinSearchPrompt() string {
 }
 
 const (
-	SettingAIProvider                         = "AIProvider"
-	SettingOllamaURL                          = "OllamaURL"
-	SettingOllamaModel                        = "OllamaModel"
-	SettingObversePrompt                      = "ObversePrompt"
-	SettingReversePrompt                      = "ReversePrompt"
-	SettingTextExtractionPrompt               = "TextExtractionPrompt"
-	SettingOllamaTimeout                      = "OllamaTimeout"
-	SettingLogLevel                           = "LogLevel"
-	SettingPublicAppURL                       = "PublicAppURL"
-	SettingNumistaAPIKey                      = "NumistaAPIKey"
-	SettingNumistaSearchTTLHours              = "NumistaSearchTTLHours"
-	SettingNumistaDetailTTLHours              = "NumistaDetailTTLHours"
-	SettingNumistaEnrichmentLimit             = "NumistaEnrichmentLimit"
-	SettingNumistaSearchResultLimit           = "NumistaSearchResultLimit"
-	SettingNumistaSearchTimeoutSeconds        = "NumistaSearchTimeoutSeconds"
-	SettingNumistaDetailTimeoutSeconds        = "NumistaDetailTimeoutSeconds"
-	SettingAnthropicAPIKey                    = "AnthropicAPIKey"
-	SettingAnthropicModel                     = "AnthropicModel"
-	SettingCoinSearchPrompt                   = "CoinSearchPrompt"
-	SettingDealerSearchSources                = "DealerSearchSources"
-	SettingAuctionSearchSources               = "AuctionSearchSources"
-	SettingCoinShowsPrompt                    = "CoinShowsPrompt"
-	SettingValuationPrompt                    = "ValuationPrompt"
+	SettingAIProvider                  = "AIProvider"
+	SettingOllamaURL                   = "OllamaURL"
+	SettingOllamaModel                 = "OllamaModel"
+	SettingObversePrompt               = "ObversePrompt"
+	SettingReversePrompt               = "ReversePrompt"
+	SettingTextExtractionPrompt        = "TextExtractionPrompt"
+	SettingOllamaTimeout               = "OllamaTimeout"
+	SettingLogLevel                    = "LogLevel"
+	SettingPublicAppURL                = "PublicAppURL"
+	SettingNumistaAPIKey               = "NumistaAPIKey"
+	SettingNumistaSearchTTLHours       = "NumistaSearchTTLHours"
+	SettingNumistaDetailTTLHours       = "NumistaDetailTTLHours"
+	SettingNumistaEnrichmentLimit      = "NumistaEnrichmentLimit"
+	SettingNumistaSearchResultLimit    = "NumistaSearchResultLimit"
+	SettingNumistaSearchTimeoutSeconds = "NumistaSearchTimeoutSeconds"
+	SettingNumistaDetailTimeoutSeconds = "NumistaDetailTimeoutSeconds"
+	SettingAnthropicAPIKey             = "AnthropicAPIKey"
+	SettingAnthropicModel              = "AnthropicModel"
+	SettingCoinSearchPrompt            = "CoinSearchPrompt"
+	SettingDealerSearchSources         = "DealerSearchSources"
+	SettingAuctionSearchSources        = "AuctionSearchSources"
+	SettingCoinShowsPrompt             = "CoinShowsPrompt"
+	SettingValuationPrompt             = "ValuationPrompt"
+	// SettingCollectionCurrency is the currency coin prices and values are
+	// kept in (USD or EUR). Change it with CollectionCurrencyService, which
+	// converts the stored values too.
+	SettingCollectionCurrency                 = "CollectionCurrency"
 	SettingSearXNGURL                         = "SearXNGURL"
 	SettingPushoverAppToken                   = "PushoverAppToken"
 	SettingWishlistCheckEnabled               = "WishlistCheckEnabled"
@@ -200,6 +204,7 @@ var settingDefaults = map[string]string{
 	SettingAuctionSearchSources:               "numisbids.com\ncngcoins.com\nbiddr.com",
 	SettingCoinShowsPrompt:                    "",
 	SettingValuationPrompt:                    "",
+	SettingCollectionCurrency:                 "USD",
 	SettingSearXNGURL:                         "",
 	SettingPushoverAppToken:                   "",
 	SettingWishlistCheckEnabled:               "false",

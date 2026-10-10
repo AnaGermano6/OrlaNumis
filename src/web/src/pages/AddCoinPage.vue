@@ -115,11 +115,11 @@
               </label>
               <label class="grid gap-[0.35rem]">
                 <span class="section-label">{{ t('coinFields.weightG') }}</span>
-                <input v-model.number="reviewForm.weightGrams" class="form-input" type="number" step="0.01" min="0">
+                <input v-model.number="reviewForm.weightGrams" class="form-input" type="number" step="any" min="0">
               </label>
               <label class="grid gap-[0.35rem]">
                 <span class="section-label">{{ t('coinForm.diameterMm') }}</span>
-                <input v-model.number="reviewForm.diameterMm" class="form-input" type="number" step="0.1" min="0">
+                <input v-model.number="reviewForm.diameterMm" class="form-input" type="number" step="any" min="0">
               </label>
               <label class="grid gap-[0.35rem]">
                 <span class="section-label">{{ t('coinFields.purchasePrice') }}</span>
@@ -204,6 +204,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { CatalogRegistry, Category, Coin, CoinLookupImageRole, CoinMutationPayload, CoinReferenceInput, IntakeDraft, Material } from '@/types'
 import {
+  addOfficialCoinPhotos,
   commitIntakeDraft,
   createIntakeDraft,
   extractText,
@@ -563,11 +564,12 @@ async function confirmDraft() {
       overrides: buildCoinPayload(reviewForm),
     })
     savedCoinId.value = response.data.coinId
+    const official = await addOfficialSides(response.data.coinId, { obverse: Boolean(obverseFile.value), reverse: Boolean(reverseFile.value) })
     if (obverseFile.value) {
       pendingImages.push({ file: obverseFile.value, face: 'obverse', primary: true, circleClip: obverseFromCamera.value })
     }
     if (reverseFile.value) {
-      pendingImages.push({ file: reverseFile.value, face: 'reverse', primary: false, circleClip: reverseFromCamera.value })
+      pendingImages.push({ file: reverseFile.value, face: 'reverse', primary: !obverseFile.value && !official.obverse, circleClip: reverseFromCamera.value })
     }
     await completeSavedCoin()
   } catch (error) {
@@ -623,18 +625,18 @@ async function handleManualSubmit() {
     savedCoinId.value = coin.id
     const formComp = coinFormRef.value
 
-    if (formComp?.obverseFile) {
-      pendingImages.push({ file: formComp.obverseFile, face: 'obverse', primary: true, circleClip: false })
-    }
-    if (formComp?.reverseFile) {
-      pendingImages.push({ file: formComp.reverseFile, face: 'reverse', primary: false, circleClip: false })
-    }
-    // Real photos from the catalogue fill the sides the user did not photograph.
-    if (catalogSource.value) {
-      const { obverse, reverse } = catalogPhotos.value
-      if (obverse && !formComp?.obverseFile) pendingImages.push({ remote: obverse, face: 'obverse', primary: true, circleClip: false })
-      if (reverse && !formComp?.reverseFile) pendingImages.push({ remote: reverse, face: 'reverse', primary: !formComp?.obverseFile && !obverse, circleClip: false })
-    }
+    // The user's own photos come first, then the real photos chosen in the
+    // catalogue; the official images fill the sides left without one.
+    const own = { obverse: formComp?.obverseFile ?? null, reverse: formComp?.reverseFile ?? null }
+    const chosen = catalogSource.value ? catalogPhotos.value : {}
+    const obverseRemote = own.obverse ? undefined : chosen.obverse
+    const reverseRemote = own.reverse ? undefined : chosen.reverse
+    const official = await addOfficialSides(coin.id, { obverse: Boolean(own.obverse || obverseRemote), reverse: Boolean(own.reverse || reverseRemote) })
+    const hasObverse = Boolean(own.obverse || obverseRemote || official.obverse)
+    if (own.obverse) pendingImages.push({ file: own.obverse, face: 'obverse', primary: true, circleClip: false })
+    if (own.reverse) pendingImages.push({ file: own.reverse, face: 'reverse', primary: !hasObverse, circleClip: false })
+    if (obverseRemote) pendingImages.push({ remote: obverseRemote, face: 'obverse', primary: true, circleClip: false })
+    if (reverseRemote) pendingImages.push({ remote: reverseRemote, face: 'reverse', primary: !hasObverse, circleClip: false })
 
     pendingCard = formComp?.cardFile ?? null
     savedNotes = form.notes || ''
@@ -654,25 +656,45 @@ async function handleManualSubmit() {
   }
 }
 
+// Gives a new euro coin the ECB's images of the sides the user brings no photo
+// of; reports which sides got one. A coin without them is saved all the same.
+async function addOfficialSides(coinId: number, provided: { obverse: boolean; reverse: boolean }) {
+  const sides = (['obverse', 'reverse'] as const).filter((side) => !provided[side])
+  const added = { obverse: false, reverse: false }
+  if (!sides.length) return added
+  try {
+    const res = await addOfficialCoinPhotos(coinId, [...sides])
+    for (const image of res.data.images) {
+      if (image.imageType === 'obverse' || image.imageType === 'reverse') added[image.imageType] = true
+    }
+  } catch {
+    // The official images are a convenience; the coin is already saved.
+  }
+  return added
+}
+
 async function completeSavedCoin() {
   const coinID = savedCoinId.value
   if (coinID === null) return
-  const refusedPhotos: string[] = []
+  const refused: Array<'obverse' | 'reverse'> = []
   for (let image = pendingImages[0]; image; image = pendingImages[0]) {
     if (image.remote) {
       try {
         await importCoinImage(coinID, { url: image.remote.imageUrl, imageType: image.face, isPrimary: image.primary, credit: photoCreditLine(image.face, image.remote) })
       } catch {
         // A source refusing a photo should not block the coin; report it below.
-        refusedPhotos.push(image.face === 'obverse' ? t('common.obverse') : t('common.reverse'))
+        refused.push(image.face)
       }
     } else {
       await uploadImage(coinID, image.file, image.face, image.primary, image.circleClip)
     }
     pendingImages.shift()
   }
-  if (refusedPhotos.length) {
-    await showAlert(t('photos.importFailed', { sides: refusedPhotos.join(', ') }), { title: t('photos.title') })
+  if (refused.length) {
+    // The official image, when there is one, stands in for a refused photo.
+    const official = await addOfficialSides(coinID, { obverse: !refused.includes('obverse'), reverse: !refused.includes('reverse') })
+    const missing = refused.filter((face) => !official[face]).map((face) => (face === 'obverse' ? t('common.obverse') : t('common.reverse')))
+    if (missing.length) await showAlert(t('photos.importFailed', { sides: missing.join(', ') }), { title: t('photos.title') })
   }
   if (pendingCard) {
     const res = await extractText(pendingCard)

@@ -647,30 +647,26 @@ func (r *CoinRepository) Delete(id uint, userID uint) (int64, error) {
 }
 
 func (r *CoinRepository) DeleteInTx(id uint, userID uint) (int64, error) {
-	result := r.db.Scopes(OwnedByID(id, userID)).Delete(&models.Coin{})
-	if result.Error != nil {
-		return 0, result.Error
+	var owned int64
+	if err := r.db.Model(&models.Coin{}).Scopes(OwnedByID(id, userID)).Count(&owned).Error; err != nil {
+		return 0, err
 	}
-	if result.RowsAffected == 0 {
+	if owned == 0 {
 		return 0, nil
 	}
-	if err := r.db.Where("coin_id = ?", id).Delete(&models.CoinImage{}).Error; err != nil {
-		return 0, err
-	}
-	if err := r.db.Where("coin_id = ?", id).Delete(&models.CoinJournal{}).Error; err != nil {
-		return 0, err
-	}
-	if err := r.db.Where("coin_id = ?", id).Delete(&models.CoinValueHistory{}).Error; err != nil {
-		return 0, err
-	}
-	if err := r.db.Where("coin_id = ?", id).Delete(&models.CoinComment{}).Error; err != nil {
-		return 0, err
-	}
-	if err := r.db.Where("coin_id = ?", id).Delete(&models.AvailabilityResult{}).Error; err != nil {
-		return 0, err
+	// Rows pointing at the coin go first: SQLite enforces the foreign keys of
+	// images and catalogue references, so deleting the coin before them fails.
+	for _, model := range []interface{}{&models.CoinImage{}, &models.CoinReference{}, &models.CoinJournal{}, &models.CoinValueHistory{}, &models.CoinComment{}, &models.AvailabilityResult{}} {
+		if err := r.db.Where("coin_id = ?", id).Delete(model).Error; err != nil {
+			return 0, err
+		}
 	}
 	if err := r.db.Model(&models.AuctionLot{}).Where("coin_id = ?", id).Update("coin_id", nil).Error; err != nil {
 		return 0, err
+	}
+	result := r.db.Scopes(OwnedByID(id, userID)).Delete(&models.Coin{})
+	if result.Error != nil {
+		return 0, result.Error
 	}
 	return result.RowsAffected, nil
 }
@@ -694,17 +690,18 @@ func (r *CoinRepository) BulkDeleteInTx(coinIDs []uint, userID uint) (int64, err
 	if len(ownedIDs) == 0 {
 		return 0, nil
 	}
-	result := r.db.Where("id IN ? AND user_id = ?", ownedIDs, userID).Delete(&models.Coin{})
-	if result.Error != nil {
-		return 0, result.Error
-	}
-	for _, model := range []interface{}{&models.CoinImage{}, &models.CoinJournal{}, &models.CoinValueHistory{}, &models.CoinComment{}, &models.AvailabilityResult{}, &models.CoinTag{}} {
+	// Dependent rows first, as in DeleteInTx.
+	for _, model := range []interface{}{&models.CoinImage{}, &models.CoinReference{}, &models.CoinJournal{}, &models.CoinValueHistory{}, &models.CoinComment{}, &models.AvailabilityResult{}, &models.CoinTag{}} {
 		if err := r.db.Where("coin_id IN ?", ownedIDs).Delete(model).Error; err != nil {
 			return 0, err
 		}
 	}
 	if err := r.db.Model(&models.AuctionLot{}).Where("coin_id IN ?", ownedIDs).Update("coin_id", nil).Error; err != nil {
 		return 0, err
+	}
+	result := r.db.Where("id IN ? AND user_id = ?", ownedIDs, userID).Delete(&models.Coin{})
+	if result.Error != nil {
+		return 0, result.Error
 	}
 	return result.RowsAffected, nil
 }

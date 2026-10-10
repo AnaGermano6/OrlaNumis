@@ -205,14 +205,19 @@ func (c *HTTPNumistaClient) IssuePrices(ctx context.Context, typeID, issueID int
 	return c.get(ctx, path, c.detailTimeout())
 }
 
-// NumistaTypeSearch filters a catalogue search. Query or Issuer is required.
+// NumistaTypeSearch filters a catalogue search. Query, Issuer or a catalogue
+// reference (Catalogue and Number) is required.
 type NumistaTypeSearch struct {
 	Query  string
 	Issuer string
-	Year   int
-	Page   int
-	Count  int
-	Lang   string
+	// Catalogue is Numista's ID of a reference catalogue (e.g. 3 for KM);
+	// Number is the coin's number in it (e.g. "84").
+	Catalogue int
+	Number    string
+	Year      int
+	Page      int
+	Count     int
+	Lang      string
 }
 
 // SearchTypes returns the raw JSON of a coin catalogue search.
@@ -223,6 +228,10 @@ func (c *HTTPNumistaClient) SearchTypes(ctx context.Context, search NumistaTypeS
 	}
 	if search.Issuer != "" {
 		values.Set("issuer", search.Issuer)
+	}
+	if search.Catalogue > 0 && search.Number != "" {
+		values.Set("catalogue", strconv.Itoa(search.Catalogue))
+		values.Set("number", search.Number)
 	}
 	if search.Year != 0 {
 		values.Set("year", strconv.Itoa(search.Year))

@@ -42,10 +42,11 @@ vi.mock('@/api/client', () => ({
   listCatalogs: vi.fn().mockResolvedValue([]),
   purchaseCoin: vi.fn(),
   sellCoin: vi.fn(),
+  swapCoinImageSides: vi.fn().mockResolvedValue({ data: [] }),
   updateCoinReference: vi.fn(),
 }))
 
-import { deleteCoin, duplicateCoin, purchaseCoin, sellCoin } from '@/api/client'
+import { deleteCoin, duplicateCoin, purchaseCoin, sellCoin, swapCoinImageSides } from '@/api/client'
 
 vi.mock('@/composables/useDialog', () => ({
   useDialog: () => ({
@@ -114,6 +115,18 @@ describe('CoinDetailPage', () => {
     // without a responsive prefix; the metadata section below uses `md:grid-cols-2`).
     expect(wrapper.find('.grid-cols-2').exists()).toBe(true)
     expect(wrapper.find('button[aria-label="Share"]').exists()).toBe(true)
+    expect(fetchCoin).toHaveBeenCalledWith(coin.id)
+  })
+
+  it('swaps the obverse and reverse images of a coin that has both', async () => {
+    const wrapper = mount(CoinDetailPage, { global: { stubs: pageStubs() } })
+    fetchCoin.mockClear()
+
+    const swap = wrapper.findAll('button').find((button) => button.text() === 'Swap obverse and reverse')!
+    await swap.trigger('click')
+    await flushPromises()
+
+    expect(swapCoinImageSides).toHaveBeenCalledWith(coin.id)
     expect(fetchCoin).toHaveBeenCalledWith(coin.id)
   })
 
