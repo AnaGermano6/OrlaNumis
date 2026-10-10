@@ -275,7 +275,12 @@ func matchMintCoin(coins []mintCoin, query MintPhotoQuery) *mintCoin {
 		// topic is another one ("Palace of Versailles" is not "National palace
 		// of Sintra").
 		// A coin of the year before or after needs half the topic's words its own.
-		coverage := float64(len(d.topic)) / float64(max(len(topicWords), 1))
+		// Numbers ("85.º aniversário") count when the title has them, but a
+		// title without them can still name the whole topic.
+		coverage := float64(countWords(d.topic, false)) / float64(max(countWords(seen, false), 1))
+		if countWords(seen, false) == 0 {
+			coverage = float64(len(d.topic)) / float64(max(len(topicWords), 1))
+		}
 		named := distinct > 0 && (coverage == 1 || (coverage >= 0.5 && d.yearExact && distinct >= 2)) &&
 			(d.yearExact || (2*distinct >= len(topicWords) && namesTopic(d.words, sharedNames, topicWords)))
 		if !named && !d.designer {
@@ -464,4 +469,15 @@ func uniqueStrings(values []string) []string {
 		}
 	}
 	return unique
+}
+
+// countWords counts the words of a set that are numbers (or are not).
+func countWords(words map[string]bool, numbers bool) int {
+	count := 0
+	for word := range words {
+		if (strings.Trim(word, "0123456789") == "") == numbers {
+			count++
+		}
+	}
+	return count
 }

@@ -1594,6 +1594,16 @@ definitions:
       limit:
         type: integer
     type: object
+  handlers.TranslationResult:
+    properties:
+      status:
+        enum:
+        - ok
+        - unavailable
+        type: string
+      text:
+        type: string
+    type: object
   handlers.UpdateLotRequest:
     description: Updates an existing auction lot.
     properties:
@@ -17462,6 +17472,60 @@ paths:
       summary: Update tag
       tags:
       - Tags
+  /translate:
+    get:
+      description: Translates a short text (up to 500 bytes) with MyMemory, a free
+        translation service; only the text is sent. Answers are cached for a year.
+        Used to compare coin subjects written in the user's language with Numista's
+        English titles.
+      parameters:
+      - description: Text to translate
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Source language
+        enum:
+        - pt
+        - en
+        - fr
+        - es
+        - de
+        - it
+        - nl
+        in: query
+        name: from
+        required: true
+        type: string
+      - default: en
+        description: Target language
+        enum:
+        - pt
+        - en
+        - fr
+        - es
+        - de
+        - it
+        - nl
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.TranslationResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Translate a short text
+      tags:
+      - Numista
   /uploads/{filepath}:
     get:
       description: Serves an uploaded coin image or avatar only when the authenticated

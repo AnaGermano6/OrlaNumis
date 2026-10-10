@@ -151,6 +151,20 @@ func TestIncmCoinPhotoService_Match(t *testing.T) {
 	}
 }
 
+func TestMatchMintCoin_IgnoresAnniversaryNumbersTheTitleLacks(t *testing.T) {
+	coins := []mintCoin{
+		{Title: "Disney animation classics - Fantasia", OtherTitles: []string{"classiques de l animation disney fantasia"}, Value: 10, Year: 2025, Obverse: "f.jpg", PageURL: "f"},
+		{Title: "Disney animation classics - Pinocchio", OtherTitles: []string{"classiques de l animation disney pinocchio"}, Value: 10, Year: 2025, Obverse: "p.jpg", PageURL: "p"},
+	}
+	coin := matchMintCoin(coins, MintPhotoQuery{Year: 2025, Value: 10, Topic: "Clássicos da Animação Disney - 85.º aniversário de Fantasia"})
+	if coin == nil || coin.PageURL != "f" {
+		t.Fatalf("coin = %+v", coin)
+	}
+	if coin := matchMintCoin(coins, MintPhotoQuery{Year: 2025, Value: 10, Topic: "Clássicos da Animação Disney - Bambi"}); coin != nil {
+		t.Fatalf("Bambi is neither coin: %+v", coin)
+	}
+}
+
 func TestIncmCoinPhotoService_ShopUnavailable(t *testing.T) {
 	service, client := newTestIncmService(t)
 	client.err = errors.New("offline")

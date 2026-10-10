@@ -76,7 +76,7 @@ export function ucoinLookupGroupKey(lookup: UcoinLookup): string {
 const VULGAR_FRACTIONS: Record<string, number> = { '½': 0.5, '¼': 0.25, '¾': 0.75, '⅓': 1 / 3, '⅔': 2 / 3, '⅛': 0.125 }
 
 // Units worth a fraction of the main one, so "2 Euro Cents" never passes for "2 euro".
-const SUBUNIT = /\b(cent|cents|centimo|centimos|centime|centimes|centavo|centavos|centesimo|centesimos|centesimi|penny|pence|pfennig|reichspfennig|groschen|grosz|groszy|kopek|kopeks|kopiyok|kopecks|halala|halalas|halerov|haleru|heller|hellers|rappen|ore|stotinki|para|fils|agorot|baisa|millimes|qapik|lipa|jiao|avos|bututs|piastres|sen|senti|seniti|santims|sentimo|dime|nickel|mils?)\b/
+const SUBUNIT = /\b(cent|cents|centimo|centimos|centime|centimes|centavo|centavos|centesimo|centesimos|centesimi|penny|pence|pfennig|reichspfennig|groschen|grosz|groszy|kopek|kopeks|kopiyok|kopiiok|kopiika|kopiikas|kopiyka|kopiyky|kopecks|halala|halalas|halerov|haleru|heller|hellers|rappen|ore|stotinki|para|fils|agorot|baisa|millimes|qapik|lipa|jiao|avos|bututs|piastres|sen|senti|seniti|santims|sentimo|dime|nickel|mils?)\b/
 
 export interface ParsedDenomination {
   value?: number
@@ -246,6 +246,35 @@ function unique<T>(scored: { item: T; score: number }[]): T | undefined {
   return top.length === 1 ? top[0]?.item : undefined
 }
 
+// Words naming a version of a design rather than the design itself: "5 Euros
+// (Jaap Eden; silver plated copper)" and "(Jaap Eden; silver)" are one design.
+const VERSION_WORDS = new Set([
+  'silver', 'gold', 'plated', 'copper', 'bronze', 'steel', 'nickel', 'cupronickel', 'brass', 'magnetic', 'non',
+  'coloured', 'colored', 'colourised', 'colorized', 'proof', 'piedfort', 'brilliant', 'uncirculated', 'normal', 'obverse',
+])
+
+function designKey(title: string): string {
+  return words(title).filter((word) => !VERSION_WORDS.has(word) && !/^\d+$/.test(word)).join(' ')
+}
+
+/**
+ * Like unique, but a tie between versions of one design (metals, finishes,
+ * colours) goes to its ordinary version, the lowest-numbered when several are.
+ */
+function uniqueDesign(scored: { item: NumistaCatalogSearchItem; score: number }[], lookup: UcoinLookup): NumistaCatalogSearchItem | undefined {
+  const best = Math.max(...scored.map((entry) => entry.score))
+  const top = scored.filter((entry) => entry.score === best).map((entry) => entry.item)
+  return ordinaryVersion(top, lookup)
+}
+
+/** The ordinary version when the items are versions of one design, else undefined (unless there is one). */
+function ordinaryVersion(items: NumistaCatalogSearchItem[], lookup: UcoinLookup): NumistaCatalogSearchItem | undefined {
+  if (items.length <= 1) return items[0]
+  const key = designKey(items[0]?.title ?? '')
+  if (!key || items.some((item) => designKey(item.title) !== key)) return undefined
+  return [...items].sort((a, b) => specialVersionPenalty(a, lookup) - specialVersionPenalty(b, lookup) || a.id - b.id)[0]
+}
+
 /**
  * Picks the coin's type among search results, or undefined when no result is
  * a clear match. Results of a catalogue-number search are already precise;
@@ -273,7 +302,7 @@ export function pickNumistaType(
         + subjectScore(lookup.subject, item.title, lookup.country)
         - specialVersionPenalty(item, lookup),
     }))
-    return unique(scored)
+    return uniqueDesign(scored, lookup)
   }
 
   const pool = candidates.filter((item) => yearFits(item, lookup.year))
@@ -281,7 +310,7 @@ export function pickNumistaType(
   if (!sameValue.length) return undefined
   if (hasSubject(lookup)) {
     const matches = sameValue.map((item) => ({ item, matched: subjectScore(lookup.subject, item.title, lookup.country) }))
-    const match = unique(matches.map(({ item, matched }) => ({ item, score: matched - specialVersionPenalty(item, lookup) })))
+    const match = uniqueDesign(matches.map(({ item, matched }) => ({ item, score: matched - specialVersionPenalty(item, lookup) })), lookup)
     if (match && matches.some((entry) => entry.item === match && entry.matched > 0)) return match
     return sameValue.length === 1 ? sameValue[0] : undefined
   }

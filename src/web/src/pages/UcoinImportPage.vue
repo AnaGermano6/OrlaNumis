@@ -54,6 +54,26 @@
       <button class="btn btn-secondary" @click="importer.enrich()">{{ t('ucoinImport.complete') }}</button>
     </section>
 
+    <!-- Coins imported before photos were added on import. -->
+    <section
+      v-if="!busy && importer.withoutImages.value.length && importer.phase.value !== 'ready' && importer.phase.value !== 'finished'"
+      class="card mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+      data-testid="ucoin-without-images"
+    >
+      <p class="m-0 text-body text-text-primary">{{ t('ucoinImport.withoutImages', { count: importer.withoutImages.value.length }) }}</p>
+      <button class="btn btn-secondary" @click="importer.addMissingPhotos()">{{ t('ucoinImport.addPhotos') }}</button>
+    </section>
+
+    <!-- Coins Numista did not have before: matching improves, so they can be tried again. -->
+    <section
+      v-if="!busy && importer.earlierNotFound.value && importer.phase.value !== 'ready' && importer.phase.value !== 'finished'"
+      class="card mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+      data-testid="ucoin-earlier-not-found"
+    >
+      <p class="m-0 text-body text-text-primary">{{ t('ucoinImport.earlierNotFound', { count: importer.earlierNotFound.value }) }}</p>
+      <button class="btn btn-secondary" @click="retryNotFound">{{ t('ucoinImport.done.retryNotFound') }}</button>
+    </section>
+
     <section v-if="busy" class="card mb-4 flex flex-col gap-3" aria-live="polite">
       <p class="m-0 text-body font-medium text-text-primary">{{ progressText }}</p>
       <div
@@ -84,7 +104,9 @@
         <li v-if="importer.progress.toEnrich">{{ t('ucoinImport.done.enriched', { count: importer.progress.enriched }) }}</li>
         <li v-if="importer.progress.failed" class="text-byzantine">{{ t('ucoinImport.done.failed', { count: importer.progress.failed }) }}</li>
         <li v-if="importer.progress.notFound">{{ t('ucoinImport.done.notFound', { count: importer.progress.notFound }) }}</li>
+        <li v-if="importer.progress.toPhoto">{{ t('ucoinImport.done.photos', { count: importer.progress.photographed, total: importer.progress.toPhoto }) }}</li>
       </ul>
+      <p v-if="importer.progress.toPhoto" class="m-0 text-chip text-text-muted">{{ t('ucoinImport.done.photosNote') }}</p>
       <p v-if="importer.progress.enriched" class="m-0 text-chip text-text-muted">{{ t('ucoinImport.done.valueNote') }}</p>
 
       <details v-if="importer.notFoundCoins.value.length" class="text-body">
@@ -117,14 +139,23 @@ const importer = useUcoinImport()
 const withNumista = ref(true)
 
 
-const busy = computed(() => importer.phase.value === 'creating' || importer.phase.value === 'enriching')
+const busy = computed(() => ['creating', 'enriching', 'photos'].includes(importer.phase.value))
 
-const progressTotal = computed(() => importer.phase.value === 'creating' ? importer.progress.toCreate : importer.progress.toEnrich)
-const progressDone = computed(() => importer.phase.value === 'creating'
-  ? importer.progress.created + importer.progress.createFailed
-  : importer.progress.enriched + importer.progress.notFound + importer.progress.failed)
+const progressTotal = computed(() => {
+  if (importer.phase.value === 'creating') return importer.progress.toCreate
+  return importer.phase.value === 'photos' ? importer.progress.toPhoto : importer.progress.toEnrich
+})
+const progressDone = computed(() => {
+  if (importer.phase.value === 'creating') return importer.progress.created + importer.progress.createFailed
+  if (importer.phase.value === 'photos') return importer.progress.photoDone
+  return importer.progress.enriched + importer.progress.notFound + importer.progress.failed
+})
 const progressPercent = computed(() => progressTotal.value ? Math.min(100, Math.round((progressDone.value / progressTotal.value) * 100)) : 0)
-const progressText = computed(() => t(importer.phase.value === 'creating' ? 'ucoinImport.creating' : 'ucoinImport.enriching', {
+const progressKey = computed(() => {
+  if (importer.phase.value === 'creating') return 'ucoinImport.creating' as const
+  return importer.phase.value === 'photos' ? 'ucoinImport.addingPhotos' as const : 'ucoinImport.enriching' as const
+})
+const progressText = computed(() => t(progressKey.value, {
   done: progressDone.value,
   total: progressTotal.value,
 }))

@@ -37,6 +37,8 @@ export default {
     retryNotFound: 'Try the coins not found again',
     viewGallery: 'View the gallery',
     valueNote: 'Values are Numista estimates for each coin\'s grade (VF when the file has no grade).',
+    photos: { one: '{count} of {total} coins got official photos.', other: '{count} of {total} coins got official photos.' },
+    photosNote: 'The photos come from the European Central Bank (euro coins) and the Portuguese and French mints (their recent collector coins). Other coins keep no image; you can add your own.',
   },
   notes: {
     source: 'Imported from uCoin ({reference}).',
@@ -45,4 +47,8 @@ export default {
     price: 'Price in uCoin: {value}',
     comment: 'uCoin comment: {value}',
   },
+  earlierNotFound: { one: '{count} imported coin was not found on Numista before. The search now also tries the subject in English and the ordinary version of a design.', other: '{count} imported coins were not found on Numista before. The search now also tries the subject in English and the ordinary version of a design.' },
+  addingPhotos: 'Adding official photos… {done} of {total}',
+  withoutImages: { one: '{count} imported coin has no image.', other: '{count} imported coins have no image.' },
+  addPhotos: 'Add official photos',
 }

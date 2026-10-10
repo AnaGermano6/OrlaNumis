@@ -7,6 +7,7 @@ import (
 	"github.com/briandenicola/ancient-coins-api/repository"
 	"github.com/briandenicola/ancient-coins-api/services"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 // registerProtectedRoutes registers every endpoint that requires an
@@ -260,9 +261,14 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/numista/catalog/types/:id/market-value", numistaCatalogHandler.MarketValue)
 		coinPhotoSearch := services.NewCoinPhotoSearchService(numistaCatalogSvc, services.NewHTTPCommonsClient(nil), numistaResponseCache).WithECB(ecbCoinPhotos).WithMint(incmCoinPhotos).WithMint(mdpCoinPhotos)
 		protected.GET("/coin-photos/search", handlers.NewCoinPhotoHandler(coinPhotoSearch).Search)
+		// Coin subjects in the user's language, translated to compare with Numista's titles.
+		protected.GET("/translate", handlers.NewTranslationHandler(services.NewTranslationService(services.NewMyMemoryClient(nil), numistaResponseCache)).Translate)
 		// The add-coin page fills the sides the user has no photo of with the
 		// coin's official images.
-		protected.POST("/coins/:id/official-photos", d.writeRateLimit, handlers.NewOfficialPhotoHandler(d.coinRepo, d.imageHandler, coinPhotoSearch, d.logger).Add)
+		// The uCoin import asks for every imported coin, so this has its own,
+		// higher limit; each request downloads at most two official images.
+		officialPhotosRateLimit := middleware.AuthenticatedRateLimit(300, time.Minute)
+		protected.POST("/coins/:id/official-photos", officialPhotosRateLimit, handlers.NewOfficialPhotoHandler(d.coinRepo, d.imageHandler, coinPhotoSearch, d.logger).Add)
 		coinCountryHandler := handlers.NewCoinCountryHandler(d.coinRepo, services.NewCoinCountryService(d.coinRepo, numistaCatalogSvc))
 		protected.GET("/coins/countries", coinCountryHandler.Countries)
 		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(d.exchangeRates).WithSettings(d.settingsSvc).Summary)

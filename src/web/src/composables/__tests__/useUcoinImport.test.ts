@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Coin, CoinMutationPayload, CoinReferenceInput } from '@/types'
 import { useUcoinImport } from '../useUcoinImport'
 import { setCollectionCurrency } from '@/utils/collectionCurrency'
+import { locale, setLocale } from '@/i18n'
 
 const mocks = vi.hoisted(() => ({
+  addOfficialCoinPhotos: vi.fn(),
   createCoin: vi.fn(),
   getCoins: vi.fn(),
   getCoinOptions: vi.fn(),
@@ -13,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   listCatalogs: vi.fn(),
   searchNumistaCatalog: vi.fn(),
   searchNumistaIssuers: vi.fn(),
+  translateText: vi.fn(),
   updateCoin: vi.fn(),
 }))
 
@@ -86,6 +89,8 @@ describe('useUcoinImport', () => {
     collection = []
     nextId = 0
     mocks.getCoinOptions.mockRejectedValue(new Error('offline'))
+    mocks.translateText.mockResolvedValue({ data: { status: 'unavailable' } })
+    mocks.addOfficialCoinPhotos.mockResolvedValue({ data: { images: [] } })
     mocks.getCollectionSummary.mockResolvedValue({ data: { exchangeRate: { usdPerEur: 1.12, date: '2026-10-09' } } })
     mocks.listCatalogs.mockResolvedValue([
       { id: 1, catalog: 'KM', displayName: 'Krause-Mishler', era: 'modern', volumeRequired: false },
@@ -178,6 +183,43 @@ describe('useUcoinImport', () => {
     expect(importer.alreadyImported.value).toBe(5)
   })
 
+  it('adds the official photos of the imported coins after the Numista details', async () => {
+    mocks.addOfficialCoinPhotos.mockImplementation(async (id: number) => {
+      const coin = collection.find((entry) => entry.id === id)!
+      // Only the €2 coin has official images.
+      const images = coin.denomination === '2 euro' ? [{ id: 1, coinId: id, filePath: 'a.jpg', imageType: 'obverse', isPrimary: true }] : []
+      coin.images = images as Coin['images']
+      return { data: { images } }
+    })
+    const importer = useUcoinImport({ paceMs: 0 })
+    await importer.readFile(csvFile(CSV))
+    await importer.start(true)
+
+    expect(importer.phase.value).toBe('finished')
+    expect(mocks.addOfficialCoinPhotos).toHaveBeenCalledTimes(5)
+    expect(mocks.addOfficialCoinPhotos).toHaveBeenCalledWith(collection[2]!.id, ['obverse', 'reverse'])
+    expect(importer.progress).toMatchObject({ toPhoto: 5, photoDone: 5, photographed: 1 })
+    expect(importer.withoutImages.value).toHaveLength(4)
+    // Photos are asked once the coin has its Numista reference.
+    const bremenCall = mocks.addOfficialCoinPhotos.mock.invocationCallOrder[mocks.addOfficialCoinPhotos.mock.calls.findIndex(([id]) => id === collection[2]!.id)]!
+    expect(bremenCall).toBeGreaterThan(Math.max(...mocks.updateCoin.mock.invocationCallOrder))
+
+    // Coins imported earlier get theirs on request; the ones with an image are left alone.
+    mocks.addOfficialCoinPhotos.mockClear()
+    await importer.addMissingPhotos()
+    expect(mocks.addOfficialCoinPhotos).toHaveBeenCalledTimes(4)
+    expect(importer.phase.value).toBe('finished')
+  })
+
+  it('keeps importing when a photo cannot be added', async () => {
+    mocks.addOfficialCoinPhotos.mockRejectedValue(new Error('offline'))
+    const importer = useUcoinImport({ paceMs: 0 })
+    await importer.readFile(csvFile(CSV))
+    await importer.start(false)
+    expect(importer.progress).toMatchObject({ created: 5, toPhoto: 5, photoDone: 5, photographed: 0 })
+    expect(importer.phase.value).toBe('finished')
+  })
+
   it('stops when the Numista quota runs out and resumes later', async () => {
     const importer = useUcoinImport({ paceMs: 0 })
     await importer.readFile(csvFile(CSV))
@@ -208,10 +250,57 @@ describe('useUcoinImport', () => {
     await importer.enrich()
     expect(importer.progress.toEnrich).toBe(0)
 
+    expect(importer.earlierNotFound.value).toBe(1)
+
+    // A later visit offers to try them again.
+    const later = useUcoinImport({ paceMs: 0 })
+    await later.init()
+    expect(later.earlierNotFound.value).toBe(1)
+    expect(later.awaitingNumista.value).toHaveLength(0)
+
     importer.retryNotFound()
     await importer.enrich()
     expect(importer.progress.toEnrich).toBe(1)
     expect(importer.progress.notFound).toBe(1)
+  })
+
+  it('tries the subject in English when the Portuguese one names no Numista type', async () => {
+    const previous = locale.value
+    setLocale('pt-PT')
+    try {
+      const csv = [
+        CSV.split('\n')[0],
+        '"Portugal","União Europeia (Euro)","2 euro","2023","","Euro","Jornada Mundial da Juventude 2023 Lisboa","25.75","","","UC# 116","",""',
+        '"Portugal","União Europeia (Euro)","2 euro","2023","","Euro","Paz Entre as Nações","25.75","","","UC# 117","",""',
+      ].join('\n')
+      const portugal = { code: 'portugal', name: 'Portugal' }
+      mocks.searchNumistaIssuers.mockResolvedValue({ data: { status: 'ok', issuers: [portugal] } })
+      mocks.searchNumistaCatalog.mockResolvedValue({
+        data: {
+          status: 'ok', count: 3, page: 1, types: [
+            { id: 9897, title: '2 Euros (2nd map)', issuer: portugal, minYear: 2008, maxYear: 2026 },
+            { id: 401, title: '2 Euros (World Youth Day)', issuer: portugal, minYear: 2023, maxYear: 2023 },
+            { id: 402, title: '2 Euros (Peace Among Nations)', issuer: portugal, minYear: 2023, maxYear: 2023 },
+          ],
+        },
+      })
+      mocks.translateText.mockImplementation(async (q: string, from: string) => ({
+        data: { status: 'ok', text: from === 'pt' ? ({ 'Jornada Mundial da Juventude 2023 Lisboa': 'World Youth Day Lisbon 2023', 'Paz Entre as Nações': 'Among the Nations' } as Record<string, string>)[q] : q },
+      }))
+      mocks.getNumistaCatalogType.mockImplementation(async (typeId: number) => ({
+        data: { status: 'ok', type: numistaType(typeId, portugal, { title: 'Type' }), issues: [{ id: typeId * 10, year: 2023 }] },
+      }))
+
+      const importer = useUcoinImport({ paceMs: 0 })
+      await importer.readFile(csvFile(csv))
+      await importer.start(true)
+
+      expect(importer.progress).toMatchObject({ created: 2, enriched: 2, notFound: 0 })
+      expect(collection.map((coin) => coin.references?.find((ref) => ref.catalog === 'Numista')?.number)).toEqual(['401', '402'])
+      expect(mocks.translateText).toHaveBeenCalledWith('Jornada Mundial da Juventude 2023 Lisboa', 'pt')
+    } finally {
+      setLocale(previous)
+    }
   })
 
   it('finds issuers Numista names differently and prefers a country to a province', async () => {
