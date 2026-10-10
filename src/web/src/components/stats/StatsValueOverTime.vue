@@ -161,6 +161,7 @@
 </template>
 
 <script setup lang="ts">
+import { collectionCurrencySymbol } from '@/utils/collectionCurrency'
 import { computed } from 'vue'
 import { useCoinsStore } from '@/stores/coins'
 import type { ValueSnapshot } from '@/types'
@@ -261,9 +262,10 @@ const sparseLabelPoints = computed((): LabelPoint[] => {
 })
 
 function formatShortAmount(v: number): string {
-  if (v >= 10000) return `$${(v / 1000).toFixed(0)}K`
-  if (v >= 1000) return `$${(v / 1000).toFixed(1)}K`
-  return `$${Math.round(v)}`
+  const symbol = collectionCurrencySymbol()
+  if (v >= 10000) return `${symbol}${(v / 1000).toFixed(0)}K`
+  if (v >= 1000) return `${symbol}${(v / 1000).toFixed(1)}K`
+  return `${symbol}${Math.round(v)}`
 }
 
 function formatShortDate(dateStr: string) {

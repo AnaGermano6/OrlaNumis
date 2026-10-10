@@ -293,7 +293,11 @@ export function useAdminConfig() {
     valSettingsMsg.value = ''
     valSettingsError.value = false
     try {
-      const entries = Object.entries(settings.value).map(([key, value]) => ({ key, value: String(value) }))
+      // The collection currency changes only with its stored values, from
+      // its own section (POST /admin/collection-currency).
+      const entries = Object.entries(settings.value)
+        .filter(([key]) => key !== 'CollectionCurrency')
+        .map(([key, value]) => ({ key, value: String(value) }))
       await updateAppSettings(entries)
       savedAnthropicAPIKey = settings.value.AnthropicAPIKey ?? ''
       // Pick up renamed or newly translated categories and eras right away.

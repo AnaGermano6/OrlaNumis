@@ -176,11 +176,11 @@
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
             <label class="form-label">{{ t('coinForm.weightGrams') }}</label>
-            <input v-model.number="form.weightGrams" class="form-input" type="number" step="0.01" />
+            <input v-model.number="form.weightGrams" class="form-input" type="number" step="any" min="0" />
           </div>
           <div class="form-group min-w-0">
             <label class="form-label">{{ t('coinForm.diameterMm') }}</label>
-            <input v-model.number="form.diameterMm" class="form-input" type="number" step="0.1" />
+            <input v-model.number="form.diameterMm" class="form-input" type="number" step="any" min="0" />
           </div>
         </div>
         <div class="form-group min-w-0">
@@ -251,11 +251,11 @@
         <h2 class="mb-4 font-display text-lg font-medium text-gold">{{ t('coinForm.sections.purchase') }}</h2>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
-            <label class="form-label">{{ t('coinForm.purchasePriceUsd') }}</label>
+            <label class="form-label">{{ t('coinForm.purchasePriceUsd', { currency: collectionCurrencySymbol() }) }}</label>
             <input v-model.number="form.purchasePrice" class="form-input" type="number" step="0.01" />
           </div>
           <div class="form-group min-w-0">
-            <label class="form-label">{{ t('coinForm.currentValueUsd') }}</label>
+            <label class="form-label">{{ t('coinForm.currentValueUsd', { currency: collectionCurrencySymbol() }) }}</label>
             <input v-model.number="form.currentValue" class="form-input" type="number" step="0.01" />
           </div>
         </div>
@@ -353,6 +353,7 @@ import { t } from '@/i18n'
 import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 import { COIN_PRESENTATIONS, COIN_RARITIES, deriveCoinYear, presentationLabel, rarityLabel } from '@/utils/coinAttributes'
 import { formatNumistaYear } from '@/utils/numistaCatalog'
+import { collectionCurrencySymbol } from '@/utils/collectionCurrency'
 
 function unwrapMintLocations(data: MintLocationsResponse): MintLocation[] {
   return Array.isArray(data) ? data : data.mintLocations ?? []

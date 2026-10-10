@@ -7,7 +7,7 @@
       <div class="form-group">
         <label class="form-label">{{ t('coinFields.purchasePrice') }}</label>
         <div class="relative flex items-center">
-          <span class="pointer-events-none absolute left-3 text-base text-text-secondary">$</span>
+          <span class="pointer-events-none absolute left-3 text-base text-text-secondary">{{ collectionCurrencySymbol() }}</span>
           <input
             ref="priceInput"
             v-model="priceStr"
@@ -66,6 +66,7 @@
 </template>
 
 <script setup lang="ts">
+import { collectionCurrencySymbol } from '@/utils/collectionCurrency'
 import { ref, onMounted } from 'vue'
 import type { Coin, ShipmentUpsertInput } from '@/types'
 import { t } from '@/i18n'

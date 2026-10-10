@@ -397,9 +397,12 @@ func (s *AIJobService) processValueEstimateJob(job *models.AIJob) error {
 	if user, err := s.userRepo.FindByID(job.UserID); err == nil {
 		zipCode = user.ZipCode
 	}
-	description := BuildCoinDescription(coin)
+	currency := s.settingsSvc.CollectionCurrency()
 	userMessage := fmt.Sprintf("Estimate the current market value of this coin:\n\n%s\n\n"+
-		"Return ONLY the JSON block as specified in your instructions. No preamble or extra text.", description)
+		"Return ONLY the JSON block as specified in your instructions. No preamble or extra text.", BuildCoinDescription(coin, currency))
+	if instruction := CurrencyInstruction(currency); instruction != "" {
+		userMessage += "\n" + instruction
+	}
 
 	ctx, cancel := context.WithTimeout(s.ctx, aiJobEstimateTimeout)
 	defer cancel()

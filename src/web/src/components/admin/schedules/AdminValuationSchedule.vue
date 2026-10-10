@@ -112,8 +112,8 @@
                     <tbody>
                       <tr v-for="result in expandedResults" :key="result.id">
                         <td>{{ result.coinName }}</td>
-                        <td>{{ result.previousValue != null ? `$${result.previousValue.toFixed(2)}` : '--' }}</td>
-                        <td class="font-semibold text-gold">{{ result.estimatedValue > 0 ? `$${result.estimatedValue.toFixed(2)}` : '--' }}</td>
+                        <td>{{ result.previousValue != null ? formatCurrency(result.previousValue) : '--' }}</td>
+                        <td class="font-semibold text-gold">{{ result.estimatedValue > 0 ? formatCurrency(result.estimatedValue) : '--' }}</td>
                         <td>
                           <span v-if="result.confidence" class="inline-block rounded-sm px-[0.3rem] py-[0.1rem] text-label font-semibold" :class="result.confidence === 'high' ? 'bg-status-success-bg text-confidence-high' : result.confidence === 'medium' ? 'bg-status-warning-bg text-confidence-medium' : 'bg-status-error-bg text-confidence-low'">{{ confidenceLabel(result.confidence) }}</span>
                           <span v-else>--</span>
@@ -153,7 +153,7 @@ import { cancelValuationRun, getValuationRunDetail, getValuationRuns, triggerVal
 import { useRunHistoryPagination } from '@/composables/useRunHistoryPagination'
 import type { AppSettings, ValuationRun } from '@/types'
 import { t, intlLocale } from '@/i18n'
-import { confidenceLabel, runStatusLabel, runTriggerLabel } from '@/utils/format'
+import { confidenceLabel, formatCurrency, runStatusLabel, runTriggerLabel } from '@/utils/format'
 
 defineProps<{
   settings: AppSettings

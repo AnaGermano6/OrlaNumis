@@ -73,8 +73,8 @@ func (c *HTTPECBClient) DailyRates(ctx context.Context) ([]byte, error) {
 	return body, nil
 }
 
-// ExchangeRateService converts collection values, which the app keeps in US
-// dollars, to euros with the ECB daily reference rate.
+// ExchangeRateService gives the ECB daily euro reference rate for the US
+// dollar, to show dollar amounts in euros and to switch the collection currency.
 type ExchangeRateService struct {
 	client ECBRatesClient
 	cache  *NumistaResponseCache

@@ -77,6 +77,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatCurrency } from '@/utils/format'
 import { ref } from 'vue'
 import type { CoinSetComparison, CoinSetSummary } from '@/types'
 import { t } from '@/i18n'
@@ -112,10 +113,6 @@ function setNameById(setId: number): string {
 function runCompare() {
   if (selected.value.length === 0 || props.loading) return
   emit('compare', [...selected.value])
-}
-
-function formatCurrency(value: number): string {
-  return `$${value.toFixed(2)}`
 }
 
 function formatChange(value: number): string {

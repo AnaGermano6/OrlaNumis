@@ -18,6 +18,12 @@ const messages: Messages['photos'] = {
   importFailed: 'A origem recusou a foto ({sides}). Escolha outra foto ou adicione a sua.',
   save: 'Guardar fotos',
   findReal: 'Procurar fotos reais',
+  sources: {
+    ecb: 'Banco Central Europeu',
+    incm: 'Imprensa Nacional-Casa da Moeda',
+  },
+  swapSides: 'Trocar anverso e reverso',
+  swapSidesFailed: 'Não foi possível trocar as imagens. Tente novamente.',
 }
 
 export default messages

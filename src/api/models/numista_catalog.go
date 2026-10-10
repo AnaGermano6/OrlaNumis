@@ -44,8 +44,10 @@ type NumistaCatalogPhoto struct {
 
 // NumistaCatalogSide describes the obverse, reverse or edge of a coin type.
 type NumistaCatalogSide struct {
-	Description string `json:"description,omitempty"`
-	Lettering   string `json:"lettering,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Lettering   string   `json:"lettering,omitempty"`
+	Designers   []string `json:"designers,omitempty"`
+	Engravers   []string `json:"engravers,omitempty"`
 }
 
 // NumistaCatalogReference is a catalogue number for a type (e.g. KM 77).
@@ -56,27 +58,33 @@ type NumistaCatalogReference struct {
 
 // NumistaCatalogType holds the catalogue details used to prefill a new coin.
 type NumistaCatalogType struct {
-	ID           int                       `json:"id"`
-	URL          string                    `json:"url"`
-	Title        string                    `json:"title"`
-	Issuer       NumistaCatalogIssuer      `json:"issuer"`
-	MinYear      *int                      `json:"minYear,omitempty"`
-	MaxYear      *int                      `json:"maxYear,omitempty"`
-	Denomination string                    `json:"denomination,omitempty"`
-	Currency     string                    `json:"currency,omitempty"`
-	Rulers       []string                  `json:"rulers"`
-	Composition  string                    `json:"composition,omitempty"`
-	Technique    string                    `json:"technique,omitempty"`
-	WeightGrams  *float64                  `json:"weightGrams,omitempty"`
-	DiameterMm   *float64                  `json:"diameterMm,omitempty"`
-	ThicknessMm  *float64                  `json:"thicknessMm,omitempty"`
-	Shape        string                    `json:"shape,omitempty"`
-	Mints        []string                  `json:"mints"`
-	Obverse      NumistaCatalogSide        `json:"obverse"`
-	Reverse      NumistaCatalogSide        `json:"reverse"`
-	Edge         NumistaCatalogSide        `json:"edge"`
-	References   []NumistaCatalogReference `json:"references"`
-	Photos       []NumistaCatalogPhoto     `json:"photos"`
+	ID           int                  `json:"id"`
+	URL          string               `json:"url"`
+	Title        string               `json:"title"`
+	Issuer       NumistaCatalogIssuer `json:"issuer"`
+	MinYear      *int                 `json:"minYear,omitempty"`
+	MaxYear      *int                 `json:"maxYear,omitempty"`
+	Denomination string               `json:"denomination,omitempty"`
+	// FaceValue is the denomination as a number (5 for "5 Euros").
+	FaceValue *float64 `json:"faceValue,omitempty"`
+	Currency  string   `json:"currency,omitempty"`
+	// CommemoratedTopic is what a commemorative coin celebrates, in the
+	// language asked for when Numista has it (e.g. "O conhecimento").
+	CommemoratedTopic string                    `json:"commemoratedTopic,omitempty"`
+	Series            string                    `json:"series,omitempty"`
+	Rulers            []string                  `json:"rulers"`
+	Composition       string                    `json:"composition,omitempty"`
+	Technique         string                    `json:"technique,omitempty"`
+	WeightGrams       *float64                  `json:"weightGrams,omitempty"`
+	DiameterMm        *float64                  `json:"diameterMm,omitempty"`
+	ThicknessMm       *float64                  `json:"thicknessMm,omitempty"`
+	Shape             string                    `json:"shape,omitempty"`
+	Mints             []string                  `json:"mints"`
+	Obverse           NumistaCatalogSide        `json:"obverse"`
+	Reverse           NumistaCatalogSide        `json:"reverse"`
+	Edge              NumistaCatalogSide        `json:"edge"`
+	References        []NumistaCatalogReference `json:"references"`
+	Photos            []NumistaCatalogPhoto     `json:"photos"`
 }
 
 // NumistaCatalogTypeResult is a catalogue type with its issues.

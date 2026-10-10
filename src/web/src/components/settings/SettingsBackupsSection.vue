@@ -55,6 +55,19 @@
       </div>
     </div>
 
+    <div class="flex flex-col gap-4 border-b border-border-subtle py-3 md:flex-row md:items-center md:justify-between last:border-0">
+      <div class="flex min-w-0 flex-col gap-[0.15rem]">
+        <span class="text-base font-medium text-text-primary">{{ t('settings.backups.ucoinTitle') }}</span>
+        <span class="text-sm text-text-muted">{{ t('settings.backups.ucoinHint') }}</span>
+      </div>
+      <RouterLink
+        to="/import/ucoin"
+        class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
+      >
+        {{ t('settings.backups.ucoinOpen') }}
+      </RouterLink>
+    </div>
+
     <p v-if="dataMsg" class="my-2 text-body" :class="dataError ? 'text-byzantine' : 'text-gold'">{{ dataMsg }}</p>
   </section>
 </template>

@@ -54,22 +54,25 @@
 </template>
 
 <script setup lang="ts">
-// Find real photos of a coin (Numista catalogue, Wikimedia Commons) and pick
-// one for each side. Nothing is saved here; the parent imports the choice.
+// Find real photos of a coin (official ECB and INCM images, Numista catalogue,
+// Wikimedia Commons) and pick one for each side. Photos identified as this very
+// coin come chosen already. Nothing is saved here; the parent imports the choice.
 import { computed, reactive, ref, watch } from 'vue'
 import { searchCoinPhotos, type CoinPhotoCandidate } from '@/api/client'
 import { t } from '@/i18n'
 import CatalogPhoto from '@/components/catalog/CatalogPhoto.vue'
 import { numistaLang } from '@/utils/numistaCatalog'
-import { photoCaption, photoLoadVia, type PhotoSide, type RealPhotoChoice } from '@/utils/coinPhotos'
+import { photoCaption, photoLoadVia, type CoinPhotoDetails, type PhotoSide, type RealPhotoChoice } from '@/utils/coinPhotos'
 
 const SIDES: PhotoSide[] = ['obverse', 'reverse']
 
 const props = withDefaults(defineProps<{
   initialQuery: string
   numistaTypeId?: number | null
+  /** Year, country… so a €2 commemorative's ECB image is found too. */
+  details?: CoinPhotoDetails
   modelValue: RealPhotoChoice
-}>(), { numistaTypeId: null })
+}>(), { numistaTypeId: null, details: () => ({}) })
 
 const emit = defineEmits<{
   'update:modelValue': [value: RealPhotoChoice]
@@ -112,6 +115,14 @@ function markUnavailable(photo: CoinPhotoCandidate) {
   emit('update:modelValue', next)
 }
 
+function chooseExactPhotos(found: CoinPhotoCandidate[]) {
+  const next: RealPhotoChoice = { ...props.modelValue }
+  for (const photo of found) {
+    if (photo.match === 'exact' && photo.side && !next[photo.side]) next[photo.side] = photo
+  }
+  if (next.obverse !== props.modelValue.obverse || next.reverse !== props.modelValue.reverse) emit('update:modelValue', next)
+}
+
 async function search() {
   const text = query.value.trim()
   if (!text && !props.numistaTypeId) return
@@ -119,10 +130,11 @@ async function search() {
   searching.value = true
   failed.value = false
   try {
-    const res = await searchCoinPhotos({ q: text || undefined, numistaTypeId: props.numistaTypeId ?? undefined, lang: numistaLang() })
+    const res = await searchCoinPhotos({ q: text || undefined, numistaTypeId: props.numistaTypeId ?? undefined, lang: numistaLang(), ...props.details })
     if (seq !== searchSeq) return
     photos.value = res.data.photos
     failed.value = res.data.status !== 'ok' && !res.data.photos.length
+    chooseExactPhotos(res.data.photos)
   } catch {
     if (seq === searchSeq) {
       photos.value = []

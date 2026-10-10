@@ -154,8 +154,8 @@ export default {
     fields: {
       rulerIssuer: 'Ruler / Issuer',
       storageLocation: 'Storage location',
-      currentValue: 'Current value ($)',
-      purchasePrice: 'Purchase price ($)',
+      currentValue: 'Current value ({currency})',
+      purchasePrice: 'Purchase price ({currency})',
       purchaseDate: 'Purchase date',
       dateAdded: 'Date added',
       wishlist: 'Wishlist',

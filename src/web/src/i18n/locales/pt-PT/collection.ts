@@ -114,6 +114,7 @@ const messages: Messages['collection'] = {
     rateDate: 'Taxa BCE de {date}',
     rateUnavailable: 'Taxa de câmbio indisponível',
     unvalued: { one: '{count} sem valor', other: '{count} sem valor' },
+    valueHintEuros: 'Soma do valor atual das moedas, em euros.',
   },
   highlights: {
     title: 'Destaques da coleção',

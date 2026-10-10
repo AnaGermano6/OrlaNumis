@@ -58,10 +58,10 @@ function formatDate(isoDate: string): string {
   return Number.isNaN(date.getTime()) ? isoDate : date.toLocaleDateString(intlLocale(), { timeZone: 'UTC' })
 }
 
-// Coin values are kept in US dollars; the server converts the sum to euros
-// with the ECB reference rate and says which rate it used.
+// A euro collection's total is shown as is. A dollar collection's total is
+// converted by the server with the ECB reference rate, which is named here.
 function valueKpi(summary: CollectionSummary | null): Kpi {
-  const rate = summary?.exchangeRate
+  const rate = summary?.currency === 'EUR' ? undefined : summary?.exchangeRate
   const euros = summary?.totalValueEur
   const notes = [
     summary && euros == null ? t('collection.kpis.rateUnavailable') : '',
@@ -72,7 +72,9 @@ function valueKpi(summary: CollectionSummary | null): Kpi {
     key: 'value',
     display: euros != null ? formatCurrency(euros, 'EUR') : '—',
     label: t('collection.kpis.value'),
-    hint: rate ? t('collection.kpis.valueHint', { date: formatDate(rate.date), rate: rateText }) : t('collection.kpis.valueHintNoRate'),
+    hint: summary?.currency === 'EUR'
+      ? t('collection.kpis.valueHintEuros')
+      : rate ? t('collection.kpis.valueHint', { date: formatDate(rate.date), rate: rateText }) : t('collection.kpis.valueHintNoRate'),
     note: notes.length ? notes.join(' · ') : rate ? t('collection.kpis.rateDate', { date: formatDate(rate.date) }) : '',
     wide: true,
   }

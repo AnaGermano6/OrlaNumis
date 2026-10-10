@@ -145,6 +145,8 @@ type CoinOptionsResponse struct {
 	Categories []string                    `json:"categories"`
 	Eras       []string                    `json:"eras"`
 	Labels     map[string]CoinOptionLabels `json:"labels"`
+	// Currency is the collection currency coin prices and values are kept in.
+	Currency string `json:"currency" enums:"USD,EUR"`
 }
 
 // GetCoinOptions returns the configured category and era choices with their
@@ -153,7 +155,7 @@ type CoinOptionsResponse struct {
 // the labels are display-only.
 //
 //	@Summary		Get coin category and era options
-//	@Description	Returns the admin-configured category and era choices with translated display names
+//	@Description	Returns the admin-configured category and era choices with translated display names, and the collection currency (USD or EUR) coin prices and values are kept in
 //	@Tags			Coins
 //	@Produce		json
 //	@Security		BearerAuth
@@ -179,6 +181,7 @@ func (h *CoinHandler) GetCoinOptions(c *gin.Context) {
 	c.JSON(http.StatusOK, CoinOptionsResponse{
 		Categories: categories,
 		Eras:       eras,
+		Currency:   h.settingsSvc.CollectionCurrency(),
 		Labels: map[string]CoinOptionLabels{
 			"pt-PT": {
 				Categories: services.ParseSettingLabelMap(get(services.SettingCoinCategoryLabelsPtPT)),

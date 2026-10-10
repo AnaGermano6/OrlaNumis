@@ -71,7 +71,20 @@ export interface NumistaCatalogTypeResult {
 export const searchNumistaIssuers = (q: string, lang: string) =>
   api.get<{ status: NumistaDataStatus; issuers: NumistaCatalogIssuer[] }>('/numista/catalog/issuers', { params: { q, lang } })
 
-export const searchNumistaCatalog = (params: { q?: string; issuer?: string; year?: number; page?: number; lang: string }) =>
+export interface NumistaCatalogSearchParams {
+  q?: string
+  issuer?: string
+  /** Reference catalogue code ("KM" or "Y"), searched together with number. */
+  catalogue?: string
+  number?: string
+  year?: number
+  page?: number
+  /** Types per page, 1–50 (default 20). */
+  count?: number
+  lang: string
+}
+
+export const searchNumistaCatalog = (params: NumistaCatalogSearchParams) =>
   api.get<NumistaCatalogSearchResult>('/numista/catalog/search', { params })
 
 export const getNumistaCatalogType = (typeId: number, lang: string) =>

@@ -8,7 +8,7 @@ import CoinLookupCaptureWizard from '@/components/coin-lookup/CoinLookupCaptureW
 const mocks = vi.hoisted(() => ({
   draft: vi.fn(), commit: vi.fn(), upload: vi.fn(), add: vi.fn(), alert: vi.fn(),
   push: vi.fn(), update: vi.fn(), extract: vi.fn(), normalize: vi.fn(), stopCamera: vi.fn(), isPwa: true,
-  confirm: vi.fn(),
+  confirm: vi.fn(), official: vi.fn(),
 }))
 vi.mock('vue-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-router')>()
@@ -24,7 +24,7 @@ vi.mock('@/utils/galleryImage', () => ({ normalizeGalleryImage: mocks.normalize 
 vi.mock('@/composables/useDialog', () => ({ useDialog: () => ({ showAlert: mocks.alert, showConfirm: mocks.confirm }) }))
 vi.mock('@/api/client', () => ({
   createIntakeDraft: mocks.draft, commitIntakeDraft: mocks.commit, uploadImage: mocks.upload,
-  updateCoin: mocks.update, extractText: mocks.extract,
+  updateCoin: mocks.update, extractText: mocks.extract, addOfficialCoinPhotos: mocks.official,
 }))
 vi.mock('@/composables/useCoinOptions', async () => {
   const { ref } = await import('vue')
@@ -79,6 +79,7 @@ async function selectImage(wrapper: ReturnType<typeof render>, file: File) {
 describe('Add Coin save workflow', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.official.mockResolvedValue({ data: { images: [] } })
     mocks.isPwa = true
     mocks.normalize.mockImplementation(async (file: File) => file)
     mocks.draft.mockResolvedValue({ data: {

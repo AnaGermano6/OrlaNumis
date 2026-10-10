@@ -1,7 +1,9 @@
 import { intlLocale, t, type MessageKey } from '@/i18n'
+import { collectionCurrency } from '@/utils/collectionCurrency'
 
+/** Formats an amount; without a currency, in the collection currency. */
 export function formatCurrency(value: number, currency?: string): string {
-  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: currency || 'USD' }).format(value)
+  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: currency || collectionCurrency.value }).format(value)
 }
 
 /**

@@ -42,11 +42,14 @@ type CollectionCoinSummary struct {
 }
 
 type CollectionAggregateSummary struct {
-	TotalCoins       int64            `json:"totalCoins"`
-	TotalWishlist    int64            `json:"totalWishlist"`
-	TotalSold        int64            `json:"totalSold"`
+	TotalCoins    int64 `json:"totalCoins"`
+	TotalWishlist int64 `json:"totalWishlist"`
+	TotalSold     int64 `json:"totalSold"`
+	// The totals are in Currency, the collection currency; the field names
+	// predate euro collections.
 	TotalCurrentUSD  float64          `json:"totalCurrentUsd"`
 	TotalPurchaseUSD float64          `json:"totalPurchaseUsd"`
+	Currency         string           `json:"currency"`
 	MissingFields    map[string]int64 `json:"missingFields,omitempty"`
 }
 
@@ -290,6 +293,7 @@ func (s *CollectionToolsService) CollectionSummary(userID uint) (*CollectionAggr
 		TotalSold:        stats.TotalSold,
 		TotalCurrentUSD:  stats.Values.TotalCurrentValue,
 		TotalPurchaseUSD: stats.Values.TotalPurchasePrice,
+		Currency:         s.settingsSvc.CollectionCurrency(),
 		MissingFields:    missingFields,
 	}, nil
 }

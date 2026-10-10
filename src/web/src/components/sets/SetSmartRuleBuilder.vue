@@ -37,8 +37,8 @@
           <option value="storageLocationId">{{ t('sets.smart.fields.storageLocation') }}</option>
         </optgroup>
         <optgroup :label="t('sets.smart.groups.valueDates')">
-          <option value="currentValue">{{ t('sets.smart.fields.currentValue') }}</option>
-          <option value="purchasePrice">{{ t('sets.smart.fields.purchasePrice') }}</option>
+          <option value="currentValue">{{ t('sets.smart.fields.currentValue', { currency: collectionCurrencySymbol() }) }}</option>
+          <option value="purchasePrice">{{ t('sets.smart.fields.purchasePrice', { currency: collectionCurrencySymbol() }) }}</option>
           <option value="purchaseDate">{{ t('sets.smart.fields.purchaseDate') }}</option>
           <option value="createdAt">{{ t('sets.smart.fields.dateAdded') }}</option>
         </optgroup>
@@ -166,7 +166,7 @@
     <p v-if="previewResult !== null" class="preview-result">
       <I18nT keypath="sets.smart.previewResult" :params="{ count: previewResult.coinCount }">
         <template #num><span class="preview-count">{{ previewResult.coinCount }}</span></template>
-        <template #value><span class="preview-value">${{ previewResult.totalValue.toFixed(2) }}</span></template>
+        <template #value><span class="preview-value">{{ formatCurrency(previewResult.totalValue) }}</span></template>
       </I18nT>
     </p>
     <p v-if="previewError" class="preview-error">{{ previewError }}</p>
@@ -237,7 +237,7 @@ import {
   type MintLocationsResponse,
 } from '@/api/client'
 import { useCoinOptions } from '@/composables/useCoinOptions'
-import { materialLabel } from '@/utils/format'
+import { formatCurrency, materialLabel } from '@/utils/format'
 import I18nT from '@/components/I18nT.vue'
 import type {
   SmartCriteriaGroup,
@@ -250,6 +250,7 @@ import type {
   StorageLocation,
 } from '@/types'
 import { t } from '@/i18n'
+import { collectionCurrencySymbol } from '@/utils/collectionCurrency'
 import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 function unwrapMintLocations(data: MintLocationsResponse): MintLocation[] {

@@ -517,6 +517,8 @@ class PortfolioSummary(StrictRequestModel):
     rulers: list[dict[str, Any]] = Field(default_factory=list, max_length=MAX_PORTFOLIO_LIST_ITEMS)
     top_coins: list[PortfolioCoin] = Field(default_factory=list, max_length=MAX_TOP_COINS)
     missing_fields: dict[str, int] = Field(default_factory=dict, max_length=MAX_PORTFOLIO_MAP_ITEMS)
+    # Currency the collection's values are kept in.
+    currency: Literal["USD", "EUR"] = "USD"
 
     @field_validator("categories", "materials", "missing_fields", mode="before")
     @classmethod

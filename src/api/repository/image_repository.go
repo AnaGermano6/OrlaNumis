@@ -194,6 +194,22 @@ func (r *ImageRepository) SetPrimaryAndCreate(coinID uint, image *models.CoinIma
 	})
 }
 
+// SwapSides turns a coin's obverse images into reverse ones and back, in one
+// transaction, and returns the coin's images afterwards.
+func (r *ImageRepository) SwapSides(coinID uint) ([]models.CoinImage, error) {
+	var images []models.CoinImage
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		swap := "CASE image_type WHEN ? THEN ? ELSE ? END"
+		if err := tx.Model(&models.CoinImage{}).
+			Where("coin_id = ? AND image_type IN ?", coinID, []models.ImageType{models.ImageTypeObverse, models.ImageTypeReverse}).
+			Update("image_type", gorm.Expr(swap, models.ImageTypeObverse, models.ImageTypeReverse, models.ImageTypeObverse)).Error; err != nil {
+			return err
+		}
+		return tx.Where("coin_id = ?", coinID).Order("id").Find(&images).Error
+	})
+	return images, err
+}
+
 // UpdateCoinNotes replaces a coin's notes.
 func (r *ImageRepository) UpdateCoinNotes(coinID uint, notes string) error {
 	return r.db.Model(&models.Coin{}).Where("id = ?", coinID).Update("notes", notes).Error

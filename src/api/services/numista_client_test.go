@@ -538,3 +538,33 @@ func TestHTTPNumistaClientCancelsDuringRetryBackoff(t *testing.T) {
 		t.Fatalf("error=%#v calls=%d", err, calls.Load())
 	}
 }
+
+func TestHTTPNumistaClientSearchTypesSendsCatalogueReference(t *testing.T) {
+	var sent *http.Request
+	transport := numistaRoundTripFunc(func(request *http.Request) (*http.Response, error) {
+		sent = request
+		return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"count":0,"types":[]}`))}, nil
+	})
+	client, err := NewHTTPNumistaClient(NumistaClientConfig{
+		BaseURL: "https://numista.test", HTTPClient: &http.Client{Transport: transport},
+		APIKey: func() string { return "key" },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.SearchTypes(context.Background(), NumistaTypeSearch{Catalogue: 3, Number: "84", Year: 1984, Count: 50, Lang: "pt"}); err != nil {
+		t.Fatal(err)
+	}
+	query := sent.URL.Query()
+	if sent.URL.Path != "/types" || query.Get("catalogue") != "3" || query.Get("number") != "84" || query.Get("year") != "1984" || query.Get("count") != "50" || query.Has("q") || query.Has("issuer") {
+		t.Fatalf("unexpected search request: %s", sent.URL)
+	}
+
+	// A number without a catalogue is meaningless to Numista and is not sent.
+	if _, err := client.SearchTypes(context.Background(), NumistaTypeSearch{Query: "escudo", Number: "84", Count: 20, Lang: "en"}); err != nil {
+		t.Fatal(err)
+	}
+	if query := sent.URL.Query(); query.Has("catalogue") || query.Has("number") || query.Get("q") != "escudo" {
+		t.Fatalf("unexpected search request: %s", sent.URL)
+	}
+}

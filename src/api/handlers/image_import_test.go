@@ -75,16 +75,21 @@ func postImport(router *gin.Engine, coinID uint, payload map[string]any) *httpte
 
 func TestImportablePhotoURL(t *testing.T) {
 	cases := map[string]bool{
-		"https://upload.wikimedia.org/wikipedia/commons/5/54/Coin.jpg":               true,
-		"https://thumb.wikimedia.org/wikipedia/commons/thumb/5/54/a.jpg/400px-a.jpg": true,
-		"https://en.numista.com/catalogue/photos/portugal/3353-original.jpg":         true,
-		"http://upload.wikimedia.org/wikipedia/commons/5/54/Coin.jpg":                false,
-		"https://upload.wikimedia.org/other/path.jpg":                                false,
-		"https://en.numista.com/forum/avatar.jpg":                                    false,
-		"https://evil.example/wikipedia/commons/a.jpg":                               false,
-		"https://user:pass@upload.wikimedia.org/wikipedia/commons/a.jpg":             false,
-		"https://upload.wikimedia.org:8443/wikipedia/commons/a.jpg":                  false,
-		"https://upload.wikimedia.org.evil.example/wikipedia/commons/a.jpg":          false,
+		"https://upload.wikimedia.org/wikipedia/commons/5/54/Coin.jpg":                true,
+		"https://thumb.wikimedia.org/wikipedia/commons/thumb/5/54/a.jpg/400px-a.jpg":  true,
+		"https://en.numista.com/catalogue/photos/portugal/3353-original.jpg":          true,
+		"http://upload.wikimedia.org/wikipedia/commons/5/54/Coin.jpg":                 false,
+		"https://upload.wikimedia.org/other/path.jpg":                                 false,
+		"https://en.numista.com/forum/avatar.jpg":                                     false,
+		"https://evil.example/wikipedia/commons/a.jpg":                                false,
+		"https://user:pass@upload.wikimedia.org/wikipedia/commons/a.jpg":              false,
+		"https://upload.wikimedia.org:8443/wikipedia/commons/a.jpg":                   false,
+		"https://upload.wikimedia.org.evil.example/wikipedia/commons/a.jpg":           false,
+		"https://www.ecb.europa.eu/euro/coins/comm/html/comm_2022/0421-23r.jpg":       true,
+		"https://www.ecb.europa.eu/press/html/index.en.html":                          false,
+		"https://www.ecb.europa.eu/euro/coins/comm/html/joint_comm_2007_Portugal.jpg": true,
+		"https://www.ecb.europa.eu/euro/coins/comm/html/comm_2022.en.html":            false,
+		"https://ecb.europa.eu/euro/coins/comm/html/comm_2022/0421-23r.jpg":           false,
 	}
 	for raw, want := range cases {
 		if _, got := importablePhotoURL(raw); got != want {

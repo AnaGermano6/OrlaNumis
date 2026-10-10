@@ -320,9 +320,11 @@ const defaultNavItems: NavItem[] = [
   },
   { id: 'wishlist', labelKey: 'nav.wishlist', icon: markRaw(Bookmark), to: '/wishlist', visible: true },
   { id: 'quick-access', labelKey: 'nav.quickAccess', icon: markRaw(Pin), to: '/quick-access', visible: true },
-  { id: 'sold', labelKey: 'nav.sold', icon: markRaw(BadgeDollarSign), to: '/sold', visible: true },
-  { id: 'auctions', labelKey: 'nav.auctions', icon: markRaw(Gavel), to: '/auctions', visible: true },
-  { id: 'followers', labelKey: 'nav.followers', icon: markRaw(UsersIcon), to: '/followers', visible: true },
+  // Sold, Auctions, Followers, Calendar and Showcases are not used in this
+  // collection: hidden here, and their routes lead back to the gallery.
+  { id: 'sold', labelKey: 'nav.sold', icon: markRaw(BadgeDollarSign), to: '/sold', visible: false },
+  { id: 'auctions', labelKey: 'nav.auctions', icon: markRaw(Gavel), to: '/auctions', visible: false },
+  { id: 'followers', labelKey: 'nav.followers', icon: markRaw(UsersIcon), to: '/followers', visible: false },
   { id: 'agent', labelKey: 'nav.agent', icon: markRaw(Bot), action: () => { showChat.value = true; sidebarOpen.value = false }, visible: true },
   {
     id: 'stats',
@@ -351,8 +353,8 @@ const defaultNavItems: NavItem[] = [
     ],
   },
   { id: 'notes', labelKey: 'nav.notes', icon: markRaw(NotebookPen), to: '/notes', visible: true },
-  { id: 'calendar', labelKey: 'nav.calendar', icon: markRaw(CalendarDays), to: '/calendar', visible: true },
-  { id: 'showcases', labelKey: 'nav.showcases', icon: markRaw(Share2), to: '/showcases', visible: true },
+  { id: 'calendar', labelKey: 'nav.calendar', icon: markRaw(CalendarDays), to: '/calendar', visible: false },
+  { id: 'showcases', labelKey: 'nav.showcases', icon: markRaw(Share2), to: '/showcases', visible: false },
   { id: 'notifications', labelKey: 'nav.notifications', icon: markRaw(Bell), to: '/notifications', visible: true, badge: () => unreadCount.value },
 ]
 

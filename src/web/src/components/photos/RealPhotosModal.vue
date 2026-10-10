@@ -25,7 +25,7 @@
 
       <div class="min-h-0 overflow-y-auto px-5 py-4">
         <p class="mb-3 mt-0 text-chip text-text-muted">{{ t('photos.chooseHint') }}</p>
-        <RealPhotoPicker v-model="choice" :initial-query="coinName" :numista-type-id="numistaTypeId" />
+        <RealPhotoPicker v-model="choice" :initial-query="coinName" :numista-type-id="numistaTypeId" :details="details" />
       </div>
 
       <div class="flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle px-5 py-3">
@@ -47,12 +47,14 @@ import { X } from 'lucide-vue-next'
 import { importCoinImage } from '@/api/client'
 import { t } from '@/i18n'
 import RealPhotoPicker from '@/components/photos/RealPhotoPicker.vue'
-import { photoCreditLine, type PhotoSide, type RealPhotoChoice } from '@/utils/coinPhotos'
+import { photoCreditLine, type CoinPhotoDetails, type PhotoSide, type RealPhotoChoice } from '@/utils/coinPhotos'
 
 const props = defineProps<{
   coinId: number
   coinName: string
   numistaTypeId: number | null
+  /** Year, country… for the ECB image of a €2 commemorative. */
+  details?: CoinPhotoDetails
   /** Whether the coin already has a primary image (kept as primary if so). */
   hasPrimaryImage: boolean
 }>()

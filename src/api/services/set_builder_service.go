@@ -349,7 +349,9 @@ func (s *SetBuilderService) collectionSummary(userID uint) (*PortfolioData, erro
 	if err != nil {
 		return nil, err
 	}
-	return portfolioDataFromSummary(summary), nil
+	portfolio := portfolioDataFromSummary(summary)
+	portfolio.Currency = s.settingsSvc.CollectionCurrency()
+	return portfolio, nil
 }
 
 func (s *SetBuilderService) workflowDraft(userID uint, prompt string, result *SetBuilderProxyResponse) SetProposalDraft {

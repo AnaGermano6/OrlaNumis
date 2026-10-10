@@ -338,6 +338,39 @@ func handleUploadError(c *gin.Context, logger *services.Logger, coinID uint64, e
 	}
 }
 
+// SwapSides turns a coin's obverse photo into its reverse and back, for photos
+// a source labelled the other way round.
+//
+//	@Summary		Swap a coin's obverse and reverse images
+//	@Description	Swaps the obverse and reverse labels of a coin's images (e.g. official photos whose source names the sides the other way round) and returns the coin's images. The primary image stays the same.
+//	@Tags			Images
+//	@Produce		json
+//	@Param			id	path		int	true	"Coin ID"
+//	@Success		200	{array}		models.CoinImage
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		404	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/coins/{id}/images/swap-sides [post]
+func (h *ImageHandler) SwapSides(c *gin.Context) {
+	coinID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid coin ID"})
+		return
+	}
+	if _, err := h.repo.FindCoinByOwner(uint(coinID), c.GetUint("userId")); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Coin not found"})
+		return
+	}
+	images, err := h.repo.SwapSides(uint(coinID))
+	if err != nil {
+		h.logger.Error("images", "Swapping the sides of coin %d failed: %v", coinID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to swap the images"})
+		return
+	}
+	c.JSON(http.StatusOK, images)
+}
+
 // Delete removes an image from a coin.
 //
 //	@Summary		Delete a coin image

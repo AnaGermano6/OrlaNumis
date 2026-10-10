@@ -298,6 +298,9 @@ const messages: Messages['settings'] = {
     imported: { one: '{count} moeda importada', other: '{count} moedas importadas' },
     skippedRows: { one: '{count} linha ignorada por não ter nome', other: '{count} linhas ignoradas por não terem nome' },
     importFailed: 'A importação falhou — confirme que o ficheiro é JSON ou CSV válido',
+    ucoinTitle: 'Importar do uCoin',
+    ucoinHint: 'Adicione uma coleção exportada do uCoin.net e complete-a com o Numista.',
+    ucoinOpen: 'Importar do uCoin',
   },
   collector: {
     title: 'Perfil de colecionador',

@@ -1,0 +1,165 @@
+<template>
+  <div class="container max-w-3xl">
+    <DesktopPageContext :title="t('ucoinImport.title')">
+      <div class="page-header">
+        <h1>{{ t('ucoinImport.title') }}</h1>
+      </div>
+    </DesktopPageContext>
+
+    <section class="card mb-4 flex flex-col gap-4">
+      <p class="m-0 text-body text-text-secondary">{{ t('ucoinImport.intro') }}</p>
+
+      <div v-if="!busy" class="flex flex-wrap items-center gap-3">
+        <label class="btn btn-secondary inline-flex cursor-pointer focus-within:outline-2 focus-within:outline-gold focus-within:outline-offset-2">
+          <FileUp :size="16" aria-hidden="true" />
+          {{ t('ucoinImport.chooseFile') }}
+          <input data-testid="ucoin-file" type="file" accept=".csv,text/csv" class="sr-only" @change="onFile" />
+        </label>
+        <span v-if="importer.fileName.value" class="text-body text-text-muted">{{ importer.fileName.value }}</span>
+      </div>
+
+      <p v-if="importer.parseError.value" class="m-0 text-body text-byzantine" role="alert">
+        {{ t(importer.parseError.value === 'columns' ? 'ucoinImport.errors.columns' : 'ucoinImport.errors.empty') }}
+      </p>
+      <p v-if="importer.loadFailed.value" class="m-0 text-body text-byzantine" role="alert">{{ t('ucoinImport.loadFailed') }}</p>
+
+      <div v-if="importer.phase.value === 'ready'" class="flex flex-col gap-3" data-testid="ucoin-preview">
+        <ul class="m-0 flex list-none flex-col gap-1 p-0 text-body text-text-primary">
+          <li>{{ t('ucoinImport.summary.inFile', { count: importer.rows.value.length }) }} · {{ t('ucoinImport.summary.countries', { count: importer.countries.value }) }}</li>
+          <li v-if="importer.alreadyImported.value">{{ t('ucoinImport.summary.already', { count: importer.alreadyImported.value }) }}</li>
+          <li class="font-medium">{{ t('ucoinImport.summary.toAdd', { count: importer.pendingRows.value.length }) }}</li>
+        </ul>
+
+        <label class="inline-flex items-start gap-2 text-body text-text-primary">
+          <input v-model="withNumista" type="checkbox" class="mt-1" />
+          <span>{{ t('ucoinImport.withNumista') }}</span>
+        </label>
+
+        <p v-if="withNumista" class="m-0 text-chip text-text-muted">{{ t('ucoinImport.estimate', { count: formatCount(importer.estimatedRequests.value) }) }}</p>
+
+        <div>
+          <button v-if="importer.pendingRows.value.length" class="btn btn-primary" @click="importer.start(withNumista)">
+            {{ t('ucoinImport.import', { count: importer.pendingRows.value.length }) }}
+          </button>
+          <p v-else class="m-0 text-body text-text-secondary">{{ t('ucoinImport.nothingNew') }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section
+      v-if="!busy && importer.awaitingNumista.value.length && importer.phase.value !== 'ready'"
+      class="card mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+    >
+      <p class="m-0 text-body text-text-primary">{{ t('ucoinImport.awaiting', { count: importer.awaitingNumista.value.length }) }}</p>
+      <button class="btn btn-secondary" @click="importer.enrich()">{{ t('ucoinImport.complete') }}</button>
+    </section>
+
+    <section v-if="busy" class="card mb-4 flex flex-col gap-3" aria-live="polite">
+      <p class="m-0 text-body font-medium text-text-primary">{{ progressText }}</p>
+      <div
+        class="h-2 overflow-hidden rounded-full bg-input"
+        role="progressbar"
+        :aria-valuenow="progressDone"
+        aria-valuemin="0"
+        :aria-valuemax="progressTotal"
+        :aria-label="progressText"
+      >
+        <div class="h-full rounded-full bg-gold transition-[width] duration-300" :style="{ width: `${progressPercent}%` }"></div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <span class="text-chip text-text-muted">{{ t('ucoinImport.keepOpen') }}</span>
+        <button class="btn btn-secondary btn-sm" @click="importer.stop()">{{ t('ucoinImport.stop') }}</button>
+      </div>
+    </section>
+
+    <section v-if="importer.phase.value === 'finished'" class="card mb-4 flex flex-col gap-3" data-testid="ucoin-result">
+      <h2 class="m-0 text-lg">{{ t(importer.stopped.value ? 'ucoinImport.done.stoppedTitle' : 'ucoinImport.done.title') }}</h2>
+      <p v-if="importer.stopMessage.value" class="m-0 text-body text-byzantine" role="alert">{{ importer.stopMessage.value }}</p>
+      <p v-else-if="importer.stopped.value" class="m-0 text-body text-text-secondary">{{ t('ucoinImport.done.stoppedByUser') }}</p>
+      <ul class="m-0 flex list-none flex-col gap-1 p-0 text-body text-text-primary">
+        <li v-if="importer.progress.toCreate">{{ t('ucoinImport.done.created', { count: importer.progress.created }) }}</li>
+        <li v-if="importer.progress.createFailed" class="text-byzantine">
+          {{ t('ucoinImport.done.createFailed', { count: importer.progress.createFailed, lines: importer.failedLines.value.join(', ') }) }}
+        </li>
+        <li v-if="importer.progress.toEnrich">{{ t('ucoinImport.done.enriched', { count: importer.progress.enriched }) }}</li>
+        <li v-if="importer.progress.failed" class="text-byzantine">{{ t('ucoinImport.done.failed', { count: importer.progress.failed }) }}</li>
+        <li v-if="importer.progress.notFound">{{ t('ucoinImport.done.notFound', { count: importer.progress.notFound }) }}</li>
+      </ul>
+      <p v-if="importer.progress.enriched" class="m-0 text-chip text-text-muted">{{ t('ucoinImport.done.valueNote') }}</p>
+
+      <details v-if="importer.notFoundCoins.value.length" class="text-body">
+        <summary class="cursor-pointer text-text-secondary">{{ t('ucoinImport.done.notFoundList') }}</summary>
+        <ul class="mt-2 flex max-h-72 list-none flex-col gap-1 overflow-y-auto p-0">
+          <li v-for="coin in importer.notFoundCoins.value" :key="coin.id">
+            <RouterLink :to="`/coin/${coin.id}`" class="text-gold underline">{{ coin.name }}</RouterLink>
+          </li>
+        </ul>
+      </details>
+
+      <div class="flex flex-wrap gap-2">
+        <RouterLink to="/" class="btn btn-primary">{{ t('ucoinImport.done.viewGallery') }}</RouterLink>
+        <button v-if="importer.progress.notFound" class="btn btn-secondary" @click="retryNotFound">{{ t('ucoinImport.done.retryNotFound') }}</button>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup lang="ts">
+// Imports a collection exported from uCoin.net and completes it from Numista.
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
+import { FileUp } from 'lucide-vue-next'
+import DesktopPageContext from '@/components/DesktopPageContext.vue'
+import { useUcoinImport } from '@/composables/useUcoinImport'
+import { intlLocale, t } from '@/i18n'
+
+const importer = useUcoinImport()
+const withNumista = ref(true)
+
+
+const busy = computed(() => importer.phase.value === 'creating' || importer.phase.value === 'enriching')
+
+const progressTotal = computed(() => importer.phase.value === 'creating' ? importer.progress.toCreate : importer.progress.toEnrich)
+const progressDone = computed(() => importer.phase.value === 'creating'
+  ? importer.progress.created + importer.progress.createFailed
+  : importer.progress.enriched + importer.progress.notFound + importer.progress.failed)
+const progressPercent = computed(() => progressTotal.value ? Math.min(100, Math.round((progressDone.value / progressTotal.value) * 100)) : 0)
+const progressText = computed(() => t(importer.phase.value === 'creating' ? 'ucoinImport.creating' : 'ucoinImport.enriching', {
+  done: progressDone.value,
+  total: progressTotal.value,
+}))
+
+function formatCount(value: number): string {
+  return new Intl.NumberFormat(intlLocale()).format(value)
+}
+
+async function onFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (file) await importer.readFile(file)
+}
+
+function retryNotFound() {
+  importer.retryNotFound()
+  void importer.enrich()
+}
+
+// Leaving mid-import would stop it halfway; ask first.
+function warnBeforeUnload(event: Event) {
+  if (!busy.value) return
+  event.preventDefault()
+}
+
+onBeforeRouteLeave(() => !busy.value || window.confirm(t('ucoinImport.leaveConfirm')))
+
+onMounted(() => {
+  window.addEventListener('beforeunload', warnBeforeUnload)
+  void importer.init()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', warnBeforeUnload)
+  importer.stop()
+})
+</script>

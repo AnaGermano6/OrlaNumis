@@ -28,6 +28,8 @@ func registerAdminRoutes(api *gin.RouterGroup, d *appDeps) {
 		admin.GET("/settings/defaults", adminHandler.GetSettingDefaults)
 		admin.PUT("/settings", adminHandler.UpdateSettings)
 		admin.GET("/logs", adminHandler.GetLogs)
+		collectionCurrencyHandler := handlers.NewCollectionCurrencyHandler(services.NewCollectionCurrencyService(repository.NewCollectionCurrencyRepository(database.DB), d.settingsSvc, d.exchangeRates))
+		admin.POST("/collection-currency", collectionCurrencyHandler.Change)
 		adminNumistaHandler := handlers.NewAdminNumistaHandler(d.numistaTelemetry, d.settingsSvc)
 		admin.GET("/numista/health", adminNumistaHandler.Health)
 		adminOCREHandler := handlers.NewAdminOCREHandler(d.settingsSvc, d.deepIdentificationRepo)

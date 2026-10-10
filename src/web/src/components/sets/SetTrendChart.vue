@@ -16,7 +16,7 @@
         class="flex justify-between border-b border-border-subtle pb-[0.4rem] text-body text-text-secondary last:border-b-0"
       >
         <span>{{ formatDate(snapshot.snapshotDate) }}</span>
-        <strong class="font-semibold text-gold">${{ snapshot.totalValue.toFixed(2) }}</strong>
+        <strong class="font-semibold text-gold">{{ formatCurrency(snapshot.totalValue) }}</strong>
       </div>
     </div>
     <p v-else class="m-0 text-body text-text-secondary">{{ t('sets.trend.empty') }}</p>
@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatCurrency } from '@/utils/format'
 import type { CoinSetSnapshot } from '@/types'
 import { t, intlLocale } from '@/i18n'
 

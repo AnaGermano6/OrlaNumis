@@ -14,6 +14,7 @@ import { reactive } from 'vue'
 import { getCoinOptions, type CoinOptionLabels } from '@/api/client'
 import { CATEGORIES, COIN_ERAS } from '@/types'
 import { parseOptionList } from '@/utils/options'
+import { setCollectionCurrency } from '@/utils/collectionCurrency'
 import { locale, type Locale } from '@/i18n'
 
 export type CoinVocabularyKind = 'category' | 'era'
@@ -121,6 +122,7 @@ export function loadCoinVocabulary(): Promise<void> {
       coinVocabulary.categories = parseOptionList(data.categories?.join('\n'), CATEGORIES)
       coinVocabulary.eras = parseOptionList(data.eras?.join('\n'), COIN_ERAS)
       coinVocabulary.labels = data.labels ?? {}
+      setCollectionCurrency(data.currency)
       coinVocabulary.loaded = true
     } catch {
       // Keep what we have; labels fall back to the built-in dictionary.
@@ -137,6 +139,7 @@ export function resetCoinVocabulary() {
   coinVocabulary.eras = [...COIN_ERAS]
   coinVocabulary.labels = {}
   coinVocabulary.loaded = false
+  setCollectionCurrency('USD')
 }
 
 function matchFirstLetterCase(source: string, label: string): string {

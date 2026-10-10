@@ -1,11 +1,12 @@
-// Real coin photos from public sources (Numista catalogue, Wikimedia Commons),
-// found by search and imported into a coin with their credit.
+// Real coin photos from public sources (ECB, the Portuguese and French mints'
+// shops, Numista catalogue, Wikimedia Commons), found by search and imported
+// into a coin with their credit.
 import { api } from '@/api/http'
 import type { NumistaDataStatus } from '@/api/endpoints/coins'
 import type { CoinImage } from '@/types'
 
 export interface CoinPhotoCandidate {
-  source: 'numista' | 'wikimedia'
+  source: 'numista' | 'wikimedia' | 'ecb' | 'incm' | 'mdp'
   /** Set when the source says which side the photo shows. */
   side?: 'obverse' | 'reverse'
   thumbnail: string
@@ -15,6 +16,8 @@ export interface CoinPhotoCandidate {
   title?: string
   author?: string
   license?: string
+  /** "exact" when the source identified this very coin (ECB, a mint's shop). */
+  match?: 'exact'
 }
 
 export interface CoinPhotoSearchResult {
@@ -23,8 +26,26 @@ export interface CoinPhotoSearchResult {
   photos: CoinPhotoCandidate[]
 }
 
-export const searchCoinPhotos = (params: { q?: string; numistaTypeId?: number; lang: string }) =>
+export interface CoinPhotoSearchParams {
+  q?: string
+  numistaTypeId?: number
+  lang: string
+  /** With a year, a €2 commemorative's ECB image is looked up too. */
+  year?: number
+  country?: string
+  denomination?: string
+  subject?: string
+}
+
+export const searchCoinPhotos = (params: CoinPhotoSearchParams) =>
   api.get<CoinPhotoSearchResult>('/coin-photos/search', { params })
+
+/**
+ * Gives a euro coin the European Central Bank's images of the sides asked for
+ * that it has no image of; the credit is appended to the coin's notes.
+ */
+export const addOfficialCoinPhotos = (coinId: number, sides: Array<'obverse' | 'reverse'>) =>
+  api.post<{ images: CoinImage[] }>(`/coins/${coinId}/official-photos`, { sides })
 
 /** Saves a found photo as a coin image; the credit is appended to the coin's notes. */
 export const importCoinImage = (

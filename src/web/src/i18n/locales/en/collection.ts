@@ -112,6 +112,7 @@ export default {
     rateDate: 'ECB rate of {date}',
     rateUnavailable: 'Exchange rate unavailable',
     unvalued: { one: '{count} without a value', other: '{count} without a value' },
+    valueHintEuros: 'Sum of the coins\' current values, in euros.',
   },
   highlights: {
     title: 'Collection highlights',

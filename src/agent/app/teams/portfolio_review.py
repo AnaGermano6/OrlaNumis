@@ -171,13 +171,21 @@ def create_portfolio_review_team(
     return graph.compile()
 
 
+def _money(amount: float, currency: str = "USD") -> str:
+    """An amount in the collection currency: "$1,234.00" or "€1,234.00"."""
+    symbol = "€" if currency == "EUR" else "$"
+    sign = "-" if amount < 0 else ""
+    return f"{sign}{symbol}{abs(amount):,.2f}"
+
+
 def _format_portfolio(portfolio: PortfolioSummary) -> str:
     """Format portfolio data as readable text for the LLM."""
+    currency = portfolio.currency
     lines = [
         f"Total coins: {portfolio.total_coins}",
-        f"Total invested: ${portfolio.total_invested:,.2f}",
-        f"Current estimated value: ${portfolio.total_value:,.2f}",
-        f"Gain/Loss: ${portfolio.total_value - portfolio.total_invested:,.2f}",
+        f"Total invested: {_money(portfolio.total_invested, currency)}",
+        f"Current estimated value: {_money(portfolio.total_value, currency)}",
+        f"Gain/Loss: {_money(portfolio.total_value - portfolio.total_invested, currency)}",
     ]
 
     if portfolio.categories:
@@ -208,8 +216,8 @@ def _format_portfolio(portfolio: PortfolioSummary) -> str:
     if portfolio.top_coins:
         lines.append("\nTop Coins by Value:")
         for coin in portfolio.top_coins:
-            value_str = f"${coin.current_value:,.2f}" if coin.current_value else "Unknown"
-            paid_str = f"${coin.purchase_price:,.2f}" if coin.purchase_price else "Unknown"
+            value_str = _money(coin.current_value, currency) if coin.current_value else "Unknown"
+            paid_str = _money(coin.purchase_price, currency) if coin.purchase_price else "Unknown"
             lines.append(f"  {coin.name} ({coin.category}) — Value: {value_str}, Paid: {paid_str}")
 
     return "\n".join(lines)
@@ -220,6 +228,7 @@ def build_collection_only_portfolio_review(summary: dict) -> str:
     total = int(summary.get("totalCoins", 0))
     current = float(summary.get("totalCurrentUsd", 0))
     invested = float(summary.get("totalPurchaseUsd", 0))
+    currency = summary.get("currency", "USD")
     gain = current - invested
     missing = summary.get("missingFields", {})
     missing_text = ", ".join(
@@ -227,8 +236,8 @@ def build_collection_only_portfolio_review(summary: dict) -> str:
     ) or "none reported"
     return (
         f"Collection-only portfolio review: {total} owned coins; "
-        f"recorded purchase total ${invested:,.2f}; recorded current-value total "
-        f"${current:,.2f}; recorded difference ${gain:,.2f}. "
+        f"recorded purchase total {_money(invested, currency)}; recorded current-value total "
+        f"{_money(current, currency)}; recorded difference {_money(gain, currency)}. "
         f"Missing-data counts: {missing_text}. "
         "No live market, dealer, auction, price-trend, or acquisition data was used."
     )

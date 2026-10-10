@@ -13,6 +13,9 @@ import (
 
 var issuerCodePattern = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 
+// catalogueNumberPattern accepts catalogue numbers like 84, A12, 329.1 or 84a.
+var catalogueNumberPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9.\-/]{0,29}$`)
+
 // NumistaCatalogHandler lets users browse the Numista catalogue to add a coin
 // with its details filled in.
 type NumistaCatalogHandler struct {
@@ -53,14 +56,17 @@ func (h *NumistaCatalogHandler) Issuers(c *gin.Context) {
 // Search finds coin types in the Numista catalogue.
 //
 //	@Summary		Search the Numista coin catalogue
-//	@Description	Returns one page (20 types) of Numista coin types matching the text and/or issuer, optionally limited to a year. Searches are cached for a day.
+//	@Description	Returns one page (20 types unless count is set) of Numista coin types matching the text, issuer and/or catalogue reference (e.g. catalogue=KM, number=84), optionally limited to a year. Searches are cached for a day.
 //	@Tags			Numista
 //	@Produce		json
-//	@Param			q		query		string	false	"Search text (required unless issuer is set)"
-//	@Param			issuer	query		string	false	"Numista issuer code, e.g. portugal"
-//	@Param			year	query		int		false	"Year the type was issued (negative for BC)"
-//	@Param			page	query		int		false	"Page number"	default(1)
-//	@Param			lang	query		string	false	"Language of results"	default(en)
+//	@Param			q			query		string	false	"Search text (required unless issuer or catalogue is set)"
+//	@Param			issuer		query		string	false	"Numista issuer code, e.g. portugal"
+//	@Param			catalogue	query		string	false	"Reference catalogue code (KM or Y); requires number"	Enums(KM, Y)
+//	@Param			number		query		string	false	"Number in the reference catalogue, e.g. 84"
+//	@Param			year		query		int		false	"Year the type was issued (negative for BC)"
+//	@Param			page		query		int		false	"Page number"	default(1)
+//	@Param			count		query		int		false	"Types per page (1-50)"	default(20)
+//	@Param			lang		query		string	false	"Language of results"	default(en)
 //	@Success		200		{object}	models.NumistaCatalogSearchResult
 //	@Failure		400		{object}	ErrorResponse
 //	@Security		BearerAuth
@@ -80,8 +86,12 @@ func (h *NumistaCatalogHandler) Search(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "issuer must be a Numista issuer code"})
 		return
 	}
-	if query == "" && issuer == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "q or issuer is required"})
+	catalogue, number, ok := catalogueReferenceQuery(c)
+	if !ok {
+		return
+	}
+	if query == "" && issuer == "" && catalogue == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "q, issuer or catalogue is required"})
 		return
 	}
 	year, ok := optionalIntQuery(c, "year", -5000, 3000)
@@ -92,8 +102,12 @@ func (h *NumistaCatalogHandler) Search(c *gin.Context) {
 	if !ok {
 		return
 	}
+	count, ok := optionalIntQuery(c, "count", 1, services.NumistaCatalogMaxPageSize)
+	if !ok {
+		return
+	}
 	c.JSON(http.StatusOK, h.catalog.Search(c.Request.Context(), services.NumistaTypeSearch{
-		Query: query, Issuer: issuer, Year: year, Page: page, Lang: lang,
+		Query: query, Issuer: issuer, Catalogue: catalogue, Number: number, Year: year, Page: page, Count: count, Lang: lang,
 	}))
 }
 
@@ -171,6 +185,26 @@ func numistaPathID(c *gin.Context) (int, bool) {
 }
 
 // optionalIntQuery reads an optional integer within [minimum, maximum]; 0 when absent.
+// catalogueReferenceQuery reads catalogue (a code such as KM) and number; both
+// are needed together. It returns Numista's catalogue ID, or 0 when absent.
+func catalogueReferenceQuery(c *gin.Context) (int, string, bool) {
+	code := strings.TrimSpace(c.Query("catalogue"))
+	number := strings.TrimSpace(c.Query("number"))
+	if code == "" && number == "" {
+		return 0, "", true
+	}
+	id, known := services.NumistaCatalogueID(code)
+	if !known {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "catalogue must be KM or Y"})
+		return 0, "", false
+	}
+	if !catalogueNumberPattern.MatchString(number) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "number must be a catalogue number such as 84 or 329.1"})
+		return 0, "", false
+	}
+	return id, number, true
+}
+
 func optionalIntQuery(c *gin.Context, name string, minimum, maximum int) (int, bool) {
 	raw := strings.TrimSpace(c.Query(name))
 	if raw == "" {

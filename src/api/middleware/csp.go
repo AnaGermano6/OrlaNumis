@@ -7,8 +7,8 @@ import (
 )
 
 // OSMTileHost is the OpenStreetMap tile origin used by the mint map
-// (src/web/src/components/map/MintMapLeaflet.vue). Apart from it and
-// NumistaPhotoHost, every remote image (auction lot photos, dealer listings)
+// (src/web/src/components/map/MintMapLeaflet.vue). Apart from it and the
+// photo hosts below, every remote image (auction lot photos, dealer listings)
 // is fetched server-side through the image proxy and handed to the browser as
 // a blob: URL, so it needs no allowance here.
 const OSMTileHost = "https://*.tile.openstreetmap.org"
@@ -18,6 +18,17 @@ const OSMTileHost = "https://*.tile.openstreetmap.org"
 // loaded by the browser directly because Numista's bot protection usually
 // rejects server-side (proxied) fetches.
 const NumistaPhotoHost = "https://en.numista.com"
+
+// EcbPhotoHost serves the European Central Bank's official images of euro
+// coins, shown in catalogue search results and type details.
+const EcbPhotoHost = "https://www.ecb.europa.eu"
+
+// IncmPhotoPath serves the Portuguese mint's (INCM) shop photos of its
+// collector coins; only that store's folder on Shopify's CDN is allowed.
+const IncmPhotoPath = "https://cdn.shopify.com/s/files/1/0525/1910/8762/"
+
+// MdpPhotoPath serves the Monnaie de Paris shop's product photos.
+const MdpPhotoPath = "https://www.monnaiedeparis.fr/media/catalog/product/"
 
 // appCSP is the policy for the SPA and the API.
 //
@@ -47,7 +58,7 @@ var appCSP = strings.Join([]string{
 	"form-action 'self'",
 	"script-src 'self' 'wasm-unsafe-eval' blob:",
 	"style-src 'self' 'unsafe-inline'",
-	"img-src 'self' data: blob: " + OSMTileHost + " " + NumistaPhotoHost,
+	"img-src 'self' data: blob: " + OSMTileHost + " " + NumistaPhotoHost + " " + EcbPhotoHost + " " + IncmPhotoPath + " " + MdpPhotoPath,
 	"font-src 'self' data:",
 	"connect-src 'self' blob:",
 	"worker-src 'self' blob:",

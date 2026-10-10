@@ -154,7 +154,7 @@
               <button type="button" class="min-w-0 truncate bg-transparent p-0 text-left text-base font-semibold text-text-primary transition-colors hover:text-gold" @click="goToCoin(coin.id)">
                 {{ coin.name }}
               </button>
-              <span class="hidden whitespace-nowrap text-chip font-semibold text-gold md:inline">${{ coin.currentValue ?? 0 }}</span>
+              <span class="hidden whitespace-nowrap text-chip font-semibold text-gold md:inline">{{ formatCurrency(coin.currentValue ?? 0) }}</span>
               <div class="flex flex-nowrap justify-end gap-1.5" :aria-label="t('sets.detail.coinActions')">
                 <button
                   v-if="canReorderCoins"
@@ -253,6 +253,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatCurrency } from '@/utils/format'
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, ChevronDown, ChevronUp, CirclePlus, Info, Menu, Pencil, Pin, PinOff, Trash2, X } from 'lucide-vue-next'

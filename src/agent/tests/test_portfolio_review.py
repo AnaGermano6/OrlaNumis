@@ -7,9 +7,11 @@ import pytest
 from app.models.requests import LLMConfig, PortfolioSummary
 from app.teams.gap_analysis import build_read_only_gap_analysis
 from app.teams.portfolio_review import (
+    _format_portfolio,
     build_collection_only_portfolio_review,
     create_portfolio_review_team,
 )
+from app.tools.copilot_collection_tools import CollectionSummary
 
 
 @pytest.mark.asyncio
@@ -73,3 +75,20 @@ def test_copilot_gap_analysis_excludes_acquisition_and_price_output():
     assert "structural metadata gaps" in result.lower()
     assert "does not estimate prices" in result.lower()
     assert "recommend purchases" in result.lower()
+
+
+def test_portfolio_amounts_use_the_collection_currency():
+    """A euro collection is described in euros, a dollar one in dollars."""
+    euros = _format_portfolio(PortfolioSummary(total_coins=1, total_value=100.0, total_invested=150.5, currency="EUR"))
+    assert "Total invested: €150.50" in euros
+    assert "Gain/Loss: -€50.50" in euros
+    assert "$" not in euros
+    assert "Current estimated value: $100.00" in _format_portfolio(PortfolioSummary(total_coins=1, total_value=100.0))
+
+    summary = CollectionSummary(
+        totalCoins=3, totalWishlist=0, totalSold=0, totalCurrentUsd=1234.5, totalPurchaseUsd=1000.0, currency="EUR",
+    )
+    review = build_collection_only_portfolio_review(summary.model_dump())
+    assert "recorded current-value total €1,234.50" in review
+    assert "$" not in review
+
