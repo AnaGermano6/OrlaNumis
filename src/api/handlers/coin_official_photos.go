@@ -25,9 +25,17 @@ type OfficialPhotoHandler struct {
 	logger *services.Logger
 	// One coin at a time, so the same image is never added twice.
 	mu sync.Mutex
-	// The few common-side images, downloaded once instead of once per coin.
+	// The ECB's images of the euro coins' sides, the same for many coins,
+	// downloaded once instead of once per coin.
 	commonSides map[string]officialPhotoFile
 }
+
+// officialSharedImages is where the ECB keeps the sides every coin of a
+// denomination (and country) shares; at most officialSharedLimit are kept.
+const (
+	officialSharedImages = "https://www.ecb.europa.eu/euro/coins/common/shared/img/"
+	officialSharedLimit  = 256
+)
 
 type officialPhotoFile struct {
 	data []byte
@@ -204,7 +212,7 @@ func (h *OfficialPhotoHandler) save(ctx context.Context, coin *models.Coin, rawU
 			return nil
 		}
 		file = officialPhotoFile{data: data, ext: ext}
-		if side == models.ImageTypeReverse {
+		if strings.HasPrefix(source.String(), officialSharedImages) && len(h.commonSides) < officialSharedLimit {
 			if h.commonSides == nil {
 				h.commonSides = map[string]officialPhotoFile{}
 			}

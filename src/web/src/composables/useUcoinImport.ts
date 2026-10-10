@@ -6,6 +6,7 @@
 // the run stops and can be resumed later from the same page.
 import { computed, reactive, ref } from 'vue'
 import {
+  addOfficialCoinPhotos,
   createCoin,
   getCoins,
   getCollectionSummary,
@@ -14,6 +15,7 @@ import {
   listCatalogs,
   searchNumistaCatalog,
   searchNumistaIssuers,
+  translateText,
   updateCoin,
   type NumistaCatalogSearchItem,
   type NumistaCatalogSearchParams,
@@ -49,7 +51,7 @@ import {
   type UcoinLookup,
 } from '@/utils/ucoinNumista'
 
-export type UcoinImportPhase = 'idle' | 'ready' | 'creating' | 'enriching' | 'finished'
+export type UcoinImportPhase = 'idle' | 'ready' | 'creating' | 'enriching' | 'photos' | 'finished'
 
 export interface UcoinImportCoinRef {
   id: number
@@ -65,6 +67,9 @@ export interface UcoinImportOptions {
 
 const NOT_FOUND_KEY = 'ucoinImport:notFound'
 const PAGE_SIZE = 100
+// Official photos are downloaded by the server; this keeps under its limit.
+const PHOTO_PACE_MS = 250
+const RATE_LIMITED_WAIT_MS = 5000
 const SEARCH_PAGE_SIZE = 50
 const MAX_ISSUER_PAGES = 3
 // Statuses that will not get better by trying the next coin.
@@ -168,7 +173,11 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
   const pendingRows = ref<UcoinRow[]>([])
   /** Imported coins still without Numista data (from this or an earlier import). */
   const awaitingNumista = ref<Coin[]>([])
-  const progress = reactive({ toCreate: 0, created: 0, createFailed: 0, toEnrich: 0, enriched: 0, notFound: 0, failed: 0 })
+  /** Imported coins Numista did not have in an earlier run, left out until asked again. */
+  const earlierNotFound = ref(0)
+  /** Imported coins with no image yet. */
+  const withoutImages = ref<Coin[]>([])
+  const progress = reactive({ toCreate: 0, created: 0, createFailed: 0, toEnrich: 0, enriched: 0, notFound: 0, failed: 0, toPhoto: 0, photoDone: 0, photographed: 0 })
   const notFoundCoins = ref<UcoinImportCoinRef[]>([])
   const failedLines = ref<number[]>([])
   /** Why Numista stopped the run (quota, key), or ''. */
@@ -217,7 +226,10 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
 
   function refreshAwaiting(collection: Coin[]) {
     const skipped = readNotFound()
-    awaitingNumista.value = collection.filter((coin) => isUcoinImported(coin) && !hasNumistaReference(coin) && !coin.isWishlist && !skipped.has(coin.id))
+    const withoutNumista = collection.filter((coin) => isUcoinImported(coin) && !hasNumistaReference(coin) && !coin.isWishlist)
+    awaitingNumista.value = withoutNumista.filter((coin) => !skipped.has(coin.id))
+    earlierNotFound.value = withoutNumista.length - awaitingNumista.value.length
+    withoutImages.value = collection.filter((coin) => isUcoinImported(coin) && !coin.isWishlist && !coin.images?.length)
   }
 
   /** Loads the collection to know which coins were already imported. */
@@ -284,6 +296,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
   const learnedIssuers = new Map<string, { code: string; minYear?: number; maxYear?: number }[]>()
   const issuerLookups = new Map<string, Promise<string | undefined>>()
   const typeResults = new Map<number, Promise<{ type?: NumistaCatalogType; issues: Awaited<ReturnType<typeof getNumistaCatalogType>>['data']['issues'] }>>()
+  const translations = new Map<string, Promise<string | undefined>>()
   const priceResults = new Map<string, Promise<NumistaGradePrice[]>>()
 
   function checkStatus(status: NumistaDataStatus) {
@@ -340,15 +353,38 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     return issuerLookups.get(key)
   }
 
+  /**
+   * The subject in English, for Numista's English titles: uCoin writes it in
+   * the language of its site ("Jornada Mundial da Juventude" for "World Youth
+   * Day"). Undefined when the app is in English or the translation fails.
+   */
+  function translatedSubject(subject: string): Promise<string | undefined> {
+    if (lang === 'en' || !subject.trim()) return Promise.resolve(undefined)
+    if (!translations.has(subject)) {
+      translations.set(subject, translateText(subject.slice(0, 400), 'pt')
+        .then((res) => (res.data.status === 'ok' ? res.data.text : undefined))
+        .catch(() => undefined))
+    }
+    return translations.get(subject)!
+  }
+
+  /** Picks the type, then, when none fits, tries again with the subject in English too. */
+  async function pickType(candidates: NumistaCatalogSearchItem[], lookup: UcoinLookup, source: 'catalogue' | 'issuer') {
+    const match = pickNumistaType(candidates, lookup, source)
+    if (match || !candidates.length || !lookup.subject.trim()) return match
+    const english = await translatedSubject(lookup.subject)
+    return english ? pickNumistaType(candidates, { ...lookup, subject: `${lookup.subject} ${english}` }, source) : undefined
+  }
+
   async function resolveType(lookup: UcoinLookup): Promise<number | undefined> {
     if (lookup.catalogue) {
       const reference = { catalogue: lookup.catalogue.code, number: lookup.catalogue.number, count: SEARCH_PAGE_SIZE }
-      let match = pickNumistaType((await search({ ...reference, year: lookup.year })).types, lookup, 'catalogue')
+      let match = await pickType((await search({ ...reference, year: lookup.year })).types, lookup, 'catalogue')
       // Numista filters by the year written on the coin, so coins dated in
       // another calendar (1387 AH, Heisei 3) are found by issuer instead.
       if (!match) {
         const issuer = await issuerCode(lookup)
-        if (issuer) match = pickNumistaType((await search({ ...reference, issuer })).types, lookup, 'catalogue')
+        if (issuer) match = await pickType((await search({ ...reference, issuer })).types, lookup, 'catalogue')
       }
       if (match) {
         learnIssuer(lookup.country, match)
@@ -366,7 +402,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
       candidates.push(...result.types)
       if (result.count <= page * SEARCH_PAGE_SIZE) break
     }
-    const match = pickNumistaType(candidates, lookup, 'issuer')
+    const match = await pickType(candidates, lookup, 'issuer')
     if (match) learnIssuer(lookup.country, match)
     return match?.id
   }
@@ -478,7 +514,72 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     return { categories: categoryOptions.value, eras: eraOptions.value, materials: materialOptions.value, registry }
   }
 
-  /** Completes every imported coin that has no Numista data yet. */
+  // ---- Official photos -------------------------------------------------------
+
+  let nextPhotoSlot = 0
+  async function pacePhoto() {
+    const now = Date.now()
+    const wait = Math.max(0, nextPhotoSlot - now)
+    nextPhotoSlot = Math.max(now, nextPhotoSlot) + (paceMs > 0 ? PHOTO_PACE_MS : 0)
+    if (wait) await new Promise((resolve) => setTimeout(resolve, wait))
+  }
+
+  /** Asks the server for the coin's official photos (ECB, Portuguese and French mints). */
+  async function addPhotos(coin: Coin) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await pacePhoto()
+      try {
+        const res = await addOfficialCoinPhotos(coin.id, ['obverse', 'reverse'])
+        if (res.data.images.length) progress.photographed += 1
+        return
+      } catch (error) {
+        const status = (error as { response?: { status?: number } }).response?.status
+        if (status !== 429 || paceMs <= 0) return
+        await new Promise((resolve) => setTimeout(resolve, RATE_LIMITED_WAIT_MS))
+      }
+    }
+  }
+
+  /** Gives the imported coins without an image their official photos, when there are any. */
+  async function photograph(coins: Coin[]) {
+    if (!coins.length || stopRequested) return
+    phase.value = 'photos'
+    progress.toPhoto = coins.length
+    progress.photoDone = 0
+    progress.photographed = 0
+    await runPool(coins, workerCount, async (coin) => {
+      await addPhotos(coin)
+      progress.photoDone += 1
+    })
+  }
+
+  /** Adds official photos to every imported coin that has none. */
+  async function addMissingPhotos() {
+    stopRequested = false
+    stopped.value = false
+    stopMessage.value = ''
+    progress.toCreate = 0
+    progress.toEnrich = 0
+    progress.notFound = 0
+    progress.failed = 0
+    notFoundCoins.value = []
+    try {
+      refreshAwaiting(await loadCollection())
+    } catch {
+      loadFailed.value = true
+      return
+    }
+    await photograph(withoutImages.value)
+    stopped.value = stopRequested
+    try {
+      refreshAwaiting(await loadCollection())
+    } catch {
+      // The counts above still describe the run.
+    }
+    phase.value = 'finished'
+  }
+
+  /** Completes every imported coin that has no Numista data yet, then adds photos. */
   async function enrich() {
     phase.value = 'enriching'
     stopRequested = false
@@ -509,13 +610,17 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     // Catalogue-number searches first: they also teach which issuer each country is.
     const ordered = [...groups.values()].sort((a, b) => Number(!a.lookup.catalogue) - Number(!b.lookup.catalogue))
     const notFound = readNotFound()
+    progress.toPhoto = 0
     await runPool(ordered, workerCount, (group) => enrichGroup(group, options, notFound))
-    stopped.value = stopRequested
+    // Photos come after the Numista data, which helps find them.
     try {
+      refreshAwaiting(await loadCollection())
+      await photograph(withoutImages.value)
       refreshAwaiting(await loadCollection())
     } catch {
       // The counts above still describe the run.
     }
+    stopped.value = stopRequested
     phase.value = 'finished'
   }
 
@@ -528,6 +633,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     progress.toCreate = pendingRows.value.length
     progress.created = 0
     progress.createFailed = 0
+    progress.toPhoto = 0
     failedLines.value = []
     const options = await catalogOptions()
     await loadRate()
@@ -547,8 +653,18 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
       phase.value = 'finished'
       return
     }
-    if (withNumista) await enrich()
-    else phase.value = 'finished'
+    if (withNumista) {
+      await enrich()
+      return
+    }
+    try {
+      refreshAwaiting(await loadCollection())
+      await photograph(withoutImages.value)
+    } catch {
+      // The coins are added; photos can be added later.
+    }
+    stopped.value = stopRequested
+    phase.value = 'finished'
   }
 
   function stop() {
@@ -568,6 +684,9 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     rows,
     pendingRows,
     awaitingNumista,
+    earlierNotFound,
+    withoutImages,
+    addMissingPhotos,
     countries,
     alreadyImported,
     estimatedRequests,

@@ -80,6 +80,51 @@ describe('matching uCoin coins to Numista', () => {
     expect(pickNumistaType(southAfrica, lookup({ country: 'África do Sul', year: 1991 }), 'catalogue')?.id).toBe(1791)
   })
 
+  it('takes the ordinary version of a design when several versions fit', () => {
+    const netherlands = { code: 'pays-bas', name: 'Países Baixos' }
+    const jaapEden = [
+      { id: 2002, title: '5 Euros - Willem-Alexander (Jaap Eden)', issuer: netherlands, minYear: 2019, maxYear: 2019 },
+      { id: 2001, title: '5 Euros - Willem-Alexander (Jaap Eden)', issuer: netherlands, minYear: 2019, maxYear: 2019 },
+      { id: 2003, title: '10 Euros - Willem-Alexander (Jaap Eden)', issuer: netherlands, minYear: 2019, maxYear: 2019 },
+    ]
+    expect(pickNumistaType(jaapEden, lookup({ country: 'Países Baixos', denomination: '5 euro', year: 2019, subject: 'Jaap Eden' }), 'issuer')?.id).toBe(2001)
+    const assen = [
+      { id: 3002, title: '5 Euro - Willem Alexander (TT Assen; silver)', issuer: netherlands, minYear: 2025, maxYear: 2025 },
+      { id: 3001, title: '5 Euros - Willem Alexander (TT Assen; silver plated copper)', issuer: netherlands, minYear: 2025, maxYear: 2025 },
+    ]
+    expect(pickNumistaType(assen, lookup({ country: 'Países Baixos', denomination: '5 euro', year: 2025, subject: '100º Aniversário - Circuito TT Assen' }), 'issuer')?.id).toBe(3001)
+    // Versions found by catalogue number too.
+    const canada = { code: 'canada', name: 'Canadá' }
+    const jubilee = [
+      { id: 4003, title: '1 Cent - Elizabeth II (Golden Jubilee; non-magnetic)', issuer: canada, minYear: 2002, maxYear: 2002 },
+      { id: 4002, title: '1 Cent - Elizabeth II (Golden Jubilee; magnetic)', issuer: canada, minYear: 2002, maxYear: 2002 },
+    ]
+    expect(pickNumistaType(jubilee, lookup({ country: 'Canadá', denomination: '1 cêntimo', year: 2002 }), 'catalogue')?.id).toBe(4002)
+    // Two designs are still not guessed between.
+    const twoDesigns = [
+      { id: 5001, title: '2 Euros (World Youth Day)', issuer: { code: 'portugal', name: 'Portugal' }, minYear: 2023, maxYear: 2023 },
+      { id: 5002, title: '2 Euros (Peace Among Nations)', issuer: { code: 'portugal', name: 'Portugal' }, minYear: 2023, maxYear: 2023 },
+    ]
+    expect(pickNumistaType(twoDesigns, lookup({ country: 'Portugal', denomination: '2 euro', year: 2023, subject: 'Paz Entre as Nações' }), 'issuer')).toBeUndefined()
+    // Versions of a design the subject does not name are not taken for it.
+    const austria = { code: 'autriche', name: 'Áustria' }
+    const hares = [
+      { id: 6002, title: "5 Euros (Dürer's Hare Trio, silver)", issuer: austria, minYear: 2026, maxYear: 2026 },
+      { id: 6001, title: "5 Euros (Dürer's Hare Trio, copper)", issuer: austria, minYear: 2026, maxYear: 2026 },
+    ]
+    expect(pickNumistaType(hares, lookup({ country: 'Áustria', denomination: '5 euro', year: 2026, subject: 'Mergulhe na Felicidade' }), 'issuer')).toBeUndefined()
+  })
+
+  it('reads the Ukrainian kopiyok however it is spelled', () => {
+    const ukraine = { code: 'ukraine', name: 'Ucrânia' }
+    const types = [
+      { id: 3104, title: '5 Kopiiok', issuer: ukraine, minYear: 1992, maxYear: 2018 },
+      { id: 3303, title: '1 Kopiika', issuer: ukraine, minYear: 1992, maxYear: 2018 },
+      { id: 9697, title: '1 Hryvnia (without mintmark)', issuer: ukraine, minYear: 1992, maxYear: 1996 },
+    ]
+    expect(pickNumistaType(types, lookup({ country: 'Ucrânia', denomination: '5 kopiyok', year: 1992 }), 'issuer')?.id).toBe(3104)
+  })
+
   it('never takes a catalogue number from another country', () => {
     const norway = [{ id: 1445, title: '5 Kroner - Olav V (Type 1)', issuer: { code: 'norvege', name: 'Noruega' }, minYear: 1963, maxYear: 1973 }]
     expect(pickNumistaType(norway, lookup({ country: 'Egito', denomination: '5 piastres', year: 1967 }), 'catalogue')).toBeUndefined()

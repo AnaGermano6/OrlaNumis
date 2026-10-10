@@ -39,6 +39,8 @@ const messages: Messages['ucoinImport'] = {
     retryNotFound: 'Tentar de novo as não encontradas',
     viewGallery: 'Ver a galeria',
     valueNote: 'Os valores são estimativas do Numista para a conservação de cada moeda (MBC quando o ficheiro não indica a conservação).',
+    photos: { one: '{count} de {total} moedas ficaram com fotos oficiais.', other: '{count} de {total} moedas ficaram com fotos oficiais.' },
+    photosNote: 'As fotos vêm do Banco Central Europeu (moedas de euro) e das casas da moeda portuguesa e francesa (as suas moedas de coleção recentes). As outras moedas ficam sem imagem; pode juntar as suas.',
   },
   notes: {
     source: 'Importada do uCoin ({reference}).',
@@ -47,6 +49,10 @@ const messages: Messages['ucoinImport'] = {
     price: 'Preço no uCoin: {value}',
     comment: 'Comentário no uCoin: {value}',
   },
+  earlierNotFound: { one: '{count} moeda importada não foi encontrada no Numista antes. A pesquisa agora também tenta o assunto em inglês e a versão comum de cada desenho.', other: '{count} moedas importadas não foram encontradas no Numista antes. A pesquisa agora também tenta o assunto em inglês e a versão comum de cada desenho.' },
+  addingPhotos: 'A adicionar fotos oficiais… {done} de {total}',
+  withoutImages: { one: '{count} moeda importada não tem imagem.', other: '{count} moedas importadas não têm imagem.' },
+  addPhotos: 'Adicionar fotos oficiais',
 }
 
 export default messages

@@ -17838,6 +17838,78 @@
                 }
             }
         },
+        "/translate": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Translates a short text (up to 500 bytes) with MyMemory, a free translation service; only the text is sent. Answers are cached for a year. Used to compare coin subjects written in the user's language with Numista's English titles.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Numista"
+                ],
+                "summary": "Translate a short text",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Text to translate",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "pt",
+                            "en",
+                            "fr",
+                            "es",
+                            "de",
+                            "it",
+                            "nl"
+                        ],
+                        "type": "string",
+                        "description": "Source language",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "pt",
+                            "en",
+                            "fr",
+                            "es",
+                            "de",
+                            "it",
+                            "nl"
+                        ],
+                        "type": "string",
+                        "default": "en",
+                        "description": "Target language",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.TranslationResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/uploads/{filepath}": {
             "get": {
                 "security": [
@@ -22144,6 +22216,21 @@
             "properties": {
                 "limit": {
                     "type": "integer"
+                }
+            }
+        },
+        "handlers.TranslationResult": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "ok",
+                        "unavailable"
+                    ]
+                },
+                "text": {
+                    "type": "string"
                 }
             }
         },
