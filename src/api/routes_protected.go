@@ -271,7 +271,11 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.POST("/coins/:id/official-photos", officialPhotosRateLimit, handlers.NewOfficialPhotoHandler(d.coinRepo, d.imageHandler, coinPhotoSearch, d.logger).Add)
 		coinCountryHandler := handlers.NewCoinCountryHandler(d.coinRepo, services.NewCoinCountryService(d.coinRepo, numistaCatalogSvc))
 		protected.GET("/coins/countries", coinCountryHandler.Countries)
-		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(d.exchangeRates).WithSettings(d.settingsSvc).Summary)
+		// Whether coins are still legal tender, from their cached Numista types.
+		coinCirculation := services.NewCoinCirculationService(d.coinRepo, numistaCatalogSvc)
+		coinHandler.WithCirculation(coinCirculation)
+		protected.GET("/coins/:id/status", coinHandler.Status)
+		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(d.exchangeRates).WithSettings(d.settingsSvc).WithCirculation(coinCirculation).Summary)
 		protected.POST("/coins/country-from-numista", d.writeRateLimit, coinCountryHandler.FillFromNumista)
 
 		auctionLotSvc := services.NewAuctionLotService(d.auctionLotRepo, d.coinRepo).

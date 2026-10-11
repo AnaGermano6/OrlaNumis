@@ -16,6 +16,7 @@ var (
 	ErrCoinInvalidCategory        = errors.New("category is not supported")
 	ErrCoinInvalidPresentation    = errors.New("presentation is not supported")
 	ErrCoinInvalidRarity          = errors.New("rarity is not supported")
+	ErrCoinInvalidCirculation     = errors.New("circulation is not supported")
 	ErrStorageSlotRequired        = errors.New("a tray slot is required")
 	ErrStorageSlotInvalid         = errors.New("storage slot is invalid for this location")
 	ErrStorageSlotOccupied        = errors.New("storage slot is occupied")
@@ -195,7 +196,7 @@ func (s *CoinService) prepareCoinForCreate(coin *models.Coin) error {
 	return nil
 }
 
-// normalizeCoinAttributes tidies the country and year and checks presentation and rarity.
+// normalizeCoinAttributes tidies the country and year and checks presentation, rarity and circulation.
 func normalizeCoinAttributes(coin *models.Coin) error {
 	// There is no year 0 between 1 BC and AD 1; treat it as "not given".
 	if coin.Year != nil && *coin.Year == 0 {
@@ -209,6 +210,10 @@ func normalizeCoinAttributes(coin *models.Coin) error {
 	coin.Rarity = strings.TrimSpace(coin.Rarity)
 	if !models.ValidCoinRarity(coin.Rarity) {
 		return ErrCoinInvalidRarity
+	}
+	coin.Circulation = strings.TrimSpace(coin.Circulation)
+	if !models.ValidCoinCirculation(coin.Circulation) {
+		return ErrCoinInvalidCirculation
 	}
 	return nil
 }

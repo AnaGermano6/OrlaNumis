@@ -8,14 +8,10 @@ import CoinForm from '../CoinForm.vue'
 import type { Coin } from '@/types'
 
 const apiMocks = vi.hoisted(() => ({
-  getStorageLocations: vi.fn(),
-  getStorageLocationOccupancy: vi.fn(),
   getMintLocations: vi.fn(),
 }))
 
 vi.mock('@/api/client', () => ({
-  getStorageLocations: apiMocks.getStorageLocations,
-  getStorageLocationOccupancy: apiMocks.getStorageLocationOccupancy,
   getMintLocations: apiMocks.getMintLocations,
 }))
 
@@ -40,18 +36,6 @@ describe('CoinForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     apiMocks.getMintLocations.mockResolvedValue({ data: { mintLocations: [] } })
-    apiMocks.getStorageLocations.mockResolvedValue({
-      data: {
-        storageLocations: [
-          { id: 1, name: 'Safe', type: 'standard', rows: null, columns: null, capacity: 0, occupied: 0 },
-          { id: 2, name: 'Cabinet A', type: 'tray', rows: 2, columns: 2, capacity: 4, occupied: 2 },
-          { id: 3, name: 'Cabinet B', type: 'tray', rows: 1, columns: 2, capacity: 2, occupied: 0 },
-        ],
-      },
-    })
-    apiMocks.getStorageLocationOccupancy.mockResolvedValue({
-      data: { id: 2, rows: 2, columns: 2, capacity: 4, occupiedSlots: [2, 4], currentCoinSlot: 4 },
-    })
   })
 
   it('renders section titles inside the form sections with larger heading styles', () => {
@@ -152,7 +136,7 @@ describe('CoinForm', () => {
     }
   })
 
-  it('shows exact coordinates only for trays and keeps the current coin slot available', async () => {
+  it('has no storage location field and keeps the coin\'s storage as it is on submit', async () => {
     const form = { name: 'Coin', category: 'Roman', material: 'Silver', storageLocationId: 2, storageSlot: 4 }
     const wrapper = mount(CoinForm, {
       props: { form, submitLabel: 'Save', coinId: 99 },
@@ -170,57 +154,16 @@ describe('CoinForm', () => {
     })
     await flushPromises()
 
-    expect(apiMocks.getStorageLocationOccupancy).toHaveBeenCalledWith(2, 99)
-    expect(wrapper.findAll('[role="gridcell"]')).toHaveLength(4)
-    expect(wrapper.get('[aria-label="Row 1, column 2, occupied"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.get('[aria-label="Row 2, column 2, selected"]').attributes('disabled')).toBeUndefined()
-  })
-
-  it('resets stale slots on location changes and requires a new tray slot before submit', async () => {
-    const form = { name: 'Coin', category: 'Roman', material: 'Silver', storageLocationId: 2, storageSlot: 4 }
-    const wrapper = mount(CoinForm, {
-      props: { form, submitLabel: 'Save', coinId: 99 },
-      global: {
-        stubs: {
-          RouterLink: { template: '<a><slot /></a>' },
-          AutocompleteInput: true,
-          ImperialFigurePicker: true,
-          CreateMintModal: true,
-          AuthenticatedImage: true,
-          X: true,
-          Camera: true,
-        },
-      },
-    })
-    await flushPromises()
-
-    apiMocks.getStorageLocationOccupancy.mockResolvedValueOnce({
-      data: { id: 3, rows: 1, columns: 2, capacity: 2, occupiedSlots: [], currentCoinSlot: null },
-    })
-    const storageSelect = wrapper.findAll('select.form-select').find((select) => select.text().includes('Cabinet B'))
-    await storageSelect!.setValue('3')
-    await flushPromises()
-
-    expect(form.storageSlot).toBeNull()
-    await wrapper.find('form').trigger('submit')
-    expect(wrapper.text()).toContain('Choose an exact tray slot before saving.')
-    expect(wrapper.emitted('submit')).toBeUndefined()
-
-    await wrapper.get('[aria-label="Row 1, column 1, available"]').trigger('click')
-    await wrapper.find('form').trigger('submit')
-    expect(form.storageSlot).toBe(1)
+    expect(wrapper.text().toLowerCase()).not.toContain('storage location')
+    expect(wrapper.find('.slot-picker').exists()).toBe(false)
+    await wrapper.get('form').trigger('submit')
     expect(wrapper.emitted('submit')).toHaveLength(1)
+    expect(form.storageLocationId).toBe(2)
+    expect(form.storageSlot).toBe(4)
   })
 
-  it('refreshes stale occupancy after a conflict without losing other form data', async () => {
-    const form = {
-      name: 'Preserved name',
-      category: 'Roman',
-      material: 'Silver',
-      notes: 'Preserved notes',
-      storageLocationId: 2,
-      storageSlot: 1,
-    }
+  it('sets the circulation by hand, or leaves it to Numista', async () => {
+    const form = reactive<Partial<Coin>>({ name: 'Coin', category: 'Modern', material: 'Silver', circulation: '' })
     const wrapper = mount(CoinForm, {
       props: { form, submitLabel: 'Save', coinId: 99 },
       global: {
@@ -237,25 +180,21 @@ describe('CoinForm', () => {
     })
     await flushPromises()
 
-    apiMocks.getStorageLocationOccupancy.mockRejectedValueOnce(new Error('stale'))
-    await (wrapper.vm as unknown as { refreshStorageOccupancy: () => Promise<void> }).refreshStorageOccupancy()
-    await flushPromises()
-    expect(wrapper.text()).toContain('Tray occupancy changed or could not be loaded.')
-
-    apiMocks.getStorageLocationOccupancy.mockResolvedValueOnce({
-      data: { id: 2, rows: 2, columns: 2, capacity: 4, occupiedSlots: [1, 2], currentCoinSlot: null },
-    })
-    await wrapper.findAll('button').find((button) => button.text() === 'Retry')!.trigger('click')
-    await flushPromises()
-
-    expect(form.name).toBe('Preserved name')
-    expect(form.notes).toBe('Preserved notes')
-    expect(form.storageSlot).toBe(1)
-    expect(wrapper.get('[aria-label="Row 1, column 1, occupied"]').attributes('disabled')).toBeDefined()
+    const select = wrapper.get('#coin-circulation')
+    expect(select.findAll('option').map((option) => option.text())).toEqual([
+      'Automatic (as Numista says)',
+      'Current',
+      'Current · Commemorative',
+      'Demonetized',
+      'Demonetized · Commemorative',
+    ])
+    await select.setValue('current_commemorative')
+    expect(form.circulation).toBe('current_commemorative')
+    await select.setValue('')
+    expect(form.circulation).toBe('')
   })
 
   it('takes a typed year, clears it to an empty value and shows the year it would read from the date', async () => {
-    apiMocks.getStorageLocations.mockResolvedValue({ data: [] })
     apiMocks.getMintLocations.mockResolvedValue({ data: [] })
     const form = reactive<Partial<Coin>>({ name: 'Denarius', category: 'Roman', material: 'Silver', dateRange: 'c. 46-44 BC', year: null })
     const wrapper = mount(CoinForm, {

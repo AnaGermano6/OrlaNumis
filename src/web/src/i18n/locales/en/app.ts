@@ -18,4 +18,10 @@ export default {
     body: 'Start with the Getting Started guide to import a CSV, try Quick Capture or Coin Lookup, and review settings that unlock alerts, images, and AI tools.',
     openGuide: 'Open Guide',
   },
+  footer: {
+    label: 'Footer',
+    version: 'Version {version}',
+    catalogue: 'Catalogue data: Numista',
+    photos: 'Official photos: ECB, INCM and Monnaie de Paris',
+  },
 }

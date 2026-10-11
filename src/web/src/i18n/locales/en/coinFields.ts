@@ -4,7 +4,6 @@ export default {
   purchaseDate: 'Purchase Date',
   vendorSku: 'Vendor SKU',
   vendorInvoice: 'Vendor Invoice',
-  storageLocation: 'Storage Location',
   denomination: 'Denomination',
   era: 'Era',
   mint: 'Mint',
@@ -32,4 +31,5 @@ export default {
   country: 'Country',
   presentation: 'Presentation',
   rarity: 'Rarity',
+  circulation: 'Circulation',
 }

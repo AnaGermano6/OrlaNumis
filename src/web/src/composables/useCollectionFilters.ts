@@ -1,4 +1,5 @@
 import { ref, onBeforeUnmount, onMounted, watch } from 'vue'
+import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
 import { useCoinsStore } from '@/stores/coins'
 import { fillCountriesFromNumista, getCoinCountries, getSets, getTags, type CoinCountryCount } from '@/api/client'
 import { COIN_GROUPINGS, type CoinGroupBy } from '@/utils/coinAttributes'
@@ -55,6 +56,9 @@ export function useCollectionFilters() {
   const selectedCountry = ref(store.selectedCountry)
   const selectedPresentation = ref(store.selectedPresentation)
   const selectedRarity = ref(store.selectedRarity)
+  const selectedCirculation = ref(store.selectedCirculation)
+  const selectedCommemorative = ref(store.selectedCommemorative)
+  const selectedClassification = ref(store.selectedClassification)
   const groupBy = ref<CoinGroupBy>(readGroupBy())
   const countryOptions = ref<CoinCountryCount[]>([])
   const fillingCountries = ref(false)
@@ -134,6 +138,9 @@ export function useCollectionFilters() {
     store.selectedCountry = selectedCountry.value
     store.selectedPresentation = selectedPresentation.value
     store.selectedRarity = selectedRarity.value
+    store.selectedCirculation = selectedCirculation.value
+    store.selectedCommemorative = selectedCommemorative.value
+    store.selectedClassification = selectedClassification.value
     store.searchQuery = search.value
 
     // For random sort, generate a per-session seed (stable across pagination within a session)
@@ -156,9 +163,13 @@ export function useCollectionFilters() {
     const params = {
       category: selectedCategory.value || undefined,
       era: selectedEra.value || undefined,
-      country: selectedCountry.value || undefined,
+      country: selectedCountry.value && selectedCountry.value !== EXTINCT_COUNTRIES ? selectedCountry.value : undefined,
+      extinct: selectedCountry.value === EXTINCT_COUNTRIES ? 'true' : undefined,
       presentation: selectedPresentation.value || undefined,
       rarity: selectedRarity.value || undefined,
+      circulation: selectedCirculation.value || undefined,
+      commemorative: selectedCommemorative.value || undefined,
+      classification: selectedClassification.value || undefined,
       search: search.value || undefined,
       tag: selectedTagFilter,
       set: selectedSetFilter,
@@ -173,7 +184,7 @@ export function useCollectionFilters() {
     else void store.fetchCoins({ ...params, page: page.value })
   }
 
-  watch([selectedCountry, selectedPresentation, selectedRarity], () => {
+  watch([selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification], () => {
     page.value = 1
     loadCoins()
   })
@@ -267,6 +278,9 @@ export function useCollectionFilters() {
     eraOptions,
     selectedCountry,
     selectedPresentation,
+    selectedCirculation,
+    selectedCommemorative,
+    selectedClassification,
     selectedRarity,
     groupBy,
     countryOptions,

@@ -221,6 +221,10 @@ const messages: Messages['coinDetail'] = {
     stale: 'Não foi possível atualizar; a mostrar os últimos valores guardados.',
     viewOnNumista: 'Ver no Numista',
   },
+  currentCoin: 'Corrente',
+  demonetizedCoin: 'Desmonetizada',
+  demonetizedOn: 'Desmonetizada em {date}',
+  commemorativeCoin: 'Comemorativa',
 }
 
 export default messages

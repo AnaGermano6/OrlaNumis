@@ -211,6 +211,16 @@ definitions:
         allOf:
         - $ref: '#/definitions/models.Category'
         maxLength: 64
+      circulation:
+        description: Circulation set by hand; empty means "as Numista says".
+        enum:
+        - ""
+        - current
+        - current_commemorative
+        - demonetized
+        - demonetized_commemorative
+        maxLength: 30
+        type: string
       country:
         maxLength: 120
         type: string
@@ -514,6 +524,16 @@ definitions:
         allOf:
         - $ref: '#/definitions/models.Category'
         maxLength: 64
+      circulation:
+        description: Circulation set by hand; empty means "as Numista says".
+        enum:
+        - ""
+        - current
+        - current_commemorative
+        - demonetized
+        - demonetized_commemorative
+        maxLength: 30
+        type: string
       country:
         maxLength: 120
         type: string
@@ -641,6 +661,20 @@ definitions:
         minimum: -5000
         type: integer
     type: object
+  handlers.CollectionClassification:
+    properties:
+      count:
+        type: integer
+      key:
+        description: |-
+          Key is "standard", "circulating-commemorative", "non-circulating" or,
+          for another kind, its label; it is the coin list's classification filter.
+        type: string
+      label:
+        description: Label is Numista's name for it, in the language it was looked
+          up in.
+        type: string
+    type: object
   handlers.CollectionCurrencyRequest:
     properties:
       currency:
@@ -653,10 +687,26 @@ definitions:
     type: object
   handlers.CollectionSummaryResponse:
     properties:
+      circulationUnknown:
+        type: integer
+      classifications:
+        description: |-
+          Classifications are Numista's kinds of coin found in the collection,
+          the usual ones first; coins Numista says nothing of are in none.
+        items:
+          $ref: '#/definitions/handlers.CollectionClassification'
+        type: array
       coincards:
         description: Coincards counts coins whose presentation is "coincard".
         type: integer
       coins:
+        type: integer
+      commemorativeCoins:
+        description: |-
+          CommemorativeCoins are of types Numista says commemorate something;
+          CommemorativeUnknown are coins it says nothing of.
+        type: integer
+      commemorativeUnknown:
         type: integer
       countries:
         type: integer
@@ -668,10 +718,20 @@ definitions:
         - USD
         - EUR
         type: string
+      currentCoins:
+        description: |-
+          CurrentCoins are still legal tender, as Numista says of their types;
+          CirculationUnknown are coins it says nothing of (not linked to Numista).
+        type: integer
       exchangeRate:
         allOf:
         - $ref: '#/definitions/services.ExchangeRate'
         description: ExchangeRate is the latest ECB rate, when available.
+      extinctCountries:
+        description: |-
+          ExtinctCountries counts the collection's countries that no longer exist
+          (USSR, Yugoslavia, Ottoman Empire…); they are among Countries.
+        type: integer
       highlights:
         $ref: '#/definitions/repository.CollectionHighlights'
       totalValue:
@@ -3000,6 +3060,18 @@ definitions:
         allOf:
         - $ref: '#/definitions/models.Category'
         maxLength: 64
+      circulation:
+        description: |-
+          Circulation, when set by hand (see CoinCirculations), says whether the
+          coin is still legal tender and whether it is commemorative, instead of
+          what Numista says of its type.
+        enum:
+        - ""
+        - current
+        - current_commemorative
+        - demonetized
+        - demonetized_commemorative
+        type: string
       country:
         description: Country is the issuing country or authority (e.g. from the Numista
           issuer).
@@ -3814,6 +3886,11 @@ definitions:
     type: object
   models.NumistaCatalogType:
     properties:
+      classification:
+        description: |-
+          Classification is Numista's kind of coin (e.g. "Moedas circulantes
+          comuns"), in the language asked for.
+        type: string
       commemoratedTopic:
         description: |-
           CommemoratedTopic is what a commemorative coin celebrates, in the
@@ -3823,6 +3900,13 @@ definitions:
         type: string
       currency:
         type: string
+      demonetizationDate:
+        type: string
+      demonetized:
+        description: |-
+          Demonetized tells whether the type is no longer legal tender (nil
+          when Numista does not say); DemonetizationDate is when, if known.
+        type: boolean
       denomination:
         type: string
       diameterMm:
@@ -5145,6 +5229,24 @@ definitions:
         type: string
       targetType:
         $ref: '#/definitions/models.RecommendationTargetType'
+    type: object
+  services.CoinStatus:
+    properties:
+      commemoratedTopic:
+        type: string
+      commemorative:
+        description: Commemorative is null when Numista says nothing of the coin.
+        type: boolean
+      current:
+        description: Current is null when nobody knows.
+        type: boolean
+      demonetizationDate:
+        description: DemonetizationDate is when it stopped being legal tender, if
+          Numista says.
+        type: string
+      manual:
+        description: Manual is true when the user set them on the coin (its circulation).
+        type: boolean
     type: object
   services.CollectionChatContext:
     properties:
@@ -10186,6 +10288,30 @@ paths:
         in: query
         name: presentation
         type: string
+      - description: Only coins of countries that no longer exist (USSR, Yugoslavia,
+          Ottoman Empire…)
+        in: query
+        name: extinct
+        type: boolean
+      - description: Only collection coins still legal tender (current) or no longer
+          (demonetized), as Numista says of their types
+        enum:
+        - current
+        - demonetized
+        in: query
+        name: circulation
+        type: string
+      - description: Only collection coins of commemorative types (true) or of regular
+          ones (false), as Numista says
+        in: query
+        name: commemorative
+        type: boolean
+      - description: 'Only collection coins of one Numista kind of coin: standard,
+          circulating-commemorative, non-circulating, or another kind''s label (see
+          the summary''s classifications)'
+        in: query
+        name: classification
+        type: string
       - description: Filter by rarity
         enum:
         - common
@@ -11914,6 +12040,46 @@ paths:
       summary: Sync coin shipment status
       tags:
       - Coins
+  /coins/{id}/status:
+    get:
+      description: Tells whether one of the user's coins is still legal tender (current)
+        and whether it is commemorative, from its cached Numista type (never asking
+        Numista); coins of countries that no longer exist are not current. A value
+        is null when nobody knows (the coin is not linked to a cached Numista type).
+      parameters:
+      - description: Coin ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.CoinStatus'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a coin's legal tender and commemorative status
+      tags:
+      - Coins
   /coins/{id}/tags:
     post:
       consumes:
@@ -12318,12 +12484,16 @@ paths:
     get:
       description: Counts the user's collection coins (excluding wishlist and sold),
         their distinct types (coins linked to the same Numista type count once; other
-        coins once per distinct name), their distinct countries, how many coins have
-        no country, and how many coins are in a coincard. Also sums the coins' current
-        values (kept in the collection currency, USD or EUR) and gives the total in
-        euros, converted from dollars with the ECB daily reference rate (cached; null
-        when unavailable), and names the rarest (fixed rarity scale; ties go to the
-        more valuable), oldest (lowest year) and most valuable (current value) coins.
+        coins once per distinct name), their distinct countries (and how many of them
+        no longer exist), how many coins are still legal tender (from their cached
+        Numista types; coins of extinct countries are not) how many are commemorative
+        and how many are of each Numista kind of coin (standard circulation, circulating
+        commemorative, non-circulating…), how many coins have no country, and how
+        many coins are in a coincard. Also sums the coins' current values (kept in
+        the collection currency, USD or EUR) and gives the total in euros, converted
+        from dollars with the ECB daily reference rate (cached; null when unavailable),
+        and names the rarest (fixed rarity scale; ties go to the more valuable), oldest
+        (lowest year) and most valuable (current value) coins.
       produces:
       - application/json
       responses:

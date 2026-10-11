@@ -6706,6 +6706,34 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Only coins of countries that no longer exist (USSR, Yugoslavia, Ottoman Empire…)",
+                        "name": "extinct",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "current",
+                            "demonetized"
+                        ],
+                        "type": "string",
+                        "description": "Only collection coins still legal tender (current) or no longer (demonetized), as Numista says of their types",
+                        "name": "circulation",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Only collection coins of commemorative types (true) or of regular ones (false), as Numista says",
+                        "name": "commemorative",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Only collection coins of one Numista kind of coin: standard, circulating-commemorative, non-circulating, or another kind's label (see the summary's classifications)",
+                        "name": "classification",
+                        "in": "query"
+                    },
+                    {
                         "enum": [
                             "common",
                             "uncommon",
@@ -7332,7 +7360,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Counts the user's collection coins (excluding wishlist and sold), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries, how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency, USD or EUR) and gives the total in euros, converted from dollars with the ECB daily reference rate (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins.",
+                "description": "Counts the user's collection coins (excluding wishlist and sold), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many coins are still legal tender (from their cached Numista types; coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency, USD or EUR) and gives the total in euros, converted from dollars with the ECB daily reference rate (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins.",
                 "produces": [
                     "application/json"
                 ],
@@ -9744,6 +9772,64 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handlers.ShipmentEnvelopeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/{id}/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Tells whether one of the user's coins is still legal tender (current) and whether it is commemorative, from its cached Numista type (never asking Numista); coins of countries that no longer exist are not current. A value is null when nobody knows (the coin is not linked to a cached Numista type).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Get a coin's legal tender and commemorative status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Coin ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.CoinStatus"
                         }
                     },
                     "400": {
@@ -20240,6 +20326,18 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "circulation": {
+                    "description": "Circulation set by hand; empty means \"as Numista says\".",
+                    "type": "string",
+                    "maxLength": 30,
+                    "enum": [
+                        "",
+                        "current",
+                        "current_commemorative",
+                        "demonetized",
+                        "demonetized_commemorative"
+                    ]
+                },
                 "country": {
                     "type": "string",
                     "maxLength": 120
@@ -20671,6 +20769,18 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "circulation": {
+                    "description": "Circulation set by hand; empty means \"as Numista says\".",
+                    "type": "string",
+                    "maxLength": 30,
+                    "enum": [
+                        "",
+                        "current",
+                        "current_commemorative",
+                        "demonetized",
+                        "demonetized_commemorative"
+                    ]
+                },
                 "country": {
                     "type": "string",
                     "maxLength": 120
@@ -20844,6 +20954,22 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CollectionClassification": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "key": {
+                    "description": "Key is \"standard\", \"circulating-commemorative\", \"non-circulating\" or,\nfor another kind, its label; it is the coin list's classification filter.",
+                    "type": "string"
+                },
+                "label": {
+                    "description": "Label is Numista's name for it, in the language it was looked up in.",
+                    "type": "string"
+                }
+            }
+        },
         "handlers.CollectionCurrencyRequest": {
             "type": "object",
             "required": [
@@ -20862,11 +20988,28 @@ const docTemplate = `{
         "handlers.CollectionSummaryResponse": {
             "type": "object",
             "properties": {
+                "circulationUnknown": {
+                    "type": "integer"
+                },
+                "classifications": {
+                    "description": "Classifications are Numista's kinds of coin found in the collection,\nthe usual ones first; coins Numista says nothing of are in none.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CollectionClassification"
+                    }
+                },
                 "coincards": {
                     "description": "Coincards counts coins whose presentation is \"coincard\".",
                     "type": "integer"
                 },
                 "coins": {
+                    "type": "integer"
+                },
+                "commemorativeCoins": {
+                    "description": "CommemorativeCoins are of types Numista says commemorate something;\nCommemorativeUnknown are coins it says nothing of.",
+                    "type": "integer"
+                },
+                "commemorativeUnknown": {
                     "type": "integer"
                 },
                 "countries": {
@@ -20880,6 +21023,10 @@ const docTemplate = `{
                         "EUR"
                     ]
                 },
+                "currentCoins": {
+                    "description": "CurrentCoins are still legal tender, as Numista says of their types;\nCirculationUnknown are coins it says nothing of (not linked to Numista).",
+                    "type": "integer"
+                },
                 "exchangeRate": {
                     "description": "ExchangeRate is the latest ECB rate, when available.",
                     "allOf": [
@@ -20887,6 +21034,10 @@ const docTemplate = `{
                             "$ref": "#/definitions/services.ExchangeRate"
                         }
                     ]
+                },
+                "extinctCountries": {
+                    "description": "ExtinctCountries counts the collection's countries that no longer exist\n(USSR, Yugoslavia, Ottoman Empire…); they are among Countries.",
+                    "type": "integer"
                 },
                 "highlights": {
                     "$ref": "#/definitions/repository.CollectionHighlights"
@@ -24298,6 +24449,17 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "circulation": {
+                    "description": "Circulation, when set by hand (see CoinCirculations), says whether the\ncoin is still legal tender and whether it is commemorative, instead of\nwhat Numista says of its type.",
+                    "type": "string",
+                    "enum": [
+                        "",
+                        "current",
+                        "current_commemorative",
+                        "demonetized",
+                        "demonetized_commemorative"
+                    ]
+                },
                 "country": {
                     "description": "Country is the issuing country or authority (e.g. from the Numista issuer).",
                     "type": "string",
@@ -25450,6 +25612,10 @@ const docTemplate = `{
         "models.NumistaCatalogType": {
             "type": "object",
             "properties": {
+                "classification": {
+                    "description": "Classification is Numista's kind of coin (e.g. \"Moedas circulantes\ncomuns\"), in the language asked for.",
+                    "type": "string"
+                },
                 "commemoratedTopic": {
                     "description": "CommemoratedTopic is what a commemorative coin celebrates, in the\nlanguage asked for when Numista has it (e.g. \"O conhecimento\").",
                     "type": "string"
@@ -25459,6 +25625,13 @@ const docTemplate = `{
                 },
                 "currency": {
                     "type": "string"
+                },
+                "demonetizationDate": {
+                    "type": "string"
+                },
+                "demonetized": {
+                    "description": "Demonetized tells whether the type is no longer legal tender (nil\nwhen Numista does not say); DemonetizationDate is when, if known.",
+                    "type": "boolean"
                 },
                 "denomination": {
                     "type": "string"
@@ -27362,6 +27535,30 @@ const docTemplate = `{
                 },
                 "targetType": {
                     "$ref": "#/definitions/models.RecommendationTargetType"
+                }
+            }
+        },
+        "services.CoinStatus": {
+            "type": "object",
+            "properties": {
+                "commemoratedTopic": {
+                    "type": "string"
+                },
+                "commemorative": {
+                    "description": "Commemorative is null when Numista says nothing of the coin.",
+                    "type": "boolean"
+                },
+                "current": {
+                    "description": "Current is null when nobody knows.",
+                    "type": "boolean"
+                },
+                "demonetizationDate": {
+                    "description": "DemonetizationDate is when it stopped being legal tender, if Numista says.",
+                    "type": "string"
+                },
+                "manual": {
+                    "description": "Manual is true when the user set them on the coin (its circulation).",
+                    "type": "boolean"
                 }
             }
         },

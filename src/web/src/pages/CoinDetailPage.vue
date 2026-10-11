@@ -203,7 +203,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCoinsStore } from '@/stores/coins'
 import SellModal from '@/components/SellModal.vue'
@@ -219,7 +219,7 @@ import CoinReferencesSection from '@/components/coin/CoinReferencesSection.vue'
 import CoinMarketValueSection from '@/components/coin/CoinMarketValueSection.vue'
 import RealPhotosModal from '@/components/photos/RealPhotosModal.vue'
 import { coinPhotoDetails } from '@/utils/coinPhotos'
-import { deleteCoin, duplicateCoin, purchaseCoin, sellCoin, swapCoinImageSides } from '@/api/client'
+import { deleteCoin, duplicateCoin, getCoinStatus, purchaseCoin, sellCoin, swapCoinImageSides, type CoinStatus } from '@/api/client'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import { useDialog } from '@/composables/useDialog'
 import { useCoinDetailMetadataRows } from '@/composables/useCoinDetailMetadataRows'
@@ -272,10 +272,23 @@ const {
 const obverseImage = computed(() => coin.value?.images?.find(i => i.imageType === 'obverse') ?? null)
 const reverseImage = computed(() => coin.value?.images?.find(i => i.imageType === 'reverse') ?? null)
 
+// Whether the coin is still legal tender and whether it is commemorative.
+const coinStatus = ref<CoinStatus | null>(null)
+watch(() => coin.value?.id, async (id) => {
+  coinStatus.value = null
+  if (!id) return
+  try {
+    const { data } = await getCoinStatus(id)
+    if (coin.value?.id === id) coinStatus.value = data
+  } catch {
+    // The details show without it.
+  }
+}, { immediate: true })
+
 // T015: Metadata rows
 const metadataRows = computed(() => {
   if (!coin.value) return []
-  return useCoinDetailMetadataRows(coin.value).rows.value
+  return useCoinDetailMetadataRows(coin.value, coinStatus.value).rows.value
 })
 const { refresh: refreshQuickAccess, forget: forgetQuickAccess } = useQuickAccess()
 

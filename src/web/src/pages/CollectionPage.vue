@@ -13,9 +13,17 @@
       <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? t('common.pull.refreshing') : pullDistance >= 60 ? t('common.pull.release') : t('common.pull.pull') }}</span>
     </div>
 
-    <CollectionKpis :summary="summary" @show-coincards="selectedPresentation = 'coincard'" />
+    <CollectionKpis
+      :summary="summary"
+      :current-only="selectedCirculation === 'current'"
+      @show-coincards="selectedPresentation = 'coincard'"
+      @show-extinct="selectCountry(EXTINCT_COUNTRIES)"
+      :commemorative-only="selectedCommemorative === 'true'"
+      @toggle-current="selectedCirculation = selectedCirculation === 'current' ? '' : 'current'"
+      @toggle-commemorative="selectedCommemorative = selectedCommemorative === 'true' ? '' : 'true'"
+    />
     <CollectionHighlights :summary="summary" />
-    <CollectionWorldMap :countries="countryOptions" :selected-country="selectedCountry" @select="selectCountry" />
+    <CollectionWorldMap :countries="countryOptions" :selected-country="selectedCountryName" @select="selectCountry" />
 
     <PwaCollectionHeader
       v-if="isPwa"
@@ -37,9 +45,12 @@
           v-model:group-by="groupBy"
           v-model:layout="layout"
           v-model:country="selectedCountry"
+          v-model:classification="selectedClassification"
           v-model:presentation="selectedPresentation"
           v-model:rarity="selectedRarity"
           :country-options="countryOptions"
+          :extinct-countries="summary?.extinctCountries ?? 0"
+          :classifications="summary?.classifications ?? []"
           :show-layout="viewMode === 'grid'"
           :filling-countries="fillingCountries"
           stacked
@@ -63,9 +74,12 @@
           v-model:group-by="groupBy"
           v-model:layout="layout"
           v-model:country="selectedCountry"
+          v-model:classification="selectedClassification"
           v-model:presentation="selectedPresentation"
           v-model:rarity="selectedRarity"
           :country-options="countryOptions"
+          :extinct-countries="summary?.extinctCountries ?? 0"
+          :classifications="summary?.classifications ?? []"
           :filling-countries="fillingCountries"
         />
       </template>
@@ -94,7 +108,7 @@
       :is-pwa="isPwa"
       :view-mode="viewMode"
       :grid-side="gridSide"
-      :has-filters="!!(search || selectedCategory || selectedEra || selectedTag || selectedCountry || selectedPresentation || selectedRarity)"
+      :has-filters="!!(search || selectedCategory || selectedEra || selectedTag || selectedCountry || selectedPresentation || selectedRarity || selectedCirculation || selectedCommemorative || selectedClassification)"
       :total="store.total"
       :page="page"
       :per-page="COINS_PER_PAGE"
@@ -116,6 +130,9 @@
       @prev="page--"
       @next="page++"
     />
+
+    <!-- Room after the last coins (and the floating button in the app). -->
+    <div :class="isPwa ? 'h-24' : 'h-16'" aria-hidden="true" data-testid="collection-end-space"></div>
 
     <BulkActionBar
       :visible="selectMode && selectedCoinIds.size > 0"
@@ -166,6 +183,7 @@ import BulkTagPickerModal from '@/components/BulkTagPickerModal.vue'
 import BulkLocationPickerModal from '@/components/BulkLocationPickerModal.vue'
 import NeedsAttentionQueue from '@/components/collection/NeedsAttentionQueue.vue'
 import { t } from '@/i18n'
+import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
 
 const store = useCoinsStore()
 const router = useRouter()
@@ -174,7 +192,7 @@ const { refresh: refreshQuickAccess } = useQuickAccess()
 const {
   selectedCategory, search, page, sortKey, selectedTag, userTags,
   selectedEra, eraOptions,
-  selectedCountry, selectedPresentation, selectedRarity, groupBy, countryOptions, fillingCountries,
+  selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, groupBy, countryOptions, fillingCountries,
   fetchUserTags, loadCoins, loadCountryOptions, fillCountriesOnce,
 } = useCollectionFilters()
 
@@ -191,6 +209,9 @@ async function loadSummary() {
   // Countries feed the map and the country filter; they change with the collection too.
   void loadCountryOptions()
 }
+
+// The map names the chosen country; "extinct countries" is not one of its own.
+const selectedCountryName = computed(() => selectedCountry.value === EXTINCT_COUNTRIES ? t('collection.view.extinctCountriesName') : selectedCountry.value)
 
 // Choosing a country on the map filters the gallery and brings the coins into view.
 const coinsAnchor = ref<HTMLElement | null>(null)

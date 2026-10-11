@@ -219,4 +219,8 @@ export default {
     stale: 'Could not refresh; showing the last stored values.',
     viewOnNumista: 'View on Numista',
   },
+  currentCoin: 'Current',
+  demonetizedCoin: 'Demonetized',
+  demonetizedOn: 'Demonetized on {date}',
+  commemorativeCoin: 'Commemorative',
 }

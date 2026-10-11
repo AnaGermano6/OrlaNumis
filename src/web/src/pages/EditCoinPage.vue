@@ -126,7 +126,6 @@ async function handleSubmit() {
   } catch (error: unknown) {
     const code = (error as { response?: { data?: { code?: string } } })?.response?.data?.code
     if (!coinSaved && code === 'slot_occupied') {
-      await coinFormRef.value?.refreshStorageOccupancy()
       await showAlert(t('addCoin.slotTaken'), { title: t('addCoin.slotUnavailable') })
       return
     }

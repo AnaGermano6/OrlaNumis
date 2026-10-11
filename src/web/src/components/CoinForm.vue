@@ -111,6 +111,14 @@
             </select>
           </div>
         </div>
+        <div class="form-group min-w-0">
+          <label class="form-label" for="coin-circulation">{{ t('coinFields.circulation') }}</label>
+          <select id="coin-circulation" v-model="circulationModel" class="form-select" aria-describedby="coin-circulation-hint">
+            <option value="">{{ t('coinForm.circulationAuto') }}</option>
+            <option v-for="option in COIN_CIRCULATIONS" :key="option" :value="option">{{ circulationLabel(option) }}</option>
+          </select>
+          <p id="coin-circulation-hint" class="mt-1 text-chip text-text-muted">{{ t('coinForm.circulationHint') }}</p>
+        </div>
         <div v-if="form.category === 'Roman'" class="form-group min-w-0">
           <label class="form-label">{{ t('coinForm.imperialFigure') }}</label>
           <ImperialFigurePicker v-model="form.romanImperialFigureId!" />
@@ -119,54 +127,6 @@
               <template #link><router-link to="/sets/emperors" class="underline">{{ t('coinForm.emperorTracker') }}</router-link></template>
             </I18nT>
           </p>
-        </div>
-        <div class="form-group min-w-0">
-          <label class="form-label">{{ t('coinFields.storageLocation') }}</label>
-          <select v-model="storageLocationIdModel" class="form-select" :disabled="storageLocationsLoading">
-            <option value="">{{ t('coinForm.storageNone') }}</option>
-            <option
-              v-for="location in storageLocations"
-              :key="location.id"
-              :value="String(location.id)"
-            >
-              {{ location.name }}
-            </option>
-          </select>
-          <p v-if="storageLocationError" class="mt-2 text-body text-text-secondary">{{ storageLocationError }}</p>
-          <div v-if="selectedStorageLocation?.type === 'tray'" class="mt-3">
-            <p class="text-body text-text-secondary">
-              {{ t('coinForm.chooseSlot', { occupied: selectedStorageLocation.occupied, capacity: selectedStorageLocation.capacity }) }}
-            </p>
-            <p v-if="occupancyLoading" class="text-body text-text-muted">{{ t('coinForm.loadingSlots') }}</p>
-            <div
-              v-else-if="trayOccupancy"
-              class="slot-picker"
-              role="grid"
-              :aria-label="t('coinForm.slotsLabel', { name: selectedStorageLocation.name })"
-              :style="{ gridTemplateColumns: `repeat(${trayOccupancy.columns}, minmax(44px, 1fr))` }"
-            >
-              <button
-                v-for="slot in trayOccupancy.capacity"
-                :key="slot"
-                type="button"
-                role="gridcell"
-                class="slot-choice"
-                :class="{ selected: form.storageSlot === slot, occupied: isOccupiedSlot(slot) }"
-                :disabled="isOccupiedSlot(slot)"
-                :aria-label="slotLabel(slot)"
-                :aria-selected="form.storageSlot === slot"
-                @click="form.storageSlot = slot"
-              >
-                <span>{{ slotCoordinates(slot) }}</span>
-                <small>{{ isOccupiedSlot(slot) ? t('coinForm.slotState.occupied') : form.storageSlot === slot ? t('coinForm.slotState.selected') : t('coinForm.slotState.available') }}</small>
-              </button>
-            </div>
-            <p v-if="occupancyError" class="mt-2 text-body text-text-secondary">
-              {{ occupancyError }}
-              <button type="button" class="btn btn-xs btn-secondary" @click="loadOccupancy">{{ t('common.retry') }}</button>
-            </p>
-            <p v-if="slotValidationError" class="mt-2 text-body text-text-secondary" role="alert">{{ slotValidationError }}</p>
-          </div>
         </div>
       </fieldset>
 
@@ -338,8 +298,8 @@
 <script setup lang="ts">
 import { BaseToggle } from '@/components/ui'
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-import { getStorageLocations, getStorageLocationOccupancy, getMintLocations, type MintLocationsResponse } from '@/api/client'
-import type { Coin, StorageLocation, MintLocation, TrayOccupancy } from '@/types'
+import { getMintLocations, type MintLocationsResponse } from '@/api/client'
+import type { Coin, MintLocation } from '@/types'
 import AutocompleteInput from '@/components/AutocompleteInput.vue'
 import ImperialFigurePicker from '@/components/ImperialFigurePicker.vue'
 import CreateMintModal from '@/components/CreateMintModal.vue'
@@ -351,7 +311,7 @@ import I18nT from '@/components/I18nT.vue'
 import { materialLabel } from '@/utils/format'
 import { t } from '@/i18n'
 import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
-import { COIN_PRESENTATIONS, COIN_RARITIES, deriveCoinYear, presentationLabel, rarityLabel } from '@/utils/coinAttributes'
+import { COIN_CIRCULATIONS, COIN_PRESENTATIONS, COIN_RARITIES, circulationLabel, deriveCoinYear, presentationLabel, rarityLabel } from '@/utils/coinAttributes'
 import { formatNumistaYear } from '@/utils/numistaCatalog'
 import { collectionCurrencySymbol } from '@/utils/collectionCurrency'
 
@@ -377,6 +337,10 @@ const countryModel = computed({
 const presentationModel = computed({
   get: () => props.form.presentation ?? '',
   set: (value: string) => { props.form.presentation = value },
+})
+const circulationModel = computed({
+  get: () => props.form.circulation ?? '',
+  set: (value: string) => { props.form.circulation = value },
 })
 const rarityModel = computed({
   get: () => props.form.rarity ?? '',
@@ -407,79 +371,9 @@ const reverseInput = ref<HTMLInputElement | null>(null)
 const cardInput = ref<HTMLInputElement | null>(null)
 const removedObverseId = ref<number | null>(null)
 const removedReverseId = ref<number | null>(null)
-const storageLocations = ref<StorageLocation[]>([])
-const storageLocationsLoading = ref(false)
-const storageLocationError = ref('')
-const trayOccupancy = ref<TrayOccupancy | null>(null)
-const occupancyLoading = ref(false)
-const occupancyError = ref('')
-const slotValidationError = ref('')
-const selectedStorageLocation = computed(() =>
-  storageLocations.value.find((location) => location.id === props.form.storageLocationId) ?? null
-)
-
-const storageLocationIdModel = computed({
-  get: () => props.form.storageLocationId == null ? '' : String(props.form.storageLocationId),
-  set: (value: string) => {
-    const next = value === '' ? null : Number(value)
-    if (props.form.storageLocationId !== next) {
-      props.form.storageSlot = null
-      trayOccupancy.value = null
-      slotValidationError.value = ''
-    }
-    props.form.storageLocationId = next
-  },
-})
-
-async function loadOccupancy() {
-  const location = selectedStorageLocation.value
-  if (!location || location.type !== 'tray') {
-    trayOccupancy.value = null
-    return
-  }
-  occupancyLoading.value = true
-  occupancyError.value = ''
-  try {
-    const response = await getStorageLocationOccupancy(location.id, props.coinId)
-    trayOccupancy.value = response.data
-  } catch {
-    trayOccupancy.value = null
-    occupancyError.value = t('coinForm.occupancyFailed')
-  } finally {
-    occupancyLoading.value = false
-  }
-}
-
-function isOccupiedSlot(slot: number): boolean {
-  return trayOccupancy.value?.occupiedSlots.includes(slot) === true &&
-    trayOccupancy.value.currentCoinSlot !== slot
-}
-
-function slotCoordinates(slot: number): string {
-  const columns = trayOccupancy.value?.columns ?? 1
-  return `${Math.floor((slot - 1) / columns) + 1},${((slot - 1) % columns) + 1}`
-}
-
-function slotLabel(slot: number): string {
-  const state = isOccupiedSlot(slot)
-    ? t('coinForm.slotStateLower.occupied')
-    : props.form.storageSlot === slot ? t('coinForm.slotStateLower.selected') : t('coinForm.slotStateLower.available')
-  const [row = '', column = ''] = slotCoordinates(slot).split(',')
-  return t('coinForm.slotLabel', { row, column, state })
-}
-
 function handleSubmit() {
-  if (selectedStorageLocation.value?.type === 'tray' && props.form.storageSlot == null) {
-    slotValidationError.value = t('coinForm.chooseSlotBeforeSave')
-    return
-  }
-  slotValidationError.value = ''
   emit('submit')
 }
-
-watch(() => props.form.storageLocationId, () => {
-  void loadOccupancy()
-})
 
 const mintLocations = ref<MintLocation[]>([])
 const mintLocationsLoading = ref(false)
@@ -546,19 +440,6 @@ watch(() => props.form.category, (category) => {
 onMounted(async () => {
   // Load coin property options from settings
   loadOptions()
-  
-  // Load storage locations
-  storageLocationsLoading.value = true
-  try {
-    const res = await getStorageLocations()
-    storageLocations.value = res.data?.storageLocations ?? []
-    await loadOccupancy()
-  } catch {
-    storageLocations.value = []
-    storageLocationError.value = t('coinForm.storageUnavailable')
-  } finally {
-    storageLocationsLoading.value = false
-  }
 
   loadMintLocations()
 })
@@ -637,48 +518,5 @@ defineExpose({
   cardFile,
   removedObverseId,
   removedReverseId,
-  refreshStorageOccupancy: loadOccupancy,
 })
 </script>
-
-<style scoped>
-.slot-picker {
-  display: grid;
-  gap: 0.35rem;
-  max-width: 100%;
-  overflow-x: auto;
-  padding: 0.35rem;
-}
-
-.slot-choice {
-  min-width: 44px;
-  min-height: 44px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--bg-input);
-  color: var(--text-primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.slot-choice small {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.slot-choice.selected {
-  border-color: var(--accent-gold);
-  background: var(--accent-gold-dim);
-}
-
-.slot-choice.occupied {
-  opacity: 0.55;
-}
-
-.slot-choice:focus-visible {
-  outline: 2px solid var(--accent-gold);
-  outline-offset: 2px;
-}
-</style>

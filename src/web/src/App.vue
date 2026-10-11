@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen">
+  <div class="flex min-h-screen flex-col">
     <!-- Nav bar — brand + hamburger for both desktop and PWA -->
     <nav v-if="auth.isAuthenticated && !immersive" class="fixed inset-x-0 top-0 z-[100] border-b border-border-subtle bg-surface/95 backdrop-blur-md">
       <div class="mx-auto flex h-[60px] max-w-[1200px] items-center justify-between gap-2 px-4">
@@ -139,13 +139,15 @@
       </aside>
     </Transition>
 
-    <main class="min-h-screen" :class="{ 'pt-[76px]': auth.isAuthenticated && !immersive }">
+    <main class="flex-1" :class="{ 'pt-[76px]': auth.isAuthenticated && !immersive }">
       <div v-if="auth.isAuthenticated && notificationError" class="container mb-4 flex items-center justify-between gap-3" role="status">
         <span class="text-chip text-text-secondary">{{ notificationError }}</span>
         <button class="btn btn-secondary btn-sm" @click="refreshNotifications">{{ t('common.retry') }}</button>
       </div>
       <router-view />
     </main>
+
+    <AppFooter v-if="!immersive" />
 
     <Teleport to="body">
       <!-- PWA floating agent button -->
@@ -213,6 +215,7 @@ import { useBulkSelect } from '@/composables/useBulkSelect'
 import { usePwa } from '@/composables/usePwa'
 import { useImmersiveShell } from '@/composables/useImmersiveShell'
 import CoinSearchChat from '@/components/CoinSearchChat.vue'
+import AppFooter from '@/components/AppFooter.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import AppToasts from '@/components/AppToasts.vue'
 import PwaInstallPrompt from '@/components/PwaInstallPrompt.vue'

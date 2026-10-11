@@ -56,7 +56,11 @@ type Coin struct {
 	// Presentation is how the coin is kept or was issued (see CoinPresentations).
 	Presentation string `gorm:"type:varchar(20);default:''" json:"presentation"`
 	// Rarity is a fixed scale (see CoinRarities). RarityRating is a legacy free-text field.
-	Rarity                string        `gorm:"type:varchar(20);default:''" json:"rarity"`
+	Rarity string `gorm:"type:varchar(20);default:''" json:"rarity"`
+	// Circulation, when set by hand (see CoinCirculations), says whether the
+	// coin is still legal tender and whether it is commemorative, instead of
+	// what Numista says of its type.
+	Circulation           string        `gorm:"type:varchar(30);default:''" json:"circulation" enums:",current,current_commemorative,demonetized,demonetized_commemorative"`
 	Mint                  string        `json:"mint" binding:"max=200"`
 	MintLocationID        *uint         `json:"mintLocationId"`
 	MintLocation          *MintLocation `gorm:"foreignKey:MintLocationID;constraint:-" json:"mintLocation"`

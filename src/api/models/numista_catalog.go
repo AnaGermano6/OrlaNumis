@@ -70,21 +70,28 @@ type NumistaCatalogType struct {
 	Currency  string   `json:"currency,omitempty"`
 	// CommemoratedTopic is what a commemorative coin celebrates, in the
 	// language asked for when Numista has it (e.g. "O conhecimento").
-	CommemoratedTopic string                    `json:"commemoratedTopic,omitempty"`
-	Series            string                    `json:"series,omitempty"`
-	Rulers            []string                  `json:"rulers"`
-	Composition       string                    `json:"composition,omitempty"`
-	Technique         string                    `json:"technique,omitempty"`
-	WeightGrams       *float64                  `json:"weightGrams,omitempty"`
-	DiameterMm        *float64                  `json:"diameterMm,omitempty"`
-	ThicknessMm       *float64                  `json:"thicknessMm,omitempty"`
-	Shape             string                    `json:"shape,omitempty"`
-	Mints             []string                  `json:"mints"`
-	Obverse           NumistaCatalogSide        `json:"obverse"`
-	Reverse           NumistaCatalogSide        `json:"reverse"`
-	Edge              NumistaCatalogSide        `json:"edge"`
-	References        []NumistaCatalogReference `json:"references"`
-	Photos            []NumistaCatalogPhoto     `json:"photos"`
+	CommemoratedTopic string `json:"commemoratedTopic,omitempty"`
+	Series            string `json:"series,omitempty"`
+	// Classification is Numista's kind of coin (e.g. "Moedas circulantes
+	// comuns"), in the language asked for.
+	Classification string `json:"classification,omitempty"`
+	// Demonetized tells whether the type is no longer legal tender (nil
+	// when Numista does not say); DemonetizationDate is when, if known.
+	Demonetized        *bool                     `json:"demonetized,omitempty"`
+	DemonetizationDate string                    `json:"demonetizationDate,omitempty"`
+	Rulers             []string                  `json:"rulers"`
+	Composition        string                    `json:"composition,omitempty"`
+	Technique          string                    `json:"technique,omitempty"`
+	WeightGrams        *float64                  `json:"weightGrams,omitempty"`
+	DiameterMm         *float64                  `json:"diameterMm,omitempty"`
+	ThicknessMm        *float64                  `json:"thicknessMm,omitempty"`
+	Shape              string                    `json:"shape,omitempty"`
+	Mints              []string                  `json:"mints"`
+	Obverse            NumistaCatalogSide        `json:"obverse"`
+	Reverse            NumistaCatalogSide        `json:"reverse"`
+	Edge               NumistaCatalogSide        `json:"edge"`
+	References         []NumistaCatalogReference `json:"references"`
+	Photos             []NumistaCatalogPhoto     `json:"photos"`
 }
 
 // NumistaCatalogTypeResult is a catalogue type with its issues.
