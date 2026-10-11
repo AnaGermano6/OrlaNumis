@@ -42,6 +42,26 @@ func TestCreateCoin_RejectsUnknownPresentationAndRarity(t *testing.T) {
 	}
 }
 
+func TestCreateCoin_KeepsACirculationSetByHandAndRejectsUnknownOnes(t *testing.T) {
+	db := setupTestDB(t)
+	svc := newTestCoinService(db)
+
+	coin := &models.Coin{Name: "2 Euros", Category: models.CategoryModern, UserID: 1, Circulation: " current_commemorative "}
+	if err := svc.CreateCoin(coin); err != nil {
+		t.Fatalf("CreateCoin: %v", err)
+	}
+	var found models.Coin
+	db.First(&found, coin.ID)
+	if found.Circulation != "current_commemorative" {
+		t.Fatalf("circulation = %q", found.Circulation)
+	}
+
+	err := svc.CreateCoin(&models.Coin{Name: "C", Category: models.CategoryModern, UserID: 1, Circulation: "legal"})
+	if !errors.Is(err, ErrCoinInvalidCirculation) {
+		t.Fatalf("circulation: %v", err)
+	}
+}
+
 func TestUpdateCoin_RecomputesYearWhenTheDateChanges(t *testing.T) {
 	db := setupTestDB(t)
 	svc := newTestCoinService(db)

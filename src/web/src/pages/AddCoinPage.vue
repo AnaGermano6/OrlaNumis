@@ -301,6 +301,7 @@ function createEmptyForm(category: Category, material: Material): Partial<Coin> 
     country: '',
     presentation: '',
     rarity: '',
+    circulation: '',
     weightGrams: undefined,
     diameterMm: undefined,
     grade: '',
@@ -446,6 +447,7 @@ function buildCoinPayload(source: Partial<Coin>): CoinMutationPayload {
     country: source.country?.trim() || undefined,
     presentation: source.presentation || undefined,
     rarity: source.rarity || undefined,
+    circulation: source.circulation || undefined,
     obverseInscription: source.obverseInscription?.trim() || undefined,
     reverseInscription: source.reverseInscription?.trim() || undefined,
     obverseDescription: source.obverseDescription?.trim() || undefined,
@@ -646,7 +648,6 @@ async function handleManualSubmit() {
     if (savedCoinId.value !== null) {
       saveCompletionError.value = apiErrorMessage(error, t('addCoin.imageOrCardFailed'))
     } else if (code === 'slot_occupied') {
-      await coinFormRef.value?.refreshStorageOccupancy()
       await showAlert(t('addCoin.slotTaken'), { title: t('addCoin.slotUnavailable') })
     } else {
       await showAlert(apiErrorMessage(error, t('addCoin.addFailed')), { title: t('common.error') })

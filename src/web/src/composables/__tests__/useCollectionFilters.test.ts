@@ -3,11 +3,13 @@ import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { COIN_ERAS } from '@/types'
-import { getCoinOptions, getSets, getTags } from '@/api/client'
+import { getCoinOptions, getCoins, getSets, getTags } from '@/api/client'
+import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
 import { resetCoinVocabulary } from '@/i18n/coinVocabulary'
 import { useCollectionFilters } from '../useCollectionFilters'
 
 vi.mock('@/api/client', () => ({
+  getCoins: vi.fn(),
   getCoinOptions: vi.fn(),
   getSets: vi.fn(),
   getTags: vi.fn(),
@@ -65,6 +67,37 @@ describe('useCollectionFilters', () => {
       },
     ])
     expect(filters.eraOptions.value).toEqual(COIN_ERAS)
+    wrapper.unmount()
+  })
+
+  it('asks for the coins of every extinct country rather than one country', async () => {
+    vi.mocked(getCoins).mockResolvedValue({ data: { coins: [], total: 0 } } as unknown as Awaited<ReturnType<typeof getCoins>>)
+    let filters!: ReturnType<typeof useCollectionFilters>
+    const wrapper = mount(defineComponent({
+      setup() {
+        filters = useCollectionFilters()
+        return () => h('div')
+      },
+    }))
+
+    filters.selectedCountry.value = EXTINCT_COUNTRIES
+    await vi.waitFor(() => expect(getCoins).toHaveBeenCalled())
+    expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ extinct: 'true', country: undefined })
+
+    filters.selectedCountry.value = 'Portugal'
+    await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ country: 'Portugal', extinct: undefined }))
+
+    // The legal tender filter goes to the server as is.
+    filters.selectedCirculation.value = 'current'
+    await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ circulation: 'current', country: 'Portugal' }))
+
+    // So does the commemorative one, together with the others.
+    filters.selectedCommemorative.value = 'true'
+    await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ commemorative: 'true', circulation: 'current' }))
+
+    // And the Numista kind of coin.
+    filters.selectedClassification.value = 'non-circulating'
+    await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ classification: 'non-circulating', commemorative: 'true' }))
     wrapper.unmount()
   })
 

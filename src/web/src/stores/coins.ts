@@ -22,6 +22,12 @@ export const useCoinsStore = defineStore('coins', () => {
   const selectedCountry = ref('')
   const selectedPresentation = ref('')
   const selectedRarity = ref('')
+  /** '', 'current' or 'demonetized'. */
+  const selectedCirculation = ref('')
+  /** '', 'true' (commemorative) or 'false'. */
+  const selectedCommemorative = ref('')
+  /** '' or a Numista kind of coin (CollectionClassification key). */
+  const selectedClassification = ref('')
   /** True when a grouped view hit ALL_COINS_LIMIT and shows only part of the collection. */
   const truncated = ref(false)
   let allCoinsGeneration = 0
@@ -33,6 +39,10 @@ export const useCoinsStore = defineStore('coins', () => {
     category?: string
     era?: string
     country?: string
+    extinct?: string
+    circulation?: string
+    commemorative?: string
+    classification?: string
     presentation?: string
     rarity?: string
     search?: string
@@ -158,6 +168,9 @@ export const useCoinsStore = defineStore('coins', () => {
     selectedCountry,
     selectedPresentation,
     selectedRarity,
+    selectedCirculation,
+    selectedCommemorative,
+    selectedClassification,
     truncated,
     fetchAllCoins,
     collectionHealth,

@@ -22,10 +22,12 @@ type CoinCreateRequest struct {
 	Era                   models.Era      `json:"era" binding:"omitempty,max=64"`
 	DateRange             string          `json:"dateRange" binding:"max=200"`
 	// Year is the coin's year (negative for BC); when omitted it is read from dateRange.
-	Year               *int            `json:"year" binding:"omitempty,min=-5000,max=3000"`
-	Country            string          `json:"country" binding:"max=120"`
-	Presentation       string          `json:"presentation" binding:"max=20" enums:"loose,coincard,capsule,flip,proof_set,blister,slab"`
-	Rarity             string          `json:"rarity" binding:"max=20" enums:"common,uncommon,scarce,rare,very_rare,extremely_rare"`
+	Year         *int   `json:"year" binding:"omitempty,min=-5000,max=3000"`
+	Country      string `json:"country" binding:"max=120"`
+	Presentation string `json:"presentation" binding:"max=20" enums:"loose,coincard,capsule,flip,proof_set,blister,slab"`
+	Rarity       string `json:"rarity" binding:"max=20" enums:"common,uncommon,scarce,rare,very_rare,extremely_rare"`
+	// Circulation set by hand; empty means "as Numista says".
+	Circulation        string          `json:"circulation" binding:"max=30" enums:",current,current_commemorative,demonetized,demonetized_commemorative"`
 	Mint               string          `json:"mint" binding:"max=200"`
 	MintLocationID     *uint           `json:"mintLocationId"`
 	Material           models.Material `json:"material"`
@@ -67,10 +69,12 @@ type CoinUpdateRequest struct {
 	Era                   *models.Era      `json:"era" binding:"omitempty,max=64"`
 	DateRange             *string          `json:"dateRange" binding:"omitempty,max=200"`
 	// Year (negative for BC); null means "read it from dateRange".
-	Year               *int             `json:"year" binding:"omitempty,min=-5000,max=3000"`
-	Country            *string          `json:"country" binding:"omitempty,max=120"`
-	Presentation       *string          `json:"presentation" binding:"omitempty,max=20" enums:"loose,coincard,capsule,flip,proof_set,blister,slab"`
-	Rarity             *string          `json:"rarity" binding:"omitempty,max=20" enums:"common,uncommon,scarce,rare,very_rare,extremely_rare"`
+	Year         *int    `json:"year" binding:"omitempty,min=-5000,max=3000"`
+	Country      *string `json:"country" binding:"omitempty,max=120"`
+	Presentation *string `json:"presentation" binding:"omitempty,max=20" enums:"loose,coincard,capsule,flip,proof_set,blister,slab"`
+	Rarity       *string `json:"rarity" binding:"omitempty,max=20" enums:"common,uncommon,scarce,rare,very_rare,extremely_rare"`
+	// Circulation set by hand; empty means "as Numista says".
+	Circulation        *string          `json:"circulation" binding:"omitempty,max=30" enums:",current,current_commemorative,demonetized,demonetized_commemorative"`
 	Mint               *string          `json:"mint" binding:"omitempty,max=200"`
 	MintLocationID     *uint            `json:"mintLocationId"`
 	Material           *models.Material `json:"material"`
@@ -120,6 +124,7 @@ func (r CoinCreateRequest) toCoin(userID uint) models.Coin {
 		Country:               r.Country,
 		Presentation:          r.Presentation,
 		Rarity:                r.Rarity,
+		Circulation:           r.Circulation,
 		Mint:                  r.Mint,
 		MintLocationID:        r.MintLocationID,
 		Material:              r.Material,
@@ -250,6 +255,10 @@ func (r CoinUpdateRequest) toCoin(existing *models.Coin, storageLocationProvided
 	if r.Presentation != nil {
 		updates.Presentation = *r.Presentation
 		updateFields = append(updateFields, "Presentation")
+	}
+	if r.Circulation != nil {
+		updates.Circulation = *r.Circulation
+		updateFields = append(updateFields, "Circulation")
 	}
 	if r.Rarity != nil {
 		updates.Rarity = *r.Rarity

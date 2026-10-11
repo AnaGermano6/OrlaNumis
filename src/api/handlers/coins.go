@@ -59,6 +59,14 @@ type CoinHandler struct {
 	shipmentSvc *services.ShipmentService
 	logger      *services.Logger
 	settingsSvc *services.SettingsService
+	circulation *services.CoinCirculationService
+}
+
+// WithCirculation lets the coin list keep only coins still legal tender (or
+// only demonetized ones).
+func (h *CoinHandler) WithCirculation(circulation *services.CoinCirculationService) *CoinHandler {
+	h.circulation = circulation
+	return h
 }
 
 func NewCoinHandler(repo *repository.CoinRepository, svc *services.CoinService, logger *services.Logger) *CoinHandler {
@@ -226,6 +234,10 @@ type ShipmentAttachRequest struct {
 //	@Param			era			query		string	false	"Filter by era (ancient, medieval, modern)"
 //	@Param			country		query		string	false	"Filter by country (exact)"
 //	@Param			presentation	query	string	false	"Filter by presentation"	Enums(loose, coincard, capsule, flip, proof_set, blister, slab)
+//	@Param			extinct			query	bool	false	"Only coins of countries that no longer exist (USSR, Yugoslavia, Ottoman Empire…)"
+//	@Param			circulation		query	string	false	"Only collection coins still legal tender (current) or no longer (demonetized), as Numista says of their types"	Enums(current, demonetized)
+//	@Param			commemorative	query	bool	false	"Only collection coins of commemorative types (true) or of regular ones (false), as Numista says"
+//	@Param			classification	query	string	false	"Only collection coins of one Numista kind of coin: standard, circulating-commemorative, non-circulating, or another kind's label (see the summary's classifications)"
 //	@Param			rarity		query		string	false	"Filter by rarity"	Enums(common, uncommon, scarce, rare, very_rare, extremely_rare)
 //	@Param			search		query		string	false	"Search across name, denomination, ruler, era, mint, inscriptions, notes"
 //	@Param			wishlist	query		string	false	"Filter by wishlist status"	Enums(true, false)
@@ -323,6 +335,46 @@ func (h *CoinHandler) List(c *gin.Context) {
 		v := false
 		filters.Sold = &v
 	}
+	circulation, commemorative, classification := c.Query("circulation"), c.Query("commemorative"), strings.TrimSpace(c.Query("classification"))
+	if (circulation != "" && circulation != "current" && circulation != "demonetized") || (commemorative != "" && commemorative != "true" && commemorative != "false") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "circulation must be 'current' or 'demonetized', commemorative 'true' or 'false'"})
+		return
+	}
+	if (circulation != "" || commemorative != "" || classification != "") && h.circulation != nil {
+		sorted, err := h.circulation.Classify(userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch coins"})
+			return
+		}
+		switch circulation {
+		case "current":
+			filters.IDs = sorted.Current
+		case "demonetized":
+			filters.IDs = sorted.Demonetized
+		}
+		switch commemorative {
+		case "true":
+			filters.IDs = intersectIDs(filters.IDs, sorted.Commemorative)
+		case "false":
+			filters.IDs = intersectIDs(filters.IDs, sorted.Regular)
+		}
+		if classification != "" {
+			filters.IDs = intersectIDs(filters.IDs, sorted.ClassificationCoins(classification))
+		}
+	}
+	if c.Query("extinct") == "true" {
+		countries, err := h.repo.DistinctCountries(userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch coins"})
+			return
+		}
+		filters.Countries = []string{}
+		for _, country := range countries {
+			if services.IsExtinctCountry(country) {
+				filters.Countries = append(filters.Countries, country)
+			}
+		}
+	}
 	if t := c.Query("tag"); t != "" {
 		if tagID, err := strconv.ParseUint(t, 10, strconv.IntSize); err == nil {
 			v := uint(tagID)
@@ -383,6 +435,43 @@ func (h *CoinHandler) Get(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, coin)
+}
+
+// Status tells whether a coin is still legal tender and whether it is
+// commemorative.
+//
+//	@Summary		Get a coin's legal tender and commemorative status
+//	@Description	Tells whether one of the user's coins is still legal tender (current) and whether it is commemorative, from its cached Numista type (never asking Numista); coins of countries that no longer exist are not current. A value is null when nobody knows (the coin is not linked to a cached Numista type).
+//	@Tags			Coins
+//	@Produce		json
+//	@Param			id	path		int	true	"Coin ID"
+//	@Success		200	{object}	services.CoinStatus
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		401	{object}	ErrorResponse
+//	@Failure		404	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/coins/{id}/status [get]
+func (h *CoinHandler) Status(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid coin ID"})
+		return
+	}
+	coin, err := h.repo.FindByID(uint(id), c.GetUint("userId"))
+	if err != nil {
+		if repository.IsRecordNotFound(err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Coin not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch coin"})
+		return
+	}
+	if h.circulation == nil {
+		c.JSON(http.StatusOK, services.CoinStatus{})
+		return
+	}
+	c.JSON(http.StatusOK, h.circulation.Status(coin))
 }
 
 // Create adds a new coin for the authenticated user.
@@ -919,7 +1008,8 @@ func handleCoinMutationError(c *gin.Context, err error) bool {
 		errors.Is(err, services.ErrCoinInvalidEra),
 		errors.Is(err, services.ErrCoinInvalidCategory),
 		errors.Is(err, services.ErrCoinInvalidPresentation),
-		errors.Is(err, services.ErrCoinInvalidRarity):
+		errors.Is(err, services.ErrCoinInvalidRarity),
+		errors.Is(err, services.ErrCoinInvalidCirculation):
 		respondError(c, http.StatusBadRequest, err.Error(), err)
 		return true
 	case errors.Is(err, services.ErrStorageSlotRequired),
@@ -945,4 +1035,22 @@ func handleCoinMutationError(c *gin.Context, err error) bool {
 	default:
 		return false
 	}
+}
+
+// intersectIDs keeps the IDs in both lists; a nil first list stands for every coin.
+func intersectIDs(ids, keep []uint) []uint {
+	if ids == nil {
+		return keep
+	}
+	allowed := map[uint]bool{}
+	for _, id := range keep {
+		allowed[id] = true
+	}
+	both := []uint{}
+	for _, id := range ids {
+		if allowed[id] {
+			both = append(both, id)
+		}
+	}
+	return both
 }

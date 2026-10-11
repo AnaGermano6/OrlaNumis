@@ -33,6 +33,8 @@ export interface Coin {
   presentation?: string
   /** Fixed rarity scale (see COIN_RARITIES); rarityRating is a legacy free-text field. */
   rarity?: string
+  /** Circulation set by hand (see COIN_CIRCULATIONS); empty means "as Numista says". */
+  circulation?: string
   purchasePrice: number | null
   currentValue: number | null
   purchaseDate: string | null

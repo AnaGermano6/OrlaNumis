@@ -3,13 +3,34 @@
 
 import { computed } from 'vue'
 import type { Coin, CoinDetailMetadataRow } from '@/types'
+import type { CoinStatus } from '@/api/client'
 import { formatCurrency, materialLabel } from '@/utils/format'
 import { sanitizeExternalUrl } from '@/composables/useSafeExternalLink'
 import { intlLocale, t } from '@/i18n'
 import { eraLabel } from '@/i18n/coinVocabulary'
 import { presentationLabel, rarityLabel } from '@/utils/coinAttributes'
 
-export function useCoinDetailMetadataRows(coin: Coin | null) {
+// "Corrente · Comemorativa", "Desmonetizada em 28/02/2002"…; '' when nothing is known.
+function statusValue(status: CoinStatus | null | undefined): string {
+  if (!status) return ''
+  const parts: string[] = []
+  if (status.current === true) parts.push(t('coinDetail.currentCoin'))
+  if (status.current === false) {
+    const date = formatDemonetizationDate(status.demonetizationDate)
+    parts.push(date ? t('coinDetail.demonetizedOn', { date }) : t('coinDetail.demonetizedCoin'))
+  }
+  if (status.commemorative) parts.push(t('coinDetail.commemorativeCoin'))
+  return parts.join(' · ')
+}
+
+function formatDemonetizationDate(value: string | undefined): string {
+  if (!value) return ''
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
+  const date = new Date(`${value}T00:00:00Z`)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(intlLocale(), { timeZone: 'UTC' })
+}
+
+export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus | null) {
   const rows = computed<CoinDetailMetadataRow[]>(() => {
     if (!coin) return []
 
@@ -57,11 +78,10 @@ export function useCoinDetailMetadataRows(coin: Coin | null) {
       })
     }
 
-    result.push({
-      key: 'storageLocation',
-      label: t('coinFields.storageLocation'),
-      value: coin.storageLocation?.name ?? '—',
-    })
+    const circulation = statusValue(status)
+    if (circulation) {
+      result.push({ key: 'circulation', label: t('coinFields.circulation'), value: circulation })
+    }
 
     if (coin.country) {
       result.push({ key: 'country', label: t('coinFields.country'), value: coin.country })

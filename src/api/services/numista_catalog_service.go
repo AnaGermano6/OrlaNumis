@@ -396,6 +396,37 @@ func (s *NumistaCatalogService) cachedTypeDetail(typeID int, langs ...string) *m
 	return nil
 }
 
+// NumistaTypeFacts is what a cached Numista type says of its coins.
+type NumistaTypeFacts struct {
+	// Demonetized is nil when Numista does not say; DemonetizationDate is
+	// when, if known.
+	Demonetized        *bool
+	DemonetizationDate string
+	// Commemorative types celebrate something: CommemoratedTopic, as Numista
+	// names it.
+	Commemorative     bool
+	CommemoratedTopic string
+	// Classification is Numista's kind of coin, as written in the cache.
+	Classification string
+}
+
+// CachedTypeFacts tells what a type Numista already described (and the app
+// cached) says of its coins; ok is false when it is not cached. It never asks
+// Numista.
+func (s *NumistaCatalogService) CachedTypeFacts(typeID int) (facts NumistaTypeFacts, ok bool) {
+	detail := s.cachedTypeDetail(typeID)
+	if detail == nil {
+		return NumistaTypeFacts{}, false
+	}
+	return NumistaTypeFacts{
+		Demonetized:        detail.Demonetized,
+		DemonetizationDate: detail.DemonetizationDate,
+		Commemorative:      strings.TrimSpace(detail.CommemoratedTopic) != "",
+		CommemoratedTopic:  strings.TrimSpace(detail.CommemoratedTopic),
+		Classification:     detail.Classification,
+	}, true
+}
+
 // mintPhoto returns the photos of a coin by the mint of its issuer, or nil.
 func (s *NumistaCatalogService) mintPhoto(ctx context.Context, issuer models.NumistaCatalogIssuer, query MintPhotoQuery, ok bool) (MintPhotoSource, *MintPhoto) {
 	mint := mintSourceFor(s.mints, issuer.Code, issuer.Name)
@@ -463,12 +494,17 @@ type providerCatalogType struct {
 	Mints     []struct {
 		Name string `json:"name"`
 	} `json:"mints"`
-	Series            string              `json:"series"`
-	CommemoratedTopic string              `json:"commemorated_topic"`
-	Obverse           providerCatalogSide `json:"obverse"`
-	Reverse           providerCatalogSide `json:"reverse"`
-	Edge              providerCatalogSide `json:"edge"`
-	References        []struct {
+	Series            string `json:"series"`
+	Type              string `json:"type"`
+	CommemoratedTopic string `json:"commemorated_topic"`
+	Demonetization    struct {
+		IsDemonetized *bool  `json:"is_demonetized"`
+		Date          string `json:"demonetization_date"`
+	} `json:"demonetization"`
+	Obverse    providerCatalogSide `json:"obverse"`
+	Reverse    providerCatalogSide `json:"reverse"`
+	Edge       providerCatalogSide `json:"edge"`
+	References []struct {
 		Catalogue struct {
 			Code string `json:"code"`
 		} `json:"catalogue"`
@@ -486,30 +522,33 @@ func parseNumistaCatalogType(body []byte) (*models.NumistaCatalogType, error) {
 		return nil, err
 	}
 	detail := &models.NumistaCatalogType{
-		ID:                raw.ID,
-		URL:               canonical,
-		Title:             strings.TrimSpace(raw.Title),
-		Issuer:            models.NumistaCatalogIssuer{Code: raw.Issuer.Code, Name: strings.TrimSpace(raw.Issuer.Name)},
-		MinYear:           raw.MinYear,
-		MaxYear:           raw.MaxYear,
-		Denomination:      strings.TrimSpace(raw.Value.Text),
-		FaceValue:         positive(raw.Value.NumericValue),
-		Currency:          strings.TrimSpace(raw.Value.Currency.Name),
-		CommemoratedTopic: strings.TrimSpace(raw.CommemoratedTopic),
-		Series:            strings.TrimSpace(raw.Series),
-		Rulers:            []string{},
-		Composition:       strings.TrimSpace(raw.Composition.Text),
-		Technique:         strings.TrimSpace(raw.Technique.Text),
-		WeightGrams:       positive(raw.Weight),
-		DiameterMm:        positive(raw.Size),
-		ThicknessMm:       positive(raw.Thickness),
-		Shape:             strings.TrimSpace(raw.Shape),
-		Mints:             []string{},
-		Obverse:           catalogSide(raw.Obverse),
-		Reverse:           catalogSide(raw.Reverse),
-		Edge:              catalogSide(raw.Edge),
-		References:        []models.NumistaCatalogReference{},
-		Photos:            []models.NumistaCatalogPhoto{},
+		ID:                 raw.ID,
+		URL:                canonical,
+		Title:              strings.TrimSpace(raw.Title),
+		Issuer:             models.NumistaCatalogIssuer{Code: raw.Issuer.Code, Name: strings.TrimSpace(raw.Issuer.Name)},
+		MinYear:            raw.MinYear,
+		MaxYear:            raw.MaxYear,
+		Denomination:       strings.TrimSpace(raw.Value.Text),
+		FaceValue:          positive(raw.Value.NumericValue),
+		Currency:           strings.TrimSpace(raw.Value.Currency.Name),
+		CommemoratedTopic:  strings.TrimSpace(raw.CommemoratedTopic),
+		Classification:     strings.TrimSpace(raw.Type),
+		Demonetized:        raw.Demonetization.IsDemonetized,
+		DemonetizationDate: strings.TrimSpace(raw.Demonetization.Date),
+		Series:             strings.TrimSpace(raw.Series),
+		Rulers:             []string{},
+		Composition:        strings.TrimSpace(raw.Composition.Text),
+		Technique:          strings.TrimSpace(raw.Technique.Text),
+		WeightGrams:        positive(raw.Weight),
+		DiameterMm:         positive(raw.Size),
+		ThicknessMm:        positive(raw.Thickness),
+		Shape:              strings.TrimSpace(raw.Shape),
+		Mints:              []string{},
+		Obverse:            catalogSide(raw.Obverse),
+		Reverse:            catalogSide(raw.Reverse),
+		Edge:               catalogSide(raw.Edge),
+		References:         []models.NumistaCatalogReference{},
+		Photos:             []models.NumistaCatalogPhoto{},
 	}
 	for _, ruler := range raw.Ruler {
 		if name := strings.TrimSpace(ruler.Name); name != "" {

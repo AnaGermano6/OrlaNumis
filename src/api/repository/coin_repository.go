@@ -15,9 +15,15 @@ var ErrStorageSlotOccupied = errors.New("storage slot is occupied")
 
 // CoinListFilters holds optional filters for listing coins.
 type CoinListFilters struct {
-	Category     string
-	Era          string
-	Country      string
+	Category string
+	Era      string
+	Country  string
+	// Countries, when not nil, keeps only coins of these countries (none
+	// when empty), e.g. the collection's extinct countries.
+	Countries []string
+	// IDs, when not nil, keeps only these coins (none when empty), e.g. the
+	// ones still legal tender.
+	IDs          []uint
 	Presentation string
 	Rarity       string
 	Search       string
@@ -253,6 +259,20 @@ func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Co
 	if filters.Category != "" {
 		query = query.Where("category = ?", filters.Category)
 	}
+	if filters.IDs != nil {
+		if len(filters.IDs) == 0 {
+			query = query.Where("1 = 0")
+		} else {
+			query = query.Where("coins.id IN ?", filters.IDs)
+		}
+	}
+	if filters.Countries != nil {
+		if len(filters.Countries) == 0 {
+			query = query.Where("1 = 0")
+		} else {
+			query = query.Where("TRIM(country) IN ?", filters.Countries)
+		}
+	}
 	if filters.Country != "" {
 		query = query.Where("country = ?", filters.Country)
 	}
@@ -475,6 +495,7 @@ func (r *CoinRepository) Duplicate(id uint, userID uint) (*models.Coin, error) {
 		Country:               source.Country,
 		Presentation:          source.Presentation,
 		Rarity:                source.Rarity,
+		Circulation:           source.Circulation,
 		PurchasePrice:         source.PurchasePrice,
 		CurrentValue:          source.CurrentValue,
 		CurrentValueUpdatedAt: source.CurrentValueUpdatedAt,
@@ -1158,6 +1179,38 @@ func (r *CoinRepository) CountryCounts(userID uint) ([]CountryCount, error) {
 		Where("country IS NOT NULL AND country <> '' AND is_wishlist = ? AND is_sold = ?", false, false).
 		Group("country").Order("country").Scan(&counts).Error
 	return counts, err
+}
+
+// CoinNumistaType is a collection coin with its country and the Numista type
+// it is linked to ("" when none).
+type CoinNumistaType struct {
+	CoinID        uint
+	Country       string
+	NumistaTypeID string
+	// Circulation is the coin's circulation set by hand, if any.
+	Circulation string
+}
+
+// CollectionNumistaTypes lists the user's collection coins (not wishlist or
+// sold) with their Numista type.
+func (r *CoinRepository) CollectionNumistaTypes(userID uint) ([]CoinNumistaType, error) {
+	var refs []CoinNumistaType
+	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID)).
+		Select(`coins.id AS coin_id, COALESCE(coins.country, '') AS country, COALESCE(coins.circulation, '') AS circulation,
+			COALESCE((SELECT TRIM(r.number) FROM coin_references r
+				WHERE r.coin_id = coins.id AND LOWER(r.catalog) = 'numista' ORDER BY r.id LIMIT 1), '') AS numista_type_id`).
+		Order("coins.id").Scan(&refs).Error
+	return refs, err
+}
+
+// DistinctCountries lists the countries of the user's coins (any, wishlist
+// and sold included), as written on the coins.
+func (r *CoinRepository) DistinctCountries(userID uint) ([]string, error) {
+	var countries []string
+	err := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID)).
+		Where("TRIM(COALESCE(country, '')) <> ''").
+		Distinct().Pluck("TRIM(country)", &countries).Error
+	return countries, err
 }
 
 // CollectionSummary holds the headline numbers of the user's collection

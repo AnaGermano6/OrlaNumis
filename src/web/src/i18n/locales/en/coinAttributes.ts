@@ -16,4 +16,10 @@ export default {
     very_rare: 'Very rare',
     extremely_rare: 'Extremely rare',
   },
+  circulation: {
+    current: 'Current',
+    current_commemorative: 'Current · Commemorative',
+    demonetized: 'Demonetized',
+    demonetized_commemorative: 'Demonetized · Commemorative',
+  },
 }

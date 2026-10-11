@@ -20,6 +20,12 @@ const messages: Messages['app'] = {
     body: 'Comece pelo guia Primeiros passos para importar um CSV, experimentar a Captura rápida ou a Identificação de moedas e rever as definições que ativam alertas, imagens e ferramentas de IA.',
     openGuide: 'Abrir guia',
   },
+  footer: {
+    label: 'Rodapé',
+    version: 'Versão {version}',
+    catalogue: 'Dados do catálogo: Numista',
+    photos: 'Fotos oficiais: BCE, INCM e Monnaie de Paris',
+  },
 }
 
 export default messages

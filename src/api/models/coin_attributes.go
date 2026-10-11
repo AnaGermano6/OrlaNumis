@@ -12,6 +12,31 @@ var CoinPresentations = []string{"loose", "coincard", "capsule", "flip", "proof_
 // Coin rarities, from most to least common. Empty means not set.
 var CoinRarities = []string{"common", "uncommon", "scarce", "rare", "very_rare", "extremely_rare"}
 
+// Coin circulations, set by hand: whether the coin is still legal tender and
+// whether it is commemorative. Empty means "as Numista says".
+var CoinCirculations = []string{"current", "current_commemorative", "demonetized", "demonetized_commemorative"}
+
+// ValidCoinCirculation reports whether value is empty or a known circulation.
+func ValidCoinCirculation(value string) bool {
+	return value == "" || containsValue(CoinCirculations, value)
+}
+
+// CoinCirculationFacts reads a circulation set by hand; ok is false when it
+// is not set (or unknown).
+func CoinCirculationFacts(value string) (current, commemorative, ok bool) {
+	switch value {
+	case "current":
+		return true, false, true
+	case "current_commemorative":
+		return true, true, true
+	case "demonetized":
+		return false, false, true
+	case "demonetized_commemorative":
+		return false, true, true
+	}
+	return false, false, false
+}
+
 // ValidCoinPresentation reports whether value is empty or a known presentation.
 func ValidCoinPresentation(value string) bool {
 	return value == "" || containsValue(CoinPresentations, value)

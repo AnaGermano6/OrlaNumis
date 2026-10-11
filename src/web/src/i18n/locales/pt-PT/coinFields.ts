@@ -6,7 +6,6 @@ const messages: Messages['coinFields'] = {
   purchaseDate: 'Data de compra',
   vendorSku: 'SKU do vendedor',
   vendorInvoice: 'Fatura do vendedor',
-  storageLocation: 'Localização de arrumação',
   denomination: 'Denominação',
   era: 'Época',
   mint: 'Casa da moeda',
@@ -34,6 +33,7 @@ const messages: Messages['coinFields'] = {
   country: 'País',
   presentation: 'Apresentação',
   rarity: 'Raridade',
+  circulation: 'Circulação',
 }
 
 export default messages

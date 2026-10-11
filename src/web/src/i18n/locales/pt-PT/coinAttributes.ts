@@ -18,6 +18,12 @@ const messages: Messages['coinAttributes'] = {
     very_rare: 'Muito rara',
     extremely_rare: 'Extremamente rara',
   },
+  circulation: {
+    current: 'Corrente',
+    current_commemorative: 'Corrente · Comemorativa',
+    demonetized: 'Desmonetizada',
+    demonetized_commemorative: 'Desmonetizada · Comemorativa',
+  },
 }
 
 export default messages

@@ -47,6 +47,14 @@ export const getCoins = (params?: {
   category?: string
   era?: string
   country?: string
+  /** "true": only coins of countries that no longer exist. */
+  extinct?: string
+  /** Only coins still legal tender, or no longer. */
+  circulation?: string
+  /** "true": only commemorative coins; "false": only the others. */
+  commemorative?: string
+  /** Only coins of one Numista kind of coin (a CollectionClassification key). */
+  classification?: string
   presentation?: string
   rarity?: string
   search?: string
@@ -84,6 +92,17 @@ function sanitizeCoin(coin: CoinMutationPayload): CoinMutationPayload {
 }
 
 export const getCoin = (id: number) => api.get<Coin>(`/coins/${id}`)
+
+/** Whether a coin is still legal tender and whether it is commemorative; null when nobody knows. */
+export interface CoinStatus {
+  current: boolean | null
+  /** When it stopped being legal tender, if Numista says (usually YYYY-MM-DD). */
+  demonetizationDate?: string
+  commemorative: boolean | null
+  commemoratedTopic?: string
+}
+
+export const getCoinStatus = (id: number) => api.get<CoinStatus>(`/coins/${id}/status`)
 
 export const createCoin = (coin: CoinMutationPayload) => api.post<Coin>('/coins', sanitizeCoin(coin))
 
@@ -462,12 +481,33 @@ export interface CoinCountryFillResult {
 export const fillCountriesFromNumista = (lang: string, coinId?: number) =>
   api.post<CoinCountryFillResult>('/coins/country-from-numista', null, { params: { lang, coinId } })
 
+/** One Numista kind of coin and how many collection coins are of it. */
+export interface CollectionClassification {
+  /** "standard", "circulating-commemorative", "non-circulating" or another kind's label. */
+  key: string
+  /** Numista's name for it, in the language it was looked up in. */
+  label: string
+  count: number
+}
+
 export interface CollectionSummary {
   /** Coins in the collection (not wishlist or sold). */
   coins: number
   /** Distinct types: same Numista type, or same name when not linked, count once. */
   types: number
   countries: number
+  /** Countries of the collection that no longer exist (among countries). */
+  extinctCountries?: number
+  /** Coins still legal tender, as Numista says of their types. */
+  currentCoins?: number
+  /** Coins Numista says nothing of (not linked to it), left out of currentCoins. */
+  circulationUnknown?: number
+  /** Coins whose Numista type commemorates something. */
+  commemorativeCoins?: number
+  /** Coins Numista says nothing of, left out of commemorativeCoins. */
+  commemorativeUnknown?: number
+  /** Numista's kinds of coin found in the collection, the usual ones first. */
+  classifications?: CollectionClassification[]
   withoutCountry: number
   /** Coins whose presentation is "coincard". */
   coincards: number
