@@ -76,7 +76,7 @@ import * as L from 'leaflet'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { createMintLocation, geocodeMintName } from '@/api/client'
 import type { GeocodeCandidate, MintLocation } from '@/types'
-import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, OSM_ATTRIBUTION, OSM_TILE_URL } from '@/components/map/MintMapLeaflet.vue'
+import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, OSM_ATTRIBUTION, OSM_TILE_URL } from '@/utils/mintMap'
 import { t } from '@/i18n'
 
 const props = defineProps<{

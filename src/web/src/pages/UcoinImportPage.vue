@@ -13,13 +13,13 @@
         <label class="btn btn-secondary inline-flex cursor-pointer focus-within:outline-2 focus-within:outline-gold focus-within:outline-offset-2">
           <FileUp :size="16" aria-hidden="true" />
           {{ t('ucoinImport.chooseFile') }}
-          <input data-testid="ucoin-file" type="file" accept=".csv,text/csv" class="sr-only" @change="onFile" />
+          <input data-testid="ucoin-file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="sr-only" @change="onFile" />
         </label>
         <span v-if="importer.fileName.value" class="text-body text-text-muted">{{ importer.fileName.value }}</span>
       </div>
 
       <p v-if="importer.parseError.value" class="m-0 text-body text-byzantine" role="alert">
-        {{ t(importer.parseError.value === 'columns' ? 'ucoinImport.errors.columns' : 'ucoinImport.errors.empty') }}
+        {{ t(importer.parseError.value === 'columns' ? 'ucoinImport.errors.columns' : importer.parseError.value === 'unreadable' ? 'ucoinImport.errors.unreadable' : 'ucoinImport.errors.empty') }}
       </p>
       <p v-if="importer.loadFailed.value" class="m-0 text-body text-byzantine" role="alert">{{ t('ucoinImport.loadFailed') }}</p>
 
@@ -29,6 +29,14 @@
           <li v-if="importer.alreadyImported.value">{{ t('ucoinImport.summary.already', { count: importer.alreadyImported.value }) }}</li>
           <li class="font-medium">{{ t('ucoinImport.summary.toAdd', { count: importer.pendingRows.value.length }) }}</li>
         </ul>
+
+        <div v-if="importer.updatable.value.length" class="flex flex-col gap-2 rounded-sm border border-border-subtle p-3 md:flex-row md:items-center md:justify-between" data-testid="ucoin-updatable">
+          <p class="m-0 text-body text-text-primary">{{ t('ucoinImport.summary.updatable', { count: importer.updatable.value.length }) }}</p>
+          <button class="btn btn-secondary" @click="importer.fillExisting()">{{ t('ucoinImport.updateExisting') }}</button>
+        </div>
+        <p v-if="importer.progress.toUpdate" class="m-0 text-body text-text-secondary" role="status" data-testid="ucoin-updated">
+          {{ t('ucoinImport.done.updated', { count: importer.progress.updated }) }}<template v-if="importer.progress.updateFailed"> · {{ t('ucoinImport.done.updateFailed', { count: importer.progress.updateFailed }) }}</template>
+        </p>
 
         <label class="inline-flex items-start gap-2 text-body text-text-primary">
           <input v-model="withNumista" type="checkbox" class="mt-1" />
@@ -67,11 +75,25 @@
     <!-- Coins Numista did not have before: matching improves, so they can be tried again. -->
     <section
       v-if="!busy && importer.earlierNotFound.value && importer.phase.value !== 'ready' && importer.phase.value !== 'finished'"
-      class="card mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+      class="card mb-4 flex flex-col gap-3"
       data-testid="ucoin-earlier-not-found"
     >
-      <p class="m-0 text-body text-text-primary">{{ t('ucoinImport.earlierNotFound', { count: importer.earlierNotFound.value }) }}</p>
-      <button class="btn btn-secondary" @click="retryNotFound">{{ t('ucoinImport.done.retryNotFound') }}</button>
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <p class="m-0 text-body text-text-primary">{{ t('ucoinImport.earlierNotFound', { count: importer.earlierNotFound.value }) }}</p>
+        <button class="btn btn-secondary" @click="retryNotFound">{{ t('ucoinImport.done.retryNotFound') }}</button>
+      </div>
+      <details class="text-body">
+        <summary class="cursor-pointer text-text-secondary">{{ t('ucoinImport.done.notFoundList') }}</summary>
+        <ul class="mt-2 flex list-none flex-col gap-2 p-0">
+          <UcoinNotFoundCoin
+            v-for="coin in importer.notFoundList.value"
+            :key="coin.id"
+            :coin="coin"
+            :candidates-for="importer.numistaCandidatesFor"
+            :choose-type="importer.chooseNumistaType"
+          />
+        </ul>
+      </details>
     </section>
 
     <section v-if="busy" class="card mb-4 flex flex-col gap-3" aria-live="polite">
@@ -111,10 +133,14 @@
 
       <details v-if="importer.notFoundCoins.value.length" class="text-body">
         <summary class="cursor-pointer text-text-secondary">{{ t('ucoinImport.done.notFoundList') }}</summary>
-        <ul class="mt-2 flex max-h-72 list-none flex-col gap-1 overflow-y-auto p-0">
-          <li v-for="coin in importer.notFoundCoins.value" :key="coin.id">
-            <RouterLink :to="`/coin/${coin.id}`" class="text-gold underline">{{ coin.name }}</RouterLink>
-          </li>
+        <ul class="mt-2 flex list-none flex-col gap-2 p-0">
+          <UcoinNotFoundCoin
+            v-for="coin in importer.notFoundCoins.value"
+            :key="coin.id"
+            :coin="coin"
+            :candidates-for="importer.numistaCandidatesFor"
+            :choose-type="importer.chooseNumistaType"
+          />
         </ul>
       </details>
 
@@ -132,6 +158,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { FileUp } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
+import UcoinNotFoundCoin from '@/components/ucoin/UcoinNotFoundCoin.vue'
 import { useUcoinImport } from '@/composables/useUcoinImport'
 import { intlLocale, t } from '@/i18n'
 
@@ -139,13 +166,15 @@ const importer = useUcoinImport()
 const withNumista = ref(true)
 
 
-const busy = computed(() => ['creating', 'enriching', 'photos'].includes(importer.phase.value))
+const busy = computed(() => ['updating', 'creating', 'enriching', 'photos'].includes(importer.phase.value))
 
 const progressTotal = computed(() => {
+  if (importer.phase.value === 'updating') return importer.progress.toUpdate
   if (importer.phase.value === 'creating') return importer.progress.toCreate
   return importer.phase.value === 'photos' ? importer.progress.toPhoto : importer.progress.toEnrich
 })
 const progressDone = computed(() => {
+  if (importer.phase.value === 'updating') return importer.progress.updated + importer.progress.updateFailed
   if (importer.phase.value === 'creating') return importer.progress.created + importer.progress.createFailed
   if (importer.phase.value === 'photos') return importer.progress.photoDone
   return importer.progress.enriched + importer.progress.notFound + importer.progress.failed
@@ -155,10 +184,9 @@ const progressKey = computed(() => {
   if (importer.phase.value === 'creating') return 'ucoinImport.creating' as const
   return importer.phase.value === 'photos' ? 'ucoinImport.addingPhotos' as const : 'ucoinImport.enriching' as const
 })
-const progressText = computed(() => t(progressKey.value, {
-  done: progressDone.value,
-  total: progressTotal.value,
-}))
+const progressText = computed(() => (importer.phase.value === 'updating'
+  ? t('ucoinImport.progress.updating', { done: progressDone.value, count: progressTotal.value })
+  : t(progressKey.value, { done: progressDone.value, total: progressTotal.value })))
 
 function formatCount(value: number): string {
   return new Intl.NumberFormat(intlLocale()).format(value)

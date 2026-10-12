@@ -136,8 +136,8 @@ describe('CoinForm', () => {
     }
   })
 
-  it('has no storage location field and keeps the coin\'s storage as it is on submit', async () => {
-    const form = { name: 'Coin', category: 'Roman', material: 'Silver', storageLocationId: 2, storageSlot: 4 }
+  it('has no storage location or private fields and keeps their values as they are on submit', async () => {
+    const form = { name: 'Coin', category: 'Roman', material: 'Silver', storageLocationId: 2, storageSlot: 4, isPrivate: true }
     const wrapper = mount(CoinForm, {
       props: { form, submitLabel: 'Save', coinId: 99 },
       global: {
@@ -155,11 +155,13 @@ describe('CoinForm', () => {
     await flushPromises()
 
     expect(wrapper.text().toLowerCase()).not.toContain('storage location')
+    expect(wrapper.text().toLowerCase()).not.toContain('private coin')
     expect(wrapper.find('.slot-picker').exists()).toBe(false)
     await wrapper.get('form').trigger('submit')
     expect(wrapper.emitted('submit')).toHaveLength(1)
     expect(form.storageLocationId).toBe(2)
     expect(form.storageSlot).toBe(4)
+    expect(form.isPrivate).toBe(true)
   })
 
   it('sets the circulation by hand, or leaves it to Numista', async () => {

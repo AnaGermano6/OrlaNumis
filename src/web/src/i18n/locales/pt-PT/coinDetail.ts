@@ -9,7 +9,6 @@ const messages: Messages['coinDetail'] = {
   confirmDelete: 'Eliminar esta moeda da sua coleção?',
   deleteTitle: 'Eliminar moeda',
   duplicateFailed: 'Não foi possível duplicar a moeda',
-  sellFailed: 'Não foi possível marcar como vendida',
   backToOverview: 'Voltar à vista geral',
   backToGallery: 'Voltar à galeria',
   metadata: {
@@ -39,7 +38,6 @@ const messages: Messages['coinDetail'] = {
     closeBackdrop: 'Fechar menu de opções',
     more: 'Mais ações',
     open: 'Abrir mais ações',
-    sell: 'Vender moeda',
     copyingCoin: 'A copiar a moeda...',
     copying: 'A copiar...',
     copy: 'Copiar moeda',

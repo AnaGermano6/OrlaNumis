@@ -67,7 +67,6 @@ describe('CoinDetailSectionPageShell -- useCoinDetailSwipeNav containerRef bindi
         stubs: {
           CoinDetailOverflowMenu: true,
           AuthenticatedImage: true,
-          SellModal: true,
           ChevronLeft: true,
         },
       },

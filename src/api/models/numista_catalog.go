@@ -75,6 +75,9 @@ type NumistaCatalogType struct {
 	// Classification is Numista's kind of coin (e.g. "Moedas circulantes
 	// comuns"), in the language asked for.
 	Classification string `json:"classification,omitempty"`
+	// IssuedInCoincard is true when Numista's comments say the type's coins
+	// are issued in a coin card (not just a special version of it).
+	IssuedInCoincard bool `json:"issuedInCoincard,omitempty"`
 	// Demonetized tells whether the type is no longer legal tender (nil
 	// when Numista does not say); DemonetizationDate is when, if known.
 	Demonetized        *bool                     `json:"demonetized,omitempty"`

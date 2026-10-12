@@ -1,9 +1,8 @@
-// Matches the collection's free-text countries (Numista issuer names, in
-// English or Portuguese, or typed by hand) to the world map's countries.
-// Issuers that are not modern countries ("Corinth", "Roman Empire") stay
-// unmatched and are listed beside the map.
+// The world map's country outlines, and how the collection's free-text
+// countries (Numista issuer names, in English or Portuguese, or typed by
+// hand) are matched to them (see utils/collectionMap). Issuers that are not
+// modern countries ("Corinth", "Roman Empire") stay unmatched.
 import type { Feature, FeatureCollection, MultiPolygon, Polygon } from 'geojson'
-import type { CoinCountryCount } from '@/api/client'
 
 export interface WorldCountryProperties {
   /** ISO 3166-1 alpha-2 code (alpha-3 for the few without one). */
@@ -39,70 +38,36 @@ export function foldCountryName(value: string): string {
     .trim()
 }
 
-/** Folded name → ISO code, from the map's own names plus the browser's names in English and Portuguese. */
-export function buildCountryIndex(collection: WorldCountryCollection): Map<string, string> {
-  const index = new Map<string, string>()
-  const displayNames = ['en', 'pt-PT', 'pt'].flatMap((locale) => {
-    try {
-      return [new Intl.DisplayNames([locale], { type: 'region' })]
-    } catch {
-      return []
-    }
-  })
-  for (const feature of collection.features) {
-    const { iso, aliases } = feature.properties
-    const names = [...aliases]
-    if (iso.length === 2) {
-      for (const display of displayNames) {
-        const name = display.of(iso)
-        if (name && name !== iso) names.push(name)
-      }
-    }
-    for (const name of names) {
-      const folded = foldCountryName(name)
-      if (folded && !index.has(folded)) index.set(folded, iso)
-    }
+/** Names collections use that the map's own names and the browser's leave out. */
+export const EXTRA_COUNTRY_ALIASES: Record<string, string[]> = {
+  US: ['Estados Unidos da América', 'EUA', 'E.U.A.', 'USA'],
+  GB: ['Grã-Bretanha', 'Great Britain'],
+  NL: ['Holanda', 'Holland'],
+  CZ: ['República Tcheca', 'Tchéquia'],
+  RU: ['Federação Russa'],
+  IR: ['Irã'],
+  VN: ['Vietnã'],
+}
+
+/**
+ * The ISO code of a stored country name: the whole name, else without what is
+ * in brackets, else the part before a comma ("Alemanha, República Federal da").
+ */
+export function lookupCountry(index: Map<string, string>, name: string): string | undefined {
+  const candidates = [name, name.replace(/\([^)]*\)/g, ' '), name.split(',')[0] ?? '']
+  for (const candidate of candidates) {
+    const iso = index.get(foldCountryName(candidate))
+    if (iso) return iso
   }
-  return index
+  return undefined
 }
 
-export interface MapCountry {
-  iso: string
-  count: number
-  /** Stored country names that map here, most coins first; the first one is used to filter. */
-  names: CoinCountryCount[]
+/** Fill opacity of a colour step: countries without coins stay faint; a single coin already stands out. */
+export function countryShadeOpacity(shade: number): number {
+  return [0.35, 0.5, 0.65, 0.8, 0.95][shade] ?? 0.35
 }
 
-export interface CountryDistribution {
-  byIso: Map<string, MapCountry>
-  /** Countries with no place on the map (historical issuers, typos), most coins first. */
-  unmatched: CoinCountryCount[]
-}
-
-export function distributeCountries(counts: CoinCountryCount[], index: Map<string, string>): CountryDistribution {
-  const byIso = new Map<string, MapCountry>()
-  const unmatched: CoinCountryCount[] = []
-  for (const entry of counts) {
-    const iso = index.get(foldCountryName(entry.country))
-    if (!iso) {
-      unmatched.push(entry)
-      continue
-    }
-    const country = byIso.get(iso) ?? { iso, count: 0, names: [] }
-    country.count += entry.count
-    country.names.push(entry)
-    byIso.set(iso, country)
-  }
-  for (const country of byIso.values()) country.names.sort((a, b) => b.count - a.count)
-  unmatched.sort((a, b) => b.count - a.count)
-  return { byIso, unmatched }
-}
-
-/** Colour steps for the map: 0 = no coins, then 1, 2–4, 5–9, 10+. */
-export function countryShade(count: number): 0 | 1 | 2 | 3 | 4 {
-  if (count <= 0) return 0
-  if (count === 1) return 1
-  if (count < 5) return 2
-  if (count < 10) return 3
-  return 4
+/** A map country's name in the app's language. */
+export function countryFeatureLabel(feature: WorldCountryFeature, language: string): string {
+  return language === 'pt-PT' ? feature.properties.namePt : feature.properties.name
 }

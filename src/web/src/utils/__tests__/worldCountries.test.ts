@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import worldCountries from '@/assets/geo/world-countries.json'
-import { buildCountryIndex, countryShade, distributeCountries, foldCountryName, type WorldCountryCollection } from '@/utils/worldCountries'
+import { buildMapPlaces, placeKeyOf } from '@/utils/collectionMap'
+import { foldCountryName, type WorldCountryCollection } from '@/utils/worldCountries'
 
 const collection = worldCountries as unknown as WorldCountryCollection
-const index = buildCountryIndex(collection)
+const places = buildMapPlaces(collection)
 
 describe('world map country matching', () => {
   it('ships every country with a code, names and an outline', () => {
@@ -34,25 +35,16 @@ describe('world map country matching', () => {
     ['Espanha', 'ES'],
     ['Brasil', 'BR'],
     ['Moçambique', 'MZ'],
+    ['Estados Unidos da América', 'US'],
+    ['Alemanha, República Federal da', 'DE'],
+    ['Mónaco', 'MC'],
+    ['Cabo Verde', 'CV'],
   ])('places %s on the map as %s', (name, iso) => {
-    expect(index.get(foldCountryName(name))).toBe(iso)
+    expect(placeKeyOf(name, places)).toBe(iso)
   })
 
-  it('adds up names of the same country and keeps historical issuers apart', () => {
-    const { byIso, unmatched } = distributeCountries([
-      { country: 'Portugal', count: 3 },
-      { country: 'Portuguese Republic', count: 1 },
-      { country: 'Angola', count: 2 },
-      { country: 'Corinth', count: 1 },
-      { country: 'Roman Empire', count: 4 },
-    ], index)
-
-    expect(byIso.get('PT')).toEqual({ iso: 'PT', count: 4, names: [{ country: 'Portugal', count: 3 }, { country: 'Portuguese Republic', count: 1 }] })
-    expect(byIso.get('AO')?.count).toBe(2)
-    expect(unmatched).toEqual([{ country: 'Roman Empire', count: 4 }, { country: 'Corinth', count: 1 }])
-  })
-
-  it.each([[0, 0], [1, 1], [2, 2], [4, 2], [5, 3], [9, 3], [10, 4], [250, 4]])('shades %i coins as step %i', (count, shade) => {
-    expect(countryShade(count)).toBe(shade)
+  it('keeps historical issuers off the map', () => {
+    expect(placeKeyOf('Roman Empire', places)).toBe('name:Roman Empire')
+    expect(placeKeyOf('Corinth', places)).toBe('name:Corinth')
   })
 })

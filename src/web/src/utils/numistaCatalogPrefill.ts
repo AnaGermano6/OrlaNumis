@@ -133,6 +133,8 @@ export function buildCatalogPrefill(selection: CatalogSelection, options: Catalo
     country: clip(type.issuer.name, 120),
     // A starting point from the mintage; the user can change it.
     rarity: rarityFromMintage(issue?.mintage) ?? '',
+    // Numista says the type is issued in a coin card.
+    ...(type.issuedInCoincard ? { presentation: 'coincard' } : {}),
     mint: clip(mint, 200),
     material: materialFromComposition(type.composition, options.materials) as Material,
     weightGrams: type.weightGrams,

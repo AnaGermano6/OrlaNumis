@@ -52,8 +52,6 @@ export default {
   removeStoreCard: 'Remove store card image',
   uploadStoreCard: 'Upload store card image',
   notesPlaceholder: 'Any additional notes...',
-  privateCoin: 'Private Coin',
-  hiddenFromFollowers: 'Hidden from followers',
   mintsUnavailable: 'Mint locations are unavailable',
   countryPlaceholder: 'e.g. Portugal',
   notSpecified: 'Not specified',

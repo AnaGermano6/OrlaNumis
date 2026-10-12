@@ -73,7 +73,7 @@ vi.mock('@/stores/auth', async () => {
 const COIN_ID = 42
 
 // Canonical 8-stop swipe order derived from the authoritative menu constants.
-// Overview is prefixed; SECTION_ORDER drives the remaining seven stops.
+// Overview is prefixed; SECTION_ORDER drives the remaining six stops.
 // This is the SINGLE SOURCE OF TRUTH the composable must also use at runtime.
 const SWIPE_STOPS = [
   `/coin/${COIN_ID}`,
@@ -196,23 +196,22 @@ describe('exported threshold constants', () => {
 // ===========================================================================
 
 describe('route ordering from menu constants', () => {
-  it('canonical stop list has exactly 8 entries', () => {
-    expect(SWIPE_STOPS).toHaveLength(8)
+  it('canonical stop list has exactly 7 entries', () => {
+    expect(SWIPE_STOPS).toHaveLength(7)
   })
 
   it('first stop is the overview path /coin/:id', () => {
     expect(SWIPE_STOPS[0]).toBe(`/coin/${COIN_ID}`)
   })
 
-  it('stops 1-7 match SECTION_ORDER in the declared menu order', () => {
+  it('stops 1-6 match SECTION_ORDER in the declared menu order', () => {
     const expectedSectionPaths = SECTION_ORDER.map(id => COIN_DETAIL_SECTIONS[id].route(COIN_ID))
     expect(SWIPE_STOPS.slice(1)).toEqual(expectedSectionPaths)
   })
 
-  it('declares shipment, journal, health, notes, actions, analysis, valuation in that order', () => {
+  it('declares journal, health, notes, actions, analysis, valuation in that order (no shipment tracking)', () => {
     expect(SWIPE_STOPS).toEqual([
       `/coin/${COIN_ID}`,
-      `/coin/${COIN_ID}/shipment`,
       `/coin/${COIN_ID}/journal`,
       `/coin/${COIN_ID}/health`,
       `/coin/${COIN_ID}/notes`,
@@ -228,8 +227,8 @@ describe('route ordering from menu constants', () => {
     }
   })
 
-  it('SECTION_ORDER has exactly 7 entries', () => {
-    expect(SECTION_ORDER).toHaveLength(7)
+  it('SECTION_ORDER has exactly 6 entries', () => {
+    expect(SECTION_ORDER).toHaveLength(6)
   })
 })
 
@@ -572,7 +571,7 @@ describe('edge guard', () => {
 
   it('gesture starting inside right 24 px zone does not navigate', () => {
     // startX = VIEWPORT_WIDTH - 10 = 1014 is inside right zone (>1024-24=1000)
-    const wrapper = mountHarness({ routePath: `/coin/${COIN_ID}/shipment` })
+    const wrapper = mountHarness({ routePath: `/coin/${COIN_ID}/journal` })
     doRightSwipe(wrapper.element as HTMLElement, VIEWPORT_WIDTH - 10)
     expect(mockPush).not.toHaveBeenCalled()
     wrapper.unmount()
@@ -580,7 +579,7 @@ describe('edge guard', () => {
 
   it('gesture starting outside the right 24 px zone does navigate', () => {
     // startX = VIEWPORT_WIDTH - SWIPE_EDGE_GUARD - 1 = 999, safely inside the valid zone
-    const wrapper = mountHarness({ routePath: `/coin/${COIN_ID}/shipment` })
+    const wrapper = mountHarness({ routePath: `/coin/${COIN_ID}/journal` })
     doRightSwipe(wrapper.element as HTMLElement, VIEWPORT_WIDTH - EDGE_GUARD - 1)
     expect(mockPush).toHaveBeenCalledTimes(1)
     wrapper.unmount()
@@ -1038,12 +1037,12 @@ describe('overflow menu -- accessibility unchanged', () => {
     expect(source).toContain('SECTION_ORDER')
   })
 
-  it('CoinDetailOverflowMenu still contains Sell Coin and Copy Coin actions', () => {
+  it('CoinDetailOverflowMenu keeps the Copy Coin action and no longer offers to sell', () => {
     const source = readFileSync(
       join(process.cwd(), 'src', 'components', 'coin', 'CoinDetailOverflowMenu.vue'),
       'utf-8',
     )
-    expect(source).toContain("t('coinDetail.menu.sell')")
+    expect(source).not.toContain("t('coinDetail.menu.sell')")
     expect(source).toContain("t('coinDetail.menu.copy')")
   })
 
@@ -1342,7 +1341,7 @@ describe('R9: gesture within edge guard ignored', () => {
   })
 
   it('gesture starting within 24 px of right viewport edge is ignored', () => {
-    const wrapper = mountHarness({ routePath: '/coin/42/shipment' })
+    const wrapper = mountHarness({ routePath: '/coin/42/journal' })
     const container = wrapper.element as HTMLElement
 
     doRightSwipe(container, window.innerWidth - 10) // inside right guard

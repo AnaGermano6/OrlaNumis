@@ -104,6 +104,16 @@ export interface CoinStatus {
 
 export const getCoinStatus = (id: number) => api.get<CoinStatus>(`/coins/${id}/status`)
 
+/** Collection coin IDs by legal tender and commemorative status; a coin nobody knows about is in neither list of a pair. */
+export interface CoinStatusGroups {
+  current: number[]
+  demonetized: number[]
+  commemorative: number[]
+  regular: number[]
+}
+
+export const getCoinStatusGroups = () => api.get<CoinStatusGroups>('/coins/statuses')
+
 export const createCoin = (coin: CoinMutationPayload) => api.post<Coin>('/coins', sanitizeCoin(coin))
 
 export interface MatchCategoryEraResponse {

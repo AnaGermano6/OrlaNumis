@@ -78,7 +78,6 @@ describe('CoinDetailPage -- useCoinDetailSwipeNav containerRef binding', () => {
       global: {
         stubs: {
           RouterLink: { props: ['to'], template: '<a><slot /></a>' },
-          SellModal: true,
           PurchaseModal: true,
           PurchaseReminderModal: true,
           ImageLightbox: true,

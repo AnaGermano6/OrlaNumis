@@ -54,6 +54,8 @@ export interface NumistaCatalogType {
   diameterMm?: number
   thicknessMm?: number
   shape?: string
+  /** Numista's comments say the type's coins are issued in a coin card. */
+  issuedInCoincard?: boolean
   mints: string[]
   obverse: NumistaCatalogSide
   reverse: NumistaCatalogSide

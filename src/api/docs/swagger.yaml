@@ -489,6 +489,25 @@ definitions:
         example: III
         type: string
     type: object
+  handlers.CoinStatusGroups:
+    properties:
+      commemorative:
+        items:
+          type: integer
+        type: array
+      current:
+        items:
+          type: integer
+        type: array
+      demonetized:
+        items:
+          type: integer
+        type: array
+      regular:
+        items:
+          type: integer
+        type: array
+    type: object
   handlers.CoinSuggestion:
     properties:
       candidateReferences:
@@ -3918,6 +3937,11 @@ definitions:
         type: number
       id:
         type: integer
+      issuedInCoincard:
+        description: |-
+          IssuedInCoincard is true when Numista's comments say the type's coins
+          are issued in a coin card (not just a special version of it).
+        type: boolean
       issuer:
         $ref: '#/definitions/models.NumistaCatalogIssuer'
       maxYear:
@@ -12480,6 +12504,34 @@ paths:
       summary: Match a category/era candidate against known values
       tags:
       - coins
+  /coins/statuses:
+    get:
+      description: 'Returns the IDs of the user''s collection coins (not wishlist
+        or sold) that are still legal tender (current) or not (demonetized), and that
+        are commemorative or not, by the same rules as the summary and the coin list
+        filters: a circulation set on the coin wins, else the cached Numista type
+        says (never asking Numista); coins of extinct countries are not current. A
+        coin nobody knows about is in neither list of a pair.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CoinStatusGroups'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List coins by legal tender and commemorative status
+      tags:
+      - Coins
   /coins/summary:
     get:
       description: Counts the user's collection coins (excluding wishlist and sold),

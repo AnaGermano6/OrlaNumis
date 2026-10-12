@@ -54,8 +54,6 @@ const messages: Messages['coinForm'] = {
   removeStoreCard: 'Remover imagem do cartão da loja',
   uploadStoreCard: 'Carregar imagem do cartão da loja',
   notesPlaceholder: 'Notas adicionais...',
-  privateCoin: 'Moeda privada',
-  hiddenFromFollowers: 'Oculta para os seguidores',
   mintsUnavailable: 'As casas da moeda não estão disponíveis',
   countryPlaceholder: 'ex.: Portugal',
   notSpecified: 'Não indicada',

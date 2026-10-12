@@ -267,15 +267,6 @@
           <label class="form-label">{{ t('coinFields.notes') }}</label>
           <textarea v-model="form.notes" class="form-textarea" rows="3" :placeholder="t('coinForm.notesPlaceholder')" />
         </div>
-        <div class="form-group flex items-center gap-3">
-          <label class="form-label mb-0">{{ t('coinForm.privateCoin') }}</label>
-          <BaseToggle
-            v-model="form.isPrivate"
-            size="sm"
-            :label="t('coinForm.privateCoin')"
-          />
-          <span class="text-chip text-text-secondary">{{ t('coinForm.hiddenFromFollowers') }}</span>
-        </div>
       </fieldset>
     </div>
 
@@ -296,7 +287,6 @@
 </template>
 
 <script setup lang="ts">
-import { BaseToggle } from '@/components/ui'
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { getMintLocations, type MintLocationsResponse } from '@/api/client'
 import type { Coin, MintLocation } from '@/types'

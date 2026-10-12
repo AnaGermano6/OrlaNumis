@@ -3,6 +3,7 @@ import type { Coin, CoinMutationPayload, CoinReferenceInput } from '@/types'
 import { useUcoinImport } from '../useUcoinImport'
 import { setCollectionCurrency } from '@/utils/collectionCurrency'
 import { locale, setLocale } from '@/i18n'
+import { buildXlsx } from '@/utils/__tests__/xlsxFixture'
 
 const mocks = vi.hoisted(() => ({
   addOfficialCoinPhotos: vi.fn(),
@@ -335,6 +336,144 @@ describe('useUcoinImport', () => {
     expect(importer.progress).toMatchObject({ created: 2, enriched: 2, notFound: 0 })
     expect(mocks.searchNumistaIssuers.mock.calls.map(([q]) => q)).toEqual(expect.arrayContaining(['Região Autónoma dos Açores', 'Açores', 'Síria']))
     expect(collection.map((coin) => coin.references?.find((ref) => ref.catalog === 'Numista')?.number)).toEqual(['900', '901'])
+  })
+
+  it('links a coin Numista did not find to the type chosen by hand, and completes it once Numista answers', async () => {
+    const netherlands = { code: 'pays-bas', name: 'Países Baixos' }
+    collection.push({
+      id: 70, name: '5 euro 2023 – 50.º Aniversário - Associação Holandesa', country: 'Países Baixos', denomination: '5 euro', year: 2023,
+      notes: 'Imported from uCoin (UC# 328).', references: [], images: [], mint: '', grade: '', material: 'Other', category: 'Modern',
+    } as unknown as Coin)
+    localStorage.setItem('ucoinImport:notFound', JSON.stringify([70]))
+    mocks.searchNumistaIssuers.mockResolvedValue({ data: { status: 'ok', issuers: [netherlands] } })
+    mocks.searchNumistaCatalog.mockResolvedValue({
+      data: {
+        status: 'ok', count: 4, page: 1, types: [
+          { id: 380095, title: '5 Euros - Willem-Alexander (COC)', issuer: netherlands, minYear: 2023, maxYear: 2023 },
+          { id: 380096, title: '5 Euros - Willem-Alexander (COC)', issuer: netherlands, minYear: 2023, maxYear: 2023 },
+          { id: 352548, title: '5 Euros - Willem-Alexander (Willemstad; silver plated copper)', issuer: netherlands, minYear: 2023, maxYear: 2023 },
+          { id: 380098, title: '10 Euros - Willem-Alexander (COC)', issuer: netherlands, minYear: 2023, maxYear: 2023 },
+        ],
+      },
+    })
+    // Numista's monthly quota is used up.
+    mocks.getNumistaCatalogType.mockResolvedValue({ data: { status: 'quota_limited', issues: [] } })
+
+    const importer = useUcoinImport({ paceMs: 0 })
+    await importer.init()
+    const coin = importer.notFoundList.value[0]!
+    expect(coin.id).toBe(70)
+    expect((await importer.numistaCandidatesFor(coin)).map((item) => item.id)).toEqual([380095, 380096, 352548])
+
+    expect(await importer.chooseNumistaType(coin, 380096)).toBe('pending')
+    expect(collection[0]!.references?.map((ref) => [ref.catalog, ref.number])).toEqual([['Numista', '380096']])
+    // No longer "not found": waiting for its details.
+    expect(importer.notFoundList.value).toEqual([])
+    expect(importer.awaitingNumista.value.map((entry) => entry.id)).toEqual([70])
+
+    // The quota is back: completing uses the chosen type without searching again.
+    mocks.getNumistaCatalogType.mockResolvedValue({
+      data: { status: 'ok', type: numistaType(380096, netherlands, { title: '5 Euros - Willem-Alexander (COC)', minYear: 2023, maxYear: 2023, composition: 'Silver plated copper' }), issues: [{ id: 3800961, year: 2023 }] },
+    })
+    const searches = mocks.searchNumistaCatalog.mock.calls.length
+    await importer.enrich()
+    expect(mocks.searchNumistaCatalog.mock.calls.length).toBe(searches)
+    expect(importer.progress).toMatchObject({ enriched: 1, notFound: 0 })
+    expect(collection[0]!.notes).toContain('numista.com/380096')
+    expect(importer.awaitingNumista.value).toEqual([])
+  })
+
+  it('reads an Excel export and adds its purchase details to coins imported earlier', async () => {
+    collection.push({
+      id: 50, name: '2 euro 2026 D – Bremen, Casa do Clima', country: 'Alemanha', notes: 'Imported from uCoin (UC# 113).',
+      purchaseDate: null, purchasePrice: 2, purchaseLocation: '', currentValue: 3.1, weightGrams: 8.5, references: [],
+    } as unknown as Coin)
+    const header = ['País', 'Periodo', 'Moeda', 'Denominação', 'Ano', 'Var.', 'Assunto', 'Preço, EUR [uCoin]', 'Número', 'Quantidade', 'Trocas', 'Compra', 'Preço, EUR [My]']
+    const buffer = await buildXlsx([
+      header,
+      ['Alemanha', 'União Europeia (Euro)', 'Euro', '2 euro', 2026, 'D', 'Bremen, Casa do Clima', 2.86, 'UC# 113', 1, 'Atlantius.ue /uid275798', 46174, 2],
+      ['Japão', 'Akihito (Heisei)', 'Yen japonês', '50 ienes', 1991, '', '', 1, 'Y# 101', 1, '', 0, ''],
+    ])
+    const file = { name: 'coleção.xlsx', type: '', arrayBuffer: async () => buffer } as unknown as File
+
+    const importer = useUcoinImport({ paceMs: 0 })
+    await importer.readFile(file)
+
+    expect(importer.parseError.value).toBe('')
+    expect(importer.pendingRows.value.map((row) => row.denomination)).toEqual(['50 ienes'])
+    expect(importer.updatable.value.map(({ coin }) => coin.id)).toEqual([50])
+
+    await importer.fillExisting()
+    expect(importer.phase.value).toBe('ready')
+    expect(importer.progress).toMatchObject({ toUpdate: 1, updated: 1, updateFailed: 0 })
+    expect(collection[0]).toMatchObject({
+      // The API client turns the date into a timestamp; it is mocked here.
+      purchaseDate: '2026-06-01',
+      purchaseLocation: 'Swap on uCoin with Atlantius.ue',
+      // What the coin had is kept.
+      purchasePrice: 2,
+      currentValue: 3.1,
+      weightGrams: 8.5,
+    })
+    expect(importer.updatable.value).toEqual([])
+  })
+
+  it('marks coins as kept in a coin card when Numista says their type is issued in one', async () => {
+    mocks.getNumistaCatalogType.mockImplementation(async (typeId: number) => {
+      const result = TYPES[typeId] as { type: Record<string, unknown> }
+      return { data: typeId === 474550 ? { ...result, type: { ...result.type, issuedInCoincard: true } } : result }
+    })
+
+    const importer = useUcoinImport({ paceMs: 0 })
+    await importer.readFile(csvFile(CSV.split('\n').slice(0, 4).join('\n')))
+    await importer.start(true)
+
+    const presentation = (name: string) => collection.find((coin) => coin.name.startsWith(name))?.presentation
+    expect(presentation('2 euro 2026')).toBe('coincard')
+    expect(presentation('5 cêntimos 1984')).toBe('')
+  })
+
+  it('looks for a region\'s coin among its country\'s types, by subject only', async () => {
+    // uCoin has "Região Autónoma dos Açores" (KM# 46, the Azores numbering);
+    // Numista has the coin as Portugal's (KM# 664), and "Açores" holds only
+    // the old coins of the islands.
+    const csv = [
+      CSV.split('\n')[0],
+      '"Região Autónoma dos Açores","República","100 escudos","1991","","Escudo","100° aniversário - Morte de Antero de Quental","","","","KM# 46","",""',
+      '"Região Autónoma dos Açores","República","100 escudos","1991","","Escudo","","","","","","",""',
+    ].join('\n')
+    const azores = { code: 'acores', name: 'Açores', parent: 'Portugal' }
+    const portugal = { code: 'portugal', name: 'Portugal' }
+    mocks.searchNumistaIssuers.mockImplementation(async (q: string) => ({
+      data: {
+        status: 'ok',
+        issuers: q === 'Açores' ? [azores] : q === 'Portugal' ? [{ code: 'portugal-notgeld', name: 'Portugal (Notgeld)', parent: 'Portugal' }, portugal] : [],
+      },
+    }))
+    mocks.searchNumistaCatalog.mockImplementation(async (params: { catalogue?: string; issuer?: string; year?: number }) => {
+      const types = params.catalogue
+        ? [{ id: 163, title: '1 Rappen (wheat spike)', issuer: { code: 'suisse', name: 'Suíça' }, minYear: 1948, maxYear: 2006 }]
+        : params.issuer === 'portugal' && params.year === 1991
+          ? [
+              { id: 10701, title: '100 Escudos (Antero de Quental)', issuer: portugal, minYear: 1991, maxYear: 1991 },
+              { id: 10702, title: '100 Escudos (Camilo Castelo Branco)', issuer: portugal, minYear: 1991, maxYear: 1991 },
+            ]
+          : []
+      return { data: { status: 'ok', count: types.length, page: 1, types } }
+    })
+    mocks.getNumistaCatalogType.mockImplementation(async (typeId: number) => ({
+      data: { status: 'ok', type: numistaType(typeId, portugal, { title: '100 Escudos (Antero de Quental)', minYear: 1991, maxYear: 1991 }), issues: [{ id: 107010, year: 1991 }] },
+    }))
+
+    const importer = useUcoinImport({ paceMs: 0 })
+    await importer.readFile(csvFile(csv))
+    await importer.start(true)
+
+    // The coin named by its subject is found among Portugal's types; the one
+    // with no subject is not given one of Portugal's ordinary coins.
+    expect(importer.progress).toMatchObject({ created: 2, enriched: 1, notFound: 1 })
+    expect(collection.map((coin) => coin.references?.find((ref) => ref.catalog === 'Numista')?.number)).toEqual(['10701', undefined])
+    expect(mocks.searchNumistaCatalog.mock.calls.map(([params]) => params.issuer)).toContain('portugal')
   })
 
   describe('in a euro collection', () => {

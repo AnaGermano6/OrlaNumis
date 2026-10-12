@@ -96,7 +96,6 @@ function mountPage() {
     global: {
       stubs: {
         RouterLink: routerLinkStub,
-        SellModal: true,
         PurchaseModal: true,
         PurchaseReminderModal: true,
         ImageLightbox: true,

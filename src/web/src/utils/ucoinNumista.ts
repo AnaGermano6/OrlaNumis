@@ -24,6 +24,34 @@ function fold(value: string): string {
   return value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
 }
 
+/**
+ * The Numista type in a link or number as people paste it: "380096",
+ * "https://pt.numista.com/380096", ".../catalogue/pieces380096.html".
+ */
+export function parseNumistaTypeId(text: string): number | undefined {
+  const value = text.trim()
+  const match = /^(\d{1,7})$/.exec(value)
+    ?? /numista\.com\/(?:catalogue\/pieces)?(\d{1,7})(?:\.html)?(?:[/?#]|$)/i.exec(value)
+    ?? /pieces(\d{1,7})\.html/i.exec(value)
+  const id = match ? Number(match[1]) : NaN
+  return Number.isInteger(id) && id > 0 ? id : undefined
+}
+
+/** The Numista type a coin is linked to, if any. */
+export function numistaTypeOf(coin: Pick<Coin, 'references'>): number | undefined {
+  const reference = coin.references?.find((ref) => ref.catalog.trim().toLowerCase() === 'numista')
+  return reference ? parseNumistaTypeId(reference.number) : undefined
+}
+
+/**
+ * Whether a coin linked to Numista has its details: completing a coin writes
+ * the type's page into its notes ("…/catalogue/pieces380096.html"); a link
+ * chosen by hand while Numista could not answer has not got them yet.
+ */
+export function hasNumistaDetails(coin: Pick<Coin, 'notes'>, typeId: number): boolean {
+  return new RegExp(`pieces${typeId}\\.html|numista\\.com/${typeId}(?!\\d)`).test(coin.notes ?? '')
+}
+
 /** What to look up for an imported coin, read back from the coin itself. */
 export function ucoinLookupForCoin(coin: Pick<Coin, 'name' | 'country' | 'denomination' | 'year' | 'mint' | 'references'>): UcoinLookup {
   const country = coin.country?.trim() ?? ''
@@ -99,6 +127,7 @@ function titleDenomination(title: string): string {
   return title.split(/\s\(|\s-\s/)[0] ?? title
 }
 
+
 function sameDenomination(a: ParsedDenomination, b: ParsedDenomination): boolean {
   return a.value !== undefined && b.value !== undefined && Math.abs(a.value - b.value) < 1e-6 && a.subunit === b.subunit
 }
@@ -156,6 +185,10 @@ function closeEnough(a: string, b: string): boolean {
 function similarWords(a: string, b: string): boolean {
   if (a === b) return true
   if (/^\d+$/.test(a) || /^\d+$/.test(b)) return false
+  // A long word inside another, not at its start: "Dirndl" in "Aufdirndln"
+  // (a shared start is weighed below: "Willem" is not "Willemstad").
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a]
+  if (shorter.length >= 6 && longer.indexOf(shorter) > 0) return true
   let prefix = 0
   while (prefix < a.length && prefix < b.length && a[prefix] === b[prefix]) prefix += 1
   // A shared start counts only between words of similar length: "Lisboa" is
@@ -235,6 +268,23 @@ function hasSubject(lookup: UcoinLookup): boolean {
   return words(lookup.subject).length > 0
 }
 
+/**
+ * How many of the subject's words, numbers left out, the title has: "100°
+ * aniversário" shares "100" with every "100 Escudos" title, which names nothing.
+ */
+function namedSubjectScore(lookup: UcoinLookup, title: string): number {
+  return subjectScore(lookup.subject.replace(/\d+/g, ' '), title, lookup.country)
+}
+
+export interface PickNumistaTypeOptions {
+  /**
+   * Only a type the subject names (by a word, not a number) will do: for
+   * lists that hold more than the coin's own country, such as Portugal's
+   * types searched for a coin of the Azores.
+   */
+  requireSubject?: boolean
+}
+
 function span(item: NumistaCatalogSearchItem): number {
   return item.minYear !== undefined && item.maxYear !== undefined ? item.maxYear - item.minYear : 0
 }
@@ -284,6 +334,7 @@ export function pickNumistaType(
   candidates: NumistaCatalogSearchItem[],
   lookup: UcoinLookup,
   source: 'catalogue' | 'issuer',
+  options: PickNumistaTypeOptions = {},
 ): NumistaCatalogSearchItem | undefined {
   const denomination = parseDenomination(lookup.denomination)
 
@@ -308,16 +359,31 @@ export function pickNumistaType(
   const pool = candidates.filter((item) => yearFits(item, lookup.year))
   const sameValue = pool.filter((item) => sameDenomination(denomination, parseDenomination(titleDenomination(item.title))))
   if (!sameValue.length) return undefined
+  if (options.requireSubject && !hasSubject(lookup)) return undefined
   if (hasSubject(lookup)) {
     const matches = sameValue.map((item) => ({ item, matched: subjectScore(lookup.subject, item.title, lookup.country) }))
     const match = uniqueDesign(matches.map(({ item, matched }) => ({ item, score: matched - specialVersionPenalty(item, lookup) })), lookup)
-    if (match && matches.some((entry) => entry.item === match && entry.matched > 0)) return match
-    return sameValue.length === 1 ? sameValue[0] : undefined
+    if (match && matches.some((entry) => entry.item === match && entry.matched > 0)) {
+      return !options.requireSubject || namedSubjectScore(lookup, match.title) > 0 ? match : undefined
+    }
+    return !options.requireSubject && sameValue.length === 1 ? sameValue[0] : undefined
   }
   // No subject: the regular circulation type, struck over several years,
   // rather than a one-year commemorative or a collector version.
   if (sameValue.length === 1) return sameValue[0]
   return unique(sameValue.map((item) => ({ item, score: span(item) - specialVersionPenalty(item, lookup) * 1000 })))
+}
+
+/**
+ * The types a person can choose from for a coin the import did not find:
+ * those of its value that fit its year, or every type of that year when none
+ * has its value; each once.
+ */
+export function numistaCandidates(candidates: NumistaCatalogSearchItem[], lookup: UcoinLookup): NumistaCatalogSearchItem[] {
+  const denomination = parseDenomination(lookup.denomination)
+  const pool = candidates.filter((item) => yearFits(item, lookup.year))
+  const sameValue = pool.filter((item) => sameDenomination(denomination, parseDenomination(titleDenomination(item.title))))
+  return [...new Map((sameValue.length ? sameValue : pool).map((item) => [item.id, item])).values()]
 }
 
 /** The issue of the coin's year (and mint mark or variety), when Numista lists it. */

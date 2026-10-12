@@ -49,7 +49,6 @@ import pwa from './pwa'
 import quickAccess from './quickAccess'
 import quickAccessPage from './quickAccessPage'
 import quickCapture from './quickCapture'
-import sell from './sell'
 import sets from './sets'
 import settings from './settings'
 import shareCard from './shareCard'
@@ -121,7 +120,6 @@ const messages: Messages = {
   quickAccess,
   quickAccessPage,
   quickCapture,
-  sell,
   sets,
   settings,
   shareCard,
