@@ -1,6 +1,12 @@
 import type { Coin } from '@/types'
 import type { MintLocation } from '@/types'
 
+// OpenStreetMap tiles and the starting view for picking a mint's position.
+export const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+export const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+export const DEFAULT_MAP_CENTER: [number, number] = [38, 16]
+export const DEFAULT_MAP_ZOOM = 5
+
 /** Sentinel ID for the virtual Unknown Mint group (coins with no mappable location). */
 export const UNKNOWN_MINT_ID = 0
 

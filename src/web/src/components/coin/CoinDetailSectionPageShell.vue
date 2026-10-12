@@ -12,10 +12,7 @@
         </button>
         <CoinDetailOverflowMenu
           :coin-id="coin.id"
-          :is-wishlist="coin.isWishlist"
-          :is-sold="coin.isSold"
           :duplicating="duplicating"
-          @sell="showSellModal = true"
           @duplicate="handleDuplicate"
         />
       </div>
@@ -60,13 +57,6 @@
       <div>
         <slot :coin="coin" :refresh="refreshCoin"></slot>
       </div>
-
-      <SellModal
-        v-if="showSellModal && coin"
-        :coin="coin"
-        @close="showSellModal = false"
-        @confirm="confirmSell"
-      />
     </div>
   </div>
 </template>
@@ -78,11 +68,9 @@ import { useRouter } from 'vue-router'
 import { ChevronLeft } from 'lucide-vue-next'
 import { useCoinDetailContext } from '@/composables/useCoinDetailContext'
 import { useDialog } from '@/composables/useDialog'
-import { duplicateCoin, sellCoin } from '@/api/client'
+import { duplicateCoin } from '@/api/client'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
-import SellModal from '@/components/SellModal.vue'
 import CoinDetailOverflowMenu from '@/components/coin/CoinDetailOverflowMenu.vue'
-import { useQuickAccess } from '@/composables/useQuickAccess'
 import { t } from '@/i18n'
 
 defineProps<{
@@ -92,17 +80,13 @@ defineProps<{
 const { coin, loading, refreshCoin, navigateToOverview } = useCoinDetailContext()
 const obverseImage = computed(() => coin.value?.images?.find((image) => image.imageType === 'obverse') ?? null)
 const reverseImage = computed(() => coin.value?.images?.find((image) => image.imageType === 'reverse') ?? null)
-const showSellModal = ref(false)
 const duplicating = ref(false)
 
 const containerRef = ref<HTMLElement | null>(null)
 
-// Swipe navigation is suppressed while SellModal is open inside this container.
-const swipeEnabled = computed(() => !showSellModal.value)
-useCoinDetailSwipeNav(containerRef, { enabled: swipeEnabled })
+useCoinDetailSwipeNav(containerRef)
 const router = useRouter()
 const { showAlert } = useDialog()
-const { forget: forgetQuickAccess } = useQuickAccess()
 
 async function handleDuplicate() {
   if (!coin.value || duplicating.value) return
@@ -114,19 +98,6 @@ async function handleDuplicate() {
     await showAlert(t('coinDetail.duplicateFailed'), { title: t('common.error') })
   } finally {
     duplicating.value = false
-  }
-}
-
-async function confirmSell(soldPrice: number | null, soldTo: string) {
-  if (!coin.value) return
-  try {
-    await sellCoin(coin.value.id, soldPrice, soldTo)
-    forgetQuickAccess('coin', coin.value.id)
-    showSellModal.value = false
-    await router.push('/sold')
-  } catch {
-    await showAlert(t('coinDetail.sellFailed'), { title: t('common.error') })
-    showSellModal.value = false
   }
 }
 </script>

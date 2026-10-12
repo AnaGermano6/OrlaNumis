@@ -44,8 +44,6 @@
       </AppIconButton>
       <CoinDetailOverflowMenu
         :coin-id="coinId"
-        :is-wishlist="isWishlist"
-        :is-sold="isSold"
         :duplicating="duplicating"
         :show-share="collapseSecondaryActions"
         :sharing="sharing"
@@ -54,7 +52,6 @@
         :show-pin="collapseSecondaryActions && !isSold"
         :pinned="coinPinned"
         :pin-busy="pinBusy"
-        @sell="emit('sell')"
         @duplicate="emit('duplicate')"
         @share="emit('share')"
         @reminder="emit('reminder')"
@@ -92,7 +89,6 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   share: []
-  sell: []
   duplicate: []
   edit: []
   delete: []

@@ -137,6 +137,14 @@ describe('catalog field suggestions', () => {
     expect(materialFromComposition(composition, MATERIALS)).toBe(material)
   })
 
+  it('marks the coin as kept in a coin card when Numista says the type is issued in one', () => {
+    const inCard = buildCatalogPrefill({ type: modernType({ issuedInCoincard: true }), wishlist: false }, options)
+    expect(inCard.fields.presentation).toBe('coincard')
+    // Otherwise the form keeps whatever presentation it has.
+    const loose = buildCatalogPrefill({ type: modernType(), wishlist: false }, options)
+    expect('presentation' in loose.fields).toBe(false)
+  })
+
   it('falls back to configured categories and eras', () => {
     expect(categoryForType(modernType({ issuer: { code: 'byzantine_empire', name: 'Byzantine Empire' }, minYear: 900, maxYear: 950 }), CATEGORIES)).toBe('Byzantine')
     expect(categoryForType(modernType({ issuer: { code: 'athens', name: 'Ancient Greece – Athens' }, minYear: -450, maxYear: -400 }), CATEGORIES)).toBe('Greek')

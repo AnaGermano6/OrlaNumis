@@ -23,7 +23,6 @@
       @toggle-commemorative="selectedCommemorative = selectedCommemorative === 'true' ? '' : 'true'"
     />
     <CollectionHighlights :summary="summary" />
-    <CollectionWorldMap :countries="countryOptions" :selected-country="selectedCountryName" @select="selectCountry" />
 
     <PwaCollectionHeader
       v-if="isPwa"
@@ -172,7 +171,6 @@ import { useCollectionFilters } from '@/composables/useCollectionFilters'
 import CollectionViewControls, { type CollectionLayout } from '@/components/collection/CollectionViewControls.vue'
 import CollectionKpis from '@/components/collection/CollectionKpis.vue'
 import CollectionHighlights from '@/components/collection/CollectionHighlights.vue'
-import CollectionWorldMap from '@/components/collection/CollectionWorldMap.vue'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import PwaCollectionHeader from '@/components/collection/PwaCollectionHeader.vue'
 import DesktopCollectionHeader from '@/components/collection/DesktopCollectionHeader.vue'
@@ -206,14 +204,11 @@ async function loadSummary() {
   } catch {
     // Keep the last numbers; the gallery itself still works.
   }
-  // Countries feed the map and the country filter; they change with the collection too.
+  // Countries feed the country filter; they change with the collection too.
   void loadCountryOptions()
 }
 
-// The map names the chosen country; "extinct countries" is not one of its own.
-const selectedCountryName = computed(() => selectedCountry.value === EXTINCT_COUNTRIES ? t('collection.view.extinctCountriesName') : selectedCountry.value)
-
-// Choosing a country on the map filters the gallery and brings the coins into view.
+// Choosing the extinct countries in their KPI filters the gallery and brings the coins into view.
 const coinsAnchor = ref<HTMLElement | null>(null)
 function selectCountry(country: string) {
   selectedCountry.value = country

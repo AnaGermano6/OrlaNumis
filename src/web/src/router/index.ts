@@ -170,7 +170,7 @@ const router = createRouter({
     {
       path: '/stats/mint-map',
       name: 'stats-mint-map',
-      component: () => import('@/pages/MintMapPage.vue'),
+      component: () => import('@/pages/CollectionMapPage.vue'),
       meta: { requiresAuth: true },
     },
     {

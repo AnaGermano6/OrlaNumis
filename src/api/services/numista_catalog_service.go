@@ -496,6 +496,7 @@ type providerCatalogType struct {
 	} `json:"mints"`
 	Series            string `json:"series"`
 	Type              string `json:"type"`
+	Comments          string `json:"comments"`
 	CommemoratedTopic string `json:"commemorated_topic"`
 	Demonetization    struct {
 		IsDemonetized *bool  `json:"is_demonetized"`
@@ -533,6 +534,7 @@ func parseNumistaCatalogType(body []byte) (*models.NumistaCatalogType, error) {
 		Currency:           strings.TrimSpace(raw.Value.Currency.Name),
 		CommemoratedTopic:  strings.TrimSpace(raw.CommemoratedTopic),
 		Classification:     strings.TrimSpace(raw.Type),
+		IssuedInCoincard:   IssuedInCoincard(raw.Comments),
 		Demonetized:        raw.Demonetization.IsDemonetized,
 		DemonetizationDate: strings.TrimSpace(raw.Demonetization.Date),
 		Series:             strings.TrimSpace(raw.Series),

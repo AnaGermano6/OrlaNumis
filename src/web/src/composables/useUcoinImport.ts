@@ -32,14 +32,21 @@ import { numistaStatusMessage } from '@/utils/numistaMarketValue'
 import {
   buildUcoinCoin,
   isUcoinImported,
+  keepCoinNullables,
+  isXlsxFile,
+  matchUcoinRows,
   parseUcoinCsv,
-  ucoinCoinKey,
-  ucoinCoinName,
+  parseUcoinXlsx,
+  ucoinPurchase,
+  ucoinPurchaseUpdate,
   type UcoinParseError,
   type UcoinRow,
 } from '@/utils/ucoinImport'
 import {
+  hasNumistaDetails,
   issuerSimilarity,
+  numistaCandidates,
+  numistaTypeOf,
   pickIssue,
   pickNumistaType,
   priceForGrade,
@@ -48,15 +55,20 @@ import {
   ucoinLookupGroupKey,
   unitQuery,
   valuationGrade,
+  type PickNumistaTypeOptions,
   type UcoinLookup,
 } from '@/utils/ucoinNumista'
 
-export type UcoinImportPhase = 'idle' | 'ready' | 'creating' | 'enriching' | 'photos' | 'finished'
+export type UcoinImportPhase = 'idle' | 'ready' | 'updating' | 'creating' | 'enriching' | 'photos' | 'finished'
 
-export interface UcoinImportCoinRef {
-  id: number
-  name: string
+/** A coin imported earlier and what the file adds to it. */
+export interface UcoinCoinUpdate {
+  coin: Coin
+  payload: CoinMutationPayload
 }
+
+/** What came of choosing a Numista type for a coin by hand. */
+export type UcoinChoiceResult = 'completed' | 'pending' | 'failed'
 
 export interface UcoinImportOptions {
   /** Pause between API calls, to stay under the app's per-user rate limit. */
@@ -150,6 +162,7 @@ export function ucoinEnrichment(
     weightGrams: coin.weightGrams ?? fields.weightGrams ?? null,
     diameterMm: coin.diameterMm ?? fields.diameterMm ?? null,
     rarity: coin.rarity || fields.rarity || '',
+    presentation: coin.presentation || fields.presentation || '',
     obverseInscription: coin.obverseInscription || fields.obverseInscription,
     reverseInscription: coin.reverseInscription || fields.reverseInscription,
     obverseDescription: coin.obverseDescription || fields.obverseDescription,
@@ -171,14 +184,18 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
   const rows = ref<UcoinRow[]>([])
   /** Rows of the file not yet in the collection. */
   const pendingRows = ref<UcoinRow[]>([])
+  /** Coins imported earlier that the file has new details for (purchase date, price paid, origin). */
+  const updatable = ref<UcoinCoinUpdate[]>([])
   /** Imported coins still without Numista data (from this or an earlier import). */
   const awaitingNumista = ref<Coin[]>([])
   /** Imported coins Numista did not have in an earlier run, left out until asked again. */
   const earlierNotFound = ref(0)
+  /** The coins of earlierNotFound, to choose their Numista type by hand. */
+  const notFoundList = ref<Coin[]>([])
   /** Imported coins with no image yet. */
   const withoutImages = ref<Coin[]>([])
-  const progress = reactive({ toCreate: 0, created: 0, createFailed: 0, toEnrich: 0, enriched: 0, notFound: 0, failed: 0, toPhoto: 0, photoDone: 0, photographed: 0 })
-  const notFoundCoins = ref<UcoinImportCoinRef[]>([])
+  const progress = reactive({ toUpdate: 0, updated: 0, updateFailed: 0, toCreate: 0, created: 0, createFailed: 0, toEnrich: 0, enriched: 0, notFound: 0, failed: 0, toPhoto: 0, photoDone: 0, photographed: 0 })
+  const notFoundCoins = ref<Coin[]>([])
   const failedLines = ref<number[]>([])
   /** Why Numista stopped the run (quota, key), or ''. */
   const stopMessage = ref('')
@@ -226,10 +243,17 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
 
   function refreshAwaiting(collection: Coin[]) {
     const skipped = readNotFound()
-    const withoutNumista = collection.filter((coin) => isUcoinImported(coin) && !hasNumistaReference(coin) && !coin.isWishlist)
-    awaitingNumista.value = withoutNumista.filter((coin) => !skipped.has(coin.id))
-    earlierNotFound.value = withoutNumista.length - awaitingNumista.value.length
-    withoutImages.value = collection.filter((coin) => isUcoinImported(coin) && !coin.isWishlist && !coin.images?.length)
+    const imported = collection.filter((coin) => isUcoinImported(coin) && !coin.isWishlist)
+    const withoutNumista = imported.filter((coin) => !hasNumistaReference(coin))
+    // Linked to a Numista type by hand while Numista could not answer: its details are still to come.
+    const linkedWithoutDetails = imported.filter((coin) => {
+      const typeId = numistaTypeOf(coin)
+      return typeId !== undefined && !hasNumistaDetails(coin, typeId)
+    })
+    awaitingNumista.value = [...withoutNumista.filter((coin) => !skipped.has(coin.id)), ...linkedWithoutDetails]
+    notFoundList.value = withoutNumista.filter((coin) => skipped.has(coin.id))
+    earlierNotFound.value = notFoundList.value.length
+    withoutImages.value = imported.filter((coin) => !coin.images?.length)
   }
 
   /** Loads the collection to know which coins were already imported. */
@@ -245,11 +269,12 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
   async function readFile(file: File) {
     fileName.value = file.name
     parseError.value = ''
-    const parsed = parseUcoinCsv(await file.text())
+    const parsed = isXlsxFile(file) ? await parseUcoinXlsx(await file.arrayBuffer()) : parseUcoinCsv(await file.text())
     if (parsed.error || !parsed.rows.length) {
       parseError.value = parsed.error ?? 'empty'
       rows.value = []
       pendingRows.value = []
+      updatable.value = []
       phase.value = 'idle'
       return
     }
@@ -262,19 +287,43 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
       return
     }
     refreshAwaiting(collection)
-    // The same coin can be in the file twice; skip only as many as are already in the collection.
-    const existing = new Map<string, number>()
-    for (const coin of collection.filter(isUcoinImported)) {
-      const key = ucoinCoinKey(coin)
-      existing.set(key, (existing.get(key) ?? 0) + 1)
-    }
+    await loadRate()
+    // The same coin can be in the file twice; each row takes one coin already
+    // in the collection, and only the rows left over are new.
+    const { matched, pending } = matchUcoinRows(parsed.rows, collection.filter(isUcoinImported))
     rows.value = parsed.rows
-    pendingRows.value = parsed.rows.filter((row) => {
-      const key = ucoinCoinKey({ name: ucoinCoinName(row), country: row.country })
-      const count = existing.get(key) ?? 0
-      if (count > 0) existing.set(key, count - 1)
-      return count === 0
+    pendingRows.value = pending
+    // A coin already imported keeps what it has and gets what the file adds.
+    updatable.value = matched.flatMap(({ row, coin }) => {
+      const payload = ucoinPurchaseUpdate(coin, ucoinPurchase(row, usdPerEur))
+      return payload ? [{ coin, payload }] : []
     })
+    progress.toUpdate = 0
+    progress.updated = 0
+    progress.updateFailed = 0
+    phase.value = 'ready'
+  }
+
+  /** Adds the file's purchase details to coins imported earlier; their other details are kept. */
+  async function fillExisting() {
+    if (phase.value !== 'ready' || !updatable.value.length) return
+    phase.value = 'updating'
+    stopRequested = false
+    stopped.value = false
+    progress.toUpdate = updatable.value.length
+    progress.updated = 0
+    progress.updateFailed = 0
+    await runPool(updatable.value, 3, async ({ coin, payload }) => {
+      try {
+        await pace()
+        await updateCoin(coin.id, payload)
+        progress.updated += 1
+      } catch {
+        progress.updateFailed += 1
+      }
+    })
+    updatable.value = []
+    stopped.value = stopRequested
     phase.value = 'ready'
   }
 
@@ -295,6 +344,10 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
   const lang = numistaLang()
   const learnedIssuers = new Map<string, { code: string; minYear?: number; maxYear?: number }[]>()
   const issuerLookups = new Map<string, Promise<string | undefined>>()
+  // Issuers that are part of another ("Açores" of "Portugal"), by code, and
+  // the codes found for those larger issuers, by name.
+  const issuerParents = new Map<string, string>()
+  const parentLookups = new Map<string, Promise<string | undefined>>()
   const typeResults = new Map<number, Promise<{ type?: NumistaCatalogType; issues: Awaited<ReturnType<typeof getNumistaCatalogType>>['data']['issues'] }>>()
   const translations = new Map<string, Promise<string | undefined>>()
   const priceResults = new Map<string, Promise<NumistaGradePrice[]>>()
@@ -344,13 +397,33 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
             .map((issuer) => ({ issuer, score: issuerSimilarity(lookup.country, issuer.name) - (issuer.parent ? 0.1 : 0) }))
             .filter((entry) => entry.score > 0)
             .sort((a, b) => b.score - a.score)
-          if (ranked[0]) return ranked[0].issuer.code
+          const best = ranked[0]?.issuer
+          if (best) {
+            if (best.parent) issuerParents.set(best.code, best.parent)
+            return best.code
+          }
           if (query === lastWord) break
         }
         return undefined
       })())
     }
     return issuerLookups.get(key)
+  }
+
+  /** Numista code of the issuer the given one is part of ("portugal" for "acores"), if any. */
+  function parentIssuerCode(code: string): Promise<string | undefined> {
+    const parent = issuerParents.get(code)
+    if (!parent) return Promise.resolve(undefined)
+    const key = fold(parent)
+    if (!parentLookups.has(key)) {
+      parentLookups.set(key, (async () => {
+        await pace()
+        const res = await searchNumistaIssuers(parent, lang)
+        checkStatus(res.data.status)
+        return res.data.issuers.find((issuer) => !issuer.parent && issuerSimilarity(parent, issuer.name) >= 3)?.code
+      })())
+    }
+    return parentLookups.get(key)!
   }
 
   /**
@@ -369,11 +442,23 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
   }
 
   /** Picks the type, then, when none fits, tries again with the subject in English too. */
-  async function pickType(candidates: NumistaCatalogSearchItem[], lookup: UcoinLookup, source: 'catalogue' | 'issuer') {
-    const match = pickNumistaType(candidates, lookup, source)
+  async function pickType(candidates: NumistaCatalogSearchItem[], lookup: UcoinLookup, source: 'catalogue' | 'issuer', options: PickNumistaTypeOptions = {}) {
+    const match = pickNumistaType(candidates, lookup, source, options)
     if (match || !candidates.length || !lookup.subject.trim()) return match
     const english = await translatedSubject(lookup.subject)
-    return english ? pickNumistaType(candidates, { ...lookup, subject: `${lookup.subject} ${english}` }, source) : undefined
+    return english ? pickNumistaType(candidates, { ...lookup, subject: `${lookup.subject} ${english}` }, source, options) : undefined
+  }
+
+  /** An issuer's types of the coin's year, narrowed to its unit when known. */
+  async function issuerTypes(issuer: string, lookup: UcoinLookup & { year: number }) {
+    const q = unitQuery(lookup.denomination)
+    const candidates: NumistaCatalogSearchItem[] = []
+    for (let page = 1; page <= MAX_ISSUER_PAGES; page += 1) {
+      const result = await search({ issuer, year: lookup.year, q, page, count: SEARCH_PAGE_SIZE })
+      candidates.push(...result.types)
+      if (result.count <= page * SEARCH_PAGE_SIZE) break
+    }
+    return candidates
   }
 
   async function resolveType(lookup: UcoinLookup): Promise<number | undefined> {
@@ -393,18 +478,21 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     }
     // Listing an issuer's types needs a year to stay short.
     if (lookup.year === undefined) return undefined
+    const dated = { ...lookup, year: lookup.year }
     const issuer = await issuerCode(lookup)
     if (!issuer) return undefined
-    const q = unitQuery(lookup.denomination)
-    const candidates: NumistaCatalogSearchItem[] = []
-    for (let page = 1; page <= MAX_ISSUER_PAGES; page += 1) {
-      const result = await search({ issuer, year: lookup.year, q, page, count: SEARCH_PAGE_SIZE })
-      candidates.push(...result.types)
-      if (result.count <= page * SEARCH_PAGE_SIZE) break
+    const match = await pickType(await issuerTypes(issuer, dated), lookup, 'issuer')
+    if (match) {
+      learnIssuer(lookup.country, match)
+      return match.id
     }
-    const match = await pickType(candidates, lookup, 'issuer')
-    if (match) learnIssuer(lookup.country, match)
-    return match?.id
+    // A region's coins may be listed under its country: Numista has the
+    // Azores' 1991 escudos as Portugal's ("Região Autónoma dos Açores" on
+    // uCoin). There only a type the subject names will do, and the country is
+    // not learned for the region, so its other coins are not looked up there.
+    const parent = await parentIssuerCode(issuer)
+    if (!parent || parent === issuer) return undefined
+    return (await pickType(await issuerTypes(parent, dated), lookup, 'issuer', { requireSubject: true }))?.id
   }
 
   function loadType(typeId: number) {
@@ -414,7 +502,11 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
         const res = await getNumistaCatalogType(typeId, lang)
         checkStatus(res.data.status)
         return { type: res.data.type, issues: res.data.issues }
-      })())
+      })().catch((error: unknown) => {
+        // Not kept: the next try asks again (the quota may be back).
+        typeResults.delete(typeId)
+        throw error
+      }))
     }
     return typeResults.get(typeId)!
   }
@@ -459,16 +551,30 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     return false
   }
 
+  type CatalogOptions = { categories: string[]; eras: string[]; materials: string[]; registry: CatalogRegistry[] }
+
+  /** Completes one coin from its Numista type: the issue of its year, the value for its grade. */
+  async function enrichCoin(coin: Coin, type: NumistaCatalogType, issues: Awaited<ReturnType<typeof loadType>>['issues'], catalogOptions: CatalogOptions) {
+    const lookup = ucoinLookupForCoin(coin)
+    const issue = pickIssue(issues, lookup) ?? (issues.length === 1 ? issues[0] : undefined)
+    const prices = issue ? await loadPrices(type.id, issue.id) : []
+    const currentValue = priceForGrade(prices, valuationGrade(coin.grade))
+    const prefill = buildCatalogPrefill({ type, issue, currentValue, wishlist: false }, catalogOptions)
+    await pace()
+    await updateCoin(coin.id, ucoinEnrichment(coin, type, prefill))
+  }
+
   async function enrichGroup(
-    group: { lookup: UcoinLookup; coins: Coin[] },
-    catalogOptions: { categories: string[]; eras: string[]; materials: string[]; registry: CatalogRegistry[] },
+    group: { lookup: UcoinLookup; coins: Coin[]; typeId?: number },
+    catalogOptions: CatalogOptions,
     notFound: Set<number>,
   ) {
     let typeId: number | undefined
     let type: NumistaCatalogType | undefined
     let issues: Awaited<ReturnType<typeof loadType>>['issues'] = []
     try {
-      typeId = await resolveType(group.lookup)
+      // A type chosen by hand is used as it is; otherwise it is looked up.
+      typeId = group.typeId ?? await resolveType(group.lookup)
       if (typeId) ({ type, issues } = await loadType(typeId))
     } catch (error) {
       if (!stopWith(error)) progress.failed += group.coins.length
@@ -477,7 +583,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     if (!typeId || !type) {
       for (const coin of group.coins) {
         notFound.add(coin.id)
-        notFoundCoins.value.push({ id: coin.id, name: coin.name })
+        notFoundCoins.value.push(coin)
       }
       progress.notFound += group.coins.length
       saveNotFound(notFound)
@@ -487,13 +593,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     for (const coin of group.coins) {
       if (stopRequested) return
       try {
-        const lookup = ucoinLookupForCoin(coin)
-        const issue = pickIssue(issues, lookup) ?? (issues.length === 1 ? issues[0] : undefined)
-        const prices = issue ? await loadPrices(typeId, issue.id) : []
-        const currentValue = priceForGrade(prices, valuationGrade(coin.grade))
-        const prefill = buildCatalogPrefill({ type, issue, currentValue, wishlist: false }, catalogOptions)
-        await pace()
-        await updateCoin(coin.id, ucoinEnrichment(coin, type, prefill))
+        await enrichCoin(coin, type, issues, catalogOptions)
         progress.enriched += 1
       } catch (error) {
         if (stopWith(error)) return
@@ -598,11 +698,12 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
       phase.value = 'finished'
       return
     }
-    const groups = new Map<string, { lookup: UcoinLookup; coins: Coin[] }>()
+    const groups = new Map<string, { lookup: UcoinLookup; coins: Coin[]; typeId?: number }>()
     for (const coin of awaitingNumista.value) {
       const lookup = ucoinLookupForCoin(coin)
-      const key = ucoinLookupGroupKey(lookup)
-      const group = groups.get(key) ?? { lookup, coins: [] }
+      const typeId = numistaTypeOf(coin)
+      const key = typeId !== undefined ? `type:${typeId}` : ucoinLookupGroupKey(lookup)
+      const group = groups.get(key) ?? { lookup, coins: [], typeId }
       group.coins.push(coin)
       groups.set(key, group)
     }
@@ -671,6 +772,60 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     stopRequested = true
   }
 
+  /**
+   * The Numista types a coin the import did not find might be: those of its
+   * country, value and year (the searches the import made, served from the
+   * cache, so they cost nothing).
+   */
+  async function numistaCandidatesFor(coin: Coin): Promise<NumistaCatalogSearchItem[]> {
+    const lookup = ucoinLookupForCoin(coin)
+    if (lookup.year === undefined) return []
+    const dated = { ...lookup, year: lookup.year }
+    const issuer = await issuerCode(lookup)
+    if (!issuer) return []
+    const candidates = await issuerTypes(issuer, dated)
+    const parent = await parentIssuerCode(issuer)
+    if (parent && parent !== issuer) candidates.push(...await issuerTypes(parent, dated))
+    return numistaCandidates(candidates, lookup)
+  }
+
+  /**
+   * Links a coin to the Numista type chosen by hand, then completes it if
+   * Numista answers; if not (its monthly quota is used up), the link stays
+   * and "Complete" adds the details later.
+   */
+  async function chooseNumistaType(coin: Coin, typeId: number): Promise<UcoinChoiceResult> {
+    const reference: CoinReferenceInput = { catalog: 'Numista', number: String(typeId), uri: `https://en.numista.com/catalogue/pieces${typeId}.html` }
+    let linked: Coin
+    try {
+      await pace()
+      linked = (await updateCoin(coin.id, { ...keepCoinNullables(coin), references: mergeReferences(coin, [reference]) } as CoinMutationPayload)).data
+    } catch {
+      return 'failed'
+    }
+    const notFound = readNotFound()
+    notFound.delete(coin.id)
+    saveNotFound(notFound)
+    let result: UcoinChoiceResult = 'pending'
+    try {
+      const { type, issues } = await loadType(typeId)
+      if (type) {
+        await loadRate()
+        await enrichCoin(linked ?? coin, type, issues, await catalogOptions())
+        result = 'completed'
+      }
+    } catch {
+      // Linked; the details come with the next "Complete".
+    }
+    notFoundCoins.value = notFoundCoins.value.filter((entry) => entry.id !== coin.id)
+    try {
+      refreshAwaiting(await loadCollection())
+    } catch {
+      // The lists refresh on the next visit.
+    }
+    return result
+  }
+
   /** Forgets which coins Numista did not have, so the next run tries them again. */
   function retryNotFound() {
     saveNotFound(new Set())
@@ -683,8 +838,13 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     loadFailed,
     rows,
     pendingRows,
+    updatable,
+    fillExisting,
     awaitingNumista,
     earlierNotFound,
+    notFoundList,
+    numistaCandidatesFor,
+    chooseNumistaType,
     withoutImages,
     addMissingPhotos,
     countries,

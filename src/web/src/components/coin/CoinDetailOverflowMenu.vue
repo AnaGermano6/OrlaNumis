@@ -40,15 +40,6 @@
       </button>
       <div v-if="showShare || showReminder || showPin" class="my-1 border-t border-border-subtle"></div>
       <button
-        v-if="!isWishlist && !isSold"
-        class="inline-flex w-full items-center gap-2 whitespace-nowrap rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary"
-        :aria-label="t('coinDetail.menu.sell')"
-        @click="handleSell(close)"
-      >
-        <CircleDollarSign :size="16" />
-        {{ t('coinDetail.menu.sell') }}
-      </button>
-      <button
         class="inline-flex w-full items-center gap-2 whitespace-nowrap rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-55"
         :disabled="duplicating"
         :aria-label="duplicating ? t('coinDetail.menu.copyingCoin') : t('coinDetail.menu.copy')"
@@ -72,15 +63,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BellRing, CircleDollarSign, Copy, Menu, Pin, PinOff, Share2 } from 'lucide-vue-next'
+import { BellRing, Copy, Menu, Pin, PinOff, Share2 } from 'lucide-vue-next'
 import { COIN_DETAIL_SECTIONS, SECTION_ORDER, type CoinDetailSection } from '@/constants/coinDetailSections'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import AppOverflowMenu from '@/components/ui/AppOverflowMenu.vue'
 import { t } from '@/i18n'
 
 const props = withDefaults(defineProps<{
-  isWishlist: boolean
-  isSold: boolean
   coinId: number
   duplicating?: boolean
   showShare?: boolean
@@ -102,7 +91,6 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  sell: []
   duplicate: []
   share: []
   reminder: []
@@ -112,11 +100,6 @@ const emit = defineEmits<{
 const sections: CoinDetailSection[] = SECTION_ORDER.map(id => COIN_DETAIL_SECTIONS[id]) as CoinDetailSection[]
 
 const pinLabel = computed(() => props.pinned ? t('coinDetail.pin.unpin') : t('coinDetail.pin.pin'))
-
-function handleSell(close: () => void) {
-  close()
-  emit('sell')
-}
 
 function handleDuplicate(close: () => void) {
   if (props.duplicating) return

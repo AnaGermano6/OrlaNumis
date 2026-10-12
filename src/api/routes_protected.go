@@ -275,6 +275,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		coinCirculation := services.NewCoinCirculationService(d.coinRepo, numistaCatalogSvc)
 		coinHandler.WithCirculation(coinCirculation)
 		protected.GET("/coins/:id/status", coinHandler.Status)
+		protected.GET("/coins/statuses", coinHandler.StatusGroups)
 		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(d.exchangeRates).WithSettings(d.settingsSvc).WithCirculation(coinCirculation).Summary)
 		protected.POST("/coins/country-from-numista", d.writeRateLimit, coinCountryHandler.FillFromNumista)
 

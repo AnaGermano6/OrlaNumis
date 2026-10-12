@@ -7,7 +7,6 @@ export default {
   confirmDelete: 'Delete this coin from your collection?',
   deleteTitle: 'Delete Coin',
   duplicateFailed: 'Failed to duplicate coin',
-  sellFailed: 'Failed to mark as sold',
   backToOverview: 'Back to Overview',
   backToGallery: 'Back to Gallery',
   metadata: {
@@ -37,7 +36,6 @@ export default {
     closeBackdrop: 'Close overflow menu',
     more: 'More actions',
     open: 'Open overflow actions',
-    sell: 'Sell Coin',
     copyingCoin: 'Copying coin...',
     copying: 'Copying...',
     copy: 'Copy Coin',

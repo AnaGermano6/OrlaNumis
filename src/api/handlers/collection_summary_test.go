@@ -353,4 +353,20 @@ func TestCollectionSummaryAndList_CurrentCoins(t *testing.T) {
 	if current := names("/api/circulation-test?circulation=current&commemorative=true"); len(current) != 1 || current[0] != "Hand-made" {
 		t.Fatalf("current commemorative = %v", current)
 	}
+
+	// The same groups in one answer, for the map.
+	groupsRoute := router.Group("/api/status-groups-test")
+	groupsRoute.Use(coinTestAuthMiddleware())
+	groupsRoute.GET("", list.StatusGroups)
+	w = coinRequest(router, http.MethodGet, "/api/status-groups-test", nil)
+	var groups CoinStatusGroups
+	if err := json.Unmarshal(w.Body.Bytes(), &groups); err != nil || w.Code != http.StatusOK {
+		t.Fatalf("status groups: %d %s", w.Code, w.Body.String())
+	}
+	// Hand-made is current and commemorative; the 2 euro (set by hand), the
+	// escudo and the dinar are demonetized; Numista says nothing of the dinar's type.
+	if len(groups.Current) != 1 || groups.Current[0] != coins[3].ID || len(groups.Demonetized) != 3 ||
+		len(groups.Commemorative) != 1 || groups.Commemorative[0] != coins[3].ID || len(groups.Regular) != 2 {
+		t.Fatalf("groups = %+v", groups)
+	}
 }

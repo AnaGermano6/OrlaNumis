@@ -55,4 +55,5 @@ export const COIN_DETAIL_SECTIONS: Record<string, CoinDetailSection> = {
   },
 }
 
-export const SECTION_ORDER: CoinDetailSection['id'][] = ['shipment', 'journal', 'health', 'notes', 'actions', 'analysis', 'valuation']
+// Shipment tracking is not used in this collection: its page is left out of the menu and the swipes.
+export const SECTION_ORDER: CoinDetailSection['id'][] = ['journal', 'health', 'notes', 'actions', 'analysis', 'valuation']

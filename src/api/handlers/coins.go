@@ -474,6 +474,43 @@ func (h *CoinHandler) Status(c *gin.Context) {
 	c.JSON(http.StatusOK, h.circulation.Status(coin))
 }
 
+// CoinStatusGroups lists the collection's coins by legal tender and
+// commemorative status; a coin nobody knows about is in neither list of a pair.
+type CoinStatusGroups struct {
+	Current       []uint `json:"current"`
+	Demonetized   []uint `json:"demonetized"`
+	Commemorative []uint `json:"commemorative"`
+	Regular       []uint `json:"regular"`
+}
+
+// StatusGroups tells, in one answer, which collection coins are current or
+// demonetized and which are commemorative or not.
+//
+//	@Summary		List coins by legal tender and commemorative status
+//	@Description	Returns the IDs of the user's collection coins (not wishlist or sold) that are still legal tender (current) or not (demonetized), and that are commemorative or not, by the same rules as the summary and the coin list filters: a circulation set on the coin wins, else the cached Numista type says (never asking Numista); coins of extinct countries are not current. A coin nobody knows about is in neither list of a pair.
+//	@Tags			Coins
+//	@Produce		json
+//	@Success		200	{object}	CoinStatusGroups
+//	@Failure		401	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/coins/statuses [get]
+func (h *CoinHandler) StatusGroups(c *gin.Context) {
+	groups := CoinStatusGroups{Current: []uint{}, Demonetized: []uint{}, Commemorative: []uint{}, Regular: []uint{}}
+	if h.circulation == nil {
+		c.JSON(http.StatusOK, groups)
+		return
+	}
+	sorted, err := h.circulation.Classify(c.GetUint("userId"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch coins"})
+		return
+	}
+	groups.Current, groups.Demonetized = sorted.Current, sorted.Demonetized
+	groups.Commemorative, groups.Regular = sorted.Commemorative, sorted.Regular
+	c.JSON(http.StatusOK, groups)
+}
+
 // Create adds a new coin for the authenticated user.
 //
 //	@Summary		Create a coin

@@ -103,7 +103,7 @@ describe('CoinDetailHeaderActions', () => {
     expect(pushMock).toHaveBeenCalledWith('/')
   })
 
-  it('keeps primary icons visible and moves sell/copy/details into overflow menu', async () => {
+  it('keeps primary icons visible and moves copy/details into overflow menu', async () => {
     const wrapper = mount(CoinDetailHeaderActions, {
       props: {
         isWishlist: false,
@@ -133,8 +133,10 @@ describe('CoinDetailHeaderActions', () => {
     expect(wrapper.emitted('share')).toHaveLength(1)
 
     await wrapper.find('button[aria-label="Open overflow actions"]').trigger('click')
-    expect(wrapper.find('button[aria-label="Sell Coin"]').exists()).toBe(true)
+    // Selling and shipment tracking are not used in this collection.
+    expect(wrapper.find('button[aria-label="Sell Coin"]').exists()).toBe(false)
     expect(wrapper.find('button[aria-label="Copy Coin"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('Shipment Tracker')
     expect(wrapper.text()).toContain('Activity Journal')
     expect(wrapper.text()).toContain('Value Trend')
   })

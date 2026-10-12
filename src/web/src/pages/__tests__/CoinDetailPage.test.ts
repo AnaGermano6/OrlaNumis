@@ -190,30 +190,23 @@ describe('CoinDetailPage', () => {
     expect(quickRefresh).toHaveBeenCalled()
   })
 
-  it('removes Quick Access state after successful delete and sell workflows', async () => {
-    const stubs = pageStubs()
-    stubs.SellModal = {
-      template: '<button aria-label="Confirm sale" @click="$emit(\'confirm\', 100, \'Buyer\')">Confirm</button>',
-    }
-    const wrapper = mount(CoinDetailPage, { global: { stubs } })
+  it('removes Quick Access state after a delete, and offers neither selling nor shipment tracking', async () => {
+    const wrapper = mount(CoinDetailPage, { global: { stubs: pageStubs() } })
 
     await wrapper.get('button[aria-label="Delete"]').trigger('click')
     await flushPromises()
     expect(quickForget).toHaveBeenCalledWith('coin', coin.id)
 
     await wrapper.find('button[aria-label="Open overflow actions"]').trigger('click')
-    await wrapper.get('button[aria-label="Sell Coin"]').trigger('click')
-    await wrapper.get('button[aria-label="Confirm sale"]').trigger('click')
-    await flushPromises()
-    expect(sellCoin).toHaveBeenCalledWith(coin.id, 100, 'Buyer')
-    expect(quickForget).toHaveBeenCalledWith('coin', coin.id)
+    expect(wrapper.find('button[aria-label="Sell Coin"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Shipment')
+    expect(wrapper.text()).toContain('Activity Journal')
   })
 })
 
 function pageStubs() {
   return {
     RouterLink: routerLinkStub,
-    SellModal: true,
     PurchaseModal: true,
     ImageLightbox: true,
     CoinTagsSection: true,

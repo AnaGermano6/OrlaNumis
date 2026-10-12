@@ -15,7 +15,6 @@
           :show-reminder-action="coin.isWishlist"
           :reminder-active="!!reminder"
           @share="handleShare"
-          @sell="showSellModal = true"
           @duplicate="handleDuplicate"
           @edit="handleEdit"
           @delete="handleDelete"
@@ -167,7 +166,6 @@
       </div>
     </div>
 
-    <SellModal v-if="showSellModal && coin" :coin="coin" @close="showSellModal = false" @confirm="confirmSell" />
     <RealPhotosModal
       v-if="showRealPhotos && coin"
       :coin-id="coin.id"
@@ -206,7 +204,6 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCoinsStore } from '@/stores/coins'
-import SellModal from '@/components/SellModal.vue'
 import PurchaseModal from '@/components/PurchaseModal.vue'
 import PurchaseReminderModal from '@/components/coin/PurchaseReminderModal.vue'
 import ImageLightbox from '@/components/ImageLightbox.vue'
@@ -219,7 +216,7 @@ import CoinReferencesSection from '@/components/coin/CoinReferencesSection.vue'
 import CoinMarketValueSection from '@/components/coin/CoinMarketValueSection.vue'
 import RealPhotosModal from '@/components/photos/RealPhotosModal.vue'
 import { coinPhotoDetails } from '@/utils/coinPhotos'
-import { deleteCoin, duplicateCoin, getCoinStatus, purchaseCoin, sellCoin, swapCoinImageSides, type CoinStatus } from '@/api/client'
+import { deleteCoin, duplicateCoin, getCoinStatus, purchaseCoin, swapCoinImageSides, type CoinStatus } from '@/api/client'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import { useDialog } from '@/composables/useDialog'
 import { useCoinDetailMetadataRows } from '@/composables/useCoinDetailMetadataRows'
@@ -236,7 +233,6 @@ const route = useRoute()
 const router = useRouter()
 const store = useCoinsStore()
 
-const showSellModal = ref(false)
 const showPurchaseModal = ref(false)
 const showReminderModal = ref(false)
 const lightboxImage = ref<CoinImage | null>(null)
@@ -246,7 +242,7 @@ const duplicating = ref(false)
 const containerRef = ref<HTMLElement | null>(null)
 
 // Swipe navigation is suppressed while any non-teleported modal is open.
-const swipeEnabled = computed(() => !showSellModal.value && !showPurchaseModal.value && !showReminderModal.value)
+const swipeEnabled = computed(() => !showPurchaseModal.value && !showReminderModal.value)
 useCoinDetailSwipeNav(containerRef, { enabled: swipeEnabled })
 
 const coin = computed(() => store.currentCoin)
@@ -403,18 +399,5 @@ async function handleDuplicate() {
 function handleEdit() {
   if (!coin.value) return
   router.push(`/edit/${coin.value.id}`)
-}
-
-async function confirmSell(soldPrice: number | null, soldTo: string) {
-  if (!coin.value) return
-  try {
-    await sellCoin(coin.value.id, soldPrice, soldTo)
-    forgetQuickAccess('coin', coin.value.id)
-    showSellModal.value = false
-    router.push('/sold')
-  } catch {
-    await showAlert(t('coinDetail.sellFailed'), { title: t('common.error') })
-    showSellModal.value = false
-  }
 }
 </script>

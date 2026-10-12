@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import type { NumistaCatalogSearchItem } from '@/api/client'
 import type { Coin } from '@/types'
 import {
+  hasNumistaDetails,
   issuerSimilarity,
+  numistaCandidates,
+  numistaTypeOf,
+  parseNumistaTypeId,
   parseDenomination,
   pickIssue,
   pickNumistaType,
@@ -78,6 +82,25 @@ describe('matching uCoin coins to Numista', () => {
     expect(pickNumistaType(southAfrica, lookup({ country: 'África do Sul', denomination: '5 cêntimos', year: 1984 }), 'catalogue')?.id).toBe(1791)
     // The number and issuer decide; uCoin and Numista sometimes date a type differently.
     expect(pickNumistaType(southAfrica, lookup({ country: 'África do Sul', year: 1991 }), 'catalogue')?.id).toBe(1791)
+  })
+
+  it('takes only a type its subject names from a list holding more than the coin\'s country', () => {
+    // Numista lists the Azores' 1991 escudos among Portugal's types.
+    const portugal = { code: 'portugal', name: 'Portugal' }
+    const portugal1991 = [
+      { id: 10701, title: '100 Escudos (Antero de Quental)', issuer: portugal, minYear: 1991, maxYear: 1991 },
+      { id: 10702, title: '100 Escudos (Camilo Castelo Branco)', issuer: portugal, minYear: 1991, maxYear: 1991 },
+    ]
+    const azores = { country: 'Região Autónoma dos Açores', denomination: '100 escudos', year: 1991 }
+    const strict = { requireSubject: true }
+    expect(pickNumistaType(portugal1991, lookup({ ...azores, subject: '100° aniversário - Morte de Antero de Quental' }), 'issuer', strict)?.id).toBe(10701)
+    // A number is no name: every "100 Escudos" title has "100".
+    expect(pickNumistaType(portugal1991, lookup({ ...azores, subject: '100° aniversário' }), 'issuer', strict)).toBeUndefined()
+    expect(pickNumistaType(portugal1991, lookup(azores), 'issuer', strict)).toBeUndefined()
+    // A single type of that value is taken only for the coin's own country.
+    const single = portugal1991.slice(1)
+    expect(pickNumistaType(single, lookup({ ...azores, subject: 'Antero de Quental' }), 'issuer')?.id).toBe(10702)
+    expect(pickNumistaType(single, lookup({ ...azores, subject: 'Antero de Quental' }), 'issuer', strict)).toBeUndefined()
   })
 
   it('takes the ordinary version of a design when several versions fit', () => {
@@ -231,5 +254,56 @@ describe('matching uCoin coins to Numista', () => {
     // Coins of one Numista type share a key: the same KM number in other years, or the same subject and year.
     expect(ucoinLookupGroupKey(ucoinLookupForRow(berlin))).toBe(ucoinLookupGroupKey({ ...ucoinLookupForRow(berlin), year: 2019, mintMark: 'A' }))
     expect(ucoinLookupGroupKey(ucoinLookupForRow(erasmus))).toBe(ucoinLookupGroupKey({ ...ucoinLookupForRow(erasmus), mintMark: 'F' }))
+  })
+})
+
+describe('Numista types chosen by hand and words inside others', () => {
+  const austria = { code: 'autriche', name: 'Áustria' }
+  const netherlands = { code: 'pays-bas', name: 'Países Baixos' }
+
+  it('finds a word inside a longer one, but not at its start', () => {
+    // Numista's titles for Austria's 10 euro coins of 2025.
+    const tenEuro2025 = [
+      { id: 20259, title: '10 Euros (Vienna Philharmonic)', issuer: austria, minYear: 2002, maxYear: 2026 },
+      { id: 464731, title: '10 Euros (Aufdirndln – Linen, copper)', issuer: austria, minYear: 2025, maxYear: 2025 },
+      { id: 464732, title: '10 Euros (Aufdirndln – Linen, silver)', issuer: austria, minYear: 2025, maxYear: 2025 },
+      { id: 490943, title: '10 Euros (Lederhose)', issuer: austria, minYear: 2025, maxYear: 2025 },
+    ]
+    expect(pickNumistaType(tenEuro2025, lookup({ country: 'Áustria', denomination: '10 euro', year: 2025, subject: 'Tracht - Dirndl' }), 'issuer')?.id).toBe(464731)
+    // "Willem" (the king, in every Dutch title) starts "Willemstad": no match from it.
+    const fiveEuro2023 = [
+      { id: 380095, title: '5 Euros - Willem-Alexander (COC)', issuer: netherlands, minYear: 2023, maxYear: 2023 },
+      { id: 352548, title: '5 Euros - Willem-Alexander (Willemstad; silver plated copper)', issuer: netherlands, minYear: 2023, maxYear: 2023 },
+    ]
+    const willemstad = lookup({ country: 'Países Baixos', denomination: '5 euro', year: 2023, subject: 'Patrimônio Mundial da UNESCO - Área Histórica de Willemstad, Curaçao' })
+    expect(pickNumistaType(fiveEuro2023, willemstad, 'issuer')?.id).toBe(352548)
+  })
+
+  it('offers the types of the coin\'s value and year to choose from', () => {
+    const items = [
+      { id: 1, title: '5 Euros (Easter coin 2021)', issuer: austria, minYear: 2021, maxYear: 2021 },
+      { id: 2, title: '5 Euros (Easter coin 2021)', issuer: austria, minYear: 2021, maxYear: 2021 },
+      { id: 3, title: '10 Euros (Rose)', issuer: austria, minYear: 2021, maxYear: 2021 },
+      { id: 4, title: '5 Euros (Janus)', issuer: austria, minYear: 2020, maxYear: 2020 },
+      { id: 1, title: '5 Euros (Easter coin 2021)', issuer: austria, minYear: 2021, maxYear: 2021 },
+    ]
+    const coin = lookup({ country: 'Áustria', denomination: '5 euro', year: 2021, subject: 'Pequeno milagre' })
+    expect(numistaCandidates(items, coin).map((item) => item.id)).toEqual([1, 2])
+    // No type of its value: every type of its year.
+    expect(numistaCandidates(items, { ...coin, denomination: '20 euro' }).map((item) => item.id)).toEqual([1, 2, 3])
+  })
+
+  it('reads a Numista type from a link or a number, and tells a linked coin without details', () => {
+    expect(parseNumistaTypeId('380096')).toBe(380096)
+    expect(parseNumistaTypeId(' https://pt.numista.com/380096 ')).toBe(380096)
+    expect(parseNumistaTypeId('https://en.numista.com/catalogue/pieces380096.html')).toBe(380096)
+    expect(parseNumistaTypeId('https://pt.ucoin.net/coin/netherlands-5-euro-2023/')).toBeUndefined()
+    expect(parseNumistaTypeId('abc')).toBeUndefined()
+
+    const linked = { references: [{ catalog: 'Numista', number: '380096' }], notes: 'Importada do uCoin (UC# 328).' } as unknown as Coin
+    expect(numistaTypeOf(linked)).toBe(380096)
+    expect(hasNumistaDetails(linked, 380096)).toBe(false)
+    expect(hasNumistaDetails({ notes: 'Do catálogo Numista: 5 Euros (COC) – https://en.numista.com/catalogue/pieces380096.html' }, 380096)).toBe(true)
+    expect(hasNumistaDetails({ notes: 'https://pt.numista.com/3800961' }, 380096)).toBe(false)
   })
 })
