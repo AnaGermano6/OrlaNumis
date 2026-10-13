@@ -1,8 +1,6 @@
 export default {
   collection: 'Collection',
   gallery: 'Gallery',
-  tray: 'Tray',
-  storageTrays: 'Storage Trays',
   addCoin: 'Add Coin',
   identifyCoin: 'Identify Coin',
   analysisHistory: 'Analysis History',
@@ -30,4 +28,6 @@ export default {
   gettingStarted: 'Getting Started',
   admin: 'Admin',
   logout: 'Logout',
+  banknotes: 'Banknotes',
+  collectionOverview: 'Overview',
 }

@@ -1,0 +1,81 @@
+import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { defineComponent, h } from 'vue'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import CollectionOverviewPage from '../CollectionOverviewPage.vue'
+import { setLocale } from '@/i18n'
+import { useCoinsStore } from '@/stores/coins'
+
+const mocks = vi.hoisted(() => ({ getCollectionSummary: vi.fn(), push: vi.fn() }))
+
+vi.mock('@/api/client', () => ({ getCollectionSummary: mocks.getCollectionSummary }))
+vi.mock('vue-router', () => ({ useRouter: () => ({ push: mocks.push }), RouterLink: { template: '<a><slot /></a>' } }))
+
+const RouterLinkStub = defineComponent({
+  props: { to: { type: String, required: true } },
+  setup: (props, { slots }) => () => h('a', { href: props.to }, slots.default?.()),
+})
+
+function summary(coins: number, countries: number, value: number, extra: Record<string, unknown> = {}) {
+  return { data: { coins, countries, totalValue: value, currency: 'EUR', currentCoins: 0, commemorativeCoins: 0, coincards: 0, extinctCountries: 0, classifications: [], highlights: { rarest: null, oldest: null, mostValuable: null }, ...extra } }
+}
+
+function mountPage() {
+  return mount(CollectionOverviewPage, { global: { stubs: { RouterLink: RouterLinkStub, 'router-link': RouterLinkStub, AuthenticatedImage: true } } })
+}
+
+describe('CollectionOverviewPage', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    setLocale('pt-PT')
+    vi.clearAllMocks()
+    mocks.getCollectionSummary.mockImplementation((kind?: string) => Promise.resolve(
+      kind === 'coin' ? summary(452, 84, 3838.11, { currentCoins: 192, commemorativeCoins: 200 })
+        : kind === 'banknote' ? summary(1, 1, 25, { highlights: { rarest: null, oldest: { id: 1820, name: '2000 Escudos 1991', country: 'Portugal', year: 1991, dateRange: '1991', rarity: '', grade: '', currentValue: 25 }, mostValuable: null } })
+          : summary(453, 84, 3863.11),
+    ))
+  })
+
+  it('sums up the whole collection, then its coins and its banknotes', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(mocks.getCollectionSummary).toHaveBeenCalledWith()
+    expect(mocks.getCollectionSummary).toHaveBeenCalledWith('coin')
+    expect(mocks.getCollectionSummary).toHaveBeenCalledWith('banknote')
+    expect(wrapper.get('[data-testid="overview-kpi-items"]').text()).toContain('453')
+    expect(wrapper.get('[data-testid="overview-kpi-value"]').text()).toContain('3863,11')
+    // The gallery's numbers and highlights for the coins…
+    expect(wrapper.get('[data-testid="kpi-coins"]').text()).toContain('452')
+    expect(wrapper.get('[data-testid="kpi-current"]').text()).toContain('192')
+    expect(wrapper.text()).toContain('Destaques das moedas')
+    // …and the banknotes'.
+    expect(wrapper.get('[data-testid="banknotes-kpi-banknotes"]').text()).toContain('1')
+    expect(wrapper.text()).toContain('Destaques das notas')
+    expect(wrapper.text()).toContain('2000 Escudos 1991')
+    expect(wrapper.text()).toContain('Ainda nenhuma nota tem raridade.')
+    expect(wrapper.get('[data-testid="overview-open-banknotes"]').attributes('href')).toBe('/banknotes')
+  })
+
+  it('opens the gallery with only the chosen card filter on', async () => {
+    const store = useCoinsStore()
+    store.searchQuery = 'escudo'
+    store.selectedCountry = 'Portugal'
+    const wrapper = mountPage()
+    await flushPromises()
+
+    await wrapper.get('[data-testid="kpi-current"]').trigger('click')
+    expect(store.selectedCirculation).toBe('current')
+    expect(store.searchQuery).toBe('')
+    expect(store.selectedCountry).toBe('')
+    expect(mocks.push).toHaveBeenCalledWith('/')
+  })
+
+  it('invites to add a banknote when there is none', async () => {
+    mocks.getCollectionSummary.mockImplementation((kind?: string) => Promise.resolve(kind === 'banknote' ? summary(0, 0, 0) : summary(452, 84, 3838.11)))
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="overview-no-banknotes"]').get('a').attributes('href')).toBe('/banknotes/add')
+  })
+})

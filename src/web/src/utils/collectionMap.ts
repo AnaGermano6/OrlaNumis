@@ -25,7 +25,7 @@ export interface MapFilters {
   era: string
   yearFrom: number | null
   yearTo: number | null
-  circulation: '' | 'current' | 'demonetized'
+  circulation: '' | 'current' | 'demonetized' | 'nonCirculating'
   commemorative: '' | 'true' | 'false'
 }
 
@@ -35,6 +35,7 @@ export const EMPTY_MAP_FILTERS: MapFilters = { era: '', yearFrom: null, yearTo: 
 export interface CoinStatusSets {
   current: Set<number>
   demonetized: Set<number>
+  nonCirculating: Set<number>
   commemorative: Set<number>
   regular: Set<number>
 }

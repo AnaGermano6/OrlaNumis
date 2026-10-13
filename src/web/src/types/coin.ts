@@ -4,9 +4,14 @@ import type { MintLocation, StorageLocation, Tag } from '@/types/collection'
 import type { NumistaEvidence, NumistaLookupOutcome, SelectedNumistaReference } from '@/types/numista'
 import type { CoinSet } from '@/types/sets'
 
+/** What a collection item is; the galleries show coins and banknotes apart. */
+export type CoinKind = 'coin' | 'banknote'
+
 export interface Coin {
   id: number
   name: string
+  /** "coin" unless the item is a banknote. */
+  kind?: CoinKind
   category: Category
   denomination: string
   ruler: string
@@ -20,6 +25,19 @@ export interface Coin {
   weightGrams: number | null
   diameterMm: number | null
   grade: string
+  /** Banknote details: series or issue ("Chapa 13"), the note's serial number, signatories, printer. */
+  series?: string
+  serialNumber?: string
+  signatures?: string
+  printer?: string
+  widthMm?: number | null
+  heightMm?: number | null
+  watermark?: string
+  /** A replacement (star) note or a specimen; '' for an ordinary note. */
+  noteVariant?: '' | 'replacement' | 'specimen'
+  /** A grading company's grade ("PMG 66 EPQ") and its certificate number. */
+  certifiedGrade?: string
+  certificationNumber?: string
   obverseInscription: string
   reverseInscription: string
   obverseDescription: string
@@ -336,7 +354,8 @@ export interface CoinImage {
 
 export type Category = string
 
-export type Material = 'Gold' | 'Silver' | 'Bronze' | 'Copper' | 'Electrum' | 'Other'
+// Coins are struck in metal; banknotes are printed on paper, polymer or both.
+export type Material = 'Gold' | 'Silver' | 'Bronze' | 'Copper' | 'Electrum' | 'Other' | 'Paper' | 'Polymer' | 'Hybrid'
 
 export type ImageType = 'obverse' | 'reverse' | 'detail' | 'other'
 

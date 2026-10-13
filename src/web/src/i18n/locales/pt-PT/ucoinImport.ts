@@ -42,7 +42,7 @@ const messages: Messages['ucoinImport'] = {
     viewGallery: 'Ver a galeria',
     valueNote: 'Os valores são estimativas do Numista para a conservação de cada moeda (MBC quando o ficheiro não indica a conservação).',
     photos: { one: '{count} de {total} moedas ficaram com fotos oficiais.', other: '{count} de {total} moedas ficaram com fotos oficiais.' },
-    photosNote: 'As fotos vêm do Banco Central Europeu (moedas de euro) e das casas da moeda portuguesa e francesa (as suas moedas de coleção recentes). As outras moedas ficam sem imagem; pode juntar as suas.',
+    photosNote: 'As fotos vêm do Banco Central Europeu (moedas de euro) e das casas da moeda portuguesa, francesa e austríaca (as moedas de coleção que vendem). As fotos do Numista não podem ser obtidas automaticamente: nas outras moedas, use "Procurar fotos reais" na página da moeda ou junte as suas.',
     updated: { one: '{count} moeda recebeu dados do ficheiro', other: '{count} moedas receberam dados do ficheiro' },
     updateFailed: { one: '{count} moeda não pôde ser atualizada', other: '{count} moedas não puderam ser atualizadas' },
   },

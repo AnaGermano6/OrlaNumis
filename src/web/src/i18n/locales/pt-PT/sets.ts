@@ -149,13 +149,11 @@ const messages: Messages['sets'] = {
     ofTheseRules: 'destas regras',
     groups: {
       coin: 'Propriedades da moeda',
-      storage: 'Arrumação',
       valueDates: 'Valor e datas',
       status: 'Estado',
     },
     fields: {
       rulerIssuer: 'Governante / emissor',
-      storageLocation: 'Localização de arrumação',
       currentValue: 'Valor atual ({currency})',
       purchasePrice: 'Preço de compra ({currency})',
       purchaseDate: 'Data de compra',
@@ -164,7 +162,6 @@ const messages: Messages['sets'] = {
       sold: 'Vendida',
       private: 'Privada',
     },
-    selectLocation: 'Selecione a localização',
     amount: 'Montante',
     value: 'Valor',
     removeRule: 'Remover regra',

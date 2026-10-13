@@ -23,6 +23,17 @@ func ActiveCollection(userID uint) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
+// OfKind keeps the coins, or the banknotes (see models.CoinKind…); every
+// item when kind is "".
+func OfKind(kind string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if kind == "" {
+			return db
+		}
+		return db.Where("kind = ?", kind)
+	}
+}
+
 // ActiveRomanCollection scopes to Roman coins that are currently in the user's collection.
 func ActiveRomanCollection(userID uint) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {

@@ -3,8 +3,6 @@ import type { Messages } from '../../types'
 const messages: Messages['nav'] = {
   collection: 'Coleção',
   gallery: 'Galeria',
-  tray: 'Tabuleiro',
-  storageTrays: 'Tabuleiros de arrumação',
   addCoin: 'Adicionar moeda',
   identifyCoin: 'Identificar moeda',
   analysisHistory: 'Histórico de análises',
@@ -32,6 +30,8 @@ const messages: Messages['nav'] = {
   gettingStarted: 'Primeiros passos',
   admin: 'Administração',
   logout: 'Terminar sessão',
+  banknotes: 'Notas de banco',
+  collectionOverview: 'Visão geral',
 }
 
 export default messages

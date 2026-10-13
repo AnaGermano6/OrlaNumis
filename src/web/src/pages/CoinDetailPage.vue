@@ -9,6 +9,7 @@
         <CoinDetailHeaderActions
           :is-wishlist="coin.isWishlist"
           :is-sold="coin.isSold"
+          :is-banknote="isBanknote"
           :coin-id="coin.id"
           :sharing="sharing"
           :duplicating="duplicating"
@@ -25,30 +26,33 @@
       <div class="mx-auto grid max-w-[1400px] grid-cols-1 items-start gap-8 md:grid-cols-[400px_minmax(0,1fr)]">
         <!-- T009-T011: Dual-side hero media -->
         <div class="order-1 self-start md:sticky md:top-[125px] md:h-fit">
-          <div class="grid grid-cols-2 gap-4">
-            <div class="relative aspect-square w-full overflow-hidden rounded-md border border-border-subtle bg-card">
+          <!-- A banknote is wide: its sides are stacked and not zoomed (zooming crops them). -->
+          <div class="grid gap-4" :class="isBanknote ? 'grid-cols-1' : 'grid-cols-2'" :data-kind="isBanknote ? 'banknote' : 'coin'">
+            <div class="relative w-full overflow-hidden rounded-md border border-border-subtle bg-card" :class="isBanknote ? 'aspect-[2/1]' : 'aspect-square'">
               <AuthenticatedImage
                 v-if="obverseImage"
                 :media-path="obverseImage.filePath"
-                :alt="t('common.obverse')"
-                class="h-full w-full cursor-pointer object-contain scale-[1.28] transition-[opacity,transform] duration-200 hover:scale-[1.32] hover:opacity-[0.85]"
+                :alt="sideLabel('obverse')"
+                class="h-full w-full cursor-pointer object-contain transition-[opacity,transform] duration-200 hover:opacity-[0.85]"
+                :class="isBanknote ? '' : 'scale-[1.28] hover:scale-[1.32]'"
                 @click="openLightbox(obverseImage)"
               />
               <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2">
-                <span class="text-body font-medium text-text-secondary">{{ t('common.obverse') }}</span>
+                <span class="text-body font-medium text-text-secondary">{{ sideLabel('obverse') }}</span>
                 <span class="text-sm italic text-text-muted">{{ t('common.noImage') }}</span>
               </div>
             </div>
-            <div class="relative aspect-square w-full overflow-hidden rounded-md border border-border-subtle bg-card">
+            <div class="relative w-full overflow-hidden rounded-md border border-border-subtle bg-card" :class="isBanknote ? 'aspect-[2/1]' : 'aspect-square'">
               <AuthenticatedImage
                 v-if="reverseImage"
                 :media-path="reverseImage.filePath"
-                :alt="t('common.reverse')"
-                class="h-full w-full cursor-pointer object-contain scale-[1.28] transition-[opacity,transform] duration-200 hover:scale-[1.32] hover:opacity-[0.85]"
+                :alt="sideLabel('reverse')"
+                class="h-full w-full cursor-pointer object-contain transition-[opacity,transform] duration-200 hover:opacity-[0.85]"
+                :class="isBanknote ? '' : 'scale-[1.28] hover:scale-[1.32]'"
                 @click="openLightbox(reverseImage)"
               />
               <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2">
-                <span class="text-body font-medium text-text-secondary">{{ t('common.reverse') }}</span>
+                <span class="text-body font-medium text-text-secondary">{{ sideLabel('reverse') }}</span>
                 <span class="text-sm italic text-text-muted">{{ t('common.noImage') }}</span>
               </div>
             </div>
@@ -84,8 +88,10 @@
           <div class="mb-6">
             <h1 class="mt-2 font-display text-2xl font-semibold text-heading">{{ coin.name }}</h1>
             <p v-if="coin.ruler" class="mt-1 text-md text-text-secondary">{{ coin.ruler }}</p>
-            <div v-if="coin.category" class="mt-3 flex flex-wrap gap-2">
+            <div v-if="coin.category || coinStatus?.commemorative || isBanknote" class="mt-3 flex flex-wrap gap-2">
+              <span v-if="isBanknote" class="chip-sm" data-testid="banknote-badge">{{ t('banknotes.badge') }}</span>
               <span
+                v-if="coin.category"
                 class="badge"
                 :style="{
                   backgroundColor: colorForLabelBackground(coin.category),
@@ -93,6 +99,13 @@
                   border: `1px solid ${colorForLabelBackground(coin.category, 30)}`,
                 }"
               >{{ categoryLabel(coin.category) }}</span>
+              <!-- Commemorative coins, as Numista says of their type or as set by hand. -->
+              <span
+                v-if="coinStatus?.commemorative"
+                class="badge"
+                data-testid="commemorative-badge"
+                :style="COMMEMORATIVE_BADGE_STYLE"
+              >{{ t('coinDetail.badges.commemorative') }}</span>
               <span v-if="coin.isWishlist" class="chip-sm">{{ t('nav.wishlist') }}</span>
               <span v-if="coin.isSold" class="chip-sm">{{ t('coinDetail.badges.sold') }}</span>
             </div>
@@ -103,7 +116,7 @@
             <div class="rounded-sm border border-border-subtle bg-card p-4">
               <div class="grid gap-6 md:grid-cols-2">
                 <div v-if="coin.obverseInscription || coin.obverseDescription" class="flex flex-col gap-3">
-                  <h4 class="m-0 text-base font-medium text-heading">{{ t('common.obverse') }}</h4>
+                  <h4 class="m-0 text-base font-medium text-heading">{{ sideLabel('obverse') }}</h4>
                   <div v-if="coin.obverseInscription" class="flex flex-col gap-1">
                     <span class="section-label">{{ t('coinFields.inscriptionLabel') }}</span>
                     <span class="text-base italic text-text-secondary">{{ coin.obverseInscription }}</span>
@@ -111,7 +124,7 @@
                   <p v-if="coin.obverseDescription" class="m-0 text-base leading-6 text-text-secondary">{{ coin.obverseDescription }}</p>
                 </div>
                 <div v-if="coin.reverseInscription || coin.reverseDescription" class="flex flex-col gap-3">
-                  <h4 class="m-0 text-base font-medium text-heading">{{ t('common.reverse') }}</h4>
+                  <h4 class="m-0 text-base font-medium text-heading">{{ sideLabel('reverse') }}</h4>
                   <div v-if="coin.reverseInscription" class="flex flex-col gap-1">
                     <span class="section-label">{{ t('coinFields.inscriptionLabel') }}</span>
                     <span class="text-base italic text-text-secondary">{{ coin.reverseInscription }}</span>
@@ -246,6 +259,12 @@ const swipeEnabled = computed(() => !showPurchaseModal.value && !showReminderMod
 useCoinDetailSwipeNav(containerRef, { enabled: swipeEnabled })
 
 const coin = computed(() => store.currentCoin)
+const isBanknote = computed(() => coin.value?.kind === 'banknote')
+// A banknote has a front and a back, a coin an obverse and a reverse.
+function sideLabel(side: 'obverse' | 'reverse'): string {
+  if (isBanknote.value) return side === 'obverse' ? t('banknoteForm.front') : t('banknoteForm.back')
+  return side === 'obverse' ? t('common.obverse') : t('common.reverse')
+}
 // Numista type linked through a "Numista" catalogue reference, if any.
 const numistaTypeId = computed(() => {
   const reference = coin.value?.references?.find((item) => item.catalog.trim().toLowerCase() === 'numista')
@@ -270,6 +289,11 @@ const reverseImage = computed(() => coin.value?.images?.find(i => i.imageType ==
 
 // Whether the coin is still legal tender and whether it is commemorative.
 const coinStatus = ref<CoinStatus | null>(null)
+const COMMEMORATIVE_BADGE_STYLE = {
+  backgroundColor: 'color-mix(in srgb, var(--accent-gold) 20%, transparent)',
+  color: 'var(--accent-gold)',
+  border: '1px solid color-mix(in srgb, var(--accent-gold) 30%, transparent)',
+}
 watch(() => coin.value?.id, async (id) => {
   coinStatus.value = null
   if (!id) return
@@ -380,7 +404,8 @@ async function handleDelete() {
   const coinId = coin.value.id
   await deleteCoin(coinId)
   forgetQuickAccess('coin', coinId)
-  router.push('/')
+  // Back to where it was listed: the banknotes, or the coin gallery.
+  router.push(isBanknote.value ? '/banknotes' : '/')
 }
 
 async function handleDuplicate() {

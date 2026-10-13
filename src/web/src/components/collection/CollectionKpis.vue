@@ -34,13 +34,14 @@
 </template>
 
 <script setup lang="ts">
-// Headline numbers of the collection shown at the top of the gallery: coins,
-// coins still legal tender, commemorative coins, countries (and how many no
-// longer exist), coincards and total value in euros. They cover the whole
+// Headline numbers of the collection's coins: coins, coins still legal
+// tender, commemorative coins, countries (and how many no longer exist),
+// coincards and total value in the currency every page uses. They cover the whole
 // collection, not the current filters.
 import { computed } from 'vue'
 import type { CollectionSummary } from '@/api/client'
 import { intlLocale, t } from '@/i18n'
+import { collectionCurrency, currencyName } from '@/utils/collectionCurrency'
 import { formatCurrency } from '@/utils/format'
 
 const props = defineProps<{
@@ -80,29 +81,14 @@ function count(value: number | undefined): string {
   return value === undefined ? '—' : new Intl.NumberFormat(intlLocale()).format(value)
 }
 
-function formatDate(isoDate: string): string {
-  const date = new Date(`${isoDate}T00:00:00Z`)
-  return Number.isNaN(date.getTime()) ? isoDate : date.toLocaleDateString(intlLocale(), { timeZone: 'UTC' })
-}
-
-// A euro collection's total is shown as is. A dollar collection's total is
-// converted by the server with the ECB reference rate, which is named here.
+// The total is in the currency every page uses (Settings › Appearance).
 function valueKpi(summary: CollectionSummary | null): Kpi {
-  const rate = summary?.currency === 'EUR' ? undefined : summary?.exchangeRate
-  const euros = summary?.totalValueEur
-  const notes = [
-    summary && euros == null ? t('collection.kpis.rateUnavailable') : '',
-    summary?.unvaluedCoins ? t('collection.kpis.unvalued', { count: summary.unvaluedCoins }) : '',
-  ].filter(Boolean)
-  const rateText = rate ? new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 4 }).format(rate.usdPerEur) : ''
   return {
     key: 'value',
-    display: euros != null ? formatCurrency(euros, 'EUR') : '—',
+    display: summary ? formatCurrency(summary.totalValue) : '—',
     label: t('collection.kpis.value'),
-    hint: summary?.currency === 'EUR'
-      ? t('collection.kpis.valueHintEuros')
-      : rate ? t('collection.kpis.valueHint', { date: formatDate(rate.date), rate: rateText }) : t('collection.kpis.valueHintNoRate'),
-    note: notes.length ? notes.join(' · ') : rate ? t('collection.kpis.rateDate', { date: formatDate(rate.date) }) : '',
+    hint: t('collection.kpis.valueHintIn', { currency: currencyName(collectionCurrency.value) }),
+    note: summary?.unvaluedCoins ? t('collection.kpis.unvalued', { count: summary.unvaluedCoins }) : '',
     wide: true,
   }
 }

@@ -260,7 +260,7 @@ type PortfolioData struct {
 	Rulers        []map[string]any     `json:"rulers"`
 	TopCoins      []PortfolioCoinProxy `json:"top_coins"`
 	MissingFields map[string]int64     `json:"missing_fields,omitempty"`
-	// Currency is the collection currency the values are in (USD or EUR).
+	// Currency is the collection currency the values are in (EUR, USD, GBP…).
 	Currency string `json:"currency,omitempty"`
 }
 

@@ -661,21 +661,6 @@ const messages: Messages['admin'] = {
     anthropicFailed: 'Não foi possível testar a ligação à Anthropic',
     searxngFailed: 'Não foi possível testar a ligação ao SearXNG',
   },
-  currency: {
-    eyebrow: 'Valores',
-    title: 'Moeda da coleção',
-    intro: 'A moeda em que os preços e valores das moedas são escritos, mostrados, avaliados pela IA e importados. Mudá-la converte todos os preços, valores e históricos guardados com a taxa de referência do BCE de hoje.',
-    label: 'Moeda',
-    options: {
-      USD: 'Dólar americano ($)',
-      EUR: 'Euro (€)',
-    },
-    apply: 'Mudar e converter',
-    conversionNote: 'Os valores guardados serão convertidos com a taxa do BCE de hoje.',
-    confirm: 'Mudar a coleção para {currency} e converter todos os preços e valores guardados com a taxa do BCE de hoje?',
-    done: { one: 'Feito: {count} moeda convertida (1 € = {rate} US$).', other: 'Feito: {count} moedas convertidas (1 € = {rate} US$).' },
-    failed: 'Não foi possível mudar a moeda (a taxa do BCE pode estar indisponível). Nada foi convertido.',
-  },
 }
 
 export default messages

@@ -14,9 +14,6 @@ const messages: Messages['stats'] = {
     byGrade: 'Por grau',
     priceRanges: 'Distribuição por intervalo de preço',
   },
-  priceRanges: {
-    under50: 'Menos de $50',
-  },
   healthIntro: 'Acompanhe a completude e a qualidade dos dados da sua coleção.',
   collectionStats: 'Estatísticas da coleção',
   value: {
@@ -154,6 +151,10 @@ const messages: Messages['stats'] = {
     unknownRuler: 'Governante desconhecido',
     unknownType: 'Tipo desconhecido',
     unknownEra: 'Época desconhecida',
+  },
+  priceRanges: {
+    under: 'Menos de {amount}',
+    over: '{amount} ou mais',
   },
 }
 

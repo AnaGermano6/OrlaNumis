@@ -45,7 +45,6 @@ export function useCollectionFilters() {
   }
   appLifecycleStarted = true
 
-  const selectedCategory = store.selectedCategory !== undefined ? ref(store.selectedCategory) : ref('')
   const selectedEra = store.selectedEra !== undefined ? ref(store.selectedEra) : ref('')
   const search = ref(store.searchQuery)
   const page = ref(1)
@@ -93,7 +92,7 @@ export function useCollectionFilters() {
 
   async function loadCountryOptions() {
     try {
-      const res = await getCoinCountries()
+      const res = await getCoinCountries('coin')
       countryOptions.value = res.data ?? []
     } catch {
       countryOptions.value = []
@@ -133,7 +132,6 @@ export function useCollectionFilters() {
     const [sort, order] = sortKey.value.split('_').length === 3
       ? [sortKey.value.split('_').slice(0, 2).join('_'), sortKey.value.split('_')[2]]
       : [sortKey.value.split('_')[0], sortKey.value.split('_')[1]]
-    store.selectedCategory = selectedCategory.value
     store.selectedEra = selectedEra.value
     store.selectedCountry = selectedCountry.value
     store.selectedPresentation = selectedPresentation.value
@@ -161,7 +159,8 @@ export function useCollectionFilters() {
       : selectedSetFilter ? undefined : selectedTag.value || undefined
 
     const params = {
-      category: selectedCategory.value || undefined,
+      // Banknotes have their own gallery.
+      kind: 'coin' as const,
       era: selectedEra.value || undefined,
       country: selectedCountry.value && selectedCountry.value !== EXTINCT_COUNTRIES ? selectedCountry.value : undefined,
       extinct: selectedCountry.value === EXTINCT_COUNTRIES ? 'true' : undefined,
@@ -198,11 +197,6 @@ export function useCollectionFilters() {
     page.value = 1
     loadCoins()
     if (value === 'country') void fillCountriesOnce()
-  })
-
-  watch(selectedCategory, () => {
-    page.value = 1
-    loadCoins()
   })
 
   watch(selectedTag, () => {
@@ -268,7 +262,6 @@ export function useCollectionFilters() {
   })
 
   return {
-    selectedCategory,
     selectedEra,
     search,
     page,

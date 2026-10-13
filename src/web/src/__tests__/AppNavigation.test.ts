@@ -47,16 +47,19 @@ vi.mock('@/api/client', async (importOriginal) => {
 })
 
 describe('App sidebar navigation', () => {
-  it('keeps the visual and physical tray views as distinct Collection children', () => {
+  it('offers the overview, the gallery and the banknotes under Collection, without the removed tray views', () => {
     const source = fs.readFileSync(appPath, 'utf8')
     const routerSource = fs.readFileSync(path.resolve(__dirname, '../router/index.ts'), 'utf8')
 
-    expect(source).toContain("labelKey: 'nav.tray', to: '/tray'")
-    expect(source).toContain("labelKey: 'nav.storageTrays', to: '/storage-trays'")
-    expect(en.nav.tray).toBe('Tray')
-    expect(en.nav.storageTrays).toBe('Storage Trays')
-    expect(routerSource).toContain("path: '/tray'")
-    expect(routerSource).toContain("path: '/storage-trays'")
+    expect(source).toContain("labelKey: 'nav.collectionOverview', to: '/collection'")
+    expect(source).toContain("labelKey: 'nav.gallery', to: '/'")
+    expect(source).toContain("labelKey: 'nav.banknotes', to: '/banknotes'")
+    expect(routerSource).toContain("path: '/collection'")
+    expect(source).not.toContain("to: '/tray'")
+    expect(source).not.toContain("to: '/storage-trays'")
+    // Old links open the gallery.
+    expect(routerSource).toContain("{ path: '/tray', name: 'tray', redirect: '/' }")
+    expect(routerSource).toContain("{ path: '/storage-trays', name: 'storage-trays', redirect: '/' }")
   })
 
   it('renders Stats as a collapsible parent with dedicated route children', () => {

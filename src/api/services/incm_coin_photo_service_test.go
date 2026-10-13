@@ -165,6 +165,50 @@ func TestMatchMintCoin_IgnoresAnniversaryNumbersTheTitleLacks(t *testing.T) {
 	}
 }
 
+// The Numista topic can add words the shop's title lacks ("75th anniversary
+// of Peanuts", a translation), and its first year can be the year before the
+// coin's: the title's subject alone, and the coin's year, are tried then.
+func TestMatchMintCoin_TriesTheTitleSubjectAndTheCoinsYear(t *testing.T) {
+	shop := "https://www.monnaiedeparis.fr/en/"
+	coins := []mintCoin{
+		{Title: "Snoopy", DesignKey: "snoopy", Value: 10, Metal: "silver", Year: 2025, Obverse: "s.jpg", PageURL: shop + "snoopy-10eur-silver-coin-proof-quality-yeardate-2025"},
+		{Title: "Snoopy", DesignKey: "snoopy snoopy", Value: 10, Metal: "silver", Year: 2025, Obverse: "s.jpg", PageURL: shop + "snoopy-10eur-silver-coin-snoopy-shape-proof-quality-yeardate-2025"},
+		{Title: "Snoopy", DesignKey: "snoopy", Value: 10, Metal: "silver", Year: 2025, Obverse: "s.jpg", PageURL: shop + "snoopy-10eur-silver-coin-circulating-quality-yeardate-2025"},
+		{Title: "Disney animation classics - Pinocchio", DesignKey: "disney animation classics pinocchio", Value: 10, Metal: "silver", Year: 2025, Obverse: "p.jpg", PageURL: shop + "disney-animation-classics-pinocchio-10eur-silver-coin-circulating-quality-yeardate-2025"},
+		{Title: "Astrological signs - Leo", DesignKey: "astrological signs leo", Value: 5, Metal: "common metal", Year: 2025, Obverse: "l.jpg", PageURL: shop + "astrological-signs-leo-5eur-common-metal-coin-circulating-quality-yeardate-2025"},
+		{Title: "Astrological signs - Aries", DesignKey: "astrological signs aries", Value: 5, Metal: "common metal", Year: 2025, Obverse: "a.jpg", PageURL: shop + "astrological-signs-aries-5eur-common-metal-coin-circulating-quality-yeardate-2025"},
+	}
+	year2024, year2025, ten, five := 2024, 2025, 10.0, 5.0
+	for _, c := range []struct {
+		detail models.NumistaCatalogType
+		want   string
+	}{
+		// The circulating edition, not the proof or the shaped one.
+		{models.NumistaCatalogType{Title: "10 euros Snoopy (argent 333‰)", CommemoratedTopic: "75º aniversário dos Peanuts", MinYear: &year2025, FaceValue: &ten, Currency: "Euro", Composition: "Bilhão (prata 333‰)"}, "snoopy-10eur-silver-coin-circulating"},
+		{models.NumistaCatalogType{Title: "10 Euros (Pinocchio, silver 333‰)", CommemoratedTopic: "Pinóquio.", MinYear: &year2025, FaceValue: &ten, Currency: "Euro", Composition: "Bilhão (prata 333‰)"}, "pinocchio-10eur"},
+		{models.NumistaCatalogType{Title: "5 Euros (Leo)", CommemoratedTopic: "Leão", MinYear: &year2024, FaceValue: &five, Currency: "Euro"}, "astrological-signs-leo"},
+	} {
+		query, ok := mintQueryForType(&c.detail)
+		coin := matchMintCoin(coins, query)
+		if !ok || coin == nil || !strings.Contains(coin.PageURL, c.want) {
+			t.Errorf("%s: coin = %+v", c.detail.Title, coin)
+		}
+	}
+	// The coin's own year, when Numista's is further off, is tried as well.
+	query := MintPhotoQuery{Year: 2023, Value: 5, Topic: "Leo"}
+	if coin := matchMintCoin(coins, query); coin != nil {
+		t.Errorf("no Leo of 2022 to 2024: coin = %+v", coin)
+	}
+	query.AltYears = []int{2025}
+	if coin := matchMintCoin(coins, query); coin == nil || !strings.Contains(coin.PageURL, "leo") {
+		t.Errorf("Leo of 2025: coin = %+v", coin)
+	}
+	// A subject no design has still finds nothing.
+	if coin := matchMintCoin(coins, MintPhotoQuery{Year: 2025, Value: 5, Topic: "Leão", AltTopics: []string{"Virgo"}}); coin != nil {
+		t.Errorf("Virgo is no coin of the shop: %+v", coin)
+	}
+}
+
 func TestIncmCoinPhotoService_ShopUnavailable(t *testing.T) {
 	service, client := newTestIncmService(t)
 	client.err = errors.New("offline")
@@ -193,5 +237,16 @@ func TestMintFaceValueAndTopic(t *testing.T) {
 	}
 	if got := MintTopic("5 Euro (The knowledge, cupronickel)"); got != "The knowledge, cupronickel" {
 		t.Errorf("MintTopic = %q", got)
+	}
+	for title, want := range map[string]string{
+		"10 euros Snoopy (argent 333‰)":       "snoopy",
+		"10 Euros (Pinocchio, silver 333‰)":   "pinocchio",
+		"5 Euro (The knowledge, cupronickel)": "knowledge",
+		"¼ Euro (Year of the Snake)":          "snake",
+		"2 Euros (Olympic Team; Coloured)":    "olympic team",
+	} {
+		if got := MintTitleSubject(title); got != want {
+			t.Errorf("MintTitleSubject(%q) = %q, want %q", title, got, want)
+		}
 	}
 }

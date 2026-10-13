@@ -23,4 +23,15 @@ describe('CollectionPage', () => {
     expect(filterSource).toContain("wishlist: 'false'")
     expect(filterSource).toContain("sold: 'false'")
   })
+
+  it('leaves the numbers and highlights to the Collection page, showing the filters its cards turn on', () => {
+    const source = fs.readFileSync(collectionPagePath, 'utf8')
+
+    expect(source).not.toContain('<CollectionKpis')
+    expect(source).not.toContain('<CollectionHighlights')
+    // A filter turned on from the Collection page can be seen and removed here.
+    expect(source).toContain('data-testid="gallery-active-filters"')
+    expect(source).toContain("@click=\"selectedCirculation = ''\"")
+    expect(source).toContain("@click=\"selectedCommemorative = ''\"")
+  })
 })

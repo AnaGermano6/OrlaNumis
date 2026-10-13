@@ -11,6 +11,9 @@
       <LanguageSwitcher class="self-start md:self-auto" />
     </div>
 
+    <!-- Currency of every page -->
+    <SettingsCurrencySetting />
+
     <!-- Theme -->
     <div class="flex justify-between items-center py-3 border-b border-border-subtle gap-4 last:border-0 md:flex-row flex-col md:items-center items-stretch">
       <div class="flex flex-col gap-[0.15rem]">
@@ -189,6 +192,7 @@ import type { Theme } from '@/types'
 import type { FeltColor } from '@/composables/useTrayPreference'
 import { useSettingsProfile } from '@/composables/useSettingsProfile'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import SettingsCurrencySetting from '@/components/settings/SettingsCurrencySetting.vue'
 import { t } from '@/i18n'
 
 defineProps<{

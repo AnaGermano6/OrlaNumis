@@ -10,7 +10,11 @@ export const COIN_RARITIES = ['common', 'uncommon', 'scarce', 'rare', 'very_rare
 export type CoinRarity = (typeof COIN_RARITIES)[number]
 
 /** Set by hand: whether the coin is still legal tender and whether it is commemorative. */
-export const COIN_CIRCULATIONS = ['current', 'current_commemorative', 'demonetized', 'demonetized_commemorative'] as const
+export const COIN_CIRCULATIONS = [
+  'current', 'current_commemorative',
+  'demonetized', 'demonetized_commemorative',
+  'non_circulating', 'non_circulating_commemorative',
+] as const
 export type CoinCirculation = (typeof COIN_CIRCULATIONS)[number]
 
 const CIRCULATION_KEYS: Record<CoinCirculation, MessageKey> = {
@@ -18,6 +22,8 @@ const CIRCULATION_KEYS: Record<CoinCirculation, MessageKey> = {
   current_commemorative: 'coinAttributes.circulation.current_commemorative',
   demonetized: 'coinAttributes.circulation.demonetized',
   demonetized_commemorative: 'coinAttributes.circulation.demonetized_commemorative',
+  non_circulating: 'coinAttributes.circulation.non_circulating',
+  non_circulating_commemorative: 'coinAttributes.circulation.non_circulating_commemorative',
 }
 
 export function circulationLabel(value: string | null | undefined): string {

@@ -80,21 +80,30 @@ type NumistaCatalogType struct {
 	IssuedInCoincard bool `json:"issuedInCoincard,omitempty"`
 	// Demonetized tells whether the type is no longer legal tender (nil
 	// when Numista does not say); DemonetizationDate is when, if known.
-	Demonetized        *bool                     `json:"demonetized,omitempty"`
-	DemonetizationDate string                    `json:"demonetizationDate,omitempty"`
-	Rulers             []string                  `json:"rulers"`
-	Composition        string                    `json:"composition,omitempty"`
-	Technique          string                    `json:"technique,omitempty"`
-	WeightGrams        *float64                  `json:"weightGrams,omitempty"`
-	DiameterMm         *float64                  `json:"diameterMm,omitempty"`
-	ThicknessMm        *float64                  `json:"thicknessMm,omitempty"`
-	Shape              string                    `json:"shape,omitempty"`
-	Mints              []string                  `json:"mints"`
-	Obverse            NumistaCatalogSide        `json:"obverse"`
-	Reverse            NumistaCatalogSide        `json:"reverse"`
-	Edge               NumistaCatalogSide        `json:"edge"`
-	References         []NumistaCatalogReference `json:"references"`
-	Photos             []NumistaCatalogPhoto     `json:"photos"`
+	Demonetized        *bool    `json:"demonetized,omitempty"`
+	DemonetizationDate string   `json:"demonetizationDate,omitempty"`
+	Rulers             []string `json:"rulers"`
+	Composition        string   `json:"composition,omitempty"`
+	Technique          string   `json:"technique,omitempty"`
+	WeightGrams        *float64 `json:"weightGrams,omitempty"`
+	// DiameterMm is a coin's diameter, or a banknote's width.
+	DiameterMm *float64 `json:"diameterMm,omitempty"`
+	// HeightMm is a banknote's height.
+	HeightMm *float64 `json:"heightMm,omitempty"`
+	// Printers, Watermark and IssuingEntity (the issuing bank) describe banknotes.
+	Printers      []string `json:"printers"`
+	Watermark     string   `json:"watermark,omitempty"`
+	IssuingEntity string   `json:"issuingEntity,omitempty"`
+	// Category is "coin", "banknote" or "exonumia".
+	Category    string                    `json:"category,omitempty"`
+	ThicknessMm *float64                  `json:"thicknessMm,omitempty"`
+	Shape       string                    `json:"shape,omitempty"`
+	Mints       []string                  `json:"mints"`
+	Obverse     NumistaCatalogSide        `json:"obverse"`
+	Reverse     NumistaCatalogSide        `json:"reverse"`
+	Edge        NumistaCatalogSide        `json:"edge"`
+	References  []NumistaCatalogReference `json:"references"`
+	Photos      []NumistaCatalogPhoto     `json:"photos"`
 }
 
 // NumistaCatalogTypeResult is a catalogue type with its issues.

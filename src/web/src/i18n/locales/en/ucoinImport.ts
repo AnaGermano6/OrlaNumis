@@ -40,7 +40,7 @@ export default {
     viewGallery: 'View the gallery',
     valueNote: 'Values are Numista estimates for each coin\'s grade (VF when the file has no grade).',
     photos: { one: '{count} of {total} coins got official photos.', other: '{count} of {total} coins got official photos.' },
-    photosNote: 'The photos come from the European Central Bank (euro coins) and the Portuguese and French mints (their recent collector coins). Other coins keep no image; you can add your own.',
+    photosNote: 'The photos come from the European Central Bank (euro coins) and the Portuguese, French and Austrian mints (the collector coins they sell). Numista\'s photos cannot be fetched automatically: for the other coins, use "Find real photos" on the coin\'s page or add your own.',
     updated: { one: '{count} coin got details from the file', other: '{count} coins got details from the file' },
     updateFailed: { one: '{count} coin could not be updated', other: '{count} coins could not be updated' },
   },

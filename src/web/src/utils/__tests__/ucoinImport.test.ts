@@ -36,7 +36,7 @@ const REGISTRY: CatalogRegistry[] = [
   { id: 2, catalog: 'Y', displayName: 'Y Number', era: 'modern', volumeRequired: false },
 ] as CatalogRegistry[]
 
-const OPTIONS = { categories: ['Roman', 'Greek', 'Modern', 'Other'], eras: ['ancient', 'medieval', 'modern'], registry: REGISTRY, usdPerEur: 1.12 }
+const OPTIONS = { categories: ['Roman', 'Greek', 'Modern', 'Other'], eras: ['ancient', 'medieval', 'modern'], registry: REGISTRY, perEur: { USD: 1.12 } }
 
 describe('uCoin CSV import', () => {
   afterEach(() => setLocale('en'))
@@ -96,7 +96,7 @@ describe('uCoin CSV import', () => {
     expect(third.notes).toContain('Comentário no uCoin: 2')
 
     // Without an exchange rate the price in euros stays in the notes.
-    const fourth = buildUcoinCoin(astronomy, { ...OPTIONS, usdPerEur: undefined })
+    const fourth = buildUcoinCoin(astronomy, { ...OPTIONS, perEur: undefined })
     expect(fourth.purchasePrice).toBeUndefined()
     expect(fourth.notes).toContain('Preço no uCoin: 7.5 EUR')
   })
@@ -144,7 +144,7 @@ describe('uCoin Excel import', () => {
       excelRow({ País: 'Espanha', Denominação: '1 peseta', Ano: 1975, 'Var.': '76', 'Preço, EUR [uCoin]': 0.3, Compra: 45931, Trocas: 'Atlantius.ue /uid275798' }),
       excelRow({ País: 'Portugal', Denominação: '400 reis', Ano: 1643, Conservação: 'VF', 'Grading company': 'PCGS', 'Grading number': '12345678', Grade: 'AU55' }),
     ]))
-    const euros = { ...OPTIONS, usdPerEur: undefined }
+    const euros = { ...OPTIONS, perEur: undefined }
     collectionCurrency.value = 'EUR'
     try {
       expect(buildUcoinCoin(rows[0]!, euros)).toMatchObject({ purchaseDate: '2025-10-01', purchaseLocation: 'Troca no uCoin com Atlantius.ue', currentValue: 0.3, purchasePrice: undefined })

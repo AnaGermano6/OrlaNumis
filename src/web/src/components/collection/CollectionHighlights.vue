@@ -1,11 +1,11 @@
 <template>
-  <section v-if="summary && summary.coins > 0" class="mb-4 rounded-md border border-border-subtle bg-card p-4" aria-labelledby="collection-highlights-title">
-    <h2 id="collection-highlights-title" class="mb-3 mt-0 font-display text-lg font-medium text-heading">{{ t('collection.highlights.title') }}</h2>
+  <section v-if="summary && summary.coins > 0" class="mb-4 rounded-md border border-border-subtle bg-card p-4" :aria-labelledby="titleId">
+    <h2 :id="titleId" class="mb-3 mt-0 font-display text-lg font-medium text-heading">{{ title ?? t('collection.highlights.title') }}</h2>
     <ul class="m-0 grid list-none gap-3 p-0 md:grid-cols-3">
       <li v-for="item in items" :key="item.key" class="flex min-w-0 items-center gap-3 rounded-sm border border-border-subtle bg-input p-3">
         <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border-subtle bg-card">
           <AuthenticatedImage v-if="item.coin?.imagePath" :media-path="item.coin.imagePath" :alt="item.coin.name" class="h-full w-full object-contain">
-            <template #fallback><Coins :size="24" :stroke-width="1" class="text-text-primary/30" /></template>
+            <template #fallback><component :is="kind === 'banknote' ? Banknote : Coins" :size="24" :stroke-width="1" class="text-text-primary/30" /></template>
           </AuthenticatedImage>
           <component :is="item.icon" v-else :size="24" :stroke-width="1.5" class="text-gold" />
         </div>
@@ -24,12 +24,11 @@
 </template>
 
 <script setup lang="ts">
-// The rarest, oldest and most valuable coins of the collection, shown under
-// the gallery KPIs. Values are stored in US dollars and shown in euros with
-// the same ECB rate as the total-value KPI.
+// The rarest, oldest and most valuable coins (or banknotes) of the
+// collection, with values in the currency every page uses.
 import { computed, type Component } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Coins, Gem, Hourglass, TrendingUp } from 'lucide-vue-next'
+import { Banknote, Coins, Gem, Hourglass, TrendingUp } from 'lucide-vue-next'
 import type { CoinHighlight, CollectionSummary } from '@/api/client'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { t } from '@/i18n'
@@ -37,9 +36,14 @@ import { rarityLabel } from '@/utils/coinAttributes'
 import { formatCurrency } from '@/utils/format'
 import { formatNumistaYear } from '@/utils/numistaCatalog'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   summary: CollectionSummary | null
-}>()
+  /** The banknotes' highlights say "banknote" where the coins' say "coin". */
+  kind?: 'coin' | 'banknote'
+  title?: string
+}>(), { kind: 'coin', title: undefined })
+
+const titleId = computed(() => `${props.kind}-highlights-title`)
 
 interface HighlightItem {
   key: string
@@ -51,13 +55,9 @@ interface HighlightItem {
   empty: string
 }
 
-// Shown in euros like the value KPI: a dollar collection's values are
-// converted with the ECB rate.
+// In the currency every page uses, like the value KPI.
 function valueText(value: number | null): string {
-  if (value == null) return ''
-  if (props.summary?.currency === 'EUR') return formatCurrency(value, 'EUR')
-  const rate = props.summary?.exchangeRate
-  return rate ? formatCurrency(value / rate.usdPerEur, 'EUR') : formatCurrency(value, 'USD')
+  return value == null ? '' : formatCurrency(value)
 }
 
 function yearText(coin: CoinHighlight): string {
@@ -81,7 +81,7 @@ const items = computed<HighlightItem[]>(() => {
       coin: rarest,
       detail: rarest ? rarityLabel(rarest.rarity) : '',
       secondary: rarest ? secondary(rarest, yearText(rarest)) : '',
-      empty: t('collection.highlights.noRarity'),
+      empty: props.kind === 'banknote' ? t('collectionOverview.banknoteHighlights.noRarity') : t('collection.highlights.noRarity'),
     },
     {
       key: 'oldest',
@@ -90,7 +90,7 @@ const items = computed<HighlightItem[]>(() => {
       coin: oldest,
       detail: oldest ? yearText(oldest) : '',
       secondary: oldest ? secondary(oldest, oldest.grade) : '',
-      empty: t('collection.highlights.noYear'),
+      empty: props.kind === 'banknote' ? t('collectionOverview.banknoteHighlights.noYear') : t('collection.highlights.noYear'),
     },
     {
       key: 'mostValuable',
@@ -99,7 +99,7 @@ const items = computed<HighlightItem[]>(() => {
       coin: mostValuable,
       detail: mostValuable ? valueText(mostValuable.currentValue) : '',
       secondary: mostValuable ? secondary(mostValuable, yearText(mostValuable)) : '',
-      empty: t('collection.highlights.noValue'),
+      empty: props.kind === 'banknote' ? t('collectionOverview.banknoteHighlights.noValue') : t('collection.highlights.noValue'),
     },
   ]
 })

@@ -52,10 +52,6 @@ export function normalizeDiameterMm(
   return diameterMm
 }
 
-export function hasKnownDiameterMm(diameterMm: number | null | undefined): boolean {
-  return diameterMm != null && diameterMm > 0
-}
-
 export function selectTrayCoinImagePath(
   images: readonly TrayCoinImage[],
   preferredFace: TrayCoinFace = 'obverse'

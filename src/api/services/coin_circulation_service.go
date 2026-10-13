@@ -13,9 +13,12 @@ import (
 // legal tender ("current"), no longer are, or nobody knows; by whether they
 // are commemorative coins; and by Numista's kind of coin.
 type CoinCirculation struct {
+	// Current coins are circulation coins still legal tender.
 	Current     []uint
 	Demonetized []uint
-	Unknown     []uint
+	// NonCirculating coins were issued for collectors (and are not demonetized).
+	NonCirculating []uint
+	Unknown        []uint
 
 	Commemorative []uint
 	Regular       []uint
@@ -50,7 +53,7 @@ func (s *CoinCirculationService) Classify(userID uint) (CoinCirculation, error) 
 	if err != nil {
 		return CoinCirculation{}, err
 	}
-	result := CoinCirculation{Current: []uint{}, Demonetized: []uint{}, Unknown: []uint{}, Commemorative: []uint{}, Regular: []uint{}, CommemorativeUnknown: []uint{}, Classifications: map[string]*CoinClassification{}}
+	result := CoinCirculation{Current: []uint{}, Demonetized: []uint{}, NonCirculating: []uint{}, Unknown: []uint{}, Commemorative: []uint{}, Regular: []uint{}, CommemorativeUnknown: []uint{}, Classifications: map[string]*CoinClassification{}}
 	for _, ref := range refs {
 		facts, typeKnown := s.typeFacts(ref.NumistaTypeID)
 		known := coinFacts(facts, typeKnown, ref.Country, ref.Circulation)
@@ -70,11 +73,15 @@ func (s *CoinCirculationService) Classify(userID uint) (CoinCirculation, error) 
 			}
 			group.CoinIDs = append(group.CoinIDs, ref.CoinID)
 		}
+		// Current means a circulation coin still legal tender: a collector
+		// coin (non-circulating) is not current even when it is legal tender.
 		switch {
+		case known.legalTenderKnown && known.demonetized:
+			result.Demonetized = append(result.Demonetized, ref.CoinID)
+		case known.nonCirculating:
+			result.NonCirculating = append(result.NonCirculating, ref.CoinID)
 		case !known.legalTenderKnown:
 			result.Unknown = append(result.Unknown, ref.CoinID)
-		case known.demonetized:
-			result.Demonetized = append(result.Demonetized, ref.CoinID)
 		default:
 			result.Current = append(result.Current, ref.CoinID)
 		}
@@ -85,6 +92,7 @@ func (s *CoinCirculationService) Classify(userID uint) (CoinCirculation, error) 
 // knownFacts is what is known of one coin, and what is not.
 type knownFacts struct {
 	demonetized, legalTenderKnown     bool
+	nonCirculating                    bool
 	commemorative, commemorativeKnown bool
 	// manual is true when the user set them on the coin.
 	manual bool
@@ -94,10 +102,17 @@ type knownFacts struct {
 // commemorative: as set by hand on the coin, else as Numista says of its type;
 // coins of countries that no longer exist are not legal tender.
 func coinFacts(facts NumistaTypeFacts, typeKnown bool, country, circulation string) knownFacts {
-	if current, commemorative, ok := models.CoinCirculationFacts(circulation); ok {
-		return knownFacts{demonetized: !current, legalTenderKnown: true, commemorative: commemorative, commemorativeKnown: true, manual: true}
+	if setting, ok := models.CoinCirculationFacts(circulation); ok {
+		return knownFacts{
+			demonetized: setting.Demonetized, legalTenderKnown: true, nonCirculating: setting.NonCirculating,
+			commemorative: setting.Commemorative, commemorativeKnown: true, manual: true,
+		}
 	}
-	known := knownFacts{commemorative: facts.Commemorative, commemorativeKnown: typeKnown}
+	known := knownFacts{
+		commemorative: facts.Commemorative, commemorativeKnown: typeKnown,
+		// Numista's "non-circulating coins": issued for collectors.
+		nonCirculating: typeKnown && NumistaClassificationKey(facts.Classification) == ClassificationNonCirculating,
+	}
 	switch {
 	case typeKnown && facts.Demonetized != nil:
 		known.demonetized, known.legalTenderKnown = *facts.Demonetized, true
@@ -107,13 +122,17 @@ func coinFacts(facts NumistaTypeFacts, typeKnown bool, country, circulation stri
 	return known
 }
 
-// CoinStatus is what is known of one coin: whether it is still legal tender
-// and whether it is commemorative, by the same rules as Classify.
+// CoinStatus is what is known of one coin: whether it is still legal tender,
+// whether it was issued for collectors and whether it is commemorative, by the
+// same rules as Classify.
 type CoinStatus struct {
 	// Current is null when nobody knows.
 	Current *bool `json:"current"`
 	// DemonetizationDate is when it stopped being legal tender, if Numista says.
 	DemonetizationDate string `json:"demonetizationDate,omitempty"`
+	// NonCirculating is true for coins issued for collectors rather than for
+	// circulation (Numista's "non-circulating coins"); null when nobody knows.
+	NonCirculating *bool `json:"nonCirculating"`
 	// Commemorative is null when Numista says nothing of the coin.
 	Commemorative     *bool  `json:"commemorative"`
 	CommemoratedTopic string `json:"commemoratedTopic,omitempty"`
@@ -134,6 +153,10 @@ func (s *CoinCirculationService) Status(coin *models.Coin) CoinStatus {
 	facts, typeKnown := s.typeFacts(numistaTypeID)
 	known := coinFacts(facts, typeKnown, coin.Country, coin.Circulation)
 	status := CoinStatus{Manual: known.manual}
+	if known.manual || typeKnown {
+		nonCirculating := known.nonCirculating
+		status.NonCirculating = &nonCirculating
+	}
 	if known.legalTenderKnown {
 		current := !known.demonetized
 		status.Current = &current

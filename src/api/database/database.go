@@ -649,6 +649,7 @@ func seedCatalogRegistry(db *gorm.DB) error {
 		{Catalog: "BM", DisplayName: "British Museum Catalogue", Era: models.EraAncient, VolumeRequired: false},
 		{Catalog: "VENÈRA", DisplayName: "La Venèra Hoard", Era: models.EraAncient, VolumeRequired: false},
 		{Catalog: "NGC", DisplayName: "NGC Certification", Era: models.EraModern, VolumeRequired: false},
+		{Catalog: "Pick", DisplayName: "Standard Catalog of World Paper Money (Pick)", Era: models.EraModern, VolumeRequired: false},
 		{Catalog: "Numista", DisplayName: "Numista", Era: models.EraModern, VolumeRequired: false},
 	}
 

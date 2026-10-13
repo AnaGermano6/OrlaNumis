@@ -2,12 +2,17 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import CollectionKpis from '../CollectionKpis.vue'
 import { setLocale } from '@/i18n'
+import { setCollectionCurrency } from '@/utils/collectionCurrency'
 
 describe('CollectionKpis', () => {
-  afterEach(() => setLocale('en'))
+  afterEach(() => {
+    setLocale('en')
+    setCollectionCurrency('USD')
+  })
 
   it('shows coins, current and commemorative coins and countries with the coins missing a country', () => {
     setLocale('pt-PT')
+    setCollectionCurrency('EUR')
     const wrapper = mount(CollectionKpis, {
       props: { summary: { coins: 1250, currentCoins: 600, circulationUnknown: 40, commemorativeCoins: 210, commemorativeUnknown: 40, types: 830, countries: 42, withoutCountry: 3, coincards: 17, totalValue: 1250, unvaluedCoins: 0, totalValueEur: 1115.47, exchangeRate: { usdPerEur: 1.1206, date: '2026-10-09' } } },
     })
@@ -19,9 +24,9 @@ describe('CollectionKpis', () => {
       ['210', 'Moedas comemorativas'],
       ['42', 'Países', '3 sem país'],
       ['17', 'Em coincard'],
-      ['1115,47 €', 'Valor total', 'Taxa BCE de 09/10/2026'],
+      ['1250,00 €', 'Valor total'],
     ])
-    expect(wrapper.findAll('section > *')[5]!.attributes('title')).toContain('1 € = 1,1206 US$')
+    expect(wrapper.findAll('section > *')[5]!.attributes('title')).toBe('Soma do valor atual das moedas, em Euro (€).')
     expect(wrapper.findAll('section > *')[1]!.attributes('title')).toContain('curso legal')
     expect(wrapper.findAll('section > *')[2]!.attributes('title')).toContain('catálogo Numista')
   })
@@ -95,24 +100,15 @@ describe('CollectionKpis', () => {
     expect(wrapper.emitted('show-coincards')).toHaveLength(1)
   })
 
-  it('shows a euro collection\'s total as is, with no exchange rate', () => {
+  it('shows the total in the currency every page uses, and counts coins without a value', () => {
     setLocale('pt-PT')
-    const wrapper = mount(CollectionKpis, {
-      props: { summary: { coins: 2, types: 2, countries: 1, withoutCountry: 0, coincards: 0, currency: 'EUR', totalValue: 3.01, unvaluedCoins: 0, totalValueEur: 3.01, exchangeRate: { usdPerEur: 1.12, date: '2026-10-09' } } },
-    })
+    setCollectionCurrency('USD')
+    const wrapper = mount(CollectionKpis, { props: { summary: { coins: 5, types: 5, countries: 2, withoutCountry: 0, coincards: 0, currency: 'USD', totalValue: 120, unvaluedCoins: 2, totalValueEur: 107.14 } } })
 
     const value = wrapper.findAll('section > *')[5]!
-    expect(value.find('span').text().replace(/\s/g, ' ')).toBe('3,01 €')
+    expect(value.find('span').text().replace(/\s/g, ' ')).toBe('120,00 US$')
+    expect(value.text()).toContain('2 sem valor')
     expect(value.text()).not.toContain('BCE')
-    expect(value.attributes('title')).toBe('Soma do valor atual das moedas, em euros.')
-  })
-
-  it('explains a missing rate and coins without a value', () => {
-    const wrapper = mount(CollectionKpis, { props: { summary: { coins: 5, types: 5, countries: 2, withoutCountry: 0, coincards: 0, totalValue: 120, unvaluedCoins: 2, totalValueEur: null } } })
-
-    const value = wrapper.findAll('section > *')[5]!
-    expect(value.find('span').text()).toBe('—')
-    expect(value.text()).toContain('Exchange rate unavailable · 2 without a value')
-    expect(value.attributes('title')).toContain('could not be loaded')
+    expect(value.attributes('title')).toBe('Soma do valor atual das moedas, em Dólar dos Estados Unidos ($).')
   })
 })

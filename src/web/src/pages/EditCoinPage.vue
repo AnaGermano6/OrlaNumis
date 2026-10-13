@@ -1,22 +1,25 @@
 <template>
   <div class="container">
     <div class="form-wrapper">
-      <DesktopPageContext :title="t('editCoin.title')">
+      <DesktopPageContext :title="title">
         <div class="page-header">
-          <h1>{{ t('editCoin.title') }}</h1>
+          <h1>{{ title }}</h1>
         </div>
       </DesktopPageContext>
       <div v-if="loading" class="loading-overlay">
         <div class="spinner"></div>
       </div>
+      <!-- A banknote has its own fields; the form chosen when the page opens stays. -->
+      <BanknoteForm v-else-if="editsBanknote" ref="coinFormRef" :form="form" :coin-id="form.id" :submit-label="t('common.saveChanges')" :loading="saving" @submit="handleSubmit" />
       <CoinForm v-else ref="coinFormRef" :form="form" :coin-id="form.id" :submit-label="t('common.saveChanges')" :loading="saving" @submit="handleSubmit" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import BanknoteForm from '@/components/BanknoteForm.vue'
 import CoinForm from '@/components/CoinForm.vue'
 import { getCoin, updateCoin, uploadImage, deleteImage, extractText } from '@/api/client'
 import type { Coin } from '@/types'
@@ -31,15 +34,19 @@ const route = useRoute()
 const router = useRouter()
 const loading = ref(true)
 const saving = ref(false)
-const coinFormRef = ref<InstanceType<typeof CoinForm> | null>(null)
+const coinFormRef = ref<InstanceType<typeof CoinForm> | InstanceType<typeof BanknoteForm> | null>(null)
 
 const form = reactive<Partial<Coin>>({})
+// Set when the item is loaded, so switching its kind does not swap the form mid-edit.
+const editsBanknote = ref(false)
+const title = computed(() => (editsBanknote.value ? t('banknoteForm.editTitle') : t('editCoin.title')))
 
 onMounted(async () => {
   const id = Number(route.params['id'])
   try {
     const res = await getCoin(id)
     Object.assign(form, res.data)
+    editsBanknote.value = form.kind === 'banknote'
     if (form.purchaseDate) {
       form.purchaseDate = form.purchaseDate.substring(0, 10)
     }

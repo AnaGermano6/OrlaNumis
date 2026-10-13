@@ -61,4 +61,7 @@ export default {
   yearHint: 'Use a negative year for BC (e.g. -44). Left empty, the year is read from the date or range.',
   circulationAuto: 'Automatic (as Numista says)',
   circulationHint: 'Choose by hand only when Numista does not know or is wrong; it counts in the KPIs and filters.',
+  kind: 'Item',
+  kindCoin: 'Coin',
+  kindBanknote: 'Banknote',
 }

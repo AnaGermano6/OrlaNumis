@@ -44,4 +44,11 @@ describe('coin photos', () => {
     expect(photoCaption(photo)).toBe('© Monnaie de Paris')
     expect(photoCreditLine('obverse', photo)).not.toContain('Monnaie de Paris, Monnaie de Paris')
   })
+
+  it('names the Münze Österreich as the source of its photos', () => {
+    const photo = { source: 'moe', author: 'Münze Österreich', thumbnail: '', imageUrl: 'https://www.muenzeoesterreich.at/var/storage/images/a.png.webp' } as CoinPhotoCandidate
+    expect(photoSourceName(photo)).toBe('Münze Österreich')
+    expect(photoLoadVia(photo)).toBe('direct')
+    expect(photoCaption(photo)).toBe('© Münze Österreich')
+  })
 })

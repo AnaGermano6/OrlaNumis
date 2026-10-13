@@ -14,8 +14,8 @@
  *   Catches engines that rely on implicit capture or passive listeners without setPointerCapture
  *   (the original useCoinDetailSwipeNav pattern that Rule A alone would have missed).
  *
- * POST-PHASE-2 ALLOWLIST — Gallery (SwipeGallery.vue) and Tray (TrayViewPage.vue) have been
- * migrated to the shared useSwipeGesture primitive. Five files with genuinely distinct purposes remain:
+ * POST-PHASE-2 ALLOWLIST — Gallery (SwipeGallery.vue) and Tray (TrayViewPage.vue, since removed)
+ * were migrated to the shared useSwipeGesture primitive. Five files with genuinely distinct purposes remain:
  *
  *   useSwipeGesture.ts      — The shared primitive ITSELF: owns setPointerCapture + cancel handling
  *   App.vue                 — FAB drag-to-reposition; distinct gesture surface/purpose

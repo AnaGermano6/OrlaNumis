@@ -90,6 +90,11 @@ func importablePhotoURL(raw string) (*url.URL, bool) {
 		lower := strings.ToLower(parsed.Path)
 		image := strings.HasSuffix(lower, ".jpg") || strings.HasSuffix(lower, ".jpeg") || strings.HasSuffix(lower, ".png") || strings.HasSuffix(lower, ".webp")
 		return parsed, strings.HasPrefix(parsed.Path, services.IncmImagePath) && image
+	case services.MoeImageHost:
+		// Only the Münze Österreich's stored images.
+		lower := strings.ToLower(parsed.Path)
+		image := strings.HasSuffix(lower, ".jpg") || strings.HasSuffix(lower, ".jpeg") || strings.HasSuffix(lower, ".png") || strings.HasSuffix(lower, ".webp")
+		return parsed, strings.HasPrefix(parsed.Path, services.MoeImagePath) && image
 	case "www.ecb.europa.eu":
 		lower := strings.ToLower(parsed.Path)
 		image := strings.HasSuffix(lower, ".jpg") || strings.HasSuffix(lower, ".jpeg") || strings.HasSuffix(lower, ".png") || strings.HasSuffix(lower, ".gif")

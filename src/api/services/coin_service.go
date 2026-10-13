@@ -17,6 +17,8 @@ var (
 	ErrCoinInvalidPresentation    = errors.New("presentation is not supported")
 	ErrCoinInvalidRarity          = errors.New("rarity is not supported")
 	ErrCoinInvalidCirculation     = errors.New("circulation is not supported")
+	ErrCoinInvalidKind            = errors.New("kind must be coin or banknote")
+	ErrCoinInvalidNoteVariant     = errors.New("note variant must be replacement or specimen")
 	ErrStorageSlotRequired        = errors.New("a tray slot is required")
 	ErrStorageSlotInvalid         = errors.New("storage slot is invalid for this location")
 	ErrStorageSlotOccupied        = errors.New("storage slot is occupied")
@@ -214,6 +216,19 @@ func normalizeCoinAttributes(coin *models.Coin) error {
 	coin.Circulation = strings.TrimSpace(coin.Circulation)
 	if !models.ValidCoinCirculation(coin.Circulation) {
 		return ErrCoinInvalidCirculation
+	}
+	if coin.Kind = strings.TrimSpace(coin.Kind); coin.Kind == "" {
+		coin.Kind = models.CoinKindCoin
+	}
+	if !models.ValidCoinKind(coin.Kind) {
+		return ErrCoinInvalidKind
+	}
+	coin.NoteVariant = strings.TrimSpace(coin.NoteVariant)
+	if !models.ValidNoteVariant(coin.NoteVariant) {
+		return ErrCoinInvalidNoteVariant
+	}
+	for _, field := range []*string{&coin.Series, &coin.SerialNumber, &coin.Signatures, &coin.Printer, &coin.Watermark, &coin.CertifiedGrade, &coin.CertificationNumber} {
+		*field = strings.TrimSpace(*field)
 	}
 	return nil
 }

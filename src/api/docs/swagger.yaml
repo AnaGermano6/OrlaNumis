@@ -211,6 +211,12 @@ definitions:
         allOf:
         - $ref: '#/definitions/models.Category'
         maxLength: 64
+      certificationNumber:
+        maxLength: 60
+        type: string
+      certifiedGrade:
+        maxLength: 60
+        type: string
       circulation:
         description: Circulation set by hand; empty means "as Numista says".
         enum:
@@ -219,6 +225,8 @@ definitions:
         - current_commemorative
         - demonetized
         - demonetized_commemorative
+        - non_circulating
+        - non_circulating_commemorative
         maxLength: 30
         type: string
       country:
@@ -241,12 +249,21 @@ definitions:
       grade:
         maxLength: 100
         type: string
+      heightMm:
+        type: number
       isPrivate:
         type: boolean
       isSold:
         type: boolean
       isWishlist:
         type: boolean
+      kind:
+        description: Kind is a coin (default) or a banknote.
+        enum:
+        - coin
+        - banknote
+        maxLength: 16
+        type: string
       material:
         $ref: '#/definitions/models.Material'
       mint:
@@ -256,6 +273,13 @@ definitions:
         type: integer
       name:
         maxLength: 200
+        type: string
+      noteVariant:
+        enum:
+        - ""
+        - replacement
+        - specimen
+        maxLength: 20
         type: string
       notes:
         maxLength: 5000
@@ -276,6 +300,9 @@ definitions:
         - blister
         - slab
         maxLength: 20
+        type: string
+      printer:
+        maxLength: 200
         type: string
       purchaseDate:
         type: string
@@ -318,6 +345,18 @@ definitions:
       ruler:
         maxLength: 200
         type: string
+      serialNumber:
+        maxLength: 100
+        type: string
+      series:
+        description: |-
+          Banknote details: series, serial number, signatories, printer, size,
+          watermark, replacement or specimen, and a grading company's grade.
+        maxLength: 200
+        type: string
+      signatures:
+        maxLength: 300
+        type: string
       soldDate:
         type: string
       soldPrice:
@@ -340,7 +379,12 @@ definitions:
       vendorSku:
         maxLength: 200
         type: string
+      watermark:
+        maxLength: 500
+        type: string
       weightGrams:
+        type: number
+      widthMm:
         type: number
       year:
         description: Year is the coin's year (negative for BC); when omitted it is
@@ -419,9 +463,7 @@ definitions:
       currency:
         description: Currency is the collection currency coin prices and values are
           kept in.
-        enum:
-        - USD
-        - EUR
+        example: EUR
         type: string
       eras:
         items:
@@ -496,10 +538,16 @@ definitions:
           type: integer
         type: array
       current:
+        description: Current are circulation coins still legal tender.
         items:
           type: integer
         type: array
       demonetized:
+        items:
+          type: integer
+        type: array
+      nonCirculating:
+        description: NonCirculating are collector coins (not demonetized).
         items:
           type: integer
         type: array
@@ -543,6 +591,12 @@ definitions:
         allOf:
         - $ref: '#/definitions/models.Category'
         maxLength: 64
+      certificationNumber:
+        maxLength: 60
+        type: string
+      certifiedGrade:
+        maxLength: 60
+        type: string
       circulation:
         description: Circulation set by hand; empty means "as Numista says".
         enum:
@@ -551,6 +605,8 @@ definitions:
         - current_commemorative
         - demonetized
         - demonetized_commemorative
+        - non_circulating
+        - non_circulating_commemorative
         maxLength: 30
         type: string
       country:
@@ -573,12 +629,21 @@ definitions:
       grade:
         maxLength: 100
         type: string
+      heightMm:
+        type: number
       isPrivate:
         type: boolean
       isSold:
         type: boolean
       isWishlist:
         type: boolean
+      kind:
+        description: Kind is a coin or a banknote.
+        enum:
+        - coin
+        - banknote
+        maxLength: 16
+        type: string
       material:
         $ref: '#/definitions/models.Material'
       mint:
@@ -588,6 +653,13 @@ definitions:
         type: integer
       name:
         maxLength: 200
+        type: string
+      noteVariant:
+        enum:
+        - ""
+        - replacement
+        - specimen
+        maxLength: 20
         type: string
       notes:
         maxLength: 5000
@@ -608,6 +680,9 @@ definitions:
         - blister
         - slab
         maxLength: 20
+        type: string
+      printer:
+        maxLength: 200
         type: string
       purchaseDate:
         type: string
@@ -650,6 +725,16 @@ definitions:
       ruler:
         maxLength: 200
         type: string
+      serialNumber:
+        maxLength: 100
+        type: string
+      series:
+        description: Banknote details.
+        maxLength: 200
+        type: string
+      signatures:
+        maxLength: 300
+        type: string
       soldDate:
         type: string
       soldPrice:
@@ -672,7 +757,12 @@ definitions:
       vendorSku:
         maxLength: 200
         type: string
+      watermark:
+        maxLength: 500
+        type: string
       weightGrams:
+        type: number
+      widthMm:
         type: number
       year:
         description: Year (negative for BC); null means "read it from dateRange".
@@ -697,9 +787,9 @@ definitions:
   handlers.CollectionCurrencyRequest:
     properties:
       currency:
-        enum:
-        - USD
-        - EUR
+        description: Currency is EUR or a currency of the ECB reference rates (USD,
+          GBP, CHF…).
+        example: EUR
         type: string
     required:
     - currency
@@ -731,21 +821,20 @@ definitions:
         type: integer
       currency:
         description: |-
-          Currency is the collection currency (USD or EUR): TotalValue and the
-          highlights' values are in it.
-        enum:
-        - USD
-        - EUR
+          Currency is the collection currency (an ISO code: EUR, USD, GBP…):
+          TotalValue and the highlights' values are in it.
+        example: EUR
         type: string
       currentCoins:
         description: |-
-          CurrentCoins are still legal tender, as Numista says of their types;
+          CurrentCoins are circulation coins still legal tender, as Numista says
+          of their types (collector coins are not);
           CirculationUnknown are coins it says nothing of (not linked to Numista).
         type: integer
       exchangeRate:
         allOf:
         - $ref: '#/definitions/services.ExchangeRate'
-        description: ExchangeRate is the latest ECB rate, when available.
+        description: ExchangeRate is the latest ECB rate for the US dollar, when available.
       extinctCountries:
         description: |-
           ExtinctCountries counts the collection's countries that no longer exist
@@ -760,7 +849,7 @@ definitions:
       totalValueEur:
         description: |-
           TotalValueEUR is TotalValue in euros: as is for a euro collection, else
-          converted with ExchangeRate; null when no rate is available.
+          converted with the ECB rate of its currency; null when no rate is available.
         type: number
       types:
         description: |-
@@ -834,6 +923,23 @@ definitions:
       message:
         example: Choose another slot and try again.
         type: string
+    type: object
+  handlers.ExchangeRatesResponse:
+    properties:
+      currencies:
+        description: Currencies are the collection currencies (the euro first).
+        items:
+          type: string
+        type: array
+      date:
+        description: Date is the ECB reference date, YYYY-MM-DD.
+        type: string
+      perEur:
+        additionalProperties:
+          format: float64
+          type: number
+        description: 'PerEUR is how much of each currency one euro buys ("USD": 1.1206).'
+        type: object
     type: object
   handlers.ExtractTextResponse:
     properties:
@@ -3079,6 +3185,12 @@ definitions:
         allOf:
         - $ref: '#/definitions/models.Category'
         maxLength: 64
+      certificationNumber:
+        maxLength: 60
+        type: string
+      certifiedGrade:
+        maxLength: 60
+        type: string
       circulation:
         description: |-
           Circulation, when set by hand (see CoinCirculations), says whether the
@@ -3090,6 +3202,8 @@ definitions:
         - current_commemorative
         - demonetized
         - demonetized_commemorative
+        - non_circulating
+        - non_circulating_commemorative
         type: string
       country:
         description: Country is the issuing country or authority (e.g. from the Numista
@@ -3117,6 +3231,8 @@ definitions:
       grade:
         maxLength: 100
         type: string
+      heightMm:
+        type: number
       id:
         type: integer
       images:
@@ -3129,6 +3245,12 @@ definitions:
         type: boolean
       isWishlist:
         type: boolean
+      kind:
+        description: 'Kind is what the item is: a coin or a banknote (see CoinKind…).'
+        enum:
+        - coin
+        - banknote
+        type: string
       listingCheckReason:
         type: string
       listingCheckedAt:
@@ -3147,6 +3269,12 @@ definitions:
       name:
         maxLength: 200
         type: string
+      noteVariant:
+        enum:
+        - ""
+        - replacement
+        - specimen
+        type: string
       notes:
         maxLength: 5000
         type: string
@@ -3160,6 +3288,9 @@ definitions:
         type: string
       presentation:
         description: Presentation is how the coin is kept or was issued (see CoinPresentations).
+        type: string
+      printer:
+        maxLength: 200
         type: string
       purchaseDate:
         type: string
@@ -3198,10 +3329,24 @@ definitions:
       ruler:
         maxLength: 200
         type: string
+      serialNumber:
+        maxLength: 100
+        type: string
+      series:
+        description: |-
+          Banknote details (see Kind): the series or issue ("Chapa 13"), the
+          note's own serial number, its signatories, printer, size, watermark,
+          whether it is a replacement or specimen note, and a grading company's
+          grade ("PMG 66 EPQ") with its certificate.
+        maxLength: 200
+        type: string
       sets:
         items:
           $ref: '#/definitions/models.CoinSet'
         type: array
+      signatures:
+        maxLength: 300
+        type: string
       soldDate:
         type: string
       soldPrice:
@@ -3237,7 +3382,12 @@ definitions:
       vendorSku:
         maxLength: 200
         type: string
+      watermark:
+        maxLength: 500
+        type: string
       weightGrams:
+        type: number
+      widthMm:
         type: number
       year:
         description: Year is derived from DateRange (first year, negative for BC)
@@ -3395,6 +3545,7 @@ definitions:
         - ecb
         - incm
         - mdp
+        - moe
         type: string
       thumbnail:
         type: string
@@ -3905,6 +4056,9 @@ definitions:
     type: object
   models.NumistaCatalogType:
     properties:
+      category:
+        description: Category is "coin", "banknote" or "exonumia".
+        type: string
       classification:
         description: |-
           Classification is Numista's kind of coin (e.g. "Moedas circulantes
@@ -3929,11 +4083,15 @@ definitions:
       denomination:
         type: string
       diameterMm:
+        description: DiameterMm is a coin's diameter, or a banknote's width.
         type: number
       edge:
         $ref: '#/definitions/models.NumistaCatalogSide'
       faceValue:
         description: FaceValue is the denomination as a number (5 for "5 Euros").
+        type: number
+      heightMm:
+        description: HeightMm is a banknote's height.
         type: number
       id:
         type: integer
@@ -3944,6 +4102,8 @@ definitions:
         type: boolean
       issuer:
         $ref: '#/definitions/models.NumistaCatalogIssuer'
+      issuingEntity:
+        type: string
       maxYear:
         type: integer
       minYear:
@@ -3957,6 +4117,12 @@ definitions:
       photos:
         items:
           $ref: '#/definitions/models.NumistaCatalogPhoto'
+        type: array
+      printers:
+        description: Printers, Watermark and IssuingEntity (the issuing bank) describe
+          banknotes.
+        items:
+          type: string
         type: array
       references:
         items:
@@ -3979,6 +4145,8 @@ definitions:
       title:
         type: string
       url:
+        type: string
+      watermark:
         type: string
       weightGrams:
         type: number
@@ -5271,6 +5439,11 @@ definitions:
       manual:
         description: Manual is true when the user set them on the coin (its circulation).
         type: boolean
+      nonCirculating:
+        description: |-
+          NonCirculating is true for coins issued for collectors rather than for
+          circulation (Numista's "non-circulating coins"); null when nobody knows.
+        type: boolean
     type: object
   services.CollectionChatContext:
     properties:
@@ -5288,11 +5461,15 @@ definitions:
         type: integer
       currency:
         type: string
-      exchangeRate:
-        allOf:
-        - $ref: '#/definitions/services.ExchangeRate'
-        description: ExchangeRate is the ECB rate used; nil when nothing was converted.
+      factor:
+        description: |-
+          Factor is what every amount was multiplied by (how much of the new
+          currency one unit of the previous one buys), at the ECB rates of
+          RateDate; both are empty when nothing was converted.
+        type: number
       previous:
+        type: string
+      rateDate:
         type: string
     type: object
   services.CollectionHealthSummary:
@@ -6732,10 +6909,11 @@ paths:
     post:
       consumes:
       - application/json
-      description: Switches the currency coin prices and values are kept in (USD or
-        EUR) and converts every stored price, value, value history and snapshot with
-        the ECB reference rate, in one transaction. Switching to the current currency
-        changes nothing. Admin only.
+      description: 'Switches the currency coin prices and values are kept in and every
+        page shows (the euro or a currency of the ECB daily reference rates: USD,
+        GBP, CHF, JPY…) and converts every stored price, value, value history and
+        snapshot with the ECB reference rates, in one transaction. Switching to the
+        current currency changes nothing. Admin only.'
       parameters:
       - description: New currency
         in: body
@@ -10214,8 +10392,8 @@ paths:
   /coin-options:
     get:
       description: Returns the admin-configured category and era choices with translated
-        display names, and the collection currency (USD or EUR) coin prices and values
-        are kept in
+        display names, and the collection currency (EUR, USD, GBP…) coin prices and
+        values are kept in
       produces:
       - application/json
       responses:
@@ -10288,6 +10466,13 @@ paths:
       description: Returns a paginated, filterable list of coins belonging to the
         authenticated user.
       parameters:
+      - description: Only coins or only banknotes (every item when omitted)
+        enum:
+        - coin
+        - banknote
+        in: query
+        name: kind
+        type: string
       - description: Filter by category (Roman, Greek, Byzantine, Modern, Other)
         in: query
         name: category
@@ -10317,8 +10502,9 @@ paths:
         in: query
         name: extinct
         type: boolean
-      - description: Only collection coins still legal tender (current) or no longer
-          (demonetized), as Numista says of their types
+      - description: Only collection coins issued for circulation and still legal
+          tender (current), or no longer legal tender (demonetized), as Numista says
+          of their types; collector (non-circulating) coins are not current
         enum:
         - current
         - demonetized
@@ -10348,7 +10534,7 @@ paths:
         name: rarity
         type: string
       - description: Search across name, denomination, ruler, era, mint, inscriptions,
-          notes
+          notes, country and a banknote's serial number, series and signatures
         in: query
         name: search
         type: string
@@ -11318,10 +11504,10 @@ paths:
       - application/json
       description: 'Adds a coin''s official images to the sides asked for that have
         no image yet: the European Central Bank''s images of a euro coin''s national
-        side (obverse) and common side (reverse), or, for a recent Portuguese or French
-        collector coin, the photos of its mint''s shop (INCM, Monnaie de Paris). Their
-        credit is appended to the coin''s notes. A coin neither has an image of (older
-        collector coins, other currencies) gets none.'
+        side (obverse) and common side (reverse), or, for a Portuguese, French or
+        Austrian collector coin, the photos of its mint (INCM, Monnaie de Paris, Münze
+        Österreich). Their credit is appended to the coin''s notes. A coin neither
+        has an image of (older collector coins, other currencies) gets none.'
       parameters:
       - description: Coin ID
         in: path
@@ -12066,7 +12252,8 @@ paths:
       - Coins
   /coins/{id}/status:
     get:
-      description: Tells whether one of the user's coins is still legal tender (current)
+      description: Tells whether one of the user's coins is still legal tender (current),
+        whether it was issued for collectors rather than for circulation (nonCirculating)
         and whether it is commemorative, from its cached Numista type (never asking
         Numista); coins of countries that no longer exist are not current. A value
         is null when nobody knows (the coin is not linked to a cached Numista type).
@@ -12241,6 +12428,14 @@ paths:
     get:
       description: Returns each country of the user's collection coins (excluding
         wishlist and sold) with how many coins it has, alphabetically.
+      parameters:
+      - description: Only coins or only banknotes (every item when omitted)
+        enum:
+        - coin
+        - banknote
+        in: query
+        name: kind
+        type: string
       produces:
       - application/json
       responses:
@@ -12250,6 +12445,10 @@ paths:
             items:
               $ref: '#/definitions/repository.CountryCount'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -12507,11 +12706,12 @@ paths:
   /coins/statuses:
     get:
       description: 'Returns the IDs of the user''s collection coins (not wishlist
-        or sold) that are still legal tender (current) or not (demonetized), and that
-        are commemorative or not, by the same rules as the summary and the coin list
-        filters: a circulation set on the coin wins, else the cached Numista type
-        says (never asking Numista); coins of extinct countries are not current. A
-        coin nobody knows about is in neither list of a pair.'
+        or sold) that are circulation coins still legal tender (current), no longer
+        legal tender (demonetized) or collector coins (nonCirculating), and that are
+        commemorative or not, by the same rules as the summary and the coin list filters:
+        a circulation set on the coin wins, else the cached Numista type says (never
+        asking Numista); coins of extinct countries are not current. A coin nobody
+        knows about is in neither list of a pair.'
       produces:
       - application/json
       responses:
@@ -12537,15 +12737,24 @@ paths:
       description: Counts the user's collection coins (excluding wishlist and sold),
         their distinct types (coins linked to the same Numista type count once; other
         coins once per distinct name), their distinct countries (and how many of them
-        no longer exist), how many coins are still legal tender (from their cached
-        Numista types; coins of extinct countries are not) how many are commemorative
-        and how many are of each Numista kind of coin (standard circulation, circulating
-        commemorative, non-circulating…), how many coins have no country, and how
-        many coins are in a coincard. Also sums the coins' current values (kept in
-        the collection currency, USD or EUR) and gives the total in euros, converted
-        from dollars with the ECB daily reference rate (cached; null when unavailable),
-        and names the rarest (fixed rarity scale; ties go to the more valuable), oldest
-        (lowest year) and most valuable (current value) coins.
+        no longer exist), how many circulation coins are still legal tender (from
+        their cached Numista types; collector coins and coins of extinct countries
+        are not) how many are commemorative and how many are of each Numista kind
+        of coin (standard circulation, circulating commemorative, non-circulating…),
+        how many coins have no country, and how many coins are in a coincard. Also
+        sums the coins' current values (kept in the collection currency) and gives
+        the total in euros, converted with the ECB daily reference rates (cached;
+        null when unavailable), and names the rarest (fixed rarity scale; ties go
+        to the more valuable), oldest (lowest year) and most valuable (current value)
+        coins.
+      parameters:
+      - description: Only the coins or only the banknotes (every item when omitted)
+        enum:
+        - coin
+        - banknote
+        in: query
+        name: kind
+        type: string
       produces:
       - application/json
       responses:
@@ -12553,6 +12762,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/handlers.CollectionSummaryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -13028,6 +13241,28 @@ paths:
       summary: Retry a Deep Analysis job
       tags:
       - Deep Identification
+  /exchange-rates:
+    get:
+      description: Returns the ECB daily euro reference rates (how much of each currency
+        one euro buys; cached for a few hours, the last stored rates when the ECB
+        cannot be reached) and the currencies a collection can be kept in, to convert
+        amounts between them.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ExchangeRatesResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get exchange rates
+      tags:
+      - Coins
   /extract-text:
     post:
       consumes:
@@ -14084,8 +14319,9 @@ paths:
   /numista/catalog/search:
     get:
       description: Returns one page (20 types unless count is set) of Numista coin
-        types matching the text, issuer and/or catalogue reference (e.g. catalogue=KM,
-        number=84), optionally limited to a year. Searches are cached for a day.
+        types (or banknote types, with category=banknote) matching the text, issuer
+        and/or catalogue reference (e.g. catalogue=KM, number=84), optionally limited
+        to a year. Searches are cached for a day.
       parameters:
       - description: Search text (required unless issuer or catalogue is set)
         in: query
@@ -14124,6 +14360,14 @@ paths:
         description: Language of results
         in: query
         name: lang
+        type: string
+      - default: coin
+        description: Coins or banknotes
+        enum:
+        - coin
+        - banknote
+        in: query
+        name: category
         type: string
       produces:
       - application/json

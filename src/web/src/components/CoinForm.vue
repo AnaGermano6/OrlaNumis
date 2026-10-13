@@ -4,6 +4,13 @@
       <!-- Basic Info -->
       <fieldset class="m-0 rounded-md border border-border-subtle bg-card p-5">
         <h2 class="mb-4 font-display text-lg font-medium text-gold">{{ t('coinForm.sections.basic') }}</h2>
+        <div v-if="coinId" class="form-group min-w-0">
+          <label class="form-label" for="coin-kind">{{ t('coinForm.kind') }}</label>
+          <select id="coin-kind" v-model="kindModel" class="form-select" data-testid="coin-kind">
+            <option value="coin">{{ t('coinForm.kindCoin') }}</option>
+            <option value="banknote">{{ t('coinForm.kindBanknote') }}</option>
+          </select>
+        </div>
         <div class="form-group min-w-0">
           <label class="form-label">{{ t('coinForm.name') }}</label>
           <AutocompleteInput v-model="form.name!" field="name" required :placeholder="t('coinForm.namePlaceholder')" />
@@ -289,7 +296,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { getMintLocations, type MintLocationsResponse } from '@/api/client'
-import type { Coin, MintLocation } from '@/types'
+import type { Coin, CoinKind, MintLocation } from '@/types'
 import AutocompleteInput from '@/components/AutocompleteInput.vue'
 import ImperialFigurePicker from '@/components/ImperialFigurePicker.vue'
 import CreateMintModal from '@/components/CreateMintModal.vue'
@@ -328,6 +335,12 @@ const presentationModel = computed({
   get: () => props.form.presentation ?? '',
   set: (value: string) => { props.form.presentation = value },
 })
+// A coin unless it says it is a banknote (older items have no kind).
+const kindModel = computed({
+  get: () => props.form.kind ?? 'coin',
+  set: (value: CoinKind) => { props.form.kind = value },
+})
+
 const circulationModel = computed({
   get: () => props.form.circulation ?? '',
   set: (value: string) => { props.form.circulation = value },

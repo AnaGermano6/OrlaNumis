@@ -48,7 +48,7 @@ func TestContentSecurityPolicyIsSetOnAppRoutes(t *testing.T) {
 		// Proxied auction images arrive as blob: URLs; the mint map needs OSM
 		// tiles; catalogue photos load directly from Numista, the ECB and the
 		// Portuguese mint's shop folder on Shopify's CDN (not all of it).
-		"img-src 'self' data: blob: " + OSMTileHost + " " + NumistaPhotoHost + " " + EcbPhotoHost + " https://cdn.shopify.com/s/files/1/0525/1910/8762/ https://www.monnaiedeparis.fr/media/catalog/product/",
+		"img-src 'self' data: blob: " + OSMTileHost + " " + NumistaPhotoHost + " " + EcbPhotoHost + " https://cdn.shopify.com/s/files/1/0525/1910/8762/ https://www.monnaiedeparis.fr/media/catalog/product/ https://www.muenzeoesterreich.at/var/storage/images/",
 		"worker-src 'self' blob:",
 	}
 	for _, directive := range required {

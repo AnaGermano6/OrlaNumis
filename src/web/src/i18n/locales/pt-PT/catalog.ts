@@ -30,7 +30,7 @@ const messages: Messages['catalog'] = {
   references: 'Referências',
   chooseGrade: 'Grau da sua moeda',
   chooseGradeHint: 'Toque no grau que corresponde à sua moeda (opcional).',
-  fillCurrentValue: 'Usar o preço do Numista para este grau como valor atual da moeda (em $, como o resto da app)',
+  fillCurrentValue: 'Usar o preço do Numista para este grau como valor atual da moeda (em {currency}, como o resto da app)',
   addToCollection: 'Adicionar à coleção',
   addToWishlist: 'Quero ter (lista de desejos)',
   notes: {
@@ -41,6 +41,26 @@ const messages: Messages['catalog'] = {
     edge: 'Bordo: {value}',
     mintage: 'Tiragem: {value}',
     otherReferences: 'Outras referências: {value}',
+  },
+  banknote: {
+    intro: 'Pesquise no catálogo Numista, escolha a nota e o ano, e os detalhes são preenchidos por si.',
+    query: 'Nota',
+    queryPlaceholder: 'ex.: 1000 escudos, Pedro Álvares Cabral',
+    yearHint: 'O ano é opcional.',
+    noResults: 'Nenhuma nota encontrada. Experimente menos palavras ou outro país.',
+    resultCount: {
+      one: '{count} nota encontrada',
+      other: '{count} notas encontradas',
+    },
+    obversePhoto: 'Frente (foto do catálogo)',
+    reversePhoto: 'Verso (foto do catálogo)',
+    loadingType: 'A carregar os detalhes da nota...',
+    typeFailed: 'Não foi possível carregar os detalhes da nota.',
+    chooseGrade: 'Conservação da sua nota',
+    chooseGradeHint: 'Toque na conservação que corresponde à sua nota (opcional).',
+    fillCurrentValue: 'Usar o preço do Numista para esta conservação como valor atual da nota (em {currency}, como o resto da app)',
+    obverse: 'Frente',
+    reverse: 'Verso',
   },
 }
 

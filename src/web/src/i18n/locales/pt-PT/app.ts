@@ -24,7 +24,7 @@ const messages: Messages['app'] = {
     label: 'Rodapé',
     version: 'Versão {version}',
     catalogue: 'Dados do catálogo: Numista',
-    photos: 'Fotos oficiais: BCE, INCM e Monnaie de Paris',
+    photos: 'Fotos oficiais: BCE, INCM, Monnaie de Paris e Münze Österreich',
   },
 }
 

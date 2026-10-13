@@ -415,6 +415,10 @@ func (s *CoinPhotoSearchService) mintPhoto(ctx context.Context, coin CoinPhotoQu
 	mint := mintSourceFor(s.mints, coin.Country)
 	if numistaType != nil {
 		mint = mintSourceFor(s.mints, numistaType.Issuer.Code, numistaType.Issuer.Name)
+		// Numista's first year can be the year before the one on the coin.
+		if coin.Year != 0 && coin.Year != query.Year {
+			query.AltYears = []int{coin.Year}
+		}
 	} else {
 		query = MintPhotoQuery{Year: coin.Year, Value: MintFaceValue(coin.Denomination), Metal: coin.Material, Topic: coin.Subject}
 		ok = query.Value > 0

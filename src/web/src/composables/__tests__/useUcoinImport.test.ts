@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   createCoin: vi.fn(),
   getCoins: vi.fn(),
   getCoinOptions: vi.fn(),
-  getCollectionSummary: vi.fn(),
+  getExchangeRates: vi.fn(),
   getNumistaCatalogType: vi.fn(),
   getNumistaTypeMarketValue: vi.fn(),
   listCatalogs: vi.fn(),
@@ -92,7 +92,7 @@ describe('useUcoinImport', () => {
     mocks.getCoinOptions.mockRejectedValue(new Error('offline'))
     mocks.translateText.mockResolvedValue({ data: { status: 'unavailable' } })
     mocks.addOfficialCoinPhotos.mockResolvedValue({ data: { images: [] } })
-    mocks.getCollectionSummary.mockResolvedValue({ data: { exchangeRate: { usdPerEur: 1.12, date: '2026-10-09' } } })
+    mocks.getExchangeRates.mockResolvedValue({ data: { date: '2026-10-09', perEur: { USD: 1.12 }, currencies: ['EUR', 'USD'] } })
     mocks.listCatalogs.mockResolvedValue([
       { id: 1, catalog: 'KM', displayName: 'Krause-Mishler', era: 'modern', volumeRequired: false },
       { id: 2, catalog: 'Y', displayName: 'Y Number', era: 'modern', volumeRequired: false },
@@ -494,7 +494,7 @@ describe('useUcoinImport', () => {
 
     it('asks Numista for euros when there is no exchange rate', async () => {
       setCollectionCurrency('EUR')
-      mocks.getCollectionSummary.mockRejectedValue(new Error('offline'))
+      mocks.getExchangeRates.mockRejectedValue(new Error('offline'))
       const importer = useUcoinImport({ paceMs: 0 })
       await importer.readFile(csvFile(CSV.split('\n').slice(0, 4).join('\n')))
       await importer.start(true)

@@ -4,6 +4,7 @@ const messages: Messages['coinDetail'] = {
   markPurchased: 'Marcar como comprada',
   badges: {
     sold: 'Vendida',
+    commemorative: 'Comemorativa',
   },
   reminderRow: 'Data do lembrete de compra',
   confirmDelete: 'Eliminar esta moeda da sua coleção?',
@@ -41,6 +42,8 @@ const messages: Messages['coinDetail'] = {
     copyingCoin: 'A copiar a moeda...',
     copying: 'A copiar...',
     copy: 'Copiar moeda',
+    copyBanknote: 'Copiar nota',
+    copyingBanknote: 'A copiar a nota...',
   },
   listing: {
     lastChecked: 'Última verificação: {date}',
@@ -223,6 +226,8 @@ const messages: Messages['coinDetail'] = {
   demonetizedCoin: 'Desmonetizada',
   demonetizedOn: 'Desmonetizada em {date}',
   commemorativeCoin: 'Comemorativa',
+  nonCirculatingCoin: 'Não circulante',
+  backToBanknotes: 'Voltar às notas de banco',
 }
 
 export default messages

@@ -33,15 +33,21 @@ func (f *fakeECBClient) DailyRates(context.Context) ([]byte, error) {
 	return []byte(f.body), nil
 }
 
-func TestParseECBDollarRate(t *testing.T) {
-	rate, err := parseECBDollarRate([]byte(testECBRates))
-	if err != nil || rate.USDPerEUR != 1.25 || rate.Date != "2026-10-09" {
-		t.Fatalf("rate = %+v (%v)", rate, err)
+func TestParseECBRates(t *testing.T) {
+	rates, err := parseECBRates([]byte(testECBRates))
+	if err != nil || rates.Date != "2026-10-09" || rates.PerEUR["USD"] != 1.25 || rates.PerEUR["JPY"] != 177.34 {
+		t.Fatalf("rates = %+v (%v)", rates, err)
 	}
-	if _, err := parseECBDollarRate([]byte(`<Envelope><Cube><Cube time="2026-10-09"><Cube currency="JPY" rate="1"/></Cube></Cube></Envelope>`)); err == nil {
-		t.Fatal("missing USD must be an error")
+	if rate, ok := rates.Rate("eur"); !ok || rate != 1 {
+		t.Fatalf("the euro is worth one euro: %v %v", rate, ok)
 	}
-	if _, err := parseECBDollarRate([]byte("not xml")); err == nil {
+	if _, ok := rates.Rate("GBP"); ok {
+		t.Fatal("a currency the ECB did not quote has no rate")
+	}
+	if _, err := parseECBRates([]byte(`<Envelope><Cube><Cube time="2026-10-09"></Cube></Cube></Envelope>`)); err == nil {
+		t.Fatal("no rates must be an error")
+	}
+	if _, err := parseECBRates([]byte("not xml")); err == nil {
 		t.Fatal("invalid XML must be an error")
 	}
 }

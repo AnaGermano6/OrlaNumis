@@ -2,6 +2,7 @@ export default {
   markPurchased: 'Mark as Purchased',
   badges: {
     sold: 'Sold',
+    commemorative: 'Commemorative',
   },
   reminderRow: 'Purchase Reminder Date',
   confirmDelete: 'Delete this coin from your collection?',
@@ -39,6 +40,8 @@ export default {
     copyingCoin: 'Copying coin...',
     copying: 'Copying...',
     copy: 'Copy Coin',
+    copyBanknote: 'Copy banknote',
+    copyingBanknote: 'Copying the banknote...',
   },
   listing: {
     lastChecked: 'Last checked: {date}',
@@ -221,4 +224,6 @@ export default {
   demonetizedCoin: 'Demonetized',
   demonetizedOn: 'Demonetized on {date}',
   commemorativeCoin: 'Commemorative',
+  nonCirculatingCoin: 'Non-circulating',
+  backToBanknotes: 'Back to banknotes',
 }

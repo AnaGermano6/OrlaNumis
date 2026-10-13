@@ -12,29 +12,65 @@ var CoinPresentations = []string{"loose", "coincard", "capsule", "flip", "proof_
 // Coin rarities, from most to least common. Empty means not set.
 var CoinRarities = []string{"common", "uncommon", "scarce", "rare", "very_rare", "extremely_rare"}
 
-// Coin circulations, set by hand: whether the coin is still legal tender and
-// whether it is commemorative. Empty means "as Numista says".
-var CoinCirculations = []string{"current", "current_commemorative", "demonetized", "demonetized_commemorative"}
+// Coin circulations, set by hand: whether the coin is still legal tender
+// (current) or not (demonetized), or was issued for collectors rather than
+// for circulation (non-circulating); and whether it is commemorative. Empty
+// means "as Numista says".
+var CoinCirculations = []string{
+	"current", "current_commemorative",
+	"demonetized", "demonetized_commemorative",
+	"non_circulating", "non_circulating_commemorative",
+}
+
+// Coin kinds: what a collection item is. The galleries show coins and
+// banknotes apart; everything else treats them alike.
+const (
+	CoinKindCoin     = "coin"
+	CoinKindBanknote = "banknote"
+)
+
+// NoteVariants are the kinds of banknote that are not an ordinary note: a
+// replacement (star) note, printed in place of a faulty one, or a specimen.
+// Empty means an ordinary note.
+var NoteVariants = []string{"replacement", "specimen"}
+
+// ValidNoteVariant reports whether value is empty or a known note variant.
+func ValidNoteVariant(value string) bool {
+	return value == "" || containsValue(NoteVariants, value)
+}
+
+// ValidCoinKind reports whether value is a known kind.
+func ValidCoinKind(value string) bool {
+	return value == CoinKindCoin || value == CoinKindBanknote
+}
 
 // ValidCoinCirculation reports whether value is empty or a known circulation.
 func ValidCoinCirculation(value string) bool {
 	return value == "" || containsValue(CoinCirculations, value)
 }
 
+// CoinCirculationSetting is what a circulation set by hand says of a coin.
+type CoinCirculationSetting struct {
+	// Demonetized coins are no longer legal tender.
+	Demonetized bool
+	// NonCirculating coins were issued for collectors, not for circulation.
+	NonCirculating bool
+	Commemorative  bool
+}
+
 // CoinCirculationFacts reads a circulation set by hand; ok is false when it
 // is not set (or unknown).
-func CoinCirculationFacts(value string) (current, commemorative, ok bool) {
-	switch value {
+func CoinCirculationFacts(value string) (setting CoinCirculationSetting, ok bool) {
+	base, commemorative := strings.CutSuffix(value, "_commemorative")
+	switch base {
 	case "current":
-		return true, false, true
-	case "current_commemorative":
-		return true, true, true
+		return CoinCirculationSetting{Commemorative: commemorative}, true
 	case "demonetized":
-		return false, false, true
-	case "demonetized_commemorative":
-		return false, true, true
+		return CoinCirculationSetting{Demonetized: true, Commemorative: commemorative}, true
+	case "non_circulating":
+		return CoinCirculationSetting{NonCirculating: true, Commemorative: commemorative}, true
 	}
-	return false, false, false
+	return CoinCirculationSetting{}, false
 }
 
 // ValidCoinPresentation reports whether value is empty or a known presentation.

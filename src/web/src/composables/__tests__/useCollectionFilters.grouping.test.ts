@@ -46,10 +46,12 @@ describe('useCollectionFilters grouping', () => {
     const { filters, wrapper } = mountFilters()
     await filters.fetchUserTags()
     expect(filters.countryOptions.value).toEqual([{ country: 'Portugal', count: 3 }])
+    // The gallery is the coins'; banknotes have their own.
+    expect(mocks.getCoinCountries).toHaveBeenCalledWith('coin')
 
     filters.selectedPresentation.value = 'coincard'
     await nextTick()
-    expect(fetchPage).toHaveBeenLastCalledWith(expect.objectContaining({ presentation: 'coincard', page: 1 }))
+    expect(fetchPage).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'coin', presentation: 'coincard', page: 1 }))
 
     mocks.fillCountriesFromNumista.mockResolvedValue({ data: { status: 'ok', updated: 0, remaining: 0, failed: 0 } })
     filters.groupBy.value = 'year'

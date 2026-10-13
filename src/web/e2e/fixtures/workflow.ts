@@ -7,7 +7,6 @@ import {
   buildTestStorageLocations,
   buildTestTags,
 } from '../../src/test/fixtures'
-import { emptyThreeByThreeTray, occupiedThreeByThreeTray, twentyByTwentyTray } from '../../src/test/fixtures/storageTrays'
 import type { Coin, CoinImage, CoinListResponse, CoinMutationPayload, CoinSet, StorageLocation, Tag, UserInfo } from '../../src/types'
 
 export interface F013Workflow {
@@ -192,11 +191,6 @@ export async function installWorkflowApiMocks(page: Page, initialCoins: Coin[] =
 
     if (path === '/mint-locations' && method === 'GET') {
       await json(route, { mintLocations: buildTestMintLocations() })
-      return
-    }
-
-    if (path === '/storage-trays' && method === 'GET') {
-      await json(route, { trays: [occupiedThreeByThreeTray, { ...emptyThreeByThreeTray, id: 2, name: 'Empty Tray' }, twentyByTwentyTray] })
       return
     }
 

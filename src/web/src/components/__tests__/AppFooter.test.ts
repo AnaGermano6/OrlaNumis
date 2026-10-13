@@ -13,7 +13,7 @@ describe('AppFooter', () => {
     expect(wrapper.get('footer').attributes('aria-label')).toBe('Rodapé')
     expect(wrapper.get('[data-testid="app-version"]').text()).toMatch(/^Versão \S+$/)
     expect(wrapper.text()).toContain('Dados do catálogo: Numista')
-    expect(wrapper.text()).toContain('Fotos oficiais: BCE, INCM e Monnaie de Paris')
+    expect(wrapper.text()).toContain('Fotos oficiais: BCE, INCM, Monnaie de Paris e Münze Österreich')
     expect(wrapper.text()).toContain(`© ${new Date().getFullYear()} Aurearia`)
   })
 })

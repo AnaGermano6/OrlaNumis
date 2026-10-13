@@ -92,6 +92,7 @@ import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { materialLabel } from '@/utils/format'
 import { t } from '@/i18n'
+import { priceRangeLabel } from '@/utils/priceRanges'
 import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
 
 const store = useCoinsStore()
@@ -119,7 +120,7 @@ const priceRangeItems = computed<BarItem[]>(() => {
   if (!stats.value?.byPriceRange) return []
   return [...stats.value.byPriceRange]
     .sort((a, b) => priceRangeOrder.indexOf(a.range) - priceRangeOrder.indexOf(b.range))
-    .map((p) => ({ label: p.range === 'Under $50' ? t('stats.priceRanges.under50') : p.range, count: p.count }))
+    .map((p) => ({ label: priceRangeLabel(p.range), count: p.count }))
 })
 
 async function handleRefresh() {

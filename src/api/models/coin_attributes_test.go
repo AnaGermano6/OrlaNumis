@@ -60,3 +60,25 @@ func deref(v *int) any {
 	}
 	return *v
 }
+
+func TestCoinCirculationFacts(t *testing.T) {
+	for value, want := range map[string]CoinCirculationSetting{
+		"current":                       {},
+		"current_commemorative":         {Commemorative: true},
+		"demonetized":                   {Demonetized: true},
+		"demonetized_commemorative":     {Demonetized: true, Commemorative: true},
+		"non_circulating":               {NonCirculating: true},
+		"non_circulating_commemorative": {NonCirculating: true, Commemorative: true},
+	} {
+		got, ok := CoinCirculationFacts(value)
+		if !ok || got != want || !ValidCoinCirculation(value) {
+			t.Errorf("CoinCirculationFacts(%q) = %+v, %v", value, got, ok)
+		}
+	}
+	if _, ok := CoinCirculationFacts(""); ok || !ValidCoinCirculation("") {
+		t.Error("an empty circulation is not set by hand, and is valid")
+	}
+	if _, ok := CoinCirculationFacts("legal"); ok || ValidCoinCirculation("legal") {
+		t.Error("an unknown circulation is not valid")
+	}
+}

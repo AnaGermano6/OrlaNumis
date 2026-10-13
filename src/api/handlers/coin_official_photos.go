@@ -16,8 +16,8 @@ import (
 // OfficialPhotoHandler gives a coin being added its official images, so they
 // need not be picked by hand: the European Central Bank's images of a euro
 // coin's national side (obverse) and common side (reverse), or the photos a
-// national mint (Portugal's INCM, the Monnaie de Paris) has of a recent
-// collector coin.
+// national mint (Portugal's INCM, the Monnaie de Paris, the Münze
+// Österreich) has of a collector coin.
 type OfficialPhotoHandler struct {
 	coins  *repository.CoinRepository
 	images *ImageHandler
@@ -60,7 +60,7 @@ type OfficialPhotosResponse struct {
 // Add gives a coin the official images of the sides asked for.
 //
 //	@Summary		Add a coin's official images
-//	@Description	Adds a coin's official images to the sides asked for that have no image yet: the European Central Bank's images of a euro coin's national side (obverse) and common side (reverse), or, for a recent Portuguese or French collector coin, the photos of its mint's shop (INCM, Monnaie de Paris). Their credit is appended to the coin's notes. A coin neither has an image of (older collector coins, other currencies) gets none.
+//	@Description	Adds a coin's official images to the sides asked for that have no image yet: the European Central Bank's images of a euro coin's national side (obverse) and common side (reverse), or, for a Portuguese, French or Austrian collector coin, the photos of its mint (INCM, Monnaie de Paris, Münze Österreich). Their credit is appended to the coin's notes. A coin neither has an image of (older collector coins, other currencies) gets none.
 //	@Tags			Coins
 //	@Accept			json
 //	@Produce		json

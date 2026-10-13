@@ -1,16 +1,12 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SettingsDataSection from '@/components/settings/SettingsDataSection.vue'
-import type { MintLocation, StorageLocation } from '@/types'
+import type { MintLocation } from '@/types'
 
 const mockGetMintLocations = vi.fn()
 const mockCreateMintLocation = vi.fn()
 const mockUpdateMintLocation = vi.fn()
 const mockDeleteMintLocation = vi.fn()
-const mockGetStorageLocations = vi.fn()
-const mockCreateStorageLocation = vi.fn()
-const mockUpdateStorageLocation = vi.fn()
-const mockDeleteStorageLocation = vi.fn()
 const mockShowConfirm = vi.fn()
 
 vi.mock('@/api/client', () => ({
@@ -18,10 +14,6 @@ vi.mock('@/api/client', () => ({
   createTag: vi.fn(),
   updateTag: vi.fn(),
   deleteTag: vi.fn(),
-  getStorageLocations: () => mockGetStorageLocations(),
-  createStorageLocation: (data: unknown) => mockCreateStorageLocation(data),
-  updateStorageLocation: (id: number, data: unknown) => mockUpdateStorageLocation(id, data),
-  deleteStorageLocation: (id: number) => mockDeleteStorageLocation(id),
   migrateLegacyReferences: vi.fn(),
   getMintLocations: () => mockGetMintLocations(),
   createMintLocation: (data: unknown) => mockCreateMintLocation(data),
@@ -63,35 +55,10 @@ function mintResponse(locations: MintLocation[]) {
   return { data: { mintLocations: locations } }
 }
 
-function storageResponse(locations: StorageLocation[]) {
-  return { data: { storageLocations: locations } }
-}
-
-const standardLocation: StorageLocation = {
-  id: 21,
-  name: 'Safe',
-  type: 'standard',
-  rows: null,
-  columns: null,
-  capacity: 0,
-  occupied: 2,
-}
-
-const occupiedTray: StorageLocation = {
-  id: 22,
-  name: 'Cabinet A',
-  type: 'tray',
-  rows: 3,
-  columns: 3,
-  capacity: 9,
-  occupied: 4,
-}
-
 describe('SettingsDataSection — Custom Mint Locations', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockShowConfirm.mockResolvedValue(false)
-    mockGetStorageLocations.mockResolvedValue(storageResponse([]))
   })
 
   it('shows empty state when user has no custom locations', async () => {
@@ -240,128 +207,14 @@ describe('SettingsDataSection — Custom Mint Locations', () => {
   })
 })
 
-describe('SettingsDataSection — Storage Locations', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+describe('SettingsDataSection — storage locations', () => {
+  it('no longer offers storage locations or coin trays', async () => {
     mockGetMintLocations.mockResolvedValue(mintResponse([]))
-    mockGetStorageLocations.mockResolvedValue(storageResponse([standardLocation, occupiedTray]))
-    mockShowConfirm.mockResolvedValue(false)
-  })
-
-  it('shows type-specific fields, capacity preview, and occupancy labels', async () => {
     const wrapper = mount(SettingsDataSection)
     await flushPromises()
 
-    const tagsSection = wrapper.find('section[aria-labelledby="tags-heading"]')
-    const storageSection = wrapper.find('section[aria-labelledby="storage-locations-heading"]')
-    expect(wrapper.text()).toContain('Standard Location')
-    expect(wrapper.text()).toContain('Coin Tray · 3×3 · 4 / 9')
-    expect(tagsSection.find('select[aria-label="Storage location type"]').exists()).toBe(false)
-    expect(tagsSection.find('input[aria-label="Tray rows"]').exists()).toBe(false)
-    expect(storageSection.find('select[aria-label="Storage location type"]').exists()).toBe(true)
-    expect(storageSection.find('input[aria-label="Tray rows"]').exists()).toBe(false)
-
-    await storageSection.find('select[aria-label="Storage location type"]').setValue('tray')
-
-    const dimensions = storageSection.findAll('input[type="number"]').filter((input) =>
-      ['Tray rows', 'Tray columns'].includes(input.attributes('aria-label') ?? ''),
-    )
-    expect(dimensions).toHaveLength(2)
-    await dimensions[0]!.setValue('4')
-    await dimensions[1]!.setValue('5')
-    expect(wrapper.text()).toContain('20 slots')
-  })
-
-  it('creates type-specific payloads and surfaces field validation errors', async () => {
-    mockCreateStorageLocation.mockResolvedValue({})
-    const wrapper = mount(SettingsDataSection)
-    await flushPromises()
-
-    const storageSection = wrapper.find('section[aria-labelledby="storage-locations-heading"]')
-    await storageSection.find('select[aria-label="Storage location type"]').setValue('tray')
-    await storageSection.find('input[placeholder="New storage location..."]').setValue('  Drawer  ')
-    const dimensions = storageSection.findAll('input[type="number"]').filter((input) =>
-      ['Tray rows', 'Tray columns'].includes(input.attributes('aria-label') ?? ''),
-    )
-    await dimensions[0]!.setValue('2')
-    await dimensions[1]!.setValue('6')
-    await storageSection.findAll('button').find((button) => button.text() === 'Create Location')!.trigger('click')
-    await flushPromises()
-
-    expect(mockCreateStorageLocation).toHaveBeenCalledWith({
-      name: 'Drawer',
-      type: 'tray',
-      rows: 2,
-      columns: 6,
-    })
-
-    mockCreateStorageLocation.mockRejectedValueOnce({
-      response: { status: 400, data: { field: 'rows', message: 'Tray rows must be between 1 and 20' } },
-    })
-    await storageSection.find('input[placeholder="New storage location..."]').setValue('Invalid Tray')
-    await storageSection.findAll('button').find((button) => button.text() === 'Create Location')!.trigger('click')
-    await flushPromises()
-    expect(wrapper.text()).toContain('Tray rows must be between 1 and 20')
-  })
-
-  it('keeps occupied dimensions disabled while allowing rename', async () => {
-    mockUpdateStorageLocation.mockResolvedValue({})
-    const wrapper = mount(SettingsDataSection)
-    await flushPromises()
-
-    const trayRow = wrapper.findAll('div.rounded-sm').find((row) =>
-      row.text().includes('Cabinet A') && row.findAll('button').some((button) => button.text() === 'Edit'),
-    )
-    await trayRow!.findAll('button').find((button) => button.text() === 'Edit')!.trigger('click')
-
-    const editingTrayRow = wrapper.findAll('div.rounded-sm').find((row) =>
-      row.text().includes('Empty the tray before resizing.') && row.findAll('button').some((button) => button.text() === 'Save'),
-    )
-    const dimensions = editingTrayRow!.findAll('input[type="number"]')
-    expect(dimensions).toHaveLength(2)
-    expect(dimensions.every((input) => input.attributes('disabled') !== undefined)).toBe(true)
-    expect(editingTrayRow!.text()).toContain('Empty the tray before resizing.')
-
-    const nameInput = wrapper.findAll('input').find((input) => (input.element as HTMLInputElement).value === 'Cabinet A')
-    await nameInput!.setValue('Renamed Cabinet')
-    await editingTrayRow!.findAll('button').find((button) => button.text() === 'Save')!.trigger('click')
-    await flushPromises()
-
-    expect(mockUpdateStorageLocation).toHaveBeenCalledWith(occupiedTray.id, { name: 'Renamed Cabinet' })
-  })
-
-  it('shows referenced deletion counts and stable conflict messages', async () => {
-    mockShowConfirm.mockResolvedValue(true)
-    mockDeleteStorageLocation.mockRejectedValueOnce({
-      response: {
-        status: 409,
-        data: { code: 'location_referenced', count: 2, message: '2 coins still reference this location' },
-      },
-    })
-    const wrapper = mount(SettingsDataSection)
-    await flushPromises()
-
-    const standardRow = wrapper.findAll('div.rounded-sm').find((row) =>
-      row.text().includes('Safe') && row.findAll('button').some((button) => button.text() === 'Delete'),
-    )
-    await standardRow!.findAll('button').find((button) => button.text() === 'Delete')!.trigger('click')
-    await flushPromises()
-
-    expect(mockDeleteStorageLocation).toHaveBeenCalledWith(standardLocation.id)
-    expect(wrapper.text()).toContain('2 coins still reference this location')
-
-    mockUpdateStorageLocation.mockRejectedValueOnce({
-      response: { status: 409, data: { code: 'tray_occupied', message: 'Empty the tray before resizing' } },
-    })
-    const trayRow = wrapper.findAll('div.rounded-sm').find((row) =>
-      row.text().includes('Cabinet A') && row.findAll('button').some((button) => button.text() === 'Edit'),
-    )
-    await trayRow!.findAll('button').find((button) => button.text() === 'Edit')!.trigger('click')
-    const editingTrayRow = wrapper.findAll('div.rounded-sm').find((row) =>
-      row.text().includes('Empty the tray before resizing.') && row.findAll('button').some((button) => button.text() === 'Save'),
-    )
-    await editingTrayRow!.findAll('button').find((button) => button.text() === 'Save')!.trigger('click')
-    await flushPromises()
-    expect(wrapper.text()).toContain('Empty the tray before resizing')
+    expect(wrapper.find('section[aria-labelledby="storage-locations-heading"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Coin Tray')
+    expect(wrapper.find('section[aria-labelledby="tags-heading"]').exists()).toBe(true)
   })
 })

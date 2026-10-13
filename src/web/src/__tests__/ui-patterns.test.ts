@@ -40,15 +40,10 @@ describe('UI pattern recipes', () => {
 
   it('keeps tray felt color in Settings appearance instead of the tray page', () => {
     const settingsAppearance = readRepoFile(join('components', 'settings', 'SettingsAppearanceSection.vue'))
-    const trayPage = readRepoFile(join('pages', 'TrayViewPage.vue'))
     const museumTray = readRepoFile(join('components', 'tray', 'MuseumTray.vue'))
 
     expect(settingsAppearance).toContain('Tray Felt Color')
     expect(settingsAppearance).toContain('set-tray-felt-color')
-    expect(trayPage).not.toContain('@update:felt-theme')
-    expect(trayPage).toContain('const coinsPerDrawer = 12')
-    expect(trayPage).toContain('while (true)')
-    expect(trayPage).toContain('limit: trayPageLimit')
     expect(museumTray).toContain('grid-template-columns: repeat(6, minmax(0, 1fr))')
   })
 
@@ -232,7 +227,7 @@ describe('UI pattern recipes', () => {
     expect(app).toContain("const collectionExpanded = ref(false)")
     expect(app).toContain("id: 'collection'")
     expect(app).toContain("labelKey: 'nav.gallery'")
-    expect(app).toContain("labelKey: 'nav.tray'")
+    expect(app).toContain("labelKey: 'nav.banknotes'")
     expect(app).toContain("id: 'stats'")
     expect(app).toContain("labelKey: 'nav.timeline'")
     expect(app).toContain("labelKey: 'nav.map'")

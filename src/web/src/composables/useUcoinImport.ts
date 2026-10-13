@@ -9,7 +9,7 @@ import {
   addOfficialCoinPhotos,
   createCoin,
   getCoins,
-  getCollectionSummary,
+  getExchangeRates,
   getNumistaCatalogType,
   getNumistaTypeMarketValue,
   listCatalogs,
@@ -203,7 +203,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
   let stopRequested = false
   let nextSlot = 0
   /** ECB rate (US dollars per euro) for amounts in the other currency. */
-  let usdPerEur: number | undefined
+  let perEur: Record<string, number> | undefined
 
   const countries = computed(() => new Set(rows.value.map((row) => fold(row.country)).filter(Boolean)).size)
   const alreadyImported = computed(() => rows.value.length - pendingRows.value.length)
@@ -295,7 +295,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     pendingRows.value = pending
     // A coin already imported keeps what it has and gets what the file adds.
     updatable.value = matched.flatMap(({ row, coin }) => {
-      const payload = ucoinPurchaseUpdate(coin, ucoinPurchase(row, usdPerEur))
+      const payload = ucoinPurchaseUpdate(coin, ucoinPurchase(row, perEur))
       return payload ? [{ coin, payload }] : []
     })
     progress.toUpdate = 0
@@ -519,12 +519,12 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
         // Prices are asked in US dollars, the currency earlier lookups are
         // cached in, and converted to the collection currency with the ECB
         // rate; without a rate they are asked in the collection currency.
-        const currency = toCollectionCurrency(1, 'USD', usdPerEur) === undefined ? collectionCurrency.value : 'USD'
+        const currency = toCollectionCurrency(1, 'USD', perEur) === undefined ? collectionCurrency.value : 'USD'
         const res = await getNumistaTypeMarketValue(typeId, { currency, issueId })
         checkStatus(res.data.status)
         if (res.data.status !== 'ok') return []
         return res.data.prices.flatMap((entry) => {
-          const price = toCollectionCurrency(entry.price, currency, usdPerEur)
+          const price = toCollectionCurrency(entry.price, currency, perEur)
           return price === undefined ? [] : [{ ...entry, price }]
         })
       })())
@@ -534,7 +534,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
 
   async function loadRate() {
     try {
-      usdPerEur = (await getCollectionSummary()).data.exchangeRate?.usdPerEur
+      perEur = (await getExchangeRates()).data.perEur
     } catch {
       // Prices in another currency then stay in the notes.
     }
@@ -624,7 +624,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     if (wait) await new Promise((resolve) => setTimeout(resolve, wait))
   }
 
-  /** Asks the server for the coin's official photos (ECB, Portuguese and French mints). */
+  /** Asks the server for the coin's official photos (ECB, Portuguese, French and Austrian mints). */
   async function addPhotos(coin: Coin) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
       await pacePhoto()
@@ -741,7 +741,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     await runPool(pendingRows.value, 3, async (row) => {
       try {
         await pace()
-        await createCoin(buildUcoinCoin(row, { ...options, usdPerEur }))
+        await createCoin(buildUcoinCoin(row, { ...options, perEur }))
         progress.created += 1
       } catch {
         progress.createFailed += 1

@@ -112,4 +112,26 @@ describe('EditCoinPage', () => {
     else expect(mocks.showAlert).not.toHaveBeenCalled()
     wrapper.unmount()
   })
+  it('edits a banknote with the banknote form', async () => {
+    mocks.getCoin.mockResolvedValue({ data: { ...buildRomanDenariusCore({ id: 42 }), kind: 'banknote', name: '1000 escudos' } })
+    const BanknoteFormStub = defineComponent({
+      emits: ['submit'],
+      setup(_, { emit, expose }) {
+        expose({ obverseFile: null, reverseFile: null, cardFile: null, removedObverseId: null, removedReverseId: null })
+        return () => h('button', { 'aria-label': 'Save banknote', onClick: () => emit('submit') }, 'Save')
+      },
+    })
+    const wrapper = mount(EditCoinPage, {
+      global: { stubs: { BanknoteForm: BanknoteFormStub, CoinForm: { template: '<div data-testid="coin-form" />' } } },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="coin-form"]').exists()).toBe(false)
+    expect(wrapper.get('h1').text()).toBe('Edit banknote')
+    await wrapper.get('button[aria-label="Save banknote"]').trigger('click')
+    await flushPromises()
+    expect(mocks.updateCoin).toHaveBeenCalledWith(42, expect.objectContaining({ kind: 'banknote', name: '1000 escudos' }))
+    expect(mocks.back).toHaveBeenCalledTimes(1)
+    wrapper.unmount()
+  })
 })

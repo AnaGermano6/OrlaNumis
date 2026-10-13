@@ -6,6 +6,8 @@ import app from './app'
 import auctions from './auctions'
 import auth from './auth'
 import availability from './availability'
+import banknoteForm from './banknoteForm'
+import banknotes from './banknotes'
 import calendar from './calendar'
 import camera from './camera'
 import catalog from './catalog'
@@ -16,6 +18,7 @@ import coinDetail from './coinDetail'
 import coinFields from './coinFields'
 import coinForm from './coinForm'
 import collection from './collection'
+import collectionOverview from './collectionOverview'
 import common from './common'
 import copilot from './copilot'
 import deepAnalysis from './deepAnalysis'
@@ -77,6 +80,8 @@ const messages: Messages = {
   auctions,
   auth,
   availability,
+  banknoteForm,
+  banknotes,
   calendar,
   camera,
   catalog,
@@ -87,6 +92,7 @@ const messages: Messages = {
   coinFields,
   coinForm,
   collection,
+  collectionOverview,
   common,
   copilot,
   deepAnalysis,

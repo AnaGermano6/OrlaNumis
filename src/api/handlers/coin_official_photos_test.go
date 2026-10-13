@@ -211,11 +211,13 @@ func TestOfficialPhotos_AddsTheINCMPhotosOfAPortugueseCollectorCoin(t *testing.T
 
 func TestImportablePhotoURL_OnlyTheINCMShopOnShopify(t *testing.T) {
 	for raw, want := range map[string]bool{
-		"https://cdn.shopify.com/s/files/1/0525/1910/8762/files/FENIX_CU_A.jpg?v=1":  true,
-		"https://cdn.shopify.com/s/files/1/0000/0000/0000/files/other.jpg":           false,
-		"https://cdn.shopify.com/s/files/1/0525/1910/8762/files/notes.pdf":           false,
-		"https://www.monnaiedeparis.fr/media/catalog/product/M/5/M5066_MDP_1_BD.jpg": true,
-		"https://www.monnaiedeparis.fr/en/shop":                                      false,
+		"https://cdn.shopify.com/s/files/1/0525/1910/8762/files/FENIX_CU_A.jpg?v=1":                                                                                 true,
+		"https://cdn.shopify.com/s/files/1/0000/0000/0000/files/other.jpg":                                                                                          false,
+		"https://cdn.shopify.com/s/files/1/0525/1910/8762/files/notes.pdf":                                                                                          false,
+		"https://www.monnaiedeparis.fr/media/catalog/product/M/5/M5066_MDP_1_BD.jpg":                                                                                true,
+		"https://www.monnaiedeparis.fr/en/shop":                                                                                                                     false,
+		"https://www.muenzeoesterreich.at/var/storage/images/_aliases/product_full/8/6/3/7/9527368-3-ger-DE/1729ea87f981-2024_5E_Weltmeister_Ag_HGH_VS_2D.png.webp": true,
+		"https://www.muenzeoesterreich.at/produkte/5-euro-kupfermuenze-weltmeister-np":                                                                              false,
 	} {
 		if _, ok := importablePhotoURL(raw); ok != want {
 			t.Errorf("importablePhotoURL(%q) = %v, want %v", raw, ok, want)

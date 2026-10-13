@@ -56,6 +56,7 @@ const messages: Messages['map'] = {
     extinct: 'Países extintos no território atual',
     clearFilters: 'Limpar filtros',
     filtered: '{shown} de {total} moedas com estes filtros',
+    nonCirculating: 'Não circulantes (coleção)',
   },
   target: {
     progress: '{target}: moedas de {have} de {total}',

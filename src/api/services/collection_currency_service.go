@@ -7,33 +7,40 @@ import (
 	"strings"
 )
 
-// Collection currencies: the ones the ECB euro reference rate converts between.
+// The euro and the US dollar, the collection's usual currencies.
 const (
 	CurrencyUSD = "USD"
 	CurrencyEUR = "EUR"
 )
 
+// CollectionCurrencies are the currencies a collection can be kept in: the
+// euro and the currencies the ECB publishes a daily euro reference rate for.
+var CollectionCurrencies = []string{
+	"EUR", "USD", "GBP", "CHF", "JPY", "CAD", "AUD", "NZD", "BRL", "CNY", "HKD", "SGD", "KRW", "INR", "IDR",
+	"MYR", "PHP", "THB", "MXN", "ZAR", "ILS", "TRY", "SEK", "NOK", "DKK", "ISK", "PLN", "CZK", "HUF", "RON",
+}
+
 var (
-	// ErrUnsupportedCollectionCurrency is returned for a currency other than USD or EUR.
-	ErrUnsupportedCollectionCurrency = errors.New("collection currency must be USD or EUR")
+	// ErrUnsupportedCollectionCurrency is returned for a currency the ECB gives no rate for.
+	ErrUnsupportedCollectionCurrency = errors.New("collection currency must be the euro or a currency of the ECB reference rates")
 	// ErrExchangeRateUnavailable means no ECB rate could be read, so nothing was converted.
 	ErrExchangeRateUnavailable = errors.New("exchange rate unavailable")
 )
 
-// NormalizeCollectionCurrency returns USD or EUR for a currency code, and false
-// for anything else.
+// NormalizeCollectionCurrency returns the code of a collection currency
+// ("eur" → "EUR"), and false for any other code.
 func NormalizeCollectionCurrency(code string) (string, bool) {
-	switch strings.ToUpper(strings.TrimSpace(code)) {
-	case CurrencyUSD:
-		return CurrencyUSD, true
-	case CurrencyEUR:
-		return CurrencyEUR, true
+	code = strings.ToUpper(strings.TrimSpace(code))
+	for _, currency := range CollectionCurrencies {
+		if currency == code {
+			return currency, true
+		}
 	}
 	return "", false
 }
 
-// CollectionCurrency is the currency coin prices and values are kept in;
-// USD unless an admin switched the collection to euros.
+// CollectionCurrency is the currency coin prices and values are kept in and
+// every page shows; USD unless an admin switched the collection to another.
 func (s *SettingsService) CollectionCurrency() string {
 	if s == nil {
 		return CurrencyUSD
@@ -50,21 +57,24 @@ func CurrencyInstruction(currency string) string {
 	if currency == "" || currency == CurrencyUSD {
 		return ""
 	}
-	return fmt.Sprintf("Give estimatedValue and every comparable price in %s (euros), not USD; convert when a source is priced in another currency.", currency)
+	return fmt.Sprintf("Give estimatedValue and every comparable price in %s, not USD; convert when a source is priced in another currency.", currency)
 }
 
 // CollectionCurrencyChange reports a currency switch.
 type CollectionCurrencyChange struct {
 	Currency string `json:"currency"`
 	Previous string `json:"previous"`
-	// ExchangeRate is the ECB rate used; nil when nothing was converted.
-	ExchangeRate *ExchangeRate `json:"exchangeRate,omitempty"`
+	// Factor is what every amount was multiplied by (how much of the new
+	// currency one unit of the previous one buys), at the ECB rates of
+	// RateDate; both are empty when nothing was converted.
+	Factor   float64 `json:"factor,omitempty"`
+	RateDate string  `json:"rateDate,omitempty"`
 	// CoinsConverted counts coins with a price or value that was converted.
 	CoinsConverted int64 `json:"coinsConverted"`
 }
 
 type collectionCurrencyRates interface {
-	USDPerEUR(ctx context.Context) (ExchangeRate, error)
+	Rates(ctx context.Context) (ExchangeRates, error)
 }
 
 // collectionAmountConverter converts the stored amounts and records the new
@@ -100,22 +110,23 @@ func (s *CollectionCurrencyService) Change(ctx context.Context, currency string)
 		return change, nil
 	}
 
-	rate, err := s.rates.USDPerEUR(ctx)
+	rates, err := s.rates.Rates(ctx)
 	if err != nil {
 		return change, fmt.Errorf("%w: %v", ErrExchangeRateUnavailable, err)
 	}
-	if rate.USDPerEUR <= 0 {
+	// Both rates are euros' worth: the ECB quotes every currency against the euro.
+	from, fromOK := rates.Rate(previous)
+	to, toOK := rates.Rate(target)
+	if !fromOK || !toOK {
 		return change, ErrExchangeRateUnavailable
 	}
-	factor := rate.USDPerEUR // EUR → USD
-	if target == CurrencyEUR {
-		factor = 1 / rate.USDPerEUR // USD → EUR
-	}
+	factor := to / from
 	coins, err := s.amounts.ConvertAmounts(factor, SettingCollectionCurrency, target)
 	if err != nil {
 		return CollectionCurrencyChange{Currency: previous, Previous: previous}, err
 	}
 	change.CoinsConverted = coins
-	change.ExchangeRate = &rate
+	change.Factor = factor
+	change.RateDate = rates.Date
 	return change, nil
 }

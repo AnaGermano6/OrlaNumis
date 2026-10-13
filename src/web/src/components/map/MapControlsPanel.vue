@@ -24,6 +24,7 @@
           <option value="">{{ t('map.controls.allCoins') }}</option>
           <option value="current">{{ t('map.controls.current') }}</option>
           <option value="demonetized">{{ t('map.controls.demonetized') }}</option>
+          <option value="nonCirculating">{{ t('map.controls.nonCirculating') }}</option>
         </select>
       </label>
       <label class="flex min-w-0 flex-col gap-1">

@@ -659,19 +659,4 @@ export default {
     anthropicFailed: 'Failed to test Anthropic connection',
     searxngFailed: 'Failed to test SearXNG connection',
   },
-  currency: {
-    eyebrow: 'Values',
-    title: 'Collection currency',
-    intro: 'The currency coin prices and values are entered, shown, valued by AI and imported in. Changing it converts every stored price, value and value history with today\'s ECB reference rate.',
-    label: 'Currency',
-    options: {
-      USD: 'US dollar ($)',
-      EUR: 'Euro (€)',
-    },
-    apply: 'Change and convert',
-    conversionNote: 'Stored amounts will be converted with today\'s ECB rate.',
-    confirm: 'Switch the collection to {currency} and convert every stored price and value with today\'s ECB rate?',
-    done: { one: 'Done: {count} coin converted (1 € = {rate} US$).', other: 'Done: {count} coins converted (1 € = {rate} US$).' },
-    failed: 'The currency could not be changed (the ECB rate may be unavailable). Nothing was converted.',
-  },
 }

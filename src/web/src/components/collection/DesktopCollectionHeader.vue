@@ -13,12 +13,6 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3 max-md:flex-col max-md:items-stretch">
-        <div class="flex min-w-[180px] flex-wrap gap-[0.35rem] max-md:w-full">
-          <CategoryFilter :model-value="selectedCategory" @update:model-value="$emit('update:selectedCategory', $event)" />
-        </div>
-
-        <div class="h-6 w-px shrink-0 bg-border-subtle max-lg:hidden"></div>
-
         <div class="flex min-w-[220px] flex-1 items-center gap-2 max-md:w-full max-sm:flex-col max-sm:items-stretch">
           <EraFilter :model-value="selectedEra" :eras="eraOptions" @update:model-value="$emit('update:selectedEra', $event)" />
           <select v-if="userTags.length" :value="selectedTag" @change="$emit('update:selectedTag', ($event.target as HTMLSelectElement).value)" class="form-select h-[38px] min-w-0 flex-1 bg-card px-[0.6rem] py-[0.45rem] text-body transition-colors hover:border-border-accent">
@@ -56,7 +50,6 @@
 
 <script setup lang="ts">
 import type { CollectionSetOption, ImageType } from '@/types'
-import CategoryFilter from '@/components/CategoryFilter.vue'
 import EraFilter from '@/components/collection/EraFilter.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import SortSelect from '@/components/SortSelect.vue'
@@ -64,7 +57,6 @@ import { t } from '@/i18n'
 
 defineProps<{
   search: string
-  selectedCategory: string
   selectedEra: string
   selectedTag: string
   userTags: CollectionSetOption[]
@@ -75,7 +67,6 @@ defineProps<{
 
 defineEmits<{
   'update:search': [value: string]
-  'update:selectedCategory': [value: string]
   'update:selectedEra': [value: string]
   'update:selectedTag': [value: string]
   'update:sortKey': [value: string]

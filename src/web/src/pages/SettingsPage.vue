@@ -80,7 +80,6 @@
           @saved="handleProcessSaved"
           @unblock="handleUnblock"
         />
-        <SettingsShipmentsSection v-if="activeTab === 'shipments'" ref="shipmentsSection" />
 
         <SavedConversationsSection
           v-if="activeTab === 'conversations'"
@@ -126,10 +125,9 @@ import SettingsBackupsSection from '@/components/settings/SettingsBackupsSection
 import SettingsApiKeysSection from '@/components/settings/SettingsApiKeysSection.vue'
 import SavedConversationsSection from '@/components/settings/SavedConversationsSection.vue'
 import SettingsToolsSection from '@/components/settings/SettingsToolsSection.vue'
-import SettingsShipmentsSection from '@/components/settings/SettingsShipmentsSection.vue'
 import SettingsConnectionsSection from '@/components/settings/SettingsConnectionsSection.vue'
 import CollectorProfileSection from '@/components/settings/CollectorProfileSection.vue'
-import { User, Palette, Database, MessageSquare, HelpCircle, Wrench, Menu, ShieldCheck, Archive, KeyRound, Truck, Link } from 'lucide-vue-next'
+import { User, Palette, Database, MessageSquare, HelpCircle, Wrench, Menu, ShieldCheck, Archive, KeyRound, Link } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { t, type MessageKey } from '@/i18n'
 
@@ -141,7 +139,6 @@ const tabIcons: Record<string, Component> = {
   backups: Archive,
   apikeys: KeyRound,
   tools: Wrench,
-  shipments: Truck,
   conversations: MessageSquare,
   help: HelpCircle,
   admin: ShieldCheck,
@@ -161,7 +158,6 @@ const accountSection = ref<InstanceType<typeof SettingsAccountSection> | null>(n
 const dataSection = ref<InstanceType<typeof SettingsDataSection> | null>(null)
 const backupsSection = ref<InstanceType<typeof SettingsBackupsSection> | null>(null)
 const apiKeysSection = ref<InstanceType<typeof SettingsApiKeysSection> | null>(null)
-const shipmentsSection = ref<InstanceType<typeof SettingsShipmentsSection> | null>(null)
 
 const tabLabelKeys: Record<string, MessageKey> = {
   account: 'settings.tabs.account',
@@ -171,12 +167,11 @@ const tabLabelKeys: Record<string, MessageKey> = {
   apikeys: 'settings.tabs.apikeys',
   tools: 'settings.tabs.tools',
   conversations: 'settings.tabs.conversations',
-  shipments: 'settings.tabs.shipments',
   backups: 'settings.tabs.backups',
   help: 'settings.tabs.help',
   admin: 'nav.admin',
 }
-const baseTabIds = ['account', 'connections', 'appearance', 'data', 'apikeys', 'tools', 'conversations', 'shipments', 'backups', 'help']
+const baseTabIds = ['account', 'connections', 'appearance', 'data', 'apikeys', 'tools', 'conversations', 'backups', 'help']
 const validTabIds = baseTabIds.concat('admin')
 // In the installed app, admins reach Admin through the settings menu, right after Account.
 const tabs = computed(() => {
@@ -323,7 +318,6 @@ async function handleRefresh() {
     loadConversations(),
     loadBlockedUsers(),
     accountSection.value?.loadCredentials() ?? Promise.resolve(),
-    shipmentsSection.value?.loadShipments() ?? Promise.resolve(),
   ])
 }
 

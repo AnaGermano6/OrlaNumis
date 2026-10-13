@@ -2,7 +2,7 @@
   <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 max-md:mb-4">
     <button class="btn btn-ghost btn-xs justify-self-start whitespace-nowrap" @click="router.push(backTarget)">
       <ArrowLeft :size="14" />
-      {{ t('coinDetail.backToGallery') }}
+      {{ isBanknote && !isWishlist ? t('coinDetail.backToBanknotes') : t('coinDetail.backToGallery') }}
     </button>
     <div class="flex min-w-0 items-center justify-end gap-[0.45rem]">
       <AppIconButton
@@ -43,6 +43,7 @@
         <Trash2 :size="24" />
       </AppIconButton>
       <CoinDetailOverflowMenu
+        :is-banknote="isBanknote"
         :coin-id="coinId"
         :duplicating="duplicating"
         :show-share="collapseSecondaryActions"
@@ -75,12 +76,15 @@ import { t } from '@/i18n'
 const props = withDefaults(defineProps<{
   isWishlist: boolean
   isSold: boolean
+  /** A banknote goes back to the banknotes, not to the coin gallery. */
+  isBanknote?: boolean
   coinId: number
   sharing?: boolean
   duplicating?: boolean
   showReminderAction?: boolean
   reminderActive?: boolean
 }>(), {
+  isBanknote: false,
   sharing: false,
   duplicating: false,
   showReminderAction: false,
@@ -96,7 +100,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-const backTarget = computed(() => props.isWishlist ? '/wishlist' : '/')
+const backTarget = computed(() => props.isWishlist ? '/wishlist' : props.isBanknote ? '/banknotes' : '/')
 const { error, pin, unpin, isPinned, isBusy } = useQuickAccess()
 const { showToast } = useToast()
 const pinned = isPinned('coin', props.coinId)

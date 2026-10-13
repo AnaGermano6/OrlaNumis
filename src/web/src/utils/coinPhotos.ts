@@ -14,6 +14,7 @@ export function photoSourceName(photo: CoinPhotoCandidate): string {
   if (photo.source === 'ecb') return t('photos.sources.ecb')
   if (photo.source === 'incm') return t('photos.sources.incm')
   if (photo.source === 'mdp') return 'Monnaie de Paris'
+  if (photo.source === 'moe') return 'Münze Österreich'
   return photo.source === 'numista' ? 'Numista' : 'Wikimedia Commons'
 }
 
@@ -62,5 +63,5 @@ export function photoCreditLine(side: PhotoSide, photo: CoinPhotoCandidate): str
 
 /** Wikimedia hosts are not in the app's CSP, so their photos go through the image proxy. */
 export function photoLoadVia(photo: CoinPhotoCandidate): 'direct' | 'proxy' {
-  return photo.source === 'numista' || photo.source === 'incm' || photo.source === 'mdp' ? 'direct' : 'proxy'
+  return photo.source === 'numista' || photo.source === 'incm' || photo.source === 'mdp' || photo.source === 'moe' ? 'direct' : 'proxy'
 }

@@ -145,6 +145,10 @@ export function materialLabel(material: string | null | undefined): string {
     case 'Bronze': return t('materials.bronze')
     case 'Copper': return t('materials.copper')
     case 'Electrum': return t('materials.electrum')
+    // What banknotes are printed on.
+    case 'Paper': return t('banknoteForm.materials.paper')
+    case 'Polymer': return t('banknoteForm.materials.polymer')
+    case 'Hybrid': return t('banknoteForm.materials.hybrid')
     case 'Other': return t('materials.other')
     default: return material ?? ''
   }

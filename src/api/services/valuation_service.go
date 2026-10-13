@@ -113,12 +113,18 @@ func valuationChangeContext(previousValue *float64, currency string) string {
 	return fmt.Sprintf("\n\nPrevious valuation context:\nPrevious value: %s\nIf your estimate changes from this value, include changeExplanation as one concise sentence.", FormatMoney(*previousValue, currency))
 }
 
-// FormatMoney writes an amount for an AI prompt: "$275.00" or "€275.00".
+// FormatMoney writes an amount for an AI prompt: "$275.00", "€275.00",
+// "£275.00", or "275.00 CHF" for another currency.
 func FormatMoney(amount float64, currency string) string {
-	if currency == CurrencyEUR {
+	switch currency {
+	case "", CurrencyUSD:
+		return fmt.Sprintf("$%.2f", amount)
+	case CurrencyEUR:
 		return fmt.Sprintf("€%.2f", amount)
+	case "GBP":
+		return fmt.Sprintf("£%.2f", amount)
 	}
-	return fmt.Sprintf("$%.2f", amount)
+	return fmt.Sprintf("%.2f %s", amount, currency)
 }
 
 // valuationRequestMessage asks for a coin's value in the collection currency.

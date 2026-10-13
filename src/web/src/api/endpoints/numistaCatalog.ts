@@ -51,9 +51,19 @@ export interface NumistaCatalogType {
   composition?: string
   technique?: string
   weightGrams?: number
+  /** A coin's diameter, or a banknote's width. */
   diameterMm?: number
+  /** A banknote's height. */
+  heightMm?: number
   thicknessMm?: number
   shape?: string
+  /** Banknotes: who printed them, their watermark and the issuing bank. */
+  printers?: string[]
+  watermark?: string
+  issuingEntity?: string
+  /** "coin", "banknote" or "exonumia". */
+  category?: string
+  series?: string
   /** Numista's comments say the type's coins are issued in a coin card. */
   issuedInCoincard?: boolean
   mints: string[]
@@ -84,6 +94,8 @@ export interface NumistaCatalogSearchParams {
   /** Types per page, 1–50 (default 20). */
   count?: number
   lang: string
+  /** Banknotes instead of coins. */
+  category?: 'coin' | 'banknote'
 }
 
 export const searchNumistaCatalog = (params: NumistaCatalogSearchParams) =>

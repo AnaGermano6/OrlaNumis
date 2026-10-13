@@ -3,6 +3,7 @@
     <NumistaCatalogTypePreview
       v-if="selectedTypeId"
       :type-id="selectedTypeId"
+      :category="category"
       :year-hint="searchedYear"
       @back="selectedTypeId = null"
       @use="$emit('use', $event)"
@@ -10,7 +11,7 @@
 
     <template v-else>
       <form class="card grid min-w-0 gap-3 p-4" role="search" @submit.prevent="runSearch(1)">
-        <p class="m-0 text-body text-text-secondary">{{ t('catalog.intro') }}</p>
+        <p class="m-0 text-body text-text-secondary">{{ text('intro') }}</p>
         <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_7rem]">
           <div class="relative flex min-w-0 flex-col gap-1">
             <label class="form-label" for="catalog-country">{{ t('catalog.country') }}</label>
@@ -61,8 +62,8 @@
             </template>
           </div>
           <div class="flex min-w-0 flex-col gap-1">
-            <label class="form-label" for="catalog-query">{{ t('catalog.query') }}</label>
-            <input id="catalog-query" v-model="query" class="form-input" type="search" maxlength="200" :placeholder="t('catalog.queryPlaceholder')" />
+            <label class="form-label" for="catalog-query">{{ text('query') }}</label>
+            <input id="catalog-query" v-model="query" class="form-input" type="search" maxlength="200" :placeholder="text('queryPlaceholder')" />
           </div>
           <div class="flex min-w-0 flex-col gap-1">
             <label class="form-label" for="catalog-year">{{ t('catalog.year') }}</label>
@@ -70,7 +71,7 @@
           </div>
         </div>
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <p class="m-0 text-chip text-text-muted">{{ t('catalog.yearHint') }}</p>
+          <p class="m-0 text-chip text-text-muted">{{ text('yearHint') }}</p>
           <button type="submit" class="btn btn-primary" :disabled="!canSearch || searching">
             {{ searching && page === 1 ? t('common.searching') : t('common.search') }}
           </button>
@@ -80,8 +81,8 @@
       <section v-if="searched" class="grid min-w-0 gap-3" aria-live="polite">
         <p v-if="searchFailed" class="m-0 text-body text-text-secondary" role="status">{{ t('catalog.searchFailed') }}</p>
         <p v-else-if="status !== 'ok'" class="m-0 text-body text-text-secondary" role="status">{{ numistaStatusMessage(status) }}</p>
-        <p v-else-if="!results.length && !searching" class="m-0 text-body text-text-secondary" role="status">{{ t('catalog.noResults') }}</p>
-        <p v-else-if="results.length" class="m-0 text-chip text-text-muted">{{ t('catalog.resultCount', { count: total }) }}</p>
+        <p v-else-if="!results.length && !searching" class="m-0 text-body text-text-secondary" role="status">{{ text('noResults') }}</p>
+        <p v-else-if="results.length" class="m-0 text-chip text-text-muted">{{ text('resultCount', { count: total }) }}</p>
 
         <ul v-if="results.length" class="m-0 grid list-none gap-2 p-0 md:grid-cols-2">
           <li v-for="item in results" :key="item.id" class="min-w-0">
@@ -90,8 +91,8 @@
               class="flex w-full min-w-0 items-center gap-3 rounded-sm border border-border-subtle bg-card p-2 text-left transition-colors hover:border-gold focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
               @click="selectedTypeId = item.id"
             >
-              <CatalogPhoto :url="item.obverseThumbnail" :alt="t('catalog.obversePhoto')" size="3.5rem" />
-              <CatalogPhoto :url="item.reverseThumbnail" :alt="t('catalog.reversePhoto')" size="3.5rem" />
+              <CatalogPhoto :url="item.obverseThumbnail" :alt="text('obversePhoto')" size="3.5rem" />
+              <CatalogPhoto :url="item.reverseThumbnail" :alt="text('reversePhoto')" size="3.5rem" />
               <span class="min-w-0">
                 <strong class="block font-medium text-text-primary [overflow-wrap:anywhere]">{{ item.title }}</strong>
                 <span class="block text-chip text-text-secondary">{{ [item.issuer.name, numistaYearRange(item.minYear, item.maxYear)].filter(Boolean).join(' · ') }}</span>
@@ -126,6 +127,18 @@ import NumistaCatalogTypePreview from '@/components/catalog/NumistaCatalogTypePr
 import { numistaLang, numistaYearRange } from '@/utils/numistaCatalog'
 import type { CatalogSelection } from '@/utils/numistaCatalogPrefill'
 import { numistaStatusMessage } from '@/utils/numistaMarketValue'
+
+const props = withDefaults(defineProps<{
+  /** Banknote types instead of coin types. */
+  category?: 'coin' | 'banknote'
+}>(), { category: 'coin' })
+
+// A banknote search speaks of banknotes, a coin search of coins.
+type CatalogText = 'intro' | 'query' | 'queryPlaceholder' | 'yearHint' | 'noResults' | 'resultCount' | 'obversePhoto' | 'reversePhoto'
+  | 'loadingType' | 'typeFailed' | 'chooseGrade' | 'chooseGradeHint' | 'fillCurrentValue'
+function text(key: CatalogText, params?: Parameters<typeof t>[1]): string {
+  return props.category === 'banknote' ? t(`catalog.banknote.${key}`, params) : t(`catalog.${key}`, params)
+}
 
 defineEmits<{
   use: [selection: CatalogSelection]
@@ -233,6 +246,7 @@ async function runSearch(nextPage: number) {
       year: yearValue.value,
       page: nextPage,
       lang: numistaLang(),
+      ...(props.category === 'banknote' ? { category: 'banknote' as const } : {}),
     })
     if (seq !== searchSeq) return
     status.value = res.data.status

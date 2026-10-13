@@ -21,13 +21,14 @@ func NewCollectionCurrencyHandler(svc *services.CollectionCurrencyService) *Coll
 
 // CollectionCurrencyRequest selects the new collection currency.
 type CollectionCurrencyRequest struct {
-	Currency string `json:"currency" binding:"required" enums:"USD,EUR"`
+	// Currency is EUR or a currency of the ECB reference rates (USD, GBP, CHF…).
+	Currency string `json:"currency" binding:"required" example:"EUR"`
 }
 
 // Change switches the collection currency and converts stored amounts.
 //
 //	@Summary		Change the collection currency
-//	@Description	Switches the currency coin prices and values are kept in (USD or EUR) and converts every stored price, value, value history and snapshot with the ECB reference rate, in one transaction. Switching to the current currency changes nothing. Admin only.
+//	@Description	Switches the currency coin prices and values are kept in and every page shows (the euro or a currency of the ECB daily reference rates: USD, GBP, CHF, JPY…) and converts every stored price, value, value history and snapshot with the ECB reference rates, in one transaction. Switching to the current currency changes nothing. Admin only.
 //	@Tags			Admin
 //	@Accept			json
 //	@Produce		json

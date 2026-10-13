@@ -53,10 +53,10 @@ func (h *NumistaCatalogHandler) Issuers(c *gin.Context) {
 	c.JSON(http.StatusOK, h.catalog.Issuers(c.Request.Context(), lang, query))
 }
 
-// Search finds coin types in the Numista catalogue.
+// Search finds coin (or banknote) types in the Numista catalogue.
 //
 //	@Summary		Search the Numista coin catalogue
-//	@Description	Returns one page (20 types unless count is set) of Numista coin types matching the text, issuer and/or catalogue reference (e.g. catalogue=KM, number=84), optionally limited to a year. Searches are cached for a day.
+//	@Description	Returns one page (20 types unless count is set) of Numista coin types (or banknote types, with category=banknote) matching the text, issuer and/or catalogue reference (e.g. catalogue=KM, number=84), optionally limited to a year. Searches are cached for a day.
 //	@Tags			Numista
 //	@Produce		json
 //	@Param			q			query		string	false	"Search text (required unless issuer or catalogue is set)"
@@ -67,6 +67,7 @@ func (h *NumistaCatalogHandler) Issuers(c *gin.Context) {
 //	@Param			page		query		int		false	"Page number"	default(1)
 //	@Param			count		query		int		false	"Types per page (1-50)"	default(20)
 //	@Param			lang		query		string	false	"Language of results"	default(en)
+//	@Param			category	query		string	false	"Coins or banknotes"	Enums(coin, banknote)	default(coin)
 //	@Success		200		{object}	models.NumistaCatalogSearchResult
 //	@Failure		400		{object}	ErrorResponse
 //	@Security		BearerAuth
@@ -106,8 +107,13 @@ func (h *NumistaCatalogHandler) Search(c *gin.Context) {
 	if !ok {
 		return
 	}
+	category := strings.TrimSpace(c.DefaultQuery("category", models.CoinKindCoin))
+	if !models.ValidCoinKind(category) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "category must be 'coin' or 'banknote'"})
+		return
+	}
 	c.JSON(http.StatusOK, h.catalog.Search(c.Request.Context(), services.NumistaTypeSearch{
-		Query: query, Issuer: issuer, Catalogue: catalogue, Number: number, Year: year, Page: page, Count: count, Lang: lang,
+		Query: query, Issuer: issuer, Catalogue: catalogue, Number: number, Year: year, Page: page, Count: count, Lang: lang, Category: category,
 	}))
 }
 

@@ -189,11 +189,38 @@ describe('CoinForm', () => {
       'Current · Commemorative',
       'Demonetized',
       'Demonetized · Commemorative',
+      'Non-circulating',
+      'Non-circulating · Commemorative',
     ])
     await select.setValue('current_commemorative')
     expect(form.circulation).toBe('current_commemorative')
     await select.setValue('')
     expect(form.circulation).toBe('')
+  })
+
+  it('says whether the item is a coin or a banknote, a coin when it does not say', async () => {
+    const form = reactive<Partial<Coin>>({ name: '1000 escudos', category: 'Modern', material: 'Other' })
+    const wrapper = mount(CoinForm, {
+      props: { form, submitLabel: 'Save', coinId: 99 },
+      global: {
+        stubs: {
+          RouterLink: { template: '<a><slot /></a>' },
+          AutocompleteInput: true,
+          ImperialFigurePicker: true,
+          CreateMintModal: true,
+          AuthenticatedImage: true,
+          X: true,
+          Camera: true,
+        },
+      },
+    })
+    await flushPromises()
+
+    const select = wrapper.get<HTMLSelectElement>('[data-testid="coin-kind"]')
+    expect(select.element.value).toBe('coin')
+    expect(select.findAll('option').map((option) => option.text())).toEqual(['Coin', 'Banknote'])
+    await select.setValue('banknote')
+    expect(form.kind).toBe('banknote')
   })
 
   it('takes a typed year, clears it to an empty value and shows the year it would read from the date', async () => {

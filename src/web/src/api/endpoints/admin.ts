@@ -249,13 +249,14 @@ export const getCoinOfDayRunDetail = (runId: number) =>
 
 /** Result of switching the collection currency. */
 export interface CollectionCurrencyChange {
-  currency: 'USD' | 'EUR'
-  previous: 'USD' | 'EUR'
-  /** ECB rate used; absent when nothing was converted. */
-  exchangeRate?: { usdPerEur: number; date: string }
+  currency: string
+  previous: string
+  /** What every amount was multiplied by, at the ECB rates of rateDate; absent when nothing was converted. */
+  factor?: number
+  rateDate?: string
   coinsConverted: number
 }
 
 /** Switches the collection currency, converting every stored price and value. */
-export const changeCollectionCurrency = (currency: 'USD' | 'EUR') =>
+export const changeCollectionCurrency = (currency: string) =>
   api.post<CollectionCurrencyChange>('/admin/collection-currency', { currency })

@@ -15,6 +15,8 @@ var ErrStorageSlotOccupied = errors.New("storage slot is occupied")
 
 // CoinListFilters holds optional filters for listing coins.
 type CoinListFilters struct {
+	// Kind keeps the coins or the banknotes; every item when "".
+	Kind     string
 	Category string
 	Era      string
 	Country  string
@@ -250,11 +252,13 @@ var allowedSortFields = map[string]string{
 var searchFields = []string{
 	"name", "denomination", "ruler", "era", "mint",
 	"obverse_inscription", "reverse_inscription", "notes", "rarity_rating", "country",
+	// Banknotes: a serial number, its series and signatories.
+	"serial_number", "series", "signatures",
 }
 
 // List returns a paginated, filtered list of coins for a user.
 func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Coin, int64, error) {
-	query := r.db.Scopes(OwnedBy(userID)).Preload("Images").Preload("Tags").Preload("Sets").Preload("References").Preload("StorageLocation").Preload("MintLocation")
+	query := r.db.Scopes(OwnedBy(userID), OfKind(filters.Kind)).Preload("Images").Preload("Tags").Preload("Sets").Preload("References").Preload("StorageLocation").Preload("MintLocation")
 
 	if filters.Category != "" {
 		query = query.Where("category = ?", filters.Category)
@@ -476,7 +480,18 @@ func (r *CoinRepository) Duplicate(id uint, userID uint) (*models.Coin, error) {
 	}
 
 	duplicate := models.Coin{
-		Name:                  source.Name + " (duplicate)",
+		Name: source.Name + " (duplicate)",
+		// A banknote's copy is a banknote of the same issue; its serial number
+		// and certificate are the copied note's own, so they are not copied.
+		Kind:                  source.Kind,
+		Series:                source.Series,
+		Signatures:            source.Signatures,
+		Printer:               source.Printer,
+		WidthMm:               source.WidthMm,
+		HeightMm:              source.HeightMm,
+		Watermark:             source.Watermark,
+		NoteVariant:           source.NoteVariant,
+		CertifiedGrade:        source.CertifiedGrade,
 		Category:              source.Category,
 		Denomination:          source.Denomination,
 		Ruler:                 source.Ruler,
@@ -1171,10 +1186,11 @@ type CountryCount struct {
 }
 
 // CountryCounts lists the countries of the user's collection coins (not
-// wishlist or sold) with how many coins each has, alphabetically.
-func (r *CoinRepository) CountryCounts(userID uint) ([]CountryCount, error) {
+// wishlist or sold) of a kind ("" for all) with how many each has,
+// alphabetically.
+func (r *CoinRepository) CountryCounts(userID uint, kind string) ([]CountryCount, error) {
 	var counts []CountryCount
-	err := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID)).
+	err := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID), OfKind(kind)).
 		Select("country, COUNT(*) AS count").
 		Where("country IS NOT NULL AND country <> '' AND is_wishlist = ? AND is_sold = ?", false, false).
 		Group("country").Order("country").Scan(&counts).Error
@@ -1230,10 +1246,19 @@ type CollectionSummary struct {
 	UnvaluedCoins int64 `json:"unvaluedCoins"`
 }
 
-// CollectionSummary returns the collection's coin, type, country and coincard counts.
-func (r *CoinRepository) CollectionSummary(userID uint) (CollectionSummary, error) {
+// CollectionIDsOfKind lists the user's collection coins (not wishlist or
+// sold) of a kind.
+func (r *CoinRepository) CollectionIDsOfKind(userID uint, kind string) ([]uint, error) {
+	ids := []uint{}
+	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).Order("id").Pluck("id", &ids).Error
+	return ids, err
+}
+
+// CollectionSummary returns the collection's coin, type, country and coincard
+// counts, for the items of a kind ("" for all).
+func (r *CoinRepository) CollectionSummary(userID uint, kind string) (CollectionSummary, error) {
 	var summary CollectionSummary
-	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID)).Select(`
+	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).Select(`
 		COUNT(*) AS coins,
 		COUNT(DISTINCT COALESCE(
 			(SELECT 'numista:' || TRIM(r.number) FROM coin_references r
@@ -1279,11 +1304,12 @@ const rarityRankSQL = `CASE rarity
 // Ties go to the more valuable coin (coins without a value last), then the older one.
 const highlightTieBreakSQL = "current_value IS NULL, current_value DESC, year IS NULL, year ASC, id ASC"
 
-// CollectionHighlights finds the rarest, oldest and most valuable coins.
-func (r *CoinRepository) CollectionHighlights(userID uint) (CollectionHighlights, error) {
+// CollectionHighlights finds the rarest, oldest and most valuable coins of a
+// kind ("" for all).
+func (r *CoinRepository) CollectionHighlights(userID uint, kind string) (CollectionHighlights, error) {
 	pick := func(where, order string) (*CoinHighlight, error) {
 		var coins []models.Coin
-		err := r.db.Scopes(ActiveCollection(userID)).Where(where).Order(order).Limit(1).
+		err := r.db.Scopes(ActiveCollection(userID), OfKind(kind)).Where(where).Order(order).Limit(1).
 			Preload("Images").Find(&coins).Error
 		if err != nil || len(coins) == 0 {
 			return nil, err

@@ -13,14 +13,14 @@ import (
 )
 
 type fakeCollectionRates struct {
-	rate  ExchangeRate
+	rates ExchangeRates
 	err   error
 	calls int
 }
 
-func (f *fakeCollectionRates) USDPerEUR(context.Context) (ExchangeRate, error) {
+func (f *fakeCollectionRates) Rates(context.Context) (ExchangeRates, error) {
 	f.calls++
-	return f.rate, f.err
+	return f.rates, f.err
 }
 
 func setupCollectionCurrencyDB(t *testing.T) (*gorm.DB, *SettingsService) {
@@ -40,7 +40,7 @@ func setupCollectionCurrencyDB(t *testing.T) (*gorm.DB, *SettingsService) {
 
 func TestCollectionCurrencyChangeConvertsStoredAmounts(t *testing.T) {
 	db, settings := setupCollectionCurrencyDB(t)
-	rates := &fakeCollectionRates{rate: ExchangeRate{USDPerEUR: 1.25, Date: "2026-10-09"}}
+	rates := &fakeCollectionRates{rates: ExchangeRates{Date: "2026-10-09", PerEUR: map[string]float64{"USD": 1.25, "GBP": 0.8}}}
 	svc := NewCollectionCurrencyService(repository.NewCollectionCurrencyRepository(db), settings, rates)
 
 	priced := models.Coin{Name: "Priced", UserID: 1, PurchasePrice: floatPtr(12.5), CurrentValue: floatPtr(3.37)}
@@ -57,7 +57,7 @@ func TestCollectionCurrencyChangeConvertsStoredAmounts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("change: %v", err)
 	}
-	if change.Currency != CurrencyEUR || change.Previous != CurrencyUSD || change.CoinsConverted != 1 || change.ExchangeRate == nil || change.ExchangeRate.USDPerEUR != 1.25 {
+	if change.Currency != CurrencyEUR || change.Previous != CurrencyUSD || change.CoinsConverted != 1 || change.Factor != 0.8 || change.RateDate != "2026-10-09" {
 		t.Fatalf("change = %+v", change)
 	}
 	if settings.CollectionCurrency() != CurrencyEUR {
@@ -83,8 +83,17 @@ func TestCollectionCurrencyChangeConvertsStoredAmounts(t *testing.T) {
 	}
 
 	// Switching to the current currency converts nothing; switching back converts back.
-	if change, err := svc.Change(context.Background(), "EUR"); err != nil || change.ExchangeRate != nil || rates.calls != 1 {
+	if change, err := svc.Change(context.Background(), "EUR"); err != nil || change.Factor != 0 || rates.calls != 1 {
 		t.Fatalf("no-op change = %+v, %v (rate calls %d)", change, err, rates.calls)
+	}
+	// Any two currencies of the ECB rates convert through the euro: €10 is £8.
+	if change, err := svc.Change(context.Background(), "gbp"); err != nil || change.Factor != 0.8 {
+		t.Fatalf("to pounds: %+v, %v", change, err)
+	}
+	var pounds models.Coin
+	db.First(&pounds, priced.ID)
+	if *pounds.PurchasePrice != 8 || settings.CollectionCurrency() != "GBP" {
+		t.Fatalf("in pounds: %v %q", *pounds.PurchasePrice, settings.CollectionCurrency())
 	}
 	if _, err := svc.Change(context.Background(), "USD"); err != nil {
 		t.Fatal(err)
@@ -100,8 +109,13 @@ func TestCollectionCurrencyChangeRejectsUnknownCurrencyAndMissingRate(t *testing
 	db, settings := setupCollectionCurrencyDB(t)
 	db.Create(&models.Coin{Name: "Priced", UserID: 1, CurrentValue: floatPtr(10)})
 
-	if _, err := NewCollectionCurrencyService(repository.NewCollectionCurrencyRepository(db), settings, &fakeCollectionRates{}).Change(context.Background(), "GBP"); !errors.Is(err, ErrUnsupportedCollectionCurrency) {
-		t.Fatalf("GBP: %v", err)
+	if _, err := NewCollectionCurrencyService(repository.NewCollectionCurrencyRepository(db), settings, &fakeCollectionRates{}).Change(context.Background(), "XYZ"); !errors.Is(err, ErrUnsupportedCollectionCurrency) {
+		t.Fatalf("XYZ: %v", err)
+	}
+	// A currency the ECB quoted no rate for today converts nothing.
+	noPounds := &fakeCollectionRates{rates: ExchangeRates{Date: "2026-10-09", PerEUR: map[string]float64{"USD": 1.25}}}
+	if _, err := NewCollectionCurrencyService(repository.NewCollectionCurrencyRepository(db), settings, noPounds).Change(context.Background(), "GBP"); !errors.Is(err, ErrExchangeRateUnavailable) {
+		t.Fatalf("GBP without a rate: %v", err)
 	}
 	_, err := NewCollectionCurrencyService(repository.NewCollectionCurrencyRepository(db), settings, &fakeCollectionRates{err: errors.New("ecb down")}).Change(context.Background(), "EUR")
 	if !errors.Is(err, ErrExchangeRateUnavailable) {
@@ -122,7 +136,15 @@ func TestValuationMessageUsesTheCollectionCurrency(t *testing.T) {
 		t.Fatalf("dollar message: %s", dollars)
 	}
 	euros := valuationRequestMessage(coin, CurrencyEUR)
-	if !strings.Contains(euros, "Purchase Price: €120.00") || !strings.Contains(euros, "Previous value: €150.00") || !strings.Contains(euros, "in EUR (euros), not USD") {
+	if !strings.Contains(euros, "Purchase Price: €120.00") || !strings.Contains(euros, "Previous value: €150.00") || !strings.Contains(euros, "in EUR, not USD") {
 		t.Fatalf("euro message: %s", euros)
+	}
+
+	pounds := valuationRequestMessage(coin, "GBP")
+	if !strings.Contains(pounds, "Purchase Price: £120.00") || !strings.Contains(pounds, "in GBP, not USD") {
+		t.Fatalf("pound message: %s", pounds)
+	}
+	if FormatMoney(120, "CHF") != "120.00 CHF" {
+		t.Fatalf("franc: %s", FormatMoney(120, "CHF"))
 	}
 }

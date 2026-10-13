@@ -12,9 +12,6 @@ export default {
     byGrade: 'By Grade',
     priceRanges: 'Price Range Distribution',
   },
-  priceRanges: {
-    under50: 'Under $50',
-  },
   healthIntro: 'Track the completeness and quality of your collection data.',
   collectionStats: 'Collection Stats',
   value: {
@@ -152,5 +149,9 @@ export default {
     unknownRuler: 'Unknown Ruler',
     unknownType: 'Unknown Type',
     unknownEra: 'Unknown Era',
+  },
+  priceRanges: {
+    under: 'Under {amount}',
+    over: '{amount} or more',
   },
 }
