@@ -179,7 +179,8 @@ func TestCollectionSummary_CountsCoinsTypesAndCountries(t *testing.T) {
 		{Name: "50 Escudos 1969 – Portugal", Category: models.CategoryModern, UserID: 1, Country: "Portugal", Presentation: "coincard", CurrentValue: ptrFloat(26.19)},
 		{Name: "Denarius", Category: models.CategoryRoman, UserID: 1},
 		{Name: " denarius ", Category: models.CategoryRoman, UserID: 1},
-		{Name: "2.50 Escudos", Category: models.CategoryModern, UserID: 1, Country: "Angola"},
+		// Three of the same coin: three coins, one of them unique, none valued.
+		{Name: "2.50 Escudos", Category: models.CategoryModern, UserID: 1, Country: "Angola", Quantity: 3},
 		{Name: "Wanted", Category: models.CategoryModern, UserID: 1, Country: "Spain", IsWishlist: true, Presentation: "coincard", CurrentValue: ptrFloat(1000)},
 		{Name: "Sold", Category: models.CategoryModern, UserID: 1, Country: "France", IsSold: true},
 		{Name: "Someone else's", Category: models.CategoryModern, UserID: 2, Country: "Italy"},
@@ -198,7 +199,7 @@ func TestCollectionSummary_CountsCoinsTypesAndCountries(t *testing.T) {
 
 	got, err := repository.NewCoinRepository(db).CollectionSummary(1, "")
 
-	want := repository.CollectionSummary{Coins: 5, Types: 3, Countries: 2, WithoutCountry: 2, Coincards: 2, TotalValue: 50, UnvaluedCoins: 3}
+	want := repository.CollectionSummary{Coins: 7, UniqueCoins: 5, Types: 3, Countries: 2, WithoutCountry: 2, Coincards: 2, TotalValue: 50, UnvaluedCoins: 5}
 	if err != nil || got != want {
 		t.Fatalf("summary = %+v (%v), want %+v", got, err, want)
 	}

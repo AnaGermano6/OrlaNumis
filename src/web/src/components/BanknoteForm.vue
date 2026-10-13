@@ -89,13 +89,19 @@
           <label class="form-label" for="banknote-signatures">{{ t('banknoteForm.signatures') }}</label>
           <input id="banknote-signatures" v-model="textModel('signatures').value" class="form-input" maxlength="300" :placeholder="t('banknoteForm.signaturesPlaceholder')" />
         </div>
-        <div class="form-group min-w-0">
-          <label class="form-label" for="banknote-grade">{{ t('banknoteForm.grade') }}</label>
-          <select id="banknote-grade" v-model="textModel('grade').value" class="form-select" data-testid="banknote-grade">
-            <option value="">{{ t('coinForm.notSpecified') }}</option>
-            <option v-if="customGrade" :value="customGrade">{{ customGrade }}</option>
-            <option v-for="grade in BANKNOTE_GRADES" :key="grade" :value="grade">{{ banknoteGradeLabel(grade) }}</option>
-          </select>
+        <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+          <div class="form-group min-w-0">
+            <label class="form-label" for="banknote-grade">{{ t('banknoteForm.grade') }}</label>
+            <select id="banknote-grade" v-model="textModel('grade').value" class="form-select" data-testid="banknote-grade">
+              <option value="">{{ t('coinForm.notSpecified') }}</option>
+              <option v-if="customGrade" :value="customGrade">{{ customGrade }}</option>
+              <option v-for="grade in BANKNOTE_GRADES" :key="grade" :value="grade">{{ banknoteGradeLabel(grade) }}</option>
+            </select>
+          </div>
+          <div class="form-group min-w-0">
+            <label class="form-label" for="banknote-quantity">{{ t('coinFields.quantity') }}</label>
+            <QuantityInput id="banknote-quantity" v-model="form.quantity" />
+          </div>
         </div>
         <fieldset class="m-0 rounded-sm border border-border-subtle p-3">
           <legend class="px-1 text-chip font-medium text-text-secondary">{{ t('banknoteForm.certification') }}</legend>
@@ -242,6 +248,7 @@ import { Camera, X } from 'lucide-vue-next'
 import type { Coin, CoinKind } from '@/types'
 import AutocompleteInput from '@/components/AutocompleteInput.vue'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
+import QuantityInput from '@/components/ui/QuantityInput.vue'
 import { usePwa } from '@/composables/usePwa'
 import { useSidePhotoInputs, type PhotoSide } from '@/composables/useSidePhotoInputs'
 import { t } from '@/i18n'

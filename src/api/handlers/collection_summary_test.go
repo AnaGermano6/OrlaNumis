@@ -201,10 +201,10 @@ func TestCollectionSummaryAndList_CurrentCoins(t *testing.T) {
 		}
 	}
 	coins := []models.Coin{
-		{Name: "2 euro", Country: "Portugal", UserID: 1},
+		{Name: "2 euro", Country: "Portugal", UserID: 1, Quantity: 3},
 		{Name: "1 escudo", Country: "Portugal", UserID: 1},
 		{Name: "10 dinar", Country: "Jugoslávia", UserID: 1},
-		{Name: "Hand-made", Country: "Portugal", UserID: 1},
+		{Name: "Hand-made", Country: "Portugal", UserID: 1, Quantity: 2},
 		{Name: "Wished 2 euro", Country: "Portugal", UserID: 1, IsWishlist: true},
 	}
 	for i := range coins {
@@ -242,12 +242,13 @@ func TestCollectionSummaryAndList_CurrentCoins(t *testing.T) {
 	}
 	// The wishlist coin does not count; the Yugoslav coin is not current.
 	// Only the 2 euro type commemorates something; Numista says nothing of
-	// the dinar and the hand-made coin.
-	if got.CurrentCoins != 1 || got.CirculationUnknown != 1 || got.CommemorativeCoins != 1 || got.CommemorativeUnknown != 2 {
+	// the dinar and the hand-made coin. Each coin counts with its quantity:
+	// three 2 euro coins, two hand-made ones.
+	if got.CurrentCoins != 3 || got.CirculationUnknown != 2 || got.CommemorativeCoins != 3 || got.CommemorativeUnknown != 3 {
 		t.Fatalf("summary = %+v", got)
 	}
 	// Numista's kinds of coin, the usual ones in their order, each with the
-	// label it was cached with.
+	// label it was cached with, and as many coins as the gallery lists.
 	if len(got.Classifications) != 2 || got.Classifications[0] != (CollectionClassification{Key: "standard", Label: "Standard circulation coins", Count: 1}) || got.Classifications[1] != (CollectionClassification{Key: "circulating-commemorative", Label: "Moedas circulantes comemorativas", Count: 1}) {
 		t.Fatalf("classifications = %+v", got.Classifications)
 	}
@@ -347,7 +348,8 @@ func TestCollectionSummaryAndList_CurrentCoins(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.CurrentCoins != 1 || got.CirculationUnknown != 0 || got.CommemorativeCoins != 1 || got.CommemorativeUnknown != 1 {
+	// The two hand-made coins are now the current and commemorative ones.
+	if got.CurrentCoins != 2 || got.CirculationUnknown != 0 || got.CommemorativeCoins != 2 || got.CommemorativeUnknown != 1 {
 		t.Fatalf("summary with circulations set by hand = %+v", got)
 	}
 	if current := names("/api/circulation-test?circulation=current&commemorative=true"); len(current) != 1 || current[0] != "Hand-made" {

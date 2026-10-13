@@ -55,6 +55,8 @@ type Coin struct {
 	Year *int `gorm:"index" json:"year"`
 	// Country is the issuing country or authority (e.g. from the Numista issuer).
 	Country string `gorm:"type:varchar(120);index" json:"country" binding:"max=120"`
+	// Quantity is how many of this coin or note the collector has (1 or more).
+	Quantity int `gorm:"not null;default:1" json:"quantity" minimum:"1" maximum:"9999"`
 	// Presentation is how the coin is kept or was issued (see CoinPresentations).
 	Presentation string `gorm:"type:varchar(20);default:''" json:"presentation"`
 	// Rarity is a fixed scale (see CoinRarities). RarityRating is a legacy free-text field.

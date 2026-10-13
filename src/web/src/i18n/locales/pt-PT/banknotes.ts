@@ -12,6 +12,7 @@ const messages: Messages['banknotes'] = {
     banknotes: 'Notas',
     countries: 'Países',
     value: 'Valor total',
+    unique: 'Notas únicas',
   },
   empty: {
     title: 'Ainda não tem notas de banco',

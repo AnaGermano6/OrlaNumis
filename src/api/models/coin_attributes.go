@@ -39,6 +39,17 @@ func ValidNoteVariant(value string) bool {
 	return value == "" || containsValue(NoteVariants, value)
 }
 
+// Quantity bounds: how many of a coin or note a collector can record.
+const (
+	CoinQuantityMin = 1
+	CoinQuantityMax = 9999
+)
+
+// ValidCoinQuantity reports whether value is a quantity a coin can have.
+func ValidCoinQuantity(value int) bool {
+	return value >= CoinQuantityMin && value <= CoinQuantityMax
+}
+
 // ValidCoinKind reports whether value is a known kind.
 func ValidCoinKind(value string) bool {
 	return value == CoinKindCoin || value == CoinKindBanknote

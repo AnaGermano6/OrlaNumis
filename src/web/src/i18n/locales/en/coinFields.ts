@@ -32,4 +32,5 @@ export default {
   presentation: 'Presentation',
   rarity: 'Rarity',
   circulation: 'Circulation',
+  quantity: 'Quantity',
 }

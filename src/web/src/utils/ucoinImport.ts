@@ -3,6 +3,7 @@
 // details (metal, weight, rarity, value) are added afterwards from Numista.
 import { t } from '@/i18n'
 import type { CatalogRegistry, Category, Coin, CoinMutationPayload, CoinReferenceInput } from '@/types'
+import { QUANTITY_MAX, QUANTITY_MIN } from '@/utils/coinAttributes'
 import { toCollectionCurrency } from '@/utils/collectionCurrency'
 import { eraForYear } from '@/utils/numistaCatalogPrefill'
 import { excelSerialDate, readXlsxRows } from '@/utils/xlsxReader'
@@ -42,6 +43,8 @@ export interface UcoinRow {
   reference: string
   catalogue?: { code: string; number: string }
   comment: string
+  /** How many of the coin ("Quantidade"); 1 when not written. */
+  quantity: number
 }
 
 export type UcoinParseError = 'empty' | 'columns' | 'unreadable'
@@ -164,8 +167,6 @@ function priceCurrency(header: string | undefined): string {
   return (header?.split(',')[1] ?? '').replace(/\[[^\]]*\]/g, '').trim().toUpperCase()
 }
 
-/** At most this many coins from one line ("Quantidade"). */
-const MAX_QUANTITY = 50
 
 /** Reads uCoin's columns from a table (a header row, then a row per coin or per kind of coin). */
 export function parseUcoinTable(table: string[][]): UcoinParseResult {
@@ -221,10 +222,11 @@ export function parseUcoinTable(table: string[][]): UcoinParseResult {
       reference,
       catalogue: parseCatalogue(reference),
       comment: cell(fields, 'comment'),
+      // One coin of that many, not that many coins.
+      quantity: Math.min(QUANTITY_MAX, Math.max(QUANTITY_MIN, Math.floor(parseNumber(cell(fields, 'quantity')) ?? 1))),
     }
     if (!row.country && !row.denomination) return
-    const quantity = Math.min(MAX_QUANTITY, Math.max(1, Math.floor(parseNumber(cell(fields, 'quantity')) ?? 1)))
-    for (let copy = 0; copy < quantity; copy += 1) rows.push(row)
+    rows.push(row)
   })
   return { rows }
 }
@@ -293,34 +295,37 @@ export interface UcoinMatch {
  * out the variety's description the CSV had: "76 dentro da estrela"), by
  * denomination, year, variety and country; and last by denomination, year
  * and country when a single coin fits (a variety written another way).
+ * A row of several coins also pairs with up to that many coins, the copies
+ * earlier imports made of it, one per unit.
  */
 export function matchUcoinRows(rows: UcoinRow[], coins: Coin[]): UcoinMatch {
   const remaining = [...coins].sort((a, b) => a.id - b.id)
   const taken = new Set<number>()
   const matched: UcoinMatch['matched'] = []
   const free = (coin: Coin) => !taken.has(coin.id)
-  const take = (row: UcoinRow, coin: Coin | undefined) => {
-    if (!coin) return false
-    taken.add(coin.id)
-    matched.push({ row, coin })
-    return true
+  const take = (row: UcoinRow, coins: Coin[]) => {
+    for (const coin of coins.slice(0, row.quantity)) {
+      taken.add(coin.id)
+      matched.push({ row, coin })
+    }
+    return coins.length > 0
   }
   const sameCountry = (coin: Coin, row: UcoinRow) => fold(coin.country ?? '') === fold(row.country)
 
   const byName = rows.filter((row) => {
     const key = ucoinCoinKey({ name: ucoinCoinName(row), country: row.country })
-    return !take(row, remaining.find((coin) => free(coin) && ucoinCoinKey(coin) === key))
+    return !take(row, remaining.filter((coin) => free(coin) && ucoinCoinKey(coin) === key))
   })
   const byBase = byName.filter((row) => {
     if (row.subject) return true
     const base = fold(`${row.denomination} ${row.yearText}`)
-    return !take(row, remaining.find((coin) => free(coin) && sameCountry(coin, row) && nameBase(coin.name) === base))
+    return !take(row, remaining.filter((coin) => free(coin) && sameCountry(coin, row) && nameBase(coin.name) === base))
   })
   const pending = byBase.filter((row) => {
     if (row.subject || row.year === undefined) return true
     const prefix = fold(`${row.denomination} ${row.year}`)
     const fits = remaining.filter((coin) => free(coin) && sameCountry(coin, row) && (nameBase(coin.name) === prefix || nameBase(coin.name).startsWith(`${prefix} `)))
-    return !(fits.length === 1 && take(row, fits[0]))
+    return !(fits.length <= row.quantity && take(row, fits))
   })
   return { matched, pending }
 }
@@ -426,6 +431,7 @@ export function buildUcoinCoin(row: UcoinRow, options: UcoinCoinOptions): CoinMu
     dateRange: row.year !== undefined ? String(row.year) : clip(row.yearText, 200) || undefined,
     year: row.year ?? null,
     country: clip(row.country, 120) || undefined,
+    quantity: row.quantity,
     mint: mintMark || undefined,
     diameterMm: row.diameterMm,
     // A graded coin's grade is the grading company's ("PCGS MS65").

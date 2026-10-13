@@ -511,8 +511,14 @@ export interface CollectionClassification {
 }
 
 export interface CollectionSummary {
-  /** Coins in the collection (not wishlist or sold). */
+  /**
+   * Coins in the collection (not wishlist or sold), counting quantities: a
+   * coin held three times counts three. The other counts and totalValue count
+   * quantities too.
+   */
   coins: number
+  /** Each different coin once, whatever its quantity. */
+  uniqueCoins?: number
   /** Distinct types: same Numista type, or same name when not linked, count once. */
   types: number
   countries: number

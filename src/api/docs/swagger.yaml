@@ -311,6 +311,11 @@ definitions:
         type: string
       purchasePrice:
         type: number
+      quantity:
+        description: Quantity is how many the collector has; 1 when omitted.
+        maximum: 9999
+        minimum: 1
+        type: integer
       rarity:
         enum:
         - common
@@ -691,6 +696,11 @@ definitions:
         type: string
       purchasePrice:
         type: number
+      quantity:
+        description: Quantity is how many the collector has (1 or more).
+        maximum: 9999
+        minimum: 1
+        type: integer
       rarity:
         enum:
         - common
@@ -801,7 +811,8 @@ definitions:
       classifications:
         description: |-
           Classifications are Numista's kinds of coin found in the collection,
-          the usual ones first; coins Numista says nothing of are in none.
+          the usual ones first; coins Numista says nothing of are in none. Each
+          coin counts once, as the gallery lists it.
         items:
           $ref: '#/definitions/handlers.CollectionClassification'
         type: array
@@ -830,6 +841,7 @@ definitions:
           CurrentCoins are circulation coins still legal tender, as Numista says
           of their types (collector coins are not);
           CirculationUnknown are coins it says nothing of (not linked to Numista).
+          These four count every coin held, with its quantity.
         type: integer
       exchangeRate:
         allOf:
@@ -843,8 +855,9 @@ definitions:
       highlights:
         $ref: '#/definitions/repository.CollectionHighlights'
       totalValue:
-        description: TotalValue sums the coins' current values, in the app's stored
-          currency (US dollars).
+        description: |-
+          TotalValue sums the coins' current values times their quantities, in
+          the collection currency.
         type: number
       totalValueEur:
         description: |-
@@ -855,6 +868,9 @@ definitions:
         description: |-
           Types counts distinct coin types: coins linked to the same Numista type
           count once; other coins count once per distinct name.
+        type: integer
+      uniqueCoins:
+        description: UniqueCoins counts each coin once, whatever its quantity.
         type: integer
       unvaluedCoins:
         description: UnvaluedCoins have no current value and are left out of TotalValue.
@@ -3299,6 +3315,12 @@ definitions:
         type: string
       purchasePrice:
         type: number
+      quantity:
+        description: Quantity is how many of this coin or note the collector has (1
+          or more).
+        maximum: 9999
+        minimum: 1
+        type: integer
       rarity:
         description: Rarity is a fixed scale (see CoinRarities). RarityRating is a
           legacy free-text field.

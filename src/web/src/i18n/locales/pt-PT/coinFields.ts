@@ -34,6 +34,7 @@ const messages: Messages['coinFields'] = {
   presentation: 'Apresentação',
   rarity: 'Raridade',
   circulation: 'Circulação',
+  quantity: 'Quantidade',
 }
 
 export default messages

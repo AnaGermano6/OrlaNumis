@@ -11,7 +11,8 @@
           <th class="hidden px-3 py-2 lg:table-cell">{{ t('coinFields.grade') }}</th>
           <th class="hidden px-3 py-2 lg:table-cell">{{ t('coinFields.rarity') }}</th>
           <th class="hidden px-3 py-2 lg:table-cell">{{ t('coinFields.presentation') }}</th>
-          <th class="hidden px-3 py-2 !text-right sm:table-cell">{{ t('coinFields.currentValue') }}</th>
+          <th class="hidden whitespace-nowrap px-3 py-2 !text-center sm:table-cell">{{ t('coinFields.quantity') }}</th>
+          <th class="hidden whitespace-nowrap px-3 py-2 !text-right sm:table-cell">{{ t('coinFields.currentValue') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -40,13 +41,14 @@
           </td>
           <td class="min-w-[12rem] px-3 py-2">
             <RouterLink :to="`/coin/${coin.id}`" class="font-medium text-text-primary hover:text-gold">{{ coin.name }}</RouterLink>
-            <span class="block text-chip text-text-secondary md:hidden">{{ [coin.country, yearText(coin)].filter(Boolean).join(' · ') }}</span>
+            <span class="block text-chip text-text-secondary md:hidden">{{ [coin.country, yearText(coin), quantityOf(coin) > 1 ? t('collection.list.quantityShort', { count: quantityOf(coin) }) : ''].filter(Boolean).join(' · ') }}</span>
           </td>
           <td class="hidden px-3 py-2 text-text-secondary md:table-cell">{{ coin.country || '—' }}</td>
           <td class="hidden whitespace-nowrap px-3 py-2 text-text-secondary md:table-cell">{{ yearText(coin) || '—' }}</td>
           <td class="hidden px-3 py-2 text-text-secondary lg:table-cell">{{ coin.grade || '—' }}</td>
           <td class="hidden px-3 py-2 text-text-secondary lg:table-cell">{{ rarityLabel(coin.rarity) || '—' }}</td>
           <td class="hidden px-3 py-2 text-text-secondary lg:table-cell">{{ presentationLabel(coin.presentation) || '—' }}</td>
+          <td class="hidden px-3 py-2 !text-center tabular-nums text-text-primary sm:table-cell" data-testid="list-quantity">{{ quantityOf(coin) }}</td>
           <td class="hidden whitespace-nowrap px-3 py-2 !text-right text-text-primary sm:table-cell">{{ coin.currentValue != null ? formatCurrency(coin.currentValue) : '—' }}</td>
         </tr>
       </tbody>
@@ -56,7 +58,7 @@
 
 <script setup lang="ts">
 // The collection as a compact table: one row per coin with the details used
-// to browse by country, year, rarity and presentation.
+// to browse by country, year, rarity, presentation and how many are held.
 import { RouterLink } from 'vue-router'
 import { Coins } from 'lucide-vue-next'
 import type { Coin, ImageType } from '@/types'
@@ -81,6 +83,11 @@ function thumbnail(coin: Coin): string | undefined {
   const images = coin.images ?? []
   const bySide = props.imageSide ? images.find((image) => image.imageType === props.imageSide) : undefined
   return (bySide ?? images.find((image) => image.isPrimary) ?? images.find((image) => image.imageType === 'obverse') ?? images[0])?.filePath
+}
+
+// Coins saved before the field existed count as one.
+function quantityOf(coin: Coin): number {
+  return coin.quantity && coin.quantity > 0 ? coin.quantity : 1
 }
 
 function yearText(coin: Coin): string {

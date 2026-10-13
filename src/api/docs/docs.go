@@ -20586,6 +20586,12 @@ const docTemplate = `{
                 "purchasePrice": {
                     "type": "number"
                 },
+                "quantity": {
+                    "description": "Quantity is how many the collector has; 1 when omitted.",
+                    "type": "integer",
+                    "maximum": 9999,
+                    "minimum": 1
+                },
                 "rarity": {
                     "type": "string",
                     "maxLength": 20,
@@ -21118,6 +21124,12 @@ const docTemplate = `{
                 "purchasePrice": {
                     "type": "number"
                 },
+                "quantity": {
+                    "description": "Quantity is how many the collector has (1 or more).",
+                    "type": "integer",
+                    "maximum": 9999,
+                    "minimum": 1
+                },
                 "rarity": {
                     "type": "string",
                     "maxLength": 20,
@@ -21259,7 +21271,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "classifications": {
-                    "description": "Classifications are Numista's kinds of coin found in the collection,\nthe usual ones first; coins Numista says nothing of are in none.",
+                    "description": "Classifications are Numista's kinds of coin found in the collection,\nthe usual ones first; coins Numista says nothing of are in none. Each\ncoin counts once, as the gallery lists it.",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/handlers.CollectionClassification"
@@ -21288,7 +21300,7 @@ const docTemplate = `{
                     "example": "EUR"
                 },
                 "currentCoins": {
-                    "description": "CurrentCoins are circulation coins still legal tender, as Numista says\nof their types (collector coins are not);\nCirculationUnknown are coins it says nothing of (not linked to Numista).",
+                    "description": "CurrentCoins are circulation coins still legal tender, as Numista says\nof their types (collector coins are not);\nCirculationUnknown are coins it says nothing of (not linked to Numista).\nThese four count every coin held, with its quantity.",
                     "type": "integer"
                 },
                 "exchangeRate": {
@@ -21307,7 +21319,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/repository.CollectionHighlights"
                 },
                 "totalValue": {
-                    "description": "TotalValue sums the coins' current values, in the app's stored currency (US dollars).",
+                    "description": "TotalValue sums the coins' current values times their quantities, in\nthe collection currency.",
                     "type": "number"
                 },
                 "totalValueEur": {
@@ -21316,6 +21328,10 @@ const docTemplate = `{
                 },
                 "types": {
                     "description": "Types counts distinct coin types: coins linked to the same Numista type\ncount once; other coins count once per distinct name.",
+                    "type": "integer"
+                },
+                "uniqueCoins": {
+                    "description": "UniqueCoins counts each coin once, whatever its quantity.",
                     "type": "integer"
                 },
                 "unvaluedCoins": {
@@ -24890,6 +24906,12 @@ const docTemplate = `{
                 },
                 "purchasePrice": {
                     "type": "number"
+                },
+                "quantity": {
+                    "description": "Quantity is how many of this coin or note the collector has (1 or more).",
+                    "type": "integer",
+                    "maximum": 9999,
+                    "minimum": 1
                 },
                 "rarity": {
                     "description": "Rarity is a fixed scale (see CoinRarities). RarityRating is a legacy free-text field.",

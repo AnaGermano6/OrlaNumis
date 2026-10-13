@@ -1,5 +1,5 @@
 <template>
-  <section class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6" :aria-label="t('collection.kpis.label')">
+  <section class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7" :aria-label="t('collection.kpis.label')">
     <component
       :is="kpi.action ? 'button' : 'div'"
       v-for="kpi in kpis"
@@ -34,10 +34,11 @@
 </template>
 
 <script setup lang="ts">
-// Headline numbers of the collection's coins: coins, coins still legal
-// tender, commemorative coins, countries (and how many no longer exist),
-// coincards and total value in the currency every page uses. They cover the whole
-// collection, not the current filters.
+// Headline numbers of the collection's coins: coins, different coins (each
+// once), coins still legal tender, commemorative coins, countries (and how
+// many no longer exist), coincards and total value in the currency every page
+// uses. Counts and value take each coin's quantity: three of a coin count
+// three. They cover the whole collection, not the current filters.
 import { computed } from 'vue'
 import type { CollectionSummary } from '@/api/client'
 import { intlLocale, t } from '@/i18n'
@@ -97,6 +98,8 @@ const kpis = computed<Kpi[]>(() => {
   const summary = props.summary
   return [
     { key: 'coins', display: count(summary?.coins), label: t('collection.kpis.coins'), hint: t('collection.kpis.coinsHint'), note: '' },
+    // Each different coin once; a summary from before quantities had one of each.
+    { key: 'unique', display: count(summary ? summary.uniqueCoins ?? summary.coins : undefined), label: t('collection.kpis.unique'), hint: t('collection.kpis.uniqueHint'), note: '' },
     {
       key: 'current',
       display: count(summary ? summary.currentCoins ?? 0 : undefined),
@@ -129,7 +132,6 @@ const kpis = computed<Kpi[]>(() => {
       hint: t('collection.kpis.coincardsHint'),
       note: '',
       action: () => emit('show-coincards'),
-      wide: true,
     },
     valueKpi(summary),
   ]

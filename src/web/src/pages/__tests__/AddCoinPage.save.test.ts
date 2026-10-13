@@ -166,6 +166,14 @@ describe('Add Coin save workflow', () => {
     wrapper.unmount()
   })
 
+  it('saves a new coin as one', async () => {
+    const wrapper = render()
+    await useManualMode(wrapper)
+    await click(wrapper, 'Save manual')
+    expect(mocks.add).toHaveBeenCalledWith(expect.objectContaining({ quantity: 1 }))
+    wrapper.unmount()
+  })
+
   it('retries a manual image upload without creating a duplicate coin', async () => {
     const wrapper = render()
     await useManualMode(wrapper)

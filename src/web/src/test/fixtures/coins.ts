@@ -193,6 +193,7 @@ function baseCoin(id: number, name: string): Coin {
     weightGrams: 3.35,
     diameterMm: 18,
     grade: 'VF',
+    quantity: 1,
     obverseInscription: 'IMP TRAIANO AVG GER DAC P M TR P',
     reverseInscription: 'SPQR OPTIMO PRINCIPI',
     obverseDescription: 'Laureate bust right',

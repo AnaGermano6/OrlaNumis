@@ -89,6 +89,8 @@ describe('AddBanknotePage', () => {
       serialNumber: 'CH 1234567',
       certifiedGrade: 'PMG 66 EPQ',
       presentation: 'slab',
+      // A new note is one unless more are counted.
+      quantity: 1,
       references: [{ catalog: 'Pick', number: '188c', volume: undefined, uri: undefined }],
     }))
     expect(mocks.uploadImage).toHaveBeenCalledWith(81, mocks.front, 'obverse', true, false)

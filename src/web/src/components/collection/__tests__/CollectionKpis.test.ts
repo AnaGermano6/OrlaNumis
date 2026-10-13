@@ -14,30 +14,36 @@ describe('CollectionKpis', () => {
     setLocale('pt-PT')
     setCollectionCurrency('EUR')
     const wrapper = mount(CollectionKpis, {
-      props: { summary: { coins: 1250, currentCoins: 600, circulationUnknown: 40, commemorativeCoins: 210, commemorativeUnknown: 40, types: 830, countries: 42, withoutCountry: 3, coincards: 17, totalValue: 1250, unvaluedCoins: 0, totalValueEur: 1115.47, exchangeRate: { usdPerEur: 1.1206, date: '2026-10-09' } } },
+      props: { summary: { coins: 1310, uniqueCoins: 1250, currentCoins: 600, circulationUnknown: 40, commemorativeCoins: 210, commemorativeUnknown: 40, types: 830, countries: 42, withoutCountry: 3, coincards: 17, totalValue: 1250, unvaluedCoins: 0, totalValueEur: 1115.47, exchangeRate: { usdPerEur: 1.1206, date: '2026-10-09' } } },
     })
 
     const cards = wrapper.findAll('section > *').map((card) => card.findAll('span').map((span) => span.text().replace(/\s/g, ' ')))
     expect(cards).toEqual([
-      ['1250', 'Moedas'],
+      ['1310', 'Moedas'],
+      ['1250', 'Moedas únicas'],
       ['600', 'Moedas correntes'],
       ['210', 'Moedas comemorativas'],
       ['42', 'Países', '3 sem país'],
       ['17', 'Em coincard'],
       ['1250,00 €', 'Valor total'],
     ])
-    expect(wrapper.findAll('section > *')[5]!.attributes('title')).toBe('Soma do valor atual das moedas, em Euro (€).')
-    expect(wrapper.findAll('section > *')[1]!.attributes('title')).toContain('curso legal')
-    expect(wrapper.findAll('section > *')[2]!.attributes('title')).toContain('catálogo Numista')
+    expect(wrapper.findAll('section > *')[6]!.attributes('title')).toBe('Soma do valor atual das moedas, contando as quantidades, em Euro (€).')
+    // Coins count the quantities; unique coins count each once.
+    expect(wrapper.findAll('section > *')[0]!.attributes('title')).toContain('contando as quantidades')
+    expect(wrapper.findAll('section > *')[1]!.attributes('title')).toContain('seja qual for a quantidade')
+    expect(wrapper.findAll('section > *')[2]!.attributes('title')).toContain('curso legal')
+    expect(wrapper.findAll('section > *')[3]!.attributes('title')).toContain('catálogo Numista')
   })
 
   it('shows placeholders until the numbers load and hides the note when every coin has a country', async () => {
     const wrapper = mount(CollectionKpis, { props: { summary: null } })
-    expect(wrapper.findAll('section > *').map((card) => card.find('span').text())).toEqual(['—', '—', '—', '—', '—', '—'])
+    expect(wrapper.findAll('section > *').map((card) => card.find('span').text())).toEqual(['—', '—', '—', '—', '—', '—', '—'])
 
     await wrapper.setProps({ summary: { coins: 2, types: 2, countries: 1, withoutCountry: 0, coincards: 0, totalValue: 0, unvaluedCoins: 0, totalValueEur: 0 } })
     expect(wrapper.text()).not.toContain('without a country')
     expect(wrapper.text()).toContain('Countries')
+    // A summary without unique coins (an older server) has one of each coin.
+    expect(wrapper.get('[data-testid="kpi-unique"]').find('span').text()).toBe('2')
   })
 
   it('counts the extinct countries among the countries and shows their coins when chosen', async () => {
@@ -105,10 +111,10 @@ describe('CollectionKpis', () => {
     setCollectionCurrency('USD')
     const wrapper = mount(CollectionKpis, { props: { summary: { coins: 5, types: 5, countries: 2, withoutCountry: 0, coincards: 0, currency: 'USD', totalValue: 120, unvaluedCoins: 2, totalValueEur: 107.14 } } })
 
-    const value = wrapper.findAll('section > *')[5]!
+    const value = wrapper.findAll('section > *')[6]!
     expect(value.find('span').text().replace(/\s/g, ' ')).toBe('120,00 US$')
     expect(value.text()).toContain('2 sem valor')
     expect(value.text()).not.toContain('BCE')
-    expect(value.attributes('title')).toBe('Soma do valor atual das moedas, em Dólar dos Estados Unidos ($).')
+    expect(value.attributes('title')).toBe('Soma do valor atual das moedas, contando as quantidades, em Dólar dos Estados Unidos ($).')
   })
 })

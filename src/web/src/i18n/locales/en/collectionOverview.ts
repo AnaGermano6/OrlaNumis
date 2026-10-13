@@ -3,9 +3,10 @@ export default {
   failed: 'Some of the collection\'s figures could not be loaded. Try again in a moment.',
   all: {
     title: 'The whole collection',
-    items: 'Items',
+    items: 'Coins and notes',
     countries: 'Countries',
     value: 'Total value',
+    unique: 'Unique coins and notes',
   },
   coins: {
     title: 'Coins',

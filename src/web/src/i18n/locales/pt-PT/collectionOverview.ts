@@ -5,9 +5,10 @@ const messages: Messages['collectionOverview'] = {
   failed: 'Não foi possível carregar alguns números da coleção. Tente de novo daqui a pouco.',
   all: {
     title: 'Toda a coleção',
-    items: 'Peças',
+    items: 'Moedas e notas',
     countries: 'Países',
     value: 'Valor total',
+    unique: 'Moedas e notas únicas',
   },
   coins: {
     title: 'Moedas',

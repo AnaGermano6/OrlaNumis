@@ -10,6 +10,7 @@ export default {
     banknotes: 'Banknotes',
     countries: 'Countries',
     value: 'Total value',
+    unique: 'Unique notes',
   },
   empty: {
     title: 'No banknotes yet',

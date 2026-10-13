@@ -16,6 +16,7 @@ const messages: Messages['ucoinImport'] = {
     already: { one: '{count} já está na coleção e será ignorada', other: '{count} já estão na coleção e serão ignoradas' },
     toAdd: { one: '{count} moeda nova a adicionar', other: '{count} moedas novas a adicionar' },
     updatable: { one: '{count} moeda já importada recebe dados do ficheiro (data de compra, preço pago ou origem)', other: '{count} moedas já importadas recebem dados do ficheiro (data de compra, preço pago ou origem)' },
+    pieces: { one: '{count} exemplar', other: '{count} exemplares' },
   },
   withNumista: 'Completar com o Numista (metal, peso, raridade, valor atual)',
   estimate: 'Até cerca de {count} pedidos ao Numista (os que já estão em cache não contam); o plano gratuito permite 2000 por mês. Se se esgotarem, a importação para e pode continuar no mês seguinte nesta página.',

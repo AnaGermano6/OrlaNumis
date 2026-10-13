@@ -47,6 +47,8 @@ export interface Coin {
   year?: number | null
   /** Issuing country or authority. */
   country?: string
+  /** How many of this coin or note the collector has (1 or more). */
+  quantity: number
   /** How the coin is kept or was issued, e.g. "coincard" (see COIN_PRESENTATIONS). */
   presentation?: string
   /** Fixed rarity scale (see COIN_RARITIES); rarityRating is a legacy free-text field. */

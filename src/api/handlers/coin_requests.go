@@ -24,8 +24,10 @@ type CoinCreateRequest struct {
 	Era                   models.Era      `json:"era" binding:"omitempty,max=64"`
 	DateRange             string          `json:"dateRange" binding:"max=200"`
 	// Year is the coin's year (negative for BC); when omitted it is read from dateRange.
-	Year         *int   `json:"year" binding:"omitempty,min=-5000,max=3000"`
-	Country      string `json:"country" binding:"max=120"`
+	Year    *int   `json:"year" binding:"omitempty,min=-5000,max=3000"`
+	Country string `json:"country" binding:"max=120"`
+	// Quantity is how many the collector has; 1 when omitted.
+	Quantity     int    `json:"quantity" binding:"omitempty,min=1,max=9999" minimum:"1" maximum:"9999"`
 	Presentation string `json:"presentation" binding:"max=20" enums:"loose,coincard,capsule,flip,proof_set,blister,slab"`
 	Rarity       string `json:"rarity" binding:"max=20" enums:"common,uncommon,scarce,rare,very_rare,extremely_rare"`
 	// Circulation set by hand; empty means "as Numista says".
@@ -85,8 +87,10 @@ type CoinUpdateRequest struct {
 	Era                   *models.Era      `json:"era" binding:"omitempty,max=64"`
 	DateRange             *string          `json:"dateRange" binding:"omitempty,max=200"`
 	// Year (negative for BC); null means "read it from dateRange".
-	Year         *int    `json:"year" binding:"omitempty,min=-5000,max=3000"`
-	Country      *string `json:"country" binding:"omitempty,max=120"`
+	Year    *int    `json:"year" binding:"omitempty,min=-5000,max=3000"`
+	Country *string `json:"country" binding:"omitempty,max=120"`
+	// Quantity is how many the collector has (1 or more).
+	Quantity     *int    `json:"quantity" binding:"omitempty,min=1,max=9999" minimum:"1" maximum:"9999"`
 	Presentation *string `json:"presentation" binding:"omitempty,max=20" enums:"loose,coincard,capsule,flip,proof_set,blister,slab"`
 	Rarity       *string `json:"rarity" binding:"omitempty,max=20" enums:"common,uncommon,scarce,rare,very_rare,extremely_rare"`
 	// Circulation set by hand; empty means "as Numista says".
@@ -150,6 +154,7 @@ func (r CoinCreateRequest) toCoin(userID uint) models.Coin {
 		DateRange:             r.DateRange,
 		Year:                  r.Year,
 		Country:               r.Country,
+		Quantity:              r.Quantity,
 		Presentation:          r.Presentation,
 		Rarity:                r.Rarity,
 		Circulation:           r.Circulation,
@@ -316,6 +321,10 @@ func (r CoinUpdateRequest) toCoin(existing *models.Coin, storageLocationProvided
 	if r.Country != nil {
 		updates.Country = *r.Country
 		updateFields = append(updateFields, "Country")
+	}
+	if r.Quantity != nil {
+		updates.Quantity = *r.Quantity
+		updateFields = append(updateFields, "Quantity")
 	}
 	if r.Presentation != nil {
 		updates.Presentation = *r.Presentation

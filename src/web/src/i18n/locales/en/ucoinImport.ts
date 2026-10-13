@@ -14,6 +14,7 @@ export default {
     already: { one: '{count} is already in your collection and will be skipped', other: '{count} are already in your collection and will be skipped' },
     toAdd: { one: '{count} new coin to add', other: '{count} new coins to add' },
     updatable: { one: '{count} coin already imported gets details from the file (purchase date, price paid or where it came from)', other: '{count} coins already imported get details from the file (purchase date, price paid or where they came from)' },
+    pieces: { one: '{count} piece', other: '{count} pieces' },
   },
   withNumista: 'Complete with Numista (metal, weight, rarity, current value)',
   estimate: 'Up to about {count} Numista requests (answers already cached do not count); the free plan allows 2,000 a month. If they run out, the import stops and you can continue next month from this page.',

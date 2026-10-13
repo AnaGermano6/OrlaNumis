@@ -483,7 +483,9 @@ func (r *CoinRepository) Duplicate(id uint, userID uint) (*models.Coin, error) {
 		Name: source.Name + " (duplicate)",
 		// A banknote's copy is a banknote of the same issue; its serial number
 		// and certificate are the copied note's own, so they are not copied.
-		Kind:                  source.Kind,
+		Kind: source.Kind,
+		// The copy is one new item, whatever number the original holds.
+		Quantity:              1,
 		Series:                source.Series,
 		Signatures:            source.Signatures,
 		Printer:               source.Printer,
@@ -1231,8 +1233,13 @@ func (r *CoinRepository) DistinctCountries(userID uint) ([]string, error) {
 
 // CollectionSummary holds the headline numbers of the user's collection
 // (coins not on the wishlist and not sold).
+// The counts and the value count every coin held: a coin with a quantity of
+// three counts three, and its value three times. UniqueCoins counts each
+// different coin once.
 type CollectionSummary struct {
 	Coins int64 `json:"coins"`
+	// UniqueCoins counts each coin once, whatever its quantity.
+	UniqueCoins int64 `json:"uniqueCoins"`
 	// Types counts distinct coin types: coins linked to the same Numista type
 	// count once; other coins count once per distinct name.
 	Types          int64 `json:"types"`
@@ -1240,36 +1247,50 @@ type CollectionSummary struct {
 	WithoutCountry int64 `json:"withoutCountry"`
 	// Coincards counts coins whose presentation is "coincard".
 	Coincards int64 `json:"coincards"`
-	// TotalValue sums the coins' current values, in the app's stored currency (US dollars).
+	// TotalValue sums the coins' current values times their quantities, in
+	// the collection currency.
 	TotalValue float64 `json:"totalValue"`
 	// UnvaluedCoins have no current value and are left out of TotalValue.
 	UnvaluedCoins int64 `json:"unvaluedCoins"`
 }
 
-// CollectionIDsOfKind lists the user's collection coins (not wishlist or
-// sold) of a kind.
-func (r *CoinRepository) CollectionIDsOfKind(userID uint, kind string) ([]uint, error) {
-	ids := []uint{}
-	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).Order("id").Pluck("id", &ids).Error
-	return ids, err
+// coinQuantitySQL is how many of a coin are held; rows saved before
+// quantities existed count as one.
+const coinQuantitySQL = "(CASE WHEN quantity > 0 THEN quantity ELSE 1 END)"
+
+// CollectionQuantities maps the user's collection coins (not wishlist or
+// sold) of a kind ("" for all) to how many of each are held.
+func (r *CoinRepository) CollectionQuantities(userID uint, kind string) (map[uint]int64, error) {
+	var rows []struct {
+		ID       uint
+		Quantity int64
+	}
+	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).
+		Select("id, " + coinQuantitySQL + " AS quantity").Scan(&rows).Error
+	quantities := make(map[uint]int64, len(rows))
+	for _, row := range rows {
+		quantities[row.ID] = row.Quantity
+	}
+	return quantities, err
 }
 
 // CollectionSummary returns the collection's coin, type, country and coincard
-// counts, for the items of a kind ("" for all).
+// counts and its value, for the items of a kind ("" for all).
 func (r *CoinRepository) CollectionSummary(userID uint, kind string) (CollectionSummary, error) {
 	var summary CollectionSummary
-	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).Select(`
-		COUNT(*) AS coins,
+	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).Select(strings.ReplaceAll(`
+		COALESCE(SUM({q}), 0) AS coins,
+		COUNT(*) AS unique_coins,
 		COUNT(DISTINCT COALESCE(
 			(SELECT 'numista:' || TRIM(r.number) FROM coin_references r
 				WHERE r.coin_id = coins.id AND LOWER(r.catalog) = 'numista' ORDER BY r.id LIMIT 1),
 			'name:' || LOWER(TRIM(coins.name))
 		)) AS types,
 		COUNT(DISTINCT CASE WHEN TRIM(COALESCE(country, '')) <> '' THEN TRIM(country) END) AS countries,
-		COALESCE(SUM(CASE WHEN TRIM(COALESCE(country, '')) = '' THEN 1 ELSE 0 END), 0) AS without_country,
-		COALESCE(SUM(CASE WHEN presentation = 'coincard' THEN 1 ELSE 0 END), 0) AS coincards,
-		COALESCE(SUM(current_value), 0) AS total_value,
-		COALESCE(SUM(CASE WHEN current_value IS NULL THEN 1 ELSE 0 END), 0) AS unvalued_coins`).
+		COALESCE(SUM(CASE WHEN TRIM(COALESCE(country, '')) = '' THEN {q} ELSE 0 END), 0) AS without_country,
+		COALESCE(SUM(CASE WHEN presentation = 'coincard' THEN {q} ELSE 0 END), 0) AS coincards,
+		COALESCE(SUM(current_value * {q}), 0) AS total_value,
+		COALESCE(SUM(CASE WHEN current_value IS NULL THEN {q} ELSE 0 END), 0) AS unvalued_coins`, "{q}", coinQuantitySQL)).
 		Scan(&summary).Error
 	return summary, err
 }

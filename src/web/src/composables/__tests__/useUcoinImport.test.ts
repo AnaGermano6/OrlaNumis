@@ -418,6 +418,25 @@ describe('useUcoinImport', () => {
     expect(importer.updatable.value).toEqual([])
   })
 
+  it('adds a line of several coins as one coin with that quantity', async () => {
+    const header = ['País', 'Periodo', 'Moeda', 'Denominação', 'Ano', 'Var.', 'Assunto', 'Preço, EUR [uCoin]', 'Número', 'Quantidade', 'Trocas', 'Compra', 'Preço, EUR [My]']
+    const buffer = await buildXlsx([
+      header,
+      ['Japão', 'Akihito (Heisei)', 'Yen japonês', '50 ienes', 1991, '', '', 1, 'Y# 101', 3, '', 0, ''],
+      ['Japão', 'Akihito (Heisei)', 'Yen japonês', '100 ienes', 1990, '', '', 1, 'Y# 98', 1, '', 0, ''],
+    ])
+    const file = { name: 'coleção.xlsx', type: '', arrayBuffer: async () => buffer } as unknown as File
+
+    const importer = useUcoinImport({ paceMs: 0 })
+    await importer.readFile(file)
+    expect(importer.rows.value).toHaveLength(2)
+    expect(importer.pieces.value).toBe(4)
+
+    await importer.start(false)
+    expect(mocks.createCoin).toHaveBeenCalledTimes(2)
+    expect(mocks.createCoin.mock.calls.map(([payload]) => [payload.denomination, payload.quantity])).toEqual([['50 ienes', 3], ['100 ienes', 1]])
+  })
+
   it('marks coins as kept in a coin card when Numista says their type is issued in one', async () => {
     mocks.getNumistaCatalogType.mockImplementation(async (typeId: number) => {
       const result = TYPES[typeId] as { type: Record<string, unknown> }

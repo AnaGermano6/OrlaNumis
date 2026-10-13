@@ -92,6 +92,9 @@ export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus
       result.push({ key: 'country', label: t('coinFields.country'), value: coin.country })
     }
 
+    // How many are held; one for coins saved before the field existed.
+    result.push({ key: 'quantity', label: t('coinFields.quantity'), value: String(coin.quantity && coin.quantity > 0 ? coin.quantity : 1) })
+
     if (coin.presentation) {
       result.push({ key: 'presentation', label: t('coinFields.presentation'), value: presentationLabel(coin.presentation) })
     }

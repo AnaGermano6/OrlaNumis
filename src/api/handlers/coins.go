@@ -1060,7 +1060,8 @@ func handleCoinMutationError(c *gin.Context, err error) bool {
 		errors.Is(err, services.ErrCoinInvalidRarity),
 		errors.Is(err, services.ErrCoinInvalidCirculation),
 		errors.Is(err, services.ErrCoinInvalidKind),
-		errors.Is(err, services.ErrCoinInvalidNoteVariant):
+		errors.Is(err, services.ErrCoinInvalidNoteVariant),
+		errors.Is(err, services.ErrCoinInvalidQuantity):
 		respondError(c, http.StatusBadRequest, err.Error(), err)
 		return true
 	case errors.Is(err, services.ErrStorageSlotRequired),
