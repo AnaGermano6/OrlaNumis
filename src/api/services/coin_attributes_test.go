@@ -199,7 +199,7 @@ func TestCollectionSummary_CountsCoinsTypesAndCountries(t *testing.T) {
 
 	got, err := repository.NewCoinRepository(db).CollectionSummary(1, "")
 
-	want := repository.CollectionSummary{Coins: 7, UniqueCoins: 5, Types: 3, Countries: 2, WithoutCountry: 2, Coincards: 2, TotalValue: 50, UnvaluedCoins: 5}
+	want := repository.CollectionSummary{Coins: 7, UniqueCoins: 5, Types: 3, Countries: 2, WithoutCountry: 2, Coincards: 2, TotalValue: 50, UnvaluedCoins: 5, RepeatedCoins: 1, SpareCoins: 2}
 	if err != nil || got != want {
 		t.Fatalf("summary = %+v (%v), want %+v", got, err, want)
 	}

@@ -25,7 +25,9 @@ type CoinListFilters struct {
 	Countries []string
 	// IDs, when not nil, keeps only these coins (none when empty), e.g. the
 	// ones still legal tender.
-	IDs          []uint
+	IDs []uint
+	// Repeated keeps the coins held more than once (a quantity above one).
+	Repeated     bool
 	Presentation string
 	Rarity       string
 	Search       string
@@ -247,6 +249,7 @@ var allowedSortFields = map[string]string{
 	"current_value": "current_value",
 	"purchase_date": "purchase_date",
 	"name":          "name",
+	"quantity":      "quantity",
 }
 
 var searchFields = []string{
@@ -282,6 +285,9 @@ func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Co
 	}
 	if filters.Presentation != "" {
 		query = query.Where("presentation = ?", filters.Presentation)
+	}
+	if filters.Repeated {
+		query = query.Where("quantity > 1")
 	}
 	if filters.Rarity != "" {
 		query = query.Where("rarity = ?", filters.Rarity)
@@ -1252,6 +1258,10 @@ type CollectionSummary struct {
 	TotalValue float64 `json:"totalValue"`
 	// UnvaluedCoins have no current value and are left out of TotalValue.
 	UnvaluedCoins int64 `json:"unvaluedCoins"`
+	// RepeatedCoins are the different coins held more than once; SpareCoins
+	// the copies beyond the first, there to trade.
+	RepeatedCoins int64 `json:"repeatedCoins"`
+	SpareCoins    int64 `json:"spareCoins"`
 }
 
 // coinQuantitySQL is how many of a coin are held; rows saved before
@@ -1274,6 +1284,49 @@ func (r *CoinRepository) CollectionQuantities(userID uint, kind string) (map[uin
 	return quantities, err
 }
 
+// CollectionCoinsOfYears lists the user's collection coins (not wishlist or
+// sold) of a kind and of these years, with their catalogue references.
+func (r *CoinRepository) CollectionCoinsOfYears(userID uint, kind string, years []int) ([]models.Coin, error) {
+	coins := []models.Coin{}
+	if len(years) == 0 {
+		return coins, nil
+	}
+	err := r.db.Scopes(ActiveCollection(userID), OfKind(kind)).Preload("References").Where("year IN ?", years).Order("id").Find(&coins).Error
+	return coins, err
+}
+
+// CollectionCoinsWithReferences lists the user's collection coins (not
+// wishlist or sold) of a kind, with their catalogue references.
+func (r *CoinRepository) CollectionCoinsWithReferences(userID uint, kind string) ([]models.Coin, error) {
+	coins := []models.Coin{}
+	err := r.db.Scopes(ActiveCollection(userID), OfKind(kind)).Preload("References").Order("id").Find(&coins).Error
+	return coins, err
+}
+
+// DailyCoin picks one of the user's collection coins (not wishlist or sold)
+// of a kind by seed, among those with a photo when there are any; nil when
+// the collection has none. The same seed picks the same coin.
+func (r *CoinRepository) DailyCoin(userID uint, kind string, seed uint32) (*models.Coin, error) {
+	var ids []uint
+	withPhoto := "EXISTS (SELECT 1 FROM coin_images i WHERE i.coin_id = coins.id)"
+	if err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).Where(withPhoto).Order("id").Pluck("id", &ids).Error; err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		if err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).Order("id").Pluck("id", &ids).Error; err != nil {
+			return nil, err
+		}
+	}
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	var coin models.Coin
+	if err := r.db.Preload("Images").Preload("References").First(&coin, ids[seed%uint32(len(ids))]).Error; err != nil {
+		return nil, err
+	}
+	return &coin, nil
+}
+
 // CollectionSummary returns the collection's coin, type, country and coincard
 // counts and its value, for the items of a kind ("" for all).
 func (r *CoinRepository) CollectionSummary(userID uint, kind string) (CollectionSummary, error) {
@@ -1290,7 +1343,9 @@ func (r *CoinRepository) CollectionSummary(userID uint, kind string) (Collection
 		COALESCE(SUM(CASE WHEN TRIM(COALESCE(country, '')) = '' THEN {q} ELSE 0 END), 0) AS without_country,
 		COALESCE(SUM(CASE WHEN presentation = 'coincard' THEN {q} ELSE 0 END), 0) AS coincards,
 		COALESCE(SUM(current_value * {q}), 0) AS total_value,
-		COALESCE(SUM(CASE WHEN current_value IS NULL THEN {q} ELSE 0 END), 0) AS unvalued_coins`, "{q}", coinQuantitySQL)).
+		COALESCE(SUM(CASE WHEN current_value IS NULL THEN {q} ELSE 0 END), 0) AS unvalued_coins,
+		COALESCE(SUM(CASE WHEN {q} > 1 THEN 1 ELSE 0 END), 0) AS repeated_coins,
+		COALESCE(SUM({q} - 1), 0) AS spare_coins`, "{q}", coinQuantitySQL)).
 		Scan(&summary).Error
 	return summary, err
 }

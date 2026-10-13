@@ -353,6 +353,7 @@ const defaultNavItems: NavItem[] = [
     children: [
       { id: 'sets-list', labelKey: 'nav.mySets', to: '/sets' },
       { id: 'sets-emperors', labelKey: 'nav.emperors', to: '/sets/emperors' },
+      { id: 'sets-commemoratives', labelKey: 'nav.commemorativeCatalogue', to: '/sets/commemoratives' },
     ],
   },
   { id: 'notes', labelKey: 'nav.notes', icon: markRaw(NotebookPen), to: '/notes', visible: true },

@@ -313,7 +313,7 @@ describe('App sidebar pinned sets', () => {
     resolveCount({ data: { count: 99 } })
     await flushPromises()
     await openSetsSubmenu()
-    expect(setsSubmenuLinks().map(link => link.text())).toEqual(['My Sets', 'Account B set'])
+    expect(setsSubmenuLinks().map(link => link.text())).toEqual(['My Sets', 'Commemorative catalogue', 'Account B set'])
     expect(wrapper!.get('nav a[aria-label="Notifications"]').text()).toBe('2')
     expect(wrapper!.text()).not.toContain('Private account A set')
   })
@@ -355,8 +355,8 @@ describe('App sidebar pinned sets', () => {
     await openSetsSubmenu()
 
     const links = setsSubmenuLinks()
-    expect(links.map((l) => l.text())).toEqual(['My Sets', 'Earlier Pin', 'Later Pin'])
-    expect(links.map((l) => l.attributes('href'))).toEqual(['/sets', '/sets/40', '/sets/41'])
+    expect(links.map((l) => l.text())).toEqual(['My Sets', 'Commemorative catalogue', 'Earlier Pin', 'Later Pin'])
+    expect(links.map((l) => l.attributes('href'))).toEqual(['/sets', '/sets/commemoratives', '/sets/40', '/sets/41'])
   })
 
   it('keeps pinned sets after Emperors when the Emperor Tracker is enabled', async () => {
@@ -368,8 +368,8 @@ describe('App sidebar pinned sets', () => {
     await openSetsSubmenu()
 
     const links = setsSubmenuLinks()
-    expect(links.map((l) => l.text())).toEqual(['My Sets', 'Emperors', 'Earlier Pin'])
-    expect(links.map((l) => l.attributes('href'))).toEqual(['/sets', '/sets/emperors', '/sets/40'])
+    expect(links.map((l) => l.text())).toEqual(['My Sets', 'Emperors', 'Commemorative catalogue', 'Earlier Pin'])
+    expect(links.map((l) => l.attributes('href'))).toEqual(['/sets', '/sets/emperors', '/sets/commemoratives', '/sets/40'])
   })
 
   it('renders the submenu unchanged when no sets are pinned', async () => {
@@ -379,7 +379,7 @@ describe('App sidebar pinned sets', () => {
     await openSetsSubmenu()
 
     const links = setsSubmenuLinks()
-    expect(links).toHaveLength(1)
+    expect(links).toHaveLength(2)
     expect(links[0]?.text()).toBe('My Sets')
     expect(wrapper!.html()).not.toContain('sets-pinned-')
   })
@@ -390,7 +390,7 @@ describe('App sidebar pinned sets', () => {
     await mountApp()
     await openSetsSubmenu()
 
-    expect(setsSubmenuLinks().map((l) => l.text())).toEqual(['My Sets'])
+    expect(setsSubmenuLinks().map((l) => l.text())).toEqual(['My Sets', 'Commemorative catalogue'])
   })
 
   it('truncates long pinned labels and exposes the full name via title', async () => {
@@ -400,7 +400,7 @@ describe('App sidebar pinned sets', () => {
     await mountApp()
     await openSetsSubmenu()
 
-    const pinnedLink = setsSubmenuLinks()[1]!
+    const pinnedLink = setsSubmenuLinks()[2]!
     expect(pinnedLink.classes()).toContain('min-w-0')
     const label = pinnedLink.find('span')
     expect(label.classes()).toContain('truncate')
@@ -419,7 +419,7 @@ describe('App sidebar pinned sets', () => {
     await openSetsSubmenu()
 
     expect(wrapper!.find('aside').exists()).toBe(true)
-    await setsSubmenuLinks()[1]!.trigger('click')
+    await setsSubmenuLinks()[2]!.trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/sets/40')
@@ -447,14 +447,14 @@ describe('App sidebar pinned sets', () => {
 
     await mountApp()
     await openSetsSubmenu()
-    expect(setsSubmenuLinks()).toHaveLength(3)
+    expect(setsSubmenuLinks()).toHaveLength(4)
 
     const { usePinnedSets } = await import('@/composables/usePinnedSets')
     mockGetQuickAccess.mockResolvedValue(pinnedSetPayload([buildSet({ id: 41, name: 'Later Pin', pinnedAt: '2026-02-01T00:00:00Z' })]))
     await usePinnedSets().refresh()
     await flushPromises()
 
-    expect(setsSubmenuLinks().map((l) => l.text())).toEqual(['My Sets', 'Later Pin'])
+    expect(setsSubmenuLinks().map((l) => l.text())).toEqual(['My Sets', 'Commemorative catalogue', 'Later Pin'])
   })
 
   it('clears pinned sets on logout so the next user sees none', async () => {
@@ -462,7 +462,7 @@ describe('App sidebar pinned sets', () => {
 
     await mountApp()
     await openSetsSubmenu()
-    expect(setsSubmenuLinks()).toHaveLength(2)
+    expect(setsSubmenuLinks()).toHaveLength(3)
 
     const logoutButton = wrapper!.findAll('.sidebar-link').find((el) => el.text() === 'Logout')
     expect(logoutButton, 'Logout button should render').toBeTruthy()

@@ -92,6 +92,10 @@ func TestParseIncmProducts(t *testing.T) {
 		!strings.Contains(knowledge.Obverse, "Conhecimento_CU_A.jpg") || !strings.Contains(knowledge.Reverse, "Conhecimento_CU_B.jpg") {
 		t.Fatalf("O Conhecimento = %+v", knowledge)
 	}
+	// When it went on sale and how many were struck.
+	if knowledge.Released != "2024-11" || knowledge.Volume != 20000 {
+		t.Fatalf("O Conhecimento release = %q, volume = %d", knowledge.Released, knowledge.Volume)
+	}
 	// Numbered photos, and packaging photos that are numbered too.
 	catarina := coins["D. Catarina de Bragança"]
 	if catarina.Year != 2016 || !strings.HasSuffix(strings.Split(catarina.Obverse, "?")[0], "-1.png") || !strings.HasSuffix(strings.Split(catarina.Reverse, "?")[0], "-2.png") {

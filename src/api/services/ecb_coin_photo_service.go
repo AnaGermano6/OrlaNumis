@@ -39,6 +39,10 @@ type EcbCoinPhoto struct {
 	Country  string `json:"country"`
 	Feature  string `json:"feature"`
 	ImageURL string `json:"imageUrl"`
+	// IssueDate is when the coin is issued, as the ECB writes it ("June
+	// 2025", "Fourth quarter of 2025"); Volume how many are struck.
+	IssueDate string `json:"issueDate,omitempty"`
+	Volume    int64  `json:"volume,omitempty"`
 }
 
 // ECBCoinsClient fetches ECB coin pages.
@@ -100,7 +104,7 @@ func (s *EcbCoinPhotoService) Commemoratives(ctx context.Context, year int) ([]E
 	if year == s.now().Year() {
 		ttl = ecbCurrentYearCacheTTL
 	}
-	body, _, _, err := s.cache.Get(ctx, "ecb:comm:v2:"+strconv.Itoa(year), ttl, func(ctx context.Context) ([]byte, error) {
+	body, _, _, err := s.cache.Get(ctx, "ecb:comm:v3:"+strconv.Itoa(year), ttl, func(ctx context.Context) ([]byte, error) {
 		page, err := s.client.CommemorativePage(ctx, year)
 		if err != nil {
 			return nil, err
@@ -122,6 +126,9 @@ var (
 	ecbImage       = regexp.MustCompile(`(?i)<img src="([^"]+\.(?:jpg|jpeg|png))"`)
 	ecbCountry     = regexp.MustCompile(`(?s)<h3>(.*?)</h3>`)
 	ecbFeature     = regexp.MustCompile(`(?is)<strong>\s*Feature\s*:?(?:\s|&nbsp;)*</strong>\s*:?(.*?)</p>`)
+	ecbIssueDate   = regexp.MustCompile(`(?is)Issuing date\s*:?(.*?)</p>`)
+	ecbVolume      = regexp.MustCompile(`(?is)Issuing volume\s*:?(.*?)</p>`)
+	ecbNumber      = regexp.MustCompile(`\d[\d\s.,]*`)
 	ecbTags        = regexp.MustCompile(`<[^>]+>`)
 	ecbNonLetters  = regexp.MustCompile(`[^a-z]+`)
 	ecbJointIssues = regexp.MustCompile(`(?i)euro area|joint`)
@@ -152,6 +159,13 @@ func ParseEcbCommemoratives(page []byte, year int) []EcbCoinPhoto {
 			continue
 		}
 		country := cleanECBText(heading[1])
+		issueDate, volume := "", int64(0)
+		if match := ecbIssueDate.FindStringSubmatch(box); match != nil {
+			issueDate = strings.TrimSpace(strings.TrimLeft(cleanECBText(match[1]), ": "))
+		}
+		if match := ecbVolume.FindStringSubmatch(box); match != nil {
+			volume = ecbCoinCount(cleanECBText(match[1]))
+		}
 		joint := ecbJointIssues.MatchString(country) || EcbCountryName(country) == ""
 		seen := map[string]bool{}
 		for _, image := range ecbImage.FindAllStringSubmatch(box, -1) {
@@ -165,14 +179,40 @@ func ParseEcbCommemoratives(page []byte, year int) []EcbCoinPhoto {
 			}
 			seen[coinCountry] = true
 			photos = append(photos, EcbCoinPhoto{
-				Year:     year,
-				Country:  coinCountry,
-				Feature:  cleanECBText(feature[1]),
-				ImageURL: imageURL(image[1]),
+				Year:      year,
+				Country:   coinCountry,
+				Feature:   cleanECBText(feature[1]),
+				ImageURL:  imageURL(image[1]),
+				IssueDate: issueDate,
+				Volume:    volume,
 			})
 		}
 	}
 	return photos
+}
+
+// ecbCoinCount reads an issuing volume: "20 000 000 coins", "1.5 million
+// coins"; 0 when it says no number.
+func ecbCoinCount(text string) int64 {
+	number := ecbNumber.FindString(text)
+	if number == "" {
+		return 0
+	}
+	if strings.Contains(strings.ToLower(text), "million") {
+		value, err := strconv.ParseFloat(strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(number), " ", ""), ",", "."), 64)
+		if err != nil {
+			return 0
+		}
+		return int64(value * 1e6)
+	}
+	digits := strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, number)
+	count, _ := strconv.ParseInt(digits, 10, 64)
+	return count
 }
 
 func cleanECBText(value string) string {

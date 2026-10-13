@@ -278,6 +278,92 @@ func (s *NumistaCatalogService) Search(ctx context.Context, search NumistaTypeSe
 	return result
 }
 
+// issuerYearCacheTTL keeps an issuer's types of a past year a long time:
+// they hardly change, and asking for every year of a country costs a
+// request each.
+const issuerYearCacheTTL = 365 * 24 * time.Hour
+
+// IssuerYearTypes lists the coin types Numista has of an issuer for a year,
+// every page of them. It fails when Numista cannot be asked (no key, quota
+// used up) and nothing was stored before.
+func (s *NumistaCatalogService) IssuerYearTypes(ctx context.Context, issuer string, year int, lang string) ([]models.NumistaCatalogSearchItem, error) {
+	search := NumistaTypeSearch{Issuer: issuer, Year: year, Lang: lang}
+	return s.searchEveryPage(ctx, fmt.Sprintf("issuer-year:v1:%s:%d:%s", issuer, year, lang), search, issuerYearCacheTTL)
+}
+
+// issuerValueCacheTTL keeps an issuer's coins of a face value for three
+// months: new ones come out every year.
+const issuerValueCacheTTL = 90 * 24 * time.Hour
+
+// IssuerEuroTypes lists the coin types Numista finds for an issuer under a
+// euro face value ("10 euro"), every page of them, oldest first. Numista's
+// search also finds other values ("10 Euro Cents"); the caller keeps what it
+// wants. It fails when Numista cannot be asked and nothing was stored before.
+func (s *NumistaCatalogService) IssuerEuroTypes(ctx context.Context, issuer string, value int, lang string) ([]models.NumistaCatalogSearchItem, error) {
+	search := NumistaTypeSearch{Issuer: issuer, Query: fmt.Sprintf("%d euro", value), Lang: lang}
+	return s.searchEveryPage(ctx, fmt.Sprintf("issuer-euro:v1:%s:%d:%s", issuer, value, lang), search, issuerValueCacheTTL)
+}
+
+// searchEveryPage reads every page of a catalogue search, each page kept
+// under key and its number for ttl.
+func (s *NumistaCatalogService) searchEveryPage(ctx context.Context, key string, search NumistaTypeSearch, ttl time.Duration) ([]models.NumistaCatalogSearchItem, error) {
+	items := []models.NumistaCatalogSearchItem{}
+	search.Count = NumistaCatalogMaxPageSize
+	for page := 1; ; page++ {
+		search.Page = page
+		body, _, _, err := s.cache.Get(ctx, fmt.Sprintf("%s:%d", key, page), ttl, func(ctx context.Context) ([]byte, error) {
+			return s.client.SearchTypes(ctx, search)
+		})
+		if err != nil {
+			return nil, err
+		}
+		var response struct {
+			Count int `json:"count"`
+			Types []struct {
+				ID     int    `json:"id"`
+				Title  string `json:"title"`
+				Issuer struct {
+					Code string `json:"code"`
+					Name string `json:"name"`
+				} `json:"issuer"`
+				MinYear *int `json:"min_year"`
+				MaxYear *int `json:"max_year"`
+			} `json:"types"`
+		}
+		if err := json.Unmarshal(body, &response); err != nil {
+			return nil, err
+		}
+		for _, item := range response.Types {
+			if item.ID > 0 && strings.TrimSpace(item.Title) != "" {
+				items = append(items, models.NumistaCatalogSearchItem{
+					ID: item.ID, Title: strings.TrimSpace(item.Title),
+					Issuer:  models.NumistaCatalogIssuer{Code: item.Issuer.Code, Name: item.Issuer.Name},
+					MinYear: item.MinYear, MaxYear: item.MaxYear,
+				})
+			}
+		}
+		if len(response.Types) < NumistaCatalogMaxPageSize || page*NumistaCatalogMaxPageSize >= response.Count {
+			return items, nil
+		}
+	}
+}
+
+// CachedIssuerTypes lists the types of an issuer whose details the app has
+// cached, once each. It never asks Numista.
+func (s *NumistaCatalogService) CachedIssuerTypes(issuer string) []*models.NumistaCatalogType {
+	seen := map[int]bool{}
+	types := []*models.NumistaCatalogType{}
+	for _, entry := range s.cache.Entries("type:") {
+		detail, err := parseNumistaCatalogType([]byte(entry.Payload))
+		if err != nil || seen[detail.ID] || !strings.EqualFold(detail.Issuer.Code, issuer) {
+			continue
+		}
+		seen[detail.ID] = true
+		types = append(types, detail)
+	}
+	return types
+}
+
 // Type returns a coin type's catalogue details and issues.
 func (s *NumistaCatalogService) Type(ctx context.Context, typeID int, lang string) models.NumistaCatalogTypeResult {
 	result := models.NumistaCatalogTypeResult{Status: models.NumistaDataStatusOK, Issues: []models.NumistaIssueSummary{}}

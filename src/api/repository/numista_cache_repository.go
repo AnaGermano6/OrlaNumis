@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"strings"
+
 	"github.com/briandenicola/ancient-coins-api/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -27,6 +29,14 @@ func (r *NumistaCacheRepository) Find(key string) (*models.NumistaCacheEntry, er
 		return nil, nil
 	}
 	return &entry, nil
+}
+
+// FindByPrefix returns the cached entries whose key starts with prefix.
+func (r *NumistaCacheRepository) FindByPrefix(prefix string) ([]models.NumistaCacheEntry, error) {
+	entries := []models.NumistaCacheEntry{}
+	escaped := strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`).Replace(prefix)
+	err := r.db.Where(`key LIKE ? ESCAPE '\'`, escaped+"%").Find(&entries).Error
+	return entries, err
 }
 
 // Save creates or replaces the entry for entry.Key.

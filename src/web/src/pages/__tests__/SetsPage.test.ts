@@ -28,6 +28,7 @@ vi.mock('@/api/client', () => ({
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
+  RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
 }))
 
 vi.mock('@/composables/usePwa', () => ({
@@ -45,6 +46,15 @@ describe('SetsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetSets.mockResolvedValue({ data: { sets: [] } })
+  })
+
+  it('links to the catalogue of commemorative coins', async () => {
+    const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
+    await flushPromises()
+
+    const link = wrapper.get('[data-testid="sets-catalogue-link"]')
+    expect(link.attributes('href')).toBe('/sets/commemoratives')
+    expect(link.text()).toContain('Commemorative catalogue')
   })
 
   it('submits an agentic set builder run instead of creating a set locally, then shows a confirmation dialog', async () => {

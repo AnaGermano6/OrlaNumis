@@ -30,4 +30,5 @@ export default {
   logout: 'Logout',
   banknotes: 'Banknotes',
   collectionOverview: 'Overview',
+  commemorativeCatalogue: 'Commemorative catalogue',
 }

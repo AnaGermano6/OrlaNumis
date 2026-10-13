@@ -21,7 +21,10 @@ function summary(coins: number, countries: number, value: number, extra: Record<
 }
 
 function mountPage() {
-  return mount(CollectionOverviewPage, { global: { stubs: { RouterLink: RouterLinkStub, 'router-link': RouterLinkStub, AuthenticatedImage: true } } })
+  return mount(CollectionOverviewPage, { global: { stubs: {
+    RouterLink: RouterLinkStub, 'router-link': RouterLinkStub, AuthenticatedImage: true,
+    CollectionDaily: true, CollectionRepeated: true, CoinReleases: true,
+  } } })
 }
 
 describe('CollectionOverviewPage', () => {
@@ -59,6 +62,10 @@ describe('CollectionOverviewPage', () => {
     expect(wrapper.text()).toContain('2000 Escudos 1991')
     expect(wrapper.text()).toContain('Ainda nenhuma nota tem raridade.')
     expect(wrapper.get('[data-testid="overview-open-banknotes"]').attributes('href')).toBe('/banknotes')
+    // A coin and a banknote of the day; the repeated coins and banknotes; the new releases.
+    expect(wrapper.findAll('collection-daily-stub').map((stub) => stub.attributes('kind'))).toEqual(['coin', 'banknote'])
+    expect(wrapper.findAll('collection-repeated-stub').map((stub) => stub.attributes('kind'))).toEqual(['coin', 'banknote'])
+    expect(wrapper.find('coin-releases-stub').exists()).toBe(true)
   })
 
   it('opens the gallery with only the chosen card filter on', async () => {

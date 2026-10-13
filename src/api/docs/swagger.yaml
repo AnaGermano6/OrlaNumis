@@ -183,6 +183,20 @@ definitions:
         example: ""
         type: string
     type: object
+  handlers.CatalogueCountry:
+    properties:
+      collector:
+        type: integer
+      commemoratives:
+        type: integer
+      country:
+        example: PT
+        type: string
+      ownedCollector:
+        type: integer
+      ownedCommemoratives:
+        type: integer
+    type: object
   handlers.CategoryCount:
     properties:
       category:
@@ -204,6 +218,25 @@ definitions:
     required:
     - currentPassword
     - newPassword
+    type: object
+  handlers.CoinCatalogueCountriesResponse:
+    properties:
+      countries:
+        items:
+          $ref: '#/definitions/handlers.CatalogueCountry'
+        type: array
+    type: object
+  handlers.CoinCatalogueResponse:
+    properties:
+      coins:
+        items:
+          $ref: '#/definitions/services.CoinRelease'
+        type: array
+      complete:
+        type: boolean
+      country:
+        example: PT
+        type: string
     type: object
   handlers.CoinCreateRequest:
     properties:
@@ -536,6 +569,13 @@ definitions:
         example: III
         type: string
     type: object
+  handlers.CoinReleasesResponse:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/services.CoinReleaseGroup'
+        type: array
+    type: object
   handlers.CoinStatusGroups:
     properties:
       commemorative:
@@ -854,6 +894,13 @@ definitions:
         type: integer
       highlights:
         $ref: '#/definitions/repository.CollectionHighlights'
+      repeatedCoins:
+        description: |-
+          RepeatedCoins are the different coins held more than once; SpareCoins
+          the copies beyond the first, there to trade.
+        type: integer
+      spareCoins:
+        type: integer
       totalValue:
         description: |-
           TotalValue sums the coins' current values times their quantities, in
@@ -915,6 +962,14 @@ definitions:
     properties:
       shipment:
         $ref: '#/definitions/handlers.ShipmentAttachRequest'
+    type: object
+  handlers.DailyCoinResponse:
+    properties:
+      coin:
+        $ref: '#/definitions/models.Coin'
+      date:
+        example: "2026-10-13"
+        type: string
     type: object
   handlers.DeleteAnalysisResponse:
     properties:
@@ -5443,6 +5498,96 @@ definitions:
         type: string
       targetType:
         $ref: '#/definitions/models.RecommendationTargetType'
+    type: object
+  services.CoinRelease:
+    properties:
+      country:
+        description: |-
+          Country is the issuing country's ISO code ("PT"); "" for a joint issue
+          of the euro area countries.
+        type: string
+      currency:
+        description: 'Currency is the face value''s, when not euros: "PTE" for escudos.'
+        type: string
+      faceValue:
+        description: |-
+          FaceValue is the lowest of the design's face values; FaceValues all of
+          them, from the lowest, when there are several.
+        type: number
+      faceValues:
+        items:
+          type: number
+        type: array
+      from:
+        description: |-
+          From and To are the first and last month of the issue period ("2025-10"
+          and "2025-12" for "Fourth quarter of 2025"); the same month when it is
+          known; January to December when only the year is.
+        example: 2025-10
+        type: string
+      imageUrl:
+        type: string
+      issueText:
+        description: IssueText is the period as the ECB writes it, in English.
+        type: string
+      kind:
+        enum:
+        - commemorative
+        - collector
+        type: string
+      owned:
+        description: Owned is true when a coin of the collection is this one.
+        type: boolean
+      pageUrl:
+        type: string
+      source:
+        enum:
+        - ecb
+        - incm
+        - mdp
+        - moe
+        - numista
+        type: string
+      title:
+        description: |-
+          Title is what the coin shows: the ECB's feature (in English) or the
+          mint's name for the design.
+        type: string
+      to:
+        example: 2025-12
+        type: string
+      upcoming:
+        description: |-
+          Upcoming is true before the issue period starts, and during a month or
+          a quarter of issue until it ends.
+        type: boolean
+      variants:
+        description: Variants are the finishes and metals a mint sells the design
+          in ("BNC", "Prata Proof").
+        items:
+          type: string
+        type: array
+      volume:
+        description: Volume is how many are struck, when the source says.
+        type: integer
+    type: object
+  services.CoinReleaseGroup:
+    properties:
+      releases:
+        items:
+          $ref: '#/definitions/services.CoinRelease'
+        type: array
+      source:
+        enum:
+        - ecb
+        - mints
+        type: string
+      year:
+        description: |-
+          Year is the year of the ECB's list (the latest it has published). The
+          mints' releases are those of the last twelve months (of this year for a
+          mint that gives only the year) and to come.
+        type: integer
     type: object
   services.CoinStatus:
     properties:
@@ -10411,6 +10556,69 @@ paths:
       summary: List catalogs
       tags:
       - Catalogs
+  /coin-catalogue:
+    get:
+      description: A country's €2 commemorative coins (every one the ECB has published
+        since 2004) and the collector coins its mint sells (Portugal, France, Austria),
+        and Portugal's commemorative and collector coins in escudos (1911–2001, from
+        Numista), newest first; each says whether a coin of the collection is it.
+      parameters:
+      - description: The country's ISO code, e.g. PT
+        in: query
+        name: country
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CoinCatalogueResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: A country's coin catalogue
+      tags:
+      - Coins
+  /coin-catalogue/countries:
+    get:
+      description: 'The countries of the catalogue of €2 commemorative coins (every
+        one the ECB has published since 2004), collector coins (those the mints of
+        Portugal, France and Austria sell) and Portugal''s coins in escudos: how many
+        commemorative and collector coins each lists, and how many of them the user
+        has.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CoinCatalogueCountriesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Countries of the coin catalogue
+      tags:
+      - Coins
   /coin-options:
     get:
       description: Returns the admin-configured category and era choices with translated
@@ -10483,6 +10691,33 @@ paths:
       summary: Search real coin photos
       tags:
       - Coins
+  /coin-releases:
+    get:
+      description: 'The ECB''s €2 commemorative coins of the latest year it lists,
+        and the collector coins the mints of Portugal (INCM), France (Monnaie de Paris)
+        and Austria (Münze Österreich) sell, of the last twelve months and to come:
+        upcoming first, then newest first. Each names its country and says whether
+        a coin of the collection is it.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CoinReleasesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List new and upcoming coins
+      tags:
+      - Coins
   /coins:
     get:
       description: Returns a paginated, filterable list of coins belonging to the
@@ -10519,6 +10754,11 @@ paths:
         in: query
         name: presentation
         type: string
+      - description: Only coins held more than once (a quantity above one), the copies
+          there to trade
+        in: query
+        name: repeated
+        type: boolean
       - description: Only coins of countries that no longer exist (USSR, Yugoslavia,
           Ottoman Empire…)
         in: query
@@ -10590,6 +10830,10 @@ paths:
         - created_at
         - updated_at
         - current_value
+        - purchase_date
+        - name
+        - quantity
+        - random
         in: query
         name: sort
         type: string
@@ -12510,6 +12754,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Fill coin countries from Numista
+      tags:
+      - Coins
+  /coins/daily:
+    get:
+      description: 'One coin (or banknote) of the collection for the day, preferring
+        those with a photo: the same all day, another the next.'
+      parameters:
+      - description: A coin (default) or a banknote
+        enum:
+        - coin
+        - banknote
+        in: query
+        name: kind
+        type: string
+      - description: 'The viewer''s day, YYYY-MM-DD (default: today, UTC)'
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.DailyCoinResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Coin of the day
       tags:
       - Coins
   /coins/health:

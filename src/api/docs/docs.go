@@ -6555,6 +6555,95 @@ const docTemplate = `{
                 }
             }
         },
+        "/coin-catalogue": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "A country's €2 commemorative coins (every one the ECB has published since 2004) and the collector coins its mint sells (Portugal, France, Austria), and Portugal's commemorative and collector coins in escudos (1911–2001, from Numista), newest first; each says whether a coin of the collection is it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "A country's coin catalogue",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The country's ISO code, e.g. PT",
+                        "name": "country",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CoinCatalogueResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coin-catalogue/countries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The countries of the catalogue of €2 commemorative coins (every one the ECB has published since 2004), collector coins (those the mints of Portugal, France and Austria sell) and Portugal's coins in escudos: how many commemorative and collector coins each lists, and how many of them the user has.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Countries of the coin catalogue",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CoinCatalogueCountriesResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/coin-options": {
             "get": {
                 "security": [
@@ -6656,6 +6745,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/coin-releases": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The ECB's €2 commemorative coins of the latest year it lists, and the collector coins the mints of Portugal (INCM), France (Monnaie de Paris) and Austria (Münze Österreich) sell, of the last twelve months and to come: upcoming first, then newest first. Each names its country and says whether a coin of the collection is it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "List new and upcoming coins",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CoinReleasesResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/coins": {
             "get": {
                 "security": [
@@ -6713,6 +6839,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by presentation",
                         "name": "presentation",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Only coins held more than once (a quantity above one), the copies there to trade",
+                        "name": "repeated",
                         "in": "query"
                     },
                     {
@@ -6801,7 +6933,11 @@ const docTemplate = `{
                         "enum": [
                             "created_at",
                             "updated_at",
-                            "current_value"
+                            "current_value",
+                            "purchase_date",
+                            "name",
+                            "quantity",
+                            "random"
                         ],
                         "type": "string",
                         "default": "updated_at",
@@ -7053,6 +7189,67 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/daily": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "One coin (or banknote) of the collection for the day, preferring those with a photo: the same all day, another the next.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Coin of the day",
+                "parameters": [
+                    {
+                        "enum": [
+                            "coin",
+                            "banknote"
+                        ],
+                        "type": "string",
+                        "description": "A coin (default) or a banknote",
+                        "name": "kind",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The viewer's day, YYYY-MM-DD (default: today, UTC)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.DailyCoinResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -20409,6 +20606,27 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CatalogueCountry": {
+            "type": "object",
+            "properties": {
+                "collector": {
+                    "type": "integer"
+                },
+                "commemoratives": {
+                    "type": "integer"
+                },
+                "country": {
+                    "type": "string",
+                    "example": "PT"
+                },
+                "ownedCollector": {
+                    "type": "integer"
+                },
+                "ownedCommemoratives": {
+                    "type": "integer"
+                }
+            }
+        },
         "handlers.CategoryCount": {
             "type": "object",
             "properties": {
@@ -20437,6 +20655,35 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 6,
                     "example": "newpass456"
+                }
+            }
+        },
+        "handlers.CoinCatalogueCountriesResponse": {
+            "type": "object",
+            "properties": {
+                "countries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CatalogueCountry"
+                    }
+                }
+            }
+        },
+        "handlers.CoinCatalogueResponse": {
+            "type": "object",
+            "properties": {
+                "coins": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.CoinRelease"
+                    }
+                },
+                "complete": {
+                    "type": "boolean"
+                },
+                "country": {
+                    "type": "string",
+                    "example": "PT"
                 }
             }
         },
@@ -20897,6 +21144,17 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CoinReleasesResponse": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.CoinReleaseGroup"
+                    }
+                }
+            }
+        },
         "handlers.CoinStatusGroups": {
             "type": "object",
             "properties": {
@@ -21318,6 +21576,13 @@ const docTemplate = `{
                 "highlights": {
                     "$ref": "#/definitions/repository.CollectionHighlights"
                 },
+                "repeatedCoins": {
+                    "description": "RepeatedCoins are the different coins held more than once; SpareCoins\nthe copies beyond the first, there to trade.",
+                    "type": "integer"
+                },
+                "spareCoins": {
+                    "type": "integer"
+                },
                 "totalValue": {
                     "description": "TotalValue sums the coins' current values times their quantities, in\nthe collection currency.",
                     "type": "number"
@@ -21398,6 +21663,18 @@ const docTemplate = `{
             "properties": {
                 "shipment": {
                     "$ref": "#/definitions/handlers.ShipmentAttachRequest"
+                }
+            }
+        },
+        "handlers.DailyCoinResponse": {
+            "type": "object",
+            "properties": {
+                "coin": {
+                    "$ref": "#/definitions/models.Coin"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-10-13"
                 }
             }
         },
@@ -27925,6 +28202,110 @@ const docTemplate = `{
                 },
                 "targetType": {
                     "$ref": "#/definitions/models.RecommendationTargetType"
+                }
+            }
+        },
+        "services.CoinRelease": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "description": "Country is the issuing country's ISO code (\"PT\"); \"\" for a joint issue\nof the euro area countries.",
+                    "type": "string"
+                },
+                "currency": {
+                    "description": "Currency is the face value's, when not euros: \"PTE\" for escudos.",
+                    "type": "string"
+                },
+                "faceValue": {
+                    "description": "FaceValue is the lowest of the design's face values; FaceValues all of\nthem, from the lowest, when there are several.",
+                    "type": "number"
+                },
+                "faceValues": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "from": {
+                    "description": "From and To are the first and last month of the issue period (\"2025-10\"\nand \"2025-12\" for \"Fourth quarter of 2025\"); the same month when it is\nknown; January to December when only the year is.",
+                    "type": "string",
+                    "example": "2025-10"
+                },
+                "imageUrl": {
+                    "type": "string"
+                },
+                "issueText": {
+                    "description": "IssueText is the period as the ECB writes it, in English.",
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "commemorative",
+                        "collector"
+                    ]
+                },
+                "owned": {
+                    "description": "Owned is true when a coin of the collection is this one.",
+                    "type": "boolean"
+                },
+                "pageUrl": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "ecb",
+                        "incm",
+                        "mdp",
+                        "moe",
+                        "numista"
+                    ]
+                },
+                "title": {
+                    "description": "Title is what the coin shows: the ECB's feature (in English) or the\nmint's name for the design.",
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string",
+                    "example": "2025-12"
+                },
+                "upcoming": {
+                    "description": "Upcoming is true before the issue period starts, and during a month or\na quarter of issue until it ends.",
+                    "type": "boolean"
+                },
+                "variants": {
+                    "description": "Variants are the finishes and metals a mint sells the design in (\"BNC\", \"Prata Proof\").",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "volume": {
+                    "description": "Volume is how many are struck, when the source says.",
+                    "type": "integer"
+                }
+            }
+        },
+        "services.CoinReleaseGroup": {
+            "type": "object",
+            "properties": {
+                "releases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.CoinRelease"
+                    }
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "ecb",
+                        "mints"
+                    ]
+                },
+                "year": {
+                    "description": "Year is the year of the ECB's list (the latest it has published). The\nmints' releases are those of the last twelve months (of this year for a\nmint that gives only the year) and to come.",
+                    "type": "integer"
                 }
             }
         },
