@@ -11,10 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CatalogueCountry is a country of the catalogue: how many €2 commemoratives
-// and collector coins it lists, and how many of each the user has.
+// CatalogueCountry is a country of the catalogue, in one currency (the euro,
+// or Portugal's escudo): how many commemorative and collector coins it
+// lists, and how many of each the user has.
 type CatalogueCountry struct {
-	Country             string `json:"country" example:"PT"`
+	Country string `json:"country" example:"PT"`
+	// Currency is "PTE" for Portugal's coins in escudos; empty for the euro.
+	Currency            string `json:"currency,omitempty" enums:",PTE"`
 	Commemoratives      int    `json:"commemoratives"`
 	Collector           int    `json:"collector"`
 	OwnedCommemoratives int    `json:"ownedCommemoratives"`
@@ -26,7 +29,7 @@ type CoinCatalogueCountriesResponse struct {
 	Countries []CatalogueCountry `json:"countries"`
 }
 
-// CoinCatalogueResponse is one country's catalogue, newest first. Complete
+// CoinCatalogueResponse is one country's catalogue in one currency, newest first. Complete
 // is false while Numista has not answered every search of the catalogue
 // (Portugal's escudos, the €5, €10 and €20 coins).
 type CoinCatalogueResponse struct {
@@ -74,7 +77,7 @@ func (h *CoinCatalogueHandler) ownedKeys(c *gin.Context, country string) (map[st
 // Countries godoc
 //
 //	@Summary		Countries of the coin catalogue
-//	@Description	The countries of the catalogue of €2 commemorative coins (every one the ECB has published since 2004), collector coins (those the mints of Portugal, France and Austria sell) and Portugal's coins in escudos: how many commemorative and collector coins each lists, and how many of them the user has.
+//	@Description	The countries of the catalogue, each in its currency: the euro (every €2 commemorative the ECB has published since 2004, the €5, €10 and €20 coins, and the collector coins the mints of Portugal, France and Austria sell) and Portugal's escudo (its commemorative and collector coins, 1911–2001). Each says how many commemorative and collector coins it lists, and how many of them the user has.
 //	@Tags			Coins
 //	@Produce		json
 //	@Success		200	{object}	CoinCatalogueCountriesResponse
@@ -91,10 +94,11 @@ func (h *CoinCatalogueHandler) Countries(c *gin.Context) {
 	services.MarkOwnedReleases(catalogue, owned)
 	byCountry := map[string]*CatalogueCountry{}
 	for _, coin := range catalogue {
-		country := byCountry[coin.Country]
+		key := coin.Country + "|" + coin.Currency
+		country := byCountry[key]
 		if country == nil {
-			country = &CatalogueCountry{Country: coin.Country}
-			byCountry[coin.Country] = country
+			country = &CatalogueCountry{Country: coin.Country, Currency: coin.Currency}
+			byCountry[key] = country
 		}
 		if coin.Kind == services.CoinReleaseKindCommemorative {
 			country.Commemoratives++
@@ -112,17 +116,21 @@ func (h *CoinCatalogueHandler) Countries(c *gin.Context) {
 	for _, country := range byCountry {
 		response.Countries = append(response.Countries, *country)
 	}
-	sort.Slice(response.Countries, func(i, j int) bool { return response.Countries[i].Country < response.Countries[j].Country })
+	sort.Slice(response.Countries, func(i, j int) bool {
+		a, b := response.Countries[i], response.Countries[j]
+		return a.Country < b.Country || a.Country == b.Country && a.Currency < b.Currency
+	})
 	c.JSON(http.StatusOK, response)
 }
 
 // Country godoc
 //
 //	@Summary		A country's coin catalogue
-//	@Description	A country's €2 commemorative coins (every one the ECB has published since 2004) and the collector coins its mint sells (Portugal, France, Austria), and Portugal's commemorative and collector coins in escudos (1911–2001, from Numista), newest first; each says whether a coin of the collection is it.
+//	@Description	A country's coins in one currency, newest first: in euros, its €2 commemoratives (every one the ECB has published since 2004), its €5, €10 and €20 coins and the collector coins its mint sells (Portugal, France, Austria); in escudos (currency PTE), Portugal's commemorative and collector coins of 1911–2001. Each says whether a coin of the collection is it.
 //	@Tags			Coins
 //	@Produce		json
-//	@Param			country	query		string	true	"The country's ISO code, e.g. PT"
+//	@Param			country		query		string	true	"The country's ISO code, e.g. PT"
+//	@Param			currency	query		string	false	"PTE for Portugal's coins in escudos; the euro coins when omitted"	Enums(PTE)
 //	@Success		200		{object}	CoinCatalogueResponse
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		401		{object}	ErrorResponse
@@ -135,9 +143,14 @@ func (h *CoinCatalogueHandler) Country(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "country must be the ISO code of a country of the catalogue"})
 		return
 	}
+	currency := strings.ToUpper(strings.TrimSpace(c.Query("currency")))
+	if currency != "" && currency != "PTE" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "currency must be PTE, or omitted for the euro"})
+		return
+	}
 	coins := []services.CoinRelease{}
 	for _, coin := range h.releases.Catalogue(c.Request.Context()) {
-		if coin.Country == country {
+		if coin.Country == country && coin.Currency == currency {
 			coins = append(coins, coin)
 		}
 	}

@@ -92,4 +92,13 @@ func TestCoinCatalogue_CountryAndCountries(t *testing.T) {
 	if w := coinRequest(router, http.MethodGet, "/api/catalogue-test?country=GB", nil); w.Code != http.StatusBadRequest {
 		t.Fatalf("a country outside the catalogue: %d", w.Code)
 	}
+	if w := coinRequest(router, http.MethodGet, "/api/catalogue-test?country=PT&currency=USD", nil); w.Code != http.StatusBadRequest {
+		t.Fatalf("a currency outside the catalogue: %d", w.Code)
+	}
+	// Portugal in escudos is apart from Portugal in euros; this catalogue has none.
+	w = coinRequest(router, http.MethodGet, "/api/catalogue-test?country=PT&currency=pte", nil)
+	var escudos CoinCatalogueResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &escudos); err != nil || w.Code != http.StatusOK || len(escudos.Coins) != 0 {
+		t.Fatalf("Portugal in escudos: %d %s", w.Code, w.Body.String())
+	}
 }

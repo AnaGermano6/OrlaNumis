@@ -641,14 +641,17 @@ export const getCoinReleases = () => api.get<{ groups: CoinReleaseGroup[] }>('/c
 export interface CatalogueCountry {
   /** ISO code, e.g. PT. */
   country: string
+  /** "PTE" for Portugal's coins in escudos; absent for the euro. */
+  currency?: string
   commemoratives: number
   collector: number
   ownedCommemoratives: number
   ownedCollector: number
 }
 
-/** The countries of the catalogue of commemorative and collector coins. */
+/** The countries of the catalogue of commemorative and collector coins, each in its currency (the euro, or Portugal's escudo). */
 export const getCoinCatalogueCountries = () => api.get<{ countries: CatalogueCountry[] }>('/coin-catalogue/countries')
 
-/** A country's €2 commemoratives and its mint's collector coins (and Portugal's in escudos), newest first; complete is false while the escudos are partly listed. */
-export const getCoinCatalogue = (country: string) => api.get<{ country: string; coins: CoinRelease[]; complete: boolean }>('/coin-catalogue', { params: { country } })
+/** A country's coins in euros, or in another currency ("PTE": Portugal's escudos), newest first; complete is false while coins from Numista are partly listed. */
+export const getCoinCatalogue = (country: string, currency?: string) =>
+  api.get<{ country: string; coins: CoinRelease[]; complete: boolean }>('/coin-catalogue', { params: currency ? { country, currency } : { country } })

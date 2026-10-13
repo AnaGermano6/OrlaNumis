@@ -271,18 +271,12 @@ const messages: Messages['sets'] = {
   catalogue: {
     title: 'Catálogo de comemorativas',
     link: 'As comemorativas e as moedas de coleção de 5 €, 10 € e 20 € de cada país, com as que já tem.',
-    intro: 'Todas as moedas de 2 € comemorativas publicadas pelo BCE desde 2004 e as moedas de coleção de 5 €, 10 € e 20 € de cada país do euro, com as outras moedas de coleção das casas da moeda de Portugal, França e Áustria e, de Portugal, as comemorativas e de coleção em escudos (1911–2001). As que já tem estão marcadas com «Na coleção».',
     sources: 'Fontes: o BCE (descrições em inglês), as lojas da INCM, da Monnaie de Paris e da Münze Österreich (as de França e da Áustria só com o ano) e o Numista para as moedas de 5 €, 10 € e 20 € e os escudos (sem imagens: o Numista não deixa a aplicação mostrá-las).',
     loading: 'A ler o catálogo… Da primeira vez pode demorar alguns segundos.',
     failed: 'Não foi possível carregar o catálogo.',
     countries: 'Países',
     progress: '{owned} de {total}',
     owned: 'Tem {owned} de {total}',
-    kinds: {
-      all: 'Todas',
-      commemoratives: 'Comemorativas',
-      collector: 'Moedas de coleção',
-    },
     ownedFilter: {
       all: 'Todas',
       owned: 'Na coleção',
@@ -292,6 +286,12 @@ const messages: Messages['sets'] = {
     more: 'Mostrar mais ({count})',
     escudos: '{value} escudos',
     partialNumista: 'Algumas moedas do Numista ainda não estão na lista: o Numista não respondeu a todas as pesquisas (a quota mensal pode ter esgotado). Entram sozinhas quando voltar a responder; por agora mostram-se as que a aplicação já conhece.',
+    euroCoins: 'Moedas do euro',
+    otherCoins: 'Outras moedas',
+    currencies: {
+      PTE: 'Escudos',
+    },
+    allValues: 'Todos os valores',
   },
 }
 

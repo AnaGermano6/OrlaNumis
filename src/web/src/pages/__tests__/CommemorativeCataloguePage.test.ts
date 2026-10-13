@@ -13,8 +13,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/api/client', () => ({ getCoinCatalogueCountries: mocks.getCoinCatalogueCountries, getCoinCatalogue: mocks.getCoinCatalogue }))
 vi.mock('vue-router', () => ({ useRoute: () => mocks.route, useRouter: () => ({ replace: mocks.replace }) }))
 
-function country(code: string, commemoratives: number, ownedCommemoratives: number, collector = 0, ownedCollector = 0): CatalogueCountry {
-  return { country: code, commemoratives, ownedCommemoratives, collector, ownedCollector }
+function country(code: string, commemoratives: number, ownedCommemoratives: number, collector = 0, ownedCollector = 0, currency?: string): CatalogueCountry {
+  return { country: code, currency, commemoratives, ownedCommemoratives, collector, ownedCollector }
 }
 
 function coin(fields: Partial<CoinRelease>): CoinRelease {
@@ -26,14 +26,21 @@ const PORTUGAL = [
   coin({ source: 'incm', title: 'Rotary', from: '2026-07', to: '2026-07', owned: true }),
   coin({ title: 'World scouting', owned: true }),
   coin({ title: 'Sustainable development', from: '2025-01', to: '2025-03' }),
-  coin({ source: 'incm', title: 'Faróis', faceValue: 5, from: '2025-11', to: '2025-11' }),
-  coin({ title: '35 years of the Erasmus programme', from: '2022-07', to: '2022-07', owned: true }),
-  // A commemorative in escudos, from Numista: no picture.
-  coin({ source: 'numista', kind: 'commemorative', title: 'Colombo e Portugal', faceValue: 200, currency: 'PTE', imageUrl: '', from: '1991-01', to: '1991-12', owned: true }),
+  coin({ source: 'incm', title: 'Faróis', faceValue: 5, faceValues: [5, 10], from: '2025-11', to: '2025-11' }),
+  coin({ source: 'numista', title: 'Mosteiro dos Jerónimos', faceValue: 10, imageUrl: '', from: '2004-01', to: '2004-12' }),
+]
+
+const ESCUDOS = [
+  coin({ source: 'numista', title: 'Colombo e Portugal', faceValue: 200, currency: 'PTE', imageUrl: '', from: '1991-01', to: '1991-12', owned: true }),
+  coin({ source: 'numista', title: 'Discovery of Azores', faceValue: 100, currency: 'PTE', imageUrl: '', from: '1989-01', to: '1989-12' }),
 ]
 
 function cards(wrapper: ReturnType<typeof mount>): string[] {
   return wrapper.findAll('[data-testid="release"]').map((card) => card.find('.line-clamp-3').text())
+}
+
+function text(element: { text: () => string }): string {
+  return element.text().replace(/\s+/g, ' ')
 }
 
 describe('CommemorativeCataloguePage', () => {
@@ -41,70 +48,89 @@ describe('CommemorativeCataloguePage', () => {
     setLocale('pt-PT')
     vi.clearAllMocks()
     mocks.route.query = {}
-    mocks.getCoinCatalogueCountries.mockResolvedValue({ data: { countries: [country('FR', 20, 1, 50, 0), country('PT', 3, 2, 2, 1), country('DE', 30, 0)] } })
-    mocks.getCoinCatalogue.mockImplementation(async (code: string) => ({ data: { country: code, coins: code === 'PT' ? PORTUGAL : [coin({ country: code, title: 'Notre-Dame' })], complete: code !== 'PT' } }))
+    mocks.getCoinCatalogueCountries.mockResolvedValue({ data: { countries: [
+      country('FR', 20, 1, 50, 0), country('PT', 3, 2, 2, 1), country('DE', 30, 0), country('PT', 40, 1, 6, 0, 'PTE'),
+    ] } })
+    mocks.getCoinCatalogue.mockImplementation(async (code: string, currency?: string) => ({ data: {
+      country: code,
+      coins: code === 'PT' ? (currency === 'PTE' ? ESCUDOS : PORTUGAL) : [coin({ country: code, title: 'Notre-Dame' })],
+      complete: code !== 'PT' || currency === 'PTE',
+    } }))
   })
 
-  it("opens the country the collection has most coins of, by year, marking the user's own", async () => {
+  it('puts the euro coins and the other coins apart, and opens the country the collection has most of', async () => {
     const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()
 
-    // Countries by name, with how many of their coins the collection has.
-    const countries = wrapper.findAll('button[data-testid^="catalogue-country-"]')
-    expect(countries.map((button) => button.find('span').text())).toEqual(['Alemanha', 'França', 'Portugal'])
-    expect(wrapper.get('[data-testid="catalogue-country-PT"]').text()).toContain('3 de 5')
-    expect(wrapper.get('[data-testid="catalogue-country-PT"]').attributes('aria-pressed')).toBe('true')
-    expect(mocks.getCoinCatalogue).toHaveBeenCalledWith('PT')
+    // Only the sources above: no introduction.
+    expect(wrapper.text()).toContain('Fontes:')
+    expect(wrapper.text()).not.toContain('Todas as moedas de 2 € comemorativas publicadas')
+    const euro = wrapper.get('[data-testid="catalogue-group-euro"]')
+    expect(euro.get('h2').text()).toBe('Moedas do euro')
+    expect(euro.findAll('button').map((button) => button.find('span').text())).toEqual(['Alemanha', 'França', 'Portugal'])
+    const other = wrapper.get('[data-testid="catalogue-group-other"]')
+    expect(other.get('h2').text()).toBe('Outras moedas')
+    expect(text(other.get('[data-testid="catalogue-country-PT-PTE"]'))).toContain('Escudos · 1 de 46')
+
+    // Portugal in euros has the most coins of the collection: its euro coins only.
+    expect(mocks.getCoinCatalogue).toHaveBeenCalledWith('PT', undefined)
     expect(mocks.replace).toHaveBeenCalledWith({ query: { country: 'PT' } })
-
+    expect(wrapper.get('#catalogue-country-title').text()).toBe('Portugal')
     expect(wrapper.get('[data-testid="catalogue-owned"]').text()).toBe('Tem 3 de 5')
-    expect(wrapper.findAll('[data-testid="catalogue-year"]').map((heading) => heading.text().replace(/\s+/g, ' '))).toEqual(['2026 · 1 de 1', '2025 · 1 de 3', '2022 · 1 de 1', '1991 · 1 de 1'])
-    expect(wrapper.findAll('[data-testid="release-owned"]').map((label) => label.text())).toEqual(['Na coleção', 'Na coleção', 'Na coleção', 'Na coleção'])
-    // The escudo coin: its value in escudos, without a picture; and the list of escudos is not complete yet.
-    const escudo = wrapper.findAll('[data-testid="release"]').at(-1)!
-    expect(escudo.text()).toContain('200 escudos')
-    expect(escudo.find('[data-testid="release-no-image"]').exists()).toBe(true)
+    // In the server's order: the newest first.
+    expect(cards(wrapper)).toEqual(['Rotary', 'World scouting', 'Sustainable development', 'Faróis', 'Mosteiro dos Jerónimos'])
+    expect(wrapper.findAll('[data-testid="catalogue-year"]').map((heading) => text(heading))).toEqual(['2026 · 1 de 1', '2025 · 1 de 3', '2004 · 0 de 1'])
     expect(wrapper.get('[data-testid="catalogue-partial"]').text()).toContain('quota mensal')
-    // The country is not repeated on each coin.
-    expect(wrapper.get('[data-testid="release"]').text()).not.toContain('Portugal')
   })
 
-  it('filters by kind of coin and by what the collection has', async () => {
+  it('filters by each face value the country has, and by what the collection has', async () => {
     const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()
 
+    expect(wrapper.findAll('[data-testid^="catalogue-value-"]').map((chip) => text(chip))).toEqual(['Todos os valores', '2 €', '5 €', '10 €'])
+    await wrapper.get('[data-testid="catalogue-value-10"]').trigger('click')
+    // A design in several face values counts for each.
+    expect(cards(wrapper)).toEqual(['Faróis', 'Mosteiro dos Jerónimos'])
+    await wrapper.get('[data-testid="catalogue-value-2"]').trigger('click')
+    expect(cards(wrapper)).toEqual(['Rotary', 'World scouting', 'Sustainable development'])
     await wrapper.get('[data-testid="catalogue-owned-missing"]').trigger('click')
-    expect(cards(wrapper)).toEqual(['Sustainable development', 'Faróis'])
-    await wrapper.get('[data-testid="catalogue-kind-collector"]').trigger('click')
-    expect(cards(wrapper)).toEqual(['Faróis'])
-    await wrapper.get('[data-testid="catalogue-owned-owned"]').trigger('click')
-    expect(cards(wrapper)).toEqual(['Rotary'])
-    // Commemoratives in euros and in escudos.
-    await wrapper.get('[data-testid="catalogue-kind-commemoratives"]').trigger('click')
-    expect(cards(wrapper)).toEqual(['World scouting', '35 years of the Erasmus programme', 'Colombo e Portugal'])
+    expect(cards(wrapper)).toEqual(['Sustainable development'])
+    await wrapper.get('[data-testid="catalogue-value-all"]').trigger('click')
+    expect(cards(wrapper)).toEqual(['Sustainable development', 'Faróis', 'Mosteiro dos Jerónimos'])
   })
 
-  it('opens the country in the address and switches country on request', async () => {
-    mocks.route.query = { country: 'de' }
+  it("shows Portugal's escudos on their own, with their face values in escudos", async () => {
     const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()
-    expect(mocks.getCoinCatalogue).toHaveBeenCalledWith('DE')
-    // A country without collector coins has no kind filter.
-    expect(wrapper.find('[data-testid="catalogue-kind-all"]').exists()).toBe(false)
 
-    await wrapper.get('[data-testid="catalogue-country-FR"]').trigger('click')
+    await wrapper.get('[data-testid="catalogue-country-PT-PTE"]').trigger('click')
     await flushPromises()
-    expect(mocks.getCoinCatalogue).toHaveBeenLastCalledWith('FR')
-    expect(cards(wrapper)).toEqual(['Notre-Dame'])
+    expect(mocks.getCoinCatalogue).toHaveBeenLastCalledWith('PT', 'PTE')
+    expect(mocks.replace).toHaveBeenLastCalledWith({ query: { country: 'PT', currency: 'PTE' } })
+    expect(wrapper.get('#catalogue-country-title').text()).toBe('Portugal · Escudos')
+    expect(cards(wrapper)).toEqual(['Colombo e Portugal', 'Discovery of Azores'])
+    expect(wrapper.findAll('[data-testid^="catalogue-value-"]').map((chip) => text(chip))).toEqual(['Todos os valores', '100 escudos', '200 escudos'])
+    await wrapper.get('[data-testid="catalogue-value-100"]').trigger('click')
+    expect(cards(wrapper)).toEqual(['Discovery of Azores'])
+    expect(wrapper.find('[data-testid="release-no-image"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="catalogue-partial"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="catalogue-kind-all"]').exists()).toBe(true)
+  })
 
-    // The phone's list chooses the same way.
-    const select = wrapper.get('[data-testid="catalogue-country-select"]')
-    expect(select.findAll('option').map((option) => option.text())).toEqual(['Alemanha — 0 de 30', 'França — 1 de 70', 'Portugal — 3 de 5'])
-    await select.setValue('PT')
+  it('opens the country and currency in the address, and the phone list chooses the same way', async () => {
+    mocks.route.query = { country: 'pt', currency: 'pte' }
+    const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()
-    expect(mocks.getCoinCatalogue).toHaveBeenLastCalledWith('PT')
+    expect(mocks.getCoinCatalogue).toHaveBeenCalledWith('PT', 'PTE')
+
+    const select = wrapper.get('[data-testid="catalogue-country-select"]')
+    expect(select.findAll('optgroup').map((group) => group.attributes('label'))).toEqual(['Moedas do euro', 'Outras moedas'])
+    expect(select.findAll('option').map((option) => option.text())).toEqual(['Alemanha — 0 de 30', 'França — 1 de 70', 'Portugal — 3 de 5', 'Portugal · Escudos — 1 de 46'])
+    await select.setValue('FR')
+    await flushPromises()
+    expect(mocks.getCoinCatalogue).toHaveBeenLastCalledWith('FR', undefined)
+    expect(cards(wrapper)).toEqual(['Notre-Dame'])
+    // One face value: no value filter.
+    expect(wrapper.find('[data-testid="catalogue-value-all"]').exists()).toBe(false)
   })
 
   it('says so when the catalogue cannot be loaded', async () => {

@@ -6562,7 +6562,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "A country's €2 commemorative coins (every one the ECB has published since 2004) and the collector coins its mint sells (Portugal, France, Austria), and Portugal's commemorative and collector coins in escudos (1911–2001, from Numista), newest first; each says whether a coin of the collection is it.",
+                "description": "A country's coins in one currency, newest first: in euros, its €2 commemoratives (every one the ECB has published since 2004), its €5, €10 and €20 coins and the collector coins its mint sells (Portugal, France, Austria); in escudos (currency PTE), Portugal's commemorative and collector coins of 1911–2001. Each says whether a coin of the collection is it.",
                 "produces": [
                     "application/json"
                 ],
@@ -6577,6 +6577,15 @@ const docTemplate = `{
                         "name": "country",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "PTE"
+                        ],
+                        "type": "string",
+                        "description": "PTE for Portugal's coins in escudos; the euro coins when omitted",
+                        "name": "currency",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -6614,7 +6623,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "The countries of the catalogue of €2 commemorative coins (every one the ECB has published since 2004), collector coins (those the mints of Portugal, France and Austria sell) and Portugal's coins in escudos: how many commemorative and collector coins each lists, and how many of them the user has.",
+                "description": "The countries of the catalogue, each in its currency: the euro (every €2 commemorative the ECB has published since 2004, the €5, €10 and €20 coins, and the collector coins the mints of Portugal, France and Austria sell) and Portugal's escudo (its commemorative and collector coins, 1911–2001). Each says how many commemorative and collector coins it lists, and how many of them the user has.",
                 "produces": [
                     "application/json"
                 ],
@@ -20618,6 +20627,14 @@ const docTemplate = `{
                 "country": {
                     "type": "string",
                     "example": "PT"
+                },
+                "currency": {
+                    "description": "Currency is \"PTE\" for Portugal's coins in escudos; empty for the euro.",
+                    "type": "string",
+                    "enum": [
+                        "",
+                        "PTE"
+                    ]
                 },
                 "ownedCollector": {
                     "type": "integer"

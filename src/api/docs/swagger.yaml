@@ -192,6 +192,13 @@ definitions:
       country:
         example: PT
         type: string
+      currency:
+        description: Currency is "PTE" for Portugal's coins in escudos; empty for
+          the euro.
+        enum:
+        - ""
+        - PTE
+        type: string
       ownedCollector:
         type: integer
       ownedCommemoratives:
@@ -10558,15 +10565,22 @@ paths:
       - Catalogs
   /coin-catalogue:
     get:
-      description: A country's €2 commemorative coins (every one the ECB has published
-        since 2004) and the collector coins its mint sells (Portugal, France, Austria),
-        and Portugal's commemorative and collector coins in escudos (1911–2001, from
-        Numista), newest first; each says whether a coin of the collection is it.
+      description: 'A country''s coins in one currency, newest first: in euros, its
+        €2 commemoratives (every one the ECB has published since 2004), its €5, €10
+        and €20 coins and the collector coins its mint sells (Portugal, France, Austria);
+        in escudos (currency PTE), Portugal''s commemorative and collector coins of
+        1911–2001. Each says whether a coin of the collection is it.'
       parameters:
       - description: The country's ISO code, e.g. PT
         in: query
         name: country
         required: true
+        type: string
+      - description: PTE for Portugal's coins in escudos; the euro coins when omitted
+        enum:
+        - PTE
+        in: query
+        name: currency
         type: string
       produces:
       - application/json
@@ -10594,11 +10608,12 @@ paths:
       - Coins
   /coin-catalogue/countries:
     get:
-      description: 'The countries of the catalogue of €2 commemorative coins (every
-        one the ECB has published since 2004), collector coins (those the mints of
-        Portugal, France and Austria sell) and Portugal''s coins in escudos: how many
-        commemorative and collector coins each lists, and how many of them the user
-        has.'
+      description: 'The countries of the catalogue, each in its currency: the euro
+        (every €2 commemorative the ECB has published since 2004, the €5, €10 and
+        €20 coins, and the collector coins the mints of Portugal, France and Austria
+        sell) and Portugal''s escudo (its commemorative and collector coins, 1911–2001).
+        Each says how many commemorative and collector coins it lists, and how many
+        of them the user has.'
       produces:
       - application/json
       responses:
