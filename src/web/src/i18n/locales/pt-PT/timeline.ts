@@ -4,7 +4,6 @@ const messages: Messages['timeline'] = {
   title: 'Cronologia da coleção',
   allCoins: 'Todas as moedas',
   collectionOnly: 'Só a coleção',
-  soldOnly: 'Só vendidas',
   loading: 'A carregar a cronologia...',
   empty: {
     title: 'Sem dados de cronologia',

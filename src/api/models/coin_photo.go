@@ -10,6 +10,8 @@ const (
 	CoinPhotoSourceINCM = "incm"
 	// CoinPhotoSourceMDP is the French mint's (Monnaie de Paris) photo of a coin it sells.
 	CoinPhotoSourceMDP = "mdp"
+	// CoinPhotoSourceMOE is the Austrian mint's (Münze Österreich) photo of a coin it issued.
+	CoinPhotoSourceMOE = "moe"
 )
 
 // CoinPhotoMatchExact marks the one photo known to show the coin itself.
@@ -19,7 +21,7 @@ const CoinPhotoMatchExact = "exact"
 // Photos belong to their authors: Author and License must be shown and kept
 // with the photo when it is saved.
 type CoinPhotoCandidate struct {
-	Source string `json:"source" enums:"numista,wikimedia,ecb,incm,mdp"`
+	Source string `json:"source" enums:"numista,wikimedia,ecb,incm,mdp,moe"`
 	// Side is "obverse" or "reverse" when the source states it.
 	Side      string `json:"side,omitempty"`
 	Thumbnail string `json:"thumbnail"`

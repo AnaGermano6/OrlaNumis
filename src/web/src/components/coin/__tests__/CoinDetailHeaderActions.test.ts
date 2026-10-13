@@ -103,6 +103,26 @@ describe('CoinDetailHeaderActions', () => {
     expect(pushMock).toHaveBeenCalledWith('/')
   })
 
+  it('routes a banknote back to the banknotes', async () => {
+    pushMock.mockReset()
+    const wrapper = mount(CoinDetailHeaderActions, {
+      props: { isWishlist: false, isSold: false, isBanknote: true, coinId: 42 },
+      global: { stubs: { RouterLink: routerLinkStub, ArrowLeft: true, CircleDollarSign: true, Copy: true, Pencil: true, Share2: true, Trash2: true } },
+    })
+
+    const back = wrapper.find('button')
+    expect(back.text()).toBe('Back to banknotes')
+    await back.trigger('click')
+    expect(pushMock).toHaveBeenCalledWith('/banknotes')
+
+    // Copying a banknote says so.
+    await wrapper.find('button[aria-label="Open overflow actions"]').trigger('click')
+    const copy = wrapper.find('button[aria-label="Copy banknote"]')
+    expect(copy.exists()).toBe(true)
+    await copy.trigger('click')
+    expect(wrapper.emitted('duplicate')).toHaveLength(1)
+  })
+
   it('keeps primary icons visible and moves copy/details into overflow menu', async () => {
     const wrapper = mount(CoinDetailHeaderActions, {
       props: {

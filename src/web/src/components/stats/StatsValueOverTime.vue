@@ -16,7 +16,7 @@
           <div class="flex min-w-[3.75rem] flex-col justify-between py-[0.35rem] text-right text-label text-text-muted max-[480px]:min-w-[3.25rem]" aria-hidden="true">
             <span>{{ formatCurrency(chartMaxValue) }}</span>
             <span>{{ formatCurrency(chartMaxValue / 2) }}</span>
-            <span>$0</span>
+            <span>{{ formatCurrency(0) }}</span>
           </div>
           <div class="h-[15rem] min-w-0 flex-1 rounded-md border border-border-subtle bg-input shadow-[inset_0_1px_0_var(--color-border-subtle)] max-md:h-[13rem]" role="img" :aria-label="t('stats.overTime.aria')">
             <svg viewBox="0 0 1000 320" preserveAspectRatio="none" class="h-full w-full overflow-visible">
@@ -161,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { collectionCurrencySymbol } from '@/utils/collectionCurrency'
+import { collectionCurrency } from '@/utils/collectionCurrency'
 import { computed } from 'vue'
 import { useCoinsStore } from '@/stores/coins'
 import type { ValueSnapshot } from '@/types'
@@ -261,11 +261,9 @@ const sparseLabelPoints = computed((): LabelPoint[] => {
     })
 })
 
+// "1,2 mil €", "€1.2K", "530 €": short, in the currency every page uses.
 function formatShortAmount(v: number): string {
-  const symbol = collectionCurrencySymbol()
-  if (v >= 10000) return `${symbol}${(v / 1000).toFixed(0)}K`
-  if (v >= 1000) return `${symbol}${(v / 1000).toFixed(1)}K`
-  return `${symbol}${Math.round(v)}`
+  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: collectionCurrency.value, notation: 'compact', maximumFractionDigits: v >= 1000 && v < 10000 ? 1 : 0 }).format(v)
 }
 
 function formatShortDate(dateStr: string) {

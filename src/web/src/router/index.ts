@@ -26,6 +26,24 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/collection',
+      name: 'collection-overview',
+      component: () => import('@/pages/CollectionOverviewPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/banknotes',
+      name: 'banknotes',
+      component: () => import('@/pages/BanknotesPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/banknotes/add',
+      name: 'add-banknote',
+      component: () => import('@/pages/AddBanknotePage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/coin/:id',
       name: 'coin-detail',
       component: () => import('@/pages/CoinDetailPage.vue'),
@@ -275,18 +293,9 @@ const router = createRouter({
       component: () => import('@/pages/PublicShowcasePage.vue'),
     },
     { path: '/calendar', name: 'calendar', redirect: '/' },
-    {
-      path: '/tray',
-      name: 'tray',
-      component: () => import('@/pages/TrayViewPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/storage-trays',
-      name: 'storage-trays',
-      component: () => import('@/pages/StorageTraysPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    // The tray views were removed; old links open the gallery.
+    { path: '/tray', name: 'tray', redirect: '/' },
+    { path: '/storage-trays', name: 'storage-trays', redirect: '/' },
     // Set routes - placeholder for Phase 2 and Phase 3 implementation
     {
       path: '/sets',

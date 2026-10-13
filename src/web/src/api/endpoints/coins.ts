@@ -10,6 +10,7 @@ import type {
   CoinHealthListResponse,
   CoinImage,
   CoinJournal,
+  CoinKind,
   CoinListResponse,
   CoinLookupImageRole,
   CoinLookupResponse,
@@ -44,6 +45,8 @@ import { appendOptionalFormValue } from '@/api/endpoints/_shared'
 
 // Coins
 export const getCoins = (params?: {
+  /** Only coins or only banknotes; every item when omitted. */
+  kind?: CoinKind
   category?: string
   era?: string
   country?: string
@@ -69,7 +72,7 @@ export const getCoins = (params?: {
   seed?: number
 }) => api.get<CoinListResponse>('/coins', { params })
 
-const NULLABLE_FIELDS: (keyof Coin)[] = ['weightGrams', 'diameterMm', 'purchasePrice', 'currentValue', 'purchaseDate', 'storageLocationId', 'storageSlot', 'romanImperialFigureId', 'mintLocationId', 'year']
+const NULLABLE_FIELDS: (keyof Coin)[] = ['weightGrams', 'diameterMm', 'widthMm', 'heightMm', 'purchasePrice', 'currentValue', 'purchaseDate', 'storageLocationId', 'storageSlot', 'romanImperialFigureId', 'mintLocationId', 'year']
 
 function sanitizeCoin(coin: CoinMutationPayload): CoinMutationPayload {
   const clean: Record<string, unknown> = { ...coin }
@@ -95,7 +98,10 @@ export const getCoin = (id: number) => api.get<Coin>(`/coins/${id}`)
 
 /** Whether a coin is still legal tender and whether it is commemorative; null when nobody knows. */
 export interface CoinStatus {
+  /** Still legal tender (a collector coin can be, while not "current" in the KPI). */
   current: boolean | null
+  /** Issued for collectors rather than for circulation (Numista's "non-circulating coins"). */
+  nonCirculating?: boolean | null
   /** When it stopped being legal tender, if Numista says (usually YYYY-MM-DD). */
   demonetizationDate?: string
   commemorative: boolean | null
@@ -106,8 +112,11 @@ export const getCoinStatus = (id: number) => api.get<CoinStatus>(`/coins/${id}/s
 
 /** Collection coin IDs by legal tender and commemorative status; a coin nobody knows about is in neither list of a pair. */
 export interface CoinStatusGroups {
+  /** Circulation coins still legal tender. */
   current: number[]
   demonetized: number[]
+  /** Collector (non-circulating) coins, not demonetized. */
+  nonCirculating?: number[]
   commemorative: number[]
   regular: number[]
 }
@@ -135,7 +144,7 @@ export interface CoinOptionsResponse {
   /** Admin-defined display names keyed by locale (e.g. `pt-PT`), then by stored value. */
   labels: Record<string, CoinOptionLabels>
   /** Collection currency coin prices and values are kept in. */
-  currency?: 'USD' | 'EUR'
+  currency?: string
 }
 
 /** Configured category and era choices; readable by every signed-in user. */
@@ -477,7 +486,8 @@ export interface CoinCountryCount {
 }
 
 /** Countries of the collection (not wishlist or sold) with coin counts. */
-export const getCoinCountries = () => api.get<CoinCountryCount[]>('/coins/countries')
+/** The collection's countries, of its coins or its banknotes (every item when kind is omitted). */
+export const getCoinCountries = (kind?: CoinKind) => api.get<CoinCountryCount[]>('/coins/countries', kind ? { params: { kind } } : undefined)
 
 export interface CoinCountryFillResult {
   status: NumistaDataStatus
@@ -522,7 +532,7 @@ export interface CollectionSummary {
   /** Coins whose presentation is "coincard". */
   coincards: number
   /** Collection currency: totalValue and the highlights' values are in it. */
-  currency?: 'USD' | 'EUR'
+  currency?: string
   /** Sum of current values in the collection currency. */
   totalValue: number
   /** Coins without a current value, left out of totalValue. */
@@ -553,4 +563,15 @@ export interface CollectionHighlights {
   mostValuable: CoinHighlight | null
 }
 
-export const getCollectionSummary = () => api.get<CollectionSummary>('/coins/summary')
+/** The ECB euro reference rates: how much of each currency one euro buys. */
+export interface ExchangeRates {
+  date: string
+  perEur: Record<string, number>
+  /** The currencies a collection can be kept in, the euro first. */
+  currencies: string[]
+}
+
+export const getExchangeRates = () => api.get<ExchangeRates>('/exchange-rates')
+
+/** The collection's headline numbers, for its coins or its banknotes (every item when kind is omitted). */
+export const getCollectionSummary = (kind?: CoinKind) => api.get<CollectionSummary>('/coins/summary', kind ? { params: { kind } } : undefined)

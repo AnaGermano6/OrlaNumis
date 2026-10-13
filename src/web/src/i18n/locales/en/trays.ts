@@ -1,18 +1,3 @@
 export default {
-  backToCollection: 'Back to Collection',
-  loading: 'Loading storage trays...',
-  none: 'No coin trays are configured yet.',
-  openSettings: 'Open Settings',
-  loadFailed: 'Storage trays could not be loaded.',
-  noCoins: 'No Coins in Tray',
-  loadingCoins: 'Loading coins...',
-  noDiameters: 'No active collection coins have known diameter values. Add coin size details to display them in the tray.',
-  emptyCollection: 'Your collection is empty or no coins match the current filters.',
-  coinsLoadFailed: 'Tray coins could not be loaded. Check your connection and try again.',
   trayOf: 'Tray {current} of {total}',
-  untitled: 'Untitled',
-  columnsLabel: '{name}, {columns} columns',
-  gridLabel: '{name}, {rows} rows by {columns} columns, {occupied} of {capacity} occupied',
-  empty: 'Empty, row {row}, column {column}',
-  coinAt: '{name}, row {row}, column {column}',
 }

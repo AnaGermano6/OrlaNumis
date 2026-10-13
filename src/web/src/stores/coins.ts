@@ -14,7 +14,6 @@ export const useCoinsStore = defineStore('coins', () => {
   const loading = ref(false)
   const stats = ref<StatsResponse | null>(null)
   const valueHistory = ref<ValueSnapshot[]>([])
-  const selectedCategory = ref('')
   const selectedEra = ref('')
   const searchQuery = ref('')
   const activeSortKey = ref('')
@@ -160,7 +159,6 @@ export const useCoinsStore = defineStore('coins', () => {
     loading,
     stats,
     valueHistory,
-    selectedCategory,
     selectedEra,
     searchQuery,
     activeSortKey,

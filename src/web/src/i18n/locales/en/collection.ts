@@ -1,6 +1,5 @@
 export default {
   searchPlaceholder: 'Search coins by name, ruler, inscription...',
-  allCategories: 'All Categories',
   allEras: 'All Eras',
   allSets: 'All Sets',
   sort: {
@@ -54,7 +53,6 @@ export default {
   bulk: {
     selected: { one: '{count} coin selected', other: '{count} coins selected' },
     tag: 'Tag',
-    assignLocation: 'Assign Location',
     markSold: 'Mark Sold',
     confirmDelete: { one: 'Delete {count} coin? This cannot be undone.', other: 'Delete {count} coins? This cannot be undone.' },
     confirmSell: { one: 'Mark {count} coin as sold?', other: 'Mark {count} coins as sold?' },
@@ -62,12 +60,8 @@ export default {
     sellFailed: 'Failed to mark coins as sold',
     applySetFailed: 'Failed to apply set',
     applyTagFailed: 'Failed to apply tag',
-    assignLocationFailed: 'Failed to assign location',
     applySet: 'Apply Set',
     noSets: 'No sets available. Create sets first.',
-    noLocation: 'No location',
-    trayNeedsSlot: 'Tray assignments require choosing a slot on each coin.',
-    noLocations: 'No storage locations. Create them in Settings first.',
   },
   view: {
     groupBy: 'View by',
@@ -111,18 +105,14 @@ export default {
     coincards: 'In coincard',
     coincardsHint: 'Coins kept in a coincard. Select to show only them.',
     value: 'Total value',
-    valueHint: 'Sum of the coins\' current values (kept in US dollars), converted to euros at the ECB reference rate of {date}: 1 € = {rate} US$.',
-    valueHintNoRate: 'Sum of the coins\' current values in euros. The ECB exchange rate could not be loaded.',
-    rateDate: 'ECB rate of {date}',
-    rateUnavailable: 'Exchange rate unavailable',
     unvalued: { one: '{count} without a value', other: '{count} without a value' },
-    valueHintEuros: 'Sum of the coins\' current values, in euros.',
     extinctCountries: { one: '{count} extinct', other: '{count} extinct' },
     extinctCountriesHint: 'Countries that no longer exist (USSR, Yugoslavia, Ottoman Empire…). Show their coins.',
     current: 'Current coins',
-    currentHint: 'Coins still legal tender (not demonetized), as the Numista catalogue says of their types; coins of countries that no longer exist are not. Select to show only them; select again to show every coin.',
+    currentHint: 'Circulation coins still legal tender (not demonetized), as the Numista catalogue says of their types; collector coins (non-circulating) and coins of countries that no longer exist are not. Select to show only them; select again to show every coin.',
     commemorative: 'Commemorative coins',
     commemorativeHint: 'Coins whose type celebrates a person, event or place, as the Numista catalogue says (circulating and collector commemoratives). Select to show only them; select again to show every coin.',
+    valueHintIn: 'Sum of the coins\' current values, in {currency}.',
   },
   highlights: {
     title: 'Collection highlights',
@@ -139,5 +129,12 @@ export default {
     notOnMap: 'Not on the map: historical issuers or names that do not match a current country.',
     loadFailed: 'The map could not be loaded.',
     attribution: 'Map data: Natural Earth (public domain).',
+  },
+  activeFilters: {
+    current: 'Only current coins',
+    demonetized: 'Only demonetized coins',
+    commemorative: 'Only commemorative coins',
+    regular: 'Only non-commemorative coins',
+    remove: 'Remove the filter: {filter}',
   },
 }

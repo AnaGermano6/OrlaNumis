@@ -39,6 +39,7 @@ vi.mock('@/api/client', () => ({
   deleteCoin: vi.fn(),
   deleteCoinReference: vi.fn(),
   duplicateCoin: vi.fn(),
+  getCoinStatus: vi.fn(),
   listCatalogs: vi.fn().mockResolvedValue([]),
   purchaseCoin: vi.fn(),
   sellCoin: vi.fn(),
@@ -46,7 +47,7 @@ vi.mock('@/api/client', () => ({
   updateCoinReference: vi.fn(),
 }))
 
-import { deleteCoin, duplicateCoin, purchaseCoin, sellCoin, swapCoinImageSides } from '@/api/client'
+import { deleteCoin, duplicateCoin, getCoinStatus, purchaseCoin, sellCoin, swapCoinImageSides } from '@/api/client'
 
 vi.mock('@/composables/useDialog', () => ({
   useDialog: () => ({
@@ -81,6 +82,8 @@ const routerLinkStub = {
 
 describe('CoinDetailPage', () => {
   beforeEach(() => {
+    vi.mocked(getCoinStatus).mockReset()
+    vi.mocked(getCoinStatus).mockResolvedValue({ data: { current: null, commemorative: null } } as Awaited<ReturnType<typeof getCoinStatus>>)
     fetchCoin.mockReset()
     routerPush.mockReset()
     shareCoinCard.mockReset()
@@ -188,6 +191,20 @@ describe('CoinDetailPage', () => {
 
     expect(purchaseCoin).toHaveBeenCalledWith(coin.id, {})
     expect(quickRefresh).toHaveBeenCalled()
+  })
+
+  it('labels commemorative coins beside their category', async () => {
+    vi.mocked(getCoinStatus).mockResolvedValueOnce({ data: { current: true, commemorative: true } } as Awaited<ReturnType<typeof getCoinStatus>>)
+    const commemorative = mount(CoinDetailPage, { global: { stubs: pageStubs() } })
+    await flushPromises()
+    expect(commemorative.get('[data-testid="commemorative-badge"]').text()).toBe('Commemorative')
+    commemorative.unmount()
+
+    vi.mocked(getCoinStatus).mockResolvedValueOnce({ data: { current: true, commemorative: false } } as Awaited<ReturnType<typeof getCoinStatus>>)
+    const regular = mount(CoinDetailPage, { global: { stubs: pageStubs() } })
+    await flushPromises()
+    expect(regular.find('[data-testid="commemorative-badge"]').exists()).toBe(false)
+    expect(regular.find('.badge').exists()).toBe(true)
   })
 
   it('removes Quick Access state after a delete, and offers neither selling nor shipment tracking', async () => {

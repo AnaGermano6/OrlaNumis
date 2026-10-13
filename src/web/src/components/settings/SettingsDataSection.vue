@@ -1,7 +1,7 @@
 <template>
   <section class="card">
     <h2 class="mb-5 border-b border-border-subtle pb-3 text-lg">{{ t('settings.data.title') }}</h2>
-    <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div class="mt-8">
       <section class="min-w-0" aria-labelledby="tags-heading">
         <h3 id="tags-heading" class="mb-3 text-base font-medium text-text-secondary">{{ t('settings.data.tagsTitle') }}</h3>
         <p class="text-sm text-text-muted">{{ t('settings.data.tagsIntro') }}</p>
@@ -98,102 +98,6 @@
           </div>
         </div>
         <p v-else class="mt-4 text-body text-text-secondary">{{ t('settings.data.noTags') }}</p>
-      </section>
-
-      <section class="min-w-0" aria-labelledby="storage-locations-heading">
-        <h3 id="storage-locations-heading" class="mb-3 text-base font-medium text-text-secondary">{{ t('settings.data.storageTitle') }}</h3>
-        <p class="text-sm text-text-muted">{{ t('settings.data.storageIntro') }}</p>
-
-        <div class="my-4 flex flex-wrap items-center gap-2">
-          <select
-            v-model="newStorageLocationType"
-            :aria-label="t('settings.data.storageType')"
-            class="form-select"
-            :disabled="storageLocationSaving"
-          >
-            <option value="standard">{{ t('settings.data.standardLocation') }}</option>
-            <option value="tray">{{ t('settings.data.coinTray') }}</option>
-          </select>
-          <input
-            v-model="newStorageLocationName"
-            type="text"
-            class="form-input min-w-[150px] flex-1 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-            :placeholder="t('settings.data.newStoragePlaceholder')"
-            maxlength="100"
-            :disabled="storageLocationSaving"
-            @keydown.enter="handleCreateStorageLocation"
-          />
-          <template v-if="newStorageLocationType === 'tray'">
-            <input v-model.number="newStorageLocationRows" :aria-label="t('settings.data.trayRows')" class="form-input w-24" type="number" min="1" max="20" />
-            <span aria-hidden="true">×</span>
-            <input v-model.number="newStorageLocationColumns" :aria-label="t('settings.data.trayColumns')" class="form-input w-24" type="number" min="1" max="20" />
-            <span class="text-sm text-text-muted">{{ t('settings.data.slots', { count: newStorageLocationRows * newStorageLocationColumns }) }}</span>
-          </template>
-          <button
-            class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-            @click="handleCreateStorageLocation"
-            :disabled="!newStorageLocationName.trim() || storageLocationSaving"
-          >
-            {{ storageLocationSaving ? t('common.saving') : t('settings.data.createLocation') }}
-          </button>
-        </div>
-        <p v-if="storageLocationError" class="mt-1 text-body text-byzantine">{{ storageLocationError }}</p>
-        <p v-if="storageLocationsLoading" class="mt-4 text-body text-text-secondary">{{ t('settings.data.loadingStorage') }}</p>
-
-        <div v-else-if="storageLocationList.length" class="mt-4 flex flex-col gap-2">
-          <div v-for="location in storageLocationList" :key="location.id" class="flex flex-wrap items-center gap-2 rounded-sm border border-border-subtle p-2">
-            <template v-if="editingStorageLocation?.id === location.id">
-              <input
-                v-model="editStorageLocationName"
-                class="form-input min-w-[120px] flex-1 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                maxlength="100"
-                @keydown.enter="handleSaveStorageLocation"
-              />
-              <template v-if="location.type === 'tray'">
-                <input v-model.number="editStorageLocationRows" :aria-label="t('settings.data.trayRows')" class="form-input w-24" type="number" min="1" max="20" :disabled="location.occupied > 0" />
-                <span aria-hidden="true">×</span>
-                <input v-model.number="editStorageLocationColumns" :aria-label="t('settings.data.trayColumns')" class="form-input w-24" type="number" min="1" max="20" :disabled="location.occupied > 0" />
-                <span v-if="location.occupied > 0" class="text-sm text-text-muted">{{ t('settings.data.emptyTray') }}</span>
-              </template>
-              <button
-                class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                @click="handleSaveStorageLocation"
-                :disabled="storageLocationSaving"
-              >
-                {{ t('common.save') }}
-              </button>
-              <button
-                class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                @click="editingStorageLocation = null"
-                :disabled="storageLocationSaving"
-              >
-                {{ t('common.cancel') }}
-              </button>
-            </template>
-            <template v-else>
-              <span class="chip-sm shrink-0 bg-input text-text-primary">{{ location.name }}</span>
-              <span class="text-sm text-text-muted">
-                {{ location.type === 'tray' ? t('settings.data.trayInfo', { rows: location.rows ?? 0, columns: location.columns ?? 0, occupied: location.occupied, capacity: location.capacity }) : t('settings.data.standardLocation') }}
-              </span>
-              <div class="ml-auto flex gap-1">
-                <button
-                  class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                  @click="startEditStorageLocation(location)"
-                >
-                  {{ t('common.edit') }}
-                </button>
-                <button
-                  class="btn btn-danger btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                  :disabled="deletingStorageLocationId === location.id"
-                  @click="handleDeleteStorageLocation(location)"
-                >
-                  {{ deletingStorageLocationId === location.id ? t('common.deleting') : t('common.delete') }}
-                </button>
-              </div>
-            </template>
-          </div>
-        </div>
-        <p v-else class="mt-4 text-body text-text-secondary">{{ t('settings.data.noStorage') }}</p>
       </section>
     </div>
 
@@ -378,14 +282,13 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { Database, RefreshCw } from 'lucide-vue-next'
 import {
   getTags, createTag, updateTag as updateTagApi, deleteTag,
-  getStorageLocations, createStorageLocation, updateStorageLocation, deleteStorageLocation,
   getMintLocations, createMintLocation, updateMintLocation, deleteMintLocation,
   migrateLegacyReferences,
   type MintLocationInput,
   type MintLocationsResponse,
 } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
-import type { Tag, StorageLocation, MintLocation, LegacyMigrationResult } from '@/types'
+import type { Tag, MintLocation, LegacyMigrationResult } from '@/types'
 import { t } from '@/i18n'
 
 const { showConfirm } = useDialog()
@@ -458,21 +361,6 @@ async function handleDeleteTag(tag: Tag) {
   } catch { /* ignore */ }
 }
 
-// Storage location management
-const storageLocationList = ref<StorageLocation[]>([])
-const newStorageLocationName = ref('')
-const newStorageLocationType = ref<'standard' | 'tray'>('standard')
-const newStorageLocationRows = ref(3)
-const newStorageLocationColumns = ref(3)
-const editingStorageLocation = ref<StorageLocation | null>(null)
-const editStorageLocationName = ref('')
-const editStorageLocationRows = ref(1)
-const editStorageLocationColumns = ref(1)
-const storageLocationError = ref('')
-const storageLocationsLoading = ref(false)
-const storageLocationSaving = ref(false)
-const deletingStorageLocationId = ref<number | null>(null)
-
 function apiErrorText(error: unknown, fallback: string): string {
   if (typeof error === 'object' && error !== null && 'response' in error) {
     const axiosErr = error as { response?: { status?: number; data?: { error?: string; message?: string; count?: number } } }
@@ -483,86 +371,6 @@ function apiErrorText(error: unknown, fallback: string): string {
     return message ?? fallback
   }
   return fallback
-}
-
-async function loadStorageLocations() {
-  storageLocationsLoading.value = true
-  storageLocationError.value = ''
-  try {
-    const res = await getStorageLocations()
-    storageLocationList.value = res.data?.storageLocations ?? []
-  } catch {
-    storageLocationList.value = []
-    storageLocationError.value = t('settings.data.loadStorageFailed')
-  } finally {
-    storageLocationsLoading.value = false
-  }
-}
-
-async function handleCreateStorageLocation() {
-  storageLocationError.value = ''
-  const name = newStorageLocationName.value.trim()
-  if (!name) return
-  storageLocationSaving.value = true
-  try {
-    await createStorageLocation({
-      name,
-      type: newStorageLocationType.value,
-      rows: newStorageLocationType.value === 'tray' ? newStorageLocationRows.value : null,
-      columns: newStorageLocationType.value === 'tray' ? newStorageLocationColumns.value : null,
-    })
-    newStorageLocationName.value = ''
-    await loadStorageLocations()
-  } catch (error: unknown) {
-    storageLocationError.value = apiErrorText(error, t('settings.data.createStorageFailed'))
-  } finally {
-    storageLocationSaving.value = false
-  }
-}
-
-function startEditStorageLocation(location: StorageLocation) {
-  editingStorageLocation.value = location
-  editStorageLocationName.value = location.name
-  editStorageLocationRows.value = location.rows ?? 1
-  editStorageLocationColumns.value = location.columns ?? 1
-  storageLocationError.value = ''
-}
-
-async function handleSaveStorageLocation() {
-  storageLocationError.value = ''
-  if (!editingStorageLocation.value) return
-  const name = editStorageLocationName.value.trim()
-  if (!name) return
-  storageLocationSaving.value = true
-  try {
-    await updateStorageLocation(editingStorageLocation.value.id, {
-      name,
-      ...(editingStorageLocation.value.type === 'tray' && editingStorageLocation.value.occupied === 0
-        ? { rows: editStorageLocationRows.value, columns: editStorageLocationColumns.value }
-        : {}),
-    })
-    editingStorageLocation.value = null
-    await loadStorageLocations()
-  } catch (error: unknown) {
-    storageLocationError.value = apiErrorText(error, t('settings.data.updateStorageFailed'))
-  } finally {
-    storageLocationSaving.value = false
-  }
-}
-
-async function handleDeleteStorageLocation(location: StorageLocation) {
-  storageLocationError.value = ''
-  const confirmed = await showConfirm(t('settings.data.confirmDeleteStorage', { name: location.name }), { title: t('settings.data.deleteStorageTitle'), variant: 'danger' })
-  if (!confirmed) return
-  deletingStorageLocationId.value = location.id
-  try {
-    await deleteStorageLocation(location.id)
-    await loadStorageLocations()
-  } catch (error: unknown) {
-    storageLocationError.value = apiErrorText(error, t('settings.data.deleteStorageFailed'))
-  } finally {
-    deletingStorageLocationId.value = null
-  }
 }
 
 // Mint location management (user-scoped)
@@ -717,9 +525,8 @@ async function handleMigrate() {
 
 onMounted(() => {
   loadTags()
-  loadStorageLocations()
   loadMintLocations()
 })
 
-defineExpose({ loadTags, loadStorageLocations, loadMintLocations })
+defineExpose({ loadTags, loadMintLocations })
 </script>

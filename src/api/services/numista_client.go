@@ -218,9 +218,11 @@ type NumistaTypeSearch struct {
 	Page      int
 	Count     int
 	Lang      string
+	// Category is "banknote" for banknotes; coins otherwise.
+	Category string
 }
 
-// SearchTypes returns the raw JSON of a coin catalogue search.
+// SearchTypes returns the raw JSON of a coin (or banknote) catalogue search.
 func (c *HTTPNumistaClient) SearchTypes(ctx context.Context, search NumistaTypeSearch) ([]byte, error) {
 	values := url.Values{}
 	if search.Query != "" {
@@ -236,7 +238,11 @@ func (c *HTTPNumistaClient) SearchTypes(ctx context.Context, search NumistaTypeS
 	if search.Year != 0 {
 		values.Set("year", strconv.Itoa(search.Year))
 	}
-	values.Set("category", "coin")
+	category := "coin"
+	if search.Category == models.CoinKindBanknote {
+		category = models.CoinKindBanknote
+	}
+	values.Set("category", category)
 	values.Set("page", strconv.Itoa(max(search.Page, 1)))
 	values.Set("count", strconv.Itoa(search.Count))
 	values.Set("lang", search.Lang)

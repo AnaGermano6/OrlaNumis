@@ -201,7 +201,14 @@ func (s *NumistaCatalogService) Search(ctx context.Context, search NumistaTypeSe
 	search.Number = strings.TrimSpace(search.Number)
 	result := models.NumistaCatalogSearchResult{Status: models.NumistaDataStatusOK, Page: search.Page, Types: []models.NumistaCatalogSearchItem{}}
 
-	digest := sha256.Sum256([]byte(fmt.Sprintf("%s|%s|%d|%d|%s|%d|%s|%d", search.Lang, search.Issuer, search.Year, search.Page, strings.ToLower(strings.TrimSpace(search.Query)), search.Catalogue, strings.ToLower(search.Number), search.Count)))
+	key := fmt.Sprintf("%s|%s|%d|%d|%s|%d|%s|%d", search.Lang, search.Issuer, search.Year, search.Page, strings.ToLower(strings.TrimSpace(search.Query)), search.Catalogue, strings.ToLower(search.Number), search.Count)
+	// Coin searches keep the key they always had, so their cache stays valid.
+	if search.Category == models.CoinKindBanknote {
+		key += "|banknote"
+	} else {
+		search.Category = ""
+	}
+	digest := sha256.Sum256([]byte(key))
 	body, _, _, err := s.cache.Get(ctx, "search:"+hex.EncodeToString(digest[:]), numistaSearchCacheTTL, func(ctx context.Context) ([]byte, error) {
 		return s.client.SearchTypes(ctx, search)
 	})
@@ -244,7 +251,7 @@ func (s *NumistaCatalogService) Search(ctx context.Context, search NumistaTypeSe
 		})
 	}
 	// Numista's photos are refused to the app; euro coins show the ECB's, and
-	// recent collector coins their mint's (Portugal's INCM, Monnaie de Paris).
+	// collector coins their mint's (INCM, Monnaie de Paris, Münze Österreich).
 	for i := range result.Types {
 		item := &result.Types[i]
 		obverse, reverse := s.ecbSides(ctx, item.Title, item.Issuer, item.MinYear, item.MaxYear)
@@ -487,13 +494,24 @@ type providerCatalogType struct {
 	Technique struct {
 		Text string `json:"text"`
 	} `json:"technique"`
-	Weight    *float64 `json:"weight"`
-	Size      *float64 `json:"size"`
+	Weight *float64 `json:"weight"`
+	Size   *float64 `json:"size"`
+	// Size2 is a banknote's height (Size its width).
+	Size2     *float64 `json:"size2"`
 	Thickness *float64 `json:"thickness"`
 	Shape     string   `json:"shape"`
 	Mints     []struct {
 		Name string `json:"name"`
 	} `json:"mints"`
+	// Banknotes: who printed them, their watermark and the issuing bank.
+	Printers []struct {
+		Name string `json:"name"`
+	} `json:"printers"`
+	Watermark     providerCatalogSide `json:"watermark"`
+	IssuingEntity struct {
+		Name string `json:"name"`
+	} `json:"issuing_entity"`
+	Category          string `json:"category"`
 	Series            string `json:"series"`
 	Type              string `json:"type"`
 	Comments          string `json:"comments"`
@@ -543,6 +561,11 @@ func parseNumistaCatalogType(body []byte) (*models.NumistaCatalogType, error) {
 		Technique:          strings.TrimSpace(raw.Technique.Text),
 		WeightGrams:        positive(raw.Weight),
 		DiameterMm:         positive(raw.Size),
+		HeightMm:           positive(raw.Size2),
+		Printers:           []string{},
+		Watermark:          strings.TrimSpace(raw.Watermark.Description),
+		IssuingEntity:      strings.TrimSpace(raw.IssuingEntity.Name),
+		Category:           strings.TrimSpace(raw.Category),
 		ThicknessMm:        positive(raw.Thickness),
 		Shape:              strings.TrimSpace(raw.Shape),
 		Mints:              []string{},
@@ -560,6 +583,11 @@ func parseNumistaCatalogType(body []byte) (*models.NumistaCatalogType, error) {
 	for _, mint := range raw.Mints {
 		if name := strings.TrimSpace(mint.Name); name != "" {
 			detail.Mints = append(detail.Mints, name)
+		}
+	}
+	for _, printer := range raw.Printers {
+		if name := strings.TrimSpace(printer.Name); name != "" {
+			detail.Printers = append(detail.Printers, name)
 		}
 	}
 	for _, ref := range raw.References {

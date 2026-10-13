@@ -2,8 +2,8 @@
   <section class="card grid min-w-0 gap-4 p-4" aria-live="polite">
     <button type="button" class="btn btn-ghost btn-sm w-fit" @click="$emit('back')">← {{ t('catalog.backToResults') }}</button>
 
-    <p v-if="loading" class="m-0 text-body text-text-secondary" role="status">{{ t('catalog.loadingType') }}</p>
-    <p v-else-if="loadFailed" class="m-0 text-body text-text-secondary" role="status">{{ t('catalog.typeFailed') }}</p>
+    <p v-if="loading" class="m-0 text-body text-text-secondary" role="status">{{ text('loadingType') }}</p>
+    <p v-else-if="loadFailed" class="m-0 text-body text-text-secondary" role="status">{{ text('typeFailed') }}</p>
     <p v-else-if="result && result.status !== 'ok'" class="m-0 text-body text-text-secondary" role="status">{{ numistaStatusMessage(result.status) }}</p>
 
     <template v-else-if="type">
@@ -41,18 +41,18 @@
 
       <div class="grid gap-2">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <h3 class="m-0 text-base font-medium text-text-primary">{{ t('catalog.chooseGrade') }}</h3>
+          <h3 class="m-0 text-base font-medium text-text-primary">{{ text('chooseGrade') }}</h3>
           <label class="inline-flex items-center gap-2 text-body text-text-secondary">
             <span>{{ t('coinDetail.marketValue.currency') }}</span>
             <select class="form-select w-auto py-1 text-body" :value="currency" @change="selectCurrency(($event.target as HTMLSelectElement).value)">
-              <option v-for="code in NUMISTA_CURRENCIES" :key="code" :value="code">{{ code }}</option>
+              <option v-for="code in numistaCurrencies()" :key="code" :value="code">{{ code }}</option>
             </select>
           </label>
         </div>
         <p v-if="valueLoading && !marketValue" class="m-0 text-body text-text-secondary" role="status">{{ t('coinDetail.marketValue.loading') }}</p>
         <template v-else-if="marketValue">
           <template v-if="marketValue.status === 'ok'">
-            <p class="m-0 text-chip text-text-muted">{{ t('catalog.chooseGradeHint') }}</p>
+            <p class="m-0 text-chip text-text-muted">{{ text('chooseGradeHint') }}</p>
             <NumistaPriceGrid
               :class="{ 'opacity-60': valueLoading }"
               :prices="marketValue.prices"
@@ -66,7 +66,7 @@
         </template>
         <label v-if="selectedPrice" class="mt-1 inline-flex items-center gap-2 text-body text-text-primary">
           <input v-model="fillCurrentValue" type="checkbox" class="h-4 w-4 accent-[var(--accent-gold)]" />
-          {{ t('catalog.fillCurrentValue') }}
+          {{ text('fillCurrentValue', { currency: currencyName(collectionCurrency) }) }}
         </label>
       </div>
 
@@ -102,14 +102,23 @@ import type { RealPhotoChoice } from '@/utils/coinPhotos'
 import { catalogPhotoCredit, numistaIssueLabel, numistaLang, numistaYearRange } from '@/utils/numistaCatalog'
 import type { CatalogSelection } from '@/utils/numistaCatalogPrefill'
 import type { NumistaGrade } from '@/utils/numistaGrades'
-import { NUMISTA_CURRENCIES, numistaStatusMessage, readPreferredCurrency, savePreferredCurrency } from '@/utils/numistaMarketValue'
-import { collectionCurrency } from '@/utils/collectionCurrency'
+import { numistaCurrencies, numistaStatusMessage, readPreferredCurrency, savePreferredCurrency } from '@/utils/numistaMarketValue'
+import { collectionCurrency, currencyName } from '@/utils/collectionCurrency'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   typeId: number
   /** Year typed in the search, used to preselect the matching issue. */
   yearHint?: number
-}>()
+  /** A banknote type: its details are a banknote's. */
+  category?: 'coin' | 'banknote'
+}>(), { yearHint: undefined, category: 'coin' })
+
+// A banknote search speaks of banknotes, a coin search of coins.
+type CatalogText = 'intro' | 'query' | 'queryPlaceholder' | 'yearHint' | 'noResults' | 'resultCount' | 'obversePhoto' | 'reversePhoto'
+  | 'loadingType' | 'typeFailed' | 'chooseGrade' | 'chooseGradeHint' | 'fillCurrentValue'
+function text(key: CatalogText, params?: Parameters<typeof t>[1]): string {
+  return props.category === 'banknote' ? t(`catalog.banknote.${key}`, params) : t(`catalog.${key}`, params)
+}
 
 const emit = defineEmits<{
   use: [selection: CatalogSelection]
@@ -163,6 +172,21 @@ function side(description?: string, lettering?: string): string {
 const detailRows = computed(() => {
   const detail = type.value
   if (!detail) return []
+  if (props.category === 'banknote') {
+    const size = detail.diameterMm && detail.heightMm ? `${measure(detail.diameterMm, '').trim()} × ${measure(detail.heightMm, 'mm')}` : measure(detail.diameterMm, 'mm')
+    return [
+      { label: t('banknoteForm.faceValue'), value: detail.denomination ?? '' },
+      { label: t('banknoteForm.issuingBank'), value: detail.issuingEntity || detail.rulers.join(', ') },
+      { label: t('banknoteForm.series'), value: detail.series ?? '' },
+      { label: t('banknoteForm.material'), value: detail.composition ?? '' },
+      { label: t('banknoteForm.dimensions'), value: size },
+      { label: t('banknoteForm.printer'), value: (detail.printers ?? []).join(', ') },
+      { label: t('catalog.banknote.obverse'), value: side(detail.obverse.description, detail.obverse.lettering) },
+      { label: t('catalog.banknote.reverse'), value: side(detail.reverse.description, detail.reverse.lettering) },
+      { label: t('banknoteForm.watermark'), value: detail.watermark ?? '' },
+      { label: t('catalog.references'), value: detail.references.map((ref) => `${ref.catalogue} ${ref.number}`).join(', ') },
+    ].filter((row) => row.value)
+  }
   return [
     { label: t('coinFields.denomination'), value: detail.denomination ?? '' },
     { label: t('coinFields.ruler'), value: detail.rulers.join(', ') },

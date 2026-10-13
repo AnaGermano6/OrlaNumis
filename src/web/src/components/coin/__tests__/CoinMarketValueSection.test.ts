@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import CoinMarketValueSection from '../CoinMarketValueSection.vue'
 import { setLocale } from '@/i18n'
+import { setCollectionCurrency } from '@/utils/collectionCurrency'
 import type { CoinMarketValue } from '@/api/client'
 
 const mocks = vi.hoisted(() => ({
@@ -44,7 +45,10 @@ describe('CoinMarketValueSection', () => {
     setLocale('en')
   })
 
-  afterEach(() => setLocale('en'))
+  afterEach(() => {
+    setLocale('en')
+    setCollectionCurrency('USD')
+  })
 
   it('shows the estimated price per grade and highlights the coin grade', async () => {
     mocks.getCoinMarketValue.mockResolvedValue({ data: marketValue() })
@@ -85,8 +89,9 @@ describe('CoinMarketValueSection', () => {
     expect(localStorage.getItem('numista:marketValueCurrency')).toBe('EUR')
   })
 
-  it('defaults to euros in Portuguese and explains provider problems', async () => {
+  it('defaults to the currency every page uses and explains provider problems', async () => {
     setLocale('pt-PT')
+    setCollectionCurrency('EUR')
     mocks.getCoinMarketValue.mockResolvedValue({ data: marketValue({ status: 'quota_limited', prices: [], fetchedAt: undefined }) })
 
     const wrapper = mountSection()

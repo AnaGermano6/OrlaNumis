@@ -11,9 +11,6 @@
         <button class="btn btn-ghost btn-sm min-w-0 justify-center" @click="$emit('tag')">
           <TagIcon :size="16" /> {{ t('collection.bulk.tag') }}
         </button>
-        <button class="btn btn-ghost btn-sm min-w-0 justify-center" @click="$emit('location')">
-          <MapPin :size="16" /> {{ t('collection.bulk.assignLocation') }}
-        </button>
         <button class="btn btn-ghost btn-sm min-w-0 justify-center hover:border-gain hover:text-gain" @click="$emit('sell')">
           <DollarSign :size="16" /> {{ t('collection.bulk.markSold') }}
         </button>
@@ -26,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { Tag as TagIcon, DollarSign, Trash2, MapPin } from 'lucide-vue-next'
+import { Tag as TagIcon, DollarSign, Trash2 } from 'lucide-vue-next'
 import { t } from '@/i18n'
 
 defineProps<{
@@ -36,7 +33,6 @@ defineProps<{
 
 defineEmits<{
   tag: []
-  location: []
   sell: []
   delete: []
 }>()

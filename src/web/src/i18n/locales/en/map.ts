@@ -54,6 +54,7 @@ export default {
     extinct: 'Extinct countries on today\'s map',
     clearFilters: 'Clear filters',
     filtered: '{shown} of {total} coins with these filters',
+    nonCirculating: 'Non-circulating (collector)',
   },
   target: {
     progress: '{target}: coins from {have} of {total}',

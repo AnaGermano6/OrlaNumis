@@ -9,12 +9,16 @@ import { sanitizeExternalUrl } from '@/composables/useSafeExternalLink'
 import { intlLocale, t } from '@/i18n'
 import { eraLabel } from '@/i18n/coinVocabulary'
 import { presentationLabel, rarityLabel } from '@/utils/coinAttributes'
+import { banknoteGradeLabel, banknoteMaterialLabel, noteVariantLabel, pickNumber } from '@/utils/banknoteAttributes'
 
-// "Corrente · Comemorativa", "Desmonetizada em 28/02/2002"…; '' when nothing is known.
+// "Corrente · Comemorativa", "Não circulante · Comemorativa", "Desmonetizada
+// em 28/02/2002"…; '' when nothing is known.
 function statusValue(status: CoinStatus | null | undefined): string {
   if (!status) return ''
   const parts: string[] = []
-  if (status.current === true) parts.push(t('coinDetail.currentCoin'))
+  // A collector coin is "non-circulating" even while it is legal tender.
+  if (status.nonCirculating) parts.push(t('coinDetail.nonCirculatingCoin'))
+  else if (status.current === true) parts.push(t('coinDetail.currentCoin'))
   if (status.current === false) {
     const date = formatDemonetizationDate(status.demonetizationDate)
     parts.push(date ? t('coinDetail.demonetizedOn', { date }) : t('coinDetail.demonetizedCoin'))
@@ -35,6 +39,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus
     if (!coin) return []
 
     const result: CoinDetailMetadataRow[] = []
+    const banknote = coin.kind === 'banknote'
 
     // Purchase & Value
     if (coin.purchasePrice != null) {
@@ -104,6 +109,26 @@ export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus
       })
     }
 
+    // What sets a banknote apart: its issue, catalogue number and this note's own marks.
+    if (banknote) {
+      const pick = pickNumber(coin.references)
+      const dimensions = coin.widthMm != null && coin.heightMm != null ? `${coin.widthMm} × ${coin.heightMm} mm` : ''
+      for (const [key, label, value] of [
+        ['series', t('banknoteForm.series'), coin.series],
+        ['pick', t('banknoteForm.pick'), pick ? `P${pick}` : ''],
+        ['serialNumber', t('banknoteForm.serialNumber'), coin.serialNumber],
+        ['signatures', t('banknoteForm.signatures'), coin.signatures],
+        ['noteVariant', t('banknoteForm.variant'), coin.noteVariant ? noteVariantLabel(coin.noteVariant) : ''],
+        ['printer', t('banknoteForm.printer'), coin.printer],
+        ['dimensions', t('banknoteForm.dimensions'), dimensions],
+        ['watermark', t('banknoteForm.watermark'), coin.watermark],
+        ['certifiedGrade', t('banknoteForm.certifiedGrade'), coin.certifiedGrade],
+        ['certificationNumber', t('banknoteForm.certificationNumber'), coin.certificationNumber],
+      ] as const) {
+        if (value) result.push({ key, label, value, valueClass: key === 'certifiedGrade' ? 'gold' : undefined })
+      }
+    }
+
     if (coin.era) {
       result.push({
         key: 'era',
@@ -112,7 +137,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus
       })
     }
 
-    if (coin.mint) {
+    if (coin.mint && !banknote) {
       result.push({
         key: 'mint',
         label: t('coinFields.mint'),
@@ -124,11 +149,11 @@ export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus
       result.push({
         key: 'material',
         label: t('coinFields.material'),
-        value: materialLabel(coin.material),
+        value: banknote ? banknoteMaterialLabel(coin.material) : materialLabel(coin.material),
       })
     }
 
-    if (coin.weightGrams != null) {
+    if (coin.weightGrams != null && !banknote) {
       result.push({
         key: 'weight',
         label: t('coinFields.weight'),
@@ -136,7 +161,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus
       })
     }
 
-    if (coin.diameterMm != null) {
+    if (coin.diameterMm != null && !banknote) {
       result.push({
         key: 'diameter',
         label: t('coinFields.diameter'),
@@ -147,8 +172,8 @@ export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus
     if (coin.grade) {
       result.push({
         key: 'grade',
-        label: t('coinFields.grade'),
-        value: coin.grade,
+        label: banknote ? t('banknoteForm.grade') : t('coinFields.grade'),
+        value: banknote ? banknoteGradeLabel(coin.grade) : coin.grade,
         valueClass: 'gold',
       })
     }

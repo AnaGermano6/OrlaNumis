@@ -62,8 +62,8 @@ const (
 	SettingCoinShowsPrompt             = "CoinShowsPrompt"
 	SettingValuationPrompt             = "ValuationPrompt"
 	// SettingCollectionCurrency is the currency coin prices and values are
-	// kept in (USD or EUR). Change it with CollectionCurrencyService, which
-	// converts the stored values too.
+	// kept in (see CollectionCurrencies). Change it with
+	// CollectionCurrencyService, which converts the stored values too.
 	SettingCollectionCurrency                 = "CollectionCurrency"
 	SettingSearXNGURL                         = "SearXNGURL"
 	SettingPushoverAppToken                   = "PushoverAppToken"

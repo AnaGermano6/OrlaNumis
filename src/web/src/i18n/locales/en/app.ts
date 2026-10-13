@@ -22,6 +22,6 @@ export default {
     label: 'Footer',
     version: 'Version {version}',
     catalogue: 'Catalogue data: Numista',
-    photos: 'Official photos: ECB, INCM and Monnaie de Paris',
+    photos: 'Official photos: ECB, INCM, Monnaie de Paris and Münze Österreich',
   },
 }

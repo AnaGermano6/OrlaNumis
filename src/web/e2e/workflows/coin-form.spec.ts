@@ -66,55 +66,6 @@ test('edit one field preserves the loaded golden fixture workflow', async ({ pag
   })
 })
 
-test('edit storage location changes and clears the golden fixture location', async ({ page }) => {
-  const coin = buildTaggedFollisStorage()
-  const api = await installWorkflowApiMocks(page, [coin])
-  const vaultBox = api.storageLocations.find((location) => location.name === 'Vault Box 2')
-  if (!vaultBox) throw new Error('Vault Box 2 fixture is required for the storage workflow')
-
-  await page.goto(`/coin/${coin.id}`)
-  await page.getByRole('button', { name: 'Edit' }).click()
-  await expect(page.getByRole('heading', { name: 'Edit Coin' })).toBeVisible()
-
-  await coinFormControl(page, 'Storage Location').selectOption(String(vaultBox.id))
-  await page.getByRole('button', { name: 'Save Changes' }).click()
-
-  await expect(page).toHaveURL(`/coin/${coin.id}`)
-  await expect(page.locator('.metadata-row').filter({ hasText: 'Storage Location' })).toContainText(vaultBox.name)
-
-  await page.getByRole('button', { name: 'Edit' }).click()
-  await expect(page.getByRole('heading', { name: 'Edit Coin' })).toBeVisible()
-
-  await coinFormControl(page, 'Storage Location').selectOption('')
-  await page.getByRole('button', { name: 'Save Changes' }).click()
-
-  await expect(page).toHaveURL(`/coin/${coin.id}`)
-  await expect(page.locator('.metadata-row').filter({ hasText: 'Storage Location' })).toContainText('—')
-  expect(api.updatePayloads.map(({ payload }) => payload.storageLocationId)).toEqual([vaultBox.id, null])
-})
-
-test('add coin assigns an exact one-based tray slot', async ({ page }) => {
-  const api = await installWorkflowApiMocks(page, [])
-  api.storageLocations.push({
-    id: 99,
-    name: 'Cabinet A',
-    type: 'tray',
-    rows: 3,
-    columns: 3,
-    occupied: 1,
-    capacity: 9,
-  })
-
-  await page.goto('/add')
-  await coinFormControl(page, 'Name').fill('Slotted Denarius')
-  await coinFormControl(page, 'Storage Location').selectOption('99')
-  await expect(page.getByRole('gridcell', { name: 'Row 2, column 3, occupied' })).toBeDisabled()
-  await page.getByRole('gridcell', { name: 'Row 2, column 2, available' }).click()
-  await page.getByRole('button', { name: 'Add to Collection' }).click()
-  await expect.poll(() => api.createPayloads[0]?.storageSlot).toBe(5)
-  expect(api.createPayloads[0]?.storageLocationId).toBe(99)
-})
-
 test('edit tags and sets updates detail-page associations deterministically', async ({ page }) => {
   const photographed = buildTestTags().find((tag) => tag.name === 'Photographed')
   if (!photographed) throw new Error('Photographed fixture tag is required for the tags workflow')

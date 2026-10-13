@@ -14,12 +14,21 @@ import (
 )
 
 const (
-	ecbDailyRatesURL     = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
-	ecbResponseLimit     = 64 << 10
-	exchangeRateCacheKey = "fx:ecb:usd"
+	ecbDailyRatesURL      = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
+	ecbResponseLimit      = 64 << 10
+	exchangeRatesCacheKey = "fx:ecb:all:v1"
 	// The ECB publishes once per working day (around 16:00 CET).
 	exchangeRateCacheTTL = 6 * time.Hour
 )
+
+// ExchangeRates are the ECB euro reference rates of a day: how much of each
+// currency one euro buys.
+type ExchangeRates struct {
+	// Date is the ECB reference date, YYYY-MM-DD.
+	Date string `json:"date"`
+	// PerEUR is how much of each currency one euro buys ("USD": 1.1206).
+	PerEUR map[string]float64 `json:"perEur"`
+}
 
 // ExchangeRate is the ECB euro reference rate for the US dollar.
 type ExchangeRate struct {
@@ -73,8 +82,8 @@ func (c *HTTPECBClient) DailyRates(ctx context.Context) ([]byte, error) {
 	return body, nil
 }
 
-// ExchangeRateService gives the ECB daily euro reference rate for the US
-// dollar, to show dollar amounts in euros and to switch the collection currency.
+// ExchangeRateService gives the ECB daily euro reference rates, to convert
+// amounts between currencies and to switch the collection currency.
 type ExchangeRateService struct {
 	client ECBRatesClient
 	cache  *NumistaResponseCache
@@ -86,33 +95,57 @@ func NewExchangeRateService(client ECBRatesClient, cache *NumistaResponseCache) 
 	return &ExchangeRateService{client: client, cache: cache}
 }
 
-// USDPerEUR returns the latest ECB rate, cached for a few hours; when the ECB
-// cannot be reached the last stored rate is used.
-func (s *ExchangeRateService) USDPerEUR(ctx context.Context) (ExchangeRate, error) {
-	body, _, _, err := s.cache.Get(ctx, exchangeRateCacheKey, exchangeRateCacheTTL, func(ctx context.Context) ([]byte, error) {
+// Rate is how much of currency one euro buys: 1 for the euro; ok is false
+// for a currency the ECB does not quote.
+func (r ExchangeRates) Rate(currency string) (float64, bool) {
+	currency = strings.ToUpper(strings.TrimSpace(currency))
+	if currency == CurrencyEUR {
+		return 1, true
+	}
+	rate, ok := r.PerEUR[currency]
+	return rate, ok && rate > 0
+}
+
+// Rates returns the latest ECB reference rates, cached for a few hours; when
+// the ECB cannot be reached the last stored rates are used.
+func (s *ExchangeRateService) Rates(ctx context.Context) (ExchangeRates, error) {
+	body, _, _, err := s.cache.Get(ctx, exchangeRatesCacheKey, exchangeRateCacheTTL, func(ctx context.Context) ([]byte, error) {
 		raw, err := s.client.DailyRates(ctx)
 		if err != nil {
 			return nil, err
 		}
-		rate, err := parseECBDollarRate(raw)
+		rates, err := parseECBRates(raw)
 		if err != nil {
 			return nil, err
 		}
-		return json.Marshal(rate)
+		return json.Marshal(rates)
 	})
+	if err != nil {
+		return ExchangeRates{}, err
+	}
+	var rates ExchangeRates
+	if err := json.Unmarshal(body, &rates); err != nil || len(rates.PerEUR) == 0 {
+		return ExchangeRates{}, errors.New("invalid stored exchange rates")
+	}
+	return rates, nil
+}
+
+// USDPerEUR returns the latest ECB rate for the US dollar (see Rates).
+func (s *ExchangeRateService) USDPerEUR(ctx context.Context) (ExchangeRate, error) {
+	rates, err := s.Rates(ctx)
 	if err != nil {
 		return ExchangeRate{}, err
 	}
-	var rate ExchangeRate
-	if err := json.Unmarshal(body, &rate); err != nil || rate.USDPerEUR <= 0 {
-		return ExchangeRate{}, errors.New("invalid stored exchange rate")
+	usd, ok := rates.Rate(CurrencyUSD)
+	if !ok {
+		return ExchangeRate{}, errors.New("USD rate not found")
 	}
-	return rate, nil
+	return ExchangeRate{USDPerEUR: usd, Date: rates.Date}, nil
 }
 
-// parseECBDollarRate reads the USD rate and its date from the ECB XML
+// parseECBRates reads every rate and their date from the ECB XML
 // (<Cube><Cube time="…"><Cube currency="USD" rate="…"/>…).
-func parseECBDollarRate(raw []byte) (ExchangeRate, error) {
+func parseECBRates(raw []byte) (ExchangeRates, error) {
 	var envelope struct {
 		Cube struct {
 			Daily struct {
@@ -125,16 +158,18 @@ func parseECBDollarRate(raw []byte) (ExchangeRate, error) {
 		} `xml:"Cube"`
 	}
 	if err := xml.Unmarshal(raw, &envelope); err != nil {
-		return ExchangeRate{}, err
+		return ExchangeRates{}, err
 	}
+	rates := ExchangeRates{Date: envelope.Cube.Daily.Time, PerEUR: map[string]float64{}}
 	for _, rate := range envelope.Cube.Daily.Rates {
-		if strings.EqualFold(rate.Currency, "USD") {
-			value, err := strconv.ParseFloat(strings.TrimSpace(rate.Rate), 64)
-			if err != nil || value <= 0 {
-				return ExchangeRate{}, errors.New("invalid USD rate")
-			}
-			return ExchangeRate{USDPerEUR: value, Date: envelope.Cube.Daily.Time}, nil
+		value, err := strconv.ParseFloat(strings.TrimSpace(rate.Rate), 64)
+		code := strings.ToUpper(strings.TrimSpace(rate.Currency))
+		if err == nil && value > 0 && len(code) == 3 {
+			rates.PerEUR[code] = value
 		}
 	}
-	return ExchangeRate{}, errors.New("USD rate not found")
+	if len(rates.PerEUR) == 0 {
+		return ExchangeRates{}, errors.New("no rates found")
+	}
+	return rates, nil
 }

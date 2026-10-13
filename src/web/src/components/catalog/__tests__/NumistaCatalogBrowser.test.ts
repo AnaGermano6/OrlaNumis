@@ -143,6 +143,8 @@ describe('NumistaCatalogBrowser', () => {
 
   it('uses the USD price for the current value when euros are shown, and can add to the wishlist', async () => {
     setLocale('pt-PT')
+    // The viewer chose to see Numista's prices in euros; the collection is in dollars.
+    localStorage.setItem('numista:marketValueCurrency', 'EUR')
     mocks.getNumistaTypeMarketValue.mockImplementation((_id: number, params: { currency: string }) =>
       Promise.resolve({ data: params.currency === 'USD' ? marketValue('USD', 33) : marketValue('EUR', 30) }))
     const wrapper = await searchAndOpenFirstResult()
@@ -166,5 +168,33 @@ describe('NumistaCatalogBrowser', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Add a Numista API key in Admin')
+  })
+
+  it('speaks of banknotes when it searches banknotes', async () => {
+    setLocale('pt-PT')
+    const banknote: NumistaCatalogType = {
+      ...TYPE, title: '1000 Escudos', category: 'banknote', issuingEntity: 'Banco de Portugal', composition: 'Papel',
+      diameterMm: 160, heightMm: 75, printers: ['Valora'], watermark: 'Pedro Álvares Cabral', mints: [], weightGrams: undefined,
+    }
+    mocks.getNumistaCatalogType.mockResolvedValue({ data: { status: 'ok', type: banknote, issues: [] } })
+    const wrapper = mount(NumistaCatalogBrowser, { props: { category: 'banknote' } })
+
+    expect(wrapper.text()).toContain('escolha a nota e o ano')
+    expect(wrapper.get('label[for="catalog-query"]').text()).toBe('Nota')
+    expect(wrapper.get('#catalog-query').attributes('placeholder')).toBe('ex.: 1000 escudos, Pedro Álvares Cabral')
+    expect(wrapper.text()).not.toContain('a.C.')
+
+    await wrapper.get('#catalog-query').setValue('1000 escudos')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(mocks.searchNumistaCatalog).toHaveBeenCalledWith(expect.objectContaining({ category: 'banknote' }))
+    expect(wrapper.text()).toContain('45 notas encontradas')
+
+    await wrapper.get('ul li button').trigger('click')
+    await flushPromises()
+    // The details are a banknote's: its bank, size, printer and watermark, not a mint or weight.
+    const text = wrapper.text()
+    for (const part of ['Banco de Portugal', '160 × 75 mm', 'Valora', 'Pedro Álvares Cabral', 'Frente']) expect(text).toContain(part)
+    expect(text).not.toContain('Casa da moeda')
   })
 })

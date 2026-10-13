@@ -116,7 +116,7 @@ func TestCoinList_FiltersByCountryPresentationAndRarity(t *testing.T) {
 	if got := names(repository.CoinListFilters{Country: "Portugal", Rarity: "rare"}); len(got) != 1 || got[0] != "B" {
 		t.Fatalf("Portugal + rare: %v", got)
 	}
-	counts, err := repo.CountryCounts(1)
+	counts, err := repo.CountryCounts(1, "")
 	if err != nil || len(counts) != 2 || counts[0] != (repository.CountryCount{Country: "Portugal", Count: 2}) || counts[1].Country != "Spain" {
 		t.Fatalf("country counts = %+v (%v)", counts, err)
 	}
@@ -196,13 +196,13 @@ func TestCollectionSummary_CountsCoinsTypesAndCountries(t *testing.T) {
 		}
 	}
 
-	got, err := repository.NewCoinRepository(db).CollectionSummary(1)
+	got, err := repository.NewCoinRepository(db).CollectionSummary(1, "")
 
 	want := repository.CollectionSummary{Coins: 5, Types: 3, Countries: 2, WithoutCountry: 2, Coincards: 2, TotalValue: 50, UnvaluedCoins: 3}
 	if err != nil || got != want {
 		t.Fatalf("summary = %+v (%v), want %+v", got, err, want)
 	}
-	empty, err := repository.NewCoinRepository(db).CollectionSummary(99)
+	empty, err := repository.NewCoinRepository(db).CollectionSummary(99, "")
 	if err != nil || empty != (repository.CollectionSummary{}) {
 		t.Fatalf("empty collection = %+v (%v)", empty, err)
 	}
@@ -277,7 +277,7 @@ func TestCollectionHighlights_PicksRarestOldestAndMostValuable(t *testing.T) {
 		t.Fatalf("image: %v", err)
 	}
 
-	got, err := repository.NewCoinRepository(db).CollectionHighlights(1)
+	got, err := repository.NewCoinRepository(db).CollectionHighlights(1, "")
 	if err != nil {
 		t.Fatalf("CollectionHighlights: %v", err)
 	}
@@ -291,7 +291,7 @@ func TestCollectionHighlights_PicksRarestOldestAndMostValuable(t *testing.T) {
 		t.Fatalf("most valuable = %+v", got.MostValuable)
 	}
 
-	empty, err := repository.NewCoinRepository(db).CollectionHighlights(99)
+	empty, err := repository.NewCoinRepository(db).CollectionHighlights(99, "")
 	if err != nil || empty.Rarest != nil || empty.Oldest != nil || empty.MostValuable != nil {
 		t.Fatalf("empty collection = %+v (%v)", empty, err)
 	}

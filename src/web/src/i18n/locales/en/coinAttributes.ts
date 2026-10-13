@@ -21,5 +21,7 @@ export default {
     current_commemorative: 'Current · Commemorative',
     demonetized: 'Demonetized',
     demonetized_commemorative: 'Demonetized · Commemorative',
+    non_circulating: 'Non-circulating',
+    non_circulating_commemorative: 'Non-circulating · Commemorative',
   },
 }

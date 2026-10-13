@@ -370,3 +370,237 @@ func TestCollectionSummaryAndList_CurrentCoins(t *testing.T) {
 		t.Fatalf("groups = %+v", groups)
 	}
 }
+
+func TestCoinCirculation_CollectorCoinsAreNotCurrent(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router, db := setupCoinHandlerRouter(t)
+	createTestUser(t, db, 1, "collector")
+	if err := db.AutoMigrate(&models.NumistaCacheEntry{}); err != nil {
+		t.Fatal(err)
+	}
+	cache := services.NewNumistaResponseCache(repository.NewNumistaCacheRepository(db), nil, nil)
+	for key, payload := range map[string]string{
+		// A Monnaie de Paris collector coin: legal tender, but not for circulation.
+		"type:535663:pt": `{"id": 535663, "title": "10 Euros (Cinderella, silver 333‰)", "type": "Moedas não circulantes", "commemorated_topic": "Cinderela", "demonetization": {"is_demonetized": false}}`,
+		"type:100:pt":    `{"id": 100, "title": "2 Euros", "type": "Moedas circulantes comemorativas", "commemorated_topic": "Jogos Olímpicos", "demonetization": {"is_demonetized": false}}`,
+	} {
+		if err := db.Create(&models.NumistaCacheEntry{Key: key, Payload: payload}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	coins := []models.Coin{
+		{Name: "10 euro 2025 – Cinderela", Country: "França", UserID: 1},
+		{Name: "2 euro", Country: "Portugal", UserID: 1},
+		{Name: "Proof set coin", Country: "Portugal", UserID: 1, Circulation: "non_circulating_commemorative"},
+		{Name: "Hand-made current", Country: "Portugal", UserID: 1, Circulation: "current"},
+	}
+	for i := range coins {
+		coins[i].Category, coins[i].Material = models.CategoryModern, models.MaterialSilver
+		if err := db.Create(&coins[i]).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	for coin, number := range map[int]string{0: "535663", 1: "100"} {
+		if err := db.Create(&models.CoinReference{CoinID: coins[coin].ID, Catalog: "Numista", Number: number}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	coinRepo := repository.NewCoinRepository(db)
+	circulation := services.NewCoinCirculationService(coinRepo, services.NewNumistaCatalogService(nil, cache))
+	handler := NewCoinHandler(coinRepo, services.NewCoinService(coinRepo, nil), services.NewLogger(10)).WithCirculation(circulation)
+	group := router.Group("/api/collector-test")
+	group.Use(coinTestAuthMiddleware())
+	group.GET("/statuses", handler.StatusGroups)
+	group.GET("/coins/:id/status", handler.Status)
+	group.GET("/coins", handler.List)
+
+	w := coinRequest(router, http.MethodGet, "/api/collector-test/statuses", nil)
+	var groups CoinStatusGroups
+	if err := json.Unmarshal(w.Body.Bytes(), &groups); err != nil || w.Code != http.StatusOK {
+		t.Fatalf("statuses: %d %s", w.Code, w.Body.String())
+	}
+	if fmt.Sprint(groups.Current) != fmt.Sprint([]uint{coins[1].ID, coins[3].ID}) || fmt.Sprint(groups.NonCirculating) != fmt.Sprint([]uint{coins[0].ID, coins[2].ID}) || len(groups.Demonetized) != 0 {
+		t.Fatalf("groups = %+v", groups)
+	}
+	// Collector coins still count as commemorative.
+	if fmt.Sprint(groups.Commemorative) != fmt.Sprint([]uint{coins[0].ID, coins[1].ID, coins[2].ID}) {
+		t.Fatalf("commemorative = %v", groups.Commemorative)
+	}
+
+	w = coinRequest(router, http.MethodGet, fmt.Sprintf("/api/collector-test/coins/%d/status", coins[0].ID), nil)
+	var status services.CoinStatus
+	if err := json.Unmarshal(w.Body.Bytes(), &status); err != nil || w.Code != http.StatusOK {
+		t.Fatalf("status: %d %s", w.Code, w.Body.String())
+	}
+	if status.Current == nil || !*status.Current || status.NonCirculating == nil || !*status.NonCirculating || status.Commemorative == nil || !*status.Commemorative {
+		t.Fatalf("Cinderella status = %+v", status)
+	}
+
+	w = coinRequest(router, http.MethodGet, "/api/collector-test/coins?circulation=current&sort=name&order=asc", nil)
+	var list struct {
+		Coins []models.Coin `json:"coins"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &list); err != nil || len(list.Coins) != 2 || list.Coins[0].Name != "2 euro" || list.Coins[1].Name != "Hand-made current" {
+		t.Fatalf("current coins = %d %s", w.Code, w.Body.String())
+	}
+}
+
+// Banknotes are kept apart from coins in the galleries: the list, the
+// countries and the summary can each be limited to one kind.
+func TestCoinKind_ListCountriesAndSummary(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router, db := setupCoinHandlerRouter(t)
+	createTestUser(t, db, 1, "collector")
+	repo := repository.NewCoinRepository(db)
+	summary := NewCollectionSummaryHandler(repo).WithSettings(services.NewSettingsService(repository.NewSettingsRepository(db)))
+	group := router.Group("/api/kind-test")
+	group.Use(coinTestAuthMiddleware())
+	group.GET("/summary", summary.Summary)
+	group.GET("/countries", NewCoinCountryHandler(repo, nil).Countries)
+
+	// Created through the API, a coin is a coin unless it says otherwise.
+	for _, body := range []map[string]any{
+		{"name": "100 escudos", "category": "Modern", "material": "Other", "country": "Portugal"},
+		{"name": "1000 escudos", "kind": "banknote", "category": "Modern", "material": "Other", "country": "Portugal", "currentValue": 12},
+		{"name": "10 marcos", "kind": "banknote", "category": "Modern", "material": "Other", "country": "Alemanha"},
+	} {
+		if w := coinRequest(router, http.MethodPost, "/api/coins", body); w.Code != http.StatusCreated {
+			t.Fatalf("create %v: %d %s", body, w.Code, w.Body.String())
+		}
+	}
+	if w := coinRequest(router, http.MethodPost, "/api/coins", map[string]any{"name": "Selo", "kind": "stamp", "category": "Modern", "material": "Other"}); w.Code != http.StatusBadRequest {
+		t.Fatalf("unknown kind: %d %s", w.Code, w.Body.String())
+	}
+
+	names := func(path string) []string {
+		w := coinRequest(router, http.MethodGet, path, nil)
+		var got struct {
+			Coins []models.Coin `json:"coins"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || w.Code != http.StatusOK {
+			t.Fatalf("%s: %d %s", path, w.Code, w.Body.String())
+		}
+		list := []string{}
+		for _, coin := range got.Coins {
+			list = append(list, coin.Kind+":"+coin.Name)
+		}
+		return list
+	}
+	if got := names("/api/coins?kind=coin"); len(got) != 1 || got[0] != "coin:100 escudos" {
+		t.Fatalf("coins = %v", got)
+	}
+	if got := names("/api/coins?kind=banknote&sort=name&order=asc"); len(got) != 2 || got[0] != "banknote:10 marcos" || got[1] != "banknote:1000 escudos" {
+		t.Fatalf("banknotes = %v", got)
+	}
+	if got := names("/api/coins"); len(got) != 3 {
+		t.Fatalf("every item without a kind: %v", got)
+	}
+	if w := coinRequest(router, http.MethodGet, "/api/coins?kind=stamp", nil); w.Code != http.StatusBadRequest {
+		t.Fatalf("unknown kind filter: %d", w.Code)
+	}
+
+	var countries []repository.CountryCount
+	w := coinRequest(router, http.MethodGet, "/api/kind-test/countries?kind=banknote", nil)
+	if err := json.Unmarshal(w.Body.Bytes(), &countries); err != nil || len(countries) != 2 || countries[0].Country != "Alemanha" || countries[1].Count != 1 {
+		t.Fatalf("banknote countries = %+v (%s)", countries, w.Body.String())
+	}
+
+	var got struct {
+		Coins      int64   `json:"coins"`
+		Countries  int64   `json:"countries"`
+		TotalValue float64 `json:"totalValue"`
+		Highlights struct {
+			MostValuable *struct{ Name string } `json:"mostValuable"`
+		} `json:"highlights"`
+	}
+	w = coinRequest(router, http.MethodGet, "/api/kind-test/summary?kind=coin", nil)
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || got.Coins != 1 || got.Countries != 1 || got.TotalValue != 0 || got.Highlights.MostValuable != nil {
+		t.Fatalf("coin summary = %+v (%s)", got, w.Body.String())
+	}
+	w = coinRequest(router, http.MethodGet, "/api/kind-test/summary?kind=banknote", nil)
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || got.Coins != 2 || got.Countries != 2 || got.TotalValue != 12 ||
+		got.Highlights.MostValuable == nil || got.Highlights.MostValuable.Name != "1000 escudos" {
+		t.Fatalf("banknote summary = %+v (%s)", got, w.Body.String())
+	}
+
+	// Editing can turn a banknote back into a coin.
+	var banknote models.Coin
+	db.Where("name = ?", "10 marcos").First(&banknote)
+	if w := coinRequest(router, http.MethodPut, fmt.Sprintf("/api/coins/%d", banknote.ID), map[string]any{"kind": "coin"}); w.Code != http.StatusOK {
+		t.Fatalf("update: %d %s", w.Code, w.Body.String())
+	}
+	if got := names("/api/coins?kind=coin"); len(got) != 2 {
+		t.Fatalf("after edit = %v", got)
+	}
+}
+
+// A banknote keeps its own details, found by its serial number.
+func TestBanknoteDetails_SaveEditAndSearch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router, db := setupCoinHandlerRouter(t)
+	createTestUser(t, db, 1, "collector")
+	body := map[string]any{
+		"name": "1000 escudos 1996", "kind": "banknote", "category": "Modern", "material": "Paper", "country": "Portugal",
+		"series": "Chapa 13", "serialNumber": " CH 1234567 ", "signatures": "António de Sousa / Luís Campos e Cunha", "printer": "Valora",
+		"widthMm": 160, "heightMm": 75, "watermark": "Pedro Álvares Cabral", "noteVariant": "replacement",
+		"certifiedGrade": "PMG 66 EPQ", "certificationNumber": "8076543-012",
+	}
+	w := coinRequest(router, http.MethodPost, "/api/coins", body)
+	var created models.Coin
+	if err := json.Unmarshal(w.Body.Bytes(), &created); err != nil || w.Code != http.StatusCreated {
+		t.Fatalf("create: %d %s", w.Code, w.Body.String())
+	}
+	if created.Kind != "banknote" || created.SerialNumber != "CH 1234567" || created.Series != "Chapa 13" || created.Printer != "Valora" ||
+		created.WidthMm == nil || *created.WidthMm != 160 || created.HeightMm == nil || *created.HeightMm != 75 ||
+		created.NoteVariant != "replacement" || created.CertifiedGrade != "PMG 66 EPQ" || created.CertificationNumber != "8076543-012" || created.Material != "Paper" {
+		t.Fatalf("created = %+v", created)
+	}
+
+	w = coinRequest(router, http.MethodGet, "/api/coins?kind=banknote&search=1234567", nil)
+	var found struct {
+		Total int64 `json:"total"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &found); err != nil || found.Total != 1 {
+		t.Fatalf("search by serial number: %s", w.Body.String())
+	}
+
+	path := fmt.Sprintf("/api/coins/%d", created.ID)
+	if w := coinRequest(router, http.MethodPut, path, map[string]any{"noteVariant": "error"}); w.Code != http.StatusBadRequest {
+		t.Fatalf("unknown variant: %d %s", w.Code, w.Body.String())
+	}
+	if w := coinRequest(router, http.MethodPut, path, map[string]any{"noteVariant": "", "heightMm": nil, "signatures": "Vítor Constâncio"}); w.Code != http.StatusOK {
+		t.Fatalf("update: %d %s", w.Code, w.Body.String())
+	}
+	var saved models.Coin
+	db.First(&saved, created.ID)
+	if saved.NoteVariant != "" || saved.HeightMm != nil || saved.WidthMm == nil || saved.Signatures != "Vítor Constâncio" || saved.SerialNumber != "CH 1234567" {
+		t.Fatalf("saved = %+v", saved)
+	}
+}
+
+// A banknote's copy is a banknote of the same issue, without the copied
+// note's serial number or certificate.
+func TestBanknoteDuplicate_KeepsTheKindAndIssueDetails(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router, db := setupCoinHandlerRouter(t)
+	createTestUser(t, db, 1, "collector")
+	width := 160.0
+	note := models.Coin{
+		Name: "2000 escudos", Kind: models.CoinKindBanknote, Category: models.CategoryModern, Material: "Paper", UserID: 1,
+		Series: "Chapa 1", Printer: "Valora", WidthMm: &width, Watermark: "Bartolomeu Dias", NoteVariant: "replacement",
+		SerialNumber: "AB 123", CertifiedGrade: "PMG 64 EPQ", CertificationNumber: "123-001",
+	}
+	if err := db.Create(&note).Error; err != nil {
+		t.Fatal(err)
+	}
+	w := coinRequest(router, http.MethodPost, fmt.Sprintf("/api/coins/%d/duplicate", note.ID), nil)
+	var copied models.Coin
+	if err := json.Unmarshal(w.Body.Bytes(), &copied); err != nil || w.Code != http.StatusCreated {
+		t.Fatalf("duplicate: %d %s", w.Code, w.Body.String())
+	}
+	if copied.Kind != models.CoinKindBanknote || copied.Series != "Chapa 1" || copied.Printer != "Valora" || copied.WidthMm == nil ||
+		copied.Watermark != "Bartolomeu Dias" || copied.NoteVariant != "replacement" || copied.CertifiedGrade != "PMG 64 EPQ" ||
+		copied.SerialNumber != "" || copied.CertificationNumber != "" {
+		t.Fatalf("copied = %+v", copied)
+	}
+}

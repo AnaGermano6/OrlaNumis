@@ -5,7 +5,7 @@
       <label v-if="numistaTypeId" class="inline-flex items-center gap-2 text-body text-text-secondary">
         <span>{{ t('coinDetail.marketValue.currency') }}</span>
         <select class="form-select w-auto py-1 text-body" :value="currency" @change="selectCurrency(($event.target as HTMLSelectElement).value)">
-          <option v-for="code in NUMISTA_CURRENCIES" :key="code" :value="code">{{ code }}</option>
+          <option v-for="code in numistaCurrencies()" :key="code" :value="code">{{ code }}</option>
         </select>
       </label>
     </div>
@@ -73,7 +73,7 @@ import CatalogPhoto from '@/components/catalog/CatalogPhoto.vue'
 import NumistaPriceGrid from '@/components/coin/NumistaPriceGrid.vue'
 import { catalogPhotoCredit, numistaIssueLabel, numistaLang } from '@/utils/numistaCatalog'
 import { numistaGradeForCoinGrade } from '@/utils/numistaGrades'
-import { NUMISTA_CURRENCIES, numistaStatusMessage, readPreferredCurrency, savePreferredCurrency } from '@/utils/numistaMarketValue'
+import { numistaCurrencies, numistaStatusMessage, readPreferredCurrency, savePreferredCurrency } from '@/utils/numistaMarketValue'
 
 const props = defineProps<{
   coinId: number

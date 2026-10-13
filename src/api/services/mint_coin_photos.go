@@ -11,9 +11,10 @@ import (
 	"github.com/briandenicola/ancient-coins-api/models"
 )
 
-// Mints publish official photos of the collector coins they sell: Portugal's
-// (INCM) and France's (Monnaie de Paris). Their catalogues are matched to a
-// coin by face value, year, topic and designer.
+// Mints publish official photos of their collector coins: Portugal's (INCM),
+// France's (Monnaie de Paris) and Austria's (Münze Österreich). Their
+// catalogues are matched to a coin by face value, year, topic (or lettering)
+// and designer.
 
 // MintPhotoSource is a mint's catalogue of coin photos.
 type MintPhotoSource interface {
@@ -62,6 +63,12 @@ type MintPhotoQuery struct {
 	// Texts are other words about the coin: series, side descriptions, lettering.
 	Texts     []string
 	Designers []string
+	// AltTopics and AltYears are tried in turn when Topic and Year find
+	// nothing: the title's subject alone ("Snoopy", without the "75th
+	// anniversary of Peanuts" Numista adds) or the coin's lettering, and the
+	// year on the coin when Numista's first year differs.
+	AltTopics []string
+	AltYears  []int
 }
 
 // MintPhoto is a mint's photos of a coin; Reverse may be empty.
@@ -187,8 +194,12 @@ func mintDesignKey(title string) string {
 	if open := strings.Index(title, "("); open > 0 {
 		title = title[:open]
 	}
-	return strings.Join(mintWords(title), " ")
+	return strings.Join(uniqueStrings(mintWords(title)), " ")
 }
+
+// mintSpecialEdition tells a proof, shaped or piedfort edition, whose photos
+// look least like the coin of the normal edition.
+var mintSpecialEdition = regexp.MustCompile(`(?i)proof|qualite-be|\bbe\b|shape|forme|piedfort|high-relief|haut-relief`)
 
 func mintMetalKind(metal string) string {
 	folded := foldASCII(metal)
@@ -203,11 +214,33 @@ func mintMetalKind(metal string) string {
 }
 
 // matchMintCoin returns the coin of a mint's catalogue that is clearly the one
-// described, or nil. A coin must be of the same face value and year (give or
-// take one: the release can follow the year on the coin), and its title must
-// name the coin's topic with a word no other design has, or its author must be
-// the coin's designer.
+// described, or nil, trying the query's other topics and years when its own
+// find nothing.
 func matchMintCoin(coins []mintCoin, query MintPhotoQuery) *mintCoin {
+	tried := map[string]bool{}
+	for _, year := range append([]int{query.Year}, query.AltYears...) {
+		for _, topic := range append([]string{query.Topic}, query.AltTopics...) {
+			key := strconv.Itoa(year) + "|" + topic
+			if tried[key] {
+				continue
+			}
+			tried[key] = true
+			variant := query
+			variant.Year, variant.Topic = year, topic
+			if coin := matchMintDesign(coins, variant); coin != nil {
+				return coin
+			}
+		}
+	}
+	return nil
+}
+
+// matchMintDesign returns the coin of a mint's catalogue that is clearly the
+// one described, or nil. A coin must be of the same face value and year (give
+// or take one: the release can follow the year on the coin), and its title
+// must name the coin's topic with a word no other design has, or its author
+// must be the coin's designer.
+func matchMintDesign(coins []mintCoin, query MintPhotoQuery) *mintCoin {
 	if query.Year == 0 || query.Value <= 0 {
 		return nil
 	}
@@ -235,7 +268,8 @@ func matchMintCoin(coins []mintCoin, query MintPhotoQuery) *mintCoin {
 		if math.Abs(coin.Value-query.Value) > 0.001 || coin.Year < query.Year-1 || coin.Year > query.Year+1 {
 			continue
 		}
-		key := coin.DesignKey
+		// "snoopy snoopy" (the shaped edition's "snoopy-…-snoopy-shape") is "snoopy".
+		key := strings.Join(uniqueStrings(strings.Fields(coin.DesignKey)), " ")
 		if key == "" {
 			key = mintDesignKey(coin.Title)
 		}
@@ -308,15 +342,18 @@ func matchMintCoin(coins []mintCoin, query MintPhotoQuery) *mintCoin {
 		return nil
 	}
 	// The version closest to the coin: same metal, else the nearest-looking
-	// one, and the normal edition before proofs and special finishes.
+	// one, and the normal edition before proofs, shapes and special finishes.
 	wanted := mintMetalKind(query.Metal)
 	rank := func(coin mintCoin) int {
 		order := map[string][]string{"base": {"base", "silver", "gold"}, "silver": {"silver", "base", "gold"}, "gold": {"gold", "silver", "base"}}[wanted]
 		r := 0
 		for i, kind := range order {
 			if kind == mintMetalKind(coin.Metal) {
-				r = 2 * i
+				r = 4 * i
 			}
+		}
+		if mintSpecialEdition.MatchString(coin.PageURL[strings.LastIndex(coin.PageURL, "/")+1:]) {
+			r += 2
 		}
 		if strings.Contains(coin.Title, "(") {
 			r++
@@ -371,6 +408,29 @@ func MintTopic(title string) string {
 
 var mintFineness = regexp.MustCompile(`\d+\s*‰`)
 
+// mintVersionWords name a coin's metal or finish, not its design.
+var mintVersionWords = map[string]bool{
+	"argent": true, "silver": true, "prata": true, "gold": true, "ouro": true, "copper": true, "cobre": true, "nickel": true, "nikel": true,
+	"cupronickel": true, "cuproniquel": true, "brass": true, "bronze": true, "bimetallic": true, "bimetalica": true,
+	"coloured": true, "colored": true, "colorized": true, "proof": true, "piedfort": true, "shape": true, "forme": true,
+}
+
+// MintTitleSubject is a Numista title's subject alone, without its face
+// value, metal or finish: "Snoopy" in "10 euros Snoopy (argent 333‰)",
+// "Pinocchio" in "10 Euros (Pinocchio, silver 333‰)".
+func MintTitleSubject(title string) string {
+	if match := mintEuroValue.FindStringIndex(title); match != nil {
+		title = title[match[1]:]
+	}
+	var words []string
+	for _, word := range ecbWords(mintFineness.ReplaceAllString(title, " ")) {
+		if !mintVersionWords[word] {
+			words = append(words, word)
+		}
+	}
+	return strings.Join(words, " ")
+}
+
 // mintQueryForType describes a euro coin type for a mint's catalogue from
 // its Numista details; ok is false when it has no euro face value.
 func mintQueryForType(detail *models.NumistaCatalogType) (MintPhotoQuery, bool) {
@@ -391,6 +451,14 @@ func mintQueryForType(detail *models.NumistaCatalogType) (MintPhotoQuery, bool) 
 		Topic: strings.TrimSpace(detail.CommemoratedTopic + " " + MintTopic(detail.Title)),
 		Texts: []string{detail.Series, detail.Obverse.Description, detail.Obverse.Lettering, detail.Reverse.Description, detail.Reverse.Lettering},
 	}
+	// The title's subject alone, then the lettering of the coin's design (a
+	// mint can name the coin in its own language: "Weltmeister"). The
+	// obverse's ("REPUBLIK ÖSTERREICH") would name a coin about the republic.
+	for _, topic := range []string{MintTitleSubject(detail.Title), detail.Reverse.Lettering} {
+		if hasNonNumberWord(mintWords(mintFineness.ReplaceAllString(topic, " "))) {
+			query.AltTopics = append(query.AltTopics, topic)
+		}
+	}
 	for _, side := range []models.NumistaCatalogSide{detail.Obverse, detail.Reverse} {
 		query.Designers = append(query.Designers, side.Designers...)
 		query.Designers = append(query.Designers, side.Engravers...)
@@ -405,6 +473,9 @@ func mintQueryForTitle(title string, minYear *int) (MintPhotoQuery, bool) {
 		return MintPhotoQuery{}, false
 	}
 	query := MintPhotoQuery{Year: *minYear, Value: MintFaceValue(title), Metal: title, Topic: MintTopic(title)}
+	if subject := MintTitleSubject(title); subject != "" {
+		query.AltTopics = []string{subject}
+	}
 	return query, query.Value > 0
 }
 
@@ -469,6 +540,17 @@ func uniqueStrings(values []string) []string {
 		}
 	}
 	return unique
+}
+
+// hasNonNumberWord tells whether a topic names something besides numbers
+// (a lettering of just "2021" names no design).
+func hasNonNumberWord(words []string) bool {
+	for _, word := range words {
+		if strings.Trim(word, "0123456789") != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // countWords counts the words of a set that are numbers (or are not).

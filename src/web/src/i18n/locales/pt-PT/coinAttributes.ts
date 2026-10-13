@@ -23,6 +23,8 @@ const messages: Messages['coinAttributes'] = {
     current_commemorative: 'Corrente · Comemorativa',
     demonetized: 'Desmonetizada',
     demonetized_commemorative: 'Desmonetizada · Comemorativa',
+    non_circulating: 'Não circulante',
+    non_circulating_commemorative: 'Não circulante · Comemorativa',
   },
 }
 

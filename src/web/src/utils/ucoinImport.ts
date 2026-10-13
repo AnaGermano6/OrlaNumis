@@ -330,8 +330,8 @@ export interface UcoinCoinOptions {
   eras: string[]
   /** Catalogues configured in Admin; others stay in the notes. */
   registry: CatalogRegistry[]
-  /** US dollars per euro, to store a price given in the other currency. */
-  usdPerEur?: number
+  /** The ECB rates (how much of each currency one euro buys), to store a price given in another currency. */
+  perEur?: Record<string, number>
 }
 
 function roundCents(value: number): number {
@@ -339,9 +339,9 @@ function roundCents(value: number): number {
 }
 
 /** An amount from the file in the collection currency, or undefined when it cannot be converted. */
-function inCollectionCurrency(amount: number | undefined, currency: string, usdPerEur: number | undefined): number | undefined {
+function inCollectionCurrency(amount: number | undefined, currency: string, perEur: Record<string, number> | undefined): number | undefined {
   if (amount === undefined) return undefined
-  const converted = toCollectionCurrency(amount, currency, usdPerEur)
+  const converted = toCollectionCurrency(amount, currency, perEur)
   return converted === undefined ? undefined : roundCents(converted)
 }
 
@@ -353,12 +353,12 @@ export interface UcoinPurchase {
   currentValue?: number
 }
 
-export function ucoinPurchase(row: UcoinRow, usdPerEur?: number): UcoinPurchase {
+export function ucoinPurchase(row: UcoinRow, perEur?: Record<string, number>): UcoinPurchase {
   return {
     purchaseDate: row.purchaseDate,
-    purchasePrice: inCollectionCurrency(row.price, row.priceCurrency, usdPerEur),
+    purchasePrice: inCollectionCurrency(row.price, row.priceCurrency, perEur),
     purchaseLocation: row.swapWith ? clip(t('ucoinImport.swapWith', { user: row.swapWith }), 500) : undefined,
-    currentValue: inCollectionCurrency(row.value, row.valueCurrency, usdPerEur),
+    currentValue: inCollectionCurrency(row.value, row.valueCurrency, perEur),
   }
 }
 
@@ -398,7 +398,7 @@ export function ucoinPurchaseUpdate(coin: Coin, purchase: UcoinPurchase): CoinMu
 
 export function buildUcoinCoin(row: UcoinRow, options: UcoinCoinOptions): CoinMutationPayload {
   const mintMark = ucoinMintMark(row.variety)
-  const purchase = ucoinPurchase(row, options.usdPerEur)
+  const purchase = ucoinPurchase(row, options.perEur)
   const price = purchase.purchasePrice
   const registered = row.catalogue
     ? options.registry.find((entry) => entry.catalog.toLowerCase() === row.catalogue!.code.toLowerCase() && !entry.volumeRequired)

@@ -2,7 +2,6 @@ export default {
   title: 'Collection Timeline',
   allCoins: 'All Coins',
   collectionOnly: 'Collection Only',
-  soldOnly: 'Sold Only',
   loading: 'Loading timeline...',
   empty: {
     title: 'No timeline data',

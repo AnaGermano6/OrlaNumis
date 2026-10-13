@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import CollectionHighlights from '../CollectionHighlights.vue'
 import { setLocale } from '@/i18n'
+import { setCollectionCurrency } from '@/utils/collectionCurrency'
 import type { CollectionSummary } from '@/api/client'
 
 const BASE: CollectionSummary = {
@@ -17,10 +18,14 @@ function mountHighlights(summary: CollectionSummary | null) {
 }
 
 describe('CollectionHighlights', () => {
-  afterEach(() => setLocale('en'))
+  afterEach(() => {
+    setLocale('en')
+    setCollectionCurrency('USD')
+  })
 
   it('names the rarest, oldest and most valuable coins with what makes them stand out', () => {
     setLocale('pt-PT')
+    setCollectionCurrency('EUR')
     const wrapper = mountHighlights({
       ...BASE,
       highlights: {
@@ -39,11 +44,12 @@ describe('CollectionHighlights', () => {
     expect(items[0]!.get('img').attributes('src')).toBe('coin-5/obverse.jpg')
     expect(items[1]!.text()).toContain('44 a.C.')
     expect(items[1]!.text()).toContain('VF')
-    expect(items[2]!.text().replace(/\s/g, ' ')).toContain('240,00 €')
+    // In the currency every page uses.
+    expect(items[2]!.text().replace(/\s/g, ' ')).toContain('300,00 €')
     expect(items[2]!.text()).toContain('Roma · c. 200')
   })
 
-  it('explains highlights that have no coin and shows values in dollars without a rate', () => {
+  it('explains highlights that have no coin and shows values in a dollar collection in dollars', () => {
     const wrapper = mountHighlights({
       ...BASE,
       totalValueEur: null,

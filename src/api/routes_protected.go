@@ -250,7 +250,8 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		ecbCoinPhotos := services.NewEcbCoinPhotoService(services.NewHTTPECBCoinsClient(nil), numistaResponseCache)
 		incmCoinPhotos := services.NewIncmCoinPhotoService(services.NewHTTPINCMShopClient(nil), numistaResponseCache)
 		mdpCoinPhotos := services.NewMdpCoinPhotoService(services.NewHTTPMDPShopClient(nil), numistaResponseCache)
-		numistaCatalogSvc := services.NewNumistaCatalogService(d.numistaClient, numistaResponseCache).WithECB(ecbCoinPhotos).WithMint(incmCoinPhotos).WithMint(mdpCoinPhotos)
+		moeCoinPhotos := services.NewMoeCoinPhotoService(services.NewHTTPMOEShopClient(nil), numistaResponseCache)
+		numistaCatalogSvc := services.NewNumistaCatalogService(d.numistaClient, numistaResponseCache).WithECB(ecbCoinPhotos).WithMint(incmCoinPhotos).WithMint(mdpCoinPhotos).WithMint(moeCoinPhotos)
 		numistaMarketValueSvc := services.NewNumistaMarketValueService(d.numistaClient, numistaResponseCache).WithCatalog(numistaCatalogSvc)
 		coinMarketValueHandler := handlers.NewCoinMarketValueHandler(d.coinRepo, numistaMarketValueSvc)
 		protected.GET("/coins/:id/market-value", coinMarketValueHandler.MarketValue)
@@ -259,7 +260,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/numista/catalog/search", numistaCatalogHandler.Search)
 		protected.GET("/numista/catalog/types/:id", numistaCatalogHandler.Type)
 		protected.GET("/numista/catalog/types/:id/market-value", numistaCatalogHandler.MarketValue)
-		coinPhotoSearch := services.NewCoinPhotoSearchService(numistaCatalogSvc, services.NewHTTPCommonsClient(nil), numistaResponseCache).WithECB(ecbCoinPhotos).WithMint(incmCoinPhotos).WithMint(mdpCoinPhotos)
+		coinPhotoSearch := services.NewCoinPhotoSearchService(numistaCatalogSvc, services.NewHTTPCommonsClient(nil), numistaResponseCache).WithECB(ecbCoinPhotos).WithMint(incmCoinPhotos).WithMint(mdpCoinPhotos).WithMint(moeCoinPhotos)
 		protected.GET("/coin-photos/search", handlers.NewCoinPhotoHandler(coinPhotoSearch).Search)
 		// Coin subjects in the user's language, translated to compare with Numista's titles.
 		protected.GET("/translate", handlers.NewTranslationHandler(services.NewTranslationService(services.NewMyMemoryClient(nil), numistaResponseCache)).Translate)
@@ -277,6 +278,8 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/coins/:id/status", coinHandler.Status)
 		protected.GET("/coins/statuses", coinHandler.StatusGroups)
 		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(d.exchangeRates).WithSettings(d.settingsSvc).WithCirculation(coinCirculation).Summary)
+		// ECB rates, to convert amounts into the collection currency.
+		protected.GET("/exchange-rates", handlers.NewExchangeRatesHandler(d.exchangeRates).Rates)
 		protected.POST("/coins/country-from-numista", d.writeRateLimit, coinCountryHandler.FillFromNumista)
 
 		auctionLotSvc := services.NewAuctionLotService(d.auctionLotRepo, d.coinRepo).

@@ -13,22 +13,10 @@
       <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? t('common.pull.refreshing') : pullDistance >= 60 ? t('common.pull.release') : t('common.pull.pull') }}</span>
     </div>
 
-    <CollectionKpis
-      :summary="summary"
-      :current-only="selectedCirculation === 'current'"
-      @show-coincards="selectedPresentation = 'coincard'"
-      @show-extinct="selectCountry(EXTINCT_COUNTRIES)"
-      :commemorative-only="selectedCommemorative === 'true'"
-      @toggle-current="selectedCirculation = selectedCirculation === 'current' ? '' : 'current'"
-      @toggle-commemorative="selectedCommemorative = selectedCommemorative === 'true' ? '' : 'true'"
-    />
-    <CollectionHighlights :summary="summary" />
-
     <PwaCollectionHeader
       v-if="isPwa"
       v-model:search="search"
       v-model:menu-open="menuOpen"
-      v-model:selected-category="selectedCategory"
       v-model:selected-era="selectedEra"
       v-model:selected-tag="selectedTag"
       v-model:sort-key="sortKey"
@@ -60,7 +48,6 @@
     <DesktopCollectionHeader
       v-if="!isPwa"
       v-model:search="search"
-      v-model:selected-category="selectedCategory"
       v-model:selected-era="selectedEra"
       v-model:selected-tag="selectedTag"
       v-model:sort-key="sortKey"
@@ -97,6 +84,30 @@
       />
     </div>
 
+    <!-- Filters the Collection page's cards turn on; the gallery has no other control for them. -->
+    <div v-if="selectedCirculation || selectedCommemorative" class="mb-3 flex flex-wrap items-center gap-2" data-testid="gallery-active-filters">
+      <button
+        v-if="selectedCirculation"
+        type="button"
+        class="chip active inline-flex items-center gap-1"
+        :aria-label="t('collection.activeFilters.remove', { filter: circulationFilterLabel })"
+        data-testid="gallery-filter-circulation"
+        @click="selectedCirculation = ''"
+      >
+        {{ circulationFilterLabel }} <X :size="12" aria-hidden="true" />
+      </button>
+      <button
+        v-if="selectedCommemorative"
+        type="button"
+        class="chip active inline-flex items-center gap-1"
+        :aria-label="t('collection.activeFilters.remove', { filter: commemorativeFilterLabel })"
+        data-testid="gallery-filter-commemorative"
+        @click="selectedCommemorative = ''"
+      >
+        {{ commemorativeFilterLabel }} <X :size="12" aria-hidden="true" />
+      </button>
+    </div>
+
     <div ref="coinsAnchor" class="scroll-mt-28" aria-hidden="true"></div>
     <CollectionContent
       :loading="store.loading"
@@ -107,7 +118,7 @@
       :is-pwa="isPwa"
       :view-mode="viewMode"
       :grid-side="gridSide"
-      :has-filters="!!(search || selectedCategory || selectedEra || selectedTag || selectedCountry || selectedPresentation || selectedRarity || selectedCirculation || selectedCommemorative || selectedClassification)"
+      :has-filters="!!(search || selectedEra || selectedTag || selectedCountry || selectedPresentation || selectedRarity || selectedCirculation || selectedCommemorative || selectedClassification)"
       :total="store.total"
       :page="page"
       :per-page="COINS_PER_PAGE"
@@ -137,7 +148,6 @@
       :visible="selectMode && selectedCoinIds.size > 0"
       :selected-count="selectedCoinIds.size"
       @tag="showTagPicker = true"
-      @location="showLocationPicker = true"
       @sell="bulkSell"
       @delete="bulkDelete"
     />
@@ -148,29 +158,20 @@
       @select="bulkTag"
       @close="showTagPicker = false"
     />
-
-    <BulkLocationPickerModal
-      :open="showLocationPicker"
-      :locations="storageLocations"
-      @select="bulkAssignLocation"
-      @close="showLocationPicker = false"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCoinsStore } from '@/stores/coins'
-import type { ImageType, HealthQuickAction, StorageLocation } from '@/types'
-import { bulkAction, getCollectionSummary, getStorageLocations, type CollectionSummary } from '@/api/client'
+import type { ImageType, HealthQuickAction } from '@/types'
+import { bulkAction, getCollectionSummary, type CollectionSummary } from '@/api/client'
 import { usePullToRefresh } from '@/composables/usePullToRefresh'
 import { useBulkSelect } from '@/composables/useBulkSelect'
 import { usePwa } from '@/composables/usePwa'
 import { useCollectionFilters } from '@/composables/useCollectionFilters'
 import CollectionViewControls, { type CollectionLayout } from '@/components/collection/CollectionViewControls.vue'
-import CollectionKpis from '@/components/collection/CollectionKpis.vue'
-import CollectionHighlights from '@/components/collection/CollectionHighlights.vue'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import PwaCollectionHeader from '@/components/collection/PwaCollectionHeader.vue'
 import DesktopCollectionHeader from '@/components/collection/DesktopCollectionHeader.vue'
@@ -178,29 +179,28 @@ import CollectionContent from '@/components/collection/CollectionContent.vue'
 import CollectionPagination from '@/components/CollectionPagination.vue'
 import BulkActionBar from '@/components/BulkActionBar.vue'
 import BulkTagPickerModal from '@/components/BulkTagPickerModal.vue'
-import BulkLocationPickerModal from '@/components/BulkLocationPickerModal.vue'
 import NeedsAttentionQueue from '@/components/collection/NeedsAttentionQueue.vue'
 import { t } from '@/i18n'
-import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
+import { X } from 'lucide-vue-next'
 
 const store = useCoinsStore()
 const router = useRouter()
 const { refresh: refreshQuickAccess } = useQuickAccess()
 
 const {
-  selectedCategory, search, page, sortKey, selectedTag, userTags,
+  search, page, sortKey, selectedTag, userTags,
   selectedEra, eraOptions,
   selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, groupBy, countryOptions, fillingCountries,
   fetchUserTags, loadCoins, loadCountryOptions, fillCountriesOnce,
 } = useCollectionFilters()
 
-// Collection-wide KPIs, refreshed whenever the coin list reloads (filters,
-// deletions, sales, country fill), so they never go stale.
+// The coins' summary feeds the filters (extinct countries, Numista kinds);
+// refreshed whenever the coin list reloads, so it never goes stale.
 const summary = ref<CollectionSummary | null>(null)
 let summaryTimer: ReturnType<typeof setTimeout> | undefined
 async function loadSummary() {
   try {
-    summary.value = (await getCollectionSummary()).data
+    summary.value = (await getCollectionSummary('coin')).data
   } catch {
     // Keep the last numbers; the gallery itself still works.
   }
@@ -208,14 +208,10 @@ async function loadSummary() {
   void loadCountryOptions()
 }
 
-// Choosing the extinct countries in their KPI filters the gallery and brings the coins into view.
 const coinsAnchor = ref<HTMLElement | null>(null)
-function selectCountry(country: string) {
-  selectedCountry.value = country
-  if (!country) return
-  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  void nextTick(() => coinsAnchor.value?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }))
-}
+
+const circulationFilterLabel = computed(() => (selectedCirculation.value === 'demonetized' ? t('collection.activeFilters.demonetized') : t('collection.activeFilters.current')))
+const commemorativeFilterLabel = computed(() => (selectedCommemorative.value === 'false' ? t('collection.activeFilters.regular') : t('collection.activeFilters.commemorative')))
 watch(() => store.coins, () => {
   clearTimeout(summaryTimer)
   summaryTimer = setTimeout(() => void loadSummary(), 300)
@@ -246,7 +242,6 @@ onMounted(() => {
   void loadSummary()
   fetchUserTags()
   if (groupBy.value === 'country') void fillCountriesOnce()
-  fetchStorageLocations()
   // Reset bulkSelectActive on mount to prevent stale state from previous navigation
   bulkSelectActive.value = false
 })
@@ -315,18 +310,7 @@ loadCoins()
 const selectMode = ref(false)
 const selectedCoinIds = ref(new Set<number>())
 const showTagPicker = ref(false)
-const showLocationPicker = ref(false)
-const storageLocations = ref<StorageLocation[]>([])
 const { bulkSelectActive } = useBulkSelect()
-
-async function fetchStorageLocations() {
-  try {
-    const res = await getStorageLocations()
-    storageLocations.value = res.data.storageLocations ?? []
-  } catch {
-    // Silent failure - locations will be empty if request fails
-  }
-}
 
 function toggleSelectMode() {
   selectMode.value = !selectMode.value
@@ -334,7 +318,6 @@ function toggleSelectMode() {
   if (!selectMode.value) {
     selectedCoinIds.value = new Set()
     showTagPicker.value = false
-    showLocationPicker.value = false
   }
 }
 
@@ -345,7 +328,6 @@ watch(bulkSelectActive, (active) => {
     if (!active) {
       selectedCoinIds.value = new Set()
       showTagPicker.value = false
-      showLocationPicker.value = false
     }
   }
 })
@@ -415,19 +397,6 @@ async function bulkTag(target: string) {
     loadCoins()
   } catch {
     alert(applyingSet ? t('collection.bulk.applySetFailed') : t('collection.bulk.applyTagFailed'))
-  }
-}
-
-async function bulkAssignLocation(locationId: number | null) {
-  try {
-    await bulkAction([...selectedCoinIds.value], 'assign-location', { storageLocationId: locationId })
-    showLocationPicker.value = false
-    selectedCoinIds.value = new Set()
-    selectMode.value = false
-    bulkSelectActive.value = false
-    loadCoins()
-  } catch {
-    alert(t('collection.bulk.assignLocationFailed'))
   }
 }
 

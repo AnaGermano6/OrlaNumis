@@ -63,6 +63,9 @@ const messages: Messages['coinForm'] = {
   yearHint: 'Use um ano negativo para a.C. (ex.: -44). Se ficar vazio, o ano é lido da data ou intervalo.',
   circulationAuto: 'Automático (segundo o Numista)',
   circulationHint: 'Escolha à mão só quando o Numista não sabe ou se engana; conta nos KPIs e nos filtros.',
+  kind: 'Tipo de peça',
+  kindCoin: 'Moeda',
+  kindBanknote: 'Nota de banco',
 }
 
 export default messages

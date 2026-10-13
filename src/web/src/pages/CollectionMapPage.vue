@@ -177,7 +177,7 @@ const store = useCoinsStore()
 const loading = ref(true)
 const failed = ref(false)
 const coins = ref<Coin[]>([])
-const statuses = ref<CoinStatusSets>({ current: new Set(), demonetized: new Set(), commemorative: new Set(), regular: new Set() })
+const statuses = ref<CoinStatusSets>({ current: new Set(), demonetized: new Set(), nonCirculating: new Set(), commemorative: new Set(), regular: new Set() })
 const world = ref<WorldCountryCollection | null>(null)
 const mintLocations = ref<MintPlace[]>([])
 const mapRef = ref<InstanceType<typeof CountryCoinsMap> | null>(null)
@@ -397,6 +397,7 @@ async function load() {
     statuses.value = {
       current: new Set(data.current),
       demonetized: new Set(data.demonetized),
+      nonCirculating: new Set(data.nonCirculating ?? []),
       commemorative: new Set(data.commemorative),
       regular: new Set(data.regular),
     }

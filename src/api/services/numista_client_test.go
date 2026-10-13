@@ -564,7 +564,15 @@ func TestHTTPNumistaClientSearchTypesSendsCatalogueReference(t *testing.T) {
 	if _, err := client.SearchTypes(context.Background(), NumistaTypeSearch{Query: "escudo", Number: "84", Count: 20, Lang: "en"}); err != nil {
 		t.Fatal(err)
 	}
-	if query := sent.URL.Query(); query.Has("catalogue") || query.Has("number") || query.Get("q") != "escudo" {
+	if query := sent.URL.Query(); query.Has("catalogue") || query.Has("number") || query.Get("q") != "escudo" || query.Get("category") != "coin" {
 		t.Fatalf("unexpected search request: %s", sent.URL)
+	}
+
+	// Banknotes are searched among Numista's banknotes.
+	if _, err := client.SearchTypes(context.Background(), NumistaTypeSearch{Query: "escudos", Count: 20, Lang: "pt", Category: "banknote"}); err != nil {
+		t.Fatal(err)
+	}
+	if query := sent.URL.Query(); query.Get("category") != "banknote" {
+		t.Fatalf("unexpected banknote search request: %s", sent.URL)
 	}
 }

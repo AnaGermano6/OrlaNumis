@@ -14,7 +14,9 @@ type CoinReferenceRequest struct {
 }
 
 type CoinCreateRequest struct {
-	Name                  string          `json:"name" binding:"max=200"`
+	Name string `json:"name" binding:"max=200"`
+	// Kind is a coin (default) or a banknote.
+	Kind                  string          `json:"kind" binding:"max=16" enums:"coin,banknote"`
 	Category              models.Category `json:"category" binding:"omitempty,max=64"`
 	Denomination          string          `json:"denomination" binding:"max=200"`
 	Ruler                 string          `json:"ruler" binding:"max=200"`
@@ -27,33 +29,45 @@ type CoinCreateRequest struct {
 	Presentation string `json:"presentation" binding:"max=20" enums:"loose,coincard,capsule,flip,proof_set,blister,slab"`
 	Rarity       string `json:"rarity" binding:"max=20" enums:"common,uncommon,scarce,rare,very_rare,extremely_rare"`
 	// Circulation set by hand; empty means "as Numista says".
-	Circulation        string          `json:"circulation" binding:"max=30" enums:",current,current_commemorative,demonetized,demonetized_commemorative"`
-	Mint               string          `json:"mint" binding:"max=200"`
-	MintLocationID     *uint           `json:"mintLocationId"`
-	Material           models.Material `json:"material"`
-	WeightGrams        *float64        `json:"weightGrams"`
-	DiameterMm         *float64        `json:"diameterMm"`
-	Grade              string          `json:"grade" binding:"max=100"`
-	ObverseInscription string          `json:"obverseInscription" binding:"max=1000"`
-	ReverseInscription string          `json:"reverseInscription" binding:"max=1000"`
-	ObverseDescription string          `json:"obverseDescription" binding:"max=2000"`
-	ReverseDescription string          `json:"reverseDescription" binding:"max=2000"`
-	RarityRating       string          `json:"rarityRating" binding:"max=100"`
-	PurchasePrice      *float64        `json:"purchasePrice"`
-	CurrentValue       *float64        `json:"currentValue"`
-	PurchaseDate       *time.Time      `json:"purchaseDate"`
-	PurchaseLocation   string          `json:"purchaseLocation" binding:"max=500"`
-	VendorSKU          string          `json:"vendorSku" binding:"max=200"`
-	VendorInvoice      string          `json:"vendorInvoice" binding:"max=200"`
-	Notes              string          `json:"notes" binding:"max=5000"`
-	ReferenceURL       string          `json:"referenceUrl" binding:"max=2000"`
-	ReferenceText      string          `json:"referenceText" binding:"max=2000"`
-	IsWishlist         bool            `json:"isWishlist"`
-	IsSold             bool            `json:"isSold"`
-	SoldPrice          *float64        `json:"soldPrice"`
-	SoldDate           *time.Time      `json:"soldDate"`
-	SoldTo             string          `json:"soldTo"`
-	StorageLocationID  *uint           `json:"storageLocationId" minimum:"1" extensions:"x-nullable"`
+	Circulation    string          `json:"circulation" binding:"max=30" enums:",current,current_commemorative,demonetized,demonetized_commemorative,non_circulating,non_circulating_commemorative"`
+	Mint           string          `json:"mint" binding:"max=200"`
+	MintLocationID *uint           `json:"mintLocationId"`
+	Material       models.Material `json:"material"`
+	WeightGrams    *float64        `json:"weightGrams"`
+	DiameterMm     *float64        `json:"diameterMm"`
+	Grade          string          `json:"grade" binding:"max=100"`
+	// Banknote details: series, serial number, signatories, printer, size,
+	// watermark, replacement or specimen, and a grading company's grade.
+	Series              string     `json:"series" binding:"max=200"`
+	SerialNumber        string     `json:"serialNumber" binding:"max=100"`
+	Signatures          string     `json:"signatures" binding:"max=300"`
+	Printer             string     `json:"printer" binding:"max=200"`
+	WidthMm             *float64   `json:"widthMm"`
+	HeightMm            *float64   `json:"heightMm"`
+	Watermark           string     `json:"watermark" binding:"max=500"`
+	NoteVariant         string     `json:"noteVariant" binding:"max=20" enums:",replacement,specimen"`
+	CertifiedGrade      string     `json:"certifiedGrade" binding:"max=60"`
+	CertificationNumber string     `json:"certificationNumber" binding:"max=60"`
+	ObverseInscription  string     `json:"obverseInscription" binding:"max=1000"`
+	ReverseInscription  string     `json:"reverseInscription" binding:"max=1000"`
+	ObverseDescription  string     `json:"obverseDescription" binding:"max=2000"`
+	ReverseDescription  string     `json:"reverseDescription" binding:"max=2000"`
+	RarityRating        string     `json:"rarityRating" binding:"max=100"`
+	PurchasePrice       *float64   `json:"purchasePrice"`
+	CurrentValue        *float64   `json:"currentValue"`
+	PurchaseDate        *time.Time `json:"purchaseDate"`
+	PurchaseLocation    string     `json:"purchaseLocation" binding:"max=500"`
+	VendorSKU           string     `json:"vendorSku" binding:"max=200"`
+	VendorInvoice       string     `json:"vendorInvoice" binding:"max=200"`
+	Notes               string     `json:"notes" binding:"max=5000"`
+	ReferenceURL        string     `json:"referenceUrl" binding:"max=2000"`
+	ReferenceText       string     `json:"referenceText" binding:"max=2000"`
+	IsWishlist          bool       `json:"isWishlist"`
+	IsSold              bool       `json:"isSold"`
+	SoldPrice           *float64   `json:"soldPrice"`
+	SoldDate            *time.Time `json:"soldDate"`
+	SoldTo              string     `json:"soldTo"`
+	StorageLocationID   *uint      `json:"storageLocationId" minimum:"1" extensions:"x-nullable"`
 	// StorageSlot is a nullable, one-based row-major tray position.
 	StorageSlot *int                   `json:"storageSlot" minimum:"1" maximum:"400" extensions:"x-nullable"`
 	IsPrivate   bool                   `json:"isPrivate"`
@@ -61,7 +75,9 @@ type CoinCreateRequest struct {
 }
 
 type CoinUpdateRequest struct {
-	Name                  *string          `json:"name" binding:"omitempty,max=200"`
+	Name *string `json:"name" binding:"omitempty,max=200"`
+	// Kind is a coin or a banknote.
+	Kind                  *string          `json:"kind" binding:"omitempty,max=16" enums:"coin,banknote"`
 	Category              *models.Category `json:"category" binding:"omitempty,max=64"`
 	Denomination          *string          `json:"denomination" binding:"omitempty,max=200"`
 	Ruler                 *string          `json:"ruler" binding:"omitempty,max=200"`
@@ -74,33 +90,44 @@ type CoinUpdateRequest struct {
 	Presentation *string `json:"presentation" binding:"omitempty,max=20" enums:"loose,coincard,capsule,flip,proof_set,blister,slab"`
 	Rarity       *string `json:"rarity" binding:"omitempty,max=20" enums:"common,uncommon,scarce,rare,very_rare,extremely_rare"`
 	// Circulation set by hand; empty means "as Numista says".
-	Circulation        *string          `json:"circulation" binding:"omitempty,max=30" enums:",current,current_commemorative,demonetized,demonetized_commemorative"`
-	Mint               *string          `json:"mint" binding:"omitempty,max=200"`
-	MintLocationID     *uint            `json:"mintLocationId"`
-	Material           *models.Material `json:"material"`
-	WeightGrams        *float64         `json:"weightGrams"`
-	DiameterMm         *float64         `json:"diameterMm"`
-	Grade              *string          `json:"grade" binding:"omitempty,max=100"`
-	ObverseInscription *string          `json:"obverseInscription" binding:"omitempty,max=1000"`
-	ReverseInscription *string          `json:"reverseInscription" binding:"omitempty,max=1000"`
-	ObverseDescription *string          `json:"obverseDescription" binding:"omitempty,max=2000"`
-	ReverseDescription *string          `json:"reverseDescription" binding:"omitempty,max=2000"`
-	RarityRating       *string          `json:"rarityRating" binding:"omitempty,max=100"`
-	PurchasePrice      *float64         `json:"purchasePrice"`
-	CurrentValue       *float64         `json:"currentValue"`
-	PurchaseDate       *time.Time       `json:"purchaseDate"`
-	PurchaseLocation   *string          `json:"purchaseLocation" binding:"omitempty,max=500"`
-	VendorSKU          *string          `json:"vendorSku" binding:"omitempty,max=200"`
-	VendorInvoice      *string          `json:"vendorInvoice" binding:"omitempty,max=200"`
-	Notes              *string          `json:"notes" binding:"omitempty,max=5000"`
-	ReferenceURL       *string          `json:"referenceUrl" binding:"omitempty,max=2000"`
-	ReferenceText      *string          `json:"referenceText" binding:"omitempty,max=2000"`
-	IsWishlist         *bool            `json:"isWishlist"`
-	IsSold             *bool            `json:"isSold"`
-	SoldPrice          *float64         `json:"soldPrice"`
-	SoldDate           *time.Time       `json:"soldDate"`
-	SoldTo             *string          `json:"soldTo"`
-	StorageLocationID  *uint            `json:"storageLocationId" minimum:"1" extensions:"x-nullable"`
+	Circulation    *string          `json:"circulation" binding:"omitempty,max=30" enums:",current,current_commemorative,demonetized,demonetized_commemorative,non_circulating,non_circulating_commemorative"`
+	Mint           *string          `json:"mint" binding:"omitempty,max=200"`
+	MintLocationID *uint            `json:"mintLocationId"`
+	Material       *models.Material `json:"material"`
+	WeightGrams    *float64         `json:"weightGrams"`
+	DiameterMm     *float64         `json:"diameterMm"`
+	Grade          *string          `json:"grade" binding:"omitempty,max=100"`
+	// Banknote details.
+	Series              *string    `json:"series" binding:"omitempty,max=200"`
+	SerialNumber        *string    `json:"serialNumber" binding:"omitempty,max=100"`
+	Signatures          *string    `json:"signatures" binding:"omitempty,max=300"`
+	Printer             *string    `json:"printer" binding:"omitempty,max=200"`
+	WidthMm             *float64   `json:"widthMm"`
+	HeightMm            *float64   `json:"heightMm"`
+	Watermark           *string    `json:"watermark" binding:"omitempty,max=500"`
+	NoteVariant         *string    `json:"noteVariant" binding:"omitempty,max=20" enums:",replacement,specimen"`
+	CertifiedGrade      *string    `json:"certifiedGrade" binding:"omitempty,max=60"`
+	CertificationNumber *string    `json:"certificationNumber" binding:"omitempty,max=60"`
+	ObverseInscription  *string    `json:"obverseInscription" binding:"omitempty,max=1000"`
+	ReverseInscription  *string    `json:"reverseInscription" binding:"omitempty,max=1000"`
+	ObverseDescription  *string    `json:"obverseDescription" binding:"omitempty,max=2000"`
+	ReverseDescription  *string    `json:"reverseDescription" binding:"omitempty,max=2000"`
+	RarityRating        *string    `json:"rarityRating" binding:"omitempty,max=100"`
+	PurchasePrice       *float64   `json:"purchasePrice"`
+	CurrentValue        *float64   `json:"currentValue"`
+	PurchaseDate        *time.Time `json:"purchaseDate"`
+	PurchaseLocation    *string    `json:"purchaseLocation" binding:"omitempty,max=500"`
+	VendorSKU           *string    `json:"vendorSku" binding:"omitempty,max=200"`
+	VendorInvoice       *string    `json:"vendorInvoice" binding:"omitempty,max=200"`
+	Notes               *string    `json:"notes" binding:"omitempty,max=5000"`
+	ReferenceURL        *string    `json:"referenceUrl" binding:"omitempty,max=2000"`
+	ReferenceText       *string    `json:"referenceText" binding:"omitempty,max=2000"`
+	IsWishlist          *bool      `json:"isWishlist"`
+	IsSold              *bool      `json:"isSold"`
+	SoldPrice           *float64   `json:"soldPrice"`
+	SoldDate            *time.Time `json:"soldDate"`
+	SoldTo              *string    `json:"soldTo"`
+	StorageLocationID   *uint      `json:"storageLocationId" minimum:"1" extensions:"x-nullable"`
 	// StorageSlot is a nullable, one-based row-major tray position.
 	StorageSlot *int                   `json:"storageSlot" minimum:"1" maximum:"400" extensions:"x-nullable"`
 	IsPrivate   *bool                  `json:"isPrivate"`
@@ -114,6 +141,7 @@ func (r CoinCreateRequest) toCoin(userID uint) models.Coin {
 	}
 	return models.Coin{
 		Name:                  r.Name,
+		Kind:                  r.Kind,
 		Category:              r.Category,
 		Denomination:          r.Denomination,
 		Ruler:                 r.Ruler,
@@ -131,6 +159,16 @@ func (r CoinCreateRequest) toCoin(userID uint) models.Coin {
 		WeightGrams:           r.WeightGrams,
 		DiameterMm:            r.DiameterMm,
 		Grade:                 r.Grade,
+		Series:                r.Series,
+		SerialNumber:          r.SerialNumber,
+		Signatures:            r.Signatures,
+		Printer:               r.Printer,
+		WidthMm:               r.WidthMm,
+		HeightMm:              r.HeightMm,
+		Watermark:             r.Watermark,
+		NoteVariant:           r.NoteVariant,
+		CertifiedGrade:        r.CertifiedGrade,
+		CertificationNumber:   r.CertificationNumber,
 		ObverseInscription:    r.ObverseInscription,
 		ReverseInscription:    r.ReverseInscription,
 		ObverseDescription:    r.ObverseDescription,
@@ -224,6 +262,33 @@ func (r CoinUpdateRequest) toCoin(existing *models.Coin, storageLocationProvided
 		updates.Grade = *r.Grade
 		updateFields = append(updateFields, "Grade")
 	}
+	for _, field := range []struct {
+		value *string
+		into  *string
+		name  string
+	}{
+		{r.Series, &updates.Series, "Series"},
+		{r.SerialNumber, &updates.SerialNumber, "SerialNumber"},
+		{r.Signatures, &updates.Signatures, "Signatures"},
+		{r.Printer, &updates.Printer, "Printer"},
+		{r.Watermark, &updates.Watermark, "Watermark"},
+		{r.NoteVariant, &updates.NoteVariant, "NoteVariant"},
+		{r.CertifiedGrade, &updates.CertifiedGrade, "CertifiedGrade"},
+		{r.CertificationNumber, &updates.CertificationNumber, "CertificationNumber"},
+	} {
+		if field.value != nil {
+			*field.into = *field.value
+			updateFields = append(updateFields, field.name)
+		}
+	}
+	if r.WidthMm != nil || nullableScalarProvided["WidthMm"] {
+		updates.WidthMm = r.WidthMm
+		updateFields = append(updateFields, "WidthMm")
+	}
+	if r.HeightMm != nil || nullableScalarProvided["HeightMm"] {
+		updates.HeightMm = r.HeightMm
+		updateFields = append(updateFields, "HeightMm")
+	}
 	if r.ObverseInscription != nil {
 		updates.ObverseInscription = *r.ObverseInscription
 		updateFields = append(updateFields, "ObverseInscription")
@@ -259,6 +324,10 @@ func (r CoinUpdateRequest) toCoin(existing *models.Coin, storageLocationProvided
 	if r.Circulation != nil {
 		updates.Circulation = *r.Circulation
 		updateFields = append(updateFields, "Circulation")
+	}
+	if r.Kind != nil {
+		updates.Kind = *r.Kind
+		updateFields = append(updateFields, "Kind")
 	}
 	if r.Rarity != nil {
 		updates.Rarity = *r.Rarity

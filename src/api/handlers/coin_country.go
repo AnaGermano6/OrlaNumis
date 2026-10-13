@@ -27,12 +27,19 @@ func NewCoinCountryHandler(coins *repository.CoinRepository, svc *services.CoinC
 //	@Description	Returns each country of the user's collection coins (excluding wishlist and sold) with how many coins it has, alphabetically.
 //	@Tags			Coins
 //	@Produce		json
-//	@Success		200	{array}		repository.CountryCount
-//	@Failure		500	{object}	ErrorResponse
+//	@Param			kind	query		string	false	"Only coins or only banknotes (every item when omitted)"	Enums(coin, banknote)
+//	@Success		200		{array}		repository.CountryCount
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
 //	@Security		BearerAuth
 //	@Router			/coins/countries [get]
 func (h *CoinCountryHandler) Countries(c *gin.Context) {
-	counts, err := h.coins.CountryCounts(c.GetUint("userId"))
+	kind, ok := coinKindQuery(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "kind must be 'coin' or 'banknote'"})
+		return
+	}
+	counts, err := h.coins.CountryCounts(c.GetUint("userId"), kind)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list countries"})
 		return

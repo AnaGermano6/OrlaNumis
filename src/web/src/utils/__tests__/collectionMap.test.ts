@@ -32,7 +32,7 @@ function coin(fields: Partial<Coin>): Coin {
   return { id: nextId, name: `Coin ${nextId}`, country: '', era: 'modern', references: [], images: [], ...fields } as Coin
 }
 
-const NO_STATUS: CoinStatusSets = { current: new Set(), demonetized: new Set(), commemorative: new Set(), regular: new Set() }
+const NO_STATUS: CoinStatusSets = { current: new Set(), demonetized: new Set(), nonCirculating: new Set(), commemorative: new Set(), regular: new Set() }
 
 describe('collectionMap', () => {
   const places = buildMapPlaces(WORLD)
@@ -75,6 +75,7 @@ describe('collectionMap', () => {
     expect(filterMapCoins(coins, { ...EMPTY_MAP_FILTERS, yearFrom: 1990, yearTo: 1999 }, statuses).map((c) => c.country))
       .toEqual(['Portugal', 'Região Autónoma dos Açores'])
     expect(filterMapCoins(coins, { ...EMPTY_MAP_FILTERS, circulation: 'current' }, statuses)).toEqual([coins[1]])
+    expect(filterMapCoins(coins, { ...EMPTY_MAP_FILTERS, circulation: 'nonCirculating' }, { ...statuses, nonCirculating: new Set([coins[0]!.id]) })).toEqual([coins[0]])
     expect(filterMapCoins(coins, { ...EMPTY_MAP_FILTERS, commemorative: 'true' }, statuses)).toEqual([coins[2]])
     expect(filterMapCoins(coins, { ...EMPTY_MAP_FILTERS, era: 'ancient' }, statuses)).toEqual([])
     expect(filterMapCoins(coins, EMPTY_MAP_FILTERS, statuses)).toHaveLength(coins.length)

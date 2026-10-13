@@ -21,10 +21,6 @@
             </button>
           </div>
           <div class="flex flex-col gap-[0.4rem]">
-            <span class="section-label mb-0">{{ t('collection.menu.category') }}</span>
-            <CategoryFilter :model-value="selectedCategory" @update:model-value="$emit('update:selectedCategory', $event)" />
-          </div>
-          <div class="flex flex-col gap-[0.4rem]">
             <span class="section-label mb-0">{{ t('collection.menu.era') }}</span>
             <EraFilter :model-value="selectedEra" :eras="eraOptions" @update:model-value="$emit('update:selectedEra', $event)" />
           </div>
@@ -69,7 +65,6 @@
 
 <script setup lang="ts">
 import type { CollectionSetOption, ImageType } from '@/types'
-import CategoryFilter from '@/components/CategoryFilter.vue'
 import EraFilter from '@/components/collection/EraFilter.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import SortSelect from '@/components/SortSelect.vue'
@@ -80,7 +75,6 @@ defineProps<{
   search: string
   selectMode: boolean
   menuOpen: boolean
-  selectedCategory: string
   selectedEra: string
   selectedTag: string
   userTags: CollectionSetOption[]
@@ -93,7 +87,6 @@ defineProps<{
 defineEmits<{
   'update:search': [value: string]
   'update:menuOpen': [value: boolean]
-  'update:selectedCategory': [value: string]
   'update:selectedEra': [value: string]
   'update:selectedTag': [value: string]
   'update:sortKey': [value: string]

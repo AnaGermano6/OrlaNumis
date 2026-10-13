@@ -26,5 +26,5 @@ test('authenticated setup helper opens protected workflows without a live backen
   await page.goto('/add')
 
   await expect(page.getByRole('heading', { name: 'Add Coin' })).toBeVisible()
-  await expectAuthenticatedApiCall(api, 'GET /storage-locations')
+  await expectAuthenticatedApiCall(api, 'GET /coin-options')
 })

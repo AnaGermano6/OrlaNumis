@@ -1193,7 +1193,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Switches the currency coin prices and values are kept in (USD or EUR) and converts every stored price, value, value history and snapshot with the ECB reference rate, in one transaction. Switching to the current currency changes nothing. Admin only.",
+                "description": "Switches the currency coin prices and values are kept in and every page shows (the euro or a currency of the ECB daily reference rates: USD, GBP, CHF, JPY…) and converts every stored price, value, value history and snapshot with the ECB reference rates, in one transaction. Switching to the current currency changes nothing. Admin only.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6562,7 +6562,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns the admin-configured category and era choices with translated display names, and the collection currency (USD or EUR) coin prices and values are kept in",
+                "description": "Returns the admin-configured category and era choices with translated display names, and the collection currency (EUR, USD, GBP…) coin prices and values are kept in",
                 "produces": [
                     "application/json"
                 ],
@@ -6673,6 +6673,16 @@ const docTemplate = `{
                 "summary": "List coins",
                 "parameters": [
                     {
+                        "enum": [
+                            "coin",
+                            "banknote"
+                        ],
+                        "type": "string",
+                        "description": "Only coins or only banknotes (every item when omitted)",
+                        "name": "kind",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "Filter by category (Roman, Greek, Byzantine, Modern, Other)",
                         "name": "category",
@@ -6717,7 +6727,7 @@ const docTemplate = `{
                             "demonetized"
                         ],
                         "type": "string",
-                        "description": "Only collection coins still legal tender (current) or no longer (demonetized), as Numista says of their types",
+                        "description": "Only collection coins issued for circulation and still legal tender (current), or no longer legal tender (demonetized), as Numista says of their types; collector (non-circulating) coins are not current",
                         "name": "circulation",
                         "in": "query"
                     },
@@ -6749,7 +6759,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Search across name, denomination, ruler, era, mint, inscriptions, notes",
+                        "description": "Search across name, denomination, ruler, era, mint, inscriptions, notes, country and a banknote's serial number, series and signatures",
                         "name": "search",
                         "in": "query"
                     },
@@ -6967,6 +6977,18 @@ const docTemplate = `{
                     "Coins"
                 ],
                 "summary": "List collection countries",
+                "parameters": [
+                    {
+                        "enum": [
+                            "coin",
+                            "banknote"
+                        ],
+                        "type": "string",
+                        "description": "Only coins or only banknotes (every item when omitted)",
+                        "name": "kind",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -6975,6 +6997,12 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/repository.CountryCount"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
@@ -7360,7 +7388,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns the IDs of the user's collection coins (not wishlist or sold) that are still legal tender (current) or not (demonetized), and that are commemorative or not, by the same rules as the summary and the coin list filters: a circulation set on the coin wins, else the cached Numista type says (never asking Numista); coins of extinct countries are not current. A coin nobody knows about is in neither list of a pair.",
+                "description": "Returns the IDs of the user's collection coins (not wishlist or sold) that are circulation coins still legal tender (current), no longer legal tender (demonetized) or collector coins (nonCirculating), and that are commemorative or not, by the same rules as the summary and the coin list filters: a circulation set on the coin wins, else the cached Numista type says (never asking Numista); coins of extinct countries are not current. A coin nobody knows about is in neither list of a pair.",
                 "produces": [
                     "application/json"
                 ],
@@ -7397,7 +7425,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Counts the user's collection coins (excluding wishlist and sold), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many coins are still legal tender (from their cached Numista types; coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency, USD or EUR) and gives the total in euros, converted from dollars with the ECB daily reference rate (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins.",
+                "description": "Counts the user's collection coins (excluding wishlist and sold), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many circulation coins are still legal tender (from their cached Numista types; collector coins and coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency) and gives the total in euros, converted with the ECB daily reference rates (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins.",
                 "produces": [
                     "application/json"
                 ],
@@ -7405,11 +7433,29 @@ const docTemplate = `{
                     "Coins"
                 ],
                 "summary": "Get collection summary",
+                "parameters": [
+                    {
+                        "enum": [
+                            "coin",
+                            "banknote"
+                        ],
+                        "type": "string",
+                        "description": "Only the coins or only the banknotes (every item when omitted)",
+                        "name": "kind",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handlers.CollectionSummaryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
@@ -8696,7 +8742,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Adds a coin's official images to the sides asked for that have no image yet: the European Central Bank's images of a euro coin's national side (obverse) and common side (reverse), or, for a recent Portuguese or French collector coin, the photos of its mint's shop (INCM, Monnaie de Paris). Their credit is appended to the coin's notes. A coin neither has an image of (older collector coins, other currencies) gets none.",
+                "description": "Adds a coin's official images to the sides asked for that have no image yet: the European Central Bank's images of a euro coin's national side (obverse) and common side (reverse), or, for a Portuguese, French or Austrian collector coin, the photos of its mint (INCM, Monnaie de Paris, Münze Österreich). Their credit is appended to the coin's notes. A coin neither has an image of (older collector coins, other currencies) gets none.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9845,7 +9891,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Tells whether one of the user's coins is still legal tender (current) and whether it is commemorative, from its cached Numista type (never asking Numista); coins of countries that no longer exist are not current. A value is null when nobody knows (the coin is not linked to a cached Numista type).",
+                "description": "Tells whether one of the user's coins is still legal tender (current), whether it was issued for collectors rather than for circulation (nonCirculating) and whether it is commemorative, from its cached Numista type (never asking Numista); coins of countries that no longer exist are not current. A value is null when nobody knows (the coin is not linked to a cached Numista type).",
                 "produces": [
                     "application/json"
                 ],
@@ -10765,6 +10811,37 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/exchange-rates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the ECB daily euro reference rates (how much of each currency one euro buys; cached for a few hours, the last stored rates when the ECB cannot be reached) and the currencies a collection can be kept in, to convert amounts between them.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Get exchange rates",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ExchangeRatesResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -12372,7 +12449,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns one page (20 types unless count is set) of Numista coin types matching the text, issuer and/or catalogue reference (e.g. catalogue=KM, number=84), optionally limited to a year. Searches are cached for a day.",
+                "description": "Returns one page (20 types unless count is set) of Numista coin types (or banknote types, with category=banknote) matching the text, issuer and/or catalogue reference (e.g. catalogue=KM, number=84), optionally limited to a year. Searches are cached for a day.",
                 "produces": [
                     "application/json"
                 ],
@@ -12434,6 +12511,17 @@ const docTemplate = `{
                         "default": "en",
                         "description": "Language of results",
                         "name": "lang",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "coin",
+                            "banknote"
+                        ],
+                        "type": "string",
+                        "default": "coin",
+                        "description": "Coins or banknotes",
+                        "name": "category",
                         "in": "query"
                     }
                 ],
@@ -20363,6 +20451,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "certificationNumber": {
+                    "type": "string",
+                    "maxLength": 60
+                },
+                "certifiedGrade": {
+                    "type": "string",
+                    "maxLength": 60
+                },
                 "circulation": {
                     "description": "Circulation set by hand; empty means \"as Numista says\".",
                     "type": "string",
@@ -20372,7 +20468,9 @@ const docTemplate = `{
                         "current",
                         "current_commemorative",
                         "demonetized",
-                        "demonetized_commemorative"
+                        "demonetized_commemorative",
+                        "non_circulating",
+                        "non_circulating_commemorative"
                     ]
                 },
                 "country": {
@@ -20405,6 +20503,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100
                 },
+                "heightMm": {
+                    "type": "number"
+                },
                 "isPrivate": {
                     "type": "boolean"
                 },
@@ -20413,6 +20514,15 @@ const docTemplate = `{
                 },
                 "isWishlist": {
                     "type": "boolean"
+                },
+                "kind": {
+                    "description": "Kind is a coin (default) or a banknote.",
+                    "type": "string",
+                    "maxLength": 16,
+                    "enum": [
+                        "coin",
+                        "banknote"
+                    ]
                 },
                 "material": {
                     "$ref": "#/definitions/models.Material"
@@ -20427,6 +20537,15 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 200
+                },
+                "noteVariant": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "enum": [
+                        "",
+                        "replacement",
+                        "specimen"
+                    ]
                 },
                 "notes": {
                     "type": "string",
@@ -20452,6 +20571,10 @@ const docTemplate = `{
                         "blister",
                         "slab"
                     ]
+                },
+                "printer": {
+                    "type": "string",
+                    "maxLength": 200
                 },
                 "purchaseDate": {
                     "type": "string"
@@ -20508,6 +20631,19 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200
                 },
+                "serialNumber": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "series": {
+                    "description": "Banknote details: series, serial number, signatories, printer, size,\nwatermark, replacement or specimen, and a grading company's grade.",
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "signatures": {
+                    "type": "string",
+                    "maxLength": 300
+                },
                 "soldDate": {
                     "type": "string"
                 },
@@ -20537,7 +20673,14 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200
                 },
+                "watermark": {
+                    "type": "string",
+                    "maxLength": 500
+                },
                 "weightGrams": {
+                    "type": "number"
+                },
+                "widthMm": {
                     "type": "number"
                 },
                 "year": {
@@ -20653,10 +20796,7 @@ const docTemplate = `{
                 "currency": {
                     "description": "Currency is the collection currency coin prices and values are kept in.",
                     "type": "string",
-                    "enum": [
-                        "USD",
-                        "EUR"
-                    ]
+                    "example": "EUR"
                 },
                 "eras": {
                     "type": "array",
@@ -20761,12 +20901,20 @@ const docTemplate = `{
                     }
                 },
                 "current": {
+                    "description": "Current are circulation coins still legal tender.",
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
                 },
                 "demonetized": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "nonCirculating": {
+                    "description": "NonCirculating are collector coins (not demonetized).",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -20835,6 +20983,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "certificationNumber": {
+                    "type": "string",
+                    "maxLength": 60
+                },
+                "certifiedGrade": {
+                    "type": "string",
+                    "maxLength": 60
+                },
                 "circulation": {
                     "description": "Circulation set by hand; empty means \"as Numista says\".",
                     "type": "string",
@@ -20844,7 +21000,9 @@ const docTemplate = `{
                         "current",
                         "current_commemorative",
                         "demonetized",
-                        "demonetized_commemorative"
+                        "demonetized_commemorative",
+                        "non_circulating",
+                        "non_circulating_commemorative"
                     ]
                 },
                 "country": {
@@ -20877,6 +21035,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100
                 },
+                "heightMm": {
+                    "type": "number"
+                },
                 "isPrivate": {
                     "type": "boolean"
                 },
@@ -20885,6 +21046,15 @@ const docTemplate = `{
                 },
                 "isWishlist": {
                     "type": "boolean"
+                },
+                "kind": {
+                    "description": "Kind is a coin or a banknote.",
+                    "type": "string",
+                    "maxLength": 16,
+                    "enum": [
+                        "coin",
+                        "banknote"
+                    ]
                 },
                 "material": {
                     "$ref": "#/definitions/models.Material"
@@ -20899,6 +21069,15 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 200
+                },
+                "noteVariant": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "enum": [
+                        "",
+                        "replacement",
+                        "specimen"
+                    ]
                 },
                 "notes": {
                     "type": "string",
@@ -20924,6 +21103,10 @@ const docTemplate = `{
                         "blister",
                         "slab"
                     ]
+                },
+                "printer": {
+                    "type": "string",
+                    "maxLength": 200
                 },
                 "purchaseDate": {
                     "type": "string"
@@ -20980,6 +21163,19 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200
                 },
+                "serialNumber": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "series": {
+                    "description": "Banknote details.",
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "signatures": {
+                    "type": "string",
+                    "maxLength": 300
+                },
                 "soldDate": {
                     "type": "string"
                 },
@@ -21009,7 +21205,14 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200
                 },
+                "watermark": {
+                    "type": "string",
+                    "maxLength": 500
+                },
                 "weightGrams": {
+                    "type": "number"
+                },
+                "widthMm": {
                     "type": "number"
                 },
                 "year": {
@@ -21043,11 +21246,9 @@ const docTemplate = `{
             ],
             "properties": {
                 "currency": {
+                    "description": "Currency is EUR or a currency of the ECB reference rates (USD, GBP, CHF…).",
                     "type": "string",
-                    "enum": [
-                        "USD",
-                        "EUR"
-                    ]
+                    "example": "EUR"
                 }
             }
         },
@@ -21082,19 +21283,16 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "currency": {
-                    "description": "Currency is the collection currency (USD or EUR): TotalValue and the\nhighlights' values are in it.",
+                    "description": "Currency is the collection currency (an ISO code: EUR, USD, GBP…):\nTotalValue and the highlights' values are in it.",
                     "type": "string",
-                    "enum": [
-                        "USD",
-                        "EUR"
-                    ]
+                    "example": "EUR"
                 },
                 "currentCoins": {
-                    "description": "CurrentCoins are still legal tender, as Numista says of their types;\nCirculationUnknown are coins it says nothing of (not linked to Numista).",
+                    "description": "CurrentCoins are circulation coins still legal tender, as Numista says\nof their types (collector coins are not);\nCirculationUnknown are coins it says nothing of (not linked to Numista).",
                     "type": "integer"
                 },
                 "exchangeRate": {
-                    "description": "ExchangeRate is the latest ECB rate, when available.",
+                    "description": "ExchangeRate is the latest ECB rate for the US dollar, when available.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/services.ExchangeRate"
@@ -21113,7 +21311,7 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "totalValueEur": {
-                    "description": "TotalValueEUR is TotalValue in euros: as is for a euro collection, else\nconverted with ExchangeRate; null when no rate is available.",
+                    "description": "TotalValueEUR is TotalValue in euros: as is for a euro collection, else\nconverted with the ECB rate of its currency; null when no rate is available.",
                     "type": "number"
                 },
                 "types": {
@@ -21218,6 +21416,30 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Choose another slot and try again."
+                }
+            }
+        },
+        "handlers.ExchangeRatesResponse": {
+            "type": "object",
+            "properties": {
+                "currencies": {
+                    "description": "Currencies are the collection currencies (the euro first).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "date": {
+                    "description": "Date is the ECB reference date, YYYY-MM-DD.",
+                    "type": "string"
+                },
+                "perEur": {
+                    "description": "PerEUR is how much of each currency one euro buys (\"USD\": 1.1206).",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number",
+                        "format": "float64"
+                    }
                 }
             }
         },
@@ -24515,6 +24737,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "certificationNumber": {
+                    "type": "string",
+                    "maxLength": 60
+                },
+                "certifiedGrade": {
+                    "type": "string",
+                    "maxLength": 60
+                },
                 "circulation": {
                     "description": "Circulation, when set by hand (see CoinCirculations), says whether the\ncoin is still legal tender and whether it is commemorative, instead of\nwhat Numista says of its type.",
                     "type": "string",
@@ -24523,7 +24753,9 @@ const docTemplate = `{
                         "current",
                         "current_commemorative",
                         "demonetized",
-                        "demonetized_commemorative"
+                        "demonetized_commemorative",
+                        "non_circulating",
+                        "non_circulating_commemorative"
                     ]
                 },
                 "country": {
@@ -24563,6 +24795,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100
                 },
+                "heightMm": {
+                    "type": "number"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -24580,6 +24815,14 @@ const docTemplate = `{
                 },
                 "isWishlist": {
                     "type": "boolean"
+                },
+                "kind": {
+                    "description": "Kind is what the item is: a coin or a banknote (see CoinKind…).",
+                    "type": "string",
+                    "enum": [
+                        "coin",
+                        "banknote"
+                    ]
                 },
                 "listingCheckReason": {
                     "type": "string"
@@ -24607,6 +24850,14 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200
                 },
+                "noteVariant": {
+                    "type": "string",
+                    "enum": [
+                        "",
+                        "replacement",
+                        "specimen"
+                    ]
+                },
                 "notes": {
                     "type": "string",
                     "maxLength": 5000
@@ -24625,6 +24876,10 @@ const docTemplate = `{
                 "presentation": {
                     "description": "Presentation is how the coin is kept or was issued (see CoinPresentations).",
                     "type": "string"
+                },
+                "printer": {
+                    "type": "string",
+                    "maxLength": 200
                 },
                 "purchaseDate": {
                     "type": "string"
@@ -24676,11 +24931,24 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200
                 },
+                "serialNumber": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "series": {
+                    "description": "Banknote details (see Kind): the series or issue (\"Chapa 13\"), the\nnote's own serial number, its signatories, printer, size, watermark,\nwhether it is a replacement or specimen note, and a grading company's\ngrade (\"PMG 66 EPQ\") with its certificate.",
+                    "type": "string",
+                    "maxLength": 200
+                },
                 "sets": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.CoinSet"
                     }
+                },
+                "signatures": {
+                    "type": "string",
+                    "maxLength": 300
                 },
                 "soldDate": {
                     "type": "string"
@@ -24729,7 +24997,14 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200
                 },
+                "watermark": {
+                    "type": "string",
+                    "maxLength": 500
+                },
                 "weightGrams": {
+                    "type": "number"
+                },
+                "widthMm": {
                     "type": "number"
                 },
                 "year": {
@@ -24949,7 +25224,8 @@ const docTemplate = `{
                         "wikimedia",
                         "ecb",
                         "incm",
-                        "mdp"
+                        "mdp",
+                        "moe"
                     ]
                 },
                 "thumbnail": {
@@ -25678,6 +25954,10 @@ const docTemplate = `{
         "models.NumistaCatalogType": {
             "type": "object",
             "properties": {
+                "category": {
+                    "description": "Category is \"coin\", \"banknote\" or \"exonumia\".",
+                    "type": "string"
+                },
                 "classification": {
                     "description": "Classification is Numista's kind of coin (e.g. \"Moedas circulantes\ncomuns\"), in the language asked for.",
                     "type": "string"
@@ -25703,6 +25983,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "diameterMm": {
+                    "description": "DiameterMm is a coin's diameter, or a banknote's width.",
                     "type": "number"
                 },
                 "edge": {
@@ -25710,6 +25991,10 @@ const docTemplate = `{
                 },
                 "faceValue": {
                     "description": "FaceValue is the denomination as a number (5 for \"5 Euros\").",
+                    "type": "number"
+                },
+                "heightMm": {
+                    "description": "HeightMm is a banknote's height.",
                     "type": "number"
                 },
                 "id": {
@@ -25721,6 +26006,9 @@ const docTemplate = `{
                 },
                 "issuer": {
                     "$ref": "#/definitions/models.NumistaCatalogIssuer"
+                },
+                "issuingEntity": {
+                    "type": "string"
                 },
                 "maxYear": {
                     "type": "integer"
@@ -25741,6 +26029,13 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.NumistaCatalogPhoto"
+                    }
+                },
+                "printers": {
+                    "description": "Printers, Watermark and IssuingEntity (the issuing bank) describe banknotes.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 },
                 "references": {
@@ -25774,6 +26069,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "url": {
+                    "type": "string"
+                },
+                "watermark": {
                     "type": "string"
                 },
                 "weightGrams": {
@@ -27629,6 +27927,10 @@ const docTemplate = `{
                 "manual": {
                     "description": "Manual is true when the user set them on the coin (its circulation).",
                     "type": "boolean"
+                },
+                "nonCirculating": {
+                    "description": "NonCirculating is true for coins issued for collectors rather than for\ncirculation (Numista's \"non-circulating coins\"); null when nobody knows.",
+                    "type": "boolean"
                 }
             }
         },
@@ -27656,15 +27958,14 @@ const docTemplate = `{
                 "currency": {
                     "type": "string"
                 },
-                "exchangeRate": {
-                    "description": "ExchangeRate is the ECB rate used; nil when nothing was converted.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/services.ExchangeRate"
-                        }
-                    ]
+                "factor": {
+                    "description": "Factor is what every amount was multiplied by (how much of the new\ncurrency one unit of the previous one buys), at the ECB rates of\nRateDate; both are empty when nothing was converted.",
+                    "type": "number"
                 },
                 "previous": {
+                    "type": "string"
+                },
+                "rateDate": {
                     "type": "string"
                 }
             }

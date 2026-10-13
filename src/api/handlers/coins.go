@@ -38,6 +38,8 @@ var nullableCoinUpdateScalarFields = map[string]string{
 	"soldDate":              "SoldDate",
 	"weightGrams":           "WeightGrams",
 	"diameterMm":            "DiameterMm",
+	"widthMm":               "WidthMm",
+	"heightMm":              "HeightMm",
 	"romanImperialFigureId": "RomanImperialFigureID",
 	"mintLocationId":        "MintLocationID",
 	"year":                  "Year",
@@ -154,7 +156,7 @@ type CoinOptionsResponse struct {
 	Eras       []string                    `json:"eras"`
 	Labels     map[string]CoinOptionLabels `json:"labels"`
 	// Currency is the collection currency coin prices and values are kept in.
-	Currency string `json:"currency" enums:"USD,EUR"`
+	Currency string `json:"currency" example:"EUR"`
 }
 
 // GetCoinOptions returns the configured category and era choices with their
@@ -163,7 +165,7 @@ type CoinOptionsResponse struct {
 // the labels are display-only.
 //
 //	@Summary		Get coin category and era options
-//	@Description	Returns the admin-configured category and era choices with translated display names, and the collection currency (USD or EUR) coin prices and values are kept in
+//	@Description	Returns the admin-configured category and era choices with translated display names, and the collection currency (EUR, USD, GBP…) coin prices and values are kept in
 //	@Tags			Coins
 //	@Produce		json
 //	@Security		BearerAuth
@@ -230,16 +232,17 @@ type ShipmentAttachRequest struct {
 //	@Description	Returns a paginated, filterable list of coins belonging to the authenticated user.
 //	@Tags			Coins
 //	@Produce		json
+//	@Param			kind		query		string	false	"Only coins or only banknotes (every item when omitted)"	Enums(coin, banknote)
 //	@Param			category	query		string	false	"Filter by category (Roman, Greek, Byzantine, Modern, Other)"
 //	@Param			era			query		string	false	"Filter by era (ancient, medieval, modern)"
 //	@Param			country		query		string	false	"Filter by country (exact)"
 //	@Param			presentation	query	string	false	"Filter by presentation"	Enums(loose, coincard, capsule, flip, proof_set, blister, slab)
 //	@Param			extinct			query	bool	false	"Only coins of countries that no longer exist (USSR, Yugoslavia, Ottoman Empire…)"
-//	@Param			circulation		query	string	false	"Only collection coins still legal tender (current) or no longer (demonetized), as Numista says of their types"	Enums(current, demonetized)
+//	@Param			circulation		query	string	false	"Only collection coins issued for circulation and still legal tender (current), or no longer legal tender (demonetized), as Numista says of their types; collector (non-circulating) coins are not current"	Enums(current, demonetized)
 //	@Param			commemorative	query	bool	false	"Only collection coins of commemorative types (true) or of regular ones (false), as Numista says"
 //	@Param			classification	query	string	false	"Only collection coins of one Numista kind of coin: standard, circulating-commemorative, non-circulating, or another kind's label (see the summary's classifications)"
 //	@Param			rarity		query		string	false	"Filter by rarity"	Enums(common, uncommon, scarce, rare, very_rare, extremely_rare)
-//	@Param			search		query		string	false	"Search across name, denomination, ruler, era, mint, inscriptions, notes"
+//	@Param			search		query		string	false	"Search across name, denomination, ruler, era, mint, inscriptions, notes, country and a banknote's serial number, series and signatures"
 //	@Param			wishlist	query		string	false	"Filter by wishlist status"	Enums(true, false)
 //	@Param			sold		query		string	false	"Filter by sold status"	Enums(true, false)
 //	@Param			page		query		int		false	"Page number"	default(1)
@@ -291,7 +294,13 @@ func (h *CoinHandler) List(c *gin.Context) {
 		return
 	}
 
+	kind, ok := coinKindQuery(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "kind must be 'coin' or 'banknote'"})
+		return
+	}
 	filters := repository.CoinListFilters{
+		Kind:         kind,
 		Category:     c.Query("category"),
 		Era:          c.Query("era"),
 		Country:      models.NormalizeCoinCountry(c.Query("country")),
@@ -441,7 +450,7 @@ func (h *CoinHandler) Get(c *gin.Context) {
 // commemorative.
 //
 //	@Summary		Get a coin's legal tender and commemorative status
-//	@Description	Tells whether one of the user's coins is still legal tender (current) and whether it is commemorative, from its cached Numista type (never asking Numista); coins of countries that no longer exist are not current. A value is null when nobody knows (the coin is not linked to a cached Numista type).
+//	@Description	Tells whether one of the user's coins is still legal tender (current), whether it was issued for collectors rather than for circulation (nonCirculating) and whether it is commemorative, from its cached Numista type (never asking Numista); coins of countries that no longer exist are not current. A value is null when nobody knows (the coin is not linked to a cached Numista type).
 //	@Tags			Coins
 //	@Produce		json
 //	@Param			id	path		int	true	"Coin ID"
@@ -477,17 +486,20 @@ func (h *CoinHandler) Status(c *gin.Context) {
 // CoinStatusGroups lists the collection's coins by legal tender and
 // commemorative status; a coin nobody knows about is in neither list of a pair.
 type CoinStatusGroups struct {
-	Current       []uint `json:"current"`
-	Demonetized   []uint `json:"demonetized"`
-	Commemorative []uint `json:"commemorative"`
-	Regular       []uint `json:"regular"`
+	// Current are circulation coins still legal tender.
+	Current     []uint `json:"current"`
+	Demonetized []uint `json:"demonetized"`
+	// NonCirculating are collector coins (not demonetized).
+	NonCirculating []uint `json:"nonCirculating"`
+	Commemorative  []uint `json:"commemorative"`
+	Regular        []uint `json:"regular"`
 }
 
 // StatusGroups tells, in one answer, which collection coins are current or
 // demonetized and which are commemorative or not.
 //
 //	@Summary		List coins by legal tender and commemorative status
-//	@Description	Returns the IDs of the user's collection coins (not wishlist or sold) that are still legal tender (current) or not (demonetized), and that are commemorative or not, by the same rules as the summary and the coin list filters: a circulation set on the coin wins, else the cached Numista type says (never asking Numista); coins of extinct countries are not current. A coin nobody knows about is in neither list of a pair.
+//	@Description	Returns the IDs of the user's collection coins (not wishlist or sold) that are circulation coins still legal tender (current), no longer legal tender (demonetized) or collector coins (nonCirculating), and that are commemorative or not, by the same rules as the summary and the coin list filters: a circulation set on the coin wins, else the cached Numista type says (never asking Numista); coins of extinct countries are not current. A coin nobody knows about is in neither list of a pair.
 //	@Tags			Coins
 //	@Produce		json
 //	@Success		200	{object}	CoinStatusGroups
@@ -496,7 +508,7 @@ type CoinStatusGroups struct {
 //	@Security		BearerAuth
 //	@Router			/coins/statuses [get]
 func (h *CoinHandler) StatusGroups(c *gin.Context) {
-	groups := CoinStatusGroups{Current: []uint{}, Demonetized: []uint{}, Commemorative: []uint{}, Regular: []uint{}}
+	groups := CoinStatusGroups{Current: []uint{}, Demonetized: []uint{}, NonCirculating: []uint{}, Commemorative: []uint{}, Regular: []uint{}}
 	if h.circulation == nil {
 		c.JSON(http.StatusOK, groups)
 		return
@@ -506,7 +518,7 @@ func (h *CoinHandler) StatusGroups(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch coins"})
 		return
 	}
-	groups.Current, groups.Demonetized = sorted.Current, sorted.Demonetized
+	groups.Current, groups.Demonetized, groups.NonCirculating = sorted.Current, sorted.Demonetized, sorted.NonCirculating
 	groups.Commemorative, groups.Regular = sorted.Commemorative, sorted.Regular
 	c.JSON(http.StatusOK, groups)
 }
@@ -1046,7 +1058,9 @@ func handleCoinMutationError(c *gin.Context, err error) bool {
 		errors.Is(err, services.ErrCoinInvalidCategory),
 		errors.Is(err, services.ErrCoinInvalidPresentation),
 		errors.Is(err, services.ErrCoinInvalidRarity),
-		errors.Is(err, services.ErrCoinInvalidCirculation):
+		errors.Is(err, services.ErrCoinInvalidCirculation),
+		errors.Is(err, services.ErrCoinInvalidKind),
+		errors.Is(err, services.ErrCoinInvalidNoteVariant):
 		respondError(c, http.StatusBadRequest, err.Error(), err)
 		return true
 	case errors.Is(err, services.ErrStorageSlotRequired),
@@ -1075,6 +1089,13 @@ func handleCoinMutationError(c *gin.Context, err error) bool {
 }
 
 // intersectIDs keeps the IDs in both lists; a nil first list stands for every coin.
+// coinKindQuery reads the optional kind filter: "" (every item), "coin" or
+// "banknote"; ok is false for anything else.
+func coinKindQuery(c *gin.Context) (kind string, ok bool) {
+	kind = strings.TrimSpace(c.Query("kind"))
+	return kind, kind == "" || models.ValidCoinKind(kind)
+}
+
 func intersectIDs(ids, keep []uint) []uint {
 	if ids == nil {
 		return keep

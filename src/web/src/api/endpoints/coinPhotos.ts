@@ -1,12 +1,12 @@
-// Real coin photos from public sources (ECB, the Portuguese and French mints'
-// shops, Numista catalogue, Wikimedia Commons), found by search and imported
+// Real coin photos from public sources (ECB, the Portuguese, French and
+// Austrian mints, Numista catalogue, Wikimedia Commons), found by search and imported
 // into a coin with their credit.
 import { api } from '@/api/http'
 import type { NumistaDataStatus } from '@/api/endpoints/coins'
 import type { CoinImage } from '@/types'
 
 export interface CoinPhotoCandidate {
-  source: 'numista' | 'wikimedia' | 'ecb' | 'incm' | 'mdp'
+  source: 'numista' | 'wikimedia' | 'ecb' | 'incm' | 'mdp' | 'moe'
   /** Set when the source says which side the photo shows. */
   side?: 'obverse' | 'reverse'
   thumbnail: string

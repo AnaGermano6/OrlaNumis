@@ -28,7 +28,7 @@ const (
 	mdpSitemapLimit     = 32 << 20
 	mdpImageLimit       = 8 << 20
 	mdpTimeout          = 30 * time.Second
-	mdpCoinsCacheKey    = "mdp:coins:v1"
+	mdpCoinsCacheKey    = "mdp:coins:v2"
 	mdpCoinsCacheTTL    = 7 * 24 * time.Hour
 	mdpShapeCacheKey    = "mdp:shape:v1:"
 	mdpShapeCacheTTL    = 365 * 24 * time.Hour
@@ -210,7 +210,10 @@ var (
 	// "10eur", "50eu", "1-4eur" (¼ €), "5-000eur" (5,000 €).
 	mdpFaceValue = regexp.MustCompile(`(?:^|-)(?:(1)-(2|4)|(\d{1,2})-(\d{3})|(\d+))eu(?:r|ros?)?(?:-|$)`)
 	mdpYear      = regexp.MustCompile(`(?:yeardate|millesime|year|vintage)-(\d{4})(?:-|$)`)
-	mdpPhotoNo   = regexp.MustCompile(`MDP_(\d{6,})_`)
+	// A coin's slug ends with its year (and a number or market code, "-jp");
+	// an object holding a coin goes on ("…-yeardate-2017-steel-letter").
+	mdpCoinEnd = regexp.MustCompile(`(?:yeardate|millesime|year|vintage)-\d{4}(?:-(?:\d+|[a-z]{2}))?$`)
+	mdpPhotoNo = regexp.MustCompile(`MDP_(\d{6,})_`)
 	// Several coins in one product: a set, an album, a box.
 	mdpSet = regexp.MustCompile(`(?:^|-)(?:set|sets|lot|lots|box|album|albums|coffret|coffrets|pack|collection|coins|monnaies|\d+x\d+(?:eu\w*)?)(?:-|$)`)
 	// Slug words that say nothing about the design.
@@ -240,7 +243,7 @@ func ParseMdpSitemaps(english, french []byte) ([]mintCoin, error) {
 		}
 		slug := url.Loc[strings.LastIndex(url.Loc, "/")+1:]
 		value, year := mdpValue(slug), mdpYearOf(slug)
-		if value <= 0 || year == 0 || !strings.Contains(slug, "coin") || mdpSet.MatchString(slug) || len(mdpFaceValue.FindAllString(slug, -1)) > 1 {
+		if value <= 0 || year == 0 || !strings.Contains(slug, "coin") || !mdpCoinEnd.MatchString(slug) || mdpSet.MatchString(slug) || len(mdpFaceValue.FindAllString(slug, -1)) > 1 {
 			continue
 		}
 		coin := mintCoin{
@@ -324,7 +327,8 @@ func mdpMetal(slug string) string {
 	}
 }
 
-// mdpDesignWords keeps the words of a slug that name the design.
+// mdpDesignWords keeps the words of a slug that name the design, once each
+// ("snoopy-10eur-silver-coin-snoopy-shape…" is "snoopy").
 func mdpDesignWords(slug string) string {
 	var words []string
 	for _, word := range strings.Split(slug, "-") {
@@ -332,7 +336,7 @@ func mdpDesignWords(slug string) string {
 			words = append(words, word)
 		}
 	}
-	return strings.Join(words, " ")
+	return strings.Join(uniqueStrings(words), " ")
 }
 
 // mdpPhotoURL drops the resizing options from a photo's address.

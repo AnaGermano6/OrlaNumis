@@ -42,11 +42,11 @@
       <button
         class="inline-flex w-full items-center gap-2 whitespace-nowrap rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-55"
         :disabled="duplicating"
-        :aria-label="duplicating ? t('coinDetail.menu.copyingCoin') : t('coinDetail.menu.copy')"
+        :aria-label="duplicating ? (isBanknote ? t('coinDetail.menu.copyingBanknote') : t('coinDetail.menu.copyingCoin')) : copyLabel"
         @click="handleDuplicate(close)"
       >
         <Copy :size="16" />
-        {{ duplicating ? t('coinDetail.menu.copying') : t('coinDetail.menu.copy') }}
+        {{ duplicating ? t('coinDetail.menu.copying') : copyLabel }}
       </button>
       <router-link
         v-for="section in sections"
@@ -71,6 +71,8 @@ import { t } from '@/i18n'
 
 const props = withDefaults(defineProps<{
   coinId: number
+  /** A banknote is copied as a banknote: "Copy banknote". */
+  isBanknote?: boolean
   duplicating?: boolean
   showShare?: boolean
   sharing?: boolean
@@ -80,6 +82,7 @@ const props = withDefaults(defineProps<{
   pinned?: boolean
   pinBusy?: boolean
 }>(), {
+  isBanknote: false,
   duplicating: false,
   showShare: false,
   sharing: false,
@@ -89,6 +92,8 @@ const props = withDefaults(defineProps<{
   pinned: false,
   pinBusy: false,
 })
+
+const copyLabel = computed(() => (props.isBanknote ? t('coinDetail.menu.copyBanknote') : t('coinDetail.menu.copy')))
 
 const emit = defineEmits<{
   duplicate: []

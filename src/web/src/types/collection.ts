@@ -38,38 +38,6 @@ export interface StorageLocation {
   sortOrder?: number
 }
 
-export interface TrayOccupancy {
-  locationId: number
-  rows: number
-  columns: number
-  capacity: number
-  occupiedSlots: number[]
-  currentCoinSlot: number | null
-}
-
-export interface StorageTrayImage {
-  filePath: string
-  imageType?: string | null
-}
-
-export interface StorageTrayCoin {
-  id: number
-  name: string
-  diameterMm: number | null
-  storageSlot: number
-  images: StorageTrayImage[]
-}
-
-export interface TrayAggregate {
-  id: number
-  name: string
-  rows: number
-  columns: number
-  capacity: number
-  occupied: number
-  coins: StorageTrayCoin[]
-}
-
 export interface MintLocation {
   id: number
   userId?: number | null

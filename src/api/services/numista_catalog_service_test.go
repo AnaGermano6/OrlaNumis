@@ -158,6 +158,15 @@ func TestNumistaCatalog_SearchMapsResultsAndCachesEachQuery(t *testing.T) {
 	if client.searchCalls != 2 {
 		t.Fatalf("another page must be fetched, got %d calls", client.searchCalls)
 	}
+	// A coin search keeps its cache entry; banknotes are another search.
+	catalog.Search(ctx, NumistaTypeSearch{Query: "escudos", Issuer: "portugal", Lang: "pt", Category: "coin"})
+	if client.searchCalls != 2 {
+		t.Fatalf("a coin search is the same search, got %d calls", client.searchCalls)
+	}
+	catalog.Search(ctx, NumistaTypeSearch{Query: "escudos", Issuer: "portugal", Lang: "pt", Category: "banknote"})
+	if client.searchCalls != 3 || client.lastSearch.Category != "banknote" {
+		t.Fatalf("banknotes must be searched apart, got %d calls (%+v)", client.searchCalls, client.lastSearch)
+	}
 
 	client.searchErr = &NumistaError{Kind: NumistaErrorQuotaLimited}
 	if failed := catalog.Search(ctx, NumistaTypeSearch{Query: "reis", Lang: "pt"}); failed.Status != models.NumistaDataStatusQuotaLimited || len(failed.Types) != 0 {
@@ -278,5 +287,23 @@ func TestNumistaCatalog_ShowsTheINCMPhotosOfAPortugueseCollectorCoin(t *testing.
 		!strings.Contains(detail.Type.Photos[0].Picture, "Conhecimento_CU_A.jpg") || detail.Type.Photos[0].Copyright != "INCM" ||
 		detail.Type.Photos[1].Side != "reverse" || !strings.Contains(detail.Type.Photos[1].Thumbnail, "Conhecimento_CU_B.jpg") {
 		t.Fatalf("type = %+v", detail.Type)
+	}
+}
+
+// A banknote type gives its height, printers, watermark and issuing bank.
+func TestParseNumistaCatalogType_Banknote(t *testing.T) {
+	detail, err := parseNumistaCatalogType([]byte(`{"id": 1234, "title": "1000 Escudos (Pedro Álvares Cabral)", "category": "banknote",
+		"issuer": {"code": "portugal", "name": "Portugal"}, "issuing_entity": {"id": 9, "name": "Banco de Portugal"},
+		"min_year": 1996, "max_year": 2000, "value": {"text": "1000 Escudos"}, "size": 160, "size2": 75,
+		"composition": {"text": "Papel"}, "printers": [{"id": 1, "name": "Valora"}, {"name": " "}],
+		"watermark": {"description": "Pedro Álvares Cabral"},
+		"references": [{"catalogue": {"code": "P"}, "number": "188"}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if detail.Category != "banknote" || detail.IssuingEntity != "Banco de Portugal" || detail.DiameterMm == nil || *detail.DiameterMm != 160 ||
+		detail.HeightMm == nil || *detail.HeightMm != 75 || len(detail.Printers) != 1 || detail.Printers[0] != "Valora" ||
+		detail.Watermark != "Pedro Álvares Cabral" || len(detail.References) != 1 || detail.References[0].Catalogue != "P" {
+		t.Fatalf("detail = %+v", detail)
 	}
 }

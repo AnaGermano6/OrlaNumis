@@ -30,6 +30,9 @@ const IncmPhotoPath = "https://cdn.shopify.com/s/files/1/0525/1910/8762/"
 // MdpPhotoPath serves the Monnaie de Paris shop's product photos.
 const MdpPhotoPath = "https://www.monnaiedeparis.fr/media/catalog/product/"
 
+// MoePhotoPath serves the Münze Österreich's catalogue and shop photos.
+const MoePhotoPath = "https://www.muenzeoesterreich.at/var/storage/images/"
+
 // appCSP is the policy for the SPA and the API.
 //
 // Notes on the non-obvious directives:
@@ -58,7 +61,7 @@ var appCSP = strings.Join([]string{
 	"form-action 'self'",
 	"script-src 'self' 'wasm-unsafe-eval' blob:",
 	"style-src 'self' 'unsafe-inline'",
-	"img-src 'self' data: blob: " + OSMTileHost + " " + NumistaPhotoHost + " " + EcbPhotoHost + " " + IncmPhotoPath + " " + MdpPhotoPath,
+	"img-src 'self' data: blob: " + OSMTileHost + " " + NumistaPhotoHost + " " + EcbPhotoHost + " " + IncmPhotoPath + " " + MdpPhotoPath + " " + MoePhotoPath,
 	"font-src 'self' data:",
 	"connect-src 'self' blob:",
 	"worker-src 'self' blob:",

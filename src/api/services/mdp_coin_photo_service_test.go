@@ -103,6 +103,8 @@ func TestMdpCoinPhotoService_Match(t *testing.T) {
 		{"10 Euro (Josephine Baker)", 2025, "josephine-baker-10eur"},
 		{"10 Euros (Year of the Snake, silver 999‰)", 2025, "year-of-the-snake-10eur"},
 		{"¼ Euro Rugby World Cup 2023 - England", 2023, "1-4eur-coin-england"},
+		// The subject is outside the brackets, which only name the metal.
+		{"10 euros Josephine Baker (argent 333‰)", 2025, "josephine-baker-10eur"},
 	} {
 		query, _ := mintQueryForTitle(c.title, &c.year)
 		photo, err := service.Match(ctx, query)
@@ -128,6 +130,20 @@ func TestMdpCoinPhotoService_Match(t *testing.T) {
 	}
 	if client.calls != 2 {
 		t.Fatalf("the sitemaps should be read once, got %d calls", client.calls)
+	}
+}
+
+// A letter opener holding a €2 coin is not a coin.
+func TestMdpCoinEnd(t *testing.T) {
+	for slug, want := range map[string]bool{
+		"astrological-signs-aries-5eur-common-metal-coin-circulating-quality-yeardate-2025": true,
+		"harry-potter-the-3-wizards-10eu-silver-coin-yeardate-2021-0":                       true,
+		"hello-kitty-50eur-1-4-oz-gold-coin-birthday-proof-quality-yeardate-2024-jp":        true,
+		"design-letter-opener-with-rodin-commemorativ-2eu-coin-yeardate-2017-steel-letter":  false,
+	} {
+		if got := mdpCoinEnd.MatchString(slug); got != want {
+			t.Errorf("%s: %v, want %v", slug, got, want)
+		}
 	}
 }
 

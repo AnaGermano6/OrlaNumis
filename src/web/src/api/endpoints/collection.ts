@@ -8,9 +8,6 @@ import type {
   NoteInput,
   NoteListResponse,
   RomanImperialFigure,
-  StorageLocation,
-  TrayAggregate,
-  TrayOccupancy,
   Tag,
   UserNote,
 } from '@/types'
@@ -32,28 +29,6 @@ export const createTag = (data: { name: string; color?: string }) => api.post<Ta
 export const updateTag = (id: number, data: { name?: string; color?: string }) => api.put<Tag>(`/tags/${id}`, data)
 
 export const deleteTag = (id: number) => api.delete(`/tags/${id}`)
-
-// Storage Locations
-export const getStorageLocations = () => api.get<{ storageLocations: StorageLocation[] }>('/storage-locations')
-
-export type StorageLocationWrite = {
-  name: string
-  type?: 'standard' | 'tray'
-  rows?: number | null
-  columns?: number | null
-  sortOrder?: number
-}
-
-export const createStorageLocation = (data: StorageLocationWrite) => api.post<StorageLocation>('/storage-locations', data)
-
-export const updateStorageLocation = (id: number, data: Partial<StorageLocationWrite>) => api.put<StorageLocation>(`/storage-locations/${id}`, data)
-
-export const deleteStorageLocation = (id: number) => api.delete(`/storage-locations/${id}`)
-
-export const getStorageLocationOccupancy = (id: number, coinId?: number) =>
-  api.get<TrayOccupancy>(`/storage-locations/${id}/occupancy`, { params: coinId ? { coinId } : undefined })
-
-export const getStorageTrays = () => api.get<{ trays: TrayAggregate[] }>('/storage-trays')
 
 export type MintLocationInput = {
   displayName: string

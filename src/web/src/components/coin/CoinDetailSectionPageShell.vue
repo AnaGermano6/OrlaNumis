@@ -12,33 +12,35 @@
         </button>
         <CoinDetailOverflowMenu
           :coin-id="coin.id"
+          :is-banknote="isBanknote"
           :duplicating="duplicating"
           @duplicate="handleDuplicate"
         />
       </div>
 
-      <div class="mb-4 grid grid-cols-2 gap-4">
-        <div class="relative aspect-square w-full overflow-hidden rounded-md border border-border-subtle bg-card">
+      <!-- A banknote is wide: its front and back are stacked. -->
+      <div class="mb-4 grid gap-4" :class="isBanknote ? 'grid-cols-1' : 'grid-cols-2'">
+        <div class="relative w-full overflow-hidden rounded-md border border-border-subtle bg-card" :class="isBanknote ? 'aspect-[2/1]' : 'aspect-square'">
           <AuthenticatedImage
             v-if="obverseImage"
             :media-path="obverseImage.filePath"
-            :alt="t('common.obverse')"
+            :alt="sideLabel('obverse')"
             class="h-full w-full object-contain"
           />
           <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2">
-            <span class="text-body font-medium text-text-secondary">{{ t('common.obverse') }}</span>
+            <span class="text-body font-medium text-text-secondary">{{ sideLabel('obverse') }}</span>
             <span class="text-sm italic text-text-muted">{{ t('common.noImage') }}</span>
           </div>
         </div>
-        <div class="relative aspect-square w-full overflow-hidden rounded-md border border-border-subtle bg-card">
+        <div class="relative w-full overflow-hidden rounded-md border border-border-subtle bg-card" :class="isBanknote ? 'aspect-[2/1]' : 'aspect-square'">
           <AuthenticatedImage
             v-if="reverseImage"
             :media-path="reverseImage.filePath"
-            :alt="t('common.reverse')"
+            :alt="sideLabel('reverse')"
             class="h-full w-full object-contain"
           />
           <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2">
-            <span class="text-body font-medium text-text-secondary">{{ t('common.reverse') }}</span>
+            <span class="text-body font-medium text-text-secondary">{{ sideLabel('reverse') }}</span>
             <span class="text-sm italic text-text-muted">{{ t('common.noImage') }}</span>
           </div>
         </div>
@@ -80,6 +82,12 @@ defineProps<{
 const { coin, loading, refreshCoin, navigateToOverview } = useCoinDetailContext()
 const obverseImage = computed(() => coin.value?.images?.find((image) => image.imageType === 'obverse') ?? null)
 const reverseImage = computed(() => coin.value?.images?.find((image) => image.imageType === 'reverse') ?? null)
+// A banknote has a front and a back, a coin an obverse and a reverse.
+const isBanknote = computed(() => coin.value?.kind === 'banknote')
+function sideLabel(side: 'obverse' | 'reverse'): string {
+  if (isBanknote.value) return side === 'obverse' ? t('banknoteForm.front') : t('banknoteForm.back')
+  return side === 'obverse' ? t('common.obverse') : t('common.reverse')
+}
 const duplicating = ref(false)
 
 const containerRef = ref<HTMLElement | null>(null)

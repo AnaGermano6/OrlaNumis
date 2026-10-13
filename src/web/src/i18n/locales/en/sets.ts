@@ -147,13 +147,11 @@ export default {
     ofTheseRules: 'of these rules',
     groups: {
       coin: 'Coin Properties',
-      storage: 'Storage',
       valueDates: 'Value & Dates',
       status: 'Status',
     },
     fields: {
       rulerIssuer: 'Ruler / Issuer',
-      storageLocation: 'Storage location',
       currentValue: 'Current value ({currency})',
       purchasePrice: 'Purchase price ({currency})',
       purchaseDate: 'Purchase date',
@@ -162,7 +160,6 @@ export default {
       sold: 'Sold',
       private: 'Private',
     },
-    selectLocation: 'Select location',
     amount: 'Amount',
     value: 'Value',
     removeRule: 'Remove rule',

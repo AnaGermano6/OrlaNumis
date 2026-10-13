@@ -2,7 +2,6 @@ import type { Messages } from '../../types'
 
 const messages: Messages['collection'] = {
   searchPlaceholder: 'Pesquisar moedas por nome, governante, inscrição...',
-  allCategories: 'Todas as categorias',
   allEras: 'Todas as épocas',
   allSets: 'Todos os conjuntos',
   sort: {
@@ -56,7 +55,6 @@ const messages: Messages['collection'] = {
   bulk: {
     selected: { one: '{count} moeda selecionada', other: '{count} moedas selecionadas' },
     tag: 'Etiqueta',
-    assignLocation: 'Atribuir localização',
     markSold: 'Marcar como vendida',
     confirmDelete: { one: 'Eliminar {count} moeda? Esta ação não pode ser anulada.', other: 'Eliminar {count} moedas? Esta ação não pode ser anulada.' },
     confirmSell: { one: 'Marcar {count} moeda como vendida?', other: 'Marcar {count} moedas como vendidas?' },
@@ -64,12 +62,8 @@ const messages: Messages['collection'] = {
     sellFailed: 'Não foi possível marcar as moedas como vendidas',
     applySetFailed: 'Não foi possível aplicar o conjunto',
     applyTagFailed: 'Não foi possível aplicar a etiqueta',
-    assignLocationFailed: 'Não foi possível atribuir a localização',
     applySet: 'Aplicar conjunto',
     noSets: 'Não há conjuntos disponíveis. Crie primeiro um conjunto.',
-    noLocation: 'Sem localização',
-    trayNeedsSlot: 'As atribuições a tabuleiros exigem escolher uma posição em cada moeda.',
-    noLocations: 'Não há localizações de arrumação. Crie-as primeiro nas Definições.',
   },
   view: {
     groupBy: 'Ver por',
@@ -113,18 +107,14 @@ const messages: Messages['collection'] = {
     coincards: 'Em coincard',
     coincardsHint: 'Moedas em coincard. Toque para ver só essas.',
     value: 'Valor total',
-    valueHint: 'Soma do valor atual das moedas (guardado em dólares), convertida para euros com a taxa de referência do BCE de {date}: 1 € = {rate} US$.',
-    valueHintNoRate: 'Soma do valor atual das moedas em euros. Não foi possível obter a taxa de câmbio do BCE.',
-    rateDate: 'Taxa BCE de {date}',
-    rateUnavailable: 'Taxa de câmbio indisponível',
     unvalued: { one: '{count} sem valor', other: '{count} sem valor' },
-    valueHintEuros: 'Soma do valor atual das moedas, em euros.',
     extinctCountries: { one: '{count} extinto', other: '{count} extintos' },
     extinctCountriesHint: 'Países que já não existem (URSS, Jugoslávia, Império Otomano…). Mostrar as suas moedas.',
     current: 'Moedas correntes',
-    currentHint: 'Moedas que ainda têm curso legal (não desmonetizadas), segundo o catálogo Numista; as de países que já não existem não contam. Toque para ver só essas; toque de novo para ver todas.',
+    currentHint: 'Moedas de circulação que ainda têm curso legal (não desmonetizadas), segundo o catálogo Numista; as moedas de coleção (não circulantes) e as de países que já não existem não contam. Toque para ver só essas; toque de novo para ver todas.',
     commemorative: 'Moedas comemorativas',
     commemorativeHint: 'Moedas cujo tipo celebra uma pessoa, um acontecimento ou um lugar, segundo o catálogo Numista (comemorativas de circulação e de coleção). Toque para ver só essas; toque de novo para ver todas.',
+    valueHintIn: 'Soma do valor atual das moedas, em {currency}.',
   },
   highlights: {
     title: 'Destaques da coleção',
@@ -141,6 +131,13 @@ const messages: Messages['collection'] = {
     notOnMap: 'Fora do mapa: emissores históricos ou nomes que não correspondem a um país atual.',
     loadFailed: 'Não foi possível carregar o mapa.',
     attribution: 'Dados do mapa: Natural Earth (domínio público).',
+  },
+  activeFilters: {
+    current: 'Só moedas correntes',
+    demonetized: 'Só moedas desmonetizadas',
+    commemorative: 'Só moedas comemorativas',
+    regular: 'Só moedas não comemorativas',
+    remove: 'Remover o filtro: {filter}',
   },
 }
 

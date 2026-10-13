@@ -11,7 +11,6 @@
             <select v-model="filterType" class="form-input form-select min-w-[150px] max-sm:w-full sm:w-auto">
               <option value="all">{{ t('timeline.allCoins') }}</option>
               <option value="collection">{{ t('timeline.collectionOnly') }}</option>
-              <option value="sold">{{ t('timeline.soldOnly') }}</option>
             </select>
           </div>
         </div>
@@ -20,7 +19,6 @@
             <select v-model="filterType" class="form-input form-select min-w-[150px]">
               <option value="all">{{ t('timeline.allCoins') }}</option>
               <option value="collection">{{ t('timeline.collectionOnly') }}</option>
-              <option value="sold">{{ t('timeline.soldOnly') }}</option>
             </select>
           </div>
         </template>
@@ -92,7 +90,7 @@
                   <span v-if="coin.purchaseDate" class="text-sm text-text-muted">{{ formatDate(coin.purchaseDate) }}</span>
                   <div class="mt-0.5 flex items-center gap-2">
                     <span v-if="coin.purchasePrice" class="text-chip font-semibold text-gold">
-                      ${{ coin.purchasePrice.toLocaleString(intlLocale()) }}
+                      {{ formatCurrency(coin.purchasePrice) }}
                     </span>
                     <span v-if="coin.isSold" class="rounded-full border border-border-subtle bg-surface-secondary px-2 py-0.5 text-sm font-medium text-warning">
                       {{ t('coinDetail.badges.sold') }}
@@ -126,7 +124,7 @@ import DesktopPageContext from '@/components/DesktopPageContext.vue'
 
 const loading = ref(true)
 const allCoins = ref<Coin[]>([])
-const filterType = ref<'all' | 'collection' | 'sold'>('all')
+const filterType = ref<'all' | 'collection'>('all')
 
 function categoryColor(cat: string): string {
   return (CATEGORY_COLORS as Record<string, string>)[cat] || '#888'
@@ -158,8 +156,6 @@ const filteredCoins = computed(() => {
   let coins = allCoins.value.filter(c => !c.isWishlist && c.purchaseDate)
   if (filterType.value === 'collection') {
     coins = coins.filter(c => !c.isSold)
-  } else if (filterType.value === 'sold') {
-    coins = coins.filter(c => c.isSold)
   }
   return coins.sort((a, b) => {
     const da = new Date(b.purchaseDate!).getTime()
