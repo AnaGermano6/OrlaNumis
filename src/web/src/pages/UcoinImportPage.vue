@@ -25,7 +25,10 @@
 
       <div v-if="importer.phase.value === 'ready'" class="flex flex-col gap-3" data-testid="ucoin-preview">
         <ul class="m-0 flex list-none flex-col gap-1 p-0 text-body text-text-primary">
-          <li>{{ t('ucoinImport.summary.inFile', { count: importer.rows.value.length }) }} · {{ t('ucoinImport.summary.countries', { count: importer.countries.value }) }}</li>
+          <li>
+            {{ t('ucoinImport.summary.inFile', { count: importer.rows.value.length }) }}<template v-if="importer.pieces.value > importer.rows.value.length"> ({{ t('ucoinImport.summary.pieces', { count: importer.pieces.value }) }})</template>
+            · {{ t('ucoinImport.summary.countries', { count: importer.countries.value }) }}
+          </li>
           <li v-if="importer.alreadyImported.value">{{ t('ucoinImport.summary.already', { count: importer.alreadyImported.value }) }}</li>
           <li class="font-medium">{{ t('ucoinImport.summary.toAdd', { count: importer.pendingRows.value.length }) }}</li>
         </ul>

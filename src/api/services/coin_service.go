@@ -19,6 +19,7 @@ var (
 	ErrCoinInvalidCirculation     = errors.New("circulation is not supported")
 	ErrCoinInvalidKind            = errors.New("kind must be coin or banknote")
 	ErrCoinInvalidNoteVariant     = errors.New("note variant must be replacement or specimen")
+	ErrCoinInvalidQuantity        = errors.New("quantity must be between 1 and 9999")
 	ErrStorageSlotRequired        = errors.New("a tray slot is required")
 	ErrStorageSlotInvalid         = errors.New("storage slot is invalid for this location")
 	ErrStorageSlotOccupied        = errors.New("storage slot is occupied")
@@ -195,6 +196,13 @@ func (s *CoinService) prepareCoinForCreate(coin *models.Coin) error {
 	if coin.Year == nil {
 		coin.Year = models.DeriveCoinYear(coin.DateRange)
 	}
+	// A new coin or note is one unless told otherwise.
+	if coin.Quantity == 0 {
+		coin.Quantity = 1
+	}
+	if !models.ValidCoinQuantity(coin.Quantity) {
+		return ErrCoinInvalidQuantity
+	}
 	return nil
 }
 
@@ -336,6 +344,11 @@ func (s *CoinService) updateCoin(existing *models.Coin, updates *models.Coin, up
 	}
 	if err := normalizeCoinAttributes(updates); err != nil {
 		return err
+	}
+	// Without named fields, a zero quantity was not given and is not written.
+	quantityGiven := containsString(updateFields, "Quantity") || (updateFields == nil && updates.Quantity != 0)
+	if quantityGiven && !models.ValidCoinQuantity(updates.Quantity) {
+		return ErrCoinInvalidQuantity
 	}
 	yearProvided := updateFields == nil || containsString(updateFields, "Year")
 	dateProvided := updateFields == nil || containsString(updateFields, "DateRange")

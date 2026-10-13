@@ -129,27 +129,27 @@ describe('uCoin Excel import', () => {
     ]))
 
     expect(error).toBeUndefined()
-    expect(rows).toHaveLength(4)
-    expect(rows[0]).toMatchObject({ yearText: '2026 D', variety: 'D', price: 2, priceCurrency: 'EUR', value: 2.86, valueCurrency: 'EUR', purchaseDate: '2026-06-01', swapWith: '' })
-    // Two of the same coin; the variety joins the year as in the CSV; no purchase date.
-    expect(rows[1]).toBe(rows[2])
-    expect(rows[1]).toMatchObject({ yearText: '1975 76', purchaseDate: undefined, price: undefined, swapWith: 'Atlantius.ue' })
-    expect(rows[3]).toMatchObject({ subject: 'Cruz com letra "P" em cada quadrante', slab: { company: 'PCGS', grade: 'AU55', number: '12345678' } })
+    expect(rows).toHaveLength(3)
+    expect(rows[0]).toMatchObject({ yearText: '2026 D', variety: 'D', price: 2, priceCurrency: 'EUR', value: 2.86, valueCurrency: 'EUR', purchaseDate: '2026-06-01', swapWith: '', quantity: 1 })
+    // Two of the same coin are one row of two; the variety joins the year as in the CSV; no purchase date.
+    expect(rows[1]).toMatchObject({ yearText: '1975 76', purchaseDate: undefined, price: undefined, swapWith: 'Atlantius.ue', quantity: 2 })
+    expect(rows[2]).toMatchObject({ subject: 'Cruz com letra "P" em cada quadrante', slab: { company: 'PCGS', grade: 'AU55', number: '12345678' }, quantity: 1 })
   })
 
   it('builds coins with the purchase details and a graded coin\'s grade', async () => {
     setLocale('pt-PT')
     const { rows } = await parseUcoinXlsx(await buildXlsx([
       XLSX_HEADER,
-      excelRow({ País: 'Espanha', Denominação: '1 peseta', Ano: 1975, 'Var.': '76', 'Preço, EUR [uCoin]': 0.3, Compra: 45931, Trocas: 'Atlantius.ue /uid275798' }),
+      excelRow({ País: 'Espanha', Denominação: '1 peseta', Ano: 1975, 'Var.': '76', 'Preço, EUR [uCoin]': 0.3, Compra: 45931, Trocas: 'Atlantius.ue /uid275798', Quantidade: 3 }),
       excelRow({ País: 'Portugal', Denominação: '400 reis', Ano: 1643, Conservação: 'VF', 'Grading company': 'PCGS', 'Grading number': '12345678', Grade: 'AU55' }),
     ]))
     const euros = { ...OPTIONS, perEur: undefined }
     collectionCurrency.value = 'EUR'
     try {
-      expect(buildUcoinCoin(rows[0]!, euros)).toMatchObject({ purchaseDate: '2025-10-01', purchaseLocation: 'Troca no uCoin com Atlantius.ue', currentValue: 0.3, purchasePrice: undefined })
+      // One coin of three, not three coins.
+      expect(buildUcoinCoin(rows[0]!, euros)).toMatchObject({ purchaseDate: '2025-10-01', purchaseLocation: 'Troca no uCoin com Atlantius.ue', currentValue: 0.3, purchasePrice: undefined, quantity: 3 })
       const graded = buildUcoinCoin(rows[1]!, euros)
-      expect(graded).toMatchObject({ grade: 'PCGS AU55', presentation: 'slab' })
+      expect(graded).toMatchObject({ grade: 'PCGS AU55', presentation: 'slab', quantity: 1 })
       expect(graded.notes).toContain('Certificado de grading: 12345678')
     } finally {
       collectionCurrency.value = 'USD'
@@ -173,7 +173,7 @@ describe('uCoin Excel import', () => {
 
 describe('matching the file with coins imported earlier', () => {
   function row(fields: Partial<UcoinRow>): UcoinRow {
-    return { line: 2, country: 'Espanha', period: '', denomination: '1 peseta', yearText: '1975 76', year: 1975, variety: '76', subject: '', grade: '', priceCurrency: 'EUR', valueCurrency: 'EUR', swapWith: '', reference: '', comment: '', ...fields }
+    return { line: 2, country: 'Espanha', period: '', denomination: '1 peseta', yearText: '1975 76', year: 1975, variety: '76', subject: '', grade: '', priceCurrency: 'EUR', valueCurrency: 'EUR', swapWith: '', reference: '', comment: '', quantity: 1, ...fields }
   }
   function coin(id: number, name: string, country = 'Espanha', fields: Partial<Coin> = {}): Coin {
     return { id, name, country, notes: 'Importada do uCoin', purchaseDate: null, purchasePrice: null, purchaseLocation: '', currentValue: null, ...fields } as unknown as Coin
@@ -197,6 +197,24 @@ describe('matching the file with coins imported earlier', () => {
     expect(matched.map(({ coin }) => coin.id)).toEqual([1, 3, 4])
     // A second 1 peseta 1975 and a coin with a subject of its own are new.
     expect(pending.map((entry) => entry.denomination)).toEqual(['1 peseta', '5 pesetas'])
+  })
+
+  it('pairs a row of several coins with the copies an earlier import made of it, and no more', () => {
+    const { matched, pending } = matchUcoinRows(
+      [
+        row({ subject: 'Bremen', denomination: '2 euro', yearText: '2026 D', year: 2026, country: 'Alemanha', quantity: 2 }),
+        row({ denomination: '40 para', yearText: '1909 0', year: 1909, variety: '0', country: 'Império Otomano', quantity: 2 }),
+      ],
+      [
+        coin(1, '2 euro 2026 D – Bremen', 'Alemanha'),
+        coin(2, '2 euro 2026 D – Bremen', 'Alemanha'),
+        coin(3, '2 euro 2026 D – Bremen', 'Alemanha'),
+        coin(4, '40 para 1909 ٥ – "٥" Abaixo da Tughra', 'Império Otomano'),
+        coin(5, '40 para 1909 ٥ – "٥" Abaixo da Tughra', 'Império Otomano'),
+      ],
+    )
+    expect(matched.map(({ coin }) => coin.id)).toEqual([1, 2, 4, 5])
+    expect(pending).toEqual([])
   })
 
   it('adds only what a coin does not have yet, keeping its other values', () => {

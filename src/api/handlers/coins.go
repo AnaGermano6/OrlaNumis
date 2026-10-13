@@ -27,6 +27,7 @@ var allowedListSortFields = map[string]bool{
 	"current_value": true,
 	"purchase_date": true,
 	"name":          true,
+	"quantity":      true,
 	"random":        true,
 }
 
@@ -237,6 +238,7 @@ type ShipmentAttachRequest struct {
 //	@Param			era			query		string	false	"Filter by era (ancient, medieval, modern)"
 //	@Param			country		query		string	false	"Filter by country (exact)"
 //	@Param			presentation	query	string	false	"Filter by presentation"	Enums(loose, coincard, capsule, flip, proof_set, blister, slab)
+//	@Param			repeated		query	bool	false	"Only coins held more than once (a quantity above one), the copies there to trade"
 //	@Param			extinct			query	bool	false	"Only coins of countries that no longer exist (USSR, Yugoslavia, Ottoman Empire…)"
 //	@Param			circulation		query	string	false	"Only collection coins issued for circulation and still legal tender (current), or no longer legal tender (demonetized), as Numista says of their types; collector (non-circulating) coins are not current"	Enums(current, demonetized)
 //	@Param			commemorative	query	bool	false	"Only collection coins of commemorative types (true) or of regular ones (false), as Numista says"
@@ -247,7 +249,7 @@ type ShipmentAttachRequest struct {
 //	@Param			sold		query		string	false	"Filter by sold status"	Enums(true, false)
 //	@Param			page		query		int		false	"Page number"	default(1)
 //	@Param			limit		query		int		false	"Items per page (max 100)"	default(50)
-//	@Param			sort		query		string	false	"Sort field"	Enums(created_at, updated_at, current_value)	default(updated_at)
+//	@Param			sort		query		string	false	"Sort field"	Enums(created_at, updated_at, current_value, purchase_date, name, quantity, random)	default(updated_at)
 //	@Param			order		query		string	false	"Sort order"	Enums(asc, desc)	default(desc)
 //	@Success		200			{object}	CoinListResponse
 //	@Failure		400			{object}	ErrorResponse
@@ -305,6 +307,7 @@ func (h *CoinHandler) List(c *gin.Context) {
 		Era:          c.Query("era"),
 		Country:      models.NormalizeCoinCountry(c.Query("country")),
 		Presentation: strings.TrimSpace(c.Query("presentation")),
+		Repeated:     c.Query("repeated") == "true",
 		Rarity:       strings.TrimSpace(c.Query("rarity")),
 		Search:       c.Query("search"),
 		SortField:    sortField,
@@ -1060,7 +1063,8 @@ func handleCoinMutationError(c *gin.Context, err error) bool {
 		errors.Is(err, services.ErrCoinInvalidRarity),
 		errors.Is(err, services.ErrCoinInvalidCirculation),
 		errors.Is(err, services.ErrCoinInvalidKind),
-		errors.Is(err, services.ErrCoinInvalidNoteVariant):
+		errors.Is(err, services.ErrCoinInvalidNoteVariant),
+		errors.Is(err, services.ErrCoinInvalidQuantity):
 		respondError(c, http.StatusBadRequest, err.Error(), err)
 		return true
 	case errors.Is(err, services.ErrStorageSlotRequired),

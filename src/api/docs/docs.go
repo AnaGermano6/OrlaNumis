@@ -6555,6 +6555,104 @@ const docTemplate = `{
                 }
             }
         },
+        "/coin-catalogue": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "A country's coins in one currency, newest first: in euros, its €2 commemoratives (every one the ECB has published since 2004), its €5, €10 and €20 coins and the collector coins its mint sells (Portugal, France, Austria); in escudos (currency PTE), Portugal's commemorative and collector coins of 1911–2001. Each says whether a coin of the collection is it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "A country's coin catalogue",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The country's ISO code, e.g. PT",
+                        "name": "country",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "PTE"
+                        ],
+                        "type": "string",
+                        "description": "PTE for Portugal's coins in escudos; the euro coins when omitted",
+                        "name": "currency",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CoinCatalogueResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coin-catalogue/countries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The countries of the catalogue, each in its currency: the euro (every €2 commemorative the ECB has published since 2004, the €5, €10 and €20 coins, and the collector coins the mints of Portugal, France and Austria sell) and Portugal's escudo (its commemorative and collector coins, 1911–2001). Each says how many commemorative and collector coins it lists, and how many of them the user has.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Countries of the coin catalogue",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CoinCatalogueCountriesResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/coin-options": {
             "get": {
                 "security": [
@@ -6656,6 +6754,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/coin-releases": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The ECB's €2 commemorative coins of the latest year it lists, and the collector coins the mints of Portugal (INCM), France (Monnaie de Paris) and Austria (Münze Österreich) sell, of the last twelve months and to come: upcoming first, then newest first. Each names its country and says whether a coin of the collection is it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "List new and upcoming coins",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CoinReleasesResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/coins": {
             "get": {
                 "security": [
@@ -6713,6 +6848,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by presentation",
                         "name": "presentation",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Only coins held more than once (a quantity above one), the copies there to trade",
+                        "name": "repeated",
                         "in": "query"
                     },
                     {
@@ -6801,7 +6942,11 @@ const docTemplate = `{
                         "enum": [
                             "created_at",
                             "updated_at",
-                            "current_value"
+                            "current_value",
+                            "purchase_date",
+                            "name",
+                            "quantity",
+                            "random"
                         ],
                         "type": "string",
                         "default": "updated_at",
@@ -7053,6 +7198,67 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/daily": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "One coin (or banknote) of the collection for the day, preferring those with a photo: the same all day, another the next.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Coin of the day",
+                "parameters": [
+                    {
+                        "enum": [
+                            "coin",
+                            "banknote"
+                        ],
+                        "type": "string",
+                        "description": "A coin (default) or a banknote",
+                        "name": "kind",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The viewer's day, YYYY-MM-DD (default: today, UTC)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.DailyCoinResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -20409,6 +20615,35 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CatalogueCountry": {
+            "type": "object",
+            "properties": {
+                "collector": {
+                    "type": "integer"
+                },
+                "commemoratives": {
+                    "type": "integer"
+                },
+                "country": {
+                    "type": "string",
+                    "example": "PT"
+                },
+                "currency": {
+                    "description": "Currency is \"PTE\" for Portugal's coins in escudos; empty for the euro.",
+                    "type": "string",
+                    "enum": [
+                        "",
+                        "PTE"
+                    ]
+                },
+                "ownedCollector": {
+                    "type": "integer"
+                },
+                "ownedCommemoratives": {
+                    "type": "integer"
+                }
+            }
+        },
         "handlers.CategoryCount": {
             "type": "object",
             "properties": {
@@ -20437,6 +20672,35 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 6,
                     "example": "newpass456"
+                }
+            }
+        },
+        "handlers.CoinCatalogueCountriesResponse": {
+            "type": "object",
+            "properties": {
+                "countries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CatalogueCountry"
+                    }
+                }
+            }
+        },
+        "handlers.CoinCatalogueResponse": {
+            "type": "object",
+            "properties": {
+                "coins": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.CoinRelease"
+                    }
+                },
+                "complete": {
+                    "type": "boolean"
+                },
+                "country": {
+                    "type": "string",
+                    "example": "PT"
                 }
             }
         },
@@ -20585,6 +20849,12 @@ const docTemplate = `{
                 },
                 "purchasePrice": {
                     "type": "number"
+                },
+                "quantity": {
+                    "description": "Quantity is how many the collector has; 1 when omitted.",
+                    "type": "integer",
+                    "maximum": 9999,
+                    "minimum": 1
                 },
                 "rarity": {
                     "type": "string",
@@ -20891,6 +21161,17 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CoinReleasesResponse": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.CoinReleaseGroup"
+                    }
+                }
+            }
+        },
         "handlers.CoinStatusGroups": {
             "type": "object",
             "properties": {
@@ -21118,6 +21399,12 @@ const docTemplate = `{
                 "purchasePrice": {
                     "type": "number"
                 },
+                "quantity": {
+                    "description": "Quantity is how many the collector has (1 or more).",
+                    "type": "integer",
+                    "maximum": 9999,
+                    "minimum": 1
+                },
                 "rarity": {
                     "type": "string",
                     "maxLength": 20,
@@ -21259,7 +21546,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "classifications": {
-                    "description": "Classifications are Numista's kinds of coin found in the collection,\nthe usual ones first; coins Numista says nothing of are in none.",
+                    "description": "Classifications are Numista's kinds of coin found in the collection,\nthe usual ones first; coins Numista says nothing of are in none. Each\ncoin counts once, as the gallery lists it.",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/handlers.CollectionClassification"
@@ -21288,7 +21575,7 @@ const docTemplate = `{
                     "example": "EUR"
                 },
                 "currentCoins": {
-                    "description": "CurrentCoins are circulation coins still legal tender, as Numista says\nof their types (collector coins are not);\nCirculationUnknown are coins it says nothing of (not linked to Numista).",
+                    "description": "CurrentCoins are circulation coins still legal tender, as Numista says\nof their types (collector coins are not);\nCirculationUnknown are coins it says nothing of (not linked to Numista).\nThese four count every coin held, with its quantity.",
                     "type": "integer"
                 },
                 "exchangeRate": {
@@ -21306,8 +21593,15 @@ const docTemplate = `{
                 "highlights": {
                     "$ref": "#/definitions/repository.CollectionHighlights"
                 },
+                "repeatedCoins": {
+                    "description": "RepeatedCoins are the different coins held more than once; SpareCoins\nthe copies beyond the first, there to trade.",
+                    "type": "integer"
+                },
+                "spareCoins": {
+                    "type": "integer"
+                },
                 "totalValue": {
-                    "description": "TotalValue sums the coins' current values, in the app's stored currency (US dollars).",
+                    "description": "TotalValue sums the coins' current values times their quantities, in\nthe collection currency.",
                     "type": "number"
                 },
                 "totalValueEur": {
@@ -21316,6 +21610,10 @@ const docTemplate = `{
                 },
                 "types": {
                     "description": "Types counts distinct coin types: coins linked to the same Numista type\ncount once; other coins count once per distinct name.",
+                    "type": "integer"
+                },
+                "uniqueCoins": {
+                    "description": "UniqueCoins counts each coin once, whatever its quantity.",
                     "type": "integer"
                 },
                 "unvaluedCoins": {
@@ -21382,6 +21680,18 @@ const docTemplate = `{
             "properties": {
                 "shipment": {
                     "$ref": "#/definitions/handlers.ShipmentAttachRequest"
+                }
+            }
+        },
+        "handlers.DailyCoinResponse": {
+            "type": "object",
+            "properties": {
+                "coin": {
+                    "$ref": "#/definitions/models.Coin"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-10-13"
                 }
             }
         },
@@ -24891,6 +25201,12 @@ const docTemplate = `{
                 "purchasePrice": {
                     "type": "number"
                 },
+                "quantity": {
+                    "description": "Quantity is how many of this coin or note the collector has (1 or more).",
+                    "type": "integer",
+                    "maximum": 9999,
+                    "minimum": 1
+                },
                 "rarity": {
                     "description": "Rarity is a fixed scale (see CoinRarities). RarityRating is a legacy free-text field.",
                     "type": "string"
@@ -27903,6 +28219,110 @@ const docTemplate = `{
                 },
                 "targetType": {
                     "$ref": "#/definitions/models.RecommendationTargetType"
+                }
+            }
+        },
+        "services.CoinRelease": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "description": "Country is the issuing country's ISO code (\"PT\"); \"\" for a joint issue\nof the euro area countries.",
+                    "type": "string"
+                },
+                "currency": {
+                    "description": "Currency is the face value's, when not euros: \"PTE\" for escudos.",
+                    "type": "string"
+                },
+                "faceValue": {
+                    "description": "FaceValue is the lowest of the design's face values; FaceValues all of\nthem, from the lowest, when there are several.",
+                    "type": "number"
+                },
+                "faceValues": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "from": {
+                    "description": "From and To are the first and last month of the issue period (\"2025-10\"\nand \"2025-12\" for \"Fourth quarter of 2025\"); the same month when it is\nknown; January to December when only the year is.",
+                    "type": "string",
+                    "example": "2025-10"
+                },
+                "imageUrl": {
+                    "type": "string"
+                },
+                "issueText": {
+                    "description": "IssueText is the period as the ECB writes it, in English.",
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "commemorative",
+                        "collector"
+                    ]
+                },
+                "owned": {
+                    "description": "Owned is true when a coin of the collection is this one.",
+                    "type": "boolean"
+                },
+                "pageUrl": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "ecb",
+                        "incm",
+                        "mdp",
+                        "moe",
+                        "numista"
+                    ]
+                },
+                "title": {
+                    "description": "Title is what the coin shows: the ECB's feature (in English) or the\nmint's name for the design.",
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string",
+                    "example": "2025-12"
+                },
+                "upcoming": {
+                    "description": "Upcoming is true before the issue period starts, and during a month or\na quarter of issue until it ends.",
+                    "type": "boolean"
+                },
+                "variants": {
+                    "description": "Variants are the finishes and metals a mint sells the design in (\"BNC\", \"Prata Proof\").",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "volume": {
+                    "description": "Volume is how many are struck, when the source says.",
+                    "type": "integer"
+                }
+            }
+        },
+        "services.CoinReleaseGroup": {
+            "type": "object",
+            "properties": {
+                "releases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.CoinRelease"
+                    }
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "ecb",
+                        "mints"
+                    ]
+                },
+                "year": {
+                    "description": "Year is the year of the ECB's list (the latest it has published). The\nmints' releases are those of the last twelve months (of this year for a\nmint that gives only the year) and to come.",
+                    "type": "integer"
                 }
             }
         },

@@ -18,6 +18,13 @@ describe('useCoinDetailMetadataRows', () => {
     expect(rows.map((row) => row.value)).not.toContain('Gaveta 1')
   })
 
+  it('says how many are held, one for a coin saved before the field', () => {
+    const quantity = (value: number | undefined) =>
+      useCoinDetailMetadataRows({ ...coin, quantity: value } as Coin).rows.value.find((row) => row.key === 'quantity')
+    expect(quantity(4)).toMatchObject({ label: 'Quantity', value: '4' })
+    expect(quantity(undefined)?.value).toBe('1')
+  })
+
   it('tells whether the coin is current and whether it is commemorative', () => {
     setLocale('pt-PT')
     expect(circulation({ current: true, commemorative: true, commemoratedTopic: 'Jogos Olímpicos' })).toBe('Corrente · Comemorativa')

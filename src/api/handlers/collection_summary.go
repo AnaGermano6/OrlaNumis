@@ -60,6 +60,7 @@ type CollectionSummaryResponse struct {
 	// CurrentCoins are circulation coins still legal tender, as Numista says
 	// of their types (collector coins are not);
 	// CirculationUnknown are coins it says nothing of (not linked to Numista).
+	// These four count every coin held, with its quantity.
 	CurrentCoins       int64 `json:"currentCoins"`
 	CirculationUnknown int64 `json:"circulationUnknown"`
 	// CommemorativeCoins are of types Numista says commemorate something;
@@ -67,7 +68,8 @@ type CollectionSummaryResponse struct {
 	CommemorativeCoins   int64 `json:"commemorativeCoins"`
 	CommemorativeUnknown int64 `json:"commemorativeUnknown"`
 	// Classifications are Numista's kinds of coin found in the collection,
-	// the usual ones first; coins Numista says nothing of are in none.
+	// the usual ones first; coins Numista says nothing of are in none. Each
+	// coin counts once, as the gallery lists it.
 	Classifications []CollectionClassification `json:"classifications"`
 }
 
@@ -130,32 +132,33 @@ func (h *CollectionSummaryHandler) Summary(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to summarise the collection"})
 			return
 		}
-		// Only the items of the kind asked for count.
-		count := func(ids []uint) int64 { return int64(len(ids)) }
-		if kind != "" {
-			ofKind, err := h.coins.CollectionIDsOfKind(c.GetUint("userId"), kind)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to summarise the collection"})
-				return
-			}
-			keep := map[uint]bool{}
-			for _, id := range ofKind {
-				keep[id] = true
-			}
-			count = func(ids []uint) int64 {
-				n := int64(0)
-				for _, id := range ids {
-					if keep[id] {
-						n++
-					}
-				}
-				return n
-			}
+		// Only the items of the kind asked for count, each with its quantity.
+		quantities, err := h.coins.CollectionQuantities(c.GetUint("userId"), kind)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to summarise the collection"})
+			return
 		}
-		response.CurrentCoins, response.CirculationUnknown = count(sorted.Current), count(sorted.Unknown)
-		response.CommemorativeCoins, response.CommemorativeUnknown = count(sorted.Commemorative), count(sorted.CommemorativeUnknown)
+		held := func(ids []uint) int64 {
+			n := int64(0)
+			for _, id := range ids {
+				n += quantities[id]
+			}
+			return n
+		}
+		// The gallery's kind-of-coin filter counts the coins it lists, once each.
+		listed := func(ids []uint) int64 {
+			n := int64(0)
+			for _, id := range ids {
+				if quantities[id] > 0 {
+					n++
+				}
+			}
+			return n
+		}
+		response.CurrentCoins, response.CirculationUnknown = held(sorted.Current), held(sorted.Unknown)
+		response.CommemorativeCoins, response.CommemorativeUnknown = held(sorted.Commemorative), held(sorted.CommemorativeUnknown)
 		for _, group := range sorted.SortedClassifications() {
-			if n := count(group.CoinIDs); n > 0 {
+			if n := listed(group.CoinIDs); n > 0 {
 				response.Classifications = append(response.Classifications, CollectionClassification{Key: group.Key, Label: group.Label, Count: n})
 			}
 		}

@@ -45,9 +45,13 @@ type mintCoin struct {
 	Authors   string  `json:"authors,omitempty"`
 	Series    string  `json:"series,omitempty"`
 	Year      int     `json:"year"`
-	Text      string  `json:"text,omitempty"`
-	Obverse   string  `json:"obverse"`
-	Reverse   string  `json:"reverse,omitempty"`
+	// Released is the month the mint puts the coin on sale ("2026-07"), and
+	// Volume how many it strikes, when the mint says.
+	Released string `json:"released,omitempty"`
+	Volume   int64  `json:"volume,omitempty"`
+	Text     string `json:"text,omitempty"`
+	Obverse  string `json:"obverse"`
+	Reverse  string `json:"reverse,omitempty"`
 	// ReverseGuess is a photo that probably shows the reverse, to be checked.
 	ReverseGuess string `json:"reverseGuess,omitempty"`
 }

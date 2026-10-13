@@ -32,6 +32,7 @@ const messages: Messages['nav'] = {
   logout: 'Terminar sessão',
   banknotes: 'Notas de banco',
   collectionOverview: 'Visão geral',
+  commemorativeCatalogue: 'Catálogo de comemorativas',
 }
 
 export default messages

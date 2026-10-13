@@ -21,6 +21,20 @@
       </div>
     </DesktopPageContext>
 
+    <!-- Every commemorative and collector coin of each country, with the collection's own -->
+    <RouterLink
+      to="/sets/commemoratives"
+      class="mb-4 flex items-center gap-3 rounded-md border border-border-subtle bg-card p-4 no-underline transition-colors hover:border-gold focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
+      data-testid="sets-catalogue-link"
+    >
+      <BookOpenCheck :size="24" class="shrink-0 text-gold" />
+      <span class="min-w-0">
+        <span class="block font-medium text-text-primary">{{ t('sets.catalogue.title') }}</span>
+        <span class="block text-body text-text-secondary">{{ t('sets.catalogue.link') }}</span>
+      </span>
+      <ChevronRight :size="20" class="ml-auto shrink-0 text-text-muted" />
+    </RouterLink>
+
     <div v-if="loading" class="loading-overlay">
       <div class="spinner"></div>
       <p>{{ t('sets.list.loading') }}</p>
@@ -67,8 +81,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { CirclePlus, Layers3, Plus, X } from 'lucide-vue-next'
+import { RouterLink, useRouter } from 'vue-router'
+import { BookOpenCheck, ChevronRight, CirclePlus, Layers3, Plus, X } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { formatSetBuilderError, getApiErrorMessage, getSets, createSet as createSetApi, createSetFromCsv, createSetBuilderRun } from '@/api/client'

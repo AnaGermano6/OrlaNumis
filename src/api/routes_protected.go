@@ -278,6 +278,14 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/coins/:id/status", coinHandler.Status)
 		protected.GET("/coins/statuses", coinHandler.StatusGroups)
 		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(d.exchangeRates).WithSettings(d.settingsSvc).WithCirculation(coinCirculation).Summary)
+		protected.GET("/coins/daily", handlers.NewDailyCoinHandler(d.coinRepo).Daily)
+		// New and upcoming coins: the ECB's €2 commemoratives and the mints' collector coins.
+		coinReleases := services.NewCoinReleasesService(ecbCoinPhotos, incmCoinPhotos, mdpCoinPhotos, moeCoinPhotos).WithNumista(numistaCatalogSvc)
+		protected.GET("/coin-releases", handlers.NewCoinReleasesHandler(coinReleases, d.coinRepo, coinPhotoSearch).Releases)
+		// Every €2 commemorative and the mints' collector coins, by country.
+		coinCatalogue := handlers.NewCoinCatalogueHandler(coinReleases, d.coinRepo, coinPhotoSearch)
+		protected.GET("/coin-catalogue/countries", coinCatalogue.Countries)
+		protected.GET("/coin-catalogue", coinCatalogue.Country)
 		// ECB rates, to convert amounts into the collection currency.
 		protected.GET("/exchange-rates", handlers.NewExchangeRatesHandler(d.exchangeRates).Rates)
 		protected.POST("/coins/country-from-numista", d.writeRateLimit, coinCountryHandler.FillFromNumista)

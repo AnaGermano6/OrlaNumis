@@ -16,6 +16,25 @@ type NumistaCacheStore interface {
 	Save(entry *models.NumistaCacheEntry) error
 }
 
+// numistaCacheLister is a store that can also list its entries by key prefix.
+type numistaCacheLister interface {
+	FindByPrefix(prefix string) ([]models.NumistaCacheEntry, error)
+}
+
+// Entries returns the stored responses whose key starts with prefix; none
+// when the store cannot list them. It never asks Numista.
+func (c *NumistaResponseCache) Entries(prefix string) []models.NumistaCacheEntry {
+	lister, ok := c.store.(numistaCacheLister)
+	if !ok {
+		return nil
+	}
+	entries, err := lister.FindByPrefix(prefix)
+	if err != nil {
+		return nil
+	}
+	return entries
+}
+
 // NumistaResponseCache keeps raw Numista responses in the database so repeat
 // lookups and restarts do not spend the free plan's 2,000 monthly requests.
 // When a refresh fails, the last stored copy is served and marked stale.

@@ -21,7 +21,10 @@ function summary(coins: number, countries: number, value: number, extra: Record<
 }
 
 function mountPage() {
-  return mount(CollectionOverviewPage, { global: { stubs: { RouterLink: RouterLinkStub, 'router-link': RouterLinkStub, AuthenticatedImage: true } } })
+  return mount(CollectionOverviewPage, { global: { stubs: {
+    RouterLink: RouterLinkStub, 'router-link': RouterLinkStub, AuthenticatedImage: true,
+    CollectionDaily: true, CollectionRepeated: true, CoinReleases: true,
+  } } })
 }
 
 describe('CollectionOverviewPage', () => {
@@ -30,9 +33,9 @@ describe('CollectionOverviewPage', () => {
     setLocale('pt-PT')
     vi.clearAllMocks()
     mocks.getCollectionSummary.mockImplementation((kind?: string) => Promise.resolve(
-      kind === 'coin' ? summary(452, 84, 3838.11, { currentCoins: 192, commemorativeCoins: 200 })
-        : kind === 'banknote' ? summary(1, 1, 25, { highlights: { rarest: null, oldest: { id: 1820, name: '2000 Escudos 1991', country: 'Portugal', year: 1991, dateRange: '1991', rarity: '', grade: '', currentValue: 25 }, mostValuable: null } })
-          : summary(453, 84, 3863.11),
+      kind === 'coin' ? summary(452, 84, 3838.11, { currentCoins: 192, commemorativeCoins: 200, uniqueCoins: 440 })
+        : kind === 'banknote' ? summary(3, 1, 25, { uniqueCoins: 1, highlights: { rarest: null, oldest: { id: 1820, name: '2000 Escudos 1991', country: 'Portugal', year: 1991, dateRange: '1991', rarity: '', grade: '', currentValue: 25 }, mostValuable: null } })
+          : summary(455, 84, 3863.11, { uniqueCoins: 441 }),
     ))
   })
 
@@ -43,18 +46,26 @@ describe('CollectionOverviewPage', () => {
     expect(mocks.getCollectionSummary).toHaveBeenCalledWith()
     expect(mocks.getCollectionSummary).toHaveBeenCalledWith('coin')
     expect(mocks.getCollectionSummary).toHaveBeenCalledWith('banknote')
-    expect(wrapper.get('[data-testid="overview-kpi-items"]').text()).toContain('453')
+    // Every item held, counting quantities, then each different one once.
+    expect(wrapper.get('[data-testid="overview-kpi-items"]').text()).toBe('455Moedas e notas')
+    expect(wrapper.get('[data-testid="overview-kpi-unique"]').text()).toBe('441Moedas e notas únicas')
     expect(wrapper.get('[data-testid="overview-kpi-value"]').text()).toContain('3863,11')
     // The gallery's numbers and highlights for the coins…
     expect(wrapper.get('[data-testid="kpi-coins"]').text()).toContain('452')
+    expect(wrapper.get('[data-testid="kpi-unique"]').text()).toContain('440')
     expect(wrapper.get('[data-testid="kpi-current"]').text()).toContain('192')
     expect(wrapper.text()).toContain('Destaques das moedas')
     // …and the banknotes'.
-    expect(wrapper.get('[data-testid="banknotes-kpi-banknotes"]').text()).toContain('1')
+    expect(wrapper.get('[data-testid="banknotes-kpi-banknotes"]').text()).toBe('3Notas')
+    expect(wrapper.get('[data-testid="banknotes-kpi-unique"]').text()).toBe('1Notas únicas')
     expect(wrapper.text()).toContain('Destaques das notas')
     expect(wrapper.text()).toContain('2000 Escudos 1991')
     expect(wrapper.text()).toContain('Ainda nenhuma nota tem raridade.')
     expect(wrapper.get('[data-testid="overview-open-banknotes"]').attributes('href')).toBe('/banknotes')
+    // A coin and a banknote of the day; the repeated coins and banknotes; the new releases.
+    expect(wrapper.findAll('collection-daily-stub').map((stub) => stub.attributes('kind'))).toEqual(['coin', 'banknote'])
+    expect(wrapper.findAll('collection-repeated-stub').map((stub) => stub.attributes('kind'))).toEqual(['coin', 'banknote'])
+    expect(wrapper.find('coin-releases-stub').exists()).toBe(true)
   })
 
   it('opens the gallery with only the chosen card filter on', async () => {

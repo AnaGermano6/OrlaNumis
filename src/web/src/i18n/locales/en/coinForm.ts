@@ -64,4 +64,6 @@ export default {
   kind: 'Item',
   kindCoin: 'Coin',
   kindBanknote: 'Banknote',
+  quantityLess: 'One fewer',
+  quantityMore: 'One more',
 }

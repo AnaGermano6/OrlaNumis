@@ -123,6 +123,9 @@ type CoinPhotoQuery struct {
 	Subject      string
 	// Material helps tell a coin's silver version from its base-metal one.
 	Material string
+	// CachedTypesOnly reads the Numista type from the cache only: no request
+	// is made to Numista, so looking at many coins spends none of its quota.
+	CachedTypesOnly bool
 }
 
 // NewCoinPhotoSearchService creates the service. catalog may be nil.
@@ -323,17 +326,15 @@ func (s *CoinPhotoSearchService) ecbPhotos(ctx context.Context, coin CoinPhotoQu
 	query := EcbPhotoQuery{Year: coin.Year, Country: coin.Country, Subject: coin.Subject}
 	commemorative := strings.TrimSpace(coin.Subject) != ""
 	denomination := coin.Denomination
-	if coin.NumistaTypeID > 0 && s.catalog != nil {
-		if numistaType, err := s.catalog.knownTypeDetail(ctx, coin.NumistaTypeID, coin.Lang); err == nil {
-			query.Title = numistaType.Title
-			if query.Country == "" {
-				query.Country = numistaType.Issuer.Code
-			}
-			if denomination == "" {
-				denomination = numistaType.Title
-			}
-			commemorative = numistaType.MinYear != nil && numistaType.MaxYear != nil && *numistaType.MinYear == *numistaType.MaxYear
+	if numistaType := s.numistaType(ctx, coin); numistaType != nil {
+		query.Title = numistaType.Title
+		if query.Country == "" {
+			query.Country = numistaType.Issuer.Code
 		}
+		if denomination == "" {
+			denomination = numistaType.Title
+		}
+		commemorative = numistaType.MinYear != nil && numistaType.MaxYear != nil && *numistaType.MinYear == *numistaType.MaxYear
 	}
 	if !commemorative || !twoEuroDenomination.MatchString(denomination) {
 		return nil
@@ -400,6 +401,9 @@ func (s *CoinPhotoSearchService) OfficialPhotos(ctx context.Context, coin CoinPh
 func (s *CoinPhotoSearchService) numistaType(ctx context.Context, coin CoinPhotoQuery) *models.NumistaCatalogType {
 	if coin.NumistaTypeID <= 0 || s.catalog == nil {
 		return nil
+	}
+	if coin.CachedTypesOnly {
+		return s.catalog.cachedTypeDetail(coin.NumistaTypeID, coin.Lang)
 	}
 	numistaType, err := s.catalog.knownTypeDetail(ctx, coin.NumistaTypeID, coin.Lang)
 	if err != nil {

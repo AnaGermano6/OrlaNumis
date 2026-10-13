@@ -219,6 +219,7 @@ import I18nT from '@/components/I18nT.vue'
 import NumistaCatalogBrowser from '@/components/catalog/NumistaCatalogBrowser.vue'
 import { buildCatalogPrefill, type CatalogSelection } from '@/utils/numistaCatalogPrefill'
 import { photoCreditLine, type RealPhotoChoice } from '@/utils/coinPhotos'
+import { validQuantity } from '@/utils/coinAttributes'
 import type { CoinPhotoCandidate } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
 import { usePwa } from '@/composables/usePwa'
@@ -299,6 +300,7 @@ function createEmptyForm(category: Category, material: Material): Partial<Coin> 
     dateRange: '',
     year: null,
     country: '',
+    quantity: 1,
     presentation: '',
     rarity: '',
     circulation: '',
@@ -408,6 +410,7 @@ function normalizeDraftCoin(coin: CoinMutationPayload): Partial<Coin> {
     weightGrams: readNumber(source, 'weightGrams', 'weight_grams'),
     diameterMm: readNumber(source, 'diameterMm', 'diameter_mm'),
     grade: readString(source, 'grade'),
+    quantity: 1,
     obverseInscription: readString(source, 'obverseInscription', 'obverse_inscription'),
     reverseInscription: readString(source, 'reverseInscription', 'reverse_inscription'),
     obverseDescription: readString(source, 'obverseDescription', 'obverse_description'),
@@ -445,6 +448,7 @@ function buildCoinPayload(source: Partial<Coin>): CoinMutationPayload {
     diameterMm: source.diameterMm ?? undefined,
     grade: source.grade?.trim() || undefined,
     country: source.country?.trim() || undefined,
+    quantity: validQuantity(source.quantity),
     presentation: source.presentation || undefined,
     rarity: source.rarity || undefined,
     circulation: source.circulation || undefined,

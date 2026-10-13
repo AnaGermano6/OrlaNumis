@@ -59,6 +59,8 @@ export const getCoins = (params?: {
   /** Only coins of one Numista kind of coin (a CollectionClassification key). */
   classification?: string
   presentation?: string
+  /** "true": only coins held more than once (to trade). */
+  repeated?: string
   rarity?: string
   search?: string
   wishlist?: string
@@ -511,8 +513,14 @@ export interface CollectionClassification {
 }
 
 export interface CollectionSummary {
-  /** Coins in the collection (not wishlist or sold). */
+  /**
+   * Coins in the collection (not wishlist or sold), counting quantities: a
+   * coin held three times counts three. The other counts and totalValue count
+   * quantities too.
+   */
   coins: number
+  /** Each different coin once, whatever its quantity. */
+  uniqueCoins?: number
   /** Distinct types: same Numista type, or same name when not linked, count once. */
   types: number
   countries: number
@@ -537,6 +545,9 @@ export interface CollectionSummary {
   totalValue: number
   /** Coins without a current value, left out of totalValue. */
   unvaluedCoins: number
+  /** Different coins held more than once, and the copies beyond the first (to trade). */
+  repeatedCoins?: number
+  spareCoins?: number
   /** totalValue in euros (converted at the ECB rate for a dollar collection); null when no rate is available. */
   totalValueEur: number | null
   exchangeRate?: { usdPerEur: number; date: string }
@@ -575,3 +586,72 @@ export const getExchangeRates = () => api.get<ExchangeRates>('/exchange-rates')
 
 /** The collection's headline numbers, for its coins or its banknotes (every item when kind is omitted). */
 export const getCollectionSummary = (kind?: CoinKind) => api.get<CollectionSummary>('/coins/summary', kind ? { params: { kind } } : undefined)
+
+/** The coin (or banknote) of the day; coin is null when the collection has none of that kind. */
+export interface DailyCoin {
+  date: string
+  coin: Coin | null
+}
+
+/** The collection's coin or banknote of the viewer's day (YYYY-MM-DD). */
+export const getDailyCoin = (kind: CoinKind, date: string) => api.get<DailyCoin>('/coins/daily', { params: { kind, date } })
+
+/** A coin the ECB lists or a mint sells, issued lately or to come. */
+export interface CoinRelease {
+  /** The ECB, the mint (Portugal's incm, France's mdp, Austria's moe), or Numista (Portugal's escudos). */
+  source: 'ecb' | 'incm' | 'mdp' | 'moe' | 'numista'
+  /** A commemorative (circulating) coin, or a collector (non-circulating) one. */
+  kind: 'commemorative' | 'collector'
+  /** ISO code of the issuing country; '' for a joint issue of the euro area. */
+  country: string
+  /** The ECB's feature (in English) or the mint's name for the design. */
+  title: string
+  /** Finishes and metals the mint sells the design in. */
+  variants?: string[]
+  /** The lowest face value; faceValues lists them all when the design has several. */
+  faceValue: number
+  faceValues?: number[]
+  /** The face value's currency when not euros: "PTE" for escudos. */
+  currency?: string
+  /** '' when there is no picture to show (Numista's are refused to the app). */
+  imageUrl: string
+  pageUrl: string
+  /** First and last month of the issue period, YYYY-MM; January to December when only the year is known. */
+  from: string
+  to: string
+  issueText?: string
+  /** How many are struck, when the source says. */
+  volume?: number
+  upcoming: boolean
+  owned: boolean
+}
+
+export interface CoinReleaseGroup {
+  /** The ECB's €2 commemoratives, or the mints' collector coins. */
+  source: 'ecb' | 'mints'
+  /** The year of the ECB's list (0 when it could not be read); for the mints, the current year. */
+  year: number
+  releases: CoinRelease[]
+}
+
+/** New and upcoming coins: the ECB's €2 commemoratives and the collector coins of the mints of Portugal, France and Austria. */
+export const getCoinReleases = () => api.get<{ groups: CoinReleaseGroup[] }>('/coin-releases')
+
+/** A country of the catalogue: its €2 commemoratives and collector coins, and how many of each the user has. */
+export interface CatalogueCountry {
+  /** ISO code, e.g. PT. */
+  country: string
+  /** "PTE" for Portugal's coins in escudos; absent for the euro. */
+  currency?: string
+  commemoratives: number
+  collector: number
+  ownedCommemoratives: number
+  ownedCollector: number
+}
+
+/** The countries of the catalogue of commemorative and collector coins, each in its currency (the euro, or Portugal's escudo). */
+export const getCoinCatalogueCountries = () => api.get<{ countries: CatalogueCountry[] }>('/coin-catalogue/countries')
+
+/** A country's coins in euros, or in another currency ("PTE": Portugal's escudos), newest first; complete is false while coins from Numista are partly listed. */
+export const getCoinCatalogue = (country: string, currency?: string) =>
+  api.get<{ country: string; coins: CoinRelease[]; complete: boolean }>('/coin-catalogue', { params: currency ? { country, currency } : { country } })

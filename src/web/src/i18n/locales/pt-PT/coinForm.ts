@@ -66,6 +66,8 @@ const messages: Messages['coinForm'] = {
   kind: 'Tipo de peça',
   kindCoin: 'Moeda',
   kindBanknote: 'Nota de banco',
+  quantityLess: 'Menos um',
+  quantityMore: 'Mais um',
 }
 
 export default messages

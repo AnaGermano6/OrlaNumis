@@ -64,12 +64,27 @@ func TestParseEcbCommemorativesReadsCoinsAndJointIssues(t *testing.T) {
 	if portugal[1].ImageURL != "https://www.ecb.europa.eu/euro/coins/comm/html/comm_2022/0421-23r.jpg" || portugal[1].Year != 2022 {
 		t.Fatalf("national coin = %+v", portugal[1])
 	}
+	// When each coin is issued and how many: a joint issue's volume varies by country.
+	if portugal[1].IssueDate != "March 2022" || portugal[1].Volume != 1000000 || portugal[0].IssueDate != "1 July 2022" || portugal[0].Volume != 0 {
+		t.Fatalf("issue dates and volumes = %+v", portugal)
+	}
 	// "Austria1.jpg" in the joint issue, a heading wrapped in <p>, the German Länder series.
 	if len(byCountry["Austria"]) != 1 || len(byCountry["Malta"]) != 3 || byCountry["Germany"][0].Feature != "Bundeslander series – Thuringia" {
 		t.Fatalf("Austria %+v, Malta %+v, Germany %+v", byCountry["Austria"], byCountry["Malta"], byCountry["Germany"])
 	}
 	if len(byCountry["Greece"]) != 2 || byCountry["Greece"][0].Feature != "200 years from the first Greek Constitution" {
 		t.Fatalf("Greece = %+v", byCountry["Greece"])
+	}
+}
+
+func TestEcbCoinCount(t *testing.T) {
+	for text, want := range map[string]int64{
+		"20 000 000 coins": 20000000, ": 30 000 000 coins": 30000000, "65 500 coins": 65500, "1.5 million coins": 1500000,
+		"1,5 million coins": 1500000, "varies from country to country": 0, "": 0,
+	} {
+		if got := ecbCoinCount(text); got != want {
+			t.Errorf("ecbCoinCount(%q) = %d, want %d", text, got, want)
+		}
 	}
 }
 

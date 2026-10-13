@@ -9,6 +9,15 @@ export type CoinPresentation = (typeof COIN_PRESENTATIONS)[number]
 export const COIN_RARITIES = ['common', 'uncommon', 'scarce', 'rare', 'very_rare', 'extremely_rare'] as const
 export type CoinRarity = (typeof COIN_RARITIES)[number]
 
+/** How many of a coin or note the collector has; the API accepts 1 to 9999. */
+export const QUANTITY_MIN = 1
+export const QUANTITY_MAX = 9999
+
+/** The quantity to save: a whole number in range, else 1. */
+export function validQuantity(value: number | null | undefined): number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= QUANTITY_MIN && value <= QUANTITY_MAX ? value : QUANTITY_MIN
+}
+
 /** Set by hand: whether the coin is still legal tender and whether it is commemorative. */
 export const COIN_CIRCULATIONS = [
   'current', 'current_commemorative',

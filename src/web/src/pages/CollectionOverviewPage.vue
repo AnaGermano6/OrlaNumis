@@ -11,17 +11,22 @@
     <!-- The whole collection: coins and banknotes together -->
     <section class="mb-8" aria-labelledby="overview-all-title">
       <h2 id="overview-all-title" class="mb-3 font-display text-lg font-medium text-heading">{{ t('collectionOverview.all.title') }}</h2>
-      <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
         <div
           v-for="kpi in totals"
           :key="kpi.key"
           class="flex min-w-0 flex-col items-center gap-1 rounded-md border border-border-subtle bg-card px-2 py-4 text-center md:px-4"
-          :class="kpi.key === 'value' ? 'col-span-2 md:col-span-1' : ''"
           :data-testid="`overview-kpi-${kpi.key}`"
         >
-          <span class="whitespace-nowrap font-display text-xl font-semibold text-text-primary md:text-2xl">{{ kpi.display }}</span>
+          <!-- A long amount gets a smaller size on phones, to fit half the row. -->
+          <span class="whitespace-nowrap font-display font-semibold text-text-primary md:text-2xl" :class="kpi.display.length > 10 ? 'text-base' : 'text-xl'">{{ kpi.display }}</span>
           <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ kpi.label }}</span>
         </div>
+      </div>
+      <!-- A coin and a banknote of the collection for the day -->
+      <div class="mt-3 grid gap-3 md:grid-cols-2">
+        <CollectionDaily kind="coin" />
+        <CollectionDaily kind="banknote" />
       </div>
     </section>
 
@@ -39,6 +44,7 @@
         @show-extinct="openGallery({ country: EXTINCT_COUNTRIES })"
       />
       <CollectionHighlights :summary="coins" :title="t('collectionOverview.coins.highlights')" />
+      <CollectionRepeated kind="coin" :summary="coins" />
     </section>
 
     <!-- Banknotes: their numbers and highlights -->
@@ -49,24 +55,32 @@
       </div>
       <BanknoteKpis :summary="banknotes" />
       <CollectionHighlights :summary="banknotes" kind="banknote" :title="t('collectionOverview.banknotes.highlights')" />
+      <CollectionRepeated v-if="banknotes && banknotes.coins > 0" kind="banknote" :summary="banknotes" />
       <p v-if="banknotes && banknotes.coins === 0" class="m-0 text-body text-text-secondary" data-testid="overview-no-banknotes">
         {{ t('banknotes.empty.title') }}.
         <router-link to="/banknotes/add" class="text-gold underline">{{ t('banknotes.add') }}</router-link>
       </p>
     </section>
+
+    <CoinReleases />
   </div>
 </template>
 
 <script setup lang="ts">
-// The collection at a glance: how many items, countries and how much they are
-// worth altogether; then the coins (the gallery's numbers and highlights, whose
-// cards open the gallery filtered) and the banknotes.
+// The collection at a glance: how many items (counting quantities, and each
+// different one once), countries and how much they are worth altogether, with
+// a coin and a banknote of the day; then the coins (the gallery's numbers and
+// highlights, whose cards open the gallery filtered) and the banknotes, each
+// with the ones held more than once; last, new and upcoming coins.
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCollectionSummary, type CollectionSummary } from '@/api/client'
 import BanknoteKpis from '@/components/collection/BanknoteKpis.vue'
 import CollectionHighlights from '@/components/collection/CollectionHighlights.vue'
 import CollectionKpis from '@/components/collection/CollectionKpis.vue'
+import CollectionDaily from '@/components/collection/CollectionDaily.vue'
+import CollectionRepeated from '@/components/collection/CollectionRepeated.vue'
+import CoinReleases from '@/components/collection/CoinReleases.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { useCoinsStore } from '@/stores/coins'
 import { intlLocale, t } from '@/i18n'
@@ -87,6 +101,7 @@ function count(value: number | undefined): string {
 
 const totals = computed(() => [
   { key: 'items', display: count(all.value?.coins), label: t('collectionOverview.all.items') },
+  { key: 'unique', display: count(all.value ? all.value.uniqueCoins ?? all.value.coins : undefined), label: t('collectionOverview.all.unique') },
   { key: 'countries', display: count(all.value?.countries), label: t('collectionOverview.all.countries') },
   {
     key: 'value',

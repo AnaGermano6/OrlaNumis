@@ -53,6 +53,7 @@ import { useDialog } from '@/composables/useDialog'
 import { useCoinsStore } from '@/stores/coins'
 import { t } from '@/i18n'
 import { buildBanknotePrefill } from '@/utils/banknotePrefill'
+import { validQuantity } from '@/utils/coinAttributes'
 import { photoCreditLine, type RealPhotoChoice } from '@/utils/coinPhotos'
 import type { CatalogSelection } from '@/utils/numistaCatalogPrefill'
 
@@ -87,6 +88,7 @@ function emptyBanknote(): Partial<Coin> {
     rarity: '',
     dateRange: '',
     year: null,
+    quantity: 1,
     serialNumber: '',
     signatures: '',
     noteVariant: '',
@@ -157,6 +159,7 @@ function buildPayload(source: Partial<Coin>): CoinMutationPayload {
     rarity: source.rarity || undefined,
     dateRange: text(source.dateRange),
     year: source.year ?? null,
+    quantity: validQuantity(source.quantity),
     serialNumber: text(source.serialNumber),
     signatures: text(source.signatures),
     noteVariant: source.noteVariant || '',

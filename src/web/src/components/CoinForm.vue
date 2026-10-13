@@ -150,9 +150,15 @@
             <input v-model.number="form.diameterMm" class="form-input" type="number" step="any" min="0" />
           </div>
         </div>
-        <div class="form-group min-w-0">
-          <label class="form-label">{{ t('coinFields.grade') }}</label>
-          <input v-model="form.grade" class="form-input" :placeholder="t('coinForm.gradePlaceholder')" />
+        <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+          <div class="form-group min-w-0">
+            <label class="form-label">{{ t('coinFields.grade') }}</label>
+            <input v-model="form.grade" class="form-input" :placeholder="t('coinForm.gradePlaceholder')" />
+          </div>
+          <div class="form-group min-w-0">
+            <label class="form-label" for="coin-quantity">{{ t('coinFields.quantity') }}</label>
+            <QuantityInput id="coin-quantity" v-model="form.quantity" />
+          </div>
         </div>
       </fieldset>
 
@@ -298,6 +304,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { getMintLocations, type MintLocationsResponse } from '@/api/client'
 import type { Coin, CoinKind, MintLocation } from '@/types'
 import AutocompleteInput from '@/components/AutocompleteInput.vue'
+import QuantityInput from '@/components/ui/QuantityInput.vue'
 import ImperialFigurePicker from '@/components/ImperialFigurePicker.vue'
 import CreateMintModal from '@/components/CreateMintModal.vue'
 import { X, Camera } from 'lucide-vue-next'

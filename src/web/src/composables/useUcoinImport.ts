@@ -202,10 +202,12 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
   const stopped = ref(false)
   let stopRequested = false
   let nextSlot = 0
-  /** ECB rate (US dollars per euro) for amounts in the other currency. */
+  /** ECB rates (per euro) for amounts in another currency. */
   let perEur: Record<string, number> | undefined
 
   const countries = computed(() => new Set(rows.value.map((row) => fold(row.country)).filter(Boolean)).size)
+  /** Coins in the file counting each line's quantity. */
+  const pieces = computed(() => rows.value.reduce((sum, row) => sum + row.quantity, 0))
   const alreadyImported = computed(() => rows.value.length - pendingRows.value.length)
 
   /** Rough number of Numista requests: a search, type and issues per type, a price per issue. */
@@ -848,6 +850,7 @@ export function useUcoinImport(options: UcoinImportOptions = {}) {
     withoutImages,
     addMissingPhotos,
     countries,
+    pieces,
     alreadyImported,
     estimatedRequests,
     progress,

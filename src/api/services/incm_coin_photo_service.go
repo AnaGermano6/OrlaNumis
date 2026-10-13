@@ -27,7 +27,7 @@ const (
 	incmPageLimit       = 8 << 20
 	incmPageTimeout     = 20 * time.Second
 	incmMaxPages        = 30
-	incmCoinsCacheKey   = "incm:coins:v3"
+	incmCoinsCacheKey   = "incm:coins:v4"
 	incmCoinsCacheTTL   = 7 * 24 * time.Hour
 	incmMemoryLifetime  = time.Hour
 	incmRetryDelay      = 10 * time.Minute
@@ -179,7 +179,8 @@ type incmProduct struct {
 }
 
 var (
-	incmReleaseDate = regexp.MustCompile(`\[DATA_LANCAMENTO\]\s*\d{1,2}-(\d{4})`)
+	incmReleaseDate = regexp.MustCompile(`\[DATA_LANCAMENTO\]\s*(\d{1,2})-(\d{4})`)
+	incmIssueLimit  = regexp.MustCompile(`\[LIM_EMISSAO\]\s*(\d[\d .]*)`)
 	incmTags        = regexp.MustCompile(`<[^>]+>`)
 	incmFaceValue   = regexp.MustCompile(`^(\d+(?:[.,]\d+)?)\s*euros?$`)
 	// The side a photo shows is the last mark of its file name: "_A", "-1" or
@@ -233,9 +234,15 @@ func incmCoinFromProduct(product incmProduct) (mintCoin, bool) {
 	}
 	text := html.UnescapeString(incmTags.ReplaceAllString(product.BodyHTML, " "))
 	if match := incmReleaseDate.FindStringSubmatch(text); match != nil {
-		coin.Year, _ = strconv.Atoi(match[1])
+		coin.Year, _ = strconv.Atoi(match[2])
+		if month, _ := strconv.Atoi(match[1]); month >= 1 && month <= 12 {
+			coin.Released = fmt.Sprintf("%04d-%02d", coin.Year, month)
+		}
 	} else if len(product.PublishedAt) >= 4 {
 		coin.Year, _ = strconv.Atoi(product.PublishedAt[:4])
+	}
+	if match := incmIssueLimit.FindStringSubmatch(text); match != nil {
+		coin.Volume, _ = strconv.ParseInt(strings.NewReplacer(" ", "", ".", "").Replace(strings.TrimSpace(match[1])), 10, 64)
 	}
 	if description, _, found := strings.Cut(text, "|*|"); found {
 		text = description
