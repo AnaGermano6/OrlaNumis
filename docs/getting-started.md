@@ -9,7 +9,6 @@ This guide walks you through setting up Aurearia for the first time, adding your
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `JWT_SECRET` | **Yes** (production) | dev default | JWT signing key. Must be 32+ characters. In release mode (`GIN_MODE=release`), the app fatals on startup if missing. |
-| `AUCTION_CREDENTIAL_ENCRYPTION_KEY` | **Yes** (production) | disabled | Base64-encoded 32-byte key for encrypting stored NumisBids/CNG passwords. Generate with `openssl rand -base64 32`. If lost, users must re-enter provider passwords. |
 | `WEBAUTHN_RP_ID` | No | `localhost` | Domain name for WebAuthn Relying Party ID |
 | `WEBAUTHN_ORIGIN` | No | `http://localhost:8080` | Full origin URL for WebAuthn (comma-separated for multiple) |
 | `CORS_ORIGINS` | No | *(smart defaults)* | Comma-separated allowed CORS origins. Falls back to WebAuthn origins + localhost |
@@ -44,18 +43,6 @@ As admin, click **Admin** in the navigation bar to configure:
 - **AI Configuration** — Select your AI Provider: **Anthropic** (recommended) for Claude models with built-in web search, or **Ollama** for self-hosted models. Configure the provider-specific settings (API key, model, URL) and optionally customize analysis prompts. The Ollama URL is configured here (default `http://localhost:11434`).
 - **System** — Set the log level (`trace`, `debug`, `info`, `warn`, `error`) and configure the Numista API key for catalog lookups.
 - **Logs** — View real-time application logs with level filtering and auto-refresh
-
-### Settings → Account: Auction Providers
-
-Configure NumisBids and/or CNG Auctions credentials in **Settings → Account** to enable watchlist sync:
-
-- **NumisBids Credentials** — Username and password for NumisBids.
-- **CNG Auctions Credentials** — Username and password for CNG Auctions.
-- Use **Test Connection** before saving to confirm provider login works.
-
-Stored provider passwords are encrypted at rest with `AUCTION_CREDENTIAL_ENCRYPTION_KEY`. Legacy plaintext values migrate automatically on next save or sync.
-
-CNG Auctions and NumisBids do not expose equivalent account data. CNG supports richer hosted-auction sync and can auto-detect won/lost outcomes where CNG reports the necessary signals. NumisBids currently supports watchlist/import tracking only, so won/lost/final outcome and max-bid values should be checked on NumisBids and updated manually in Aurearia.
 
 ### 4. Start Adding Coins
 

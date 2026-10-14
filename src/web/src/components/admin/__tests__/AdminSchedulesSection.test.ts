@@ -17,8 +17,6 @@ const mocks = vi.hoisted(() => ({
   triggerAuctionEndingCheck: vi.fn(),
   getAuctionAlertReminderRuns: vi.fn(),
   triggerAuctionAlertReminderCheck: vi.fn(),
-  getAuctionWatchBidDigestRuns: vi.fn(),
-  triggerAuctionWatchBidDigest: vi.fn(),
   triggerCollectionHealthSnapshots: vi.fn(),
   getCollectionHealthSnapshotRuns: vi.fn(),
   getCollectionHealthSnapshotStatus: vi.fn(),
@@ -42,7 +40,6 @@ describe('AdminSchedulesSection', () => {
     mocks.getAdminWishlistSearchAlertRuns.mockResolvedValue({ data: { runs: [], total: 0, page: 1, limit: 5 } })
     mocks.getValuationRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
     mocks.getAuctionEndingRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
-    mocks.getAuctionWatchBidDigestRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
     mocks.getCoinOfDayRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
     mocks.getCollectionHealthSnapshotRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
     mocks.getCollectionHealthSnapshotStatus.mockResolvedValue({
@@ -85,11 +82,9 @@ describe('AdminSchedulesSection', () => {
 
     for (const heading of [
       'Wishlist Availability Check',
-      'ParcelApp Shipment Tracking',
       'Wishlist Search Alerts',
       'Auction Ending Alerts',
       'Auction Price Alerts and Bid Reminders',
-      'Auction Watch Bid Digest',
       'Collection Valuation',
       'Collection Health Snapshots',
       'Coin of the Day',
@@ -102,7 +97,9 @@ describe('AdminSchedulesSection', () => {
     expect(mocks.getAdminWishlistSearchAlertRuns).toHaveBeenCalledWith(1, 5)
     expect(mocks.getAuctionEndingRuns).toHaveBeenCalled()
     expect(mocks.getAuctionAlertReminderRuns).toHaveBeenCalled()
-    expect(mocks.getAuctionWatchBidDigestRuns).toHaveBeenCalled()
+    // The ParcelApp tracking and the watch-bid digest (a Pushover push) were removed.
+    expect(wrapper.text()).not.toContain('ParcelApp')
+    expect(wrapper.text()).not.toContain('Auction Watch Bid Digest')
     expect(mocks.getValuationRuns).toHaveBeenCalled()
     expect(mocks.getCollectionHealthSnapshotRuns).toHaveBeenCalled()
     expect(mocks.getCoinOfDayRuns).toHaveBeenCalled()
@@ -122,14 +119,12 @@ describe('AdminSchedulesSection', () => {
     const text = wrapper.text()
     const availabilitySettings = text.indexOf('Wishlist Availability Check')
     const availabilityHistory = text.indexOf('Availability Run History')
-    const parcelSettings = text.indexOf('ParcelApp Shipment Tracking')
     const searchSettings = text.indexOf('Wishlist Search Alerts')
     const searchHistory = text.indexOf('Wishlist Search Alert Run History')
     const auctionSettings = text.indexOf('Auction Ending Alerts')
 
     expect(availabilitySettings).toBeLessThan(availabilityHistory)
-    expect(availabilityHistory).toBeLessThan(parcelSettings)
-    expect(parcelSettings).toBeLessThan(searchSettings)
+    expect(availabilityHistory).toBeLessThan(searchSettings)
     expect(searchSettings).toBeLessThan(searchHistory)
     expect(searchHistory).toBeLessThan(auctionSettings)
   })
@@ -197,9 +192,9 @@ describe('AdminSchedulesSection', () => {
     expect(wrapper.text()).toContain('13h 42m')
 
     // Run Now buttons in template order: Availability(0), AuctionEnding(1),
-    // AlertReminder(2), WatchBidDigest(3), Valuation(4), Health(5), CoinOfDay(6).
+    // AlertReminder(2), Valuation(3), Health(4), CoinOfDay(5).
     const runButtons = wrapper.findAll('button').filter(button => button.text() === 'Run Now')
-    await runButtons[5]?.trigger('click')
+    await runButtons[4]?.trigger('click')
     await flushPromises()
 
     expect(mocks.triggerCollectionHealthSnapshots).toHaveBeenCalledTimes(1)
@@ -250,9 +245,6 @@ function buildProps() {
       AuctionAlertsCheckEnabled: 'true',
       AuctionAlertsCheckStartTime: '08:00',
       AuctionAlertsCheckInterval: '60',
-      AuctionWatchBidDigestEnabled: 'false',
-      AuctionWatchBidDigestStartTime: '08:00',
-      AuctionWatchBidDigestInterval: '1440',
       WishlistCheckEnabled: 'true',
       WishlistCheckStartTime: '08:00',
       WishlistCheckInterval: '10080',
@@ -268,8 +260,6 @@ function buildProps() {
     auctionSettingsError: false,
     alertReminderSettingsMsg: '',
     alertReminderSettingsError: false,
-    watchBidDigestSettingsMsg: '',
-    watchBidDigestSettingsError: false,
     healthSettingsMsg: '',
     healthSettingsError: false,
     valSettingsMsg: '',

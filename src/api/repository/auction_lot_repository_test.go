@@ -265,86 +265,6 @@ func TestAuctionLotRepository_GetEndingSoon_MultipleUsers(t *testing.T) {
 	}
 }
 
-func TestAuctionLotRepository_GetActiveWatchBidDigestLots(t *testing.T) {
-	db := setupAuctionTestDB(t)
-	repo := NewAuctionLotRepository(db)
-
-	now := time.Now()
-	in12Hours := now.Add(12 * time.Hour)
-	in48Hours := now.Add(48 * time.Hour)
-	ended := now.Add(-1 * time.Hour)
-	bid := 300.0
-
-	lots := []models.AuctionLot{
-		{
-			NumisBidsURL: "https://example.com/watching-future",
-			Title:        "Watching Future",
-			Status:       models.AuctionStatusWatching,
-			SaleDate:     &in12Hours,
-			CurrentBid:   &bid,
-			LotNumber:    1,
-			UserID:       1,
-		},
-		{
-			NumisBidsURL:   "https://example.com/bidding-future",
-			Title:          "Bidding Future",
-			Status:         models.AuctionStatusBidding,
-			AuctionEndTime: &in48Hours,
-			CurrentBid:     &bid,
-			LotNumber:      2,
-			UserID:         1,
-		},
-		{
-			NumisBidsURL: "https://example.com/ended",
-			Title:        "Ended",
-			Status:       models.AuctionStatusWatching,
-			SaleDate:     &ended,
-			CurrentBid:   &bid,
-			LotNumber:    3,
-			UserID:       1,
-		},
-		{
-			NumisBidsURL: "https://example.com/passed",
-			Title:        "Passed",
-			Status:       models.AuctionStatusPassed,
-			SaleDate:     &in12Hours,
-			CurrentBid:   &bid,
-			LotNumber:    4,
-			UserID:       1,
-		},
-		{
-			NumisBidsURL: "https://example.com/no-date",
-			Title:        "No Date",
-			Status:       models.AuctionStatusWatching,
-			CurrentBid:   &bid,
-			LotNumber:    5,
-			UserID:       1,
-		},
-	}
-	for i := range lots {
-		if err := repo.Create(&lots[i]); err != nil {
-			t.Fatalf("create lot %d: %v", i, err)
-		}
-	}
-
-	got, err := repo.GetActiveWatchBidDigestLots()
-	if err != nil {
-		t.Fatalf("GetActiveWatchBidDigestLots: %v", err)
-	}
-	if len(got) != 2 {
-		t.Fatalf("got %d lots, want 2: %#v", len(got), got)
-	}
-	found := map[string]bool{}
-	for _, lot := range got {
-		found[lot.NumisBidsURL] = true
-	}
-	for _, url := range []string{"https://example.com/watching-future", "https://example.com/bidding-future"} {
-		if !found[url] {
-			t.Fatalf("expected active digest lot %s", url)
-		}
-	}
-}
-
 func TestAuctionLotRepository_CountAllAndCountAllByStatus(t *testing.T) {
 	db := setupAuctionTestDB(t)
 	repo := NewAuctionLotRepository(db)
@@ -1046,52 +966,6 @@ func TestAuctionLotRepository_ListResolvedByUserAndCategory(t *testing.T) {
 		if lot.Status != models.AuctionStatusWon && lot.Status != models.AuctionStatusLost {
 			t.Fatalf("unexpected status %q in resolved results", lot.Status)
 		}
-	}
-}
-
-func TestAuctionLotRepository_SaveWatchBidDigestBids(t *testing.T) {
-	db := setupAuctionTestDB(t)
-	repo := NewAuctionLotRepository(db)
-
-	reportedBid := 80.0
-	staleBaseline := 60.0
-	withBid := &models.AuctionLot{
-		NumisBidsURL: "https://example.com/lot1", Title: "Reported lot", Status: models.AuctionStatusWatching,
-		CurrentBid: &reportedBid, UserID: 1,
-	}
-	withoutBid := &models.AuctionLot{
-		NumisBidsURL: "https://example.com/lot2", Title: "Bid unavailable", Status: models.AuctionStatusWatching,
-		CurrentBid: nil, LastDigestBid: &staleBaseline, UserID: 1,
-	}
-	for _, lot := range []*models.AuctionLot{withBid, withoutBid} {
-		if err := db.Create(lot).Error; err != nil {
-			t.Fatalf("failed to seed lot: %v", err)
-		}
-	}
-
-	if err := repo.SaveWatchBidDigestBids([]models.AuctionLot{*withBid, *withoutBid}); err != nil {
-		t.Fatalf("SaveWatchBidDigestBids: %v", err)
-	}
-
-	var reported models.AuctionLot
-	if err := db.First(&reported, withBid.ID).Error; err != nil {
-		t.Fatalf("failed to reload reported lot: %v", err)
-	}
-	if reported.LastDigestBid == nil || *reported.LastDigestBid != reportedBid {
-		t.Fatalf("LastDigestBid = %v, want %v", reported.LastDigestBid, reportedBid)
-	}
-	if !reported.UpdatedAt.Equal(withBid.UpdatedAt) {
-		t.Fatalf("UpdatedAt moved from %v to %v; a digest snapshot is not a change to the lot", withBid.UpdatedAt, reported.UpdatedAt)
-	}
-
-	// A lot whose bid the provider stopped reporting keeps the baseline it already had,
-	// so the next digest that does see a bid can still compare against something.
-	var unavailable models.AuctionLot
-	if err := db.First(&unavailable, withoutBid.ID).Error; err != nil {
-		t.Fatalf("failed to reload lot with no bid: %v", err)
-	}
-	if unavailable.LastDigestBid == nil || *unavailable.LastDigestBid != staleBaseline {
-		t.Fatalf("LastDigestBid = %v, want the previous baseline %v", unavailable.LastDigestBid, staleBaseline)
 	}
 }
 

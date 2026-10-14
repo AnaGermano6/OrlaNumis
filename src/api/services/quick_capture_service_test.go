@@ -33,7 +33,7 @@ func newQuickCaptureServiceAndDBForTest(t *testing.T, uploadDir string) (*QuickC
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.StorageLocation{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CatalogRegistry{}, &models.ValueSnapshot{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}, &models.AppSetting{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.StorageLocation{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CatalogRegistry{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}, &models.AppSetting{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	if err := db.Create(&models.CatalogRegistry{
@@ -436,18 +436,15 @@ func TestQuickCaptureServicePromoteDraftValidatesAndIsIdempotent(t *testing.T) {
 	if second.CoinID != first.CoinID || !second.AlreadyPromoted {
 		t.Fatalf("expected idempotent existing coin response, first=%#v second=%#v", first, second)
 	}
-	var coinCount, coinImageCount, snapshotCount int64
+	var coinCount, coinImageCount int64
 	if err := db.Model(&models.Coin{}).Where("user_id = ?", uint(1)).Count(&coinCount).Error; err != nil {
 		t.Fatalf("count coins: %v", err)
 	}
 	if err := db.Model(&models.CoinImage{}).Where("coin_id = ?", first.CoinID).Count(&coinImageCount).Error; err != nil {
 		t.Fatalf("count images: %v", err)
 	}
-	if err := db.Model(&models.ValueSnapshot{}).Where("user_id = ?", uint(1)).Count(&snapshotCount).Error; err != nil {
-		t.Fatalf("count snapshots: %v", err)
-	}
-	if coinCount != 1 || coinImageCount != 1 || snapshotCount != 1 {
-		t.Fatalf("expected one promoted coin/image/snapshot, got coins=%d images=%d snapshots=%d", coinCount, coinImageCount, snapshotCount)
+	if coinCount != 1 || coinImageCount != 1 {
+		t.Fatalf("expected one promoted coin/image, got coins=%d images=%d", coinCount, coinImageCount)
 	}
 	active, total, err := svc.ListDrafts(1, models.QuickCaptureDraftStatusActive, 1, 50)
 	if err != nil {

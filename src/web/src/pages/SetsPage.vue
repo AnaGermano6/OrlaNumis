@@ -152,7 +152,12 @@ async function createSet(value: CreateCoinSetRequest, csv?: string) {
     if (csv) {
       await createSetFromCsv({ ...value, csv })
     } else {
-      await createSetApi(value)
+      // The new set opens, to show its coins or to add them.
+      const res = await createSetApi(value)
+      showCreateModal.value = false
+      resetNewSet()
+      goToSet(res.data.id)
+      return
     }
     showCreateModal.value = false
     resetNewSet()

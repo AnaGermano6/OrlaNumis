@@ -84,13 +84,13 @@ src/
 | `/stats/timeline` | TimelinePage | Yes |
 | `/stats/mint-map` | MintMapPage | Yes |
 | `/stats/health` | StatsHealthPage | Yes |
-| `/stats/value-trends` | StatsValueTrendsPage | Yes |
-| `/stats/investment-breakdown` | StatsInvestmentBreakdownPage | Yes |
+| `/stats/value-trends` | Redirects to `/stats` | Yes |
+| `/stats/investment-breakdown` | Redirects to `/stats` | Yes |
 | `/stats/distribution` | CollectionDistributionPage | Yes |
 | `/stats/emperors` | Redirects to `/sets/emperors` | Yes + Emperor Tracker |
 | `/mint-map` | Redirects to `/stats/mint-map` | Yes |
 | `/timeline` | Redirects to `/stats/timeline` | Yes |
-| `/notes` | NotesPage | Yes |
+| `/notes` | Redirects to `/` | Yes |
 | `/settings` | SettingsPage | Yes |
 | `/settings/oidc/link/callback/:providerId` | OIDCLinkCallbackPage | Yes |
 | `/auth/oidc/callback/:providerId` | OIDCLoginCallbackPage | No |

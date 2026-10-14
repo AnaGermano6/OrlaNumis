@@ -627,7 +627,6 @@ Rate limit: 10 requests per minute per IP on auth endpoints.
 | DELETE | `/api/coins/:id` | Delete coin and all related data |
 | GET | `/api/stats` | Collection statistics |
 | GET | `/api/suggestions` | Autocomplete suggestions for form fields |
-| GET | `/api/value-history` | Collection value snapshots over time |
 | GET | `/api/coins/:id/value-history` | Individual coin value history |
 
 #### 6.1.4 Images (Protected)

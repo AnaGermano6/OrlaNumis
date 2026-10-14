@@ -14,7 +14,6 @@
           <p class="m-0"><strong class="text-text-primary">{{ t('shipment.tracking') }}</strong> {{ shipment.trackingNumber }}</p>
           <p v-if="shipment.notes" class="m-0"><strong class="text-text-primary">{{ t('shipment.notes') }}</strong> {{ shipment.notes }}</p>
           <p class="m-0"><strong class="text-text-primary">{{ t('shipment.status') }}</strong> {{ statusLabel(shipment.currentStatus) }}</p>
-          <p v-if="shipment.lastSyncError" class="m-0 text-loss"><strong>ParcelApp:</strong> {{ shipment.lastSyncError }}</p>
         </div>
 
         <div class="mb-4 grid gap-2 border-t border-border-subtle pt-4">
@@ -44,14 +43,6 @@
         </div>
 
         <div class="flex flex-wrap gap-2 border-t border-border-subtle pt-4">
-          <button
-            class="btn btn-secondary btn-sm"
-            :disabled="syncing || shipment.carrier !== 'parcel' || isDelivered"
-            :title="isDelivered ? t('shipment.deliveredTitle') : undefined"
-            @click="syncShipment"
-          >
-            {{ isDelivered ? t('shipment.trackingComplete') : (syncing ? t('common.checking') : t('shipment.checkNow')) }}
-          </button>
           <button class="btn btn-danger btn-sm" :disabled="deleting" @click="removeShipment">{{ deleting ? t('common.removing') : t('shipment.remove') }}</button>
         </div>
       </template>
@@ -60,6 +51,7 @@
         <p class="m-0 mb-4 text-body text-text-secondary">{{ t('shipment.none') }}</p>
         <p class="m-0 mb-4 text-body text-text-secondary">{{ t('shipment.enterTracking') }}</p>
         <div class="grid gap-3 md:grid-cols-2">
+          <input v-model="form.manualCarrierName" class="form-input" :placeholder="t('shipment.carrierName')" />
           <input v-model="form.trackingNumber" class="form-input" :placeholder="t('shipment.trackingNumber')" />
           <input v-model="form.notes" class="form-input md:col-span-2" :placeholder="t('shipment.optionalNotes')" />
         </div>
@@ -74,8 +66,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
-import { deleteCoinShipment, getCoinShipment, setCoinShipmentManualOverride, syncCoinShipment, upsertCoinShipment } from '@/api/client'
+import { onMounted, reactive, ref } from 'vue'
+import { deleteCoinShipment, getCoinShipment, setCoinShipmentManualOverride, upsertCoinShipment } from '@/api/client'
 import type { Shipment, ShipmentCarrier, ShipmentStatus, ShipmentUpsertInput } from '@/types'
 import { shipmentStatusLabel } from '@/utils/format'
 import { intlLocale, t } from '@/i18n'
@@ -85,7 +77,6 @@ const emit = defineEmits<{ changed: [] }>()
 
 const loading = ref(true)
 const saving = ref(false)
-const syncing = ref(false)
 const deleting = ref(false)
 const shipment = ref<Shipment | null>(null)
 const trackingUrl = ref('')
@@ -94,7 +85,7 @@ const messageError = ref(false)
 const manualStatus = ref<ShipmentStatus>('in_transit')
 const manualNote = ref('')
 const form = reactive<ShipmentUpsertInput>({
-  carrier: 'parcel',
+  carrier: 'other',
   trackingNumber: '',
   notes: '',
   manualCarrierName: '',
@@ -102,11 +93,6 @@ const form = reactive<ShipmentUpsertInput>({
 
 const statusOptions: ShipmentStatus[] = ['pending', 'label_created', 'in_transit', 'out_for_delivery', 'delivered', 'exception', 'returned', 'unknown']
 
-// Manual ParcelApp checks are pointless once a shipment is delivered — the terminal
-// status won't change on the carrier side (spec 340 delivered-terminal-state). This is
-// reactive off shipment.currentStatus, so switching status away from delivered (e.g. via
-// the manual override above) immediately re-enables the action.
-const isDelivered = computed(() => shipment.value?.currentStatus === 'delivered')
 
 function setMessage(next: string, isError = false) {
   message.value = next
@@ -123,7 +109,6 @@ function statusLabel(status: string) {
 }
 
 function carrierLabel(carrier: ShipmentCarrier, manualName: string) {
-  if (carrier === 'parcel') return 'ParcelApp'
   if (carrier === 'other' && manualName) return manualName
   return carrier.toUpperCase()
 }
@@ -155,15 +140,20 @@ async function loadShipment() {
 
 function buildUpsertInput(): ShipmentUpsertInput | null {
   const trackingNumber = form.trackingNumber.trim()
+  const manualCarrierName = form.manualCarrierName?.trim() ?? ''
   if (!trackingNumber) {
     setMessage(t('shipment.trackingRequired'), true)
     return null
   }
+  if (!manualCarrierName) {
+    setMessage(t('shipment.carrierRequired'), true)
+    return null
+  }
   return {
-    carrier: 'parcel',
+    carrier: 'other',
     trackingNumber,
     notes: form.notes?.trim() || '',
-    manualCarrierName: '',
+    manualCarrierName,
   }
 }
 
@@ -176,11 +166,7 @@ async function saveShipment() {
     const res = await upsertCoinShipment(props.coinId, input)
     shipment.value = res.data.shipment
     trackingUrl.value = res.data.trackingUrl ?? ''
-    if (shipment.value.lastSyncError) {
-      setMessage(t('shipment.savedSyncFailed', { error: shipment.value.lastSyncError }), true)
-    } else {
-      setMessage(t('shipment.saved'))
-    }
+    setMessage(t('shipment.saved'))
     emit('changed')
   } catch (err: unknown) {
     setMessage(apiErrorMessage(err) || t('shipment.saveFailed'), true)
@@ -206,26 +192,6 @@ async function saveStatus() {
     setMessage(apiErrorMessage(err) || t('shipment.statusSaveFailed'), true)
   } finally {
     saving.value = false
-  }
-}
-
-async function syncShipment() {
-  if (!shipment.value) return
-  syncing.value = true
-  setMessage('')
-  try {
-    const res = await syncCoinShipment(props.coinId)
-    shipment.value = res.data.shipment
-    trackingUrl.value = res.data.trackingUrl ?? ''
-    if (shipment.value.lastSyncError) {
-      setMessage(t('shipment.syncFailed', { error: shipment.value.lastSyncError }), true)
-    } else {
-      setMessage(t('shipment.synced'))
-    }
-  } catch (err: unknown) {
-    setMessage(apiErrorMessage(err) || t('shipment.syncRequestFailed'), true)
-  } finally {
-    syncing.value = false
   }
 }
 

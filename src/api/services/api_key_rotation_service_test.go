@@ -30,7 +30,7 @@ func newTestAPIKeyRotationService(t *testing.T, db *gorm.DB) *APIKeyRotationServ
 	notifRepo := repository.NewNotificationRepository(db)
 	userRepo := repository.NewUserRepository(db)
 	socialRepo := repository.NewSocialRepository(db)
-	notifSvc := NewNotificationService(notifRepo, socialRepo, userRepo, nil, NewLogger(100))
+	notifSvc := NewNotificationService(notifRepo, socialRepo, userRepo, NewLogger(100))
 	apiKeyRepo := repository.NewApiKeyRepository(db)
 	return NewAPIKeyRotationService(apiKeyRepo, notifRepo, notifSvc, settingsSvc, NewLogger(100))
 }

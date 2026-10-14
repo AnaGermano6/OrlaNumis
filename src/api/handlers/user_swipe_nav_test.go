@@ -36,7 +36,7 @@ func TestGetMeDefaultsPWASwipeNavEnabledToFalse(t *testing.T) {
 		t.Fatalf("create user: %v", err)
 	}
 
-	handler := NewUserHandler("", userRepo, nil, services.NewLogger(10))
+	handler := NewUserHandler("", userRepo, services.NewLogger(10))
 	req := httptest.NewRequest(http.MethodGet, "/auth/me", nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -66,7 +66,7 @@ func TestUpdateProfileSetsPWASwipeNavEnabled(t *testing.T) {
 		t.Fatalf("create user: %v", err)
 	}
 
-	handler := NewUserHandler("", userRepo, nil, services.NewLogger(10))
+	handler := NewUserHandler("", userRepo, services.NewLogger(10))
 	body := bytes.NewBufferString(`{"pwaSwipeNavEnabled": true}`)
 	req := httptest.NewRequest(http.MethodPut, "/user/profile", body)
 	req.Header.Set("Content-Type", "application/json")
@@ -107,7 +107,7 @@ func TestUpdateProfileClearsPWASwipeNavEnabled(t *testing.T) {
 		t.Fatalf("create user: %v", err)
 	}
 
-	handler := NewUserHandler("", userRepo, nil, services.NewLogger(10))
+	handler := NewUserHandler("", userRepo, services.NewLogger(10))
 	body := bytes.NewBufferString(`{"pwaSwipeNavEnabled": false}`)
 	req := httptest.NewRequest(http.MethodPut, "/user/profile", body)
 	req.Header.Set("Content-Type", "application/json")
@@ -141,7 +141,7 @@ func TestUpdateProfileLeavesPWASwipeNavEnabledUnchangedWhenOmitted(t *testing.T)
 		t.Fatalf("create user: %v", err)
 	}
 
-	handler := NewUserHandler("", userRepo, nil, services.NewLogger(10))
+	handler := NewUserHandler("", userRepo, services.NewLogger(10))
 	body := bytes.NewBufferString(`{"bio":"numismatist"}`)
 	req := httptest.NewRequest(http.MethodPut, "/user/profile", body)
 	req.Header.Set("Content-Type", "application/json")
@@ -180,7 +180,7 @@ func TestUpdateProfilePWASwipeNavEnabledOnlyAffectsAuthenticatedUser(t *testing.
 		t.Fatalf("create victim: %v", err)
 	}
 
-	handler := NewUserHandler("", userRepo, nil, services.NewLogger(10))
+	handler := NewUserHandler("", userRepo, services.NewLogger(10))
 	req := httptest.NewRequest(http.MethodPut, "/user/profile", bytes.NewBufferString(`{"pwaSwipeNavEnabled": true}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()

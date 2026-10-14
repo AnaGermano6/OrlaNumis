@@ -5,11 +5,10 @@ import "time"
 type ShipmentCarrier string
 
 const (
-	ShipmentCarrierUSPS   ShipmentCarrier = "usps"
-	ShipmentCarrierUPS    ShipmentCarrier = "ups"
-	ShipmentCarrierFedEx  ShipmentCarrier = "fedex"
-	ShipmentCarrierParcel ShipmentCarrier = "parcel"
-	ShipmentCarrierOther  ShipmentCarrier = "other"
+	ShipmentCarrierUSPS  ShipmentCarrier = "usps"
+	ShipmentCarrierUPS   ShipmentCarrier = "ups"
+	ShipmentCarrierFedEx ShipmentCarrier = "fedex"
+	ShipmentCarrierOther ShipmentCarrier = "other"
 )
 
 type ShipmentStatus string

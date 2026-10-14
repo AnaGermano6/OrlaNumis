@@ -487,10 +487,6 @@ curl http://localhost:8080/api/stats \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-#### GET /api/value-history
-
-Get portfolio value snapshots over time, useful for charting collection value trends.
-
 #### GET /api/stats/distribution
 
 Get era × category cross-tabulation data for the collection heat map visualization.

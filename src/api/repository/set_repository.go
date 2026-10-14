@@ -20,6 +20,19 @@ const agenticTargetNotePrefix = "agentic_target:"
 // SetRepository encapsulates all set-related database operations.
 type SetRepository struct {
 	db *gorm.DB
+	// classify lists the user's coins of a kind of coin ("circulation",
+	// "commemorative", "collector"), for the smart-set classification rule.
+	classify CoinClassifier
+}
+
+// CoinClassifier lists a user's coins of a kind of coin.
+type CoinClassifier func(userID uint, kind string) ([]uint, error)
+
+// WithCoinClassifier lets smart sets choose coins by their kind of coin,
+// which Numista says and the database does not hold.
+func (r *SetRepository) WithCoinClassifier(classify CoinClassifier) *SetRepository {
+	r.classify = classify
+	return r
 }
 
 type AgenticTargetMatch struct {
@@ -33,7 +46,7 @@ func NewSetRepository(db *gorm.DB) *SetRepository {
 }
 
 func (r *SetRepository) WithTx(tx *gorm.DB) *SetRepository {
-	return &SetRepository{db: tx}
+	return &SetRepository{db: tx, classify: r.classify}
 }
 
 func (r *SetRepository) Transaction(fn func(tx *gorm.DB) error) error {
@@ -47,7 +60,7 @@ func (r *SetRepository) RunInTransaction(fn func(tx *Transaction) error) error {
 }
 
 func (r *SetRepository) WithTransaction(tx *Transaction) *SetRepository {
-	return &SetRepository{db: tx.db}
+	return &SetRepository{db: tx.db, classify: r.classify}
 }
 
 // List returns all sets belonging to the given user.
@@ -107,7 +120,43 @@ func (r *SetRepository) DeleteInTx(id, userID uint) error {
 	if err := r.db.Where("set_id = ?", id).Delete(&models.CoinSetMembership{}).Error; err != nil {
 		return err
 	}
+	if err := r.db.Where("set_id = ?", id).Delete(&models.CoinSetChecklistKey{}).Error; err != nil {
+		return err
+	}
 	return r.db.Scopes(OwnedByID(id, userID)).Delete(&models.CoinSet{}).Error
+}
+
+// ListChecklistSets lists every user's checklist sets.
+func (r *SetRepository) ListChecklistSets() ([]models.CoinSet, error) {
+	sets := []models.CoinSet{}
+	// Sets left behind by a deleted user are not looked at.
+	err := r.db.Where("set_type = ? AND EXISTS (SELECT 1 FROM users WHERE users.id = coin_sets.user_id)", models.CoinSetTypeChecklist).Order("id").Find(&sets).Error
+	return sets, err
+}
+
+// ChecklistKeys returns the catalogue coins a checklist set has already listed.
+func (r *SetRepository) ChecklistKeys(setID uint) (map[string]bool, error) {
+	var keys []string
+	if err := r.db.Model(&models.CoinSetChecklistKey{}).Where("set_id = ?", setID).Pluck("key", &keys).Error; err != nil {
+		return nil, err
+	}
+	known := make(map[string]bool, len(keys))
+	for _, key := range keys {
+		known[key] = true
+	}
+	return known, nil
+}
+
+// AddChecklistKeys records catalogue coins a checklist set has listed.
+func (r *SetRepository) AddChecklistKeys(setID uint, keys []string) error {
+	if len(keys) == 0 {
+		return nil
+	}
+	rows := make([]models.CoinSetChecklistKey, 0, len(keys))
+	for _, key := range keys {
+		rows = append(rows, models.CoinSetChecklistKey{SetID: setID, Key: key})
+	}
+	return r.db.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(rows, 200).Error
 }
 
 // AddCoinToSet adds a coin to a set. Agentic sets require a target ID assignment.
@@ -809,14 +858,61 @@ func (r *SetRepository) MarkMilestoneAlertTriggered(id uint) error {
 
 // GetCoinsMatchingCriteria returns coins that match validated smart set criteria.
 func (r *SetRepository) GetCoinsMatchingCriteria(userID uint, criteria map[string]interface{}) ([]models.Coin, error) {
+	criteria, err := r.resolveClassifications(userID, criteria)
+	if err != nil {
+		return nil, err
+	}
 	query := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID)).Preload("Images").Preload("Tags")
-	query, err := r.applyCriteria(query, criteria)
+	query, err = r.applyCriteria(query, criteria)
 	if err != nil {
 		return nil, err
 	}
 	var coins []models.Coin
 	err = query.Order("name ASC").Find(&coins).Error
 	return coins, err
+}
+
+// resolveClassifications turns each kind-of-coin rule ("classification" eq
+// "commemorative") into the coins of that kind, in a copy of the criteria.
+func (r *SetRepository) resolveClassifications(userID uint, node map[string]interface{}) (map[string]interface{}, error) {
+	if rules, ok := node["rules"].([]interface{}); ok {
+		resolved := make([]interface{}, 0, len(rules))
+		for _, raw := range rules {
+			child, ok := raw.(map[string]interface{})
+			if !ok {
+				resolved = append(resolved, raw)
+				continue
+			}
+			next, err := r.resolveClassifications(userID, child)
+			if err != nil {
+				return nil, err
+			}
+			resolved = append(resolved, next)
+		}
+		copied := map[string]interface{}{}
+		for key, value := range node {
+			copied[key] = value
+		}
+		copied["rules"] = resolved
+		return copied, nil
+	}
+	if field, _ := node["field"].(string); field != "classification" {
+		return node, nil
+	}
+	ids := []uint{}
+	if r.classify != nil {
+		kind, _ := node["value"].(string)
+		found, err := r.classify(userID, kind)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, found...)
+	}
+	if len(ids) == 0 {
+		// No coin is of that kind: a rule nothing matches.
+		return map[string]interface{}{"field": "id", "op": "isNull"}, nil
+	}
+	return map[string]interface{}{"field": "id", "op": "in", "value": ids}, nil
 }
 
 func (r *SetRepository) applyCriteria(query *gorm.DB, node map[string]interface{}) (*gorm.DB, error) {
@@ -899,6 +995,12 @@ var criteriaFieldColumns = map[string]string{
 	"isSold":            "is_sold",
 	"isPrivate":         "is_private",
 	"storageLocationId": "storage_location_id",
+	"country":           "country",
+	"year":              "year",
+	"presentation":      "presentation",
+	"kind":              "kind",
+	// id is for kind-of-coin rules once resolved (see resolveClassifications).
+	"id": "coins.id",
 }
 
 func nextSetSortOrder(tx *gorm.DB, setID uint) (int, error) {

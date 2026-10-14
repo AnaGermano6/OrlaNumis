@@ -25,7 +25,7 @@ func setupCoinIntakeTest(t *testing.T) (*CoinIntakeService, *gorm.DB) {
 	}
 	if err := db.AutoMigrate(
 		&models.User{}, &models.StorageLocation{}, &models.Coin{}, &models.CoinImage{},
-		&models.CoinReference{}, &models.ValueSnapshot{}, &models.CoinJournal{},
+		&models.CoinReference{}, &models.CoinJournal{},
 		&models.CoinIntakeDraft{},
 	); err != nil {
 		t.Fatal(err)

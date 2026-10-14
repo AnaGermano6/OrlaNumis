@@ -36,7 +36,7 @@ func TestEventLinkDoesNotReportFailedWriteAsSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	repo := repository.NewAuctionLotRepository(db)
-	h := NewAuctionLotHandler(repo, services.NewAuctionLotService(repo, nil), nil, nil, nil, services.NewLogger(10))
+	h := NewAuctionLotHandler(repo, services.NewAuctionLotService(repo, nil), nil, nil, services.NewLogger(10))
 	router := gin.New()
 	router.Use(func(c *gin.Context) { c.Set("userId", uint(1)) })
 	router.PUT("/lots/:id/event", h.LinkEvent)
@@ -80,7 +80,7 @@ func TestEventLinkPartialSuccessOwnershipAndReloadRollback(t *testing.T) {
 	}
 	repo := repository.NewAuctionLotRepository(db)
 	svc := services.NewAuctionLotService(repo, nil)
-	h := NewAuctionLotHandler(repo, svc, nil, nil, nil, services.NewLogger(10))
+	h := NewAuctionLotHandler(repo, svc, nil, nil, services.NewLogger(10))
 	router := gin.New()
 	router.Use(func(c *gin.Context) { c.Set("userId", uint(1)) })
 	router.PUT("/lots/:id/event", h.LinkEvent)

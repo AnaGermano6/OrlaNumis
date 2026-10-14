@@ -38,6 +38,25 @@ type CoinCatalogueResponse struct {
 	Complete bool                   `json:"complete"`
 }
 
+// JointIssuesResponse lists the euro area's joint issues, newest first.
+type JointIssuesResponse struct {
+	Issues []services.JointIssue `json:"issues"`
+}
+
+// JointIssues godoc
+//
+//	@Summary		Joint issues of the euro area
+//	@Description	The €2 coins the euro area's countries issued together (the Treaty of Rome in 2007, the EU flag in 2015…), newest first, each with every country's version.
+//	@Tags			Coins
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	JointIssuesResponse
+//	@Failure		401	{object}	ErrorResponse
+//	@Router			/coin-catalogue/joint-issues [get]
+func (h *CoinCatalogueHandler) JointIssues(c *gin.Context) {
+	c.JSON(http.StatusOK, JointIssuesResponse{Issues: h.releases.JointIssues(c.Request.Context())})
+}
+
 // CoinCatalogueHandler serves the catalogue of commemorative and collector
 // coins by country, marking those the user has.
 type CoinCatalogueHandler struct {
@@ -54,7 +73,7 @@ func NewCoinCatalogueHandler(releases *services.CoinReleasesService, coins *repo
 
 // ownedKeys finds the catalogue keys of the user's coins of a country ("" for
 // every country of the catalogue).
-func (h *CoinCatalogueHandler) ownedKeys(c *gin.Context, country string) (map[string]bool, bool) {
+func (h *CoinCatalogueHandler) ownedKeys(c *gin.Context, country string) (map[string]uint, bool) {
 	coins, err := h.coins.CollectionCoinsWithReferences(c.GetUint("userId"), models.CoinKindCoin)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read the catalogue"})
@@ -66,7 +85,7 @@ func (h *CoinCatalogueHandler) ownedKeys(c *gin.Context, country string) (map[st
 		if code == "" || (country != "" && code != country) {
 			continue
 		}
-		query := officialPhotoQuery(&coins[i])
+		query := services.CoinPhotoQueryFor(&coins[i])
 		// Its Numista type as cached: no request to Numista for the catalogue.
 		query.CachedTypesOnly = true
 		queries = append(queries, query)
@@ -159,5 +178,17 @@ func (h *CoinCatalogueHandler) Country(c *gin.Context) {
 		return
 	}
 	services.MarkOwnedReleases(coins, owned)
+	wishlist, err := h.coins.WishlistCoinsWithReferences(c.GetUint("userId"), models.CoinKindCoin)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read the catalogue"})
+		return
+	}
+	ofCountry := []models.Coin{}
+	for _, coin := range wishlist {
+		if services.CatalogueCountryCode(coin.Country) == country {
+			ofCountry = append(ofCountry, coin)
+		}
+	}
+	services.MarkWishlistReleases(coins, h.releases.OwnedKeys(c.Request.Context(), wishlistQueries(ofCountry, nil), h.photos))
 	c.JSON(http.StatusOK, CoinCatalogueResponse{Country: country, Coins: coins, Complete: h.releases.CatalogueComplete()})
 }

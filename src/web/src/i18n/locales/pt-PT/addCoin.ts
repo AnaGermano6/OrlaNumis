@@ -29,6 +29,13 @@ const messages: Messages['addCoin'] = {
   fromCatalogHint: 'Confirme os dados, acrescente o preço, a data e a arrumação, e guarde.',
   fromCatalogWishlistHint: 'Vai ser guardada na lista de desejos.',
   chooseAnother: 'Escolher outra moeda',
+  fromRelease: 'Preenchido a partir do lançamento: {title}.',
+  releaseImages: 'As imagens oficiais entram ao guardar, nos lados sem fotografia sua.',
+  release: {
+    ecb: 'BCE',
+    variants: 'Versões: {value}',
+    source: 'Fonte: {source} – {url}',
+  },
 }
 
 export default messages

@@ -3,11 +3,6 @@
     <h2 class="mb-5 border-b border-border-subtle pb-3 text-xl font-medium">{{ t('admin.system.title') }}</h2>
     <form @submit.prevent="save">
       <div class="form-group">
-        <label class="form-label">{{ t('admin.system.pushoverToken') }}</label>
-        <input v-model="localPushoverAppToken" class="form-input" type="password" :placeholder="t('admin.system.pushoverTokenPlaceholder')" />
-        <span class="mt-1 block text-sm text-text-muted"><I18nT keypath="admin.system.pushoverHint"><template #link><a href="https://pushover.net/apps" target="_blank" rel="noopener">pushover.net/apps</a></template></I18nT></span>
-      </div>
-      <div class="form-group">
         <label class="form-label">{{ t('admin.security.checks.publicUrl') }}</label>
         <input v-model="localPublicAppUrl" class="form-input" type="url" placeholder="https://coins.example.com" />
         <span class="mt-1 block text-sm text-text-muted">{{ t('admin.system.publicUrlHint') }}</span>
@@ -494,7 +489,6 @@ const props = withDefaults(defineProps<{
   coinCopilotEventRetentionHours?: string
   coinCopilotCheckpointRetentionDays?: string
   coinCopilotResumeWindowHours?: string
-  pushoverAppToken: string
   publicAppUrl: string
   dealerSearchSources?: string
   auctionSearchSources?: string
@@ -577,7 +571,6 @@ const emit = defineEmits<{
     coinCopilotCheckpointRetentionDays: string
     coinCopilotResumeWindowHours: string
     logLevel: string
-    pushoverAppToken: string
     publicAppUrl: string
     dealerSearchSources: string
     auctionSearchSources: string
@@ -627,7 +620,6 @@ const localCoinCopilotMaxPersistedToolResultBytes = ref(props.coinCopilotMaxPers
 const localCoinCopilotEventRetentionHours = ref(props.coinCopilotEventRetentionHours)
 const localCoinCopilotCheckpointRetentionDays = ref(props.coinCopilotCheckpointRetentionDays)
 const localCoinCopilotResumeWindowHours = ref(props.coinCopilotResumeWindowHours)
-const localPushoverAppToken = ref(props.pushoverAppToken)
 const localPublicAppUrl = ref(props.publicAppUrl)
 const localDealerSearchSources = ref(props.dealerSearchSources)
 const localAuctionSearchSources = ref(props.auctionSearchSources)
@@ -770,7 +762,6 @@ function save() {
     coinCopilotCheckpointRetentionDays: localCoinCopilotCheckpointRetentionDays.value,
     coinCopilotResumeWindowHours: localCoinCopilotResumeWindowHours.value,
     logLevel: localLogLevel.value,
-    pushoverAppToken: localPushoverAppToken.value,
     publicAppUrl: localPublicAppUrl.value,
     dealerSearchSources: localDealerSearchSources.value,
     auctionSearchSources: localAuctionSearchSources.value,
@@ -905,7 +896,6 @@ watch(() => props.coinCopilotMaxPersistedToolResultBytes, (value) => { localCoin
 watch(() => props.coinCopilotEventRetentionHours, (value) => { localCoinCopilotEventRetentionHours.value = value })
 watch(() => props.coinCopilotCheckpointRetentionDays, (value) => { localCoinCopilotCheckpointRetentionDays.value = value })
 watch(() => props.coinCopilotResumeWindowHours, (value) => { localCoinCopilotResumeWindowHours.value = value })
-watch(() => props.pushoverAppToken, (value) => { localPushoverAppToken.value = value })
 watch(() => props.publicAppUrl, (value) => { localPublicAppUrl.value = value })
 watch(() => props.dealerSearchSources, (value) => { localDealerSearchSources.value = value })
 watch(() => props.auctionSearchSources, (value) => { localAuctionSearchSources.value = value })

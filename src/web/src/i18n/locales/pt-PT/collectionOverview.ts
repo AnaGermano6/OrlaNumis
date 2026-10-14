@@ -66,6 +66,14 @@ const messages: Messages['collectionOverview'] = {
     country: 'País',
     allCountries: 'Todos os países ({count})',
     mintsNote: 'Das lojas das casas da moeda: as de Portugal com o mês de lançamento; as de França e da Áustria só com o ano.',
+    add: 'Adicionar à coleção',
+    addShort: 'Adicionar',
+    saveWishlist: 'Guardar na lista de desejos',
+    wishlistShort: 'Lista de desejos',
+    onWishlist: 'Na lista de desejos',
+    savedWishlist: 'Guardada na lista de desejos: {title}',
+    alreadyWishlist: 'Já está na lista de desejos.',
+    wishlistFailed: 'Não foi possível guardar na lista de desejos. Tente novamente.',
   },
 }
 

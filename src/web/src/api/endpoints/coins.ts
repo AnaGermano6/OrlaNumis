@@ -39,7 +39,6 @@ import type {
   ShipmentEnvelopeResponse,
   ShipmentStatus,
   ShipmentUpsertInput,
-  ValueSnapshot,
 } from '@/types'
 import { appendOptionalFormValue } from '@/api/endpoints/_shared'
 
@@ -448,8 +447,6 @@ export const extractText = (file: File) => {
   return api.post<{ text: string }>('/extract-text', formData)
 }
 
-export const getValueHistory = () => api.get<ValueSnapshot[]>('/value-history')
-
 export const getCoinHealthList = (params?: { scope?: 'all' | 'needs_attention'; page?: number; limit?: number }) =>
   api.get<CoinHealthListResponse>('/coins/health', { params })
 
@@ -477,7 +474,6 @@ export const setCoinShipmentManualOverride = (
   input: { enabled: boolean; status: ShipmentStatus; note?: string },
 ) => api.put<ShipmentEnvelopeResponse>(`/coins/${coinId}/shipment/manual-override`, input)
 
-export const syncCoinShipment = (coinId: number) => api.post<ShipmentEnvelopeResponse>(`/coins/${coinId}/shipment/sync`)
 
 export const updateListingStatus = (coinId: number, status: string) =>
   api.put(`/coins/${coinId}/listing-status`, { status })
@@ -624,6 +620,8 @@ export interface CoinRelease {
   volume?: number
   upcoming: boolean
   owned: boolean
+  /** A coin of the wishlist is this one. */
+  wishlist?: boolean
 }
 
 export interface CoinReleaseGroup {
@@ -648,6 +646,18 @@ export interface CatalogueCountry {
   ownedCommemoratives: number
   ownedCollector: number
 }
+
+/** A €2 coin the euro area's countries issued together (the Treaty of Rome in 2007…), with each country's version. */
+export interface JointIssue {
+  year: number
+  /** The ECB's feature, in English. */
+  title: string
+  pageUrl: string
+  coins: { country: string; imageUrl: string }[]
+}
+
+/** The euro area's joint issues, newest first. */
+export const getJointIssues = () => api.get<{ issues: JointIssue[] }>('/coin-catalogue/joint-issues')
 
 /** The countries of the catalogue of commemorative and collector coins, each in its currency (the euro, or Portugal's escudo). */
 export const getCoinCatalogueCountries = () => api.get<{ countries: CatalogueCountry[] }>('/coin-catalogue/countries')

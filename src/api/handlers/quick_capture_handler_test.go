@@ -329,7 +329,7 @@ func TestQuickCaptureDraftResumeDiscardPromoteContracts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.ValueSnapshot{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	handler := NewQuickCaptureHandler(services.NewQuickCaptureService(repository.NewQuickCaptureRepository(db), t.TempDir()), nil)
@@ -509,7 +509,7 @@ func TestQuickCapturePromotionIncrementsActiveCountExactlyOnceAndPreservesWishli
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.ValueSnapshot{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 
@@ -584,7 +584,7 @@ func TestQuickCapturePromotionCanTargetWishlist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.ValueSnapshot{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 

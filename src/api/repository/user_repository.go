@@ -81,19 +81,3 @@ func (r *UserRepository) ListCoinOfDayEnabled() ([]models.User, error) {
 	err := r.db.Where("coin_of_day_enabled = ?", true).Find(&users).Error
 	return users, err
 }
-
-// ListUsersWithAuctionCredentials returns every user with at least one auction provider
-// (NumisBids or CNG) configured, for background watchlist sync. This is intentionally NOT
-// gated on Pushover/notification preferences (see specs/_backlog/F026) — sync should keep a
-// user's CurrentBid/status fresh regardless of whether they've opted into push notifications;
-// Pushover configuration should only ever gate whether a *notification* is sent, checked
-// separately at the point each notification is sent (see notificationUser in
-// auction_alert_service.go and the equivalent checks in auction_ending_scheduler.go /
-// auction_watch_bid_digest_scheduler.go).
-func (r *UserRepository) ListUsersWithAuctionCredentials() ([]models.User, error) {
-	var users []models.User
-	err := r.db.
-		Where("(numis_bids_username <> '' AND numis_bids_password <> '') OR (cng_username <> '' AND cng_password <> '')").
-		Find(&users).Error
-	return users, err
-}

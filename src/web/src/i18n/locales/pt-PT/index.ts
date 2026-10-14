@@ -41,7 +41,6 @@ import map from './map'
 import materials from './materials'
 import mint from './mint'
 import nav from './nav'
-import notes from './notes'
 import notifications from './notifications'
 import numista from './numista'
 import numistaGrades from './numistaGrades'
@@ -115,7 +114,6 @@ const messages: Messages = {
   materials,
   mint,
   nav,
-  notes,
   notifications,
   numista,
   numistaGrades,

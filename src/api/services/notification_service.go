@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"html"
 	"net/url"
 	"sort"
 	"strings"
@@ -14,11 +13,10 @@ import (
 
 // NotificationService handles creating and managing notifications.
 type NotificationService struct {
-	notifRepo   *repository.NotificationRepository
-	socialRepo  *repository.SocialRepository
-	userRepo    *repository.UserRepository
-	pushoverSvc *PushoverService
-	logger      *Logger
+	notifRepo  *repository.NotificationRepository
+	socialRepo *repository.SocialRepository
+	userRepo   *repository.UserRepository
+	logger     *Logger
 }
 
 const NotificationTypeFollowRequest = "follow_request"
@@ -56,15 +54,13 @@ func NewNotificationService(
 	notifRepo *repository.NotificationRepository,
 	socialRepo *repository.SocialRepository,
 	userRepo *repository.UserRepository,
-	pushoverSvc *PushoverService,
 	logger *Logger,
 ) *NotificationService {
 	return &NotificationService{
-		notifRepo:   notifRepo,
-		socialRepo:  socialRepo,
-		userRepo:    userRepo,
-		pushoverSvc: pushoverSvc,
-		logger:      logger,
+		notifRepo:  notifRepo,
+		socialRepo: socialRepo,
+		userRepo:   userRepo,
+		logger:     logger,
 	}
 }
 
@@ -92,7 +88,6 @@ func (s *NotificationService) NotifyWishlistUnavailable(userID uint, coin models
 		s.logger.Error("notifications", "Failed to create wishlist notification for user %d, coin %d: %v", userID, coin.ID, err)
 	}
 
-	go s.sendPushover(userID, title, message, coin.ReferenceURL)
 }
 
 // NotifyAvailabilityRunTerminal creates the owner-facing terminal-outcome notification for a
@@ -128,7 +123,6 @@ func (s *NotificationService) NotifyAvailabilityRunTerminal(userID uint, run *mo
 		s.logger.Error("notifications", "Failed to create availability run notification for user %d, run %d: %v", userID, run.ID, err)
 	}
 
-	go s.sendPushover(userID, title, message, refURL)
 }
 
 // NotifyAdminCycleChildFailure notifies the admin who triggered a cycle that one of its
@@ -159,7 +153,6 @@ func (s *NotificationService) NotifyAdminCycleChildFailure(adminID uint, ownerUs
 		s.logger.Error("notifications", "Failed to create admin cycle-child-failure notification for admin %d, cycle %d: %v", adminID, cycleID, err)
 	}
 
-	go s.sendPushover(adminID, title, message, refURL)
 }
 
 // summarizeUnavailableCoinNames formats up to 3 newly-unavailable coin names plus an
@@ -207,7 +200,6 @@ func (s *NotificationService) NotifyShipmentStatusTransition(
 	if err := s.notifRepo.Create(n); err != nil {
 		s.logger.Error("notifications", "Failed to create shipment notification for user %d, shipment %d: %v", userID, shipmentID, err)
 	}
-	go s.sendPushover(userID, title, message, refURL)
 }
 
 // NotifyNewCoin creates notifications for all accepted followers when a user
@@ -249,7 +241,6 @@ func (s *NotificationService) NotifyNewCoin(ownerID uint, coin models.Coin) {
 		if err := s.notifRepo.Create(n); err != nil {
 			s.logger.Error("notifications", "Failed to notify follower %d about coin %d: %v", followerID, coin.ID, err)
 		}
-		go s.sendPushover(followerID, "New coin added", fmt.Sprintf("%s added %s to their collection.", ownerName, coinName), "")
 	}
 
 	s.logger.Debug("notifications", "Notified %d followers about new coin %d from user %d", len(followers), coin.ID, ownerID)
@@ -284,7 +275,6 @@ func (s *NotificationService) NotifyFollowRequest(followerID, targetID uint) {
 		return
 	}
 
-	go s.sendPushover(targetID, title, message, "/followers")
 }
 
 // NotifyAuctionPriceAlert creates an in-app notification when a tracked lot's price alert
@@ -304,7 +294,6 @@ func (s *NotificationService) NotifyAuctionPriceAlert(userID uint, lot models.Au
 		s.logger.Error("notifications", "Failed to create price alert notification for user %d, lot %d: %v", userID, lot.ID, err)
 	}
 
-	go s.sendPushoverMessage(userID, buildAuctionPriceAlertPushoverMessage(lot, targetPrice))
 }
 
 const auctionPriceAlertTitle = "Auction Price Alert"
@@ -320,21 +309,6 @@ func auctionPriceAlertBody(lot models.AuctionLot, targetPrice float64) string {
 		formatAuctionBidAmount(targetPrice, lot.Currency),
 		formatAuctionTargetBid(lot, targetPrice),
 	)
-}
-
-// buildAuctionPriceAlertPushoverMessage renders the price alert push: the lot's headline with
-// its lot number linked to the auction site, then the shared body. The body is escaped because
-// it carries scraped sale names, matching the HTML pushes F031 introduced.
-func buildAuctionPriceAlertPushoverMessage(lot models.AuctionLot, targetPrice float64) PushoverMessage {
-	return PushoverMessage{
-		Title:   auctionPriceAlertTitle,
-		Message: fmt.Sprintf("%s\n%s", auctionLotHeadlineHTML(lot), html.EscapeString(auctionPriceAlertBody(lot, targetPrice))),
-		// Only a usable http(s) URL is offered as the push's action button: Pushover
-		// rejects a malformed url outright, which would cost the whole notification.
-		URL:      auctionLotProviderURL(lot),
-		URLTitle: "View auction lot",
-		HTML:     true,
-	}
 }
 
 // formatAuctionTargetBid renders a price alert's bid line: the current high bid, then how far
@@ -377,7 +351,6 @@ func (s *NotificationService) NotifyAuctionBidReminder(userID uint, lot models.A
 	if err := s.notifRepo.Create(n); err != nil {
 		s.logger.Error("notifications", "Failed to create bid reminder notification for user %d, lot %d: %v", userID, lot.ID, err)
 	}
-	go s.sendPushoverWithURLTitle(userID, title, message, refURL, "View auction lot")
 }
 
 // NotifyAuctionEndingSoon creates a single in-app notification consolidating every lot a user
@@ -409,192 +382,6 @@ func (s *NotificationService) NotifyAuctionEndingSoon(userID uint, lots []models
 	if err := s.notifRepo.Create(n); err != nil {
 		s.logger.Error("notifications", "Failed to create ending-soon notification for user %d: %v", userID, err)
 	}
-}
-
-// NotifyAuctionLotsTracked creates a single in-app notification, plus a single rich-HTML
-// Pushover push, for every lot a background watchlist sync started tracking in one run —
-// whether it landed on the watchlist or was picked up as one the user is already bidding on.
-// Batching is the whole point: a sync that discovers a dozen new lots must produce one
-// notification, not a dozen (F031). Pushover delivery stays best-effort and never gates the
-// in-app notification, per F027.
-func (s *NotificationService) NotifyAuctionLotsTracked(userID uint, lots []models.AuctionLot) {
-	if len(lots) == 0 {
-		return
-	}
-
-	title := auctionLotsTrackedTitle(len(lots))
-	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf("Auction sync started tracking %d new lot(s):\n\n", len(lots)))
-	for i, lot := range lots {
-		if i == auctionLotsTrackedInAppLimit {
-			builder.WriteString(fmt.Sprintf("… and %d more\n", len(lots)-i))
-			break
-		}
-		builder.WriteString(fmt.Sprintf("%s\n%s\n\n", auctionLotTitle(lot), auctionLotTrackingLabel(lot)))
-	}
-
-	// A single new lot can deep-link straight to itself; a batch can only sensibly land on
-	// the auctions list, since no one page shows an arbitrary set of lots.
-	refURL := "/auctions"
-	var refID uint
-	if len(lots) == 1 {
-		refURL = auctionLotAppPath(lots[0].ID)
-		refID = lots[0].ID
-	}
-
-	n := &models.Notification{
-		UserID:       userID,
-		Type:         NotificationTypeAuctionLotsTracked,
-		Title:        title,
-		Message:      strings.TrimRight(builder.String(), "\n"),
-		ReferenceID:  refID,
-		ReferenceURL: refURL,
-	}
-	if err := s.notifRepo.Create(n); err != nil {
-		s.logger.Error("notifications", "Failed to create auction lots tracked notification for user %d: %v", userID, err)
-	}
-
-	go s.sendPushoverMessage(userID, buildAuctionLotsTrackedPushoverMessage(lots, s.publicAppBaseURL()))
-}
-
-// NotifyAuctionLotsBidding creates a single in-app notification, plus a single rich-HTML
-// Pushover push, for every lot a background sync moved from watching to bidding in one run —
-// the provider has started reporting a bid of yours on a lot you were only watching. This is
-// distinct from NotifyAuctionLotsTracked: those lots are newly tracked, these were already
-// tracked and changed state, so they carry their own title and their current/max bid rather
-// than being folded into the new-lot list. Batched and best-effort on the same terms (F031).
-func (s *NotificationService) NotifyAuctionLotsBidding(userID uint, lots []models.AuctionLot) {
-	if len(lots) == 0 {
-		return
-	}
-
-	title := auctionLotsBiddingTitle(len(lots))
-	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf("You now have a bid on %d lot(s) you were watching:\n\n", len(lots)))
-	for i, lot := range lots {
-		if i == auctionLotsTrackedInAppLimit {
-			builder.WriteString(fmt.Sprintf("… and %d more\n", len(lots)-i))
-			break
-		}
-		builder.WriteString(fmt.Sprintf("%s\n%s\n%s\n\n", auctionLotTitle(lot), auctionLotLabel(lot), auctionLotBidSummary(lot)))
-	}
-
-	refURL := "/auctions"
-	var refID uint
-	if len(lots) == 1 {
-		refURL = auctionLotAppPath(lots[0].ID)
-		refID = lots[0].ID
-	}
-
-	n := &models.Notification{
-		UserID:       userID,
-		Type:         NotificationTypeAuctionLotsBidding,
-		Title:        title,
-		Message:      strings.TrimRight(builder.String(), "\n"),
-		ReferenceID:  refID,
-		ReferenceURL: refURL,
-	}
-	if err := s.notifRepo.Create(n); err != nil {
-		s.logger.Error("notifications", "Failed to create auction lots bidding notification for user %d: %v", userID, err)
-	}
-
-	go s.sendPushoverMessage(userID, buildAuctionLotsBiddingPushoverMessage(lots, s.publicAppBaseURL()))
-}
-
-// NotifyAuctionLotsOutbid creates a single in-app notification, plus a single rich-HTML
-// Pushover push, for every lot this sync run found the user newly outbid on — the provider
-// now reports someone else holding the winning bid on a lot they are bidding on. This is the
-// most time-critical of the auction notifications: unlike the others it names a lot the user
-// can still do something about, and only until it closes. Batched and best-effort on the same
-// terms as the newly-tracked and now-bidding pushes (specs/_backlog/F034).
-func (s *NotificationService) NotifyAuctionLotsOutbid(userID uint, lots []models.AuctionLot) {
-	if len(lots) == 0 {
-		return
-	}
-
-	title := auctionLotsOutbidTitle(len(lots))
-	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf("You have been outbid on %d lot(s):\n\n", len(lots)))
-	for i, lot := range lots {
-		if i == auctionLotsTrackedInAppLimit {
-			builder.WriteString(fmt.Sprintf("… and %d more\n", len(lots)-i))
-			break
-		}
-		builder.WriteString(fmt.Sprintf("%s\n%s\n%s\n%s\n\n",
-			auctionLotHeadline(lot),
-			auctionLotSaleLabel(lot),
-			auctionLotBidSummary(lot),
-			auctionLotClosesIn(lot),
-		))
-	}
-
-	refURL := "/auctions"
-	var refID uint
-	if len(lots) == 1 {
-		refURL = auctionLotAppPath(lots[0].ID)
-		refID = lots[0].ID
-	}
-
-	n := &models.Notification{
-		UserID:       userID,
-		Type:         NotificationTypeAuctionLotsOutbid,
-		Title:        title,
-		Message:      strings.TrimRight(builder.String(), "\n"),
-		ReferenceID:  refID,
-		ReferenceURL: refURL,
-	}
-	if err := s.notifRepo.Create(n); err != nil {
-		s.logger.Error("notifications", "Failed to create auction lots outbid notification for user %d: %v", userID, err)
-	}
-
-	go s.sendPushoverMessage(userID, buildAuctionLotsOutbidPushoverMessage(lots, s.publicAppBaseURL()))
-}
-
-// buildAuctionLotsOutbidPushoverMessage renders the outbid push: per lot, the headline with
-// its lot number linked to the auction site, the sale, where the bidding stands, and how long
-// is left to respond. Same escaping and trimming rules as the sibling batched pushes (F031).
-func buildAuctionLotsOutbidPushoverMessage(lots []models.AuctionLot, publicAppBaseURL string) PushoverMessage {
-	message := buildBatchedLotMessage(
-		fmt.Sprintf("You have been outbid on %d lot(s):\n\n", len(lots)),
-		lots,
-		func(lot models.AuctionLot) string {
-			entry := fmt.Sprintf(
-				"%s\n%s\n%s\n%s\n",
-				auctionLotHeadlineHTML(lot),
-				html.EscapeString(auctionLotSaleLabel(lot)),
-				html.EscapeString(auctionLotBidSummary(lot)),
-				html.EscapeString(auctionLotClosesIn(lot)),
-			)
-			if lotURL := buildAuctionLotAppURL(publicAppBaseURL, lot.ID); lotURL != "" {
-				entry += fmt.Sprintf("<a href=\"%s\">View lot in Aurearia</a>\n", html.EscapeString(lotURL))
-			}
-			return entry + "\n"
-		},
-	)
-
-	actionURL := buildPublicAppURL(publicAppBaseURL, "/auctions")
-	urlTitle := "Open auctions"
-	if len(lots) == 1 {
-		if lotURL := buildAuctionLotAppURL(publicAppBaseURL, lots[0].ID); lotURL != "" {
-			actionURL = lotURL
-			urlTitle = "View auction lot"
-		}
-	}
-
-	return PushoverMessage{
-		Title:    auctionLotsOutbidTitle(len(lots)),
-		Message:  message,
-		URL:      actionURL,
-		URLTitle: urlTitle,
-		HTML:     true,
-	}
-}
-
-func auctionLotsOutbidTitle(count int) string {
-	if count == 1 {
-		return "Outbid on an Auction Lot"
-	}
-	return fmt.Sprintf("Outbid on %d Auction Lots", count)
 }
 
 // auctionLotClosesIn states how long is left to respond, which is what makes an outbid
@@ -656,7 +443,6 @@ func (s *NotificationService) NotifyCoinOfDay(userID uint, featuredCoinID, coinI
 		s.logger.Error("notifications", "Failed to create coin-of-day notification for user %d: %v", userID, err)
 	}
 
-	go s.sendPushoverMessage(userID, buildCoinOfDayPushoverMessage(title, coinID, coinName, summary, s.publicAppBaseURL()))
 }
 
 // NotifyPurchaseReminder creates an in-app notification when a purchase reminder's
@@ -680,7 +466,6 @@ func (s *NotificationService) NotifyPurchaseReminder(userID, reminderID, coinID 
 	if err := s.notifRepo.Create(n); err != nil {
 		s.logger.Error("notifications", "Failed to create purchase reminder notification for user %d, reminder %d: %v", userID, reminderID, err)
 	}
-	go s.sendPushover(userID, title, message, refURL)
 }
 
 // NotifyAIJobCompleted creates a notification when an asynchronous AI job completes.
@@ -703,7 +488,6 @@ func (s *NotificationService) NotifyAIJobCompleted(userID, jobID, coinID uint, c
 	if err := s.notifRepo.Create(n); err != nil {
 		s.logger.Error("notifications", "Failed to create AI job completion notification for user %d, job %d: %v", userID, jobID, err)
 	}
-	go s.sendPushover(userID, title, message, refURL)
 }
 
 // NotifyAIJobFailed creates a notification when an asynchronous AI job fails.
@@ -726,7 +510,6 @@ func (s *NotificationService) NotifyAIJobFailed(userID, jobID, coinID uint, jobT
 	if err := s.notifRepo.Create(n); err != nil {
 		s.logger.Error("notifications", "Failed to create AI job failure notification for user %d, job %d: %v", userID, jobID, err)
 	}
-	go s.sendPushover(userID, title, message, refURL)
 }
 
 // NotifyValuationRunComplete creates an in-app notification when a background valuation run completes.
@@ -739,7 +522,7 @@ func (s *NotificationService) NotifyValuationRunComplete(userID, runID uint, che
 		Title:        title,
 		Message:      message,
 		ReferenceID:  runID,
-		ReferenceURL: "/stats/value-trends",
+		ReferenceURL: "/stats/health",
 	}
 	if err := s.notifRepo.Create(n); err != nil {
 		s.logger.Error("notifications", "Failed to create valuation completion notification for user %d, run %d: %v", userID, runID, err)
@@ -785,171 +568,10 @@ func (s *NotificationService) NotifyAPIKeyRotationRequired(userID uint, keyNames
 	return nil
 }
 
-// sendPushover checks if the user has Pushover enabled and sends a push notification.
-func (s *NotificationService) sendPushover(userID uint, title, message, refURL string) {
-	s.sendPushoverMessage(userID, PushoverMessage{
-		Title:   title,
-		Message: message,
-		URL:     refURL,
-	})
-}
-
-// sendPushoverWithURLTitle behaves like sendPushover but also sets a Pushover URL title so the
-// action link shows a readable label (e.g. "View auction lot") instead of the raw URL.
-func (s *NotificationService) sendPushoverWithURLTitle(userID uint, title, message, refURL, urlTitle string) {
-	s.sendPushoverMessage(userID, PushoverMessage{
-		Title:    title,
-		Message:  message,
-		URL:      refURL,
-		URLTitle: urlTitle,
-	})
-}
-
-// sendPushoverMessage checks if the user has Pushover enabled and sends a push notification.
-func (s *NotificationService) sendPushoverMessage(userID uint, message PushoverMessage) {
-	if s.pushoverSvc == nil || s.userRepo == nil {
-		return
-	}
-
-	user, err := s.userRepo.FindByID(userID)
-	if err != nil || user == nil {
-		return
-	}
-
-	if !user.PushoverEnabled || user.PushoverUserKey == "" {
-		return
-	}
-
-	message.UserKey = user.PushoverUserKey
-	if err := s.pushoverSvc.SendMessage(message); err != nil {
-		s.logger.Error("pushover", "Failed to send Pushover notification to user %d: %v", userID, err)
-	}
-}
-
-func (s *NotificationService) publicAppBaseURL() string {
-	if s == nil || s.pushoverSvc == nil || s.pushoverSvc.settingsSvc == nil {
-		return ""
-	}
-	return s.pushoverSvc.settingsSvc.GetSetting(SettingPublicAppURL)
-}
-
-func buildCoinOfDayPushoverMessage(title string, coinID uint, coinName, summary, publicAppBaseURL string) PushoverMessage {
-	if coinName == "" {
-		coinName = "Today's coin"
-	}
-
-	body := fmt.Sprintf("<b>%s</b>", html.EscapeString(coinName))
-	if summary != "" {
-		body = fmt.Sprintf("%s — %s", body, html.EscapeString(truncateRunes(summary, 140)))
-	}
-
-	coinURL := buildCoinOfDayURL(publicAppBaseURL, coinID)
-	if coinURL != "" {
-		body = fmt.Sprintf("%s — <a href=\"%s\">Open coin</a>", body, html.EscapeString(coinURL))
-	}
-
-	return PushoverMessage{
-		Title:   title,
-		Message: body,
-		URL:     coinURL,
-		HTML:    true,
-	}
-}
-
 // auctionLotsTrackedInAppLimit caps how many lots the in-app notification body lists before
 // collapsing the rest into an "… and N more" line. The Pushover body has its own, tighter cap
 // (pushoverMessageLimit) because the API rejects oversized messages outright.
 const auctionLotsTrackedInAppLimit = 10
-
-// buildAuctionLotsTrackedPushoverMessage renders the batched new-lot push as Pushover HTML:
-// per lot, the coin name in bold, then the auction house/sale, lot number and how the lot is
-// being tracked, then a fully-qualified link into the app's auction view for that exact lot.
-// Every interpolated value is HTML-escaped — lot titles are scraped from third-party auction
-// sites, so they can carry markup. Batching and length-trimming are handled by the shared
-// buildBatchedLotMessage, the same path the watch-bid digest uses.
-func buildAuctionLotsTrackedPushoverMessage(lots []models.AuctionLot, publicAppBaseURL string) PushoverMessage {
-	message := buildBatchedLotMessage(
-		fmt.Sprintf("Auction sync started tracking %d new lot(s):\n\n", len(lots)),
-		lots,
-		func(lot models.AuctionLot) string {
-			entry := fmt.Sprintf(
-				"<b>%s</b>\n%s\n",
-				html.EscapeString(auctionLotTitle(lot)),
-				html.EscapeString(auctionLotTrackingLabel(lot)),
-			)
-			if lotURL := buildAuctionLotAppURL(publicAppBaseURL, lot.ID); lotURL != "" {
-				entry += fmt.Sprintf("<a href=\"%s\">View lot in Aurearia</a>\n", html.EscapeString(lotURL))
-			}
-			return entry + "\n"
-		},
-	)
-
-	// The notification-level action link mirrors the in-app reference: straight to the lot
-	// when there is exactly one, otherwise the auctions list.
-	actionURL := buildPublicAppURL(publicAppBaseURL, "/auctions")
-	urlTitle := "Open auctions"
-	if len(lots) == 1 {
-		if lotURL := buildAuctionLotAppURL(publicAppBaseURL, lots[0].ID); lotURL != "" {
-			actionURL = lotURL
-			urlTitle = "View auction lot"
-		}
-	}
-
-	return PushoverMessage{
-		Title:    auctionLotsTrackedTitle(len(lots)),
-		Message:  message,
-		URL:      actionURL,
-		URLTitle: urlTitle,
-		HTML:     true,
-	}
-}
-
-// buildAuctionLotsBiddingPushoverMessage renders the batched watching → bidding push. Same
-// HTML shape and escaping rules as the newly-tracked push, but each lot leads with the bid
-// state that just changed — the current high bid and your max bid — since that is what makes
-// the notification actionable.
-func buildAuctionLotsBiddingPushoverMessage(lots []models.AuctionLot, publicAppBaseURL string) PushoverMessage {
-	message := buildBatchedLotMessage(
-		fmt.Sprintf("You now have a bid on %d lot(s) you were watching:\n\n", len(lots)),
-		lots,
-		func(lot models.AuctionLot) string {
-			entry := fmt.Sprintf(
-				"<b>%s</b>\n%s\n%s\n",
-				html.EscapeString(auctionLotTitle(lot)),
-				html.EscapeString(auctionLotLabel(lot)),
-				html.EscapeString(auctionLotBidSummary(lot)),
-			)
-			if lotURL := buildAuctionLotAppURL(publicAppBaseURL, lot.ID); lotURL != "" {
-				entry += fmt.Sprintf("<a href=\"%s\">View lot in Aurearia</a>\n", html.EscapeString(lotURL))
-			}
-			return entry + "\n"
-		},
-	)
-
-	actionURL := buildPublicAppURL(publicAppBaseURL, "/auctions")
-	urlTitle := "Open auctions"
-	if len(lots) == 1 {
-		if lotURL := buildAuctionLotAppURL(publicAppBaseURL, lots[0].ID); lotURL != "" {
-			actionURL = lotURL
-			urlTitle = "View auction lot"
-		}
-	}
-
-	return PushoverMessage{
-		Title:    auctionLotsBiddingTitle(len(lots)),
-		Message:  message,
-		URL:      actionURL,
-		URLTitle: urlTitle,
-		HTML:     true,
-	}
-}
-
-func auctionLotsBiddingTitle(count int) string {
-	if count == 1 {
-		return "Now Bidding on an Auction Lot"
-	}
-	return fmt.Sprintf("Now Bidding on %d Auction Lots", count)
-}
 
 // auctionLotBidSummary states where the bidding stands, reusing formatAuctionBid so the
 // wording matches the watch-bid digest and the single-lot alerts. The max bid is only shown
@@ -960,13 +582,6 @@ func auctionLotBidSummary(lot models.AuctionLot) string {
 		summary = fmt.Sprintf("%s · your max bid %.2f %s", summary, *lot.MaxBid, auctionCurrency(lot.Currency))
 	}
 	return summary
-}
-
-func auctionLotsTrackedTitle(count int) string {
-	if count == 1 {
-		return "New Auction Lot Tracked"
-	}
-	return fmt.Sprintf("%d New Auction Lots Tracked", count)
 }
 
 // auctionLotTrackingLabel adds how the lot is being tracked to the shared auction/lot label,
@@ -1020,10 +635,6 @@ func formatAIJobType(jobType string) string {
 	}
 }
 
-func buildCoinOfDayURL(publicAppBaseURL string, coinID uint) string {
-	return buildPublicAppURL(publicAppBaseURL, fmt.Sprintf("/coin/%d", coinID))
-}
-
 // buildAuctionLotAppURL returns the fully-qualified link to a lot inside the app, or "" when
 // no valid public app URL is configured — a relative link in a push notification is broken on
 // the device, so it is better to omit the link entirely (same rule as coin-of-the-day).
@@ -1069,4 +680,20 @@ func formatShipmentStatusLabel(status models.ShipmentStatus) string {
 		words[i] = strings.ToUpper(word[:1]) + word[1:]
 	}
 	return strings.Join(words, " ")
+}
+
+func formatAuctionBid(bid *float64, currency string) string {
+	if bid == nil {
+		return "current high bid unavailable"
+	}
+	return fmt.Sprintf("current high bid %s", formatAuctionBidAmount(*bid, currency))
+}
+
+// formatAuctionBidAmount renders a bid as "80.00 USD", defaulting a blank currency to USD.
+func formatAuctionBidAmount(bid float64, currency string) string {
+	currency = strings.TrimSpace(currency)
+	if currency == "" {
+		currency = "USD"
+	}
+	return fmt.Sprintf("%.2f %s", bid, currency)
 }

@@ -28,7 +28,7 @@ func TestFollowUser_CreatesFollowRequestNotification(t *testing.T) {
 	socialRepo := repository.NewSocialRepository(db)
 	notifRepo := repository.NewNotificationRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	notifSvc := NewNotificationService(notifRepo, socialRepo, userRepo, nil, NewLogger(100))
+	notifSvc := NewNotificationService(notifRepo, socialRepo, userRepo, NewLogger(100))
 	svc := NewSocialService(socialRepo, notifSvc)
 
 	follower := models.User{Username: "alice", Email: "alice@example.com", PasswordHash: "hash", IsPublic: true}

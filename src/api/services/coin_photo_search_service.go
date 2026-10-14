@@ -126,6 +126,29 @@ type CoinPhotoQuery struct {
 	// CachedTypesOnly reads the Numista type from the cache only: no request
 	// is made to Numista, so looking at many coins spends none of its quota.
 	CachedTypesOnly bool
+	// CoinID is the collection coin described, for callers that need it back.
+	CoinID uint
+}
+
+// CoinPhotoQueryFor describes a collection coin for the photo search: its
+// Numista type, year, country, denomination and subject (what follows " – "
+// in its name, unless that is just the country).
+func CoinPhotoQueryFor(coin *models.Coin) CoinPhotoQuery {
+	query := CoinPhotoQuery{CoinID: coin.ID, Country: coin.Country, Denomination: coin.Denomination, Material: string(coin.Material), Lang: "en"}
+	if coin.Year != nil {
+		query.Year = *coin.Year
+	}
+	if _, detail, found := strings.Cut(coin.Name, " – "); found && !strings.EqualFold(strings.TrimSpace(detail), strings.TrimSpace(coin.Country)) {
+		query.Subject = strings.TrimSpace(detail)
+	}
+	for _, ref := range coin.References {
+		if strings.EqualFold(ref.Catalog, "Numista") {
+			if id, err := strconv.Atoi(strings.TrimSpace(ref.Number)); err == nil && id > 0 {
+				query.NumistaTypeID = id
+			}
+		}
+	}
+	return query
 }
 
 // NewCoinPhotoSearchService creates the service. catalog may be nil.

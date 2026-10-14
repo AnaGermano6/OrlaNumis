@@ -35,7 +35,7 @@ func TestUserHandlerGetMeDefaultsEmperorTrackerFieldsToFalse(t *testing.T) {
 		t.Fatalf("create user: %v", err)
 	}
 
-	handler := NewUserHandler("", userRepo, nil, services.NewLogger(10))
+	handler := NewUserHandler("", userRepo, services.NewLogger(10))
 	req := httptest.NewRequest(http.MethodGet, "/auth/me", nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -71,7 +71,7 @@ func TestUserHandlerUpdateProfileTogglesEmperorTrackerFields(t *testing.T) {
 		t.Fatalf("create user: %v", err)
 	}
 
-	handler := NewUserHandler("", userRepo, nil, services.NewLogger(10))
+	handler := NewUserHandler("", userRepo, services.NewLogger(10))
 	body := bytes.NewBufferString(`{
 		"emperorTrackerEnabled": true,
 		"emperorTrackerShowUsurpers": true,
@@ -109,7 +109,7 @@ func TestUserHandlerUpdateProfileLeavesEmperorTrackerFieldsUnchangedWhenOmitted(
 		t.Fatalf("create user: %v", err)
 	}
 
-	handler := NewUserHandler("", userRepo, nil, services.NewLogger(10))
+	handler := NewUserHandler("", userRepo, services.NewLogger(10))
 	body := bytes.NewBufferString(`{"bio":"just updating bio"}`)
 	req := httptest.NewRequest(http.MethodPut, "/user/profile", body)
 	req.Header.Set("Content-Type", "application/json")

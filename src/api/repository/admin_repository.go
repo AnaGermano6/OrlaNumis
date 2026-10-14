@@ -164,8 +164,11 @@ func deleteUserCascadeInTx(tx *gorm.DB, userID uint) (*gorm.DB, error) {
 	if err := tx.Where("user_id = ?", userID).Delete(&models.AgentConversation{}).Error; err != nil {
 		return nil, err
 	}
-	if err := tx.Where("user_id = ?", userID).Delete(&models.ValueSnapshot{}).Error; err != nil {
-		return nil, err
+	// Value snapshots are no longer recorded; the old ones go with their user.
+	if tx.Migrator().HasTable("value_snapshots") {
+		if err := tx.Exec("DELETE FROM value_snapshots WHERE user_id = ?", userID).Error; err != nil {
+			return nil, err
+		}
 	}
 	if err := tx.Where("user_id = ?", userID).Delete(&models.ApiKey{}).Error; err != nil {
 		return nil, err

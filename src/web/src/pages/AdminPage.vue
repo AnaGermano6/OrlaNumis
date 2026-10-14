@@ -107,7 +107,6 @@
           :coin-copilot-event-retention-hours="settings.CoinCopilotEventRetentionHours ?? '168'"
           :coin-copilot-checkpoint-retention-days="settings.CoinCopilotCheckpointRetentionDays ?? '30'"
           :coin-copilot-resume-window-hours="settings.CoinCopilotResumeWindowHours ?? '168'"
-          :pushover-app-token="settings.PushoverAppToken ?? ''"
           :public-app-url="settings.PublicAppURL ?? ''"
           :dealer-search-sources="settings.DealerSearchSources ?? ''"
           :auction-search-sources="settings.AuctionSearchSources ?? ''"
@@ -176,8 +175,6 @@
           :auction-settings-error="auctionSettingsError"
           :alert-reminder-settings-msg="alertReminderSettingsMsg"
           :alert-reminder-settings-error="alertReminderSettingsError"
-          :watch-bid-digest-settings-msg="watchBidDigestSettingsMsg"
-          :watch-bid-digest-settings-error="watchBidDigestSettingsError"
           :health-settings-msg="healthSettingsMsg"
           :health-settings-error="healthSettingsError"
           :val-settings-msg="valSettingsMsg"
@@ -191,8 +188,6 @@
           @update:auction-settings-error="auctionSettingsError = $event"
           @update:alert-reminder-settings-msg="alertReminderSettingsMsg = $event"
           @update:alert-reminder-settings-error="alertReminderSettingsError = $event"
-          @update:watch-bid-digest-settings-msg="watchBidDigestSettingsMsg = $event"
-          @update:watch-bid-digest-settings-error="watchBidDigestSettingsError = $event"
           @update:health-settings-msg="healthSettingsMsg = $event"
           @update:health-settings-error="healthSettingsError = $event"
         />
@@ -382,7 +377,7 @@ const {
   anthropicTesting, anthropicTestResult, anthropicTestOk, anthropicModels,
   searxngTesting, searxngTestResult, searxngTestOk,
   coinSearchPromptDefault, coinShowsPromptDefault, valuationPromptDefault,
-  availSettingsMsg, availSettingsError, auctionSettingsMsg, auctionSettingsError, alertReminderSettingsMsg, alertReminderSettingsError, watchBidDigestSettingsMsg, watchBidDigestSettingsError, healthSettingsMsg, healthSettingsError, valSettingsMsg, valSettingsError,
+  availSettingsMsg, availSettingsError, auctionSettingsMsg, auctionSettingsError, alertReminderSettingsMsg, alertReminderSettingsError, healthSettingsMsg, healthSettingsError, valSettingsMsg, valSettingsError,
   loadSettings, saveSettings,
   testOllamaConnection, testAnthropicConn, testSearxngConn,
   cleanup: cleanupAdminConfig,
@@ -462,7 +457,6 @@ function onSystemSave(payload: {
   coinCopilotCheckpointRetentionDays: string
   coinCopilotResumeWindowHours: string
   logLevel: string
-  pushoverAppToken: string
   publicAppUrl: string
   dealerSearchSources: string
   auctionSearchSources: string
@@ -511,7 +505,6 @@ function onSystemSave(payload: {
   settings.value.CoinCopilotCheckpointRetentionDays = payload.coinCopilotCheckpointRetentionDays
   settings.value.CoinCopilotResumeWindowHours = payload.coinCopilotResumeWindowHours
   settings.value.LogLevel = payload.logLevel
-  settings.value.PushoverAppToken = payload.pushoverAppToken
   settings.value.PublicAppURL = payload.publicAppUrl
   settings.value.DealerSearchSources = payload.dealerSearchSources
   settings.value.AuctionSearchSources = payload.auctionSearchSources

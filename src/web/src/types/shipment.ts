@@ -1,7 +1,7 @@
 // shipment types. Split out of the former single-file src/types/index.ts;
 // re-exported from '@/types' so existing imports keep working.
 
-export type ShipmentCarrier = 'usps' | 'ups' | 'fedex' | 'parcel' | 'other'
+export type ShipmentCarrier = 'usps' | 'ups' | 'fedex' | 'other'
 
 export type ShipmentStatus =
   | 'pending'

@@ -39,7 +39,6 @@ Admin Settings are accessed by admins and provide configuration for AI providers
 **Application Settings:**
 - **Log Level** — trace, debug, info, warn, error
 - **Numista API Key** — For coin catalog lookups
-- **Pushover App Token** — Enables push notifications for configured users
 - **Public App URL** — Used in outbound links and notifications
 - **Version Info** — Displays app version/build date
 

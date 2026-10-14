@@ -236,11 +236,6 @@ func (s *CoinIntakeService) CommitDraft(userID uint, req IntakeCommitRequest) (*
 		if err := txDraftRepo.AttachConfirmedCoin(draft.ID, userID, coin.ID); err != nil {
 			return err
 		}
-		if s.coinService == nil {
-			if err := txCoinRepo.RecordValueSnapshot(userID); err != nil {
-				return err
-			}
-		}
 		journalEntry := &models.CoinJournal{
 			CoinID: coin.ID,
 			UserID: userID,

@@ -27,4 +27,11 @@ export default {
   fromCatalogHint: 'Check the details, add your price, date and storage, and save.',
   fromCatalogWishlistHint: 'It will be saved to your wishlist.',
   chooseAnother: 'Choose another coin',
+  fromRelease: 'Filled in from the new coin: {title}.',
+  releaseImages: 'The official images are added when you save, for the sides without a photo of yours.',
+  release: {
+    ecb: 'ECB',
+    variants: 'Versions: {value}',
+    source: 'Source: {source} – {url}',
+  },
 }

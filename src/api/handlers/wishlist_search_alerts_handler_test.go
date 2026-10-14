@@ -74,15 +74,15 @@ func TestWishlistSearchAlertHandler_CRUDAndOwnerScoping(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("list expected 200, got %d", w.Code)
 	}
-	w = sendAlertRequest(router, http.MethodGet, "/api/wishlist/search-alerts/"+uintString(created.ID), 2, nil)
+	w = sendAlertRequest(router, http.MethodGet, "/api/wishlist/search-alerts/"+strconvUint(created.ID), 2, nil)
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("non-owner read expected 404, got %d: %s", w.Code, w.Body.String())
 	}
-	w = sendAlertRequest(router, http.MethodPut, "/api/wishlist/search-alerts/"+uintString(created.ID), 1, alertPayload("Updated discovery"))
+	w = sendAlertRequest(router, http.MethodPut, "/api/wishlist/search-alerts/"+strconvUint(created.ID), 1, alertPayload("Updated discovery"))
 	if w.Code != http.StatusOK {
 		t.Fatalf("owner update expected 200, got %d: %s", w.Code, w.Body.String())
 	}
-	w = sendAlertRequest(router, http.MethodDelete, "/api/wishlist/search-alerts/"+uintString(created.ID), 1, nil)
+	w = sendAlertRequest(router, http.MethodDelete, "/api/wishlist/search-alerts/"+strconvUint(created.ID), 1, nil)
 	if w.Code != http.StatusNoContent {
 		t.Fatalf("delete expected 204, got %d: %s", w.Code, w.Body.String())
 	}

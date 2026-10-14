@@ -241,7 +241,7 @@ var ecbCountries = [][]string{
 	{"Luxembourg", "luxemburgo"},
 	{"Malta", "malte"},
 	{"Monaco", "monaco"},
-	{"Netherlands", "paises baixos", "holanda", "pays bas"},
+	{"Netherlands", "paises baixos", "holanda", "pays bas", "nederland"},
 	{"Portugal"},
 	{"San Marino", "sao marinho", "saint marin"},
 	{"Slovakia", "eslovaquia", "slovaquie"},
@@ -280,16 +280,21 @@ func EcbCountryName(name string) string {
 }
 
 // ecbCountryFromFile names the country of a joint-issue image ("Portugal.jpg",
-// "Austria1.jpg", "joint_comm_2012_San_Marino.jpg"); "" when the file name
-// does not say.
+// "Austria1.jpg", "joint_comm_2012_San_Marino.jpg", or in the country's own
+// language, "joint_comm_2015_Nederland.jpg"); "" when the file name does not say.
 func ecbCountryFromFile(path string) string {
 	file := strings.ToLower(path[strings.LastIndex(path, "/")+1:])
-	letters := ecbNonLetters.ReplaceAllString(strings.TrimSuffix(file, file[strings.LastIndex(file, "."):]), "")
-	found := ""
+	if dot := strings.LastIndex(file, "."); dot >= 0 {
+		file = file[:dot]
+	}
+	letters := ecbNonLetters.ReplaceAllString(foldASCII(file), "")
+	found, longest := "", 0
 	for _, names := range ecbCountries {
-		key := ecbNonLetters.ReplaceAllString(strings.ToLower(names[0]), "")
-		if strings.Contains(letters, key) && len(key) > len(ecbNonLetters.ReplaceAllString(strings.ToLower(found), "")) {
-			found = names[0]
+		for _, name := range names {
+			key := ecbNonLetters.ReplaceAllString(foldASCII(strings.ToLower(name)), "")
+			if strings.Contains(letters, key) && len(key) > longest {
+				found, longest = names[0], len(key)
+			}
 		}
 	}
 	return found

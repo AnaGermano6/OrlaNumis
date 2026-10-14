@@ -24,6 +24,7 @@ vi.mock('@/api/client', () => ({
   createSet: (...args: unknown[]) => mockCreateSetApi(...args),
   createSetFromCsv: (...args: unknown[]) => mockCreateSetFromCsv(...args),
   createSetBuilderRun: (...args: unknown[]) => mockCreateSetBuilderRun(...args),
+  getJointIssues: () => Promise.resolve({ data: { issues: [] } }),
 }))
 
 vi.mock('vue-router', () => ({
@@ -57,6 +58,37 @@ describe('SetsPage', () => {
     expect(link.text()).toContain('Commemorative catalogue')
   })
 
+  it('shows how far a checklist set is on its card', async () => {
+    mockGetSets.mockResolvedValue({ data: { sets: [
+      { id: 3, name: 'Portugal · 2 €', color: '#c9a84c', setType: 'checklist', coinCount: 12, totalValue: 30, completionPercentage: 33.3 },
+    ] } })
+    const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Checklist · 33% complete')
+    expect(wrapper.text()).toContain('12')
+  })
+
+  it('creates a challenge set and opens it', async () => {
+    mockCreateSetApi.mockResolvedValue({ data: { id: 42 } })
+    const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
+    await flushPromises()
+
+    await wrapper.find('.btn-primary').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="set-path-challenge"]').trigger('click')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(mockCreateSetApi).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'A coin of each euro country',
+      setType: 'checklist',
+      checklist: { source: 'challenge', challenge: 'euro-countries' },
+    }))
+    expect(mockPush).toHaveBeenCalledWith({ name: 'set-detail', params: { id: 42 } })
+    expect(wrapper.find('.card').exists()).toBe(false)
+  })
+
   it('submits an agentic set builder run instead of creating a set locally, then shows a confirmation dialog', async () => {
     mockCreateSetBuilderRun.mockResolvedValue({ data: { run: { id: 1, status: 'queued' } } })
     const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
@@ -65,7 +97,7 @@ describe('SetsPage', () => {
     await wrapper.find('.btn-primary').trigger('click')
     await flushPromises()
 
-    await wrapper.find('#setType').setValue('agentic')
+    await wrapper.get('[data-testid="set-path-agentic"]').trigger('click')
     await wrapper.find('#agenticPrompt').setValue('All US silver quarters from 1940s to 1960s')
     await wrapper.find('#setName').setValue('Silver Quarters')
     await wrapper.find('form').trigger('submit.prevent')
@@ -90,7 +122,7 @@ describe('SetsPage', () => {
     await wrapper.find('.btn-primary').trigger('click')
     await flushPromises()
 
-    await wrapper.find('#setType').setValue('agentic')
+    await wrapper.get('[data-testid="set-path-agentic"]').trigger('click')
     await wrapper.find('#agenticPrompt').setValue('All US silver quarters')
     await wrapper.find('#setName').setValue('Silver Quarters')
     await wrapper.find('form').trigger('submit.prevent')
@@ -107,7 +139,7 @@ describe('SetsPage', () => {
     await wrapper.find('.btn-primary').trigger('click')
     await flushPromises()
 
-    await wrapper.find('#setType').setValue('agentic')
+    await wrapper.get('[data-testid="set-path-agentic"]').trigger('click')
     await wrapper.find('#agenticPrompt').setValue('US wheat pennies across mints Denver, Philly, and San Fran from 1909 to 1930')
     await wrapper.find('#setName').setValue('Wheat Pennies')
     await wrapper.find('form').trigger('submit.prevent')

@@ -28,7 +28,6 @@ var collectionMoneyColumns = []struct {
 	{&models.Coin{}, []string{"purchase_price", "current_value", "sold_price"}},
 	{&models.CoinValueHistory{}, []string{"value"}},
 	{&models.QuickCaptureDraft{}, []string{"purchase_price"}},
-	{&models.ValueSnapshot{}, []string{"total_value", "total_invested"}},
 	{&models.CoinSetValuationSnapshot{}, []string{"total_value", "total_invested", "avg_value_per_coin"}},
 	{&models.ValuationResult{}, []string{"previous_value", "estimated_value"}},
 }

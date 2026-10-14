@@ -1,9 +1,6 @@
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import {
-  changePassword, uploadAvatar, deleteAvatar, updateProfile,
-  validateNumisBidsCredentials, testPushover,
-} from '@/api/client'
+import { changePassword, uploadAvatar, deleteAvatar, updateProfile } from '@/api/client'
 import { t } from '@/i18n'
 
 export function useSettingsProfile() {
@@ -45,15 +42,6 @@ export function useSettingsProfile() {
   const profileEmail = ref(auth.user?.email || '')
   const profileBio = ref(auth.user?.bio || '')
   const profileZipCode = ref(auth.user?.zipCode || '')
-  const nbUsername = ref(auth.user?.numisBidsUsername || '')
-  const nbPassword = ref('')
-  const cngUsername = ref(auth.user?.cngUsername || '')
-  const cngPassword = ref('')
-  const parcelAppAPIKey = ref('')
-  const pushoverKey = ref('')
-  const pushoverTesting = ref(false)
-  const pushoverTestMsg = ref('')
-  const pushoverTestError = ref(false)
   const profilePublic = ref(auth.user?.isPublic || false)
   const coinOfDayEnabled = ref(auth.user?.coinOfDayEnabled ?? true)
   const coinOfDayIncludeWishlist = ref(auth.user?.coinOfDayIncludeWishlist ?? true)
@@ -86,65 +74,16 @@ export function useSettingsProfile() {
     showPrivacyWarning.value = false
   }
 
-  // NumisBids validation
-  const nbValidating = ref(false)
-  const nbValidationError = ref('')
-  const cngValidating = ref(false)
-  const cngValidationError = ref('')
-
   async function handleSaveProfile() {
     profileMsg.value = ''
     profileError.value = false
     profileSaving.value = true
-    nbValidationError.value = ''
-    cngValidationError.value = ''
     try {
-      if (nbPassword.value && nbUsername.value) {
-        nbValidating.value = true
-        try {
-          const valRes = await validateNumisBidsCredentials(nbUsername.value, nbPassword.value)
-          if (!valRes.data.valid) {
-            nbValidationError.value = valRes.data.error || t('settings.connections.numisbids.invalid')
-            profileSaving.value = false
-            nbValidating.value = false
-            return
-          }
-        } catch {
-          nbValidationError.value = t('settings.connections.numisbids.validateFailed')
-          profileSaving.value = false
-          nbValidating.value = false
-          return
-        } finally {
-          nbValidating.value = false
-        }
-      }
-      if (cngPassword.value && cngUsername.value) {
-        cngValidating.value = true
-        try {
-          const valRes = await validateNumisBidsCredentials(cngUsername.value, cngPassword.value, 'cng')
-          if (!valRes.data.valid) {
-            cngValidationError.value = valRes.data.error || t('settings.connections.cng.invalid')
-            profileSaving.value = false
-            cngValidating.value = false
-            return
-          }
-        } catch {
-          cngValidationError.value = t('settings.connections.cng.validateFailed')
-          profileSaving.value = false
-          cngValidating.value = false
-          return
-        } finally {
-          cngValidating.value = false
-        }
-      }
-
       const data: Record<string, unknown> = {
         email: profileEmail.value,
         bio: profileBio.value,
         zipCode: profileZipCode.value,
         isPublic: profilePublic.value,
-        numisBidsUsername: nbUsername.value,
-        cngUsername: cngUsername.value,
         coinOfDayEnabled: coinOfDayEnabled.value,
         coinOfDayIncludeWishlist: coinOfDayIncludeWishlist.value,
         emperorTrackerEnabled: emperorTrackerEnabled.value,
@@ -152,30 +91,12 @@ export function useSettingsProfile() {
         emperorTrackerShowEmpresses: emperorTrackerShowEmpresses.value,
         emperorTrackerShowOtherFigures: emperorTrackerShowOtherFigures.value,
       }
-      if (nbPassword.value) {
-        data.numisBidsPassword = nbPassword.value
-      }
-      if (cngPassword.value) {
-        data.cngPassword = cngPassword.value
-      }
-      if (parcelAppAPIKey.value !== '') {
-        data.parcelAppAPIKey = parcelAppAPIKey.value
-      }
-      if (pushoverKey.value !== '') {
-        data.pushoverUserKey = pushoverKey.value
-      }
       const res = await updateProfile(data as Parameters<typeof updateProfile>[0])
       if (auth.user) {
         auth.user.email = res.data.email
         auth.user.bio = res.data.bio
         auth.user.zipCode = res.data.zipCode
         auth.user.isPublic = res.data.isPublic
-        auth.user.numisBidsUsername = res.data.numisBidsUsername
-        auth.user.numisBidsConfigured = res.data.numisBidsConfigured
-        auth.user.cngUsername = res.data.cngUsername
-        auth.user.cngConfigured = res.data.cngConfigured
-        auth.user.parcelAppConfigured = res.data.parcelAppConfigured
-        auth.user.pushoverEnabled = res.data.pushoverEnabled
         auth.user.coinOfDayEnabled = res.data.coinOfDayEnabled
         auth.user.coinOfDayIncludeWishlist = res.data.coinOfDayIncludeWishlist
         auth.user.emperorTrackerEnabled = res.data.emperorTrackerEnabled
@@ -184,10 +105,6 @@ export function useSettingsProfile() {
         auth.user.emperorTrackerShowOtherFigures = res.data.emperorTrackerShowOtherFigures
         localStorage.setItem('user', JSON.stringify(auth.user))
       }
-      nbPassword.value = ''
-      cngPassword.value = ''
-      parcelAppAPIKey.value = ''
-      pushoverKey.value = ''
       profileMsg.value = t('settings.account.profileSaved')
     } catch {
       profileMsg.value = t('settings.account.profileSaveFailed')
@@ -248,22 +165,6 @@ export function useSettingsProfile() {
     }
   }
 
-  // Pushover test
-  async function handleTestPushover() {
-    pushoverTesting.value = true
-    pushoverTestMsg.value = ''
-    pushoverTestError.value = false
-    try {
-      await testPushover()
-      pushoverTestMsg.value = t('settings.connections.pushover.sent')
-    } catch {
-      pushoverTestMsg.value = t('settings.connections.pushover.failed')
-      pushoverTestError.value = true
-    } finally {
-      pushoverTesting.value = false
-    }
-  }
-
   return {
     // Avatar
     avatarUrl,
@@ -273,16 +174,6 @@ export function useSettingsProfile() {
     profileEmail,
     profileBio,
     profileZipCode,
-    nbUsername,
-    nbPassword,
-    cngUsername,
-    cngPassword,
-    parcelAppAPIKey,
-    pushoverKey,
-    pushoverTesting,
-    pushoverTestMsg,
-    pushoverTestError,
-    handleTestPushover,
     profilePublic,
     profileMsg,
     profileError,
@@ -291,10 +182,6 @@ export function useSettingsProfile() {
     onPublicToggle,
     confirmGoPrivate,
     cancelGoPrivate,
-    nbValidating,
-    nbValidationError,
-    cngValidating,
-    cngValidationError,
     handleSaveProfile,
     coinOfDayEnabled,
     coinOfDayIncludeWishlist,

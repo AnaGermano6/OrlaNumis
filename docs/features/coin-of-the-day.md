@@ -21,10 +21,6 @@ Coin of the Day surfaces a featured coin each day, helping you rediscover coins 
 - Appears after scheduled time
 - Click to view coin in modal
 
-#### Pushover Integration (Optional)
-- Desktop/mobile notifications if Pushover configured
-- Same message as in-app notification
-
 ### Featured Coin Modal
 
 **Click notification to open:**

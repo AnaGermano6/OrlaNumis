@@ -66,7 +66,6 @@ const (
 	// CollectionCurrencyService, which converts the stored values too.
 	SettingCollectionCurrency                 = "CollectionCurrency"
 	SettingSearXNGURL                         = "SearXNGURL"
-	SettingPushoverAppToken                   = "PushoverAppToken"
 	SettingWishlistCheckEnabled               = "WishlistCheckEnabled"
 	SettingWishlistCheckInterval              = "WishlistCheckInterval"
 	SettingWishlistCheckStartTime             = "WishlistCheckStartTime"
@@ -79,9 +78,6 @@ const (
 	SettingAuctionEndingCheckEnabled          = "AuctionEndingCheckEnabled"
 	SettingAuctionEndingCheckInterval         = "AuctionEndingCheckInterval"
 	SettingAuctionEndingCheckStartTime        = "AuctionEndingCheckStartTime"
-	SettingAuctionWatchBidDigestEnabled       = "AuctionWatchBidDigestEnabled"
-	SettingAuctionWatchBidDigestInterval      = "AuctionWatchBidDigestInterval"
-	SettingAuctionWatchBidDigestStartTime     = "AuctionWatchBidDigestStartTime"
 	SettingAuctionAlertsCheckEnabled          = "AuctionAlertsCheckEnabled"
 	SettingAuctionAlertsCheckInterval         = "AuctionAlertsCheckInterval"
 	SettingAuctionAlertsCheckStartTime        = "AuctionAlertsCheckStartTime"
@@ -113,7 +109,6 @@ const (
 	SettingFedExClientID                      = "FedExClientID"
 	SettingFedExClientSecret                  = "FedExClientSecret"
 	SettingFedExScope                         = "FedExScope"
-	SettingParcelAppEnabled                   = "ParcelAppEnabled"
 	SettingShipmentSyncEnabled                = "ShipmentSyncEnabled"
 	SettingShipmentSyncInterval               = "ShipmentSyncInterval"
 	SettingShipmentSyncStartTime              = "ShipmentSyncStartTime"
@@ -206,7 +201,6 @@ var settingDefaults = map[string]string{
 	SettingValuationPrompt:                    "",
 	SettingCollectionCurrency:                 "USD",
 	SettingSearXNGURL:                         "",
-	SettingPushoverAppToken:                   "",
 	SettingWishlistCheckEnabled:               "false",
 	SettingWishlistCheckInterval:              "120",
 	SettingWishlistCheckStartTime:             "02:00",
@@ -219,9 +213,6 @@ var settingDefaults = map[string]string{
 	SettingAuctionEndingCheckEnabled:          "false",
 	SettingAuctionEndingCheckInterval:         "1440",
 	SettingAuctionEndingCheckStartTime:        "08:00",
-	SettingAuctionWatchBidDigestEnabled:       "false",
-	SettingAuctionWatchBidDigestInterval:      "1440",
-	SettingAuctionWatchBidDigestStartTime:     "08:00",
 	SettingAuctionAlertsCheckEnabled:          "false",
 	SettingAuctionAlertsCheckInterval:         "60",
 	SettingAuctionAlertsCheckStartTime:        "08:00",
@@ -253,7 +244,6 @@ var settingDefaults = map[string]string{
 	SettingFedExClientID:                      "",
 	SettingFedExClientSecret:                  "",
 	SettingFedExScope:                         "",
-	SettingParcelAppEnabled:                   "false",
 	SettingShipmentSyncEnabled:                "false",
 	SettingShipmentSyncInterval:               "20",
 	SettingShipmentSyncStartTime:              "09:00",

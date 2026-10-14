@@ -177,6 +177,15 @@
             </p>
             <button type="button" class="btn btn-secondary btn-sm" @click="entryMode = 'catalog'">{{ t('addCoin.chooseAnother') }}</button>
           </div>
+          <div v-else-if="releaseSource" class="mb-4 rounded-md border border-gold bg-gold-glow p-3" role="status" data-testid="release-source">
+            <p class="m-0 min-w-0 text-body text-text-primary">
+              <I18nT keypath="addCoin.fromRelease" :params="{ title: releaseSource.title }">
+                <template #title><strong>{{ releaseSource.title }}</strong></template>
+              </I18nT>
+              {{ releaseSource.wishlist ? t('addCoin.fromCatalogWishlistHint') : t('addCoin.fromCatalogHint') }}
+              <span class="mt-1 block text-chip text-text-secondary">{{ t('addCoin.releaseImages') }}</span>
+            </p>
+          </div>
           <CoinForm
             ref="coinFormRef"
             :form="form"
@@ -218,6 +227,7 @@ import CoinForm from '@/components/CoinForm.vue'
 import I18nT from '@/components/I18nT.vue'
 import NumistaCatalogBrowser from '@/components/catalog/NumistaCatalogBrowser.vue'
 import { buildCatalogPrefill, type CatalogSelection } from '@/utils/numistaCatalogPrefill'
+import { buildReleasePrefill, releaseFromQuery } from '@/utils/releasePrefill'
 import { photoCreditLine, type RealPhotoChoice } from '@/utils/coinPhotos'
 import { validQuantity } from '@/utils/coinAttributes'
 import type { CoinPhotoCandidate } from '@/api/client'
@@ -621,12 +631,28 @@ async function applyCatalogSelection(selection: CatalogSelection) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+// Set when the form was filled from a new release (the Collection page's
+// "Releases"): shown as a notice; a coin from Numista keeps its reference.
+const releaseSource = ref<{ title: string; wishlist: boolean } | null>(null)
+const releaseReferences = ref<CoinReferenceInput[]>([])
+
+function applyRelease() {
+  const release = releaseFromQuery(route.query.release)
+  if (!release) return
+  const { fields, references } = buildReleasePrefill(release, { categories: categoryOptions.value, materials: materialOptions.value })
+  Object.assign(form, createEmptyForm(defaultCategory.value, defaultMaterial.value), fields)
+  releaseReferences.value = references
+  releaseSource.value = { title: release.title, wishlist: release.upcoming }
+  entryMode.value = 'manual'
+}
+
 async function handleManualSubmit() {
   if (saving.value || savedCoinId.value !== null) return
   saving.value = true
   try {
     const payload = buildCoinPayload(form)
     if (catalogSource.value && catalogReferences.value.length) payload.references = catalogReferences.value
+    else if (releaseSource.value && releaseReferences.value.length) payload.references = releaseReferences.value
     const coin = await store.addCoin(payload)
     savedCoinId.value = coin.id
     const formComp = coinFormRef.value
@@ -730,9 +756,15 @@ watch(entryMode, (mode) => {
   if (mode === 'catalog') catalogOpened.value = true
 })
 
+// A coin picked in the Numista catalogue replaces the release's.
+watch(catalogSource, (source) => {
+  if (source) releaseSource.value = null
+})
+
 onMounted(async () => {
   // Load coin property options from settings
   await loadOptions()
+  applyRelease()
 })
 
 onBeforeUnmount(() => {

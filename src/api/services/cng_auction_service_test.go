@@ -3,7 +3,6 @@ package services
 import (
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -81,103 +80,6 @@ func TestCNGAuctionService_ParseLotPage_UsesRealBidFields(t *testing.T) {
 	}
 }
 
-func TestCNGAuctionService_ParseWatchlist(t *testing.T) {
-	svc := NewCNGAuctionService(nil)
-	lots := svc.ParseWatchlist(cngWatchlistFixture())
-
-	if len(lots) != 2 {
-		t.Fatalf("ParseWatchlist returned %d lots, want 2", len(lots))
-	}
-	if lots[0].SourceLotID != "4-LOT1" || lots[1].SourceLotID != "4-LOT2" {
-		t.Fatalf("unexpected source lot IDs: %#v", lots)
-	}
-	if lots[1].Currency != "USD" {
-		t.Fatalf("second lot currency = %q, want USD fallback", lots[1].Currency)
-	}
-}
-
-func TestCNGAuctionService_LoginAndFetchWatchlist(t *testing.T) {
-	var loggedIn bool
-	var watchedLotRequests []string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/":
-			if !loggedIn {
-				w.Write([]byte(`viewVars = {"me":null};`))
-				return
-			}
-			w.Write([]byte(`viewVars = {"me":{"row_id":"user"}};`))
-			return
-		case "/login":
-			if r.Method == http.MethodGet {
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`<form action="/login"><input name="username"><input name="password"></form>`))
-				return
-			}
-			if r.Method == http.MethodPost {
-				if err := r.ParseForm(); err != nil {
-					t.Fatalf("ParseForm failed: %v", err)
-				}
-				if r.Form.Get("username") != "user@example.com" || r.Form.Get("password") != "secret" || r.Form.Get("Login") != "Login" {
-					t.Fatalf("unexpected login form: %#v", r.Form)
-				}
-				loggedIn = true
-				http.SetCookie(w, &http.Cookie{Name: "PHPSESSID", Value: "test"})
-				http.Redirect(w, r, "/", http.StatusFound)
-				return
-			}
-		case "/ajax/refresh-me":
-			if !loggedIn {
-				w.Write([]byte(`null`))
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"row_id":"user"}`))
-			return
-		case "/watched-lots":
-			if !loggedIn {
-				http.Redirect(w, r, "/login", http.StatusFound)
-				return
-			}
-			watchedLotRequests = append(watchedLotRequests, r.URL.RawQuery)
-			if r.URL.Query().Get("page") == "2" {
-				w.Write([]byte(cngWatchlistPageFixture(2, 3, 2, []string{"4-LOT3"})))
-				return
-			}
-			w.Write([]byte(cngWatchlistPageFixture(1, 3, 2, []string{"4-LOT1", "4-LOT2"})))
-			return
-		}
-		http.NotFound(w, r)
-	}))
-	defer server.Close()
-
-	restore := overrideCNGURLs(server.URL)
-	defer restore()
-
-	svc := NewCNGAuctionService(nil)
-	client, err := svc.Login("user@example.com", "secret")
-	if err != nil {
-		t.Fatalf("Login returned error: %v", err)
-	}
-	raw, err := svc.FetchWatchlist(client)
-	if err != nil {
-		t.Fatalf("FetchWatchlist returned error: %v", err)
-	}
-	if got := svc.ParseWatchlist(raw); len(got) != 2 {
-		t.Fatalf("parsed %d watched lots, want 2", len(got))
-	}
-	lots, err := svc.FetchWatchlistLots(client)
-	if err != nil {
-		t.Fatalf("FetchWatchlistLots returned error: %v", err)
-	}
-	if len(lots) != 3 {
-		t.Fatalf("FetchWatchlistLots returned %d lots, want 3", len(lots))
-	}
-	if len(watchedLotRequests) != 3 || watchedLotRequests[2] != "page=2" {
-		t.Fatalf("unexpected watched-lots requests: %#v", watchedLotRequests)
-	}
-}
-
 // TestCNGAuctionService_ScrapeLotWithClientUsesRealBidFields verifies that ScrapeLotWithClient
 // uses the provided HTTP client and returns real current-bid/max-bid values. This path backs
 // the manual "paste a lot URL" import (ImportFromURL), which fetches a single lot page directly
@@ -212,29 +114,6 @@ func TestCNGAuctionService_ScrapeLotWithClientUsesRealBidFields(t *testing.T) {
 	}
 	if len(lotPageRequests) == 0 {
 		t.Fatal("no request was made to the test server — ScrapeLotWithClient did not fetch the page")
-	}
-}
-
-func TestCNGAuctionService_LoginInvalidCredentials(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/login":
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`<form action="/login"><input name="username"><input name="password"></form>`))
-		case "/ajax/refresh-me":
-			w.Write([]byte(`null`))
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer server.Close()
-
-	restore := overrideCNGURLs(server.URL)
-	defer restore()
-
-	svc := NewCNGAuctionService(nil)
-	if _, err := svc.Login("bad@example.com", "wrong"); err == nil {
-		t.Fatal("Login succeeded, want error")
 	}
 }
 
@@ -295,23 +174,6 @@ func TestCanonicalCNGLotPath(t *testing.T) {
 				t.Fatalf("canonicalCNGLotPath = %q, want %q", got, tt.want)
 			}
 		})
-	}
-}
-
-func overrideCNGURLs(base string) func() {
-	oldBase := cngBase
-	oldLoginURL := cngLoginURL
-	oldWatchlistURL := cngWatchlistURL
-	oldRefreshMeURL := cngRefreshMeURL
-	cngBase = base
-	cngLoginURL = base + "/login"
-	cngWatchlistURL = base + "/watched-lots"
-	cngRefreshMeURL = base + "/ajax/refresh-me"
-	return func() {
-		cngBase = oldBase
-		cngLoginURL = oldLoginURL
-		cngWatchlistURL = oldWatchlistURL
-		cngRefreshMeURL = oldRefreshMeURL
 	}
 }
 
@@ -390,40 +252,8 @@ viewVars = {
 </script></html>`
 }
 
-func cngWatchlistFixture() string {
-	return cngWatchlistPageFixture(1, 2, 48, []string{"4-LOT1", "4-LOT2"})
-}
-
-func cngWatchlistPageFixture(page, total, pageSize int, lotIDs []string) string {
-	lots := make([]string, 0, len(lotIDs))
-	for index, lotID := range lotIDs {
-		lotNumber := ((page - 1) * pageSize) + index + 1
-		currency := `"currency_code":"USD",`
-		if lotID == "4-LOT2" {
-			currency = ""
-		}
-		lots = append(lots, `{
-        "row_id":"`+lotID+`",
-        "lot_number":`+strconv.Itoa(lotNumber)+`,
-        "title":"Lot `+strconv.Itoa(lotNumber)+`",
-        "truncated_description":"<b>Lot</b> description",
-        "estimate_low":"100.00",
-        `+currency+`
-        "starting_price":"60.00",
-        "_detail_url":"/lots/view/`+lotID+`/lot-`+strconv.Itoa(lotNumber)+`",
-        "cover_thumbnail":"https://images.example/`+strconv.Itoa(lotNumber)+`.jpg",
-        "auction":{"row_id":"4-SALEID","title":"Electronic Auction 612","currency_code":"USD","effective_end_time":"2026-07-01T21:15:00Z"}
-      }`)
-	}
-	return `<!doctype html><html><script>
-viewVars = {
-  "currentRouteName":"watched-lots-index",
-  "lots":{
-    "query_info":{"total_num_results":` + strconv.Itoa(total) + `,"page_size":` + strconv.Itoa(pageSize) + `},
-    "result_page":[
-      ` + strings.Join(lots, ",") + `
-    ]
-  }
-};
-</script></html>`
+func overrideCNGURLs(base string) func() {
+	oldBase := cngBase
+	cngBase = base
+	return func() { cngBase = oldBase }
 }

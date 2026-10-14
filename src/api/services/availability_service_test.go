@@ -584,9 +584,8 @@ func setupFullAvailabilityService(t *testing.T, db *gorm.DB) (*AvailabilityServi
 	userRepo := repository.NewUserRepository(db)
 	settingsSvc := NewSettingsService(repository.NewSettingsRepository(db))
 	logger := NewLogger(100)
-	pushoverSvc := NewPushoverService(settingsSvc, logger)
-	notifSvc := NewNotificationService(repository.NewNotificationRepository(db), nil, userRepo, pushoverSvc, logger)
-	svc := NewAvailabilityService(coinRepo, availRepo, nil, notifSvc, pushoverSvc, userRepo, settingsSvc, logger).WithCycleRepo(availCycleRepo)
+	notifSvc := NewNotificationService(repository.NewNotificationRepository(db), nil, userRepo, logger)
+	svc := NewAvailabilityService(coinRepo, availRepo, nil, notifSvc, userRepo, settingsSvc, logger).WithCycleRepo(availCycleRepo)
 	return svc, availCycleRepo, availRepo
 }
 
@@ -801,41 +800,6 @@ func TestRunAdminCycle_MixedOutcomes_PartialFailureAndNotifications(t *testing.T
 	db.Model(&models.Notification{}).Where("user_id = ?", admin.ID).Count(&adminNotifCount)
 	if adminNotifCount != 1 {
 		t.Fatalf("expected exactly 1 admin notification for the failed child, got %d", adminNotifCount)
-	}
-}
-
-// T025: a Pushover send failure (deterministic — no app token configured) must never change
-// the child run's terminal status; the DB status transition and the Pushover attempt are
-// fully decoupled (FR-011).
-func TestCheckWishlistForUser_PushoverFailureDoesNotAffectRunStatus(t *testing.T) {
-	db := setupAvailServiceFullDB(t)
-	svc, _, _ := setupFullAvailabilityService(t, db)
-	// Pushover app token is deliberately left unset — every send will fail deterministically
-	// with ErrPushoverNotConfigured without any network call.
-
-	user := models.User{Username: "pushover-fail-owner", Email: "pfo@test.com"}
-	db.Create(&user)
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<html><body><button>Add to Cart</button></body></html>`))
-	}))
-	defer server.Close()
-	db.Create(&models.Coin{UserID: user.ID, Name: "Coin", ReferenceURL: server.URL, IsWishlist: true})
-
-	run, err := svc.CheckWishlistForUser(user.ID, models.AvailabilityRunTriggerOwner, &user.ID, nil)
-	if err != nil {
-		t.Fatalf("CheckWishlistForUser: %v", err)
-	}
-	if run.Status != models.AvailabilityRunStatusCompleted {
-		t.Fatalf("expected completed status despite Pushover being unconfigured, got %q", run.Status)
-	}
-
-	// The in-app notification must still have been persisted even though Pushover failed.
-	var notifCount int64
-	db.Model(&models.Notification{}).Where("user_id = ? AND type = ?", user.ID, NotificationTypeAvailabilityRun).Count(&notifCount)
-	if notifCount != 1 {
-		t.Fatalf("expected the in-app notification to persist despite Pushover failure, got %d", notifCount)
 	}
 }
 

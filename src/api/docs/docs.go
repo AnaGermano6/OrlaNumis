@@ -406,147 +406,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/auction-watch-bid-digest-runs": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns paginated history of auction watch bid digest runs.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "List auction watch bid digest runs",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-watch-bid-digest/run": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Refreshes watched auction lots and sends current-bid digest notifications.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Trigger manual auction watch bid digest",
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-watch-bid-digest/status": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns runtime status for the auction watch bid digest scheduler.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Get auction watch bid digest scheduler status",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/services.SchedulerStatus"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/admin/availability-cycles": {
             "get": {
                 "security": [
@@ -4687,119 +4546,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/auctions/sync": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Logs into NumisBids or CNG with the user's stored credentials, fetches the selected watchlist, and upserts each lot. Defaults to NumisBids when source is omitted.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Sync auction watchlist",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Auction source (numisbids, cng)",
-                        "name": "source",
-                        "in": "query"
-                    },
-                    {
-                        "description": "Auction source request",
-                        "name": "body",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SyncWatchlistRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SyncWatchlistResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/validate-credentials": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Attempts to log in to NumisBids or CNG with the provided credentials. Defaults to NumisBids when source is omitted.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Validate auction provider credentials",
-                "parameters": [
-                    {
-                        "description": "Auction provider credentials",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ValidateNumisBidsRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "boolean"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/auctions/{id}": {
             "get": {
                 "security": [
@@ -6646,6 +6392,37 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coin-catalogue/joint-issues": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The €2 coins the euro area's countries issued together (the Treaty of Rome in 2007, the EU flag in 2015…), newest first, each with every country's version.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Joint issues of the euro area",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.JointIssuesResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -12150,235 +11927,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/notes": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns all notes owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Notes"
-                ],
-                "summary": "List notes",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.NoteListResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a Markdown-capable note for the authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Notes"
-                ],
-                "summary": "Create note",
-                "parameters": [
-                    {
-                        "description": "Note",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.noteRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.Note"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/notes/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns one note owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Notes"
-                ],
-                "summary": "Get note",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Note ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Note"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Updates one note owned by the authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Notes"
-                ],
-                "summary": "Update note",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Note ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Note",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.noteRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Note"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deletes one note owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Notes"
-                ],
-                "summary": "Delete note",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Note ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/notifications": {
             "get": {
                 "security": [
@@ -12445,49 +11993,6 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/notifications/test-pushover": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Sends a test Pushover notification using the authenticated user's saved Pushover configuration.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "User"
-                ],
-                "summary": "Test Pushover notification",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "502": {
-                        "description": "Bad Gateway",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -15652,6 +15157,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/sets/{id}/checklist": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Every coin a checklist set lists (a country's coins in the catalogue, or a challenge's), each filled by a coin of the collection when it has one.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sets"
+                ],
+                "summary": "Get a checklist set's slots",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Set ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SetChecklistResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/sets/{id}/coins": {
             "get": {
                 "security": [
@@ -17513,62 +17076,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/stats/investment-breakdown": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns investment, current value, gain/loss, confidence counts, top valuation movement, and stale valuations for the authenticated user's active collection.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "Get investment breakdown",
-                "parameters": [
-                    {
-                        "enum": [
-                            "purchase-year",
-                            "material"
-                        ],
-                        "type": "string",
-                        "description": "Breakdown dimension",
-                        "name": "dimension",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.InvestmentBreakdownResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/stats/time-machine": {
             "get": {
                 "security": [
@@ -18697,7 +18204,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates profile, privacy, NumisBids, Pushover, coin-of-day, emperor-tracker, and PWA swipe navigation preferences for the authenticated user.",
+                "description": "Updates profile, privacy, coin-of-day, emperor-tracker, and PWA swipe navigation preferences for the authenticated user.",
                 "consumes": [
                     "application/json"
                 ],
@@ -19323,40 +18830,6 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/value-history": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns value snapshots over time for charting collection value trends.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "Get value history",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.ValueSnapshot"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -21985,35 +21458,13 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.InvestmentBreakdownResponse": {
+        "handlers.JointIssuesResponse": {
             "type": "object",
             "properties": {
-                "dimension": {
-                    "type": "string",
-                    "example": "purchase-year"
-                },
-                "segments": {
+                "issues": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.InvestmentBreakdownSegment"
-                    }
-                },
-                "staleValuations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.StaleValuationCoin"
-                    }
-                },
-                "topDrops": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.InvestmentMovementCoin"
-                    }
-                },
-                "topIncreases": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.InvestmentMovementCoin"
+                        "$ref": "#/definitions/services.JointIssue"
                     }
                 }
             }
@@ -22308,17 +21759,6 @@ const docTemplate = `{
                 },
                 "query": {
                     "type": "string"
-                }
-            }
-        },
-        "handlers.NoteListResponse": {
-            "type": "object",
-            "properties": {
-                "notes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Note"
-                    }
                 }
             }
         },
@@ -22716,6 +22156,20 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.SetChecklistResponse": {
+            "type": "object",
+            "properties": {
+                "complete": {
+                    "type": "boolean"
+                },
+                "slots": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.ChecklistSlot"
+                    }
+                }
+            }
+        },
         "handlers.SettingInput": {
             "type": "object",
             "properties": {
@@ -22945,28 +22399,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.SyncWatchlistRequest": {
-            "type": "object",
-            "properties": {
-                "source": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.SyncWatchlistResponse": {
-            "type": "object",
-            "properties": {
-                "lots": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.AuctionLot"
-                    }
-                },
-                "synced": {
-                    "type": "integer"
-                }
-            }
-        },
         "handlers.TopCoinsByValueRequest": {
             "type": "object",
             "properties": {
@@ -23120,24 +22552,6 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "admin"
-                }
-            }
-        },
-        "handlers.ValidateNumisBidsRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         },
@@ -24127,17 +23541,6 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/services.NomismaSearchStatus"
-                }
-            }
-        },
-        "handlers.noteRequest": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
                 }
             }
         },
@@ -25615,6 +25018,14 @@ const docTemplate = `{
                 "agenticStatus": {
                     "type": "string"
                 },
+                "checklist": {
+                    "description": "Checklist defines a checklist set's slots (see services.ChecklistDefinition).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.JSONObject"
+                        }
+                    ]
+                },
                 "color": {
                     "type": "string"
                 },
@@ -25683,6 +25094,7 @@ const docTemplate = `{
                 "smart",
                 "goal",
                 "agentic",
+                "checklist",
                 "standard",
                 "goal",
                 "agentic"
@@ -25692,6 +25104,7 @@ const docTemplate = `{
                 "CoinSetTypeSmart",
                 "CoinSetTypeGoal",
                 "CoinSetTypeAgentic",
+                "CoinSetTypeChecklist",
                 "CoinSetTypeOpen",
                 "CoinSetTypeDefined",
                 "CoinSetTypeTracker"
@@ -26030,29 +25443,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "region": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.Note": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "title": {
                     "type": "string"
                 },
                 "updatedAt": {
@@ -27373,14 +26763,12 @@ const docTemplate = `{
                 "usps",
                 "ups",
                 "fedex",
-                "parcel",
                 "other"
             ],
             "x-enum-varnames": [
                 "ShipmentCarrierUSPS",
                 "ShipmentCarrierUPS",
                 "ShipmentCarrierFedEx",
-                "ShipmentCarrierParcel",
                 "ShipmentCarrierOther"
             ]
         },
@@ -27547,29 +26935,6 @@ const docTemplate = `{
                 "RoleAdmin",
                 "RoleUser"
             ]
-        },
-        "models.ValueSnapshot": {
-            "type": "object",
-            "properties": {
-                "coinCount": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "recordedAt": {
-                    "type": "string"
-                },
-                "totalInvested": {
-                    "type": "number"
-                },
-                "totalValue": {
-                    "type": "number"
-                },
-                "userId": {
-                    "type": "integer"
-                }
-            }
         },
         "models.WebAuthnCredential": {
             "type": "object",
@@ -27763,81 +27128,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "era": {
-                    "type": "string"
-                }
-            }
-        },
-        "repository.InvestmentBreakdownSegment": {
-            "type": "object",
-            "properties": {
-                "coinCount": {
-                    "type": "integer"
-                },
-                "currentValue": {
-                    "type": "number"
-                },
-                "gainLoss": {
-                    "type": "number"
-                },
-                "gainLossPct": {
-                    "type": "number"
-                },
-                "invested": {
-                    "type": "number"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "missingCurrentValueCount": {
-                    "type": "integer"
-                },
-                "missingPurchasePriceCount": {
-                    "type": "integer"
-                },
-                "month": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "integer"
-                }
-            }
-        },
-        "repository.InvestmentMovementCoin": {
-            "type": "object",
-            "properties": {
-                "changeAmount": {
-                    "type": "number"
-                },
-                "changeExplanation": {
-                    "type": "string"
-                },
-                "changePct": {
-                    "type": "number"
-                },
-                "coinId": {
-                    "type": "integer"
-                },
-                "currentValue": {
-                    "type": "number"
-                },
-                "initialValue": {
-                    "type": "number"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "repository.StaleValuationCoin": {
-            "type": "object",
-            "properties": {
-                "coinId": {
-                    "type": "integer"
-                },
-                "lastValuationAt": {
-                    "type": "string"
-                },
-                "name": {
                     "type": "string"
                 }
             }
@@ -28127,6 +27417,60 @@ const docTemplate = `{
                 "ChecklistSeverityLow"
             ]
         },
+        "services.ChecklistSlot": {
+            "type": "object",
+            "properties": {
+                "coinId": {
+                    "description": "The collection's coin filling the slot.",
+                    "type": "integer"
+                },
+                "coinImage": {
+                    "type": "string"
+                },
+                "coinName": {
+                    "type": "string"
+                },
+                "coinValue": {
+                    "description": "CoinValue is the current value of the coin filling the slot.",
+                    "type": "number"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "faceValue": {
+                    "type": "number"
+                },
+                "faceValues": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "imageUrl": {
+                    "description": "ImageURL and PageURL show the coin as its source does.",
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "owned": {
+                    "type": "boolean"
+                },
+                "pageUrl": {
+                    "type": "string"
+                },
+                "title": {
+                    "description": "Title names the coin; a challenge's country slots leave it empty (the\ncountry says it).",
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
         "services.CoinCopilotCapability": {
             "type": "object",
             "properties": {
@@ -28301,6 +27645,10 @@ const docTemplate = `{
                 "volume": {
                     "description": "Volume is how many are struck, when the source says.",
                     "type": "integer"
+                },
+                "wishlist": {
+                    "description": "Wishlist is true when a coin of the wishlist is this one.",
+                    "type": "boolean"
                 }
             }
         },
@@ -28684,6 +28032,42 @@ const docTemplate = `{
                 },
                 "highlightedCoinId": {
                     "type": "integer"
+                }
+            }
+        },
+        "services.JointIssue": {
+            "type": "object",
+            "properties": {
+                "coins": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.JointIssueCoin"
+                    }
+                },
+                "pageUrl": {
+                    "type": "string"
+                },
+                "title": {
+                    "description": "Title is the ECB's feature, in English.",
+                    "type": "string",
+                    "example": "50th anniversary of the Treaty of Rome"
+                },
+                "year": {
+                    "type": "integer",
+                    "example": 2007
+                }
+            }
+        },
+        "services.JointIssueCoin": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "description": "Country is an ISO code.",
+                    "type": "string",
+                    "example": "PT"
+                },
+                "imageUrl": {
+                    "type": "string"
                 }
             }
         },

@@ -42,6 +42,8 @@ func TestCoinCatalogue_CountryAndCountries(t *testing.T) {
 	for _, coin := range []models.Coin{
 		{Name: "2 euro 2022 – Travessia aérea do Atlântico Sul por Gago Coutinho e Sacadura Cabral", Denomination: "2 euro", Country: "Portugal", Year: &year},
 		{Name: "1 euro 2022 – Portugal", Denomination: "1 euro", Country: "Portugal", Year: &year},
+		// Wanted, not had.
+		{Name: "2 euro 2022 – 35 years of the Erasmus programme", Denomination: "2 euro", Country: "Portugal", Year: &year, IsWishlist: true},
 	} {
 		coin.UserID, coin.Category, coin.Material = 1, models.CategoryModern, models.MaterialOther
 		if err := db.Create(&coin).Error; err != nil {
@@ -61,9 +63,12 @@ func TestCoinCatalogue_CountryAndCountries(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &portugal); err != nil || w.Code != http.StatusOK || portugal.Country != "PT" {
 		t.Fatalf("Portugal: %d %s", w.Code, w.Body.String())
 	}
-	owned := map[string]bool{}
+	owned, wishlist := map[string]bool{}, map[string]bool{}
 	for _, coin := range portugal.Coins {
-		owned[coin.Title] = coin.Owned
+		owned[coin.Title], wishlist[coin.Title] = coin.Owned, coin.Wishlist
+	}
+	if !wishlist["35 years of the Erasmus programme"] || len(wishlist) != 2 || wishlist["The 100th anniversary of the crossing the South Atlantic Ocean by air, achieved in 1922 by Gago Coutinho and Sacadura Cabral"] {
+		t.Fatalf("wishlist = %v", wishlist)
 	}
 	if len(portugal.Coins) != 2 || !owned["The 100th anniversary of the crossing the South Atlantic Ocean by air, achieved in 1922 by Gago Coutinho and Sacadura Cabral"] {
 		t.Fatalf("Portugal's coins = %+v", portugal.Coins)

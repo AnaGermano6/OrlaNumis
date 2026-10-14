@@ -891,58 +891,6 @@ func (h *CoinHandler) Distribution(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"cells": cells})
 }
 
-// InvestmentBreakdown returns active-collection investment aggregates for charting.
-//
-//	@Summary		Get investment breakdown
-//	@Description	Returns investment, current value, gain/loss, confidence counts, top valuation movement, and stale valuations for the authenticated user's active collection.
-//	@Tags			Coins
-//	@Produce		json
-//	@Param			dimension	query		string	true	"Breakdown dimension"	Enums(purchase-year, material)
-//	@Success		200			{object}	InvestmentBreakdownResponse
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/stats/investment-breakdown [get]
-func (h *CoinHandler) InvestmentBreakdown(c *gin.Context) {
-	userID := c.GetUint("userId")
-	dimension := c.Query("dimension")
-	switch dimension {
-	case repository.InvestmentBreakdownPurchaseYear, repository.InvestmentBreakdownMaterial:
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "dimension must be one of: purchase-year, material"})
-		return
-	}
-
-	segments, err := h.repo.GetInvestmentBreakdown(userID, dimension)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch investment breakdown"})
-		return
-	}
-	topIncreases, err := h.repo.GetTopInvestmentIncreases(userID, 5)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch investment movement"})
-		return
-	}
-	topDrops, err := h.repo.GetTopInvestmentDrops(userID, 5)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch investment movement"})
-		return
-	}
-	staleValuations, err := h.repo.GetStaleValuationCoins(userID, 5)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch stale valuations"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"dimension":       dimension,
-		"segments":        segments,
-		"topIncreases":    topIncreases,
-		"topDrops":        topDrops,
-		"staleValuations": staleValuations,
-	})
-}
-
 // Suggestions returns distinct values for autocomplete fields.
 //
 //	@Summary		Get autocomplete suggestions
@@ -986,28 +934,6 @@ func (h *CoinHandler) Suggestions(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, values)
-}
-
-// ValueHistory returns historical value snapshots for the authenticated user.
-//
-//	@Summary		Get value history
-//	@Description	Returns value snapshots over time for charting collection value trends.
-//	@Tags			Coins
-//	@Produce		json
-//	@Success		200	{array}		models.ValueSnapshot
-//	@Failure		401	{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/value-history [get]
-func (h *CoinHandler) ValueHistory(c *gin.Context) {
-	userID := c.GetUint("userId")
-
-	snapshots, err := h.repo.GetValueHistory(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch value history"})
-		return
-	}
-
-	c.JSON(http.StatusOK, snapshots)
 }
 
 // CoinValueHistory returns value history entries for a specific coin.

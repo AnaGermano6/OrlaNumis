@@ -10,7 +10,7 @@ package services
 // delivered — whether that status was reached via a manual override or via
 // a provider/carrier sync write — neither the manual/direct sync entrypoint
 // (SyncShipment) nor the automatic entrypoint (SyncCandidates) ever invokes
-// the carrier client or the ParcelApp client for it again.
+// the carrier client for it again.
 
 import (
 	"context"
@@ -157,35 +157,5 @@ func TestFeature340_SyncCandidates_SkipsDeliveredShipment(t *testing.T) {
 	}
 	if refetchedDelivered.CurrentStatus != models.ShipmentStatusDelivered {
 		t.Fatalf("delivered shipment status changed to %s, want unchanged delivered", refetchedDelivered.CurrentStatus)
-	}
-}
-
-// TestFeature340_SyncShipment_DeliveredParcelShipment_NeverCallsParcelApp
-// proves the syncSingleShipment delivered guard fires before the
-// Parcel-specific branch, so a delivered Parcel-carrier shipment's direct
-// sync never calls the ParcelApp client either.
-func TestFeature340_SyncShipment_DeliveredParcelShipment_NeverCallsParcelApp(t *testing.T) {
-	h := setupShipmentServiceHarness(t)
-	parcel := &stubParcelAppClient{}
-	h.service.WithParcelAppSupport(nil, nil, nil, parcel)
-
-	shipment := &models.Shipment{
-		UserID:                h.user.ID,
-		CoinID:                h.coin.ID,
-		Carrier:               models.ShipmentCarrierParcel,
-		TrackingNumber:        "PX-6004",
-		CurrentStatus:         models.ShipmentStatusDelivered,
-		CurrentStatusSource:   models.ShipmentStatusSourceAPI,
-		ManualOverrideEnabled: false,
-	}
-	if err := h.shipmentRepo.Create(shipment); err != nil {
-		t.Fatalf("create delivered parcel shipment: %v", err)
-	}
-
-	if _, err := h.service.SyncShipment(context.Background(), shipment.ID, h.user.ID); err != nil {
-		t.Fatalf("sync shipment: %v", err)
-	}
-	if parcel.listCalls != 0 || parcel.addCalls != 0 {
-		t.Fatalf("parcel calls = list:%d add:%d, want 0/0 for a delivered parcel shipment", parcel.listCalls, parcel.addCalls)
 	}
 }

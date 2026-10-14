@@ -171,8 +171,6 @@ export function useAdminConfig() {
   const auctionSettingsError = ref(false)
   const alertReminderSettingsMsg = ref('')
   const alertReminderSettingsError = ref(false)
-  const watchBidDigestSettingsMsg = ref('')
-  const watchBidDigestSettingsError = ref(false)
   const healthSettingsMsg = ref('')
   const healthSettingsError = ref(false)
   const valSettingsMsg = ref('')
@@ -223,15 +221,6 @@ export function useAdminConfig() {
       }
       if (!settings.value.WishlistSearchAlertsCheckStartTime) {
         settings.value.WishlistSearchAlertsCheckStartTime = '03:00'
-      }
-      if (!settings.value.AuctionWatchBidDigestEnabled) {
-        settings.value.AuctionWatchBidDigestEnabled = 'false'
-      }
-      if (!settings.value.AuctionWatchBidDigestStartTime) {
-        settings.value.AuctionWatchBidDigestStartTime = '08:00'
-      }
-      if (!settings.value.AuctionWatchBidDigestInterval) {
-        settings.value.AuctionWatchBidDigestInterval = '1440'
       }
 
       // Apply defaults for collection health snapshot settings if not set
@@ -286,8 +275,6 @@ export function useAdminConfig() {
     auctionSettingsError.value = false
     alertReminderSettingsMsg.value = ''
     alertReminderSettingsError.value = false
-    watchBidDigestSettingsMsg.value = ''
-    watchBidDigestSettingsError.value = false
     healthSettingsMsg.value = ''
     healthSettingsError.value = false
     valSettingsMsg.value = ''
@@ -306,11 +293,10 @@ export function useAdminConfig() {
       availSettingsMsg.value = t('admin.config.saved')
       auctionSettingsMsg.value = t('admin.config.saved')
       alertReminderSettingsMsg.value = t('admin.config.saved')
-      watchBidDigestSettingsMsg.value = t('admin.config.saved')
       healthSettingsMsg.value = t('admin.config.saved')
       valSettingsMsg.value = t('admin.config.saved')
       if (saveTimerId) clearTimeout(saveTimerId)
-      saveTimerId = setTimeout(() => { availSettingsMsg.value = ''; auctionSettingsMsg.value = ''; alertReminderSettingsMsg.value = ''; watchBidDigestSettingsMsg.value = ''; healthSettingsMsg.value = ''; valSettingsMsg.value = '' }, 3000)
+      saveTimerId = setTimeout(() => { availSettingsMsg.value = ''; auctionSettingsMsg.value = ''; alertReminderSettingsMsg.value = ''; healthSettingsMsg.value = ''; valSettingsMsg.value = '' }, 3000)
     } catch {
       settingsMsg.value = t('admin.config.saveFailed')
       settingsError.value = true
@@ -320,8 +306,6 @@ export function useAdminConfig() {
       auctionSettingsError.value = true
       alertReminderSettingsMsg.value = t('admin.config.saveFailed')
       alertReminderSettingsError.value = true
-      watchBidDigestSettingsMsg.value = t('admin.config.saveFailed')
-      watchBidDigestSettingsError.value = true
       healthSettingsMsg.value = t('admin.config.saveFailed')
       healthSettingsError.value = true
       valSettingsMsg.value = t('admin.config.saveFailed')
@@ -412,8 +396,6 @@ export function useAdminConfig() {
     auctionSettingsError,
     alertReminderSettingsMsg,
     alertReminderSettingsError,
-    watchBidDigestSettingsMsg,
-    watchBidDigestSettingsError,
     healthSettingsMsg,
     healthSettingsError,
     valSettingsMsg,

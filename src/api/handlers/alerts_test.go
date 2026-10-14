@@ -89,7 +89,6 @@ func TestAuctionAlertAdminHandlerRunNowAndListRuns(t *testing.T) {
 		repository.NewNotificationRepository(db),
 		nil,
 		repository.NewUserRepository(db),
-		services.NewPushoverService(settingsSvc, logger),
 		logger,
 	)
 	evaluator := services.NewAuctionAlertEvaluator(
@@ -99,7 +98,7 @@ func TestAuctionAlertAdminHandlerRunNowAndListRuns(t *testing.T) {
 		logger,
 	)
 	runRepo := repository.NewAuctionAlertRunRepository(db)
-	scheduler := services.NewAuctionAlertScheduler(evaluator, runRepo, nil, settingsSvc, logger)
+	scheduler := services.NewAuctionAlertScheduler(evaluator, runRepo, settingsSvc, logger)
 	handler := NewAuctionAlertAdminHandler(scheduler, runRepo)
 
 	router := gin.New()

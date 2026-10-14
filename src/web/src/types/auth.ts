@@ -10,12 +10,6 @@ export interface User {
   isPublic: boolean
   bio: string
   zipCode: string
-  numisBidsUsername?: string
-  numisBidsConfigured?: boolean
-  cngUsername?: string
-  cngConfigured?: boolean
-  parcelAppConfigured?: boolean
-  pushoverEnabled?: boolean
   coinOfDayEnabled?: boolean
   coinOfDayIncludeWishlist?: boolean
   emperorTrackerEnabled?: boolean
@@ -144,12 +138,6 @@ export interface UserInfo {
   bio: string
   zipCode: string
   emailMissing: boolean
-  numisBidsUsername: string
-  numisBidsConfigured: boolean
-  cngUsername?: string
-  cngConfigured?: boolean
-  parcelAppConfigured?: boolean
-  pushoverEnabled?: boolean
   coinOfDayEnabled?: boolean
   /** Spec 354 D11: per-user opt-out; default-on. When false, Coin of the Day falls back to owned-only eligibility. */
   coinOfDayIncludeWishlist?: boolean

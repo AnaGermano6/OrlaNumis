@@ -487,6 +487,46 @@ func (h *SetHandler) GetCompletion(c *gin.Context) {
 	c.JSON(http.StatusOK, completion)
 }
 
+// SetChecklistResponse is a checklist set's slots; Complete is false while
+// the catalogue behind them is partly listed.
+type SetChecklistResponse struct {
+	Slots    []services.ChecklistSlot `json:"slots"`
+	Complete bool                     `json:"complete"`
+}
+
+// GetChecklist lists a checklist set's slots.
+//
+//	@Summary		Get a checklist set's slots
+//	@Description	Every coin a checklist set lists (a country's coins in the catalogue, or a challenge's), each filled by a coin of the collection when it has one.
+//	@Tags			sets
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		int	true	"Set ID"
+//	@Success		200	{object}	SetChecklistResponse
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		401	{object}	ErrorResponse
+//	@Failure		404	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Router			/sets/{id}/checklist [get]
+func (h *SetHandler) GetChecklist(c *gin.Context) {
+	setID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid set ID"})
+		return
+	}
+	slots, complete, err := h.service.ChecklistSlots(c.Request.Context(), uint(setID), c.GetUint("userId"))
+	switch {
+	case repository.IsRecordNotFound(err):
+		c.JSON(http.StatusNotFound, gin.H{"error": "Set not found"})
+	case errors.Is(err, services.ErrNotChecklistSet):
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	case err != nil:
+		respondError(c, http.StatusInternalServerError, "Failed to list the set's coins", err)
+	default:
+		c.JSON(http.StatusOK, SetChecklistResponse{Slots: slots, Complete: complete})
+	}
+}
+
 // CreateSnapshot captures a manual valuation snapshot.
 //
 //	@Summary		Create set snapshot

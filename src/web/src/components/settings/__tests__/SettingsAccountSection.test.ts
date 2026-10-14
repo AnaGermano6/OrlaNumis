@@ -46,8 +46,6 @@ vi.mock('@/api/client', () => ({
   uploadAvatar: vi.fn(),
   deleteAvatar: vi.fn(),
   updateProfile: (...args: unknown[]) => mockUpdateProfile(...args),
-  validateNumisBidsCredentials: vi.fn(),
-  testPushover: vi.fn(),
   webauthnRegisterBegin: vi.fn(),
   webauthnRegisterFinish: vi.fn(),
   webauthnListCredentials: vi.fn(),
@@ -227,20 +225,19 @@ describe('SettingsAccountSection emperor tracker toggles', () => {
     })
   })
 
-  describe('SettingsAccountSection auction provider copy', () => {
+  describe('SettingsAccountSection integrations', () => {
     beforeEach(() => {
       vi.clearAllMocks()
       mockGetOIDCIdentities.mockResolvedValue({ data: { identities: [] } })
       mockGetOIDCPublicProviders.mockResolvedValue({ data: { providers: [] } })
     })
 
-    it('distinguishes NumisBids tracking from CNG outcome sync', async () => {
+    it('asks for no auction, parcel or push credentials: those integrations were removed', async () => {
       const wrapper = mountSection()
       await flushPromises()
 
-      expect(wrapper.text()).toContain('NumisBids account for watchlist/import tracking')
-      expect(wrapper.text()).toContain('updated manually')
-      expect(wrapper.text()).toContain('CNG Auctions account to sync watched lots and auto-detect hosted-auction outcomes')
+      for (const name of ['NumisBids', 'CNG', 'ParcelApp', 'Pushover']) expect(wrapper.text()).not.toContain(name)
+      expect(wrapper.find('input[type="password"][autocomplete="new-password"][placeholder*="NumisBids"]').exists()).toBe(false)
     })
   })
 

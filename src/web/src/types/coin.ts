@@ -386,15 +386,6 @@ export interface CoinListResponse {
   limit: number
 }
 
-export interface ValueSnapshot {
-  id: number
-  userId: number
-  totalValue: number
-  totalInvested: number
-  coinCount: number
-  recordedAt: string
-}
-
 export interface CoinJournal {
   id: number
   coinId: number

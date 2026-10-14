@@ -33,10 +33,10 @@ func newQuickAccessTestService(t *testing.T) (*QuickAccessService, *gorm.DB) {
 	t.Cleanup(func() { _ = sqlDB.Close() })
 	if err := db.AutoMigrate(
 		&models.Coin{}, &models.CoinImage{}, &models.CoinSet{}, &models.AuctionLot{},
-		&models.AuctionEvent{}, &models.QuickAccessPin{}, &models.ValueSnapshot{},
+		&models.AuctionEvent{}, &models.QuickAccessPin{},
 		&models.CoinJournal{}, &models.CoinValueHistory{}, &models.CoinComment{},
 		&models.AvailabilityRun{}, &models.AvailabilityResult{}, &models.CoinTag{},
-		&models.CoinSetMembership{}, &models.CoinReference{}, &models.StorageLocation{},
+		&models.CoinSetMembership{}, &models.CoinSetChecklistKey{}, &models.CoinReference{}, &models.StorageLocation{},
 		&models.MintLocation{},
 	); err != nil {
 		t.Fatal(err)
@@ -225,46 +225,6 @@ func TestQuickAccessLifecycleCleanupAndPreservation(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetAuctionLot, syncedLotID, 0)
-
-	scheduledLot := models.AuctionLot{
-		UserID: userID, Title: "Scheduled Lot", NumisBidsURL: "https://example.test/scheduled",
-		Source: models.AuctionSourceNumisBids, SourceURL: "https://example.test/scheduled",
-		Status: models.AuctionStatusWatching,
-	}
-	syncSvc := &AuctionWatchlistSyncService{
-		auctionRepo: repository.NewAuctionLotRepository(db),
-		quickAccess: quickAccess,
-	}
-	if _, err := syncSvc.upsertWithQuickAccessCleanup(&scheduledLot); err != nil {
-		t.Fatal(err)
-	}
-	scheduledPin, _, err := quickAccess.Pin(userID, models.QuickAccessTargetAuctionLot, scheduledLot.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	scheduledLotID := scheduledLot.ID
-	var scheduledPinRow models.QuickAccessPin
-	if err := db.Where("user_id = ? AND target_type = ? AND target_id = ?", userID, models.QuickAccessTargetAuctionLot, scheduledLotID).First(&scheduledPinRow).Error; err != nil {
-		t.Fatal(err)
-	}
-	scheduledLot.ID = 0
-	scheduledLot.Status = models.AuctionStatusBidding
-	if _, err := syncSvc.upsertWithQuickAccessCleanup(&scheduledLot); err != nil {
-		t.Fatal(err)
-	}
-	var scheduledPreserved models.QuickAccessPin
-	if err := db.Where("user_id = ? AND target_type = ? AND target_id = ?", userID, models.QuickAccessTargetAuctionLot, scheduledLotID).First(&scheduledPreserved).Error; err != nil {
-		t.Fatal(err)
-	}
-	if scheduledPreserved.ID != scheduledPinRow.ID || !scheduledPreserved.PinnedAt.Equal(scheduledPin.PinnedAt) {
-		t.Fatalf("scheduled watching-to-bidding transition changed pin identity/time: before=%#v after=%#v", scheduledPinRow, scheduledPreserved)
-	}
-	scheduledLot.ID = 0
-	scheduledLot.Status = models.AuctionStatusLost
-	if _, err := syncSvc.upsertWithQuickAccessCleanup(&scheduledLot); err != nil {
-		t.Fatal(err)
-	}
-	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetAuctionLot, scheduledLotID, 0)
 
 	event := models.AuctionEvent{UserID: userID, Title: "Manual Event"}
 	calendarSvc := NewCalendarService(repository.NewAuctionEventRepository(db), quickAccess)

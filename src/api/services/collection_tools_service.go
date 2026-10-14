@@ -506,8 +506,7 @@ func (s *CollectionToolsService) commitProposalWithSource(
 		}); err != nil {
 			return err
 		}
-
-		return txCoinRepo.RecordValueSnapshot(userID)
+		return nil
 	})
 	if err != nil {
 		return nil, err

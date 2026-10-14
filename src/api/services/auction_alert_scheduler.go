@@ -14,7 +14,6 @@ import (
 type AuctionAlertScheduler struct {
 	evaluator   *AuctionAlertEvaluator
 	runRepo     *repository.AuctionAlertRunRepository
-	syncSvc     *AuctionWatchlistSyncService
 	settingsSvc *SettingsService
 	logger      *Logger
 
@@ -27,14 +26,12 @@ type AuctionAlertScheduler struct {
 func NewAuctionAlertScheduler(
 	evaluator *AuctionAlertEvaluator,
 	runRepo *repository.AuctionAlertRunRepository,
-	syncSvc *AuctionWatchlistSyncService,
 	settingsSvc *SettingsService,
 	logger *Logger,
 ) *AuctionAlertScheduler {
 	return &AuctionAlertScheduler{
 		evaluator:   evaluator,
 		runRepo:     runRepo,
-		syncSvc:     syncSvc,
 		settingsSvc: settingsSvc,
 		logger:      logger,
 		stopCh:      make(chan struct{}),
@@ -108,11 +105,6 @@ func (s *AuctionAlertScheduler) runCycleWithTrigger(triggerType string, triggerU
 	if err := s.runRepo.CreateRun(run); err != nil {
 		s.logger.Error("scheduler", "Failed to create auction alerts run: %s", err)
 		return nil, err
-	}
-
-	if s.syncSvc != nil {
-		stats := s.syncSvc.SyncAllConfiguredUsers()
-		s.logger.Info("scheduler", "Auction watchlist refresh before alerts complete — %d users checked, %d lots synced, %d errors", stats.UsersChecked, stats.LotsSynced, stats.Errors)
 	}
 
 	result, err := s.evaluator.Evaluate(time.Now())

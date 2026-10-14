@@ -64,5 +64,13 @@ export default {
     country: 'Country',
     allCountries: 'All countries ({count})',
     mintsNote: 'From the mints\' shops: Portugal\'s coins with the month they went on sale; France\'s and Austria\'s with their year.',
+    add: 'Add to collection',
+    addShort: 'Add',
+    saveWishlist: 'Save to wishlist',
+    wishlistShort: 'Wishlist',
+    onWishlist: 'On wishlist',
+    savedWishlist: 'Saved to the wishlist: {title}',
+    alreadyWishlist: 'It is already on the wishlist.',
+    wishlistFailed: 'It could not be saved to the wishlist. Try again.',
   },
 }

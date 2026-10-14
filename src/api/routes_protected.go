@@ -79,14 +79,6 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.DELETE("/coins/:id/reminder", purchaseReminderHandler.Cancel)
 		protected.GET("/purchase-reminders", purchaseReminderHandler.List)
 
-		noteSvc := services.NewNoteService(d.noteRepo)
-		noteHandler := handlers.NewNoteHandler(noteSvc)
-		protected.GET("/notes", noteHandler.List)
-		protected.POST("/notes", noteHandler.Create)
-		protected.GET("/notes/:id", noteHandler.Get)
-		protected.PUT("/notes/:id", noteHandler.Update)
-		protected.DELETE("/notes/:id", noteHandler.Delete)
-
 		protected.GET("/collector-profile", d.collectorProfileHandler.Get)
 		protected.PUT("/collector-profile", d.writeRateLimit, d.collectorProfileHandler.Put)
 		protected.POST("/wishlist/url-intake/analyze", d.writeRateLimit, d.wishlistURLHandler.Analyze)
@@ -170,6 +162,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.PUT("/sets/:id/coins/order", setHandler.ReorderCoins)
 		protected.DELETE("/sets/:id/coins/:coinId", setHandler.RemoveCoin)
 		protected.GET("/sets/:id/completion", setHandler.GetCompletion)
+		protected.GET("/sets/:id/checklist", setHandler.GetChecklist)
 		protected.POST("/sets/:id/snapshot", setHandler.CreateSnapshot)
 		protected.GET("/sets/:id/trends", setHandler.GetTrends)
 		protected.GET("/sets/:id/analytics", setHandler.GetAnalytics)
@@ -195,8 +188,6 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/stats/time-machine", timeMachineHandler.GetSnapshot)
 		protected.GET("/stats/time-machine/bounds", timeMachineHandler.GetBounds)
 		protected.GET("/stats/distribution", coinHandler.Distribution)
-		protected.GET("/stats/investment-breakdown", coinHandler.InvestmentBreakdown)
-		protected.GET("/value-history", coinHandler.ValueHistory)
 		protected.GET("/coins/:id/value-history", coinHandler.CoinValueHistory)
 		protected.GET("/suggestions", coinHandler.Suggestions)
 
@@ -282,9 +273,42 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		// New and upcoming coins: the ECB's €2 commemoratives and the mints' collector coins.
 		coinReleases := services.NewCoinReleasesService(ecbCoinPhotos, incmCoinPhotos, mdpCoinPhotos, moeCoinPhotos).WithNumista(numistaCatalogSvc)
 		protected.GET("/coin-releases", handlers.NewCoinReleasesHandler(coinReleases, d.coinRepo, coinPhotoSearch).Releases)
+		// Checklist sets list the catalogue's coins or a challenge's; smart
+		// sets choose coins by their kind too; new coins of a checklist set's
+		// catalogue are announced.
+		setChecklist := services.NewSetChecklistService(coinReleases, d.coinRepo, coinPhotoSearch)
+		setService.WithChecklist(setChecklist)
+		setRepo.WithCoinClassifier(func(userID uint, kind string) ([]uint, error) {
+			sorted, err := coinCirculation.Classify(userID)
+			if err != nil {
+				return nil, err
+			}
+			switch kind {
+			case "commemorative":
+				return sorted.Commemorative, nil
+			case "collector":
+				return sorted.NonCirculating, nil
+			case "circulation":
+				collector := map[uint]bool{}
+				for _, id := range sorted.NonCirculating {
+					collector[id] = true
+				}
+				ids := []uint{}
+				for _, id := range sorted.Regular {
+					if !collector[id] {
+						ids = append(ids, id)
+					}
+				}
+				return ids, nil
+			}
+			return nil, nil
+		})
+		setChecklistWatcher := services.NewSetChecklistWatcher(setRepo, setChecklist, d.notifRepo, d.logger)
+		go setChecklistWatcher.Start()
 		// Every €2 commemorative and the mints' collector coins, by country.
 		coinCatalogue := handlers.NewCoinCatalogueHandler(coinReleases, d.coinRepo, coinPhotoSearch)
 		protected.GET("/coin-catalogue/countries", coinCatalogue.Countries)
+		protected.GET("/coin-catalogue/joint-issues", coinCatalogue.JointIssues)
 		protected.GET("/coin-catalogue", coinCatalogue.Country)
 		// ECB rates, to convert amounts into the collection currency.
 		protected.GET("/exchange-rates", handlers.NewExchangeRatesHandler(d.exchangeRates).Rates)
@@ -294,12 +318,10 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 			WithImageService(d.imageSvc).
 			WithMarketSignal(d.agentProxy, d.settingsSvc).
 			WithQuickAccessSupport(d.quickAccessSvc)
-		nbSvc := services.NewNumisBidsService(d.logger)
 		cngSvc := services.NewCNGAuctionService(d.logger)
 		auctionUserRepo := repository.NewUserRepository(database.DB)
-		auctionLotHandler := handlers.NewAuctionLotHandler(d.auctionLotRepo, auctionLotSvc, auctionUserRepo, nbSvc, cngSvc, d.logger, d.credentialEncryptionSvc).
-			WithShipmentSupport(d.shipmentSvc).
-			WithWatchlistSync(d.auctionWatchlistSyncSvc)
+		auctionLotHandler := handlers.NewAuctionLotHandler(d.auctionLotRepo, auctionLotSvc, auctionUserRepo, cngSvc, d.logger).
+			WithShipmentSupport(d.shipmentSvc)
 		protected.GET("/auctions", auctionLotHandler.List)
 		protected.GET("/auctions/counts", auctionLotHandler.Counts)
 		protected.PUT("/auctions/bulk-link-event", auctionLotHandler.BulkLinkEvent)
@@ -313,8 +335,6 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.POST("/auctions/:id/market-signal", d.writeRateLimit, auctionLotHandler.GetMarketSignal)
 		protected.DELETE("/auctions/:id", auctionLotHandler.Delete)
 		protected.POST("/auctions/import", d.writeRateLimit, auctionLotHandler.ImportFromURL)
-		protected.POST("/auctions/sync", d.writeRateLimit, auctionLotHandler.SyncWatchlist)
-		protected.POST("/auctions/validate-credentials", auctionLotHandler.ValidateNumisBids)
 
 		// Wishlist availability checking
 		availHandler := handlers.NewAvailabilityHandler(d.availSvc, d.availScheduler, d.availRepo, d.coinRepo).WithCycleRepo(d.availCycleRepo)
@@ -369,7 +389,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.DELETE("/agent/conversations/:id", convHandler.Delete)
 
 		// User self-service routes
-		userHandler := handlers.NewUserHandler(d.cfg.UploadDir, userRepo, d.pushoverSvc, d.logger, d.credentialEncryptionSvc)
+		userHandler := handlers.NewUserHandler(d.cfg.UploadDir, userRepo, d.logger)
 		oidcUserHandler := handlers.NewOIDCHandler(d.oidcSvc)
 		protected.GET("/auth/me", userHandler.GetMe)
 		protected.POST("/auth/change-password", userHandler.ChangePassword)
@@ -382,7 +402,6 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/user/export", userHandler.ExportCollection)
 		protected.GET("/user/export/catalog", userHandler.ExportCatalogPDF)
 		protected.POST("/user/import", d.writeRateLimit, userHandler.ImportCollection)
-		protected.POST("/notifications/test-pushover", userHandler.TestPushover)
 
 		// Social routes
 		socialSvc := services.NewSocialService(d.socialRepo, d.notifSvc)

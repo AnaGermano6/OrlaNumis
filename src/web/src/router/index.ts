@@ -209,18 +209,10 @@ const router = createRouter({
       component: () => import('@/pages/StatsHealthPage.vue'),
       meta: { requiresAuth: true },
     },
-    {
-      path: '/stats/value-trends',
-      name: 'stats-value-trends',
-      component: () => import('@/pages/StatsValueTrendsPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/stats/investment-breakdown',
-      name: 'stats-investment-breakdown',
-      component: () => import('@/pages/StatsInvestmentBreakdownPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    // The value details page is gone; old links open Stats.
+    { path: '/stats/value-trends', name: 'stats-value-trends', redirect: '/stats' },
+    // The investment breakdown page is gone too; old links open Stats.
+    { path: '/stats/investment-breakdown', name: 'stats-investment-breakdown', redirect: '/stats' },
     {
       path: '/stats/distribution',
       name: 'stats-distribution',
@@ -242,12 +234,8 @@ const router = createRouter({
       name: 'timeline',
       redirect: '/stats/timeline',
     },
-    {
-      path: '/notes',
-      name: 'notes',
-      component: () => import('@/pages/NotesPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    // The Notes page is gone; old links open the collection.
+    { path: '/notes', name: 'notes', redirect: '/' },
     {
       path: '/settings',
       name: 'settings',

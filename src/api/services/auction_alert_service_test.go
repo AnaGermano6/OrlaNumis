@@ -32,12 +32,10 @@ func setupAuctionAlertServiceDB(t *testing.T) *gorm.DB {
 }
 
 func newTestAuctionNotificationService(db *gorm.DB, logger *Logger) *NotificationService {
-	settingsSvc := NewSettingsService(repository.NewSettingsRepository(db))
 	return NewNotificationService(
 		repository.NewNotificationRepository(db),
 		nil,
 		repository.NewUserRepository(db),
-		NewPushoverService(settingsSvc, logger),
 		logger,
 	)
 }
@@ -162,7 +160,7 @@ func TestAuctionAlertSchedulerSucceedsWithoutPushover(t *testing.T) {
 		logger,
 	)
 	runRepo := repository.NewAuctionAlertRunRepository(db)
-	scheduler := NewAuctionAlertScheduler(evaluator, runRepo, nil, settingsSvc, logger)
+	scheduler := NewAuctionAlertScheduler(evaluator, runRepo, settingsSvc, logger)
 
 	run, err := scheduler.RunNowWithTrigger(&user.ID)
 	if err != nil {
@@ -232,11 +230,9 @@ func TestAuctionAlertServiceCreateRequiresOwnedWatchedLot(t *testing.T) {
 func TestAuctionAlertEvaluatorTriggersOnce(t *testing.T) {
 	db := setupAuctionAlertServiceDB(t)
 	user := models.User{
-		Username:        "bidder",
-		Email:           "bidder@example.com",
-		PasswordHash:    "hash",
-		PushoverEnabled: true,
-		PushoverUserKey: "user-key",
+		Username:     "bidder",
+		Email:        "bidder@example.com",
+		PasswordHash: "hash",
 	}
 	if err := db.Create(&user).Error; err != nil {
 		t.Fatalf("failed to create user: %v", err)

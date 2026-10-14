@@ -206,7 +206,7 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted, markRaw, type Component } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
-import { Landmark, Bookmark, BadgeDollarSign, BarChart3, CirclePlus, Settings, ShieldCheck, LogOut, Users as UsersIcon, Bot, Gavel, X, Bell, Plus, CalendarDays, Share2, GripVertical, BookOpen, Layers3, Search, NotebookPen, ChevronRight, ChevronDown, CheckSquare, Pin } from 'lucide-vue-next'
+import { Landmark, Bookmark, BadgeDollarSign, BarChart3, CirclePlus, Settings, ShieldCheck, LogOut, Users as UsersIcon, Bot, Gavel, X, Bell, Plus, CalendarDays, Share2, GripVertical, BookOpen, Layers3, Search, ChevronRight, ChevronDown, CheckSquare, Pin } from 'lucide-vue-next'
 import { updateProfile, getMe } from '@/api/client'
 import { useNotifications } from '@/composables/useNotifications'
 import { usePinnedSets } from '@/composables/usePinnedSets'
@@ -339,8 +339,6 @@ const defaultNavItems: NavItem[] = [
       { id: 'stats-timeline', labelKey: 'nav.timeline', to: '/stats/timeline' },
       { id: 'stats-map', labelKey: 'nav.map', to: '/stats/mint-map' },
       { id: 'stats-health', labelKey: 'nav.health', to: '/stats/health' },
-      { id: 'stats-value-trends', labelKey: 'nav.valueDetails', to: '/stats/value-trends' },
-      { id: 'stats-investment-breakdown', labelKey: 'nav.investmentBreakdown', to: '/stats/investment-breakdown' },
       { id: 'stats-time-machine', labelKey: 'nav.timeMachine', to: '/stats/time-machine' },
     ],
   },
@@ -356,7 +354,6 @@ const defaultNavItems: NavItem[] = [
       { id: 'sets-commemoratives', labelKey: 'nav.commemorativeCatalogue', to: '/sets/commemoratives' },
     ],
   },
-  { id: 'notes', labelKey: 'nav.notes', icon: markRaw(NotebookPen), to: '/notes', visible: true },
   { id: 'calendar', labelKey: 'nav.calendar', icon: markRaw(CalendarDays), to: '/calendar', visible: false },
   { id: 'showcases', labelKey: 'nav.showcases', icon: markRaw(Share2), to: '/showcases', visible: false },
   { id: 'notifications', labelKey: 'nav.notifications', icon: markRaw(Bell), to: '/notifications', visible: true, badge: () => unreadCount.value },
@@ -628,14 +625,9 @@ onMounted(async () => {
       const data = res.data
       onboardingPromptKey.value = `onboardingPromptSeen:${data.id}`
 
-      // Sync auth store with fresh server-side user data so fields like
-      // numisBidsConfigured and cngConfigured are always up-to-date.
+      // Sync auth store with fresh server-side user data so preferences
+      // changed elsewhere are always up-to-date.
       if (auth.user) {
-        auth.user.numisBidsUsername = data.numisBidsUsername
-        auth.user.numisBidsConfigured = data.numisBidsConfigured
-        auth.user.cngUsername = data.cngUsername
-        auth.user.cngConfigured = data.cngConfigured
-        auth.user.pushoverEnabled = data.pushoverEnabled
         auth.user.coinOfDayEnabled = data.coinOfDayEnabled
         auth.user.pwaSwipeNavEnabled = data.pwaSwipeNavEnabled
         localStorage.setItem('user', JSON.stringify(auth.user))

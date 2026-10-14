@@ -32,7 +32,7 @@ func setupCollectionCurrencyDB(t *testing.T) (*gorm.DB, *SettingsService) {
 	sqlDB, _ := db.DB()
 	sqlDB.SetMaxOpenConns(1)
 	if err := db.AutoMigrate(&models.AppSetting{}, &models.User{}, &models.Coin{}, &models.CoinValueHistory{}, &models.QuickCaptureDraft{},
-		&models.ValueSnapshot{}, &models.CoinSet{}, &models.CoinSetValuationSnapshot{}, &models.ValuationRun{}, &models.ValuationResult{}); err != nil {
+		&models.CoinSet{}, &models.CoinSetValuationSnapshot{}, &models.ValuationRun{}, &models.ValuationResult{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	return db, NewSettingsService(repository.NewSettingsRepository(db))
@@ -48,7 +48,6 @@ func TestCollectionCurrencyChangeConvertsStoredAmounts(t *testing.T) {
 	db.Create(&priced)
 	db.Create(&unpriced)
 	db.Create(&models.CoinValueHistory{CoinID: priced.ID, UserID: 1, Value: 25})
-	db.Create(&models.ValueSnapshot{UserID: 1, TotalValue: 100, TotalInvested: 50})
 
 	if settings.CollectionCurrency() != CurrencyUSD {
 		t.Fatalf("default currency = %q", settings.CollectionCurrency())
@@ -76,10 +75,8 @@ func TestCollectionCurrencyChangeConvertsStoredAmounts(t *testing.T) {
 	}
 	var history models.CoinValueHistory
 	db.First(&history)
-	var snapshot models.ValueSnapshot
-	db.First(&snapshot)
-	if history.Value != 20 || snapshot.TotalValue != 80 || snapshot.TotalInvested != 40 {
-		t.Fatalf("history %v, snapshot %v/%v", history.Value, snapshot.TotalValue, snapshot.TotalInvested)
+	if history.Value != 20 {
+		t.Fatalf("history %v", history.Value)
 	}
 
 	// Switching to the current currency converts nothing; switching back converts back.

@@ -255,3 +255,96 @@ func TestCatalogueCountryNames(t *testing.T) {
 		t.Fatal("CatalogueCountryCode")
 	}
 }
+
+func TestJointIssues_EachCountrysVersionOfTheSameCoin(t *testing.T) {
+	ecb := newTestEcbService(t, ecbPagesByYear{2022: ecb2022Page(t)})
+	releases := NewCoinReleasesService(ecb)
+	releases.now = ecb.now
+
+	issues := releases.JointIssues(context.Background())
+	if len(issues) != 1 || issues[0].Year != 2022 || issues[0].Title != "35 years of the Erasmus programme" || len(issues[0].Coins) != 19 {
+		t.Fatalf("issues = %+v", issues)
+	}
+	// Germany's image, whose file does not name it, is the one member state missing.
+	if germany := issues[0].Coins[3]; germany.Country != "DE" || !strings.Contains(germany.ImageURL, "EU1-erasmus") {
+		t.Fatalf("Germany = %+v", germany)
+	}
+	if releases.JointIssue(context.Background(), 2021) != nil {
+		t.Fatal("2021 had no joint issue")
+	}
+
+	// The catalogue lists Germany's Erasmus coin too.
+	found := false
+	for _, coin := range releases.Catalogue(context.Background()) {
+		found = found || coin.Country == "DE" && coin.Title == "35 years of the Erasmus programme"
+	}
+	if !found {
+		t.Fatal("Germany's Erasmus coin is not in the catalogue")
+	}
+}
+
+func TestWithJointIssueCountries(t *testing.T) {
+	members := []string{"Austria", "Belgium", "Cyprus", "Estonia", "Finland", "France", "Germany", "Greece", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Portugal", "Slovakia", "Slovenia", "Spain"}
+	issue := func(year int, without []string, images ...string) []EcbCoinPhoto {
+		skip := map[string]bool{}
+		for _, country := range without {
+			skip[country] = true
+		}
+		photos := []EcbCoinPhoto{{Year: year, Country: "Portugal", Feature: "Portugal's own", ImageURL: "https://ecb/own.jpg"}}
+		for _, country := range members {
+			if !skip[country] {
+				photos = append(photos, EcbCoinPhoto{Year: year, Country: country, Feature: "Flag", ImageURL: "https://ecb/" + country + ".jpg"})
+			}
+		}
+		for _, image := range images {
+			photos = append(photos, EcbCoinPhoto{Year: year, Feature: "Flag", ImageURL: image})
+		}
+		return photos
+	}
+	countryOf := func(photos []EcbCoinPhoto, image string) string {
+		for _, photo := range photos {
+			if photo.ImageURL == image {
+				return photo.Country
+			}
+		}
+		return "not listed"
+	}
+
+	// Named in the country's own language.
+	photos := withJointIssueCountries(issue(2015, []string{"Netherlands"}, "https://ecb/joint_comm_2015_Nederland.jpg"), 2015)
+	if got := countryOf(photos, "https://ecb/joint_comm_2015_Nederland.jpg"); got != "Netherlands" {
+		t.Fatalf("Nederland = %q", got)
+	}
+	// Not named, and one member state missing: that one.
+	photos = withJointIssueCountries(issue(2022, []string{"Germany"}, "https://ecb/EU1.jpg"), 2022)
+	if got := countryOf(photos, "https://ecb/EU1.jpg"); got != "Germany" {
+		t.Fatalf("EU1 = %q", got)
+	}
+	// Two missing, two unnamed: no guess.
+	photos = withJointIssueCountries(issue(2022, []string{"Germany", "Spain"}, "https://ecb/EU1.jpg", "https://ecb/EU2.jpg"), 2022)
+	if countryOf(photos, "https://ecb/EU1.jpg") != "" || countryOf(photos, "https://ecb/EU2.jpg") != "" {
+		t.Fatalf("guessed = %+v", photos)
+	}
+	// Lithuania was not a member in 2014: Germany is the one missing.
+	photos = withJointIssueCountries(issue(2014, []string{"Germany", "Lithuania"}, "https://ecb/EU1.jpg"), 2014)
+	if got := countryOf(photos, "https://ecb/EU1.jpg"); got != "Germany" {
+		t.Fatalf("2014 EU1 = %q", got)
+	}
+}
+
+func TestMarkWishlistReleases(t *testing.T) {
+	releases := []CoinRelease{
+		{Title: "Wanted", Keys: []string{"https://ecb/a.jpg"}},
+		{Title: "Had", Keys: []string{"https://ecb/b.jpg"}, Owned: true},
+		{Title: "Other", Keys: []string{"numista:7"}},
+	}
+	MarkWishlistReleases(releases, map[string]uint{"https://ecb/a.jpg": 4})
+	if !releases[0].Wishlist || releases[1].Wishlist || releases[2].Wishlist || releases[0].Owned {
+		t.Fatalf("releases = %+v", releases)
+	}
+	// Marking ownership leaves the wishlist mark alone, and the other way round.
+	MarkOwnedReleases(releases, map[string]uint{"numista:7": 9})
+	if !releases[0].Wishlist || !releases[1].Owned || !releases[2].Owned {
+		t.Fatalf("after ownership = %+v", releases)
+	}
+}

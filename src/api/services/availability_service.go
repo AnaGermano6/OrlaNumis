@@ -49,7 +49,6 @@ type AvailabilityService struct {
 	availCycleRepo *repository.AvailabilityCycleRepository
 	agentProxy     *AgentProxy
 	notifSvc       *NotificationService
-	pushoverSvc    *PushoverService
 	userRepo       *repository.UserRepository
 	settingsSvc    *SettingsService
 	logger         *Logger
@@ -61,7 +60,6 @@ func NewAvailabilityService(
 	availRepo *repository.AvailabilityRepository,
 	agentProxy *AgentProxy,
 	notifSvc *NotificationService,
-	pushoverSvc *PushoverService,
 	userRepo *repository.UserRepository,
 	settingsSvc *SettingsService,
 	logger *Logger,
@@ -71,7 +69,6 @@ func NewAvailabilityService(
 		availRepo:   availRepo,
 		agentProxy:  agentProxy,
 		notifSvc:    notifSvc,
-		pushoverSvc: pushoverSvc,
 		userRepo:    userRepo,
 		settingsSvc: settingsSvc,
 		logger:      logger,

@@ -22,7 +22,6 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/api/client', () => ({
-  createNote: vi.fn(),
   getApiErrorMessage: () => '',
 }))
 

@@ -1,9 +1,6 @@
 package handlers
 
-import (
-	"github.com/briandenicola/ancient-coins-api/models"
-	"github.com/briandenicola/ancient-coins-api/repository"
-)
+import "github.com/briandenicola/ancient-coins-api/models"
 
 // Swagger response types for documentation
 
@@ -95,10 +92,6 @@ type CoinListResponse struct {
 	Total int64         `json:"total" example:"42"`
 	Page  int           `json:"page" example:"1"`
 	Limit int           `json:"limit" example:"50"`
-}
-
-type NoteListResponse struct {
-	Notes []models.Note `json:"notes"`
 }
 
 type WishlistSearchAlertCriteriaRequest struct {
@@ -211,14 +204,6 @@ type StatsResponse struct {
 	ByCategory    []CategoryCount `json:"byCategory"`
 	ByMaterial    []MaterialCount `json:"byMaterial"`
 	Values        ValueSummary    `json:"values"`
-}
-
-type InvestmentBreakdownResponse struct {
-	Dimension       string                                  `json:"dimension" example:"purchase-year"`
-	Segments        []repository.InvestmentBreakdownSegment `json:"segments"`
-	TopIncreases    []repository.InvestmentMovementCoin     `json:"topIncreases"`
-	TopDrops        []repository.InvestmentMovementCoin     `json:"topDrops"`
-	StaleValuations []repository.StaleValuationCoin         `json:"staleValuations"`
 }
 
 type CategoryCount struct {

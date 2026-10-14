@@ -17,30 +17,17 @@ import (
 
 // AuctionLotHandler handles HTTP requests for auction lot operations.
 type AuctionLotHandler struct {
-	repo          *repository.AuctionLotRepository
-	svc           *services.AuctionLotService
-	userRepo      *repository.UserRepository
-	nbSvc         *services.NumisBidsService
-	cngSvc        *services.CNGAuctionService
-	shipmentSvc   *services.ShipmentService
-	logger        *services.Logger
-	credentials   *services.CredentialEncryptionService
-	watchlistSync *services.AuctionWatchlistSyncService
+	repo        *repository.AuctionLotRepository
+	svc         *services.AuctionLotService
+	userRepo    *repository.UserRepository
+	cngSvc      *services.CNGAuctionService
+	shipmentSvc *services.ShipmentService
+	logger      *services.Logger
 }
 
 // NewAuctionLotHandler creates a new AuctionLotHandler.
-func NewAuctionLotHandler(repo *repository.AuctionLotRepository, svc *services.AuctionLotService, userRepo *repository.UserRepository, nbSvc *services.NumisBidsService, cngSvc *services.CNGAuctionService, logger *services.Logger, credentialSvc ...*services.CredentialEncryptionService) *AuctionLotHandler {
-	credentials := services.NewDisabledCredentialEncryptionService()
-	if len(credentialSvc) > 0 && credentialSvc[0] != nil {
-		credentials = credentialSvc[0]
-	}
-	return &AuctionLotHandler{repo: repo, svc: svc, userRepo: userRepo, nbSvc: nbSvc, cngSvc: cngSvc, logger: logger, credentials: credentials,
-		watchlistSync: services.NewAuctionWatchlistSyncService(repo, userRepo, nbSvc, cngSvc, credentials, logger)}
-}
-
-func (h *AuctionLotHandler) WithWatchlistSync(sync *services.AuctionWatchlistSyncService) *AuctionLotHandler {
-	h.watchlistSync = sync
-	return h
+func NewAuctionLotHandler(repo *repository.AuctionLotRepository, svc *services.AuctionLotService, userRepo *repository.UserRepository, cngSvc *services.CNGAuctionService, logger *services.Logger) *AuctionLotHandler {
+	return &AuctionLotHandler{repo: repo, svc: svc, userRepo: userRepo, cngSvc: cngSvc, logger: logger}
 }
 
 // WithShipmentSupport enables optional shipment creation on conversion flow.
@@ -746,65 +733,6 @@ func (h *AuctionLotHandler) ImportFromURL(c *gin.Context) {
 	c.JSON(http.StatusCreated, imported)
 }
 
-// SyncWatchlist syncs auction lots from the user's configured auction provider watchlist.
-//
-//	@Summary		Sync auction watchlist
-//	@Description	Logs into NumisBids or CNG with the user's stored credentials, fetches the selected watchlist, and upserts each lot. Defaults to NumisBids when source is omitted.
-//	@Tags			Auctions
-//	@Produce		json
-//	@Param			source	query	string	false	"Auction source (numisbids, cng)"
-//	@Param			body	body	SyncWatchlistRequest	false	"Auction source request"
-//	@Success		200	{object}	SyncWatchlistResponse
-//	@Failure		400	{object}	ErrorResponse
-//	@Failure		401	{object}	ErrorResponse
-//	@Failure		500	{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/auctions/sync [post]
-func (h *AuctionLotHandler) SyncWatchlist(c *gin.Context) {
-	userID := c.GetUint("userId")
-	source := models.AuctionSource(c.DefaultQuery("source", string(models.AuctionSourceNumisBids)))
-	if c.Request.ContentLength > 0 {
-		var req SyncWatchlistRequest
-		if err := c.ShouldBindJSON(&req); err == nil && req.Source != "" {
-			source = models.AuctionSource(req.Source)
-		}
-	}
-	if source != models.AuctionSourceNumisBids && source != models.AuctionSourceCNG {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported auction source"})
-		return
-	}
-	h.debug("%s sync started for user %d", source, userID)
-
-	user, err := h.userRepo.FindByID(userID)
-	if err != nil {
-		h.warn("%s sync failed to load user %d: %v", source, userID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load user"})
-		return
-	}
-
-	lots, err := h.watchlistSync.SyncSource(user, source)
-	if err != nil {
-		h.warn("%s sync failed for user %d: %v", source, userID, err)
-		provider := "NumisBids"
-		if source == models.AuctionSourceCNG {
-			provider = "CNG"
-		}
-		switch {
-		case errors.Is(err, services.ErrAuctionSyncCredentialsMissing):
-			c.JSON(http.StatusBadRequest, gin.H{"error": provider + " credentials not configured. Go to Settings to add them."})
-		case errors.Is(err, services.ErrAuctionSyncCredentials):
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read stored " + provider + " credentials"})
-		case errors.Is(err, services.ErrAuctionSyncLogin), errors.Is(err, services.ErrCNGAuthenticationRequired), errors.Is(err, services.ErrNumisBidsAuthenticationRequired):
-			c.JSON(http.StatusUnauthorized, gin.H{"error": provider + " login failed. Check your credentials in Settings."})
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sync watchlist from " + provider})
-		}
-		return
-	}
-	h.info("%s sync completed for user %d: synced=%d", source, userID, len(lots))
-	c.JSON(http.StatusOK, gin.H{"synced": len(lots), "lots": lots})
-}
-
 func auctionLotFromWatchlist(source models.AuctionSource, userID uint, wl services.WatchlistLot, status models.AuctionLotStatus, auctionEndTime *time.Time) models.AuctionLot {
 	sourceURL := strings.TrimSpace(wl.URL)
 	return models.AuctionLot{
@@ -858,28 +786,6 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
-func (h *AuctionLotHandler) decryptStoredCredential(userID uint, field string, stored string) (plain string, shouldMigrate bool, err error) {
-	plain, wasEncrypted, err := h.credentials.DecryptStringWithAAD(stored, services.AuctionCredentialAAD(userID, field))
-	if err != nil {
-		return "", false, err
-	}
-	return plain, h.credentials.Enabled() && !wasEncrypted && stored != "", nil
-}
-
-func (h *AuctionLotHandler) migrateStoredCredential(user *models.User, field string, plain string) {
-	encrypted, err := h.credentials.EncryptStringWithAAD(plain, services.AuctionCredentialAAD(user.ID, field))
-	if err != nil {
-		h.warn("Failed to encrypt legacy auction credential for user %d: %v", user.ID, err)
-		return
-	}
-	if encrypted == plain {
-		return
-	}
-	if err := h.userRepo.UpdateField(user, field, encrypted); err != nil {
-		h.warn("Failed to save encrypted legacy auction credential for user %d: %v", user.ID, err)
-	}
-}
-
 func (h *AuctionLotHandler) debug(format string, args ...interface{}) {
 	if h.logger != nil {
 		h.logger.Debug("auctions", format, args...)
@@ -902,52 +808,6 @@ func (h *AuctionLotHandler) warn(format string, args ...interface{}) {
 type SyncWatchlistResponse struct {
 	Synced int                 `json:"synced"`
 	Lots   []models.AuctionLot `json:"lots"`
-}
-
-type SyncWatchlistRequest struct {
-	Source string `json:"source"`
-}
-
-// ValidateNumisBids tests the given credentials against an auction provider.
-//
-//	@Summary		Validate auction provider credentials
-//	@Description	Attempts to log in to NumisBids or CNG with the provided credentials. Defaults to NumisBids when source is omitted.
-//	@Tags			Auctions
-//	@Accept			json
-//	@Produce		json
-//	@Param			body	body		ValidateNumisBidsRequest	true	"Auction provider credentials"
-//	@Success		200		{object}	map[string]bool
-//	@Failure		400		{object}	ErrorResponse
-//	@Failure		401		{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/auctions/validate-credentials [post]
-func (h *AuctionLotHandler) ValidateNumisBids(c *gin.Context) {
-	var req ValidateNumisBidsRequest
-	if err := c.ShouldBindJSON(&req); err != nil || req.Username == "" || req.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Username and password are required"})
-		return
-	}
-
-	source := models.AuctionSource(req.Source)
-	if source == "" {
-		source = models.AuctionSourceNumisBids
-	}
-	var err error
-	switch source {
-	case models.AuctionSourceNumisBids:
-		_, err = h.nbSvc.Login(req.Username, req.Password)
-	case models.AuctionSourceCNG:
-		_, err = h.cngSvc.Login(req.Username, req.Password)
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported auction source"})
-		return
-	}
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"valid": false, "error": "Login failed. Check your credentials."})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"valid": true})
 }
 
 // ValidateNumisBidsRequest holds credentials for validation.

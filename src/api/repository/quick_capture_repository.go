@@ -349,10 +349,6 @@ func (r *QuickCaptureRepository) PromoteDraftTransaction(
 			}
 		}
 
-		if err2 := recordValueSnapshotInTx(tx, userID); err2 != nil {
-			return err2
-		}
-
 		// Mark draft promoted
 		now := time.Now().UTC()
 		if err2 := tx.Model(&models.QuickCaptureDraft{}).
@@ -387,8 +383,4 @@ func quickCaptureReferenceKey(catalog, volume, number string) string {
 	return strings.ToUpper(strings.TrimSpace(catalog)) + "|" +
 		strings.ToUpper(strings.TrimSpace(volume)) + "|" +
 		strings.ToUpper(strings.TrimSpace(number))
-}
-
-func recordValueSnapshotInTx(tx *gorm.DB, userID uint) error {
-	return recordActiveCollectionValueSnapshot(tx, userID)
 }

@@ -1,10 +1,10 @@
 # Collection Statistics
 
-> View comprehensive analytics and visualizations of your collection's composition, value trends, and performance.
+> View comprehensive analytics and visualizations of your collection's composition, value, and performance.
 
 ## Overview
 
-The Stats page provides deep insights into your collection through interactive charts, rankings, and distribution analysis. Track portfolio value over time, identify your most valuable coins, understand your collecting patterns, and spot gaps in your collection at a glance.
+The Stats page provides deep insights into your collection through interactive charts, rankings, and distribution analysis. Identify your most valuable coins, understand your collecting patterns, and spot gaps in your collection at a glance.
 
 ## Summary Cards
 
@@ -25,8 +25,6 @@ The Stats sidebar expands into focused pages:
 | Timeline | `/stats/timeline` | Chronological collection timeline and lifecycle history |
 | Map | `/stats/mint-map` | Mint geography for coins with mapped mint data |
 | Health | `/stats/health` | Collection health score, missing metadata/images/AI analysis, stale valuations, and cleanup suggestions |
-| Value Details | `/stats/value-trends` | Portfolio value snapshots and detailed value-over-time analysis |
-| Investment Breakdown | `/stats/investment-breakdown` | Allocation, acquisition-year performance, top increases/drops, and stale valuation rows |
 | Time Machine | `/stats/time-machine` | The collection replayed as it stood on any past date |
 
 ## Category Breakdown
@@ -72,24 +70,6 @@ Features:
 - Blue gradient coloring
 - Hover for exact counts
 - Identify grade gaps in collection
-
-## Value Over Time
-
-Interactive line chart tracking:
-
-- **Portfolio Value** — Total current value of all coins (blue line)
-- **Total Invested** — Sum of all purchase prices (gold line)
-- **ROI** — Return on investment (calculated from snapshots)
-
-### Data Source
-- Automatic snapshots recorded after every coin create/update/delete
-- Historical snapshots visible when zoomed into date ranges
-- Hover for exact values on specific dates
-
-### Interactions
-- **Zoom** — Click and drag to zoom into date range
-- **Hover** — See exact values at any point
-- **Export** — Download trend data as CSV
 
 ## Top Coins by Value
 
@@ -225,13 +205,11 @@ No separate chart toggles are currently required for the summary, health, value,
 ## API Endpoints
 
 ```
-GET    /api/stats                   # Summary cards, charts, rankings, value history
+GET    /api/stats                   # Summary cards, charts, rankings, value totals
 GET    /api/stats/distribution      # Era/region heat map
 GET    /api/stats/health            # Collection health summary
 GET    /api/coins/health            # Paginated per-coin health list
 GET    /api/coins/:id/health        # Single coin health score
-GET    /api/stats/value-trends      # Value trend details
-GET    /api/stats/investment-breakdown # Investment allocation and movement analysis
 GET    /api/stats/emperors          # Emperor tracker progress
 ```
 

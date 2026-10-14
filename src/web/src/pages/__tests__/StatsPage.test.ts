@@ -59,7 +59,7 @@ describe('StatsPage', () => {
     expect(wrapper.text()).toContain('42')
     expect(wrapper.text()).toContain('7')
 
-    // Value detail block has moved to Value Details page
+    // The Stats page has no value detail block
     expect(wrapper.text()).not.toContain('Value Summary')
     expect(wrapper.text()).not.toContain('Total Invested')
 

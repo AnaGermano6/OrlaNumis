@@ -1,6 +1,6 @@
 # Coin Agent
 
-> Chat with an intelligent agent to discover coins, answer collection questions, research shows, and save useful answers as markdown Notes after review.
+> Chat with an intelligent agent to discover coins, answer collection questions, and research shows.
 >
 > When an administrator enables Coin Copilot, the same chat drawer uses Copilot
 > instead. For how the two compare, and diagrams of both, see
@@ -265,17 +265,6 @@ These are imported with the coin to your wishlist.
 3. Click to reopen and continue searching
 4. Delete chats you no longer need
 
-## Saving Answers to Notes
-
-Completed assistant answers show **Save to Notes**. Clicking it opens a review dialog with:
-
-1. A generated title from the first markdown heading or first non-empty line
-2. Editable markdown body
-3. Rendered preview
-4. Explicit **Create Note** action
-
-The agent does not automatically create notes during normal chat. A note is created only after the user reviews the draft and confirms.
-
 ## Configuration
 
 ### Admin Settings (`Admin → AI Configuration`)
@@ -320,8 +309,6 @@ POST   /api/agent/chat              # Send message to agent (SSE stream)
 GET    /api/agent/conversations     # List saved conversations
 POST   /api/agent/conversations     # Save current conversation
 DELETE /api/agent/conversations/:id # Delete conversation
-GET    /api/notes                   # List notes
-POST   /api/notes                   # Save reviewed markdown from an answer
 GET    /api/ai-status               # Check agent provider status
 ```
 

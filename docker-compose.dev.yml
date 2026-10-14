@@ -6,8 +6,7 @@
 #   docker compose -f docker-compose.dev.yml down             # stop (keeps data)
 #   docker compose -f docker-compose.dev.yml down -v          # stop + wipe DB/uploads
 #
-# Secrets come from .env (JWT_SECRET, AGENT_INTERNAL_SERVICE_TOKEN,
-# AUCTION_CREDENTIAL_ENCRYPTION_KEY). GIN_MODE is left unset (debug), so the
+# Secrets come from .env (JWT_SECRET, AGENT_INTERNAL_SERVICE_TOKEN). GIN_MODE is left unset (debug), so the
 # production-only startup checks are skipped and localhost origins are allowed.
 name: aurearia-dev
 
@@ -27,7 +26,6 @@ services:
       AGENT_SERVICE_URL: http://agent:8081
       AGENT_INTERNAL_SERVICE_TOKEN: ${AGENT_INTERNAL_SERVICE_TOKEN:?Set AGENT_INTERNAL_SERVICE_TOKEN in .env}
       AGENT_INTERNAL_CALLBACK_URL: http://app:8080
-      AUCTION_CREDENTIAL_ENCRYPTION_KEY: ${AUCTION_CREDENTIAL_ENCRYPTION_KEY:-}
       WEBAUTHN_RP_ID: localhost
       WEBAUTHN_ORIGIN: http://localhost:8080
     ports:

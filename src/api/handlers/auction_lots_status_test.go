@@ -40,7 +40,7 @@ func TestAuctionLotHandlerUpdateStatusPersistsChangedMaxBidWithoutStatusChange(t
 	}
 
 	auctionRepo := repository.NewAuctionLotRepository(db)
-	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil, nil)
+	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil)
 	req := httptest.NewRequest(http.MethodPut, "/auctions/1/status", bytes.NewBufferString(`{"status":"bidding","maxBid":150}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -91,7 +91,7 @@ func TestAuctionLotHandlerUpdateStatusPersistsWinningBidWhenWon(t *testing.T) {
 	}
 
 	auctionRepo := repository.NewAuctionLotRepository(db)
-	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil, nil)
+	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil)
 	req := httptest.NewRequest(http.MethodPut, "/auctions/1/status", bytes.NewBufferString(`{"status":"won","winningBid":275.5}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -142,7 +142,7 @@ func TestAuctionLotHandlerUpdateStatusPersistsWinningBidWhenLost(t *testing.T) {
 	}
 
 	auctionRepo := repository.NewAuctionLotRepository(db)
-	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil, nil)
+	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil)
 	req := httptest.NewRequest(http.MethodPut, "/auctions/1/status", bytes.NewBufferString(`{"status":"lost","winningBid":410}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -196,7 +196,7 @@ func TestAuctionLotHandlerGetBidRecommendationReturnsInsufficientDataWithoutHist
 	}
 
 	auctionRepo := repository.NewAuctionLotRepository(db)
-	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil, nil)
+	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/auctions/1/bid-recommendation", nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -239,7 +239,7 @@ func TestAuctionLotHandlerGetMarketSignalReturnsUnavailableWithoutAgentConfigure
 	}
 
 	auctionRepo := repository.NewAuctionLotRepository(db)
-	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil, nil)
+	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil)
 	req := httptest.NewRequest(http.MethodPost, "/auctions/1/market-signal", nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -269,7 +269,7 @@ func TestAuctionLotHandlerGetMarketSignalReturnsNotFoundForMissingLot(t *testing
 	}
 
 	auctionRepo := repository.NewAuctionLotRepository(db)
-	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil, nil)
+	handler := NewAuctionLotHandler(auctionRepo, services.NewAuctionLotService(auctionRepo, nil), nil, nil, nil)
 	req := httptest.NewRequest(http.MethodPost, "/auctions/999/market-signal", nil)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)

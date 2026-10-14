@@ -3,7 +3,6 @@ package services
 import (
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/briandenicola/ancient-coins-api/models"
 	"github.com/briandenicola/ancient-coins-api/repository"
@@ -31,13 +30,11 @@ func setupNotificationServiceDB(t *testing.T) *gorm.DB {
 }
 
 func newTestNotificationService(db *gorm.DB) *NotificationService {
-	settingsSvc := NewSettingsService(repository.NewSettingsRepository(db))
 	logger := NewLogger(100)
 	return NewNotificationService(
 		repository.NewNotificationRepository(db),
 		nil,
 		repository.NewUserRepository(db),
-		NewPushoverService(settingsSvc, logger),
 		logger,
 	)
 }
@@ -478,47 +475,6 @@ func TestNotifyAdminCycleChildFailure_NoOpWhenAdminIDZero(t *testing.T) {
 // --- Feature 353 (T023/SC-007): Pushover isolation — a failing Pushover client must never
 // affect the in-app notification or the caller. ---
 
-func TestNotifyAvailabilityRunTerminal_PushoverFailureDoesNotBlockInAppNotification(t *testing.T) {
-	db := setupNotificationServiceDB(t)
-	if err := db.AutoMigrate(&models.AvailabilityRun{}); err != nil {
-		t.Fatalf("failed to migrate AvailabilityRun: %v", err)
-	}
-	settingsRepo := repository.NewSettingsRepository(db)
-	settingsSvc := NewSettingsService(settingsRepo)
-	logger := NewLogger(100)
-	// Leave the Pushover app token unset so SendMessage deterministically fails with
-	// ErrPushoverNotConfigured (no network call needed) — proves the fire-and-forget
-	// Pushover failure path never blocks the in-app notification (FR-011, SC-008).
-	pushoverSvc := NewPushoverService(settingsSvc, logger)
-	svc := NewNotificationService(
-		repository.NewNotificationRepository(db),
-		nil,
-		repository.NewUserRepository(db),
-		pushoverSvc,
-		logger,
-	)
-
-	user := models.User{
-		Username: "pushoverfail", Email: "pushoverfail@example.com", PasswordHash: "hash",
-		PushoverEnabled: true, PushoverUserKey: "fake-user-key",
-	}
-	if err := db.Create(&user).Error; err != nil {
-		t.Fatalf("failed to create user: %v", err)
-	}
-
-	run := &models.AvailabilityRun{ID: 1, UserID: user.ID, Status: models.AvailabilityRunStatusCompleted, CoinsChecked: 1, Available: 1}
-	svc.NotifyAvailabilityRunTerminal(user.ID, run, nil)
-
-	// Give the fire-and-forget Pushover goroutine a moment to fail internally.
-	time.Sleep(50 * time.Millisecond)
-
-	var count int64
-	db.Model(&models.Notification{}).Where("user_id = ? AND type = ?", user.ID, NotificationTypeAvailabilityRun).Count(&count)
-	if count != 1 {
-		t.Fatalf("expected in-app notification to persist despite Pushover failure, got count=%d", count)
-	}
-}
-
 func TestFormatAuctionTargetBidStatesTheGapToTheTarget(t *testing.T) {
 	over := 475.0
 	under := 180.0
@@ -562,60 +518,5 @@ func TestFormatAuctionTargetBidStatesTheGapToTheTarget(t *testing.T) {
 				t.Fatalf("formatAuctionTargetBid() = %q, want %q", got, test.want)
 			}
 		})
-	}
-}
-
-func TestBuildAuctionPriceAlertPushoverMessageLinksTheLotAndEscapesScrapedText(t *testing.T) {
-	bid := 475.0
-	lot := models.AuctionLot{
-		Title:        "Vespasian. AD 69-79. AR Denarius (16.5mm, 3.22 g, 6h). Rome mint. Near VF.",
-		AuctionHouse: "Classical Numismatic Group",
-		SaleName:     "Electronic Auction 616",
-		LotNumber:    684,
-		CurrentBid:   &bid,
-		Currency:     "USD",
-		SourceURL:    "https://auctions.cngcoins.com/lots/view/4-5000000",
-	}
-
-	message := buildAuctionPriceAlertPushoverMessage(lot, 200)
-
-	want := "<b>Vespasian</b> (<a href=\"https://auctions.cngcoins.com/lots/view/4-5000000\">Lot 684</a>)\n" +
-		"Classical Numismatic Group - Electronic Auction 616\n" +
-		"- Target: 200.00 USD\n" +
-		"- Current high bid: 475.00 USD (275.00 over target)"
-	if message.Message != want {
-		t.Fatalf("message = %q, want %q", message.Message, want)
-	}
-	if !message.HTML {
-		t.Fatal("price alert push is not flagged as HTML")
-	}
-	if message.Title != "Auction Price Alert" {
-		t.Fatalf("title = %q, want Auction Price Alert", message.Title)
-	}
-	if message.URL != lot.SourceURL || message.URLTitle != "View auction lot" {
-		t.Fatalf("url = %q / %q, want the lot URL and its action label", message.URL, message.URLTitle)
-	}
-
-	// A scraped sale name carrying markup must not reach the HTML body unescaped.
-	lot.SaleName = "Sale <b>616</b> & friends"
-	if escaped := buildAuctionPriceAlertPushoverMessage(lot, 200); !strings.Contains(escaped.Message, "Sale &lt;b&gt;616&lt;/b&gt; &amp; friends") {
-		t.Fatalf("message = %q, want the scraped sale name escaped", escaped.Message)
-	}
-}
-
-func TestBuildAuctionPriceAlertPushoverMessageOmitsAnUnusableLotURL(t *testing.T) {
-	bid := 475.0
-	lot := models.AuctionLot{
-		Title: "Vespasian AR Denarius", AuctionHouse: "CNG", SaleName: "Electronic Auction 616",
-		LotNumber: 684, CurrentBid: &bid, Currency: "USD", SourceURL: "javascript:alert(1)",
-	}
-
-	message := buildAuctionPriceAlertPushoverMessage(lot, 200)
-
-	if message.URL != "" {
-		t.Fatalf("url = %q, want it dropped — Pushover rejects a malformed url outright", message.URL)
-	}
-	if strings.Contains(message.Message, "<a href") {
-		t.Fatalf("message = %q, want the lot number left unlinked", message.Message)
 	}
 }

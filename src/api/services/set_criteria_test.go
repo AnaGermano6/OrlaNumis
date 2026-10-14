@@ -135,6 +135,31 @@ func TestValidateSmartCriteria_StorageLocation(t *testing.T) {
 	}
 }
 
+func TestValidateSmartCriteria_SimpleFiltersAndKindOfCoin(t *testing.T) {
+	rules := func(rules ...interface{}) map[string]interface{} {
+		return map[string]interface{}{"operator": "and", "rules": rules}
+	}
+	valid := rules(
+		map[string]interface{}{"field": "country", "op": "eq", "value": "Portugal"},
+		map[string]interface{}{"field": "year", "op": "between", "value": []interface{}{2002, 2010}},
+		map[string]interface{}{"field": "presentation", "op": "eq", "value": "coincard"},
+		map[string]interface{}{"field": "kind", "op": "eq", "value": "coin"},
+		map[string]interface{}{"field": "classification", "op": "eq", "value": "commemorative"},
+	)
+	if err := ValidateSmartCriteria(valid); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	for _, bad := range []map[string]interface{}{
+		rules(map[string]interface{}{"field": "classification", "op": "eq", "value": "ancient"}),
+		rules(map[string]interface{}{"field": "classification", "op": "neq", "value": "collector"}),
+		rules(map[string]interface{}{"field": "id", "op": "in", "value": []interface{}{1, 2}}),
+	} {
+		if err := ValidateSmartCriteria(bad); err == nil {
+			t.Errorf("expected an error for %v", bad)
+		}
+	}
+}
+
 // ---- GetSuggestedCriteria ----
 
 func TestGetSuggestedCriteria_ReturnsTenSuggestions(t *testing.T) {

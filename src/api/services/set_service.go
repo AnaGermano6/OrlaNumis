@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -39,11 +40,49 @@ type SetService struct {
 	tagRepo     *repository.TagRepository
 	notifRepo   *repository.NotificationRepository
 	quickAccess *QuickAccessService
+	checklist   *SetChecklistService
 }
 
 func (s *SetService) WithQuickAccessSupport(quickAccess *QuickAccessService) *SetService {
 	s.quickAccess = quickAccess
 	return s
+}
+
+// WithChecklist lets the service work out checklist sets' slots.
+func (s *SetService) WithChecklist(checklist *SetChecklistService) *SetService {
+	s.checklist = checklist
+	return s
+}
+
+// ErrNotChecklistSet is returned for the slots of a set that is not a checklist.
+var ErrNotChecklistSet = errors.New("the set is not a checklist")
+
+// ChecklistSlots lists a checklist set's slots; complete is false while the
+// catalogue behind them is partly listed.
+func (s *SetService) ChecklistSlots(ctx context.Context, setID, userID uint) (slots []ChecklistSlot, complete bool, err error) {
+	set, err := s.repo.GetByID(setID, userID)
+	if err != nil {
+		return nil, false, err
+	}
+	if set.SetType != models.CoinSetTypeChecklist || set.Checklist == nil || s.checklist == nil {
+		return nil, false, ErrNotChecklistSet
+	}
+	definition, err := ParseChecklistDefinition(map[string]interface{}(*set.Checklist))
+	if err != nil {
+		return nil, false, err
+	}
+	slots, err = s.checklist.Slots(ctx, userID, definition)
+	return slots, s.checklist.Complete(), err
+}
+
+// checklistSummary counts a checklist set's slots; nil when it cannot.
+func (s *SetService) checklistSummary(set *models.CoinSet) *ChecklistSummary {
+	slots, _, err := s.ChecklistSlots(context.Background(), set.ID, set.UserID)
+	if err != nil {
+		return nil
+	}
+	summary := Summarize(slots)
+	return &summary
 }
 
 // NewSetService creates a new SetService.
@@ -118,6 +157,11 @@ func (s *SetService) ListSets(userID uint) ([]map[string]interface{}, error) {
 
 		var completion interface{}
 		switch {
+		case set.SetType == models.CoinSetTypeChecklist:
+			if checklist := s.checklistSummary(&set); checklist != nil {
+				summary = map[string]interface{}{"coinCount": checklist.Owned, "totalValue": checklist.TotalValue}
+				completion = checklist.Completion()
+			}
 		case set.SetType == models.CoinSetTypeGoal:
 			if pct, ok := batchedCompletions[set.ID]; ok {
 				completion = pct
@@ -186,6 +230,16 @@ func (s *SetService) GetSetDetail(setID, userID uint) (map[string]interface{}, e
 		if c, err := s.repo.GetSetCompletion(set.ID, userID); err == nil {
 			result["completionPercentage"] = c["completionPercentage"]
 		}
+	}
+	if set.SetType == models.CoinSetTypeChecklist {
+		result["checklist"] = set.Checklist
+		if checklist := s.checklistSummary(set); checklist != nil {
+			result["coinCount"], result["totalValue"] = checklist.Owned, checklist.TotalValue
+			result["completionPercentage"] = checklist.Completion()
+		}
+	}
+	if set.SetType == models.CoinSetTypeSmart {
+		result["smartCriteria"] = set.SmartCriteria
 	}
 
 	return result, nil
@@ -259,6 +313,21 @@ func (s *SetService) CreateSet(userID uint, input map[string]interface{}) (*mode
 	if setType == string(models.CoinSetTypeSmart) && smartCriteria == nil {
 		return nil, fmt.Errorf("smart criteria is required for smart sets")
 	}
+	var checklist *ChecklistDefinition
+	if setType == string(models.CoinSetTypeChecklist) {
+		raw, ok := input["checklist"].(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("checklist is required for checklist sets")
+		}
+		definition, err := ParseChecklistDefinition(raw)
+		if err != nil {
+			return nil, err
+		}
+		if definition.Challenge == ChallengeJointIssue && s.checklist != nil && s.checklist.JointIssue(context.Background(), definition.Year) == nil {
+			return nil, fmt.Errorf("the euro area had no joint issue in %d", definition.Year)
+		}
+		checklist = &definition
+	}
 	// Validate parent set ID if provided
 	if parentSetID, ok := input["parentSetId"].(float64); ok && parentSetID > 0 {
 		parentID := uint(parentSetID)
@@ -291,6 +360,10 @@ func (s *SetService) CreateSet(userID uint, input map[string]interface{}) (*mode
 		SmartCriteria: smartCriteria,
 		AgenticStatus: agenticInitialStatus(models.CoinSetType(setType)),
 	}
+	if checklist != nil {
+		definition := checklist.JSON()
+		set.Checklist = &definition
+	}
 	if rawDate := getStringValue(input, "targetCompletionDate"); rawDate != "" {
 		t, err := time.Parse("2006-01-02", rawDate)
 		if err != nil {
@@ -306,6 +379,16 @@ func (s *SetService) CreateSet(userID uint, input map[string]interface{}) (*mode
 
 	if err := s.repo.Create(set); err != nil {
 		return nil, err
+	}
+	// The catalogue's coins of now are known: only those added later are announced.
+	if checklist != nil && checklist.Source == ChecklistSourceCatalogue && s.checklist != nil {
+		keys := []string{}
+		for _, slot := range s.checklist.CatalogueSlots(context.Background(), *checklist) {
+			keys = append(keys, slot.Key)
+		}
+		if err := s.repo.AddChecklistKeys(set.ID, keys); err != nil {
+			return nil, err
+		}
 	}
 	if templateID := getStringValue(input, "templateId"); templateID != "" {
 		template := GetTemplateByID(templateID)
@@ -346,10 +429,26 @@ func (s *SetService) UpdateSet(setID, userID uint, updates map[string]interface{
 		}
 		updates["name"] = name
 	}
+	// A checklist is defined when created; its definition does not change.
+	delete(updates, "checklist")
+	if raw, ok := updates["smartCriteria"]; ok {
+		delete(updates, "smartCriteria")
+		criteria, isMap := raw.(map[string]interface{})
+		if set.SetType != models.CoinSetTypeSmart || !isMap {
+			return nil, newSetValidationError("only a smart set has criteria")
+		}
+		if err := ValidateSmartCriteria(criteria); err != nil {
+			return nil, newSetValidationError(err.Error())
+		}
+		updates["smart_criteria"] = models.JSONObject(criteria)
+	}
 	if setTypeRaw, ok := updates["setType"].(string); ok {
 		normalizedType, err := normalizeSetType(setTypeRaw)
 		if err != nil {
 			return nil, newSetValidationError("invalid set type")
+		}
+		if (normalizedType == string(models.CoinSetTypeChecklist)) != (set.SetType == models.CoinSetTypeChecklist) {
+			return nil, newSetValidationError("a checklist set stays a checklist")
 		}
 		updates["setType"] = normalizedType
 		if normalizedType != string(models.CoinSetTypeAgentic) && set.CreationMode == models.CoinSetCreationModeDynamic {
@@ -444,6 +543,9 @@ func (s *SetService) AddCoinToSet(coinID, setID, userID uint, notes string, targ
 	if set.SetType == models.CoinSetTypeSmart {
 		return fmt.Errorf("cannot manually add coins to smart sets")
 	}
+	if set.SetType == models.CoinSetTypeChecklist {
+		return fmt.Errorf("cannot manually add coins to checklist sets")
+	}
 	if set.SetType == models.CoinSetTypeAgentic {
 		if len(targetID) == 0 {
 			return fmt.Errorf("targetId is required for agentic sets")
@@ -455,6 +557,22 @@ func (s *SetService) AddCoinToSet(coinID, setID, userID uint, notes string, targ
 }
 
 func (s *SetService) GetCompletion(setID, userID uint) (map[string]interface{}, error) {
+	set, err := s.repo.GetByID(setID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if set.SetType == models.CoinSetTypeChecklist {
+		summary := s.checklistSummary(set)
+		if summary == nil {
+			summary = &ChecklistSummary{}
+		}
+		return map[string]interface{}{
+			"totalTargets":         summary.Total,
+			"completedTargets":     summary.Owned,
+			"completionPercentage": summary.Completion(),
+			"missingTargets":       []models.CoinSetTarget{},
+		}, nil
+	}
 	return s.repo.GetSetCompletion(setID, userID)
 }
 
@@ -679,6 +797,9 @@ func (s *SetService) RemoveCoinFromSet(coinID, setID, userID uint) error {
 	if set.SetType == models.CoinSetTypeSmart {
 		return fmt.Errorf("cannot manually remove coins from smart sets")
 	}
+	if set.SetType == models.CoinSetTypeChecklist {
+		return fmt.Errorf("cannot manually remove coins from checklist sets")
+	}
 	if set.SetType == models.CoinSetTypeAgentic {
 		return fmt.Errorf("cannot manually remove coins from agentic sets")
 	}
@@ -697,7 +818,7 @@ func (s *SetService) ReorderCoinsInSet(setID, userID uint, coinIDs []uint) error
 	if err != nil {
 		return err
 	}
-	if set.SetType == models.CoinSetTypeSmart {
+	if set.SetType == models.CoinSetTypeSmart || set.SetType == models.CoinSetTypeChecklist {
 		return ErrSmartSetOrder
 	}
 
@@ -922,6 +1043,8 @@ func normalizeSetType(raw string) (string, error) {
 		return string(models.CoinSetTypeSmart), nil
 	case "tracker", string(models.CoinSetTypeAgentic):
 		return string(models.CoinSetTypeAgentic), nil
+	case string(models.CoinSetTypeChecklist):
+		return string(models.CoinSetTypeChecklist), nil
 	case "dynamic":
 		return "", fmt.Errorf("dynamic is a workflow, not a set type")
 	default:

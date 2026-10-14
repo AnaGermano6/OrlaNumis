@@ -644,79 +644,6 @@ func TestNeedsSetup_WithUsers(t *testing.T) {
 	}
 }
 
-// TestAuthResponseIncludesAuctionCredentialFields verifies that login and refresh
-// responses include numisBidsConfigured and cngConfigured so the frontend Pinia store
-// never loses those fields after a token refresh (regression test for #464).
-func TestAuthResponseIncludesAuctionCredentialFields(t *testing.T) {
-	router, _ := setupAuthHandlerRouter(t)
-
-	registerTestUser(t, router, "auctionuser", "auction@example.com", "password123")
-
-	loginBody, _ := json.Marshal(map[string]string{
-		"username": "auctionuser",
-		"password": "password123",
-	})
-	loginReq := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(loginBody))
-	loginReq.Header.Set("Content-Type", "application/json")
-	loginW := httptest.NewRecorder()
-	router.ServeHTTP(loginW, loginReq)
-
-	if loginW.Code != http.StatusOK {
-		t.Fatalf("expected login 200, got %d: %s", loginW.Code, loginW.Body.String())
-	}
-
-	type auctionUserFields struct {
-		NumisBidsConfigured bool `json:"numisBidsConfigured"`
-		CngConfigured       bool `json:"cngConfigured"`
-	}
-	var loginResp struct {
-		Token        string            `json:"token"`
-		RefreshToken string            `json:"refreshToken"`
-		User         auctionUserFields `json:"user"`
-	}
-	if err := json.Unmarshal(loginW.Body.Bytes(), &loginResp); err != nil {
-		t.Fatalf("failed to parse login response: %v", err)
-	}
-
-	// Verify the fields exist with correct zero values for a new user
-	var rawLoginResp map[string]interface{}
-	json.Unmarshal(loginW.Body.Bytes(), &rawLoginResp)
-	userMap, ok := rawLoginResp["user"].(map[string]interface{})
-	if !ok {
-		t.Fatal("expected user object in login response")
-	}
-	if _, exists := userMap["numisBidsConfigured"]; !exists {
-		t.Error("login response missing numisBidsConfigured field")
-	}
-	if _, exists := userMap["cngConfigured"]; !exists {
-		t.Error("login response missing cngConfigured field")
-	}
-
-	// Verify refresh response also includes the fields
-	refreshBody, _ := json.Marshal(map[string]string{"refreshToken": loginResp.RefreshToken})
-	refreshReq := httptest.NewRequest(http.MethodPost, "/api/auth/refresh", bytes.NewReader(refreshBody))
-	refreshReq.Header.Set("Content-Type", "application/json")
-	refreshW := httptest.NewRecorder()
-	router.ServeHTTP(refreshW, refreshReq)
-
-	if refreshW.Code != http.StatusOK {
-		t.Fatalf("expected refresh 200, got %d: %s", refreshW.Code, refreshW.Body.String())
-	}
-
-	var rawRefreshResp map[string]interface{}
-	json.Unmarshal(refreshW.Body.Bytes(), &rawRefreshResp)
-	refreshUserMap, ok := rawRefreshResp["user"].(map[string]interface{})
-	if !ok {
-		t.Fatal("expected user object in refresh response")
-	}
-	if _, exists := refreshUserMap["numisBidsConfigured"]; !exists {
-		t.Error("refresh response missing numisBidsConfigured field")
-	}
-	if _, exists := refreshUserMap["cngConfigured"]; !exists {
-		t.Error("refresh response missing cngConfigured field")
-	}
-}
-
 func TestAuthResponseIncludesEmperorTrackerFields(t *testing.T) {
 	router, _ := setupAuthHandlerRouter(t)
 
@@ -756,5 +683,33 @@ func TestAuthResponseIncludesPWASwipeNavEnabled(t *testing.T) {
 	}
 	if value != false {
 		t.Errorf("pwaSwipeNavEnabled = %v, want false for a new user", value)
+	}
+}
+
+// The NumisBids, CNG, ParcelApp and Pushover integrations were removed: a
+// login no longer reports them.
+func TestAuthResponseHasNoRemovedIntegrationFields(t *testing.T) {
+	router, _ := setupAuthHandlerRouter(t)
+	registerTestUser(t, router, "plainuser", "plain@example.com", "password123")
+
+	loginBody, _ := json.Marshal(map[string]string{"username": "plainuser", "password": "password123"})
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(loginBody))
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginW := httptest.NewRecorder()
+	router.ServeHTTP(loginW, loginReq)
+	if loginW.Code != http.StatusOK {
+		t.Fatalf("expected login 200, got %d: %s", loginW.Code, loginW.Body.String())
+	}
+
+	var resp struct {
+		User map[string]interface{} `json:"user"`
+	}
+	if err := json.Unmarshal(loginW.Body.Bytes(), &resp); err != nil || resp.User == nil {
+		t.Fatalf("failed to parse login response: %v %s", err, loginW.Body.String())
+	}
+	for _, field := range []string{"numisBidsUsername", "numisBidsConfigured", "cngUsername", "cngConfigured", "parcelAppConfigured", "pushoverEnabled"} {
+		if _, exists := resp.User[field]; exists {
+			t.Errorf("login response still has %s", field)
+		}
 	}
 }

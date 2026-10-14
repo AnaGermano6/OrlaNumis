@@ -50,14 +50,10 @@ func (h *ShipmentHandler) UpsertForCoin(c *gin.Context) {
 		return
 	}
 
-	carrier := models.ShipmentCarrier(req.Carrier)
-	if strings.TrimSpace(req.Carrier) == "" {
-		carrier = models.ShipmentCarrierParcel
-	}
 	shipment, err := h.svc.UpsertShipmentForCoin(
 		userID,
 		coinID,
-		carrier,
+		models.ShipmentCarrier(req.Carrier),
 		req.TrackingNumber,
 		req.Notes,
 		req.ManualCarrierName,
@@ -246,9 +242,7 @@ func handleShipmentServiceError(c *gin.Context, err error) bool {
 		errors.Is(err, services.ErrShipmentTrackingRequired),
 		errors.Is(err, services.ErrShipmentCarrierNameRequired),
 		errors.Is(err, services.ErrShipmentCarrierNotConfigured),
-		errors.Is(err, services.ErrShipmentCarrierUnsupported),
-		errors.Is(err, services.ErrParcelAppDisabled),
-		errors.Is(err, services.ErrParcelAppAPIKeyRequired):
+		errors.Is(err, services.ErrShipmentCarrierUnsupported):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return true
 	default:

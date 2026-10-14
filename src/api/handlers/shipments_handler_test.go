@@ -69,7 +69,7 @@ func setupShipmentHandlerTestRouter(t *testing.T, clients ...services.ShipmentCa
 
 	coinRepo := repository.NewCoinRepository(db)
 	shipmentRepo := repository.NewShipmentRepository(db)
-	notifSvc := services.NewNotificationService(repository.NewNotificationRepository(db), nil, repository.NewUserRepository(db), nil, services.NewLogger(10))
+	notifSvc := services.NewNotificationService(repository.NewNotificationRepository(db), nil, repository.NewUserRepository(db), services.NewLogger(10))
 	shipmentSvc := services.NewShipmentService(shipmentRepo, coinRepo, services.NewShipmentCarrierClientRegistry(clients...), notifSvc, services.NewLogger(10))
 	shipmentHandler := NewShipmentHandler(shipmentSvc)
 

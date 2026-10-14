@@ -7,7 +7,6 @@ import type {
   AppSettings,
   AuctionAlertReminderRun,
   AuctionEndingRun,
-  AuctionWatchBidDigestRun,
   AvailabilityCycleDetail,
   AvailabilityCycleListResponse,
   AvailabilityCycleTriggerResponse,
@@ -220,13 +219,6 @@ export const getAuctionAlertReminderRuns = (page = 1, limit = 20) =>
 
 export const triggerAuctionAlertReminderCheck = () =>
   api.post<{ message?: string; runId?: number; lotsChecked?: number; alertsTriggered?: number; alertsSent?: number; priceAlertsTriggered?: number; remindersNotified?: number; remindersSent?: number; bidRemindersSent?: number; status?: string; durationMs?: number }>('/admin/auction-alerts/run')
-
-// Auction Watch Bid Digest Runs
-export const getAuctionWatchBidDigestRuns = (page = 1, limit = 20) =>
-  api.get<{ runs: AuctionWatchBidDigestRun[]; total: number; page: number; limit: number }>('/admin/auction-watch-bid-digest-runs', { params: { page, limit } })
-
-export const triggerAuctionWatchBidDigest = () =>
-  api.post<{ message: string }>('/admin/auction-watch-bid-digest/run')
 
 // Collection Health Snapshots
 export const triggerCollectionHealthSnapshots = () =>

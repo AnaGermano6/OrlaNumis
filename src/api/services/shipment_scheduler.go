@@ -105,7 +105,7 @@ func (s *ShipmentScheduler) runCycleWithTrigger(triggerType string) error {
 }
 
 func (s *ShipmentScheduler) isEnabled() bool {
-	return s.settingsSvc.GetSetting(SettingParcelAppEnabled) == "true"
+	return s.settingsSvc.GetSetting(SettingShipmentSyncEnabled) == "true"
 }
 
 func (s *ShipmentScheduler) timeUntilNextRun() time.Duration {

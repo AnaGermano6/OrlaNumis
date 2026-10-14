@@ -11,7 +11,12 @@ var allowedCriteriaFields = []string{
 	"material", "category", "denomination", "ruler", "era", "mint", "grade",
 	"currentValue", "purchasePrice", "purchaseDate", "createdAt", "isWishlist",
 	"isSold", "isPrivate", "storageLocationId",
+	"country", "year", "presentation", "kind", "classification",
 }
+
+// CriteriaClassifications are the kinds of coin a "classification" rule can
+// choose: circulation coins, commemoratives and collector coins, as Numista says.
+var CriteriaClassifications = []string{"circulation", "commemorative", "collector"}
 
 var allowedCriteriaOps = []string{
 	"eq", "neq", "contains", "startsWith", "in", "between", "gte", "lte", "isNull", "isNotNull",
@@ -53,6 +58,12 @@ func validateCriteriaNode(node map[string]interface{}) error {
 	}
 	if !slices.Contains(allowedCriteriaOps, ruleOp) {
 		return fmt.Errorf("criteria operator %q is not allowed", ruleOp)
+	}
+	if field == "classification" {
+		value, _ := node["value"].(string)
+		if ruleOp != "eq" || !slices.Contains(CriteriaClassifications, value) {
+			return fmt.Errorf("classification criteria must be eq circulation, commemorative or collector")
+		}
 	}
 	if field == "storageLocationId" {
 		if !slices.Contains([]string{"eq", "neq", "isNull", "isNotNull"}, ruleOp) {
