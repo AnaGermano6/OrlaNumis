@@ -18,9 +18,8 @@ func NewCollectionCurrencyRepository(db *gorm.DB) *CollectionCurrencyRepository 
 	return &CollectionCurrencyRepository{db: db}
 }
 
-// Amounts kept in the collection currency, by table and column. Auction lots,
-// price alerts and wishlist search alerts carry their own currency and are not
-// converted.
+// Amounts kept in the collection currency, by table and column. Wishlist
+// search alerts carry their own currency and are not converted.
 var collectionMoneyColumns = []struct {
 	model   any
 	columns []string

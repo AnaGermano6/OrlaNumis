@@ -30,9 +30,8 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		coinSvc := services.NewCoinService(d.coinRepo, d.notifSvc).WithReferenceSupport(coinReferenceRepo, coinReferenceSvc).WithStorageLocationSupport(storageLocationRepo).WithMintLocationSupport(mintLocationRepo).WithCatalogRegistrySupport(catalogRegistryRepo).WithSettingsSupport(d.settingsSvc)
 		coinSvc.WithReminderSupport(d.purchaseReminderRepo)
 		coinSvc.WithQuickAccessSupport(d.quickAccessSvc)
-		shipmentHandler := handlers.NewShipmentHandler(d.shipmentSvc)
 		d.wishlistSearchAlertSvc.WithCoinCreation(coinSvc)
-		coinHandler := handlers.NewCoinHandler(d.coinRepo, coinSvc, d.logger).WithSettingsSupport(d.settingsSvc).WithShipmentSupport(d.shipmentSvc)
+		coinHandler := handlers.NewCoinHandler(d.coinRepo, coinSvc, d.logger).WithSettingsSupport(d.settingsSvc)
 		coinReferenceHandler := handlers.NewCoinReferenceHandler(coinReferenceRepo, coinReferenceSvc, referenceMigrationSvc)
 		coinIntakeSvc := services.NewCoinIntakeService(intakeDraftRepo, d.coinRepo, d.agentProxy, d.settingsSvc).WithCoinService(coinSvc)
 		coinIntakeHandler := handlers.NewCoinIntakeHandler(coinIntakeSvc, d.logger)
@@ -65,11 +64,6 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.POST("/references/migrate-legacy", coinReferenceHandler.MigrateLegacy)
 		protected.POST("/coins/:id/purchase", coinHandler.Purchase)
 		protected.POST("/coins/:id/sell", coinHandler.Sell)
-		protected.GET("/coins/:id/shipment", shipmentHandler.GetForCoin)
-		protected.PUT("/coins/:id/shipment", shipmentHandler.UpsertForCoin)
-		protected.DELETE("/coins/:id/shipment", shipmentHandler.DeleteForCoin)
-		protected.PUT("/coins/:id/shipment/manual-override", shipmentHandler.SetManualOverride)
-		protected.POST("/coins/:id/shipment/sync", shipmentHandler.SyncForCoin)
 		protected.DELETE("/coins/:id", coinHandler.Delete)
 		protected.GET("/catalogs", catalogRegistryHandler.List)
 
@@ -314,28 +308,6 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/exchange-rates", handlers.NewExchangeRatesHandler(d.exchangeRates).Rates)
 		protected.POST("/coins/country-from-numista", d.writeRateLimit, coinCountryHandler.FillFromNumista)
 
-		auctionLotSvc := services.NewAuctionLotService(d.auctionLotRepo, d.coinRepo).
-			WithImageService(d.imageSvc).
-			WithMarketSignal(d.agentProxy, d.settingsSvc).
-			WithQuickAccessSupport(d.quickAccessSvc)
-		cngSvc := services.NewCNGAuctionService(d.logger)
-		auctionUserRepo := repository.NewUserRepository(database.DB)
-		auctionLotHandler := handlers.NewAuctionLotHandler(d.auctionLotRepo, auctionLotSvc, auctionUserRepo, cngSvc, d.logger).
-			WithShipmentSupport(d.shipmentSvc)
-		protected.GET("/auctions", auctionLotHandler.List)
-		protected.GET("/auctions/counts", auctionLotHandler.Counts)
-		protected.PUT("/auctions/bulk-link-event", auctionLotHandler.BulkLinkEvent)
-		protected.GET("/auctions/:id", auctionLotHandler.Get)
-		protected.POST("/auctions", auctionLotHandler.Create)
-		protected.PUT("/auctions/:id", auctionLotHandler.Update)
-		protected.PUT("/auctions/:id/status", auctionLotHandler.UpdateStatus)
-		protected.PUT("/auctions/:id/event", auctionLotHandler.LinkEvent)
-		protected.POST("/auctions/:id/convert", auctionLotHandler.ConvertToCoin)
-		protected.GET("/auctions/:id/bid-recommendation", auctionLotHandler.GetBidRecommendation)
-		protected.POST("/auctions/:id/market-signal", d.writeRateLimit, auctionLotHandler.GetMarketSignal)
-		protected.DELETE("/auctions/:id", auctionLotHandler.Delete)
-		protected.POST("/auctions/import", d.writeRateLimit, auctionLotHandler.ImportFromURL)
-
 		// Wishlist availability checking
 		availHandler := handlers.NewAvailabilityHandler(d.availSvc, d.availScheduler, d.availRepo, d.coinRepo).WithCycleRepo(d.availCycleRepo)
 		protected.POST("/wishlist/check-availability", availHandler.CheckAvailability)
@@ -454,29 +426,9 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.DELETE("/showcases/:id", showcaseHandler.DeleteShowcase)
 		protected.PUT("/showcases/:id/coins", showcaseHandler.SetShowcaseCoins)
 
-		// Calendar / Auction Event routes
-		calendarSvc := services.NewCalendarService(d.auctionEventRepo, d.quickAccessSvc)
-		calendarHandler := handlers.NewCalendarHandler(d.auctionEventRepo, d.auctionLotRepo, calendarSvc)
-		protected.GET("/calendar", calendarHandler.GetCalendar)
-		protected.GET("/calendar/events", calendarHandler.ListEvents)
-		protected.GET("/calendar/events/:id", calendarHandler.GetEvent)
-		protected.POST("/calendar/events", calendarHandler.CreateEvent)
-		protected.PUT("/calendar/events/:id", calendarHandler.UpdateEvent)
-		protected.DELETE("/calendar/events/:id", calendarHandler.DeleteEvent)
-
 		quickAccessHandler := handlers.NewQuickAccessHandler(d.quickAccessSvc, d.logger)
 		protected.GET("/quick-access", quickAccessHandler.List)
 		protected.PUT("/quick-access/:type/:id", d.writeRateLimit, quickAccessHandler.Pin)
 		protected.DELETE("/quick-access/:type/:id", d.writeRateLimit, quickAccessHandler.Unpin)
-
-		// Price Alerts & Bid Reminders
-		alertSvc := services.NewAuctionAlertService(d.priceAlertRepo, d.bidReminderRepo, d.auctionLotRepo)
-		alertHandler := handlers.NewAlertHandler(alertSvc)
-		protected.GET("/alerts", alertHandler.ListAlerts)
-		protected.POST("/alerts", alertHandler.CreateAlert)
-		protected.DELETE("/alerts/:id", alertHandler.DeleteAlert)
-		protected.GET("/reminders", alertHandler.ListReminders)
-		protected.POST("/reminders", alertHandler.CreateReminder)
-		protected.DELETE("/reminders/:id", alertHandler.DeleteReminder)
 	}
 }

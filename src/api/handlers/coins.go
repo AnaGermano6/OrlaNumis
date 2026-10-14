@@ -59,7 +59,6 @@ func nullableScalarFieldPresence(raw map[string]json.RawMessage) map[string]bool
 type CoinHandler struct {
 	repo        *repository.CoinRepository
 	svc         *services.CoinService
-	shipmentSvc *services.ShipmentService
 	logger      *services.Logger
 	settingsSvc *services.SettingsService
 	circulation *services.CoinCirculationService
@@ -80,12 +79,6 @@ func NewCoinHandler(repo *repository.CoinRepository, svc *services.CoinService, 
 // CoinCategories/CoinEras lists in addition to the built-in defaults.
 func (h *CoinHandler) WithSettingsSupport(settingsSvc *services.SettingsService) *CoinHandler {
 	h.settingsSvc = settingsSvc
-	return h
-}
-
-// WithShipmentSupport enables optional shipment creation on purchase flows.
-func (h *CoinHandler) WithShipmentSupport(shipmentSvc *services.ShipmentService) *CoinHandler {
-	h.shipmentSvc = shipmentSvc
 	return h
 }
 
@@ -204,18 +197,9 @@ func (h *CoinHandler) GetCoinOptions(c *gin.Context) {
 
 // PurchaseRequest holds optional details when purchasing a wishlist coin.
 type PurchaseRequest struct {
-	PurchasePrice    *float64               `json:"purchasePrice"`
-	PurchaseDate     string                 `json:"purchaseDate"`
-	PurchaseLocation string                 `json:"purchaseLocation"`
-	Shipment         *ShipmentAttachRequest `json:"shipment,omitempty"`
-}
-
-// ShipmentAttachRequest allows optional shipment creation in purchase/conversion flows.
-type ShipmentAttachRequest struct {
-	Carrier           string `json:"carrier"`
-	TrackingNumber    string `json:"trackingNumber"`
-	Notes             string `json:"notes"`
-	ManualCarrierName string `json:"manualCarrierName,omitempty"`
+	PurchasePrice    *float64 `json:"purchasePrice"`
+	PurchaseDate     string   `json:"purchaseDate"`
+	PurchaseLocation string   `json:"purchaseLocation"`
 }
 
 // List returns a paginated list of coins for the authenticated user.
@@ -731,19 +715,6 @@ func (h *CoinHandler) Purchase(c *gin.Context) {
 	if err := h.svc.PurchaseCoin(coin, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark as purchased"})
 		return
-	}
-
-	if req.Shipment != nil && h.shipmentSvc != nil {
-		if _, err := h.shipmentSvc.UpsertShipmentForCoin(
-			userID,
-			coin.ID,
-			models.ShipmentCarrier(req.Shipment.Carrier),
-			req.Shipment.TrackingNumber,
-			req.Shipment.Notes,
-			req.Shipment.ManualCarrierName,
-		); err != nil {
-			h.logger.Warn("coins", "Shipment attach failed for purchased coin %d user %d: %v", coin.ID, userID, err)
-		}
 	}
 
 	c.JSON(http.StatusOK, coin)

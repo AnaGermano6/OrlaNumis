@@ -4,19 +4,13 @@
 import { t } from '@/i18n'
 
 export interface CoinDetailSection {
-  id: 'shipment' | 'journal' | 'notes' | 'actions' | 'analysis' | 'health' | 'valuation'
+  id: 'journal' | 'notes' | 'actions' | 'analysis' | 'health' | 'valuation'
   title: string
   description: string
   route: (coinId: number) => string
 }
 
 export const COIN_DETAIL_SECTIONS: Record<string, CoinDetailSection> = {
-  shipment: {
-    id: 'shipment',
-    get title() { return t('coinDetail.sections.shipment.title') },
-    get description() { return t('coinDetail.sections.shipment.description') },
-    route: (coinId: number) => `/coin/${coinId}/shipment`,
-  },
   journal: {
     id: 'journal',
     get title() { return t('coinDetail.sections.journal.title') },
@@ -55,5 +49,4 @@ export const COIN_DETAIL_SECTIONS: Record<string, CoinDetailSection> = {
   },
 }
 
-// Shipment tracking is not used in this collection: its page is left out of the menu and the swipes.
 export const SECTION_ORDER: CoinDetailSection['id'][] = ['journal', 'health', 'notes', 'actions', 'analysis', 'valuation']

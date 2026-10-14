@@ -206,10 +206,8 @@ GET    /api/wishlist/search-alerts/:id/runs # List alert run history
 - [Collection Management](collection-management.md) — Browse owned coins
 - [Coin Details](coin-details.md) — Full metadata for each coin
 - [AI Coin Search Agent](ai-search-agent.md) — Deep dive on agent capabilities
-- [Auction Tracking](auction-tracking.md) — Track NumisBids and CNG Auctions lots instead
 - [Collection Statistics](statistics.md) — Portfolio analytics
 
 ## See Also
 
 - [AI Coin Search Agent](ai-search-agent.md) — How the search agent works
-- [Auction Tracking](auction-tracking.md) — Similar feature for auction lots

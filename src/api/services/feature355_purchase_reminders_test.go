@@ -50,7 +50,7 @@ func setupFeature355DB(t *testing.T) *gorm.DB {
 		&models.CatalogRegistry{}, &models.AppSetting{},
 		&models.MintLocation{}, &models.StorageLocation{},
 		&models.CoinJournal{}, &models.CoinValueHistory{},
-		&models.CoinComment{}, &models.AvailabilityResult{}, &models.AuctionLot{},
+		&models.CoinComment{}, &models.AvailabilityResult{},
 		&models.Tag{}, &models.CoinTag{},
 		&models.CoinSet{}, &models.CoinSetMembership{},
 		&models.Showcase{}, &models.ShowcaseCoin{},

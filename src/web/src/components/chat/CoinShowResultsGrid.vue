@@ -32,14 +32,6 @@
         <div v-if="show.notableDealers?.length" class="flex flex-wrap gap-1">
           <span v-for="(dealer, k) in show.notableDealers" :key="k" class="chip-sm">{{ dealer }}</span>
         </div>
-        <button
-          class="btn btn-ghost btn-xs mt-2 flex disabled:cursor-default disabled:opacity-60"
-          :disabled="savedShows.has(showKey(show)) || savingShow === showKey(show)"
-          @click="$emit('save-show', show)"
-        >
-          <CalendarPlus :size="13" />
-          {{ savedShows.has(showKey(show)) ? t('chat.shows.saved') : savingShow === showKey(show) ? t('common.saving') : t('chat.shows.saveToCalendar') }}
-        </button>
       </div>
     </div>
   </div>
@@ -47,24 +39,13 @@
 
 <script setup lang="ts">
 import type { CoinShow } from '@/types'
-import { Calendar, MapPin, Ticket, CalendarPlus, ExternalLink } from 'lucide-vue-next'
+import { Calendar, MapPin, Ticket, ExternalLink } from 'lucide-vue-next'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import { sanitizeExternalUrl } from '@/composables/useSafeExternalLink'
-import { t } from '@/i18n'
 
 defineProps<{
   shows: CoinShow[]
-  savedShows: Set<string>
-  savingShow: string | null
 }>()
-
-defineEmits<{
-  'save-show': [show: CoinShow]
-}>()
-
-function showKey(show: CoinShow): string {
-  return `${show.name}|${show.dates}`
-}
 
 function safeShowUrl(url: string | null | undefined): string | null {
   return sanitizeExternalUrl(url)

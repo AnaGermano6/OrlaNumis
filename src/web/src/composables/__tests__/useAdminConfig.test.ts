@@ -25,6 +25,13 @@ describe('useAdminConfig', () => {
         PriceAlertCheckEnabled: 'true',
         PriceAlertCheckStartTime: '01:00',
         PriceAlertCheckInterval: '15',
+        // Left by retired features in an older database.
+        AuctionAlertsCheckEnabled: 'true',
+        AuctionEndingCheckEnabled: 'true',
+        ShipmentSyncEnabled: 'true',
+        USPSAPIBaseURL: 'https://usps.example',
+        FedExClientID: 'client',
+        UPSClientSecret: 'secret',
       },
     })
     mocks.getAppSettingDefaults.mockResolvedValue({ data: {} })
@@ -35,23 +42,17 @@ describe('useAdminConfig', () => {
     mocks.updateAppSettings.mockResolvedValue({ data: {} })
   })
 
-  it('saves auction alert scheduler keys expected by the backend scheduler', async () => {
+  it('does not save back the settings of retired features', async () => {
     const config = useAdminConfig()
 
     await config.loadSettings()
-    config.settings.value.AuctionAlertsCheckEnabled = 'true'
-    config.settings.value.AuctionAlertsCheckStartTime = '09:30'
-    config.settings.value.AuctionAlertsCheckInterval = '120'
-
     await config.saveSettings()
 
     const entries = mocks.updateAppSettings.mock.calls[0]?.[0] as Array<{ key: string; value: string }>
-    expect(entries).toEqual(expect.arrayContaining([
-      { key: 'AuctionAlertsCheckEnabled', value: 'true' },
-      { key: 'AuctionAlertsCheckStartTime', value: '09:30' },
-      { key: 'AuctionAlertsCheckInterval', value: '120' },
-    ]))
-    expect(entries.some(entry => entry.key.startsWith('PriceAlertCheck'))).toBe(false)
+    expect(entries.length).toBeGreaterThan(0)
+    for (const retired of ['PriceAlertCheck', 'AuctionAlertsCheck', 'AuctionEndingCheck', 'ShipmentSync', 'USPS', 'FedEx', 'UPSClient']) {
+      expect(entries.some(entry => entry.key.startsWith(retired))).toBe(false)
+    }
 
     config.cleanup()
   })

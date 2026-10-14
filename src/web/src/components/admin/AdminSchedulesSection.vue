@@ -28,27 +28,6 @@
       @save="emit('save')"
     />
 
-    <AdminAuctionEndingSchedule
-      :settings="settings"
-      :settings-saving="settingsSaving"
-      :settings-msg="auctionSettingsMsg"
-      :settings-error="auctionSettingsError"
-      @save="emit('save')"
-      @update:settings-msg="emit('update:auctionSettingsMsg', $event)"
-      @update:settings-error="emit('update:auctionSettingsError', $event)"
-    />
-
-    <AdminAuctionAlertReminderSchedule
-      :settings="settings"
-      :settings-saving="settingsSaving"
-      :settings-msg="alertReminderSettingsMsg"
-      :settings-error="alertReminderSettingsError"
-      @save="emit('save')"
-      @update:settings-msg="emit('update:alertReminderSettingsMsg', $event)"
-      @update:settings-error="emit('update:alertReminderSettingsError', $event)"
-    />
-
-
     <AdminValuationSchedule
       :settings="settings"
       :settings-saving="settingsSaving"
@@ -84,8 +63,6 @@
 </template>
 
 <script setup lang="ts">
-import AdminAuctionAlertReminderSchedule from '@/components/admin/schedules/AdminAuctionAlertReminderSchedule.vue'
-import AdminAuctionEndingSchedule from '@/components/admin/schedules/AdminAuctionEndingSchedule.vue'
 import AdminAvailabilitySchedule from '@/components/admin/schedules/AdminAvailabilitySchedule.vue'
 import AdminWishlistSearchAlertSchedule from '@/components/admin/schedules/AdminWishlistSearchAlertSchedule.vue'
 import AdminCoinOfDaySchedule from '@/components/admin/schedules/AdminCoinOfDaySchedule.vue'
@@ -101,10 +78,6 @@ defineProps<{
   settingsSaving: boolean
   availSettingsMsg: string
   availSettingsError: boolean
-  auctionSettingsMsg: string
-  auctionSettingsError: boolean
-  alertReminderSettingsMsg: string
-  alertReminderSettingsError: boolean
   healthSettingsMsg: string
   healthSettingsError: boolean
   valSettingsMsg: string
@@ -115,10 +88,6 @@ const emit = defineEmits<{
   save: []
   'update:valSettingsMsg': [val: string]
   'update:valSettingsError': [val: boolean]
-  'update:auctionSettingsMsg': [val: string]
-  'update:auctionSettingsError': [val: boolean]
-  'update:alertReminderSettingsMsg': [val: string]
-  'update:alertReminderSettingsError': [val: boolean]
   'update:availSettingsMsg': [val: string]
   'update:availSettingsError': [val: boolean]
   'update:healthSettingsMsg': [val: string]

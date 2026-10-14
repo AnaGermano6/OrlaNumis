@@ -47,7 +47,6 @@ Custom tags provide flexible organization for your coins, allowing you to create
 
 - Wishlist coins can be tagged
 - Sold coins can be tagged
-- Auction lots cannot be tagged
 
 ## API Endpoints
 

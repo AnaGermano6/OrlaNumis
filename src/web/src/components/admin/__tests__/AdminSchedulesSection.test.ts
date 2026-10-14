@@ -1,4 +1,4 @@
-﻿import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
+﻿import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AdminSchedulesSection from '../AdminSchedulesSection.vue'
 
@@ -13,10 +13,6 @@ const mocks = vi.hoisted(() => ({
   getValuationRunDetail: vi.fn(),
   triggerValuation: vi.fn(),
   cancelValuationRun: vi.fn(),
-  getAuctionEndingRuns: vi.fn(),
-  triggerAuctionEndingCheck: vi.fn(),
-  getAuctionAlertReminderRuns: vi.fn(),
-  triggerAuctionAlertReminderCheck: vi.fn(),
   triggerCollectionHealthSnapshots: vi.fn(),
   getCollectionHealthSnapshotRuns: vi.fn(),
   getCollectionHealthSnapshotStatus: vi.fn(),
@@ -39,34 +35,12 @@ describe('AdminSchedulesSection', () => {
     mocks.getAvailabilityCycleDetail.mockResolvedValue({ data: { children: [] } })
     mocks.getAdminWishlistSearchAlertRuns.mockResolvedValue({ data: { runs: [], total: 0, page: 1, limit: 5 } })
     mocks.getValuationRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
-    mocks.getAuctionEndingRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
     mocks.getCoinOfDayRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
     mocks.getCollectionHealthSnapshotRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
     mocks.getCollectionHealthSnapshotStatus.mockResolvedValue({
       data: { name: 'collection-health', enabled: true, isRunning: false, nextRunIn: 49320000000000 },
     })
     mocks.getCoinOfDayRunDetail.mockResolvedValue({ data: { id: 1, status: 'queued', picked: 0, skipped: 0, errors: 0 } })
-    mocks.getAuctionAlertReminderRuns.mockResolvedValue({
-      data: {
-        runs: [{
-          id: 37,
-          triggerType: 'manual',
-          triggerUserId: 1,
-          status: 'success',
-          lotsChecked: 4,
-          priceAlertsTriggered: 2,
-          bidRemindersSent: 1,
-          durationMs: 1200,
-          startedAt: '2026-07-02T12:00:00Z',
-          completedAt: '2026-07-02T12:00:01Z',
-          createdAt: '2026-07-02T12:00:00Z',
-        }],
-        total: 1,
-      },
-    })
-    mocks.triggerAuctionAlertReminderCheck.mockResolvedValue({
-      data: { runId: 38, priceAlertsTriggered: 3, bidRemindersSent: 2, status: 'success', durationMs: 1500 },
-    })
   })
 
   it('renders every schedule workflow and loads each run history', async () => {
@@ -83,8 +57,6 @@ describe('AdminSchedulesSection', () => {
     for (const heading of [
       'Wishlist Availability Check',
       'Wishlist Search Alerts',
-      'Auction Ending Alerts',
-      'Auction Price Alerts and Bid Reminders',
       'Collection Valuation',
       'Collection Health Snapshots',
       'Coin of the Day',
@@ -95,11 +67,10 @@ describe('AdminSchedulesSection', () => {
 
     expect(mocks.getAvailabilityRuns).toHaveBeenCalled()
     expect(mocks.getAdminWishlistSearchAlertRuns).toHaveBeenCalledWith(1, 5)
-    expect(mocks.getAuctionEndingRuns).toHaveBeenCalled()
-    expect(mocks.getAuctionAlertReminderRuns).toHaveBeenCalled()
-    // The ParcelApp tracking and the watch-bid digest (a Pushover push) were removed.
-    expect(wrapper.text()).not.toContain('ParcelApp')
-    expect(wrapper.text()).not.toContain('Auction Watch Bid Digest')
+    // ParcelApp tracking, the watch-bid digest and the auction alerts were removed.
+    for (const removed of ['ParcelApp', 'Auction Watch Bid Digest', 'Auction Ending Alerts', 'Auction Price Alerts']) {
+      expect(wrapper.text()).not.toContain(removed)
+    }
     expect(mocks.getValuationRuns).toHaveBeenCalled()
     expect(mocks.getCollectionHealthSnapshotRuns).toHaveBeenCalled()
     expect(mocks.getCoinOfDayRuns).toHaveBeenCalled()
@@ -121,35 +92,12 @@ describe('AdminSchedulesSection', () => {
     const availabilityHistory = text.indexOf('Availability Run History')
     const searchSettings = text.indexOf('Wishlist Search Alerts')
     const searchHistory = text.indexOf('Wishlist Search Alert Run History')
-    const auctionSettings = text.indexOf('Auction Ending Alerts')
+    const valuationSettings = text.indexOf('Collection Valuation')
 
     expect(availabilitySettings).toBeLessThan(availabilityHistory)
     expect(availabilityHistory).toBeLessThan(searchSettings)
     expect(searchSettings).toBeLessThan(searchHistory)
-    expect(searchHistory).toBeLessThan(auctionSettings)
-  })
-
-  it('shows auction alert and reminder run history and triggers a manual run', async () => {
-    const wrapper = mount(AdminSchedulesSection, {
-      props: buildProps(),
-      global: {
-        stubs: {
-          SafeExternalLink: { template: '<a><slot /></a>' },
-        },
-      },
-    })
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('Auction Price Alert and Reminder Run History')
-    expect(wrapper.text()).toContain('2')
-    expect(wrapper.text()).toContain('1')
-
-    const runButtons = wrapper.findAll('button').filter(button => button.text() === 'Run Now')
-    await runButtons[2]?.trigger('click')
-    await flushPromises()
-
-    expect(mocks.triggerAuctionAlertReminderCheck).toHaveBeenCalledTimes(1)
-    expect(wrapper.emitted('update:alertReminderSettingsMsg')?.at(-1)?.[0]).toContain('3 alerts, 2 reminders')
+    expect(searchHistory).toBeLessThan(valuationSettings)
   })
 
   it('shows collection health snapshot run history and triggers a manual run', async () => {
@@ -191,75 +139,29 @@ describe('AdminSchedulesSection', () => {
     expect(wrapper.text()).toContain('Enabled')
     expect(wrapper.text()).toContain('13h 42m')
 
-    // Run Now buttons in template order: Availability(0), AuctionEnding(1),
-    // AlertReminder(2), Valuation(3), Health(4), CoinOfDay(5).
+    // Run Now buttons in template order: Availability(0), Valuation(1),
+    // Health(2), CoinOfDay(3).
     const runButtons = wrapper.findAll('button').filter(button => button.text() === 'Run Now')
-    await runButtons[4]?.trigger('click')
+    await runButtons[2]?.trigger('click')
     await flushPromises()
 
     expect(mocks.triggerCollectionHealthSnapshots).toHaveBeenCalledTimes(1)
   })
 
-  it('binds price alert scheduler controls to backend AuctionAlerts setting keys', async () => {
-    const props = buildProps()
-    const wrapper = mount(AdminSchedulesSection, {
-      props,
-      global: {
-        stubs: {
-          SafeExternalLink: { template: '<a><slot /></a>' },
-        },
-      },
-    })
-    await flushPromises()
-
-    // The Auction Price Alerts/Reminders interval input is the only one with min="15";
-    // use it to locate the enclosing settings block for that section.
-    const intervalMarker = wrapper.find('input[type="number"][min="15"]')
-    expect(intervalMarker.exists()).toBe(true)
-    const sectionEl = intervalMarker.element.closest('.mb-4')
-    expect(sectionEl).toBeTruthy()
-    const alertReminderSection = new DOMWrapper(sectionEl as Element)
-    const enabled = alertReminderSection.find('input[type="checkbox"]')
-    const time = alertReminderSection.find('input[type="time"]')
-    const interval = alertReminderSection.find('input[type="number"]')
-
-    await enabled?.setValue(false)
-    await time?.setValue('09:30')
-    await interval?.setValue('120')
-
-    expect(props.settings.AuctionAlertsCheckEnabled).toBe('false')
-    expect(props.settings.AuctionAlertsCheckStartTime).toBe('09:30')
-    expect(String(props.settings.AuctionAlertsCheckInterval)).toBe('120')
-    expect('PriceAlertCheckEnabled' in props.settings).toBe(false)
-    expect('PriceAlertCheckStartTime' in props.settings).toBe(false)
-    expect('PriceAlertCheckInterval' in props.settings).toBe(false)
-  })
 })
 
 function buildProps() {
   return {
     settings: {
-      AuctionEndingCheckEnabled: 'false',
-      AuctionEndingCheckStartTime: '08:00',
-      AuctionEndingCheckInterval: '1440',
-      AuctionAlertsCheckEnabled: 'true',
-      AuctionAlertsCheckStartTime: '08:00',
-      AuctionAlertsCheckInterval: '60',
       WishlistCheckEnabled: 'true',
       WishlistCheckStartTime: '08:00',
       WishlistCheckInterval: '10080',
       WishlistSearchAlertsCheckEnabled: 'true',
       WishlistSearchAlertsCheckStartTime: '08:00',
-      ParcelAppEnabled: 'true',
-      ShipmentSyncInterval: '20',
     },
     settingsSaving: false,
     availSettingsMsg: '',
     availSettingsError: false,
-    auctionSettingsMsg: '',
-    auctionSettingsError: false,
-    alertReminderSettingsMsg: '',
-    alertReminderSettingsError: false,
     healthSettingsMsg: '',
     healthSettingsError: false,
     valSettingsMsg: '',

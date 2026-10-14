@@ -75,12 +75,6 @@ const (
 	SettingValuationCheckInterval             = "ValuationCheckIntervalDays"
 	SettingValuationCheckStartTime            = "ValuationCheckStartTime"
 	SettingValuationMaxCoins                  = "ValuationMaxCoins"
-	SettingAuctionEndingCheckEnabled          = "AuctionEndingCheckEnabled"
-	SettingAuctionEndingCheckInterval         = "AuctionEndingCheckInterval"
-	SettingAuctionEndingCheckStartTime        = "AuctionEndingCheckStartTime"
-	SettingAuctionAlertsCheckEnabled          = "AuctionAlertsCheckEnabled"
-	SettingAuctionAlertsCheckInterval         = "AuctionAlertsCheckInterval"
-	SettingAuctionAlertsCheckStartTime        = "AuctionAlertsCheckStartTime"
 	SettingCoinOfDayEnabled                   = "CoinOfDayEnabled"
 	SettingCoinOfDayStartTime                 = "CoinOfDayStartTime"
 	SettingCoinOfDayTimezone                  = "CoinOfDayTimezone"
@@ -96,23 +90,6 @@ const (
 	SettingCoinEras                           = "CoinEras"
 	SettingCoinCategoryLabelsPtPT             = "CoinCategoryLabelsPtPT"
 	SettingCoinEraLabelsPtPT                  = "CoinEraLabelsPtPT"
-	SettingUSPSAPIBaseURL                     = "USPSAPIBaseURL"
-	SettingUSPSAPIKey                         = "USPSAPIKey"
-	SettingUSPSAPIKeyHeader                   = "USPSAPIKeyHeader"
-	SettingUPSAPIBaseURL                      = "UPSAPIBaseURL"
-	SettingUPSTokenURL                        = "UPSTokenURL"
-	SettingUPSClientID                        = "UPSClientID"
-	SettingUPSClientSecret                    = "UPSClientSecret"
-	SettingUPSScope                           = "UPSScope"
-	SettingFedExAPIBaseURL                    = "FedExAPIBaseURL"
-	SettingFedExTokenURL                      = "FedExTokenURL"
-	SettingFedExClientID                      = "FedExClientID"
-	SettingFedExClientSecret                  = "FedExClientSecret"
-	SettingFedExScope                         = "FedExScope"
-	SettingShipmentSyncEnabled                = "ShipmentSyncEnabled"
-	SettingShipmentSyncInterval               = "ShipmentSyncInterval"
-	SettingShipmentSyncStartTime              = "ShipmentSyncStartTime"
-	SettingShipmentSyncBatchSize              = "ShipmentSyncBatchSize"
 
 	// 344-deep-agentic-coin-identification settings (data-model.md §8).
 	SettingDeepIdentificationEnabled            = "DeepIdentificationEnabled"
@@ -210,12 +187,6 @@ var settingDefaults = map[string]string{
 	SettingValuationCheckInterval:             "7",
 	SettingValuationCheckStartTime:            "03:00",
 	SettingValuationMaxCoins:                  "50",
-	SettingAuctionEndingCheckEnabled:          "false",
-	SettingAuctionEndingCheckInterval:         "1440",
-	SettingAuctionEndingCheckStartTime:        "08:00",
-	SettingAuctionAlertsCheckEnabled:          "false",
-	SettingAuctionAlertsCheckInterval:         "60",
-	SettingAuctionAlertsCheckStartTime:        "08:00",
 	SettingCoinOfDayEnabled:                   "false",
 	SettingCoinOfDayStartTime:                 "07:00",
 	SettingCoinOfDayTimezone:                  "", // empty = ScheduleTimezone, then server local time
@@ -231,23 +202,6 @@ var settingDefaults = map[string]string{
 	SettingCoinEras:                           "ancient\nmedieval\nmodern",
 	SettingCoinCategoryLabelsPtPT:             "",
 	SettingCoinEraLabelsPtPT:                  "",
-	SettingUSPSAPIBaseURL:                     "",
-	SettingUSPSAPIKey:                         "",
-	SettingUSPSAPIKeyHeader:                   "X-API-Key",
-	SettingUPSAPIBaseURL:                      "",
-	SettingUPSTokenURL:                        "",
-	SettingUPSClientID:                        "",
-	SettingUPSClientSecret:                    "",
-	SettingUPSScope:                           "",
-	SettingFedExAPIBaseURL:                    "",
-	SettingFedExTokenURL:                      "",
-	SettingFedExClientID:                      "",
-	SettingFedExClientSecret:                  "",
-	SettingFedExScope:                         "",
-	SettingShipmentSyncEnabled:                "false",
-	SettingShipmentSyncInterval:               "20",
-	SettingShipmentSyncStartTime:              "09:00",
-	SettingShipmentSyncBatchSize:              "100",
 
 	// 344-deep-agentic-coin-identification defaults (data-model.md §8).
 	// Enabled defaults to false: this is a feature-flagged, safe-by-default

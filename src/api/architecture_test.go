@@ -11,7 +11,6 @@ import (
 )
 
 var allowedServiceGORMFiles = map[string]string{
-	"auction_lot_service.go":         "transaction orchestration only; queries stay in repositories via WithTx",
 	"coin_intake_service.go":         "transaction orchestration only; queries stay in repositories via WithTx",
 	"coin_service.go":                "transaction orchestration only; queries stay in repositories via WithTx",
 	"collection_tools_service.go":    "legacy proposal commit transaction still performs field/tag writes; tracked boundary debt",

@@ -27,7 +27,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		&models.MintLocation{},
 		&models.StorageLocation{}, &models.CoinJournal{},
 		&models.CoinValueHistory{}, &models.CoinComment{},
-		&models.AvailabilityResult{}, &models.AuctionLot{},
+		&models.AvailabilityResult{},
 		&models.Tag{}, &models.CoinTag{},
 		&models.CoinSet{}, &models.CoinSetMembership{},
 		&models.Showcase{}, &models.ShowcaseCoin{},

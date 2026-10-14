@@ -50,8 +50,7 @@ func Connect(dbPath string) {
 	// opened), so they are encoded in the DSN rather than exec'd once.
 	//
 	// This is a global change: every scheduler in this process (deep
-	// identification, valuation, health, auction, coin-of-day, shipments,
-	// wishlist, ...) shares this one *gorm.DB/*sql.DB. Making every write
+	// identification, valuation, health, coin-of-day, wishlist, ...) shares this one *gorm.DB/*sql.DB. Making every write
 	// transaction acquire its lock immediately plus wait up to 5s under
 	// contention is strictly safer for all of them than the previous
 	// fail-fast default - none of those schedulers currently retry a bare
@@ -87,7 +86,7 @@ func Connect(dbPath string) {
 	// optional columns (343-nomisma-mint-authority-linking). SQLite
 	// AutoMigrate adds them additively with no backfill and no destructive
 	// migration - every existing row simply starts unlinked.
-	err = DB.AutoMigrate(&models.User{}, &models.CollectorProfile{}, &models.StorageLocation{}, &models.MintLocation{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CatalogRegistry{}, &models.AppSetting{}, &models.ApiKey{}, &models.RefreshToken{}, &models.WebAuthnCredential{}, &models.SecurityEvent{}, &models.IPRule{}, &models.OIDCProvider{}, &models.ExternalIdentity{}, &models.OIDCAuthState{}, &models.CoinJournal{}, &models.CoinIntakeDraft{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}, &models.AgentConversation{}, &models.CollectionUpdateProposal{}, &models.SetBuilderRun{}, &models.SetProposal{}, &models.ProposalSlot{}, &models.Follow{}, &models.CoinComment{}, &models.CoinValueHistory{}, &models.Shipment{}, &models.ShipmentEvent{}, &models.AuctionLot{}, &models.AvailabilityCycle{}, &models.AvailabilityRun{}, &models.AvailabilityResult{}, &models.WishlistSearchAlert{}, &models.AlertRun{}, &models.AlertCandidate{}, &models.CandidateProvenance{}, &models.CandidateReviewAction{}, &models.Notification{}, &models.AIJob{}, &models.Tag{}, &models.CoinTag{}, &models.CoinSet{}, &models.CoinSetMembership{}, &models.CoinSetTarget{}, &models.CoinSetChecklistKey{}, &models.CoinSetValuationSnapshot{}, &models.CoinSetMilestoneAlert{}, &models.SmartCriteriaTemplate{}, &models.CoinRecommendation{}, &models.RecommendationFeedback{}, &models.Showcase{}, &models.ShowcaseCoin{}, &models.AuctionEvent{}, &models.QuickAccessPin{}, &models.PriceAlert{}, &models.BidReminder{}, &models.AuctionAlertRun{}, &models.ValuationRun{}, &models.ValuationResult{}, &models.AuctionEndingRun{}, &models.FeaturedCoin{}, &models.CoinOfDayRun{}, &models.CollectionHealthSnapshot{}, &models.CollectionHealthSnapshotRun{}, &models.RomanImperialFigure{}, &models.RomanImperialFigureHighlight{}, &models.DeepIdentificationEvent{}, &models.DeepIdentificationProviderRun{}, &models.DeepIdentificationArtifact{}, &models.PurchaseReminder{}, &models.CoinCopilotThread{}, &models.CoinCopilotRun{}, &models.CoinCopilotCheckpoint{}, &models.CoinCopilotEvent{}, &models.CoinCopilotResumeRequest{})
+	err = DB.AutoMigrate(&models.User{}, &models.CollectorProfile{}, &models.StorageLocation{}, &models.MintLocation{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CatalogRegistry{}, &models.AppSetting{}, &models.ApiKey{}, &models.RefreshToken{}, &models.WebAuthnCredential{}, &models.SecurityEvent{}, &models.IPRule{}, &models.OIDCProvider{}, &models.ExternalIdentity{}, &models.OIDCAuthState{}, &models.CoinJournal{}, &models.CoinIntakeDraft{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}, &models.AgentConversation{}, &models.CollectionUpdateProposal{}, &models.SetBuilderRun{}, &models.SetProposal{}, &models.ProposalSlot{}, &models.Follow{}, &models.CoinComment{}, &models.CoinValueHistory{}, &models.AvailabilityCycle{}, &models.AvailabilityRun{}, &models.AvailabilityResult{}, &models.WishlistSearchAlert{}, &models.AlertRun{}, &models.AlertCandidate{}, &models.CandidateProvenance{}, &models.CandidateReviewAction{}, &models.Notification{}, &models.AIJob{}, &models.Tag{}, &models.CoinTag{}, &models.CoinSet{}, &models.CoinSetMembership{}, &models.CoinSetTarget{}, &models.CoinSetChecklistKey{}, &models.CoinSetValuationSnapshot{}, &models.CoinSetMilestoneAlert{}, &models.SmartCriteriaTemplate{}, &models.CoinRecommendation{}, &models.RecommendationFeedback{}, &models.Showcase{}, &models.ShowcaseCoin{}, &models.QuickAccessPin{}, &models.ValuationRun{}, &models.ValuationResult{}, &models.FeaturedCoin{}, &models.CoinOfDayRun{}, &models.CollectionHealthSnapshot{}, &models.CollectionHealthSnapshotRun{}, &models.RomanImperialFigure{}, &models.RomanImperialFigureHighlight{}, &models.DeepIdentificationEvent{}, &models.DeepIdentificationProviderRun{}, &models.DeepIdentificationArtifact{}, &models.PurchaseReminder{}, &models.CoinCopilotThread{}, &models.CoinCopilotRun{}, &models.CoinCopilotCheckpoint{}, &models.CoinCopilotEvent{}, &models.CoinCopilotResumeRequest{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
@@ -182,8 +181,6 @@ func backfillRequiredDefaults(db *gorm.DB) error {
 		args []interface{}
 	}{
 		{"API key capabilities", "UPDATE api_keys SET capabilities='read' WHERE capabilities IS NULL OR capabilities=''", nil},
-		{"auction source", "UPDATE auction_lots SET source='numisbids' WHERE source IS NULL OR source=''", nil},
-		{"auction source URL", "UPDATE auction_lots SET source_url=numis_bids_url WHERE (source_url IS NULL OR source_url='') AND numis_bids_url IS NOT NULL AND numis_bids_url<>''", nil},
 		{"featured coin source", "UPDATE featured_coins SET source_type='owned' WHERE source_type IS NULL OR source_type=''", nil},
 		{"coin of day wishlist preference", "UPDATE users SET coin_of_day_include_wishlist=1 WHERE coin_of_day_include_wishlist IS NULL", nil},
 		{"completed identification retention", "UPDATE deep_identification_jobs SET expires_at=? WHERE status IN (?, ?)", []interface{}{models.DeepIdentificationNoExpirySentinel, models.DeepJobStatusCompleted, models.DeepJobStatusPartial}},
@@ -204,20 +201,6 @@ func migrateFeature362(db *gorm.DB) error {
 
 func migrateQuickAccessPins(db *gorm.DB) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Exec(
-			"UPDATE auction_events SET origin = ? WHERE id IN (SELECT DISTINCT event_id FROM auction_lots WHERE event_id IS NOT NULL)",
-			models.AuctionEventOriginAuction,
-		).Error; err != nil {
-			return fmt.Errorf("backfill auction event origins: %w", err)
-		}
-		if err := tx.Exec(
-			"UPDATE auction_events SET origin = ? WHERE origin IS NULL OR origin = '' OR origin NOT IN (?, ?)",
-			models.AuctionEventOriginManual,
-			models.AuctionEventOriginManual,
-			models.AuctionEventOriginAuction,
-		).Error; err != nil {
-			return fmt.Errorf("backfill manual event origins: %w", err)
-		}
 		if err := tx.Exec(`
 			INSERT INTO quick_access_pins (user_id, target_type, target_id, pinned_at, created_at)
 			SELECT user_id, ?, id, pinned_at, pinned_at

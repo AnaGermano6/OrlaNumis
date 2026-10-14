@@ -110,19 +110,6 @@
           :public-app-url="settings.PublicAppURL ?? ''"
           :dealer-search-sources="settings.DealerSearchSources ?? ''"
           :auction-search-sources="settings.AuctionSearchSources ?? ''"
-          :usps-api-base-url="settings.USPSAPIBaseURL ?? ''"
-          :usps-api-key="settings.USPSAPIKey ?? ''"
-          :usps-api-key-header="settings.USPSAPIKeyHeader ?? ''"
-          :ups-api-base-url="settings.UPSAPIBaseURL ?? ''"
-          :ups-token-url="settings.UPSTokenURL ?? ''"
-          :ups-client-id="settings.UPSClientID ?? ''"
-          :ups-client-secret="settings.UPSClientSecret ?? ''"
-          :ups-scope="settings.UPSScope ?? ''"
-          :fedex-api-base-url="settings.FedExAPIBaseURL ?? ''"
-          :fedex-token-url="settings.FedExTokenURL ?? ''"
-          :fedex-client-id="settings.FedExClientID ?? ''"
-          :fedex-client-secret="settings.FedExClientSecret ?? ''"
-          :fedex-scope="settings.FedExScope ?? ''"
           :log-level="settings.LogLevel ?? ''"
           :log-levels="LOG_LEVELS"
           :saving="settingsSaving"
@@ -171,10 +158,6 @@
           :settings-saving="settingsSaving"
           :avail-settings-msg="availSettingsMsg"
           :avail-settings-error="availSettingsError"
-          :auction-settings-msg="auctionSettingsMsg"
-          :auction-settings-error="auctionSettingsError"
-          :alert-reminder-settings-msg="alertReminderSettingsMsg"
-          :alert-reminder-settings-error="alertReminderSettingsError"
           :health-settings-msg="healthSettingsMsg"
           :health-settings-error="healthSettingsError"
           :val-settings-msg="valSettingsMsg"
@@ -184,10 +167,6 @@
           @update:avail-settings-error="availSettingsError = $event"
           @update:val-settings-msg="valSettingsMsg = $event"
           @update:val-settings-error="valSettingsError = $event"
-          @update:auction-settings-msg="auctionSettingsMsg = $event"
-          @update:auction-settings-error="auctionSettingsError = $event"
-          @update:alert-reminder-settings-msg="alertReminderSettingsMsg = $event"
-          @update:alert-reminder-settings-error="alertReminderSettingsError = $event"
           @update:health-settings-msg="healthSettingsMsg = $event"
           @update:health-settings-error="healthSettingsError = $event"
         />
@@ -377,7 +356,7 @@ const {
   anthropicTesting, anthropicTestResult, anthropicTestOk, anthropicModels,
   searxngTesting, searxngTestResult, searxngTestOk,
   coinSearchPromptDefault, coinShowsPromptDefault, valuationPromptDefault,
-  availSettingsMsg, availSettingsError, auctionSettingsMsg, auctionSettingsError, alertReminderSettingsMsg, alertReminderSettingsError, healthSettingsMsg, healthSettingsError, valSettingsMsg, valSettingsError,
+  availSettingsMsg, availSettingsError, healthSettingsMsg, healthSettingsError, valSettingsMsg, valSettingsError,
   loadSettings, saveSettings,
   testOllamaConnection, testAnthropicConn, testSearxngConn,
   cleanup: cleanupAdminConfig,
@@ -460,19 +439,6 @@ function onSystemSave(payload: {
   publicAppUrl: string
   dealerSearchSources: string
   auctionSearchSources: string
-  uspsApiBaseUrl: string
-  uspsApiKey: string
-  uspsApiKeyHeader: string
-  upsApiBaseUrl: string
-  upsTokenUrl: string
-  upsClientId: string
-  upsClientSecret: string
-  upsScope: string
-  fedexApiBaseUrl: string
-  fedexTokenUrl: string
-  fedexClientId: string
-  fedexClientSecret: string
-  fedexScope: string
 }) {
   settings.value.NumistaAPIKey = payload.numistaApiKey
   settings.value.NumistaSearchTTLHours = payload.numistaSearchTTLHours
@@ -508,19 +474,6 @@ function onSystemSave(payload: {
   settings.value.PublicAppURL = payload.publicAppUrl
   settings.value.DealerSearchSources = payload.dealerSearchSources
   settings.value.AuctionSearchSources = payload.auctionSearchSources
-  settings.value.USPSAPIBaseURL = payload.uspsApiBaseUrl
-  settings.value.USPSAPIKey = payload.uspsApiKey
-  settings.value.USPSAPIKeyHeader = payload.uspsApiKeyHeader
-  settings.value.UPSAPIBaseURL = payload.upsApiBaseUrl
-  settings.value.UPSTokenURL = payload.upsTokenUrl
-  settings.value.UPSClientID = payload.upsClientId
-  settings.value.UPSClientSecret = payload.upsClientSecret
-  settings.value.UPSScope = payload.upsScope
-  settings.value.FedExAPIBaseURL = payload.fedexApiBaseUrl
-  settings.value.FedExTokenURL = payload.fedexTokenUrl
-  settings.value.FedExClientID = payload.fedexClientId
-  settings.value.FedExClientSecret = payload.fedexClientSecret
-  settings.value.FedExScope = payload.fedexScope
   saveSettings()
 }
 

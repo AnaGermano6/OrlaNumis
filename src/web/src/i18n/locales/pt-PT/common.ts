@@ -50,7 +50,6 @@ const messages: Messages['common'] = {
   confidenceLabel: 'confiança {level}',
   remove: 'Remover',
   add: 'Adicionar',
-  removing: 'A remover...',
   checking: 'A verificar...',
   date: 'Data',
   value: 'Valor',

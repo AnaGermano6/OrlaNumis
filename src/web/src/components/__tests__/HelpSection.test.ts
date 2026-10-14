@@ -38,12 +38,13 @@ describe('HelpSection', () => {
     const text = wrapper.text()
 
     expect(text).toContain('Stats Views')
-    // The value details, investment breakdown and Notes pages were removed.
-    expect(text).not.toContain('Value Details')
-    expect(text).not.toContain('Investment Breakdown')
-    expect(text).not.toContain('Save to Notes')
+    // The value details, investment breakdown and Notes pages, auction
+    // tracking, the calendar and shipments were removed.
+    for (const removed of ['Value Details', 'Investment Breakdown', 'Save to Notes', 'Calendar', 'Shipment', 'auction alerts']) {
+      expect(text).not.toContain(removed)
+    }
     expect(text).toContain('Quick Capture, Coin Lookup, and image upload flows start the camera only after you tap')
-    expect(text).toContain('The notification badge tracks unread social, auction, wishlist, set milestone')
+    expect(text).toContain('The notification badge tracks unread social, wishlist, set, and Coin of the Day activity')
     expect(text).toContain('Header Name: X-API-Key')
     expect(text).toContain('Owned coins show purchase dates in YYYY-MM-DD')
     expect(text).toContain('Only approval creates the Agentic set')
@@ -112,7 +113,7 @@ describe('HelpSection', () => {
     expect(app).not.toContain("to: '/quick-capture'")
     expect(text).toContain('Both intake flows live under Identify Coin')
 
-    for (const view of ['Time Machine', 'Analysis History', 'Calendar', 'Showcases']) {
+    for (const view of ['Time Machine', 'Analysis History', 'Showcases']) {
       expect(Object.values(en.nav)).toContain(view)
       expect(text).toContain(view)
     }

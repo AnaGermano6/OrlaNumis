@@ -25,8 +25,6 @@ func requiredBackfillFixture(t *testing.T) *gorm.DB {
 	for _, sql := range []string{
 		"CREATE TABLE api_keys (capabilities TEXT)",
 		"INSERT INTO api_keys VALUES (NULL), (''), ('write')",
-		"CREATE TABLE auction_lots (source TEXT, source_url TEXT, numis_bids_url TEXT)",
-		"INSERT INTO auction_lots VALUES (NULL, '', 'https://example.test/lot')",
 		"CREATE TABLE featured_coins (source_type TEXT)",
 		"INSERT INTO featured_coins VALUES (NULL)",
 		"CREATE TABLE users (coin_of_day_include_wishlist INTEGER)",
@@ -53,7 +51,6 @@ func TestRequiredBackfillsLegacyAndIdempotent(t *testing.T) {
 		}{
 			{"SELECT COUNT(*) FROM api_keys WHERE capabilities='read'", 2},
 			{"SELECT COUNT(*) FROM api_keys WHERE capabilities='write'", 1},
-			{"SELECT COUNT(*) FROM auction_lots WHERE source='numisbids' AND source_url=numis_bids_url", 1},
 			{"SELECT COUNT(*) FROM featured_coins WHERE source_type='owned'", 1},
 			{"SELECT COUNT(*) FROM users WHERE coin_of_day_include_wishlist=1", 1},
 			{"SELECT COUNT(*) FROM users WHERE coin_of_day_include_wishlist=0", 1},
@@ -69,7 +66,7 @@ func TestRequiredBackfillsLegacyAndIdempotent(t *testing.T) {
 }
 
 func TestRequiredBackfillFailuresStopSequence(t *testing.T) {
-	for index, name := range []string{"API key capabilities", "auction source", "auction source URL", "featured coin source", "coin of day wishlist preference", "completed identification retention"} {
+	for index, name := range []string{"API key capabilities", "featured coin source", "coin of day wishlist preference", "completed identification retention"} {
 		t.Run(name, func(t *testing.T) {
 			db := requiredBackfillFixture(t)
 			executed := 0

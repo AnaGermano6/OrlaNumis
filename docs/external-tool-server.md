@@ -7,7 +7,7 @@ adapters:
 - a stateless Streamable HTTP MCP endpoint at `/api/mcp`.
 
 OpenAPI clients can query collection data and optionally use confirm-gated
-updates. MCP clients receive only read-only collection, wishlist, auction, and
+updates. MCP clients receive only read-only collection, wishlist, and
 statistics tools plus the explicitly scoped Coin Copilot lifecycle.
 
 This document covers the security model, enabling and configuring the server, creating API keys with appropriate scopes, the available tools, and step-by-step setup instructions for popular clients.
@@ -217,9 +217,6 @@ Read operations:
 - `list_wishlist`
 - `collection_stats`
 - `top_coins_by_value`
-- `list_auction_lots`
-- `get_auction_lot`
-- `auction_counts`
 
 Keys with the explicit `copilot` capability also receive:
 
@@ -228,7 +225,7 @@ Keys with the explicit `copilot` capability also receive:
 - `resume_copilot_run`
 - `cancel_copilot_run`
 
-The MCP adapter exposes no collection, wishlist, auction, settings, shell,
+The MCP adapter exposes no collection, wishlist, settings, shell,
 filesystem, arbitrary HTTP, or database mutation tools.
 
 ### Available Operations
@@ -521,8 +518,8 @@ All errors follow a consistent JSON format:
 
 Aurearia exposes a native stateless Streamable HTTP endpoint at
 `POST /api/mcp`. Configure MCP clients to send the API key in the
-`X-API-Key` header. A `read` key discovers only the eight read-only collection,
-wishlist, auction, and statistics tools. Coin Copilot lifecycle tools are
+`X-API-Key` header. A `read` key discovers only the five read-only collection,
+wishlist, and statistics tools. Coin Copilot lifecycle tools are
 discoverable only when the key also has the explicit `copilot` capability.
 
 Do not proxy `/api/v1/tools/openapi.json` into MCP. That separate OpenAPI

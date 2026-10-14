@@ -26,10 +26,6 @@ const messages: Messages['chat'] = {
   confirmField: 'Confirmar {field}',
   confirmFieldBody: 'O valor sugerido para {field}, "{value}", não corresponde a nenhum dos seus valores configurados. Use um dos seus ou mantenha a sugestão.',
   keepSuggested: 'Manter "{value}"',
-  shows: {
-    saved: 'Guardada',
-    saveToCalendar: 'Guardar no calendário',
-  },
   suggestions: {
     source: 'Fonte',
     added: 'Adicionada!',
@@ -84,8 +80,6 @@ const messages: Messages['chat'] = {
   untitled: 'Conversa sem título',
   wishlistFailed: 'Não foi possível adicionar a moeda à lista de desejos',
   wishlistFailedDetail: 'Não foi possível adicionar a moeda à lista de desejos: {detail}',
-  calendarFailed: 'Não foi possível guardar o evento no calendário',
-  entry: 'Entrada: {fee}',
   updateCommitted: 'Atualização aplicada.',
   proposalCommitted: 'Proposta aplicada.',
   commitFailed: 'Não foi possível aplicar a proposta de atualização da coleção.',

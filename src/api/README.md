@@ -81,7 +81,6 @@ All dependencies are wired via constructor injection in `main.go`. No global sta
 - `/api/coins/:id/images` — Image upload (multipart + base64), delete
 - `/api/coins/:id/analyze` — AI analysis via agent proxy
 - `/api/stats`, `/api/suggestions` — Collection statistics
-- `/api/auctions` — Auction lot CRUD, import, provider-aware sync, convert to coin
 - `/api/agent/chat` — SSE streaming AI chat (proxied to Python agent)
 - `/api/agent/conversations` — Conversation history CRUD
 - `/api/auth/api-keys` — API key management
@@ -90,41 +89,32 @@ All dependencies are wired via constructor injection in `main.go`. No global sta
 - `/api/social/*` — Follow/unfollow, comments, ratings
 - `/api/notifications` — Notification list, read, delete
 - `/api/showcases` — Showcase CRUD, coin assignment
-- `/api/calendar`, `/api/calendar/events` — Auction calendar
-- `/api/alerts`, `/api/reminders` — Price alerts and bid reminders
 - `/api/wishlist/check-availability` — Wishlist availability checking
-
-Auction provider sync is intentionally source-aware. `CNGAuctionService` can use CNG hosted-auction fields to sync richer bid metadata and auto-detect won/lost outcomes where CNG exposes them. `NumisBidsService` supports watchlist/import tracking only today; NumisBids max-bid, final outcome, and winning-bid values require manual updates unless future verified NumisBids data exposes those signals.
 
 ## Background Schedulers
 
-The API runs three background schedulers that start automatically on server startup:
+The API runs background schedulers that start automatically on server startup:
 
 1. **Wishlist Availability Scheduler** — Checks if wishlist coins with reference URLs are still available for purchase. Configured via `WishlistCheckEnabled`, `WishlistCheckStartTime` (HH:MM), and `WishlistCheckInterval` (minutes). Default: every 2 hours starting at 02:00. Each run is logged in the `availability_runs` table.
 
 2. **Collection Valuation Scheduler** — Periodically re-values all owned coins using the AI agent. Configured via `ValuationCheckEnabled`, `ValuationCheckStartTime` (HH:MM), and `ValuationCheckIntervalDays` (days). Default: every 7 days at 03:00. Each run is logged in the `valuation_runs` table. Runs can be manually triggered via `/admin/valuation-runs/trigger` and cancelled via `/admin/valuation-runs/{id}/cancel`.
 
-3. **Auction Ending Scheduler** — Checks for auction lots ending today and sends consolidated Pushover notifications per user. Configured via `AuctionEndingCheckEnabled`, `AuctionEndingCheckStartTime` (HH:MM), and `AuctionEndingCheckInterval` (minutes). Default: every 24 hours at 08:00. Each run is logged in the `auction_ending_runs` table. Runs can be manually triggered via `/admin/auction-ending/run`.
+3. **Wishlist Search Alert Scheduler** — Daily sweep that queues an automatic discovery run for each active `WishlistSearchAlert` whose configured cadence (`daily`/`weekly`/`monthly`) has elapsed since its last run. Configured via `WishlistSearchAlertsCheckEnabled` (default `"false"`) and `WishlistSearchAlertsCheckStartTime` (HH:MM, default `03:00`). Alerts with `cadence: manual` are never auto-run — only "Run Now" processes them. Queued runs are logged in `alert_runs` the same as manual runs, with `triggerType: scheduled`.
 
-4. **Wishlist Search Alert Scheduler** — Daily sweep that queues an automatic discovery run for each active `WishlistSearchAlert` whose configured cadence (`daily`/`weekly`/`monthly`) has elapsed since its last run. Configured via `WishlistSearchAlertsCheckEnabled` (default `"false"`) and `WishlistSearchAlertsCheckStartTime` (HH:MM, default `03:00`). Alerts with `cadence: manual` are never auto-run — only "Run Now" processes them. Queued runs are logged in `alert_runs` the same as manual runs, with `triggerType: scheduled`.
-
-5. **Collection Health Scheduler** — Captures a daily per-user collection health snapshot (score, grade distribution, eligible coin count) used by the 30-day health trend indicator. Configured via `CollectionHealthSnapshotsEnabled` (default `"false"`) and `CollectionHealthSnapshotsStartTime` (HH:MM, default `04:30`). Each run is logged in the `collection_health_snapshot_runs` table with eligible/snapshotted/failed user counts. Runs can be manually triggered via `/admin/collection-health-snapshots/run`.
+4. **Collection Health Scheduler** — Captures a daily per-user collection health snapshot (score, grade distribution, eligible coin count) used by the 30-day health trend indicator. Configured via `CollectionHealthSnapshotsEnabled` (default `"false"`) and `CollectionHealthSnapshotsStartTime` (HH:MM, default `04:30`). Each run is logged in the `collection_health_snapshot_runs` table with eligible/snapshotted/failed user counts. Runs can be manually triggered via `/admin/collection-health-snapshots/run`.
 
 All schedulers honor the enabled flag — set to `"false"` to disable. Run history is available via admin endpoints:
 - `GET /admin/availability-runs` — Paginated list of availability check runs
 - `GET /admin/valuation-runs` — Paginated list of valuation runs
-- `GET /admin/auction-ending-runs` — Paginated list of auction ending runs
 - `GET /admin/collection-health-snapshot-runs` — Paginated list of collection health snapshot runs
 
 ## Pagination
 
-1. **Wishlist Availability Scheduler** — Periodically checks if wishlist coins are still available at their reference URLs. Configured via `WishlistCheckEnabled`, `WishlistCheckStartTime`, and `WishlistCheckInterval` settings. Sends Pushover notifications when items become unavailable.
+1. **Wishlist Availability Scheduler** — Periodically checks if wishlist coins are still available at their reference URLs. Configured via `WishlistCheckEnabled`, `WishlistCheckStartTime`, and `WishlistCheckInterval` settings. Sends in-app notifications when items become unavailable.
 
-2. **Collection Valuation Scheduler** — Periodically runs AI-powered valuation estimates for the user's collection. Configured via `ValuationCheckEnabled`, `ValuationCheckStartTime`, and `ValuationCheckIntervalDays` settings. Sends Pushover notifications with valuation summaries.
+2. **Collection Valuation Scheduler** — Periodically runs AI-powered valuation estimates for the user's collection. Configured via `ValuationCheckEnabled`, `ValuationCheckStartTime`, and `ValuationCheckIntervalDays` settings. Sends in-app notifications with valuation summaries.
 
-3. **Auction Ending Scheduler** — Daily check for auction lots the user is bidding on that end today. Configured via `AuctionEndingCheckEnabled`, `AuctionEndingCheckStartTime`, and `AuctionEndingCheckInterval` settings. Sends consolidated Pushover notifications per user with all ending auctions. Uses in-memory idempotency tracking to avoid duplicate notifications within the same day.
-
-All schedulers respect user-level Pushover notification settings and gracefully handle disabled or missing configuration.
+All schedulers gracefully handle disabled or missing configuration.
 
 ### `admin` — JWT + Admin Role Required
 

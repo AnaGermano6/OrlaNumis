@@ -43,9 +43,6 @@
           <CoinShowResultsGrid
             v-if="msg.role === 'assistant' && msg.suggestions?.length && isCoinShowResults(msg.suggestions)"
             :shows="(msg.suggestions as CoinShow[])"
-            :saved-shows="savedShows"
-            :saving-show="savingShow"
-            @save-show="saveShowToCalendar"
           />
 
           <CoinSuggestionGrid
@@ -218,8 +215,6 @@ const {
   loading,
   addingIdx,
   addedSet,
-  savedShows,
-  savingShow,
   conversationId,
   saving,
   saveLabel,
@@ -251,7 +246,6 @@ const {
   pickDisambiguationCandidate,
   formatMessage,
   isCoinShowResults,
-  saveShowToCalendar,
 } = useCoinSearchChat({
   loadConversation: props.loadConversation,
   messagesEl,

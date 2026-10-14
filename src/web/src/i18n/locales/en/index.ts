@@ -2,12 +2,10 @@ import addCoin from './addCoin'
 import admin from './admin'
 import agent from './agent'
 import app from './app'
-import auctions from './auctions'
 import auth from './auth'
 import availability from './availability'
 import banknoteForm from './banknoteForm'
 import banknotes from './banknotes'
-import calendar from './calendar'
 import camera from './camera'
 import catalog from './catalog'
 import chat from './chat'
@@ -53,7 +51,6 @@ import quickCapture from './quickCapture'
 import sets from './sets'
 import settings from './settings'
 import shareCard from './shareCard'
-import shipment from './shipment'
 import showcases from './showcases'
 import social from './social'
 import sold from './sold'
@@ -75,12 +72,10 @@ export default {
   admin,
   agent,
   app,
-  auctions,
   auth,
   availability,
   banknoteForm,
   banknotes,
-  calendar,
   camera,
   catalog,
   chat,
@@ -126,7 +121,6 @@ export default {
   sets,
   settings,
   shareCard,
-  shipment,
   showcases,
   social,
   sold,

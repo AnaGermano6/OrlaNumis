@@ -28,25 +28,6 @@ type QuickAccessSetRow struct {
 	Icon    string
 }
 
-type QuickAccessAuctionLotRow struct {
-	ID             uint
-	Title          string
-	Status         models.AuctionLotStatus
-	AuctionHouse   string
-	SaleDate       *time.Time
-	AuctionEndTime *time.Time
-	ImageURL       string
-}
-
-type QuickAccessCalendarEventRow struct {
-	ID           uint
-	Title        string
-	AuctionHouse string
-	StartDate    *time.Time
-	EndDate      *time.Time
-	Origin       models.AuctionEventOrigin
-}
-
 func NewQuickAccessRepository(db *gorm.DB) *QuickAccessRepository {
 	return &QuickAccessRepository{db: db}
 }
@@ -175,54 +156,6 @@ func (r *QuickAccessRepository) FindCoinSets(userID uint, ids []uint) ([]QuickAc
 	}
 	err := r.db.Model(&models.CoinSet{}).
 		Select("id, name, set_type, color, icon").
-		Scopes(OwnedBy(userID)).
-		Where("id IN ?", ids).
-		Scan(&rows).Error
-	return rows, err
-}
-
-func (r *QuickAccessRepository) FindAuctionLot(userID, id uint) (*QuickAccessAuctionLotRow, error) {
-	rows, err := r.FindAuctionLots(userID, []uint{id})
-	if err != nil {
-		return nil, err
-	}
-	if len(rows) == 0 {
-		return nil, gorm.ErrRecordNotFound
-	}
-	return &rows[0], nil
-}
-
-func (r *QuickAccessRepository) FindAuctionLots(userID uint, ids []uint) ([]QuickAccessAuctionLotRow, error) {
-	rows := make([]QuickAccessAuctionLotRow, 0)
-	if len(ids) == 0 {
-		return rows, nil
-	}
-	err := r.db.Model(&models.AuctionLot{}).
-		Select("id, title, status, auction_house, sale_date, auction_end_time, image_url").
-		Scopes(OwnedBy(userID)).
-		Where("id IN ?", ids).
-		Scan(&rows).Error
-	return rows, err
-}
-
-func (r *QuickAccessRepository) FindCalendarEvent(userID, id uint) (*QuickAccessCalendarEventRow, error) {
-	rows, err := r.FindCalendarEvents(userID, []uint{id})
-	if err != nil {
-		return nil, err
-	}
-	if len(rows) == 0 {
-		return nil, gorm.ErrRecordNotFound
-	}
-	return &rows[0], nil
-}
-
-func (r *QuickAccessRepository) FindCalendarEvents(userID uint, ids []uint) ([]QuickAccessCalendarEventRow, error) {
-	rows := make([]QuickAccessCalendarEventRow, 0)
-	if len(ids) == 0 {
-		return rows, nil
-	}
-	err := r.db.Model(&models.AuctionEvent{}).
-		Select("id, title, auction_house, start_date, end_date, origin").
 		Scopes(OwnedBy(userID)).
 		Where("id IN ?", ids).
 		Scan(&rows).Error

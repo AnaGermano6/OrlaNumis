@@ -23,7 +23,6 @@ Brian's review; only approved images are copied/moved into `docs/assets/screensh
 | `coin-detail-justinian.png` | Coin detail page — Justinian coin |
 | `collection-tray.png` | Collection tray view |
 | `wishlist-detail-maximinus.png` | Wishlist detail — Maximinus coin |
-| `auctions-dashboard.png` | Auctions dashboard view |
 | `rulers-set-completion.png` | Rulers set/completion tray view |
 
 ## Core Collection Features
@@ -38,7 +37,6 @@ Brian's review; only approved images are copied/moved into `docs/assets/screensh
 - **[Quick Capture](../quick-capture.md)** — Mobile-first intake drafts for show-floor photos and notes before promoting to collection or wishlist
 - **[Coin Lookup](coin-lookup.md)** — Photograph a coin or slab at a show, extract NGC Ancients certs, verify with NGC, and save to wish list or collection
 - **[Wish List](wish-list.md)** — Track coins you'd like to acquire with AI-powered search, availability checking, and saved search alerts
-- **[Auction Tracking](auction-tracking.md)** — Monitor NumisBids and CNG Auctions lots with provider-aware sync, price alerts, and reminders
 - **[Sold Coins](sold-coins.md)** — Track coins you've sold with profit/loss analysis
 
 ## AI Features
@@ -87,8 +85,7 @@ Brian's review; only approved images are copied/moved into `docs/assets/screensh
 - **[Image Operations](image-operations.md)** — Background removal, text extraction, authenticated image serving, and responsive image variants
 - **[PDF Export](pdf-export.md)** — Generate insurance/provenance catalogs with photos and structured data
 - **[Bulk Operations](bulk-operations.md)** — Multi-select coins for batch actions
-- **[Notifications](notifications.md)** — In-app notifications for social interactions, alerts, and reminders
-- **[Auction Calendar](auction-calendar.md)** — Visual calendar of auction dates and custom events
+- **[Notifications](notifications.md)** — In-app notifications for social interactions, wishlist alerts, and reminders
 
 ## Integration & Import/Export
 
@@ -106,7 +103,7 @@ Brian's review; only approved images are copied/moved into `docs/assets/screensh
 | Quick Capture | Shipped | v2.0 |
 | Wishlist Search Alerts | Shipped | v2.0 |
 | Coin Lookup | Shipped | v2.0 |
-| Auction Tracking | Shipped | v1.0 |
+| Auction Tracking | Removed (2026-10) | v1.0 |
 | Social Features | Shipped | v1.0 |
 | External Tool Server | Shipped | v1.0 |
 | Native MCP Agentic Harness | Shipped (default off) | Feature 366 |

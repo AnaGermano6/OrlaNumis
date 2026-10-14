@@ -80,7 +80,6 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
             <tr><td><strong>Chaves</strong></td><td>Chaves de API para clientes de IA externos</td></tr>
             <tr><td><strong>Ferramentas</strong></td><td>Definições do processador de imagens e utilizadores bloqueados</td></tr>
             <tr><td><strong>Conversas</strong></td><td>Conversas guardadas com o agente</td></tr>
-            <tr><td><strong>Envios</strong></td><td>Envios ainda não entregues</td></tr>
             <tr><td><strong>Cópias de segurança</strong></td><td>Importação da coleção, exportação ZIP, exportação do catálogo em PDF, modelo CSV</td></tr>
             <tr><td><strong>Ajuda</strong></td><td>Este guia</td></tr>
           </tbody>
@@ -91,7 +90,7 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
     <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim">
       <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Usar as funcionalidades do Aurearia</summary>
       <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>O Aurearia permite catalogar a coleção, planear aquisições, acompanhar leilões, partilhar com outros colecionadores e pesquisar com ajuda de IA. Estes fluxos são opcionais: comece por importar a coleção ou pela Captura rápida e ative as integrações quando precisar.</p>
+        <p>O Aurearia permite catalogar a coleção, planear aquisições, partilhar com outros colecionadores e pesquisar com ajuda de IA. Estes fluxos são opcionais: comece por importar a coleção ou pela Captura rápida e ative as integrações quando precisar.</p>
 
         <h4>Registo rápido</h4>
         <ul>
@@ -166,12 +165,9 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Moedas vendidas</strong> — Venda uma moeda na página de detalhe para registar o preço e o comprador; <strong>Vendidas</strong> acompanha depois o lucro ou prejuízo face ao que pagou.</li>
         </ul>
 
-        <h4>Envios e lembretes</h4>
+        <h4>Lembretes</h4>
         <ul>
-          <li><strong>Seguimento de envios</strong> — Acompanhe uma compra a caminho na página <strong>Seguimento de envio</strong> da moeda.</li>
-          <li><strong>Resumo de envios</strong> — <strong>Definições → Envios</strong> lista todos os envios ainda não entregues.</li>
           <li><strong>Lembretes de compra</strong> — Agende um lembrete para uma moeda que pretende comprar e receba uma notificação quando chegar a data.</li>
-          <li><strong>Calendário</strong> — O <strong>Calendário</strong> mostra as datas dos leilões dos lotes acompanhados, juntamente com os seus próprios eventos, como feiras e tarefas de pesquisa.</li>
         </ul>
 
         <h4>Cópias de segurança e exportação</h4>
@@ -191,8 +187,8 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
 
         <h4>Notificações e alertas</h4>
         <ul>
-          <li><strong>Notificações na aplicação</strong> — O contador de notificações acompanha a atividade não lida de seguidores, leilões, lista de desejos, marcos de conjuntos e Moeda do dia.</li>
-          <li><strong>Revisão de alertas</strong> — Os alertas de pesquisa da lista de desejos criam execuções com candidatos para rever; os alertas e resumos de leilões ajudam a acompanhar os lotes observados e licitados.</li>
+          <li><strong>Notificações na aplicação</strong> — O contador de notificações acompanha a atividade não lida de seguidores, lista de desejos, conjuntos e Moeda do dia.</li>
+          <li><strong>Revisão de alertas</strong> — Os alertas de pesquisa da lista de desejos criam execuções com candidatos para rever.</li>
         </ul>
       </div>
     </details>

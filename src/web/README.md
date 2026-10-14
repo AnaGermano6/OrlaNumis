@@ -79,7 +79,7 @@ src/
 | `/wishlist` | WishlistPage | Yes |
 | `/wishlist/search-alerts` | WishlistAlertsPage | Yes |
 | `/sold` | SoldPage | Yes |
-| `/auctions` | AuctionsPage | Yes |
+| `/auctions` | Redirects to `/` | Yes |
 | `/stats` | StatsPage | Yes |
 | `/stats/timeline` | TimelinePage | Yes |
 | `/stats/mint-map` | MintMapPage | Yes |
@@ -102,8 +102,8 @@ src/
 | `/showcases` | ShowcasesPage | Yes |
 | `/showcases/:id/edit` | ShowcaseEditPage | Yes |
 | `/s/:slug` | PublicShowcasePage | No |
-| `/calendar` | CalendarPage | Yes |
-| `/tray` | TrayViewPage | Yes |
+| `/calendar` | Redirects to `/` | Yes |
+| `/tray` | Redirects to `/` | Yes |
 | `/sets` | SetsPage | Yes |
 | `/sets/emperors` | EmperorTrackerPage | Yes + Emperor Tracker |
 | `/sets/:id` | SetDetailPage | Yes |

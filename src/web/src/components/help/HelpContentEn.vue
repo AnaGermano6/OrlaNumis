@@ -80,7 +80,6 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
             <tr><td><strong>Keys</strong></td><td>API keys for external AI clients</td></tr>
             <tr><td><strong>Tools</strong></td><td>Image processor settings and blocked users</td></tr>
             <tr><td><strong>Conversations</strong></td><td>Saved agent chats</td></tr>
-            <tr><td><strong>Shipments</strong></td><td>Shipments not yet delivered</td></tr>
             <tr><td><strong>Backups</strong></td><td>Collection import, ZIP export, PDF catalog export, CSV template</td></tr>
             <tr><td><strong>Help</strong></td><td>This guide</td></tr>
           </tbody>
@@ -91,7 +90,7 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
     <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim">
       <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Using Aurearia - Coin Collection Features</summary>
       <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>Aurearia - Coin Collection supports collection cataloging, acquisition planning, auctions, social sharing, and AI-assisted research. These workflows are optional; start with collection import or Quick Capture, then enable integrations as needed.</p>
+        <p>Aurearia - Coin Collection supports collection cataloging, acquisition planning, social sharing, and AI-assisted research. These workflows are optional; start with collection import or Quick Capture, then enable integrations as needed.</p>
 
         <h4>Fast Intake</h4>
         <ul>
@@ -166,12 +165,9 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Sold coins</strong> — Sell a coin from its detail page to record the sale price and buyer; <strong>Sold</strong> then tracks profit and loss against what you paid.</li>
         </ul>
 
-        <h4>Shipments and Reminders</h4>
+        <h4>Reminders</h4>
         <ul>
-          <li><strong>Shipment tracker</strong> — Track an incoming purchase from the coin's <strong>Shipment Tracker</strong> page.</li>
-          <li><strong>Shipments overview</strong> — <strong>Settings → Shipments</strong> lists every shipment that has not been delivered yet.</li>
           <li><strong>Purchase reminders</strong> — Schedule a reminder against a coin you mean to buy, and get notified when it comes due.</li>
-          <li><strong>Calendar</strong> — <strong>Calendar</strong> shows auction sale dates from tracked lots alongside your own events, such as shows and research tasks.</li>
         </ul>
 
         <h4>Backups and Export</h4>
@@ -191,8 +187,8 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
 
         <h4>Notifications and Alerts</h4>
         <ul>
-          <li><strong>In-app notifications</strong> — The notification badge tracks unread social, auction, wishlist, set milestone, and Coin of the Day activity.</li>
-          <li><strong>Alert review</strong> — Wishlist search alerts create candidate runs for review; auction alerts and digests help track watched and bidding lots.</li>
+          <li><strong>In-app notifications</strong> — The notification badge tracks unread social, wishlist, set, and Coin of the Day activity.</li>
+          <li><strong>Alert review</strong> — Wishlist search alerts create candidate runs for review.</li>
         </ul>
       </div>
     </details>

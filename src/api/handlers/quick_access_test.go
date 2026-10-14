@@ -34,7 +34,7 @@ func setupQuickAccessHandler(t *testing.T) (*gin.Engine, *gorm.DB) {
 	}
 	sqlDB, _ := db.DB()
 	t.Cleanup(func() { _ = sqlDB.Close() })
-	if err := db.AutoMigrate(&models.Coin{}, &models.CoinImage{}, &models.CoinSet{}, &models.AuctionLot{}, &models.AuctionEvent{}, &models.QuickAccessPin{}); err != nil {
+	if err := db.AutoMigrate(&models.Coin{}, &models.CoinImage{}, &models.CoinSet{}, &models.QuickAccessPin{}); err != nil {
 		t.Fatal(err)
 	}
 	service := services.NewQuickAccessService(repository.NewQuickAccessRepository(db))
@@ -128,12 +128,7 @@ func TestQuickAccessHandlerListUsesExactDiscriminatedPayloads(t *testing.T) {
 	router, db := setupQuickAccessHandler(t)
 	coin := models.Coin{UserID: 1, Name: "Denarius", IsWishlist: true}
 	set := models.CoinSet{UserID: 1, Name: "Roman Set"}
-	lot := models.AuctionLot{
-		UserID: 1, Title: "Auction Lot", NumisBidsURL: "https://example.test/lot",
-		Status: models.AuctionStatusWatching,
-	}
-	event := models.AuctionEvent{UserID: 1, Title: "Coin Show", Origin: models.AuctionEventOriginManual}
-	for _, target := range []interface{}{&coin, &set, &lot, &event} {
+	for _, target := range []interface{}{&coin, &set} {
 		if err := db.Create(target).Error; err != nil {
 			t.Fatal(err)
 		}
@@ -146,8 +141,6 @@ func TestQuickAccessHandlerListUsesExactDiscriminatedPayloads(t *testing.T) {
 	}{
 		{models.QuickAccessTargetCoin, coin.ID, "coin"},
 		{models.QuickAccessTargetCoinSet, set.ID, "coinSet"},
-		{models.QuickAccessTargetAuctionLot, lot.ID, "auctionLot"},
-		{models.QuickAccessTargetCalendarEvent, event.ID, "calendarEvent"},
 	}
 	for _, target := range targets {
 		w := httptest.NewRecorder()
@@ -177,7 +170,7 @@ func TestQuickAccessHandlerListUsesExactDiscriminatedPayloads(t *testing.T) {
 	for _, target := range targets {
 		expectedPayload[string(target.targetType)] = target.payloadKey
 	}
-	payloadKeys := []string{"coin", "coinSet", "auctionLot", "calendarEvent"}
+	payloadKeys := []string{"coin", "coinSet"}
 	for _, item := range response.Items {
 		var discriminator string
 		if err := json.Unmarshal(item["type"], &discriminator); err != nil {

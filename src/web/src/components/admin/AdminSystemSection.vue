@@ -492,19 +492,6 @@ const props = withDefaults(defineProps<{
   publicAppUrl: string
   dealerSearchSources?: string
   auctionSearchSources?: string
-  uspsApiBaseUrl: string
-  uspsApiKey: string
-  uspsApiKeyHeader: string
-  upsApiBaseUrl: string
-  upsTokenUrl: string
-  upsClientId: string
-  upsClientSecret: string
-  upsScope: string
-  fedexApiBaseUrl: string
-  fedexTokenUrl: string
-  fedexClientId: string
-  fedexClientSecret: string
-  fedexScope: string
   logLevel: string
   logLevels: readonly string[]
   saving: boolean
@@ -574,19 +561,6 @@ const emit = defineEmits<{
     publicAppUrl: string
     dealerSearchSources: string
     auctionSearchSources: string
-    uspsApiBaseUrl: string
-    uspsApiKey: string
-    uspsApiKeyHeader: string
-    upsApiBaseUrl: string
-    upsTokenUrl: string
-    upsClientId: string
-    upsClientSecret: string
-    upsScope: string
-    fedexApiBaseUrl: string
-    fedexTokenUrl: string
-    fedexClientId: string
-    fedexClientSecret: string
-    fedexScope: string
   }]
 }>()
 
@@ -623,19 +597,6 @@ const localCoinCopilotResumeWindowHours = ref(props.coinCopilotResumeWindowHours
 const localPublicAppUrl = ref(props.publicAppUrl)
 const localDealerSearchSources = ref(props.dealerSearchSources)
 const localAuctionSearchSources = ref(props.auctionSearchSources)
-const localUSPSAPIBaseURL = ref(props.uspsApiBaseUrl)
-const localUSPSAPIKey = ref(props.uspsApiKey)
-const localUSPSAPIKeyHeader = ref(props.uspsApiKeyHeader)
-const localUPSAPIBaseURL = ref(props.upsApiBaseUrl)
-const localUPSTokenURL = ref(props.upsTokenUrl)
-const localUPSClientID = ref(props.upsClientId)
-const localUPSClientSecret = ref(props.upsClientSecret)
-const localUPSScope = ref(props.upsScope)
-const localFedExAPIBaseURL = ref(props.fedexApiBaseUrl)
-const localFedExTokenURL = ref(props.fedexTokenUrl)
-const localFedExClientID = ref(props.fedexClientId)
-const localFedExClientSecret = ref(props.fedexClientSecret)
-const localFedExScope = ref(props.fedexScope)
 const localLogLevel = ref(props.logLevel)
 const health = ref<NumistaHealthSummary | null>(null)
 const healthLoading = ref(true)
@@ -765,19 +726,6 @@ function save() {
     publicAppUrl: localPublicAppUrl.value,
     dealerSearchSources: localDealerSearchSources.value,
     auctionSearchSources: localAuctionSearchSources.value,
-    uspsApiBaseUrl: localUSPSAPIBaseURL.value,
-    uspsApiKey: localUSPSAPIKey.value,
-    uspsApiKeyHeader: localUSPSAPIKeyHeader.value,
-    upsApiBaseUrl: localUPSAPIBaseURL.value,
-    upsTokenUrl: localUPSTokenURL.value,
-    upsClientId: localUPSClientID.value,
-    upsClientSecret: localUPSClientSecret.value,
-    upsScope: localUPSScope.value,
-    fedexApiBaseUrl: localFedExAPIBaseURL.value,
-    fedexTokenUrl: localFedExTokenURL.value,
-    fedexClientId: localFedExClientID.value,
-    fedexClientSecret: localFedExClientSecret.value,
-    fedexScope: localFedExScope.value,
   })
 }
 
@@ -899,19 +847,6 @@ watch(() => props.coinCopilotResumeWindowHours, (value) => { localCoinCopilotRes
 watch(() => props.publicAppUrl, (value) => { localPublicAppUrl.value = value })
 watch(() => props.dealerSearchSources, (value) => { localDealerSearchSources.value = value })
 watch(() => props.auctionSearchSources, (value) => { localAuctionSearchSources.value = value })
-watch(() => props.uspsApiBaseUrl, (value) => { localUSPSAPIBaseURL.value = value })
-watch(() => props.uspsApiKey, (value) => { localUSPSAPIKey.value = value })
-watch(() => props.uspsApiKeyHeader, (value) => { localUSPSAPIKeyHeader.value = value })
-watch(() => props.upsApiBaseUrl, (value) => { localUPSAPIBaseURL.value = value })
-watch(() => props.upsTokenUrl, (value) => { localUPSTokenURL.value = value })
-watch(() => props.upsClientId, (value) => { localUPSClientID.value = value })
-watch(() => props.upsClientSecret, (value) => { localUPSClientSecret.value = value })
-watch(() => props.upsScope, (value) => { localUPSScope.value = value })
-watch(() => props.fedexApiBaseUrl, (value) => { localFedExAPIBaseURL.value = value })
-watch(() => props.fedexTokenUrl, (value) => { localFedExTokenURL.value = value })
-watch(() => props.fedexClientId, (value) => { localFedExClientID.value = value })
-watch(() => props.fedexClientSecret, (value) => { localFedExClientSecret.value = value })
-watch(() => props.fedexScope, (value) => { localFedExScope.value = value })
 watch(() => props.logLevel, (value) => { localLogLevel.value = value })
 
 onMounted(() => {

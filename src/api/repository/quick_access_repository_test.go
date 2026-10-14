@@ -70,7 +70,7 @@ func TestQuickAccessRepositoryUniquenessOrderingAndScope(t *testing.T) {
 		t.Fatalf("target cleanup error=%v", err)
 	}
 
-	rollbackPin := models.QuickAccessPin{UserID: 1, TargetType: models.QuickAccessTargetCalendarEvent, TargetID: 9, PinnedAt: tied}
+	rollbackPin := models.QuickAccessPin{UserID: 1, TargetType: models.QuickAccessTargetCoinSet, TargetID: 9, PinnedAt: tied}
 	sentinel := errors.New("force rollback")
 	if err := repo.RunInTransaction(func(tx *Transaction) error {
 		if _, err := repo.WithTransaction(tx).CreateOrGet(&rollbackPin); err != nil {
@@ -80,7 +80,7 @@ func TestQuickAccessRepositoryUniquenessOrderingAndScope(t *testing.T) {
 	}); !errors.Is(err, sentinel) {
 		t.Fatalf("rollback error=%v", err)
 	}
-	if _, err := repo.Get(1, models.QuickAccessTargetCalendarEvent, 9); !IsRecordNotFound(err) {
+	if _, err := repo.Get(1, models.QuickAccessTargetCoinSet, 9); !IsRecordNotFound(err) {
 		t.Fatalf("transaction did not roll back pin: %v", err)
 	}
 }

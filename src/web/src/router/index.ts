@@ -55,12 +55,8 @@ const router = createRouter({
       component: () => import('@/pages/CoinDetailJournalPage.vue'),
       meta: { requiresAuth: true },
     },
-    {
-      path: '/coin/:id/shipment',
-      name: 'coin-detail-shipment',
-      component: () => import('@/pages/CoinDetailShipmentPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    // Shipment tracking was removed; old links open the coin.
+    { path: '/coin/:id/shipment', name: 'coin-detail-shipment', redirect: (to) => `/coin/${String(to.params.id)}` },
     {
       path: '/coin/:id/health',
       name: 'coin-detail-health',
@@ -175,8 +171,9 @@ const router = createRouter({
       component: () => import('@/pages/WishlistAvailabilityHistoryPage.vue'),
       meta: { requiresAuth: true },
     },
-    // Sold, Auctions, Followers, Calendar and Showcases are not used in this
-    // collection; their addresses (and links to them) lead to the gallery.
+    // Sold, Followers and Showcases are not used in this collection, and
+    // auctions were removed; their addresses (and links to them) lead to the
+    // gallery.
     { path: '/sold', name: 'sold', redirect: '/' },
     { path: '/auctions', name: 'auctions', redirect: '/' },
     {
@@ -280,6 +277,7 @@ const router = createRouter({
       name: 'public-showcase',
       component: () => import('@/pages/PublicShowcasePage.vue'),
     },
+    // The calendar was removed; old links open the gallery.
     { path: '/calendar', name: 'calendar', redirect: '/' },
     // The tray views were removed; old links open the gallery.
     { path: '/tray', name: 'tray', redirect: '/' },

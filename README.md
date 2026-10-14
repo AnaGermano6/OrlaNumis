@@ -45,7 +45,7 @@ Organize coins with rich metadata: denomination, ruler, material, weight, inscri
 
 **Nomisma Authority Linking** — Admins can explicitly reconcile global mint locations to Nomisma.org concepts with visible CC BY 4.0 attribution; private/user-defined mints remain local.
 
-**Coin Agent** — Ask one chat surface to search dealer listings, find shows, analyze portfolio questions, answer collection questions such as missing metadata, and save useful answers as markdown Notes after review. **[Learn more →](docs/features/ai-search-agent.md)**
+**Coin Agent** — Ask one chat surface to search dealer listings, find shows, analyze portfolio questions, and answer collection questions such as missing metadata. **[Learn more →](docs/features/ai-search-agent.md)**
 
 ### 🎯 Discovery & Acquisition
 **AI Coin Search** — Chat with an agent to find real dealer listings matching your description. Imports structured results with images, metadata, prices, and candidate catalog references.
@@ -54,10 +54,8 @@ Organize coins with rich metadata: denomination, ruler, material, weight, inscri
 
 **Wish List** — Track coins you want with automatic availability checking, saved search alerts, AI search, price tracking, and one-click purchase-to-collection conversion. **[Learn more →](docs/features/wish-list.md)**
 
-**Auction Tracking** — Monitor NumisBids and CNG Auctions lots with provider-aware tracking: CNG supports richer hosted-auction sync and outcome detection where available, while NumisBids supports watchlist/import tracking with manual won/lost and max-bid updates. **[Learn more →](docs/features/auction-tracking.md)**
-
 ### 📊 Portfolio Intelligence
-**Collection Statistics** — Dashboard and subviews for portfolio value trends, category/material/grade distributions, top coins by value, mint maps, timeline, investment breakdown, Emperor Tracker, and health scorecards. **[Learn more →](docs/features/statistics.md)**
+**Collection Statistics** — Dashboard and subviews for category/material/grade distributions, top coins by value, mint maps, timeline, Emperor Tracker, and health scorecards. **[Learn more →](docs/features/statistics.md)**
 
 **Collection Time Machine** — Scrub a timeline to see the collection exactly as it stood on any past date: what you owned, what it was worth then, and how it was distributed. Reconstructed from purchase/sold dates and recorded valuation history, and explicit about which figures rest on a real valuation versus a purchase-price fallback. **[Learn more →](docs/features/time-machine.md)**
 
@@ -83,8 +81,8 @@ Organize coins with rich metadata: denomination, ruler, material, weight, inscri
 **External Tool Server and MCP** — Connect OpenWebUI, LibreChat, automation,
 and agentic harnesses with scoped API keys. The OpenAPI adapter supports
 confirm-gated collection updates; the native `/api/mcp` adapter exposes
-read-only collection, wishlist, auction, and statistics tools plus explicitly
-scoped Coin Copilot lifecycle operations.
+read-only collection, wishlist, and statistics tools plus explicitly scoped
+Coin Copilot lifecycle operations.
 
 **Fine-Grained Privacy** — Public/private profiles, per-coin privacy toggle, role-based admin access. **[Learn more →](docs/authentication.md)**
 
@@ -102,21 +100,21 @@ scoped Coin Copilot lifecycle operations.
 
 ## 🎯 Feature Matrix
 
-| Feature | Collection | Wish List | Auctions | Social | Analytics | Admin | Mobile |
-|---------|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| Create/Edit Coins | ✅ | ✅ | ✅ | — | — | ✅ | ✅ |
-| Quick Capture | ✅ | ✅ | — | — | — | — | ✅ |
-| Coin Lookup | ✅ | ✅ | — | — | — | ✅ | ✅ |
-| AI Analysis | ✅ | ✅ | ✅ | — | — | — | ✅ |
-| Search & Filter | ✅ | ✅ | ✅ | — | — | — | ✅ |
-| Saved Search Alerts | — | ✅ | — | — | — | ✅ | ✅ |
-| Tags & Sets | ✅ | ✅ | ❌ | — | ✅ | — | ✅ |
-| Valuations | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ |
-| Offer/Sold | ✅ | ✅ | ✅ | — | ✅ | — | ✅ |
-| Comments/Ratings | — | — | — | ✅ | — | — | ✅ |
-| Follow/Share | — | — | — | ✅ | — | — | ✅ |
-| Offline Access | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ |
-| PWA Install | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Feature | Collection | Wish List | Social | Analytics | Admin | Mobile |
+|---------|:-:|:-:|:-:|:-:|:-:|:-:|
+| Create/Edit Coins | ✅ | ✅ | — | — | ✅ | ✅ |
+| Quick Capture | ✅ | ✅ | — | — | — | ✅ |
+| Coin Lookup | ✅ | ✅ | — | — | ✅ | ✅ |
+| AI Analysis | ✅ | ✅ | — | — | — | ✅ |
+| Search & Filter | ✅ | ✅ | — | — | — | ✅ |
+| Saved Search Alerts | — | ✅ | — | — | ✅ | ✅ |
+| Tags & Sets | ✅ | ✅ | — | ✅ | — | ✅ |
+| Valuations | ✅ | ✅ | — | ✅ | ✅ | ✅ |
+| Offer/Sold | ✅ | ✅ | — | ✅ | — | ✅ |
+| Comments/Ratings | — | — | ✅ | — | — | ✅ |
+| Follow/Share | — | — | ✅ | — | — | ✅ |
+| Offline Access | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ |
+| PWA Install | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -134,10 +132,7 @@ scoped Coin Copilot lifecycle operations.
 - **Quick Capture** — Mobile-first draft intake for show-floor photos/notes, resumable drafts, owner-scoped media, and idempotent promotion into normal collection coins.
 - **Coin Lookup** — Photo-based show workflow for NGC Ancients cert extraction, official NGC verification links, Numista fallback matches, and saving lookups to wish list or collection.
 - **Configurable Coin Properties** — Admin-managed Era and Category options used by coin forms and lookup saves.
-- **CNG Auctions Support** — Import CNG lots, sync CNG watched lots, and filter auction tracking by provider alongside NumisBids. CNG can auto-detect hosted auction outcomes where provider data is available; NumisBids remains watchlist/import tracking only and needs manual won/lost and max-bid updates.
-- **Encrypted Auction Credentials** — Stored NumisBids and CNG provider passwords are encrypted at rest with lazy migration for existing plaintext values.
 - **Coin Sets** — Organize coins into themed collections with trend tracking and completion analysis. Standard, goal, smart, and human-reviewed Agentic set types. Snapshot history and value milestones.
-- **Coin Agent Notes** — Save completed Coin Agent answers into Notes through an explicit markdown review dialog.
 - **Museum Tray Dates** — Tray cards show purchase dates in `YYYY-MM-DD`; wishlist placeholders are more transparent and display `TBD`.
 - **Structured Storage Trays** — Define backward-compatible Standard Locations or fixed 1–20 by 1–20 Coin Trays in Settings. Assign coins to exact one-based slots and open **Collection → Storage Trays** for a read-only physical layout. The existing Museum Tray remains the curated, responsive collection view.
 - **Health Scorecard** — Track AI coverage, image coverage, and metadata completeness.
@@ -148,7 +143,6 @@ scoped Coin Copilot lifecycle operations.
 - ✅ AI-powered coin analysis (Claude/Ollama)
 - ✅ AI coin search agent with dealer discovery
 - ✅ Wish list with availability checking
-- ✅ Auction tracking (NumisBids and CNG Auctions)
 - ✅ Sold coin tracking with profit/loss
 - ✅ Social features (follow, comment, rate)
 - ✅ Collection statistics and portfolios
@@ -223,7 +217,6 @@ Run `task --list` to see all targets.
 | Feature: Deep Analysis | [`docs/features/deep-analysis.md`](docs/features/deep-analysis.md) |
 | Feature: Coin Sets | [`docs/features/coin-sets.md`](docs/features/coin-sets.md) |
 | Feature: Wish List | [`docs/features/wish-list.md`](docs/features/wish-list.md) |
-| Feature: Auction Tracking | [`docs/features/auction-tracking.md`](docs/features/auction-tracking.md) |
 | Feature: AI Analysis | [`docs/features/ai-analysis.md`](docs/features/ai-analysis.md) |
 | Feature: AI Search Agent | [`docs/features/ai-search-agent.md`](docs/features/ai-search-agent.md) |
 | Feature: Statistics | [`docs/features/statistics.md`](docs/features/statistics.md) |

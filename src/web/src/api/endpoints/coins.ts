@@ -36,9 +36,6 @@ import type {
   QuickCaptureDraftUpdateInput,
   QuickCapturePromoteRequest,
   QuickCapturePromotionResponse,
-  ShipmentEnvelopeResponse,
-  ShipmentStatus,
-  ShipmentUpsertInput,
 } from '@/types'
 import { appendOptionalFormValue } from '@/api/endpoints/_shared'
 
@@ -296,7 +293,7 @@ export const commitIntakeDraft = (request: IntakeCommitRequest) =>
 export const updateCoin = (id: number, coin: CoinMutationPayload, params?: Record<string, string>) =>
   api.put<Coin>(`/coins/${id}`, sanitizeCoin(coin), { params })
 
-export const purchaseCoin = (id: number, data?: { purchasePrice?: number; purchaseDate?: string; purchaseLocation?: string; shipment?: ShipmentUpsertInput }) =>
+export const purchaseCoin = (id: number, data?: { purchasePrice?: number; purchaseDate?: string; purchaseLocation?: string }) =>
   api.post<Coin>(`/coins/${id}/purchase`, data || {})
 
 export const sellCoin = (id: number, soldPrice: number | null, soldTo: string) =>
@@ -462,17 +459,6 @@ export const proxyImage = (url: string) =>
 
 export const scrapeImage = (url: string) =>
   api.get<{ imageUrl: string }>('/scrape-image', { params: { url } })
-
-export const getCoinShipment = (coinId: number) => api.get<ShipmentEnvelopeResponse>(`/coins/${coinId}/shipment`)
-
-export const upsertCoinShipment = (coinId: number, input: ShipmentUpsertInput) => api.put<ShipmentEnvelopeResponse>(`/coins/${coinId}/shipment`, input)
-
-export const deleteCoinShipment = (coinId: number) => api.delete<{ message: string }>(`/coins/${coinId}/shipment`)
-
-export const setCoinShipmentManualOverride = (
-  coinId: number,
-  input: { enabled: boolean; status: ShipmentStatus; note?: string },
-) => api.put<ShipmentEnvelopeResponse>(`/coins/${coinId}/shipment/manual-override`, input)
 
 
 export const updateListingStatus = (coinId: number, status: string) =>

@@ -16,7 +16,7 @@ Collection Management is the heart of Ancient Coins. It provides a responsive ga
 ### Filtering & Organization
 - **Category Filter** — Filter by Roman, Greek, Byzantine, Modern, or Other
 - **Tag Filter** — Show only coins with specific custom tags
-- **Status Filter** — Filter by collection coins, wishlist, sold coins, or auction lots
+- **Status Filter** — Filter by collection coins, wishlist, or sold coins
 - **Full-Text Search** — Search across name, inscription, ruler, denomination, and notes
 
 ### Viewing Modes
@@ -88,7 +88,7 @@ POST /api/coins/bulk              # Bulk operations
 ### Query Parameters
 - `?search=...` — Full-text search
 - `?category=...` — Filter by category
-- `?status=...` — Filter by status (collection, wishlist, sold, auction)
+- `?status=...` — Filter by status (collection, wishlist, sold)
 - `?tags=...` — Filter by tag IDs
 - `?sort=...` — Sort field (date_added, updated_at, current_value, random)
 - `?order=...` — Order direction (asc, desc)

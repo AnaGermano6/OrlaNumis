@@ -206,7 +206,7 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted, markRaw, type Component } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
-import { Landmark, Bookmark, BadgeDollarSign, BarChart3, CirclePlus, Settings, ShieldCheck, LogOut, Users as UsersIcon, Bot, Gavel, X, Bell, Plus, CalendarDays, Share2, GripVertical, BookOpen, Layers3, Search, ChevronRight, ChevronDown, CheckSquare, Pin } from 'lucide-vue-next'
+import { Landmark, Bookmark, BadgeDollarSign, BarChart3, CirclePlus, Settings, ShieldCheck, LogOut, Users as UsersIcon, Bot, X, Bell, Plus, Share2, GripVertical, BookOpen, Layers3, Search, ChevronRight, ChevronDown, CheckSquare, Pin } from 'lucide-vue-next'
 import { updateProfile, getMe } from '@/api/client'
 import { useNotifications } from '@/composables/useNotifications'
 import { usePinnedSets } from '@/composables/usePinnedSets'
@@ -323,10 +323,9 @@ const defaultNavItems: NavItem[] = [
   },
   { id: 'wishlist', labelKey: 'nav.wishlist', icon: markRaw(Bookmark), to: '/wishlist', visible: true },
   { id: 'quick-access', labelKey: 'nav.quickAccess', icon: markRaw(Pin), to: '/quick-access', visible: true },
-  // Sold, Auctions, Followers, Calendar and Showcases are not used in this
-  // collection: hidden here, and their routes lead back to the gallery.
+  // Sold, Followers and Showcases are not used in this collection: hidden
+  // here, and their routes lead back to the gallery.
   { id: 'sold', labelKey: 'nav.sold', icon: markRaw(BadgeDollarSign), to: '/sold', visible: false },
-  { id: 'auctions', labelKey: 'nav.auctions', icon: markRaw(Gavel), to: '/auctions', visible: false },
   { id: 'followers', labelKey: 'nav.followers', icon: markRaw(UsersIcon), to: '/followers', visible: false },
   { id: 'agent', labelKey: 'nav.agent', icon: markRaw(Bot), action: () => { showChat.value = true; sidebarOpen.value = false }, visible: true },
   {
@@ -354,7 +353,6 @@ const defaultNavItems: NavItem[] = [
       { id: 'sets-commemoratives', labelKey: 'nav.commemorativeCatalogue', to: '/sets/commemoratives' },
     ],
   },
-  { id: 'calendar', labelKey: 'nav.calendar', icon: markRaw(CalendarDays), to: '/calendar', visible: false },
   { id: 'showcases', labelKey: 'nav.showcases', icon: markRaw(Share2), to: '/showcases', visible: false },
   { id: 'notifications', labelKey: 'nav.notifications', icon: markRaw(Bell), to: '/notifications', visible: true, badge: () => unreadCount.value },
 ]

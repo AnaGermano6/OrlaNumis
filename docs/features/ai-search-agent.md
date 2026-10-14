@@ -328,7 +328,6 @@ GET    /api/ai-status               # Check agent provider status
 - [Wish List](wish-list.md) — Add search results to wishlist
 - [Coin Details](coin-details.md) — View and edit collection records referenced by collection questions
 - [AI Coin Analysis](ai-analysis.md) — Vision-model analysis of uploaded photos
-- [Auction Tracking](auction-tracking.md) — Track NumisBids and CNG Auctions lots found by agent
 - [Price Trends](price-trends.md) — Analyze auction market trends
 
 ## Architecture Deep Dive

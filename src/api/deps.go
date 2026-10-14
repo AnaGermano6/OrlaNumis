@@ -71,17 +71,8 @@ type appDeps struct {
 	deepAnalysisHandoffSvc  *services.DeepAnalysisHandoffService
 	healthSvc               *services.HealthService
 	healthScheduler         *services.CollectionHealthScheduler
-	shipmentSvc             *services.ShipmentService
 	wishlistSearchAlertSvc  *services.WishlistSearchAlertService
-	auctionLotRepo          *repository.AuctionLotRepository
-	auctionEventRepo        *repository.AuctionEventRepository
 	quickAccessSvc          *services.QuickAccessService
-	auctionEndingRepo       *repository.AuctionEndingRepository
-	auctionEndingScheduler  *services.AuctionEndingScheduler
-	auctionAlertRunRepo     *repository.AuctionAlertRunRepository
-	auctionAlertScheduler   *services.AuctionAlertScheduler
-	priceAlertRepo          *repository.PriceAlertRepository
-	bidReminderRepo         *repository.BidReminderRepository
 	featuredCoinRepo        *repository.FeaturedCoinRepository
 	coinOfDayScheduler      *services.CoinOfDayScheduler
 	schedulerRegistry       *SchedulerRegistry
@@ -186,10 +177,7 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	socialRepo := repository.NewSocialRepository(database.DB)
 	notifRepo := repository.NewNotificationRepository(database.DB)
 	valRepo := repository.NewValuationRepository(database.DB)
-	auctionEndingRepo := repository.NewAuctionEndingRepository(database.DB)
 	userRepoForVal := repository.NewUserRepository(database.DB)
-	auctionLotRepo := repository.NewAuctionLotRepository(database.DB)
-	auctionEventRepo := repository.NewAuctionEventRepository(database.DB)
 	quickAccessRepo := repository.NewQuickAccessRepository(database.DB)
 	quickAccessSvc := services.NewQuickAccessService(quickAccessRepo, logger)
 	notifSvc := services.NewNotificationService(notifRepo, socialRepo, userRepoForVal, logger)
@@ -219,26 +207,11 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	timeMachineSvc := services.NewTimeMachineService(timeMachineRepo)
 	healthRepo := repository.NewHealthRepository(database.DB)
 	healthSvc := services.NewHealthService(healthRepo, logger)
-	priceAlertRepo := repository.NewPriceAlertRepository(database.DB)
-	bidReminderRepo := repository.NewBidReminderRepository(database.DB)
-	auctionAlertRunRepo := repository.NewAuctionAlertRunRepository(database.DB)
-	shipmentRepo := repository.NewShipmentRepository(database.DB)
-	shipmentSvc := services.NewShipmentService(
-		shipmentRepo,
-		coinRepo,
-		services.NewShipmentCarrierClientRegistry(buildShipmentCarrierClients(settingsSvc, logger)...),
-		notifSvc,
-		logger,
-	)
 
 	// Create schedulers before routes so they can be passed to admin handlers
 	availScheduler := services.NewAvailabilityScheduler(availSvc, coinRepo, availRepo, settingsSvc, logger).WithCycleRepo(availCycleRepo)
 	availScheduler.StartWorkers(1)
 	valScheduler := services.NewValuationScheduler(valSvc, coinRepo, valRepo, settingsSvc, logger)
-	auctionEndingScheduler := services.NewAuctionEndingScheduler(auctionLotRepo, auctionEndingRepo, userRepoForVal, notifSvc, settingsSvc, logger)
-	auctionAlertEvaluator := services.NewAuctionAlertEvaluator(priceAlertRepo, bidReminderRepo, notifSvc, logger)
-	auctionAlertScheduler := services.NewAuctionAlertScheduler(auctionAlertEvaluator, auctionAlertRunRepo, settingsSvc, logger)
-	shipmentScheduler := services.NewShipmentScheduler(shipmentSvc, settingsSvc, logger)
 	collectionHealthSnapshotRunRepo := repository.NewCollectionHealthSnapshotRunRepository(database.DB)
 	healthScheduler := services.NewCollectionHealthScheduler(healthSvc, collectionHealthSnapshotRunRepo, settingsSvc, logger)
 	featuredCoinRepo := repository.NewFeaturedCoinRepository(database.DB)
@@ -252,9 +225,6 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	reminderScheduler := services.NewReminderScheduler(purchaseReminderRepo, notifSvc, settingsSvc, logger)
 	schedulerRegistry.Register(availScheduler)
 	schedulerRegistry.Register(valScheduler)
-	schedulerRegistry.Register(auctionEndingScheduler)
-	schedulerRegistry.Register(auctionAlertScheduler)
-	schedulerRegistry.Register(shipmentScheduler)
 	schedulerRegistry.Register(healthScheduler)
 	schedulerRegistry.Register(wishlistSearchAlertScheduler)
 	schedulerRegistry.Register(reminderScheduler)
@@ -277,7 +247,7 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 		deepIdentificationSvc, settingsSvc, cfg.UploadDir,
 	)
 	coinCopilotSvc.StartWorkers(backgroundCtx)
-	mcpSvc := services.NewMCPService(collectionSvc, coinRepo, auctionLotRepo, coinCopilotSvc)
+	mcpSvc := services.NewMCPService(collectionSvc, coinRepo, coinCopilotSvc)
 
 	// #218 external tool server: per-key rate limiter shared by the
 	// authenticated /api/v1/tools routes.
@@ -327,17 +297,8 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 		deepAnalysisHandoffSvc:  deepAnalysisHandoffSvc,
 		healthSvc:               healthSvc,
 		healthScheduler:         healthScheduler,
-		shipmentSvc:             shipmentSvc,
 		wishlistSearchAlertSvc:  wishlistSearchAlertSvc,
-		auctionLotRepo:          auctionLotRepo,
-		auctionEventRepo:        auctionEventRepo,
 		quickAccessSvc:          quickAccessSvc,
-		auctionEndingRepo:       auctionEndingRepo,
-		auctionEndingScheduler:  auctionEndingScheduler,
-		auctionAlertRunRepo:     auctionAlertRunRepo,
-		auctionAlertScheduler:   auctionAlertScheduler,
-		priceAlertRepo:          priceAlertRepo,
-		bidReminderRepo:         bidReminderRepo,
 		featuredCoinRepo:        featuredCoinRepo,
 		coinOfDayScheduler:      coinOfDayScheduler,
 		schedulerRegistry:       schedulerRegistry,

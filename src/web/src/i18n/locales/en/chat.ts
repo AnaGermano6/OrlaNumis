@@ -24,10 +24,6 @@ export default {
   confirmField: 'Confirm {field}',
   confirmFieldBody: 'The suggested {field} "{value}" doesn\'t match any of your configured values. Use one of yours, or keep it as suggested.',
   keepSuggested: 'Keep "{value}"',
-  shows: {
-    saved: 'Saved',
-    saveToCalendar: 'Save to Calendar',
-  },
   suggestions: {
     source: 'Source',
     added: 'Added!',
@@ -82,8 +78,6 @@ export default {
   untitled: 'Untitled conversation',
   wishlistFailed: 'Failed to add coin to wishlist',
   wishlistFailedDetail: 'Failed to add coin to wishlist: {detail}',
-  calendarFailed: 'Failed to save event to calendar',
-  entry: 'Entry: {fee}',
   updateCommitted: 'Update committed.',
   proposalCommitted: 'Proposal committed.',
   commitFailed: 'Failed to commit collection update proposal.',

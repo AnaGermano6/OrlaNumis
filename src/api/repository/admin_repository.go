@@ -43,10 +43,10 @@ func (r *AdminRepository) DeleteUserCascade(userID uint) (int64, error) {
 	var rowsAffected int64
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		result, err := deleteUserCascadeInTx(tx, userID)
-		rowsAffected = result.RowsAffected
 		if err != nil {
 			return err
 		}
+		rowsAffected = result.RowsAffected
 		return result.Error
 	})
 	return rowsAffected, err
@@ -72,10 +72,10 @@ func (r *AdminRepository) DeleteUserCascadeWithRecoveryGuard(userID uint) (int64
 			}
 		}
 		result, err := deleteUserCascadeInTx(tx, userID)
-		rowsAffected = result.RowsAffected
 		if err != nil {
 			return err
 		}
+		rowsAffected = result.RowsAffected
 		return result.Error
 	})
 	return rowsAffected, blockedUser, err
@@ -137,6 +137,18 @@ func deleteUserCascadeInTx(tx *gorm.DB, userID uint) (*gorm.DB, error) {
 			return nil, err
 		}
 	}
+	// The tables of retired features (value history, notes, auction
+	// tracking, shipments) are no longer migrated; their old rows go with
+	// their user, before the coins they point at, and those pointing at
+	// others first.
+	for _, table := range []string{"value_snapshots", "notes", "price_alerts", "bid_reminders", "shipment_events", "shipments", "auction_lots", "auction_events"} {
+		if !tx.Migrator().HasTable(table) {
+			continue
+		}
+		if err := tx.Exec("DELETE FROM "+table+" WHERE user_id = ?", userID).Error; err != nil {
+			return nil, err
+		}
+	}
 	var coinIDs []uint
 	if err := tx.Model(&models.Coin{}).Where("user_id = ?", userID).Pluck("id", &coinIDs).Error; err != nil {
 		return nil, err
@@ -163,12 +175,6 @@ func deleteUserCascadeInTx(tx *gorm.DB, userID uint) (*gorm.DB, error) {
 	}
 	if err := tx.Where("user_id = ?", userID).Delete(&models.AgentConversation{}).Error; err != nil {
 		return nil, err
-	}
-	// Value snapshots are no longer recorded; the old ones go with their user.
-	if tx.Migrator().HasTable("value_snapshots") {
-		if err := tx.Exec("DELETE FROM value_snapshots WHERE user_id = ?", userID).Error; err != nil {
-			return nil, err
-		}
 	}
 	if err := tx.Where("user_id = ?", userID).Delete(&models.ApiKey{}).Error; err != nil {
 		return nil, err

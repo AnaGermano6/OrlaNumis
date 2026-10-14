@@ -47,13 +47,10 @@ verification, rotation, and troubleshooting instructions, see
 | `list_wishlist` | Search owned wishlist entries |
 | `collection_stats` | Read collection, wishlist, sold, distribution, and value statistics |
 | `top_coins_by_value` | Read a bounded highest-value active-collection list |
-| `list_auction_lots` | List owned auction lots with bounded filters and pagination |
-| `get_auction_lot` | Read one owned auction lot |
-| `auction_counts` | Read auction status counts, optionally by source |
 
 Collection search excludes wishlist and sold records. Use `list_wishlist` for
-wishlist data. Inputs, page sizes, query lengths, and returned auction text are
-bounded at the service boundary.
+wishlist data. Inputs, limits, and query lengths are bounded at the service
+boundary.
 
 ## Coin Copilot lifecycle tools
 
@@ -79,7 +76,7 @@ existing provider/model capability preflight.
 - Copilot tools are registered only for an exact `copilot` capability token.
 - Cross-owner identifiers produce not-found behavior without leaking data.
 - MCP requests are limited to 128 KiB.
-- The MCP surface exposes no collection, wishlist, auction, settings, shell,
+- The MCP surface exposes no collection, wishlist, settings, shell,
   filesystem, arbitrary HTTP, or database mutation tools.
 - Coin Copilot tools persist only their existing durable run state; they do not
   grant general application write access.

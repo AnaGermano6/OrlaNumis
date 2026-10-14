@@ -324,10 +324,10 @@ func (s *AvailabilityService) CheckWishlistForUser(
 	return run, nil
 }
 
-// notifyRunTerminal fires the owner-facing terminal-outcome notification (in-app + best-effort
-// Pushover) for every terminal child run, and — for admin-triggered children that end up
-// failed — an additional notification to the triggering admin. Called only after the terminal
-// transition has already committed (FR-011: Pushover failures can never regress run status).
+// notifyRunTerminal fires the owner-facing terminal-outcome in-app notification for every
+// terminal child run, and — for admin-triggered children that end up failed — an additional
+// notification to the triggering admin. Called only after the terminal transition has
+// already committed (FR-011: notification failures can never regress run status).
 func (s *AvailabilityService) notifyRunTerminal(run *models.AvailabilityRun, newlyUnavailableCoinNames []string) {
 	if s.notifSvc == nil {
 		return
