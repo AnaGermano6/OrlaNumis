@@ -299,6 +299,22 @@ func (s *CoinReleasesService) readCatalogue(ctx context.Context) []CoinRelease {
 // The face values of the collector coins listed for every euro country.
 var catalogueEuroValues = []int{5, 10, 20}
 
+// catalogueLeftOutSeries are Numista series a country's catalogue does not
+// list, by the start of their names: Portugal's square, coloured "Portuguese
+// tiles" coins (one per century), which the owner does not collect.
+var catalogueLeftOutSeries = map[string][]string{"PT": {"portuguese tiles"}}
+
+// catalogueLeavesOut tells whether a coin is of a series the catalogue leaves out.
+func catalogueLeavesOut(coin CoinRelease) bool {
+	name := strings.ToLower(strings.TrimSpace(coin.Title))
+	for _, series := range catalogueLeftOutSeries[coin.Country] {
+		if strings.HasPrefix(name, series) {
+			return true
+		}
+	}
+	return false
+}
+
 // numistaEuroIssuers are Numista's codes of the euro countries, by ISO code.
 var numistaEuroIssuers = map[string]string{
 	"AD": "andorre", "AT": "autriche", "BE": "belgique", "BG": "bulgarie", "HR": "croatie", "CY": "chypre",
@@ -329,7 +345,7 @@ func (s *CoinReleasesService) euroCollectorCoins(ctx context.Context, coins []Co
 			}
 			for _, item := range types {
 				coin, ok := euroCollectorRelease(item, country, value)
-				if !ok || seen[item.ID] {
+				if !ok || seen[item.ID] || catalogueLeavesOut(coin) {
 					continue
 				}
 				seen[item.ID] = true

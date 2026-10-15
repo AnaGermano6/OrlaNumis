@@ -208,9 +208,10 @@ func TestCoinCatalogue_EuroCollectorCoins(t *testing.T) {
 			{"id": 702, "title": "10 Euros (JO 2024 Paris - Eiffel Tower)", "issuer": {"code": "france"}, "min_year": 2024, "max_year": 2024},
 			{"id": 703, "title": "10 Euros (10 euros Coupe du Monde FIFA 2026)", "issuer": {"code": "france"}, "min_year": 2025, "max_year": 2025},
 			{"id": 704, "title": "10 Euros (JO 2024 Paris - handball)", "issuer": {"code": "france"}, "min_year": 2024, "max_year": 2024}]}`,
-		"portugal|5 euro": `{"count": 2, "types": [
+		"portugal|5 euro": `{"count": 3, "types": [
 			{"id": 601, "title": "5 Euros (Faróis de Portugal - Cabo de São Vicente)", "issuer": {"code": "portugal"}, "min_year": 2025, "max_year": 2025},
-			{"id": 602, "title": "5 Euros (Mosteiro dos Jerónimos)", "issuer": {"code": "portugal"}, "min_year": 2004, "max_year": 2004}]}`,
+			{"id": 602, "title": "5 Euros (Mosteiro dos Jerónimos)", "issuer": {"code": "portugal"}, "min_year": 2004, "max_year": 2004},
+			{"id": 604, "title": "5 Euro (Portuguese tiles; 16th centuries)", "issuer": {"code": "portugal"}, "min_year": 2025, "max_year": 2025}]}`,
 	}}
 	portugal := fakeMint{country: "Portugal", source: "incm", coins: []mintCoin{
 		{Title: "Faróis de Portugal - Cabo de São Vicente (Prata Proof)", Value: 5, Year: 2025, Released: "2025-11", PageURL: "https://loja.incm.pt/products/farol", Obverse: "https://cdn/farol_A.jpg"},
@@ -242,6 +243,10 @@ func TestCoinCatalogue_EuroCollectorCoins(t *testing.T) {
 	}
 	if byKey["numista:602"].Source != CoinReleaseSourceNumista {
 		t.Fatalf("an older coin = %+v", byKey["numista:602"])
+	}
+	// Portugal's square "Portuguese tiles" coins are left out.
+	if tiles, listed := byKey["numista:604"]; listed {
+		t.Fatalf("a tiles coin is listed: %+v", tiles)
 	}
 	// Asterix is the Monnaie de Paris's coin, though Numista names it in
 	// French; the Eiffel Tower coin shares only "Paris" with Notre-Dame, and stays.
