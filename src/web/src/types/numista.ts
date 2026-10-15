@@ -159,6 +159,17 @@ export interface NumistaHealthSummary {
   enrichmentFailed: number
   lastQuotaLimitedAt?: string | null
   lastRetryAfterSeconds?: number | null
+  /** This month's request count against the quota. */
+  usage?: NumistaUsageSummary
+}
+
+/** The month's Numista requests: above pauseAt, background requests wait for the next month. */
+export interface NumistaUsageSummary {
+  month: string
+  requests: number
+  limit: number
+  pauseAt: number
+  backgroundPaused: boolean
 }
 
 export interface SelectedNumistaReference {

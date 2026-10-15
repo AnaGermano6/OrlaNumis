@@ -254,9 +254,13 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		// The uCoin import asks for every imported coin, so this has its own,
 		// higher limit; each request downloads at most two official images.
 		officialPhotosRateLimit := middleware.AuthenticatedRateLimit(300, time.Minute)
-		protected.POST("/coins/:id/official-photos", officialPhotosRateLimit, handlers.NewOfficialPhotoHandler(d.coinRepo, d.imageHandler, coinPhotoSearch, d.logger).Add)
+		officialPhotos := handlers.NewOfficialPhotoHandler(d.coinRepo, d.imageHandler, coinPhotoSearch, d.logger)
+		protected.POST("/coins/:id/official-photos", officialPhotosRateLimit, officialPhotos.Add)
+		protected.GET("/coins/official-photos/missing", officialPhotos.Missing)
+		protected.POST("/coins/official-photos/batch", officialPhotosRateLimit, officialPhotos.Batch)
 		coinCountryHandler := handlers.NewCoinCountryHandler(d.coinRepo, services.NewCoinCountryService(d.coinRepo, numistaCatalogSvc))
 		protected.GET("/coins/countries", coinCountryHandler.Countries)
+		protected.GET("/coins/denominations", coinCountryHandler.Denominations)
 		// Whether coins are still legal tender, from their cached Numista types.
 		coinCirculation := services.NewCoinCirculationService(d.coinRepo, numistaCatalogSvc)
 		coinHandler.WithCirculation(coinCirculation)
@@ -270,7 +274,8 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		// Checklist sets list the catalogue's coins or a challenge's; smart
 		// sets choose coins by their kind too; new coins of a checklist set's
 		// catalogue are announced.
-		setChecklist := services.NewSetChecklistService(coinReleases, d.coinRepo, coinPhotoSearch)
+		catalogueOverrides := repository.NewCatalogueOverrideRepository(database.DB)
+		setChecklist := services.NewSetChecklistService(coinReleases, d.coinRepo, coinPhotoSearch).WithOverrides(catalogueOverrides)
 		setService.WithChecklist(setChecklist)
 		setRepo.WithCoinClassifier(func(userID uint, kind string) ([]uint, error) {
 			sorted, err := coinCirculation.Classify(userID)
@@ -300,10 +305,13 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		setChecklistWatcher := services.NewSetChecklistWatcher(setRepo, setChecklist, d.notifRepo, d.logger)
 		go setChecklistWatcher.Start()
 		// Every €2 commemorative and the mints' collector coins, by country.
-		coinCatalogue := handlers.NewCoinCatalogueHandler(coinReleases, d.coinRepo, coinPhotoSearch)
+		coinCatalogue := handlers.NewCoinCatalogueHandler(coinReleases, d.coinRepo, coinPhotoSearch).WithOverrides(catalogueOverrides)
 		protected.GET("/coin-catalogue/countries", coinCatalogue.Countries)
 		protected.GET("/coin-catalogue/joint-issues", coinCatalogue.JointIssues)
 		protected.GET("/coin-catalogue", coinCatalogue.Country)
+		// Each user's coins hidden from the catalogue, or joined to another.
+		protected.PUT("/coin-catalogue/overrides", d.writeRateLimit, coinCatalogue.SetOverride)
+		protected.DELETE("/coin-catalogue/overrides", d.writeRateLimit, coinCatalogue.DeleteOverride)
 		// ECB rates, to convert amounts into the collection currency.
 		protected.GET("/exchange-rates", handlers.NewExchangeRatesHandler(d.exchangeRates).Rates)
 		protected.POST("/coins/country-from-numista", d.writeRateLimit, coinCountryHandler.FillFromNumista)

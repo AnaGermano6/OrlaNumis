@@ -3,6 +3,8 @@ package database
 import (
 	"fmt"
 	"log"
+	"strings"
+	"time"
 
 	"github.com/briandenicola/ancient-coins-api/models"
 	"github.com/glebarez/sqlite"
@@ -105,6 +107,17 @@ func Connect(dbPath string) {
 	if err := DB.AutoMigrate(&models.NumistaCacheEntry{}); err != nil {
 		log.Fatalf("Failed to migrate Numista cache: %v", err)
 	}
+	// Numista requests by month: a new standalone table.
+	if err := DB.AutoMigrate(&models.NumistaUsage{}); err != nil {
+		log.Fatalf("Failed to migrate Numista usage: %v", err)
+	}
+	if err := seedNumistaUsage(DB, time.Now()); err != nil {
+		log.Printf("database: could not estimate this month's Numista requests: %v", err)
+	}
+	// The coins each user hid in the catalogue, or joined to another: a new standalone table.
+	if err := DB.AutoMigrate(&models.CatalogueOverride{}); err != nil {
+		log.Fatalf("Failed to migrate catalogue overrides: %v", err)
+	}
 	if err := migrateFeature362(DB); err != nil {
 		log.Fatalf("Failed to migrate Feature 362 schema: %v", err)
 	}
@@ -196,6 +209,35 @@ func backfillRequiredDefaults(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+// numistaAnswerKeys start the cache entries that are answers of Numista's
+// API; the same cache keeps the ECB's, the mints' and other pages.
+var numistaAnswerKeys = []string{"search:", "type:", "issues:", "prices:", "issuer-euro:", "issuer-year:", "issuers:"}
+
+// seedNumistaUsage starts this month's Numista request count, when it has
+// none yet, from the answers cached since the month began: the requests
+// made before the count began, at least.
+func seedNumistaUsage(db *gorm.DB, now time.Time) error {
+	now = now.UTC()
+	month := now.Format("2006-01")
+	var counted int64
+	if err := db.Model(&models.NumistaUsage{}).Where("month = ?", month).Count(&counted).Error; err != nil || counted > 0 {
+		return err
+	}
+	conditions := make([]string, 0, len(numistaAnswerKeys))
+	args := make([]any, 0, len(numistaAnswerKeys))
+	for _, prefix := range numistaAnswerKeys {
+		conditions = append(conditions, "key LIKE ?")
+		args = append(args, prefix+"%")
+	}
+	var cached int64
+	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	if err := db.Model(&models.NumistaCacheEntry{}).Where("fetched_at >= ?", start).
+		Where(strings.Join(conditions, " OR "), args...).Count(&cached).Error; err != nil || cached == 0 {
+		return err
+	}
+	return db.Create(&models.NumistaUsage{Month: month, Requests: int(cached), UpdatedAt: now}).Error
 }
 
 // retiredTables are the tables of features removed in 2026-10: value

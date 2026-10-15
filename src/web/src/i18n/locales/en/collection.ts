@@ -1,6 +1,6 @@
 export default {
   searchPlaceholder: 'Search coins by name, ruler, inscription...',
-  allEras: 'All Eras',
+  allDenominations: 'All face values',
   allSets: 'All Sets',
   sort: {
     lastUpdated: 'Last Updated',
@@ -16,7 +16,7 @@ export default {
     exitSelection: 'Exit Selection Mode',
     enableSelection: 'Enable Selection Mode',
     category: 'Category',
-    era: 'Era',
+    denomination: 'Face value',
     set: 'Set',
     sort: 'Sort',
     view: 'View',

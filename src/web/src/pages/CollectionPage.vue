@@ -17,14 +17,14 @@
       v-if="isPwa"
       v-model:search="search"
       v-model:menu-open="menuOpen"
-      v-model:selected-era="selectedEra"
+      v-model:selected-denomination="selectedDenomination"
       v-model:selected-tag="selectedTag"
       v-model:sort-key="sortKey"
       v-model:view-mode="viewMode"
       v-model:grid-side="gridSide"
       :select-mode="selectMode"
       :user-tags="userTags"
-      :era-options="eraOptions"
+      :denomination-options="denominationOptions"
       @toggle-select-mode="toggleSelectMode"
     >
       <template #controls>
@@ -48,12 +48,12 @@
     <DesktopCollectionHeader
       v-if="!isPwa"
       v-model:search="search"
-      v-model:selected-era="selectedEra"
+      v-model:selected-denomination="selectedDenomination"
       v-model:selected-tag="selectedTag"
       v-model:sort-key="sortKey"
       v-model:grid-side="gridSide"
       :user-tags="userTags"
-      :era-options="eraOptions"
+      :denomination-options="denominationOptions"
     >
       <template #controls>
         <CollectionViewControls
@@ -118,7 +118,7 @@
       :is-pwa="isPwa"
       :view-mode="viewMode"
       :grid-side="gridSide"
-      :has-filters="!!(search || selectedEra || selectedTag || selectedCountry || selectedPresentation || selectedRarity || selectedCirculation || selectedCommemorative || selectedClassification)"
+      :has-filters="!!(search || selectedDenomination || selectedTag || selectedCountry || selectedPresentation || selectedRarity || selectedCirculation || selectedCommemorative || selectedClassification)"
       :total="store.total"
       :page="page"
       :per-page="COINS_PER_PAGE"
@@ -189,7 +189,7 @@ const { refresh: refreshQuickAccess } = useQuickAccess()
 
 const {
   search, page, sortKey, selectedTag, userTags,
-  selectedEra, eraOptions,
+  selectedDenomination, denominationOptions,
   selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, groupBy, countryOptions, fillingCountries,
   fetchUserTags, loadCoins, loadCountryOptions, fillCountriesOnce,
 } = useCollectionFilters()

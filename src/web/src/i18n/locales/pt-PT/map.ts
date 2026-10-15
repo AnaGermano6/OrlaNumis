@@ -16,8 +16,6 @@ const messages: Messages['map'] = {
     noMatch: 'Nenhum país com esse nome.',
     offMapMark: 'Fora do mapa',
     choose: 'Escolha um país no mapa ou na lista para ver as moedas que já tem dele.',
-    loadingCoins: 'A carregar as moedas...',
-    coinsFailed: 'Não foi possível carregar as moedas deste país.',
     years: 'Anos {from}–{to}',
     year: 'Ano {year}',
     value: 'Valor {value}',

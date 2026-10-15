@@ -98,6 +98,12 @@ func (h *OfficialPhotoHandler) Add(c *gin.Context) {
 // Attach adds the coin's official images for the given sides it has no image
 // of and returns them; found is false when the user has no such coin.
 func (h *OfficialPhotoHandler) Attach(ctx context.Context, coinID, userID uint, sides []models.ImageType) (added []models.CoinImage, found bool) {
+	return h.attach(ctx, coinID, userID, sides, false)
+}
+
+// attach is Attach; cachedTypesOnly reads the coin's Numista type from the
+// cache only, so going through many coins spends none of Numista's quota.
+func (h *OfficialPhotoHandler) attach(ctx context.Context, coinID, userID uint, sides []models.ImageType, cachedTypesOnly bool) (added []models.CoinImage, found bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	coin, err := h.coins.FindByID(coinID, userID)
@@ -108,7 +114,9 @@ func (h *OfficialPhotoHandler) Attach(ctx context.Context, coinID, userID uint, 
 	if coin.Year == nil {
 		return added, true
 	}
-	obverse, reverse := h.photos.OfficialPhotos(ctx, services.CoinPhotoQueryFor(coin))
+	query := services.CoinPhotoQueryFor(coin)
+	query.CachedTypesOnly = cachedTypesOnly
+	obverse, reverse := h.photos.OfficialPhotos(ctx, query)
 	var credits []string
 	for _, side := range []models.ImageType{models.ImageTypeObverse, models.ImageTypeReverse} {
 		photo := obverse
@@ -127,6 +135,100 @@ func (h *OfficialPhotoHandler) Attach(ctx context.Context, coinID, userID uint, 
 	}
 	h.recordCredits(coin, credits)
 	return added, true
+}
+
+// officialBatchLimit is the most coins one batch looks at: each may download
+// two images, so a batch answers within seconds.
+const officialBatchLimit = 20
+
+// MissingPhotosResponse says how many coins have no photo at all.
+type MissingPhotosResponse struct {
+	Count int64 `json:"count" example:"326"`
+}
+
+// Missing counts the user's coins without any photo.
+//
+//	@Summary		Count coins without photos
+//	@Description	Counts the user's coins (not banknotes, not sold) that have no image at all: the ones the official photos batch looks at.
+//	@Tags			Coins
+//	@Produce		json
+//	@Success		200	{object}	MissingPhotosResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/coins/official-photos/missing [get]
+func (h *OfficialPhotoHandler) Missing(c *gin.Context) {
+	count, err := h.coins.CountWithoutImages(c.GetUint("userId"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count coins without photos"})
+		return
+	}
+	c.JSON(http.StatusOK, MissingPhotosResponse{Count: count})
+}
+
+// OfficialPhotosBatchRequest says where a batch starts and how many coins it looks at.
+type OfficialPhotosBatchRequest struct {
+	// AfterID is the last coin the previous batch looked at (0 to start).
+	AfterID uint `json:"afterId" example:"0"`
+	Limit   int  `json:"limit" binding:"omitempty,min=1,max=20" example:"10"`
+}
+
+// OfficialPhotosBatchResponse tells what a batch did and where the next one starts.
+type OfficialPhotosBatchResponse struct {
+	// Checked is how many coins the batch looked at; WithPhotos how many of
+	// them got at least one image, Images how many images in all.
+	Checked    int `json:"checked" example:"10"`
+	WithPhotos int `json:"withPhotos" example:"7"`
+	Images     int `json:"images" example:"13"`
+	// NextAfterID starts the next batch; Done is true when no coin is left.
+	NextAfterID uint `json:"nextAfterId" example:"431"`
+	Done        bool `json:"done"`
+}
+
+// Batch gives coins without any photo their official images, a few at a time.
+//
+//	@Summary		Add official images to coins without photos
+//	@Description	Looks at up to limit (default 10, at most 20) of the user's coins without any image, after afterId, and adds the official images each has (as for one coin): the ECB's images of a euro coin, or its mint's photos. Numista types are read from the cache only, so no Numista request is made. Call again with nextAfterId until done.
+//	@Tags			Coins
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		OfficialPhotosBatchRequest	true	"Where to start"
+//	@Success		200		{object}	OfficialPhotosBatchResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/coins/official-photos/batch [post]
+func (h *OfficialPhotoHandler) Batch(c *gin.Context) {
+	var req OfficialPhotosBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 20"})
+		return
+	}
+	limit := req.Limit
+	if limit == 0 {
+		limit = 10
+	}
+	limit = min(limit, officialBatchLimit)
+	userID := c.GetUint("userId")
+	ids, err := h.coins.IDsWithoutImages(userID, req.AfterID, limit+1)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list coins without photos"})
+		return
+	}
+	resp := OfficialPhotosBatchResponse{NextAfterID: req.AfterID, Done: len(ids) <= limit}
+	if len(ids) > limit {
+		ids = ids[:limit]
+	}
+	sides := []models.ImageType{models.ImageTypeObverse, models.ImageTypeReverse}
+	for _, id := range ids {
+		added, _ := h.attach(c.Request.Context(), id, userID, sides, true)
+		resp.Checked++
+		resp.NextAfterID = id
+		if len(added) > 0 {
+			resp.WithPhotos++
+			resp.Images += len(added)
+		}
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func containsSide(sides []models.ImageType, side models.ImageType) bool {

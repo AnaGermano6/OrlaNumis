@@ -104,6 +104,20 @@
             </button>
           </div>
 
+          <!-- This month's requests against the quota -->
+          <div v-if="!healthLoading && health?.usage" class="mb-4 rounded-sm border border-border-subtle bg-card p-4" data-testid="numista-usage">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <h4 class="section-label m-0">{{ t('admin.system.numistaUsageTitle') }}</h4>
+              <span class="font-semibold text-text-primary">{{ t('admin.system.numistaUsage', { requests: formatCount(health.usage.requests), limit: formatCount(health.usage.limit) }) }}</span>
+            </div>
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-surface-secondary" role="progressbar" :aria-valuenow="health.usage.requests" aria-valuemin="0" :aria-valuemax="health.usage.limit">
+              <div class="h-full rounded-full" :class="health.usage.backgroundPaused ? 'bg-[var(--color-negative)]' : 'bg-gold'" :style="{ width: `${Math.min(100, (health.usage.requests / health.usage.limit) * 100)}%` }"></div>
+            </div>
+            <p class="mb-0 mt-2 text-sm" :class="health.usage.backgroundPaused ? 'text-loss' : 'text-text-secondary'">
+              {{ health.usage.backgroundPaused ? t('admin.system.numistaUsagePaused', { pauseAt: formatCount(health.usage.pauseAt) }) : t('admin.system.numistaUsageNote', { pauseAt: formatCount(health.usage.pauseAt) }) }}
+            </p>
+          </div>
+
           <div v-if="healthLoading" class="flex items-center gap-3 py-6 text-sm text-text-secondary" role="status">
             <span class="spinner"></span>
             {{ t('admin.system.loadingNumista') }}
@@ -803,6 +817,10 @@ function formatTimestamp(value?: string | null) {
   if (!value) return t('admin.system.notObserved')
   const timestamp = new Date(value)
   return Number.isNaN(timestamp.getTime()) ? t('admin.system.notObserved') : timestamp.toLocaleString(intlLocale())
+}
+
+function formatCount(value: number) {
+  return new Intl.NumberFormat(intlLocale()).format(value)
 }
 
 function formatPercent(value: number) {

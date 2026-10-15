@@ -14,8 +14,6 @@ export default {
     noMatch: 'No country by that name.',
     offMapMark: 'Off the map',
     choose: 'Choose a country on the map or in the list to see the coins you have from it.',
-    loadingCoins: 'Loading the coins...',
-    coinsFailed: 'The coins of this country could not be loaded.',
     years: 'Years {from}–{to}',
     year: 'Year {year}',
     value: 'Value {value}',

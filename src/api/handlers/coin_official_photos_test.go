@@ -170,6 +170,78 @@ func TestOfficialPhotos_Endpoint(t *testing.T) {
 	}
 }
 
+// The coins without any photo get their official images a batch at a time:
+// those that have one or are sold, banknotes and another user's coins are
+// left alone, and a coin with no official image is passed over.
+func TestOfficialPhotos_Batch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler, db := setupOfficialPhotos(t)
+	stubPhotoSource(t, http.StatusOK, "image/jpeg", makeSyntheticJPEG(64, 64))
+	year := 2022
+	newCoin := func(coin models.Coin) models.Coin {
+		coin.Year = &year
+		if coin.UserID == 0 {
+			coin.UserID = 1
+		}
+		if err := db.Create(&coin).Error; err != nil {
+			t.Fatal(err)
+		}
+		return coin
+	}
+	germany := newCoin(models.Coin{Name: "2 euro 2022 – Alemanha", Country: "Alemanha", Denomination: "2 euro"})
+	collector := newCoin(models.Coin{Name: "5 euro 2022 – Thuringia", Country: "Alemanha", Denomination: "5 euro"})
+	france := newCoin(models.Coin{Name: "2 euro 2022 – França", Country: "França", Denomination: "2 euro"})
+	photographed := newCoin(models.Coin{Name: "2 euro 2022 – Itália", Country: "Itália", Denomination: "2 euro"})
+	db.Create(&models.CoinImage{CoinID: photographed.ID, FilePath: "mine.jpg", ImageType: models.ImageTypeObverse, IsPrimary: true})
+	newCoin(models.Coin{Name: "2 euro 2022 – Bélgica", Country: "Bélgica", Denomination: "2 euro", IsSold: true})
+	newCoin(models.Coin{Name: "5 euro note", Country: "Portugal", Denomination: "5 euro", Kind: models.CoinKindBanknote})
+	newCoin(models.Coin{Name: "2 euro 2022 – Áustria", Country: "Áustria", Denomination: "2 euro", UserID: 2})
+
+	router := gin.New()
+	group := router.Group("/api")
+	group.Use(coinTestAuthMiddleware())
+	group.GET("/coins/official-photos/missing", handler.Missing)
+	group.POST("/coins/official-photos/batch", handler.Batch)
+	missing := func() int64 {
+		var got MissingPhotosResponse
+		w := coinRequest(router, http.MethodGet, "/api/coins/official-photos/missing", nil)
+		if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || w.Code != http.StatusOK {
+			t.Fatalf("missing: %d %s", w.Code, w.Body.String())
+		}
+		return got.Count
+	}
+	if count := missing(); count != 3 {
+		t.Fatalf("coins without photos = %d, want 3", count)
+	}
+	if w := coinRequest(router, http.MethodPost, "/api/coins/official-photos/batch", map[string]any{"limit": 21}); w.Code != http.StatusBadRequest {
+		t.Fatalf("limit 21: %d", w.Code)
+	}
+
+	batch := func(afterID uint) OfficialPhotosBatchResponse {
+		var got OfficialPhotosBatchResponse
+		w := coinRequest(router, http.MethodPost, "/api/coins/official-photos/batch", map[string]any{"afterId": afterID, "limit": 2})
+		if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || w.Code != http.StatusOK {
+			t.Fatalf("batch: %d %s", w.Code, w.Body.String())
+		}
+		return got
+	}
+	first := batch(0)
+	if first.Checked != 2 || first.WithPhotos != 1 || first.Images != 2 || first.NextAfterID != collector.ID || first.Done {
+		t.Fatalf("first batch = %+v", first)
+	}
+	second := batch(first.NextAfterID)
+	if second.Checked != 1 || second.WithPhotos != 1 || second.NextAfterID != france.ID || !second.Done {
+		t.Fatalf("second batch = %+v", second)
+	}
+	if len(coinImages(t, db, germany.ID)) != 2 || len(coinImages(t, db, collector.ID)) != 0 {
+		t.Fatal("the euro coins get both sides, the collector coin none")
+	}
+	// The collector coin, which has no official image, is the one left.
+	if count := missing(); count != 1 {
+		t.Fatalf("coins still without photos = %d, want 1", count)
+	}
+}
+
 type fixtureINCMShop struct{ body []byte }
 
 func (f fixtureINCMShop) ProductsPage(_ context.Context, _ string, page int) ([]byte, error) {

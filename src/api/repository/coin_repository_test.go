@@ -1130,3 +1130,36 @@ func TestCoinRepository_WishlistCoinsWithReferences(t *testing.T) {
 		t.Fatalf("wishlist = %+v", got)
 	}
 }
+
+// The gallery's face value filter: the face values of the collection with
+// their counts, the most common first, and the coins of one of them.
+func TestCoinRepository_DenominationCountsAndFilter(t *testing.T) {
+	db := setupTestDB(t)
+	repo := NewCoinRepository(db)
+	for _, coin := range []models.Coin{
+		{Name: "Malta", Denomination: "2 euro", UserID: 1},
+		{Name: "Espanha", Denomination: " 2 euro ", UserID: 1},
+		{Name: "Escudo", Denomination: "1 escudo", UserID: 1},
+		{Name: "Wanted", Denomination: "5 euro", UserID: 1, IsWishlist: true},
+		{Name: "Sold", Denomination: "5 euro", UserID: 1, IsSold: true},
+		{Name: "No value", UserID: 1},
+		{Name: "Another user's", Denomination: "10 euro", UserID: 2},
+	} {
+		coin.Category = models.CategoryModern
+		if err := repo.Create(&coin); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	counts, err := repo.DenominationCounts(1, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprint(counts) != "[{2 euro 2} {1 escudo 1}]" {
+		t.Fatalf("counts = %v", counts)
+	}
+	coins, total, err := repo.List(1, CoinListFilters{Denomination: "2 euro", Page: 1, Limit: 50})
+	if err != nil || total != 2 || len(coins) != 2 {
+		t.Fatalf("2 euro coins = %d of %d, %v", len(coins), total, err)
+	}
+}

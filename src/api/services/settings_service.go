@@ -38,16 +38,18 @@ func (s *SettingsService) GetCoinSearchPrompt() string {
 }
 
 const (
-	SettingAIProvider                  = "AIProvider"
-	SettingOllamaURL                   = "OllamaURL"
-	SettingOllamaModel                 = "OllamaModel"
-	SettingObversePrompt               = "ObversePrompt"
-	SettingReversePrompt               = "ReversePrompt"
-	SettingTextExtractionPrompt        = "TextExtractionPrompt"
-	SettingOllamaTimeout               = "OllamaTimeout"
-	SettingLogLevel                    = "LogLevel"
-	SettingPublicAppURL                = "PublicAppURL"
-	SettingNumistaAPIKey               = "NumistaAPIKey"
+	SettingAIProvider           = "AIProvider"
+	SettingOllamaURL            = "OllamaURL"
+	SettingOllamaModel          = "OllamaModel"
+	SettingObversePrompt        = "ObversePrompt"
+	SettingReversePrompt        = "ReversePrompt"
+	SettingTextExtractionPrompt = "TextExtractionPrompt"
+	SettingOllamaTimeout        = "OllamaTimeout"
+	SettingLogLevel             = "LogLevel"
+	SettingPublicAppURL         = "PublicAppURL"
+	SettingNumistaAPIKey        = "NumistaAPIKey"
+	// SettingNumistaMonthlyLimit is the plan's monthly request quota.
+	SettingNumistaMonthlyLimit         = "NumistaMonthlyLimit"
 	SettingNumistaSearchTTLHours       = "NumistaSearchTTLHours"
 	SettingNumistaDetailTTLHours       = "NumistaDetailTTLHours"
 	SettingNumistaEnrichmentLimit      = "NumistaEnrichmentLimit"
@@ -163,6 +165,7 @@ var settingDefaults = map[string]string{
 	SettingLogLevel:                           "info",
 	SettingPublicAppURL:                       "",
 	SettingNumistaAPIKey:                      "",
+	SettingNumistaMonthlyLimit:                "2000",
 	SettingNumistaSearchTTLHours:              "24",
 	SettingNumistaDetailTTLHours:              "168",
 	SettingNumistaEnrichmentLimit:             "5",

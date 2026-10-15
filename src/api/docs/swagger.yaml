@@ -184,6 +184,17 @@ definitions:
       ownedCommemoratives:
         type: integer
     type: object
+  handlers.CatalogueOverrideRequest:
+    properties:
+      id:
+        maxLength: 600
+        type: string
+      sameAs:
+        maxLength: 600
+        type: string
+    required:
+    - id
+    type: object
   handlers.CategoryCount:
     properties:
       category:
@@ -224,6 +235,13 @@ definitions:
       country:
         example: PT
         type: string
+      hidden:
+        description: |-
+          Hidden are the coins the user hid, and those the user joined to
+          another (sameAs), which is listed in their place.
+        items:
+          $ref: '#/definitions/services.CoinRelease'
+        type: array
     type: object
   handlers.CoinCreateRequest:
     properties:
@@ -1306,6 +1324,12 @@ definitions:
         example: 12
         type: integer
     type: object
+  handlers.MissingPhotosResponse:
+    properties:
+      count:
+        example: 326
+        type: integer
+    type: object
   handlers.NGCDataSwagger:
     properties:
       certNumber:
@@ -1514,6 +1538,40 @@ definitions:
         type: array
       status:
         type: string
+    type: object
+  handlers.OfficialPhotosBatchRequest:
+    properties:
+      afterId:
+        description: AfterID is the last coin the previous batch looked at (0 to start).
+        example: 0
+        type: integer
+      limit:
+        example: 10
+        maximum: 20
+        minimum: 1
+        type: integer
+    type: object
+  handlers.OfficialPhotosBatchResponse:
+    properties:
+      checked:
+        description: |-
+          Checked is how many coins the batch looked at; WithPhotos how many of
+          them got at least one image, Images how many images in all.
+        example: 10
+        type: integer
+      done:
+        type: boolean
+      images:
+        example: 13
+        type: integer
+      nextAfterId:
+        description: NextAfterID starts the next batch; Done is true when no coin
+          is left.
+        example: 431
+        type: integer
+      withPhotos:
+        example: 7
+        type: integer
     type: object
   handlers.OfficialPhotosRequest:
     properties:
@@ -3970,6 +4028,10 @@ definitions:
           type: integer
         description: Sparse rolling counts; absent statuses have zero events.
         type: object
+      usage:
+        allOf:
+        - $ref: '#/definitions/models.NumistaUsageSummary'
+        description: Usage is this month's request count against the quota.
       userEditedQueryCount:
         type: integer
     type: object
@@ -4100,6 +4162,23 @@ definitions:
     x-enum-varnames:
     - NumistaSearchAttemptPrimary
     - NumistaSearchAttemptRelaxed
+  models.NumistaUsageSummary:
+    properties:
+      backgroundPaused:
+        type: boolean
+      limit:
+        example: 2000
+        type: integer
+      month:
+        example: 2026-10
+        type: string
+      pauseAt:
+        example: 1800
+        type: integer
+      requests:
+        example: 1234
+        type: integer
+    type: object
   models.OCREHealthSummary:
     properties:
       callBudget:
@@ -4681,6 +4760,13 @@ definitions:
       country:
         type: string
     type: object
+  repository.DenominationCount:
+    properties:
+      count:
+        type: integer
+      denomination:
+        type: string
+    type: object
   repository.DistributionCell:
     properties:
       category:
@@ -4975,6 +5061,11 @@ definitions:
           known; January to December when only the year is.
         example: 2025-10
         type: string
+      id:
+        description: |-
+          ID identifies a coin of the catalogue (its first key), to hide it or
+          join it to another.
+        type: string
       imageUrl:
         type: string
       issueText:
@@ -4989,6 +5080,10 @@ definitions:
         description: Owned is true when a coin of the collection is this one.
         type: boolean
       pageUrl:
+        type: string
+      sameAs:
+        description: SameAs is, for a coin the user joined to another, that one's
+          id.
         type: string
       source:
         enum:
@@ -6677,7 +6772,8 @@ paths:
   /admin/numista/health:
     get:
       description: Returns redacted Numista configuration validity and bounded rolling
-        status, latency, cache, quota, and enrichment aggregates. Admin only.
+        status, latency, cache, quota, and enrichment aggregates, and this month's
+        request count against the quota. Admin only.
       produces:
       - application/json
       responses:
@@ -8896,7 +8992,8 @@ paths:
         €2 commemoratives (every one the ECB has published since 2004), its €5, €10
         and €20 coins and the collector coins its mint sells (Portugal, France, Austria);
         in escudos (currency PTE), Portugal''s commemorative and collector coins of
-        1911–2001. Each says whether a coin of the collection is it.'
+        1911–2001. Each says whether a coin of the collection is it. The coins the
+        user hid, or joined to another, are listed apart.'
       parameters:
       - description: The country's ISO code, e.g. PT
         in: query
@@ -8980,6 +9077,70 @@ paths:
       security:
       - BearerAuth: []
       summary: Joint issues of the euro area
+      tags:
+      - Coins
+  /coin-catalogue/overrides:
+    delete:
+      description: 'Forgets the user''s choice for a coin of the catalogue: hidden,
+        it is listed again; joined to another, it is listed apart again.'
+      parameters:
+      - description: The coin's id
+        in: query
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Show a coin of the catalogue again
+      tags:
+      - Coins
+    put:
+      consumes:
+      - application/json
+      description: Hides a coin of the catalogue from the user's catalogue and checklist
+        sets; or, with sameAs, says it is the same coin as another of the same country
+        and currency, which is then listed in its place (and is the user's when the
+        user has either). It replaces what the user had chosen for the coin.
+      parameters:
+      - description: The coin's id, and the other's
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CatalogueOverrideRequest'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hide a coin of the catalogue, or join it to another
       tags:
       - Coins
   /coin-options:
@@ -9104,6 +9265,10 @@ paths:
       - description: Filter by country (exact)
         in: query
         name: country
+        type: string
+      - description: Filter by face value, as written (\
+        in: query
+        name: denomination
         type: string
       - description: Filter by presentation
         enum:
@@ -10956,6 +11121,41 @@ paths:
       summary: Coin of the day
       tags:
       - Coins
+  /coins/denominations:
+    get:
+      description: Returns each face value of the user's collection coins (excluding
+        wishlist and sold), as written, with how many coins have it, the most common
+        first.
+      parameters:
+      - description: Only coins or only banknotes (every item when omitted)
+        enum:
+        - coin
+        - banknote
+        in: query
+        name: kind
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.DenominationCount'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List collection face values
+      tags:
+      - Coins
   /coins/health:
     get:
       description: Returns paginated per-coin metadata health scores for the authenticated
@@ -11169,6 +11369,62 @@ paths:
       summary: Match a category/era candidate against known values
       tags:
       - coins
+  /coins/official-photos/batch:
+    post:
+      consumes:
+      - application/json
+      description: 'Looks at up to limit (default 10, at most 20) of the user''s coins
+        without any image, after afterId, and adds the official images each has (as
+        for one coin): the ECB''s images of a euro coin, or its mint''s photos. Numista
+        types are read from the cache only, so no Numista request is made. Call again
+        with nextAfterId until done.'
+      parameters:
+      - description: Where to start
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.OfficialPhotosBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.OfficialPhotosBatchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Add official images to coins without photos
+      tags:
+      - Coins
+  /coins/official-photos/missing:
+    get:
+      description: 'Counts the user''s coins (not banknotes, not sold) that have no
+        image at all: the ones the official photos batch looks at.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MissingPhotosResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Count coins without photos
+      tags:
+      - Coins
   /coins/statuses:
     get:
       description: 'Returns the IDs of the user''s collection coins (not wishlist

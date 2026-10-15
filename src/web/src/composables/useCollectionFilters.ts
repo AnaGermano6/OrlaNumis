@@ -1,12 +1,12 @@
 import { ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
 import { useCoinsStore } from '@/stores/coins'
-import { fillCountriesFromNumista, getCoinCountries, getSets, getTags, type CoinCountryCount } from '@/api/client'
+import { fillCountriesFromNumista, getCoinCountries, getCoinDenominations, getSets, getTags, type CoinCountryCount, type CoinDenominationCount } from '@/api/client'
 import { COIN_GROUPINGS, type CoinGroupBy } from '@/utils/coinAttributes'
 import { numistaLang } from '@/utils/numistaCatalog'
-import { coinVocabulary, loadCoinVocabulary } from '@/i18n/coinVocabulary'
+import { loadCoinVocabulary } from '@/i18n/coinVocabulary'
 import { usePwa } from '@/composables/usePwa'
-import { COIN_ERAS, normalizeCoinSetType } from '@/types'
+import { normalizeCoinSetType } from '@/types'
 import type { CollectionSetOption } from '@/types'
 
 const RANDOM_SEED_KEY = 'coins:randomSeed'
@@ -45,13 +45,13 @@ export function useCollectionFilters() {
   }
   appLifecycleStarted = true
 
-  const selectedEra = store.selectedEra !== undefined ? ref(store.selectedEra) : ref('')
+  const selectedDenomination = ref(store.selectedDenomination)
   const search = ref(store.searchQuery)
   const page = ref(1)
   const sortKey = ref(store.activeSortKey || localStorage.getItem('defaultSort') || 'updated_at_desc')
   const selectedTag = ref('')
   const userTags = ref<CollectionSetOption[]>([])
-  const eraOptions = ref<string[]>([...COIN_ERAS])
+  const denominationOptions = ref<CoinDenominationCount[]>([])
   const selectedCountry = ref(store.selectedCountry)
   const selectedPresentation = ref(store.selectedPresentation)
   const selectedRarity = ref(store.selectedRarity)
@@ -67,7 +67,7 @@ export function useCollectionFilters() {
 
   async function fetchUserTags() {
     try {
-      const [tagRes, setRes] = await Promise.all([getTags(), getSets(), loadCoinVocabulary(), loadCountryOptions()])
+      const [tagRes, setRes] = await Promise.all([getTags(), getSets(), loadCoinVocabulary(), loadCountryOptions(), loadDenominationOptions()])
       const tagOptions = (tagRes.data?.tags ?? []).map((tag) => ({
         id: tag.id,
         name: tag.name,
@@ -86,8 +86,16 @@ export function useCollectionFilters() {
           source: 'set' as const,
         }))
       userTags.value = [...tagOptions, ...setOptions]
-      eraOptions.value = [...coinVocabulary.eras]
     } catch { /* ignore */ }
+  }
+
+  async function loadDenominationOptions() {
+    try {
+      const res = await getCoinDenominations('coin')
+      denominationOptions.value = res.data ?? []
+    } catch {
+      denominationOptions.value = []
+    }
   }
 
   async function loadCountryOptions() {
@@ -132,7 +140,7 @@ export function useCollectionFilters() {
     const [sort, order] = sortKey.value.split('_').length === 3
       ? [sortKey.value.split('_').slice(0, 2).join('_'), sortKey.value.split('_')[2]]
       : [sortKey.value.split('_')[0], sortKey.value.split('_')[1]]
-    store.selectedEra = selectedEra.value
+    store.selectedDenomination = selectedDenomination.value
     store.selectedCountry = selectedCountry.value
     store.selectedPresentation = selectedPresentation.value
     store.selectedRarity = selectedRarity.value
@@ -161,7 +169,7 @@ export function useCollectionFilters() {
     const params = {
       // Banknotes have their own gallery.
       kind: 'coin' as const,
-      era: selectedEra.value || undefined,
+      denomination: selectedDenomination.value || undefined,
       country: selectedCountry.value && selectedCountry.value !== EXTINCT_COUNTRIES ? selectedCountry.value : undefined,
       extinct: selectedCountry.value === EXTINCT_COUNTRIES ? 'true' : undefined,
       presentation: selectedPresentation.value || undefined,
@@ -204,7 +212,7 @@ export function useCollectionFilters() {
     loadCoins()
   })
 
-  watch(selectedEra, () => {
+  watch(selectedDenomination, () => {
     page.value = 1
     loadCoins()
   })
@@ -262,13 +270,13 @@ export function useCollectionFilters() {
   })
 
   return {
-    selectedEra,
+    selectedDenomination,
     search,
     page,
     sortKey,
     selectedTag,
     userTags,
-    eraOptions,
+    denominationOptions,
     selectedCountry,
     selectedPresentation,
     selectedCirculation,

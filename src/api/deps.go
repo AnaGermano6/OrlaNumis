@@ -41,6 +41,7 @@ type appDeps struct {
 	internalTokenSvc        *services.InternalTokenService
 	numistaLookupSvc        *services.NumistaLookupService
 	numistaTelemetry        *services.NumistaTelemetry
+	numistaUsage            *services.NumistaUsageService
 	exchangeRates           *services.ExchangeRateService
 	authRateLimit           gin.HandlerFunc
 	apiRateLimit            gin.HandlerFunc
@@ -113,6 +114,8 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	if err != nil {
 		log.Fatalf("Failed to configure Numista client: %v", err)
 	}
+	numistaUsage := services.NewNumistaUsageService(repository.NewNumistaUsageRepository(database.DB), settingsSvc, logger)
+	numistaClient.WithUsage(numistaUsage)
 	numistaLookupSvc := services.NewNumistaLookupService(
 		numistaClient, numistaCache, services.NewNumistaV1Scorer(),
 		numistaTelemetry, settingsSvc, numistaClock, numistaQueryBuilder,
@@ -268,6 +271,7 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 		internalTokenSvc:        internalTokenSvc,
 		numistaLookupSvc:        numistaLookupSvc,
 		numistaTelemetry:        numistaTelemetry,
+		numistaUsage:            numistaUsage,
 		exchangeRates:           exchangeRates,
 		authRateLimit:           authRateLimit,
 		apiRateLimit:            apiRateLimit,

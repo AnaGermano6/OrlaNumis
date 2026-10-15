@@ -52,3 +52,19 @@ export const importCoinImage = (
   coinId: number,
   body: { url: string; imageType: 'obverse' | 'reverse'; isPrimary: boolean; credit?: string },
 ) => api.post<CoinImage>(`/coins/${coinId}/images/import`, body)
+
+/** How many of the user's coins (not banknotes or sold) have no photo at all. */
+export const getCoinsWithoutPhotos = () => api.get<{ count: number }>('/coins/official-photos/missing')
+
+/** What a batch of official photos did, and where the next one starts. */
+export interface OfficialPhotosBatch {
+  checked: number
+  withPhotos: number
+  images: number
+  nextAfterId: number
+  done: boolean
+}
+
+/** Adds the official images of up to limit coins without photos, after afterId. */
+export const addOfficialPhotosBatch = (afterId: number, limit = 10) =>
+  api.post<OfficialPhotosBatch>('/coins/official-photos/batch', { afterId, limit })

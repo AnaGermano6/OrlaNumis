@@ -46,6 +46,8 @@ export const getCoins = (params?: {
   category?: string
   era?: string
   country?: string
+  /** Only coins of one face value, as written ("2 euro"). */
+  denomination?: string
   /** "true": only coins of countries that no longer exist. */
   extinct?: string
   /** Only coins still legal tender, or no longer. */
@@ -469,6 +471,14 @@ export interface CoinCountryCount {
   count: number
 }
 
+export interface CoinDenominationCount {
+  denomination: string
+  count: number
+}
+
+/** Face values of the collection (not wishlist or sold) with coin counts, the most common first. */
+export const getCoinDenominations = (kind?: CoinKind) => api.get<CoinDenominationCount[]>('/coins/denominations', kind ? { params: { kind } } : undefined)
+
 /** Countries of the collection (not wishlist or sold) with coin counts. */
 /** The collection's countries, of its coins or its banknotes (every item when kind is omitted). */
 export const getCoinCountries = (kind?: CoinKind) => api.get<CoinCountryCount[]>('/coins/countries', kind ? { params: { kind } } : undefined)
@@ -608,6 +618,10 @@ export interface CoinRelease {
   owned: boolean
   /** A coin of the wishlist is this one. */
   wishlist?: boolean
+  /** Identifies a coin of the catalogue, to hide it or join it to another. */
+  id?: string
+  /** For a coin joined to another of the catalogue: that one's id. */
+  sameAs?: string
 }
 
 export interface CoinReleaseGroup {
@@ -648,6 +662,15 @@ export const getJointIssues = () => api.get<{ issues: JointIssue[] }>('/coin-cat
 /** The countries of the catalogue of commemorative and collector coins, each in its currency (the euro, or Portugal's escudo). */
 export const getCoinCatalogueCountries = () => api.get<{ countries: CatalogueCountry[] }>('/coin-catalogue/countries')
 
-/** A country's coins in euros, or in another currency ("PTE": Portugal's escudos), newest first; complete is false while coins from Numista are partly listed. */
+/** A country's coins in euros, or in another currency ("PTE": Portugal's escudos), newest first; complete is false while coins from Numista are partly listed. Hidden are the coins the user hid, or joined to another (sameAs). */
 export const getCoinCatalogue = (country: string, currency?: string) =>
-  api.get<{ country: string; coins: CoinRelease[]; complete: boolean }>('/coin-catalogue', { params: currency ? { country, currency } : { country } })
+  api.get<{ country: string; coins: CoinRelease[]; hidden?: CoinRelease[]; complete: boolean }>('/coin-catalogue', { params: currency ? { country, currency } : { country } })
+
+/** Hides a coin from the user's catalogue and the sets made from it. */
+export const hideCatalogueCoin = (id: string) => api.put<void>('/coin-catalogue/overrides', { id })
+
+/** Says a coin of the catalogue is the same as another of its country, listed in its place. */
+export const joinCatalogueCoin = (id: string, sameAs: string) => api.put<void>('/coin-catalogue/overrides', { id, sameAs })
+
+/** Lists a hidden or joined coin of the catalogue again. */
+export const showCatalogueCoin = (id: string) => api.delete<void>('/coin-catalogue/overrides', { params: { id } })

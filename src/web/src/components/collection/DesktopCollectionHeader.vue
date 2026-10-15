@@ -14,7 +14,7 @@
 
       <div class="flex flex-wrap items-center gap-3 max-md:flex-col max-md:items-stretch">
         <div class="flex min-w-[220px] flex-1 items-center gap-2 max-md:w-full max-sm:flex-col max-sm:items-stretch">
-          <EraFilter :model-value="selectedEra" :eras="eraOptions" @update:model-value="$emit('update:selectedEra', $event)" />
+          <DenominationFilter :model-value="selectedDenomination" :denominations="denominationOptions" @update:model-value="$emit('update:selectedDenomination', $event)" />
           <select v-if="userTags.length" :value="selectedTag" @change="$emit('update:selectedTag', ($event.target as HTMLSelectElement).value)" class="form-select h-[38px] min-w-0 flex-1 bg-card px-[0.6rem] py-[0.45rem] text-body transition-colors hover:border-border-accent">
             <option value="">{{ t('collection.allSets') }}</option>
             <option v-for="tag in userTags" :key="tag.filterValue" :value="tag.filterValue">{{ tag.name }}</option>
@@ -50,24 +50,25 @@
 
 <script setup lang="ts">
 import type { CollectionSetOption, ImageType } from '@/types'
-import EraFilter from '@/components/collection/EraFilter.vue'
+import type { CoinDenominationCount } from '@/api/client'
+import DenominationFilter from '@/components/collection/DenominationFilter.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import SortSelect from '@/components/SortSelect.vue'
 import { t } from '@/i18n'
 
 defineProps<{
   search: string
-  selectedEra: string
+  selectedDenomination: string
   selectedTag: string
   userTags: CollectionSetOption[]
-  eraOptions: string[]
+  denominationOptions: CoinDenominationCount[]
   sortKey: string
   gridSide: ImageType | null
 }>()
 
 defineEmits<{
   'update:search': [value: string]
-  'update:selectedEra': [value: string]
+  'update:selectedDenomination': [value: string]
   'update:selectedTag': [value: string]
   'update:sortKey': [value: string]
   'update:gridSide': [value: ImageType | null]

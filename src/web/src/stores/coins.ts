@@ -13,7 +13,7 @@ export const useCoinsStore = defineStore('coins', () => {
   const total = ref(0)
   const loading = ref(false)
   const stats = ref<StatsResponse | null>(null)
-  const selectedEra = ref('')
+  const selectedDenomination = ref('')
   const searchQuery = ref('')
   const activeSortKey = ref('')
   const galleryIndex = ref(0)
@@ -37,6 +37,7 @@ export const useCoinsStore = defineStore('coins', () => {
     category?: string
     era?: string
     country?: string
+    denomination?: string
     extinct?: string
     circulation?: string
     commemorative?: string
@@ -152,7 +153,7 @@ export const useCoinsStore = defineStore('coins', () => {
     total,
     loading,
     stats,
-    selectedEra,
+    selectedDenomination,
     searchQuery,
     activeSortKey,
     galleryIndex,

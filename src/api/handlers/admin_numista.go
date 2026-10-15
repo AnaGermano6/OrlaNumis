@@ -13,6 +13,13 @@ import (
 type AdminNumistaHandler struct {
 	telemetry *services.NumistaTelemetry
 	settings  services.NumistaSettingsProvider
+	usage     *services.NumistaUsageService
+}
+
+// WithUsage adds the month's request count to the health.
+func (h *AdminNumistaHandler) WithUsage(usage *services.NumistaUsageService) *AdminNumistaHandler {
+	h.usage = usage
+	return h
 }
 
 func NewAdminNumistaHandler(
@@ -25,7 +32,7 @@ func NewAdminNumistaHandler(
 // Health returns redacted Numista configuration and rolling operational health.
 //
 //	@Summary		Get Numista operational health
-//	@Description	Returns redacted Numista configuration validity and bounded rolling status, latency, cache, quota, and enrichment aggregates. Admin only.
+//	@Description	Returns redacted Numista configuration validity and bounded rolling status, latency, cache, quota, and enrichment aggregates, and this month's request count against the quota. Admin only.
 //	@Tags			Admin
 //	@Produce		json
 //	@Success		200	{object}	models.NumistaHealthSummary
@@ -48,6 +55,10 @@ func (h *AdminNumistaHandler) Health(c *gin.Context) {
 	}
 	if h.telemetry != nil {
 		summary = h.telemetry.Health(configured, configurationValid)
+	}
+	if h.usage != nil {
+		usage := h.usage.Usage()
+		summary.Usage = &usage
 	}
 	c.JSON(http.StatusOK, summary)
 }

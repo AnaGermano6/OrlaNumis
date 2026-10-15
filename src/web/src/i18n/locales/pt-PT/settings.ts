@@ -155,7 +155,6 @@ const messages: Messages['settings'] = {
     newTagPlaceholder: 'Nome da nova etiqueta...',
     createTag: 'Criar etiqueta',
     noTags: 'Ainda não criou etiquetas. Crie a primeira etiqueta acima.',
-    createLocation: 'Criar local',
     mintTitle: 'Localizações de casas da moeda personalizadas',
     mintIntro: 'Adicione as suas próprias coordenadas de casas da moeda para as moedas que atribui. Aparecem no mapa juntamente com as localizações globais.',
     locationCount: { one: '{count} localização', other: '{count} localizações' },
