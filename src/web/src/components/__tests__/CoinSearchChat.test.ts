@@ -3,12 +3,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import CoinSearchChat from '../CoinSearchChat.vue'
 
-const mockCreateNote = vi.fn()
 const mockShowAlert = vi.fn()
 const mockNewChat = vi.fn().mockResolvedValue(true)
 
 vi.mock('@/api/client', () => ({
-  createNote: (note: { title: string; body: string }) => mockCreateNote(note),
   getApiErrorMessage: () => '',
 }))
 
@@ -26,8 +24,6 @@ vi.mock('@/composables/useCoinSearchChat', () => ({
     loading: ref(false),
     addingIdx: ref(null),
     addedSet: ref(new Set()),
-    savedShows: ref(new Set()),
-    savingShow: ref(null),
     conversationId: ref(null),
     saving: ref(false),
     saveLabel: ref('Save'),
@@ -60,55 +56,26 @@ vi.mock('@/composables/useCoinSearchChat', () => ({
     pickDisambiguationCandidate: vi.fn(),
     formatMessage: (message: string) => message,
     isCoinShowResults: () => false,
-    saveShowToCalendar: vi.fn(),
   }),
 }))
 
-describe('CoinSearchChat note saving', () => {
-  it('starts a new chat from the header and clears an open note draft', async () => {
+describe('CoinSearchChat', () => {
+  it('starts a new chat from the header', async () => {
     const wrapper = mount(CoinSearchChat)
-    await wrapper.findAll('button').find(button => button.text() === 'Save to Notes')!.trigger('click')
-    expect(wrapper.text()).toContain('Review Note')
     await wrapper.findAll('button').find(button => button.text() === 'New Chat')!.trigger('click')
     await flushPromises()
     expect(mockNewChat).toHaveBeenCalledOnce()
-    expect(wrapper.text()).not.toContain('Review Note')
     wrapper.unmount()
   })
 
-  it('lets the user explicitly save an assistant answer to Notes', async () => {
-    mockCreateNote.mockResolvedValue({ data: { id: 7 } })
-    mockShowAlert.mockResolvedValue(true)
-
+  it('offers no saving of answers to Notes, which are gone', () => {
     const wrapper = mount(CoinSearchChat, {
-      global: {
-        stubs: {
-          CoinSuggestionGrid: true,
-          CoinShowResultsGrid: true,
-          CategoryEraConfirmModal: true,
-        },
-      },
+      global: { stubs: { CoinSuggestionGrid: true, CoinShowResultsGrid: true, CategoryEraConfirmModal: true } },
     })
 
     expect(wrapper.text()).toContain('Coin Agent')
-
-    const saveToNotesButton = wrapper.findAll('button').find((button) => button.text() === 'Save to Notes')
-    expect(saveToNotesButton).toBeTruthy()
-    await saveToNotesButton!.trigger('click')
-    expect(wrapper.text()).toContain('Review Note')
-    expect((wrapper.get('#noteTitle').element as HTMLInputElement).value).toBe('Missing Era Report')
-
-    await wrapper.get('#noteTitle').setValue('Collection cleanup')
-    await wrapper.get('#noteBody').setValue('## Missing era\n\n- Coin #1 needs an era.')
-    const noteForm = wrapper.findAll('form').at(-1)
-    expect(noteForm).toBeTruthy()
-    await noteForm!.trigger('submit')
-    await flushPromises()
-
-    expect(mockCreateNote).toHaveBeenCalledWith({
-      title: 'Collection cleanup',
-      body: '## Missing era\n\n- Coin #1 needs an era.',
-    })
-    expect(mockShowAlert).toHaveBeenCalledWith('The agenda result was saved to Notes.', { title: 'Note Created' })
+    expect(wrapper.text()).toContain('Missing Era Report')
+    expect(wrapper.findAll('button').some((button) => button.text() === 'Save to Notes')).toBe(false)
+    wrapper.unmount()
   })
 })

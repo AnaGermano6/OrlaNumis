@@ -23,23 +23,6 @@ type legacyFeature357Set struct {
 
 func (legacyFeature357Set) TableName() string { return "coin_sets" }
 
-type legacyFeature357Event struct {
-	ID     uint `gorm:"primaryKey"`
-	UserID uint
-	Title  string
-}
-
-func (legacyFeature357Event) TableName() string { return "auction_events" }
-
-type legacyFeature357Lot struct {
-	ID      uint `gorm:"primaryKey"`
-	UserID  uint
-	Title   string
-	EventID *uint
-}
-
-func (legacyFeature357Lot) TableName() string { return "auction_lots" }
-
 func TestFeature357MigrationPreservesAndReconcilesLegacyPins(t *testing.T) {
 	dsn := fmt.Sprintf("file:feature357_%d_%d?mode=memory&cache=shared",
 		time.Now().UnixNano(), atomic.AddUint64(&feature357DBCounter, 1))
@@ -52,7 +35,8 @@ func TestFeature357MigrationPreservesAndReconcilesLegacyPins(t *testing.T) {
 	}
 	sqlDB, _ := db.DB()
 	t.Cleanup(func() { _ = sqlDB.Close() })
-	if err := db.AutoMigrate(&legacyFeature357Set{}, &legacyFeature357Event{}, &legacyFeature357Lot{}); err != nil {
+	// No auction tables: the migration no longer needs them.
+	if err := db.AutoMigrate(&legacyFeature357Set{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -69,19 +53,8 @@ func TestFeature357MigrationPreservesAndReconcilesLegacyPins(t *testing.T) {
 	if err := db.Create(&unpinned).Error; err != nil {
 		t.Fatal(err)
 	}
-	unlinked := legacyFeature357Event{UserID: 1, Title: "Manual"}
-	linked := legacyFeature357Event{UserID: 1, Title: "Generated"}
-	if err := db.Create(&unlinked).Error; err != nil {
-		t.Fatal(err)
-	}
-	if err := db.Create(&linked).Error; err != nil {
-		t.Fatal(err)
-	}
-	if err := db.Create(&legacyFeature357Lot{UserID: 1, Title: "Lot", EventID: &linked.ID}).Error; err != nil {
-		t.Fatal(err)
-	}
 
-	if err := db.AutoMigrate(&models.CoinSet{}, &models.AuctionEvent{}, &models.QuickAccessPin{}); err != nil {
+	if err := db.AutoMigrate(&models.CoinSet{}, &models.QuickAccessPin{}); err != nil {
 		t.Fatal(err)
 	}
 	authoritativeAt := time.Date(2026, 8, 31, 8, 0, 0, 456000000, time.UTC)
@@ -104,15 +77,12 @@ func TestFeature357MigrationPreservesAndReconcilesLegacyPins(t *testing.T) {
 	if len(pins) != 6 {
 		t.Fatalf("pins=%d want 6", len(pins))
 	}
-	var setCount, eventCount int64
+	var setCount int64
 	if err := db.Model(&models.CoinSet{}).Count(&setCount).Error; err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Model(&models.AuctionEvent{}).Count(&eventCount).Error; err != nil {
-		t.Fatal(err)
-	}
-	if setCount != 7 || eventCount != 2 {
-		t.Fatalf("migration lost rows: sets=%d events=%d", setCount, eventCount)
+	if setCount != 7 {
+		t.Fatalf("migration lost rows: sets=%d", setCount)
 	}
 	var unpinnedCount int64
 	if err := db.Model(&models.QuickAccessPin{}).
@@ -140,16 +110,6 @@ func TestFeature357MigrationPreservesAndReconcilesLegacyPins(t *testing.T) {
 		}
 	}
 
-	var migratedLinked, migratedUnlinked models.AuctionEvent
-	if err := db.First(&migratedLinked, linked.ID).Error; err != nil {
-		t.Fatal(err)
-	}
-	if err := db.First(&migratedUnlinked, unlinked.ID).Error; err != nil {
-		t.Fatal(err)
-	}
-	if migratedLinked.Origin != models.AuctionEventOriginAuction || migratedUnlinked.Origin != models.AuctionEventOriginManual {
-		t.Fatalf("origins linked=%q unlinked=%q", migratedLinked.Origin, migratedUnlinked.Origin)
-	}
 	for _, index := range []string{"idx_quick_access_owner_target", "idx_quick_access_owner_time", "idx_quick_access_target"} {
 		if !db.Migrator().HasIndex(&models.QuickAccessPin{}, index) {
 			t.Fatalf("missing index %s", index)

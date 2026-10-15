@@ -6,7 +6,7 @@
         :saving="saving"
         :conversation-id="conversationId"
         :save-label="saveLabel"
-        :new-chat-disabled="newChatDisabled || noteSaving"
+        :new-chat-disabled="newChatDisabled"
         @save="handleSave"
         @new-chat="handleNewChat"
         @close="$emit('close')"
@@ -39,21 +39,10 @@
             ></div>
             <span v-if="msg.streaming && (!msg.statusText || msg.content)" class="ml-1 inline-block text-gold animate-pulse">▊</span>
           </div>
-          <div
-            v-if="canSaveMessageToNote(msg)"
-            class="-mt-2 flex max-w-[85%] justify-start self-start"
-          >
-            <button class="btn btn-xs btn-ghost" @click="openNoteDraft(msg)">
-              {{ t('chat.saveToNotes') }}
-            </button>
-          </div>
 
           <CoinShowResultsGrid
             v-if="msg.role === 'assistant' && msg.suggestions?.length && isCoinShowResults(msg.suggestions)"
             :shows="(msg.suggestions as CoinShow[])"
-            :saved-shows="savedShows"
-            :saving-show="savingShow"
-            @save-show="saveShowToCalendar"
           />
 
           <CoinSuggestionGrid
@@ -167,38 +156,6 @@
       @choose="chooseCategoryEraConfirmation"
       @cancel="cancelCategoryEraConfirmation"
     />
-
-    <div v-if="noteDraftOpen" class="fixed inset-0 z-[1500] flex items-center justify-center bg-black/60 p-4" @click.self="closeNoteDraft">
-      <div class="card flex max-h-[88vh] w-full max-w-[760px] flex-col gap-4 overflow-y-auto p-6">
-        <div>
-          <span class="section-label">{{ t('chat.note.eyebrow') }}</span>
-          <h2 class="m-0">{{ t('chat.note.title') }}</h2>
-        </div>
-        <form class="flex flex-col gap-4" @submit.prevent="saveNoteDraft">
-          <div class="form-group">
-            <label for="noteTitle" class="form-label">{{ t('common.title') }}</label>
-            <input id="noteTitle" v-model="noteDraft.title" class="form-input" maxlength="120" required />
-          </div>
-          <div class="form-group">
-            <label for="noteBody" class="form-label">{{ t('chat.note.markdown') }}</label>
-            <textarea id="noteBody" v-model="noteDraft.body" class="form-input min-h-[220px]" rows="10" required />
-          </div>
-          <div class="form-group">
-            <span class="form-label">{{ t('chat.note.preview') }}</span>
-            <div
-              class="bubble-content max-h-[260px] overflow-y-auto rounded-sm border border-border-subtle bg-input p-4 text-body leading-[1.7] text-text-secondary"
-              v-html="formatMessage(noteDraft.body)"
-            ></div>
-          </div>
-          <div class="flex justify-end gap-2">
-            <button type="button" class="btn btn-secondary" @click="closeNoteDraft">{{ t('common.cancel') }}</button>
-            <button type="submit" class="btn btn-primary" :disabled="noteSaving">
-              {{ noteSaving ? t('common.saving') : t('chat.note.create') }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -215,7 +172,6 @@ import { AlertTriangle } from 'lucide-vue-next'
 import I18nT from '@/components/I18nT.vue'
 import { t, intlLocale } from '@/i18n'
 import { useCoinSearchChat } from '@/composables/useCoinSearchChat'
-import { createNote, getApiErrorMessage } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
 import ChatHeader from '@/components/chat/ChatHeader.vue'
 import ChatIntroPanel from '@/components/chat/ChatIntroPanel.vue'
@@ -252,12 +208,6 @@ onBeforeUnmount(() => { disposed = true })
 // in-flight run hides the action.
 const copilotBusy = computed(() =>
   ['queued', 'running', 'cancel_requested', 'paused'].includes(copilotRun.value?.status ?? ''))
-const noteDraftOpen = ref(false)
-const noteSaving = ref(false)
-const noteDraft = ref({
-  title: '',
-  body: '',
-})
 
 const {
   messages,
@@ -265,8 +215,6 @@ const {
   loading,
   addingIdx,
   addedSet,
-  savedShows,
-  savingShow,
   conversationId,
   saving,
   saveLabel,
@@ -298,7 +246,6 @@ const {
   pickDisambiguationCandidate,
   formatMessage,
   isCoinShowResults,
-  saveShowToCalendar,
 } = useCoinSearchChat({
   loadConversation: props.loadConversation,
   messagesEl,
@@ -307,9 +254,7 @@ const {
 })
 
 async function handleNewChat() {
-  if (noteSaving.value || !await newChat()) return
-  noteDraftOpen.value = false
-  noteDraft.value = { title: '', body: '' }
+  await newChat()
 }
 
 async function addCopilotDealerToWishlist(
@@ -368,49 +313,6 @@ function formatExpiry(value: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleString(intlLocale())
-}
-
-function canSaveMessageToNote(msg: { role: string; content: string; streaming?: boolean }): boolean {
-  return msg.role === 'assistant' && !msg.streaming && msg.content.trim().length > 0
-}
-
-function openNoteDraft(msg: { content: string }) {
-  const body = msg.content.trim()
-  noteDraft.value = {
-    title: noteTitleFromBody(body),
-    body,
-  }
-  noteDraftOpen.value = true
-}
-
-function closeNoteDraft() {
-  if (noteSaving.value) return
-  noteDraftOpen.value = false
-}
-
-async function saveNoteDraft() {
-  const title = noteDraft.value.title.trim() || t('chat.note.defaultTitle')
-  const body = noteDraft.value.body.trim()
-  if (!body) {
-    await showAlert(t('chat.note.required'), { title: t('chat.note.requiredTitle') })
-    return
-  }
-  noteSaving.value = true
-  try {
-    await createNote({ title, body })
-    noteDraftOpen.value = false
-    await showAlert(t('chat.note.saved'), { title: t('chat.note.savedTitle') })
-  } catch (error) {
-    await showAlert(getApiErrorMessage(error) || t('chat.note.failed'), { title: t('chat.note.failedTitle') })
-  } finally {
-    noteSaving.value = false
-  }
-}
-
-function noteTitleFromBody(body: string): string {
-  const firstHeading = body.split('\n').find((line) => line.trim().startsWith('#'))
-  const source = firstHeading?.replace(/^#+\s*/, '') || body.split('\n').find((line) => line.trim()) || t('chat.note.defaultTitle')
-  return source.replace(/[*_`[\]()]/g, '').trim().slice(0, 120) || t('chat.note.defaultTitle')
 }
 </script>
 

@@ -1,7 +1,5 @@
 // reminders endpoints — purchase reminder CRUD (Feature 355).
 // Re-exported from '@/api/client' so existing imports keep working.
-// Note: "listReminders" / "deleteReminder" / "createReminder" are already exported
-// from auctions.ts (bid reminders). These are prefixed to avoid collision.
 import { api } from '@/api/http'
 import type { PurchaseReminder, PurchaseReminderListResponse } from '@/types/coin'
 

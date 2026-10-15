@@ -99,20 +99,6 @@ func registerAdminRoutes(api *gin.RouterGroup, d *appDeps) {
 		admin.POST("/valuation-runs/trigger", valAdminHandler.TriggerValuation)
 		admin.POST("/valuation-runs/:id/cancel", valAdminHandler.CancelValuation)
 
-		// Auction ending run history and manual trigger
-		auctionEndingAdminHandler := handlers.NewAuctionEndingAdminHandler(d.auctionEndingRepo, d.auctionEndingScheduler, d.logger)
-		admin.GET("/auction-ending-runs", auctionEndingAdminHandler.ListRuns)
-		admin.GET("/auction-ending-runs/:id", auctionEndingAdminHandler.GetRun)
-		admin.POST("/auction-ending/run", auctionEndingAdminHandler.TriggerRun)
-		auctionWatchBidDigestAdminHandler := handlers.NewAuctionWatchBidDigestAdminHandler(d.auctionWatchBidDigestScheduler, d.auctionWatchBidDigestRepo)
-		admin.GET("/auction-watch-bid-digest-runs", auctionWatchBidDigestAdminHandler.ListRuns)
-		admin.GET("/auction-watch-bid-digest/status", auctionWatchBidDigestAdminHandler.GetStatus)
-		admin.POST("/auction-watch-bid-digest/run", auctionWatchBidDigestAdminHandler.RunNow)
-		auctionAlertAdminHandler := handlers.NewAuctionAlertAdminHandler(d.auctionAlertScheduler, d.auctionAlertRunRepo)
-		admin.GET("/auction-alert-runs", auctionAlertAdminHandler.ListRuns)
-		admin.GET("/auction-alerts/status", auctionAlertAdminHandler.GetStatus)
-		admin.POST("/auction-alerts/run", auctionAlertAdminHandler.RunNow)
-
 		// Coin of the Day manual trigger
 		coinOfDayAdminHandler := handlers.NewCoinOfDayAdminHandler(d.coinOfDayScheduler, d.logger)
 		admin.POST("/coin-of-day/run", coinOfDayAdminHandler.TriggerRun)
@@ -133,9 +119,5 @@ func registerAdminRoutes(api *gin.RouterGroup, d *appDeps) {
 		// API key rotation notification trigger
 		apiKeyAdminHandler := handlers.NewApiKeyAdminHandler(d.apiKeyRepo, d.notifSvc, d.logger)
 		admin.POST("/api-keys/notify-rotation", apiKeyAdminHandler.NotifyRotationRequired)
-
-		// Auction ending debug endpoint
-		auctionDebugHandler := handlers.NewAuctionEndingDebugHandler(d.auctionLotRepo)
-		admin.GET("/auction-ending/debug", auctionDebugHandler.DebugGetAuctionEndingInfo)
 	}
 }

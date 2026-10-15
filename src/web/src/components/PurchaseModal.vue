@@ -41,18 +41,6 @@
 
       <p class="mb-3 text-chip text-text-secondary">{{ t('purchase.allOptional') }}</p>
 
-      <div class="mb-3 rounded-sm border border-border-subtle bg-card-hover p-3">
-        <label class="mb-2 inline-flex items-center gap-2 text-body text-text-secondary">
-          <input v-model="addShipment" type="checkbox" />
-          {{ t('purchase.addShipment') }}
-        </label>
-        <div v-if="addShipment" class="grid gap-2">
-          <p class="m-0 text-chip text-text-muted">{{ t('purchase.shipmentHint') }}</p>
-          <input v-model="shipmentTrackingNumber" class="form-input" :placeholder="t('shipment.trackingNumber')" />
-          <input v-model="shipmentNotes" class="form-input" :placeholder="t('purchase.shipmentNotes')" />
-        </div>
-      </div>
-
       <div v-if="error" class="mb-3 text-chip text-loss">{{ error }}</div>
 
       <div class="mt-6 flex justify-end gap-3">
@@ -68,7 +56,7 @@
 <script setup lang="ts">
 import { collectionCurrencySymbol } from '@/utils/collectionCurrency'
 import { ref, onMounted } from 'vue'
-import type { Coin, ShipmentUpsertInput } from '@/types'
+import type { Coin } from '@/types'
 import { t } from '@/i18n'
 
 const props = defineProps<{
@@ -81,16 +69,12 @@ const emit = defineEmits<{
     purchasePrice?: number
     purchaseDate?: string
     purchaseLocation?: string
-    shipment?: ShipmentUpsertInput
   }]
 }>()
 
 const priceStr = ref('')
 const purchaseDate = ref(new Date().toISOString().slice(0, 10))
 const purchaseLocation = ref('')
-const addShipment = ref(false)
-const shipmentTrackingNumber = ref('')
-const shipmentNotes = ref('')
 const error = ref('')
 const submitting = ref(false)
 const priceInput = ref<HTMLInputElement>()
@@ -112,7 +96,6 @@ function handleSubmit() {
     purchasePrice?: number
     purchaseDate?: string
     purchaseLocation?: string
-    shipment?: ShipmentUpsertInput
   } = {}
 
   if (priceStr.value) {
@@ -130,18 +113,6 @@ function handleSubmit() {
 
   if (purchaseLocation.value.trim()) {
     data.purchaseLocation = purchaseLocation.value.trim()
-  }
-
-  if (addShipment.value) {
-    if (!shipmentTrackingNumber.value.trim()) {
-      error.value = t('purchase.trackingRequired')
-      return
-    }
-    data.shipment = {
-      carrier: 'parcel',
-      trackingNumber: shipmentTrackingNumber.value.trim(),
-      notes: shipmentNotes.value.trim() || undefined,
-    }
   }
 
   submitting.value = true

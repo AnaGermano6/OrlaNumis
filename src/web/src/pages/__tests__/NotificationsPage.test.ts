@@ -37,6 +37,7 @@ async function buildRouter() {
       { path: '/admin/availability-cycles/:id', name: 'admin-availability-cycle', component: { template: '<div />' } },
       { path: '/wishlist/availability-runs/:id', name: 'wishlist-availability-run', component: { template: '<div />' } },
       { path: '/coin/:id', name: 'coin', component: { template: '<div />' } },
+      { path: '/sets/:id', name: 'set-detail', component: { template: '<div />' } },
     ],
   })
   router.push('/notifications')
@@ -113,5 +114,26 @@ describe('NotificationsPage wishlist_availability_run routing', () => {
     await flushPromises()
 
     expect(pushSpy).toHaveBeenCalledWith('/coin/99')
+  })
+})
+
+describe('NotificationsPage set_new_coins', () => {
+  beforeEach(() => {
+    Object.values(mocks).forEach((mock) => mock.mockReset())
+  })
+
+  it("names the set, lists the new coins and opens the set", async () => {
+    const { wrapper, pushSpy } = await mountWith(notification({
+      type: 'set_new_coins', title: 'Portugal · 2 €', message: 'Rotary (2026)\nFado (2026)', referenceId: 9, referenceUrl: '/sets/9',
+    }))
+
+    const card = wrapper.get('.card')
+    expect(card.text()).toContain('New coins for “Portugal · 2 €”')
+    expect(card.text()).toContain('Rotary (2026)')
+    expect(card.text()).toContain('Open the set to see them.')
+
+    await card.trigger('click')
+    await flushPromises()
+    expect(pushSpy).toHaveBeenCalledWith('/sets/9')
   })
 })

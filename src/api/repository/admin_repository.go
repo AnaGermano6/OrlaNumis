@@ -43,10 +43,10 @@ func (r *AdminRepository) DeleteUserCascade(userID uint) (int64, error) {
 	var rowsAffected int64
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		result, err := deleteUserCascadeInTx(tx, userID)
-		rowsAffected = result.RowsAffected
 		if err != nil {
 			return err
 		}
+		rowsAffected = result.RowsAffected
 		return result.Error
 	})
 	return rowsAffected, err
@@ -72,10 +72,10 @@ func (r *AdminRepository) DeleteUserCascadeWithRecoveryGuard(userID uint) (int64
 			}
 		}
 		result, err := deleteUserCascadeInTx(tx, userID)
-		rowsAffected = result.RowsAffected
 		if err != nil {
 			return err
 		}
+		rowsAffected = result.RowsAffected
 		return result.Error
 	})
 	return rowsAffected, blockedUser, err
@@ -162,9 +162,6 @@ func deleteUserCascadeInTx(tx *gorm.DB, userID uint) (*gorm.DB, error) {
 		return nil, err
 	}
 	if err := tx.Where("user_id = ?", userID).Delete(&models.AgentConversation{}).Error; err != nil {
-		return nil, err
-	}
-	if err := tx.Where("user_id = ?", userID).Delete(&models.ValueSnapshot{}).Error; err != nil {
 		return nil, err
 	}
 	if err := tx.Where("user_id = ?", userID).Delete(&models.ApiKey{}).Error; err != nil {

@@ -22,7 +22,6 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/api/client', () => ({
-  createNote: vi.fn(),
   getApiErrorMessage: () => '',
 }))
 
@@ -37,8 +36,6 @@ vi.mock('@/composables/useCoinSearchChat', () => ({
     loading: ref(false),
     addingIdx: ref(null),
     addedSet: ref(new Set()),
-    savedShows: ref(new Set()),
-    savingShow: ref(null),
     conversationId: ref(null),
     saving: ref(false),
     saveLabel: ref('Save'),
@@ -72,7 +69,6 @@ vi.mock('@/composables/useCoinSearchChat', () => ({
     pickDisambiguationCandidate: vi.fn(),
     formatMessage: (message: string) => message,
     isCoinShowResults: () => false,
-    saveShowToCalendar: vi.fn(),
   }),
 }))
 

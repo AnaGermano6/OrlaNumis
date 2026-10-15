@@ -11,5 +11,7 @@ export default {
     proposalFailed: 'Try a narrower prompt by date range, mint, ruler, or series, then submit again.',
     proposalReady: 'Open review to inspect the proposed slots, scope interpretation, and collection match estimates before approving.',
     creationFailed: 'Open Sets and retry from a reviewed proposal, or regenerate with clearer instructions.',
+    setNewCoins: 'Open the set to see them.',
   },
+  setNewCoins: 'New coins for “{set}”',
 }

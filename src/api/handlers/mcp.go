@@ -48,30 +48,6 @@ type mcpStatsOutput struct {
 	Stats *repository.CollectionStats `json:"stats"`
 }
 
-type mcpAuctionListInput struct {
-	Status string `json:"status,omitempty" jsonschema:"Optional status: watching, bidding, won, lost, or passed"`
-	Source string `json:"source,omitempty" jsonschema:"Optional source: numisbids or cng"`
-	Search string `json:"search,omitempty" jsonschema:"Optional title, description, or auction house search"`
-	Page   int    `json:"page,omitempty" jsonschema:"Page number starting at 1"`
-	Limit  int    `json:"limit,omitempty" jsonschema:"Page size from 1 through 50"`
-}
-
-type mcpAuctionIDInput struct {
-	AuctionLotID uint `json:"auctionLotId" jsonschema:"Owned auction lot identifier"`
-}
-
-type mcpAuctionOutput struct {
-	Lot *services.MCPAuctionLotSummary `json:"lot"`
-}
-
-type mcpAuctionCountsInput struct {
-	Source string `json:"source,omitempty" jsonschema:"Optional source: numisbids or cng"`
-}
-
-type mcpAuctionCountsOutput struct {
-	Counts map[string]int64 `json:"counts"`
-}
-
 type mcpCopilotStartInput struct {
 	ThreadID       string         `json:"threadId,omitempty" jsonschema:"Existing owner-scoped thread identifier; omit to create a thread"`
 	Goal           string         `json:"goal" jsonschema:"Goal for the durable Coin Copilot run"`
@@ -173,33 +149,6 @@ func (h *MCPHandler) newServer(userID uint, capabilities string) *mcp.Server {
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input mcpLimitInput) (*mcp.CallToolResult, mcpCoinListOutput, error) {
 		coins, err := h.service.TopCoinsByValue(userID, input.Limit)
 		return nil, mcpCoinListOutput{Coins: coins}, h.safeToolError("top_coins_by_value", err)
-	})
-
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "list_auction_lots",
-		Description: "List auction lots owned by the authenticated user with bounded filters and pagination. Read-only.",
-	}, func(ctx context.Context, req *mcp.CallToolRequest, input mcpAuctionListInput) (*mcp.CallToolResult, *services.MCPAuctionListResult, error) {
-		result, err := h.service.ListAuctionLots(userID, services.MCPAuctionListInput{
-			Status: input.Status, Source: input.Source, Search: input.Search,
-			Page: input.Page, Limit: input.Limit,
-		})
-		return nil, result, h.safeToolError("list_auction_lots", err)
-	})
-
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "get_auction_lot",
-		Description: "Get one auction lot owned by the authenticated user. Read-only.",
-	}, func(ctx context.Context, req *mcp.CallToolRequest, input mcpAuctionIDInput) (*mcp.CallToolResult, mcpAuctionOutput, error) {
-		lot, err := h.service.GetAuctionLot(userID, input.AuctionLotID)
-		return nil, mcpAuctionOutput{Lot: lot}, h.safeToolError("get_auction_lot", err)
-	})
-
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "auction_counts",
-		Description: "Read per-status counts for the authenticated user's auction lots.",
-	}, func(ctx context.Context, req *mcp.CallToolRequest, input mcpAuctionCountsInput) (*mcp.CallToolResult, mcpAuctionCountsOutput, error) {
-		counts, err := h.service.AuctionCounts(userID, input.Source)
-		return nil, mcpAuctionCountsOutput{Counts: counts}, h.safeToolError("auction_counts", err)
 	})
 
 	if models.HasAPICapability(capabilities, "copilot") {

@@ -28,7 +28,6 @@ The Constitution remains normative. This document translates its security expect
 | Input validation | User-controlled query inputs must be parameterized or validated against explicit allowlists before they reach SQL, search parameters, or downstream services. | Principle V |
 | Output encoding and rendering | Untrusted HTML or Markdown rendered in the browser must be sanitized before `v-html` or equivalent sinks. | Principle V |
 | Secret handling | Secrets, API keys, and signing material must come from environment or secret stores; tracked files may only contain obviously fake examples. | Principles V and VII |
-| Credential encryption | Stored provider credentials such as NumisBids and CNG passwords must be encrypted at rest with AES-GCM using `AUCTION_CREDENTIAL_ENCRYPTION_KEY`; plaintext legacy values migrate lazily on save or sync. | Principle V |
 | Authentication and token policy | Access tokens stay short-lived, refresh tokens rotate on use, API keys stay hashed at rest, and WebAuthn ceremonies are origin-bound and time-bound. | Principle V |
 | External agent adapters | OpenAPI and MCP stay default-off, API-key scoped, owner-bound, rate-limited, and contract-separated. MCP remains read-only for application data; `write` never implies `copilot`. | Principles II, V, and VIII |
 | Upload safety | File uploads validate extension and MIME/magic bytes, and body sizes stay capped to prevent memory exhaustion. | Principle V |
@@ -46,7 +45,6 @@ The Constitution remains normative. This document translates its security expect
 - Fail safely: log internal errors server-side and return generic client messages.
 - Set multipart and JSON body caps for endpoints that accept user payloads.
 - Keep WebAuthn origins explicit and ceremony sessions time-limited.
-- Encrypt auction provider credentials at rest using `AUCTION_CREDENTIAL_ENCRYPTION_KEY`; support lazy migration from legacy plaintext values.
 - Keep Deep Analysis jobs, events, artifacts, and proposals owner-scoped.
 - Use short-lived job-scoped credentials for Python-to-Go provider tools; never
   expose those credentials in logs, browser responses, or replayable SSE.

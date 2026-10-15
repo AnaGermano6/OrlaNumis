@@ -32,11 +32,11 @@ func newQuickAccessTestService(t *testing.T) (*QuickAccessService, *gorm.DB) {
 	sqlDB, _ := db.DB()
 	t.Cleanup(func() { _ = sqlDB.Close() })
 	if err := db.AutoMigrate(
-		&models.Coin{}, &models.CoinImage{}, &models.CoinSet{}, &models.AuctionLot{},
-		&models.AuctionEvent{}, &models.QuickAccessPin{}, &models.ValueSnapshot{},
+		&models.Coin{}, &models.CoinImage{}, &models.CoinSet{},
+		&models.QuickAccessPin{},
 		&models.CoinJournal{}, &models.CoinValueHistory{}, &models.CoinComment{},
 		&models.AvailabilityRun{}, &models.AvailabilityResult{}, &models.CoinTag{},
-		&models.CoinSetMembership{}, &models.CoinReference{}, &models.StorageLocation{},
+		&models.CoinSetMembership{}, &models.CoinSetChecklistKey{}, &models.CoinReference{}, &models.StorageLocation{},
 		&models.MintLocation{},
 	); err != nil {
 		t.Fatal(err)
@@ -145,174 +145,6 @@ func TestQuickAccessLifecycleCleanupAndPreservation(t *testing.T) {
 	}
 	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetCoin, bulkSold.ID, 0)
 	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetCoin, bulkDeleted.ID, 0)
-
-	lot := models.AuctionLot{
-		UserID: userID, Title: "Lot", NumisBidsURL: "https://example.test/lifecycle",
-		Source: models.AuctionSourceNumisBids, SourceURL: "https://example.test/lifecycle",
-		Status: models.AuctionStatusWatching,
-	}
-	if err := db.Create(&lot).Error; err != nil {
-		t.Fatal(err)
-	}
-	lotPin, _, err := quickAccess.Pin(userID, models.QuickAccessTargetAuctionLot, lot.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	lotSvc := NewAuctionLotService(repository.NewAuctionLotRepository(db), coinRepo).WithQuickAccessSupport(quickAccess)
-	if err := lotSvc.UpdateStatus(lot.ID, userID, models.AuctionStatusBidding); err != nil {
-		t.Fatal(err)
-	}
-	var preserved models.QuickAccessPin
-	if err := db.Where("user_id = ? AND target_type = ? AND target_id = ?", userID, models.QuickAccessTargetAuctionLot, lot.ID).First(&preserved).Error; err != nil {
-		t.Fatal(err)
-	}
-	if !preserved.PinnedAt.Equal(lotPin.PinnedAt) {
-		t.Fatal("watching to bidding changed pin time")
-	}
-	if err := lotSvc.UpdateStatus(lot.ID, userID, models.AuctionStatusWatching); err != nil {
-		t.Fatal(err)
-	}
-	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetAuctionLot, lot.ID, 1)
-	if err := lotSvc.UpdateStatus(lot.ID, userID, models.AuctionStatusWon); err != nil {
-		t.Fatal(err)
-	}
-	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetAuctionLot, lot.ID, 0)
-	if err := lotSvc.UpdateStatus(lot.ID, userID, models.AuctionStatusWatching); err != nil {
-		t.Fatal(err)
-	}
-	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetAuctionLot, lot.ID, 0)
-	if _, err := lotSvc.Delete(999999, userID); !errors.Is(err, ErrAuctionLotNotFound) {
-		t.Fatalf("missing lot delete error=%v", err)
-	}
-	foreignLot := models.AuctionLot{UserID: userID + 1, Title: "Foreign Lot", NumisBidsURL: "https://example.test/foreign-lot", Status: models.AuctionStatusWatching}
-	if err := db.Create(&foreignLot).Error; err != nil {
-		t.Fatal(err)
-	}
-	if err := lotSvc.UpdateStatus(foreignLot.ID, userID, models.AuctionStatusBidding); !errors.Is(err, ErrAuctionLotNotFound) {
-		t.Fatalf("foreign lot update error=%v", err)
-	}
-
-	deleteLot := models.AuctionLot{
-		UserID: userID, Title: "Delete Lot", NumisBidsURL: "https://example.test/delete-lot",
-		Status: models.AuctionStatusWatching,
-	}
-	if err := db.Create(&deleteLot).Error; err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := quickAccess.Pin(userID, models.QuickAccessTargetAuctionLot, deleteLot.ID); err != nil {
-		t.Fatal(err)
-	}
-	if rows, err := lotSvc.Delete(deleteLot.ID, userID); err != nil || rows != 1 {
-		t.Fatalf("delete lot rows=%d err=%v", rows, err)
-	}
-	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetAuctionLot, deleteLot.ID, 0)
-
-	syncedLot := models.AuctionLot{
-		UserID: userID, Title: "Synced Lot", NumisBidsURL: "https://example.test/synced",
-		Source: models.AuctionSourceNumisBids, SourceURL: "https://example.test/synced",
-		Status: models.AuctionStatusWatching,
-	}
-	if _, err := lotSvc.UpsertSyncedLot(&syncedLot); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := quickAccess.Pin(userID, models.QuickAccessTargetAuctionLot, syncedLot.ID); err != nil {
-		t.Fatal(err)
-	}
-	syncedLotID := syncedLot.ID
-	syncedLot.ID = 0
-	syncedLot.Status = models.AuctionStatusPassed
-	if _, err := lotSvc.UpsertSyncedLot(&syncedLot); err != nil {
-		t.Fatal(err)
-	}
-	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetAuctionLot, syncedLotID, 0)
-
-	scheduledLot := models.AuctionLot{
-		UserID: userID, Title: "Scheduled Lot", NumisBidsURL: "https://example.test/scheduled",
-		Source: models.AuctionSourceNumisBids, SourceURL: "https://example.test/scheduled",
-		Status: models.AuctionStatusWatching,
-	}
-	syncSvc := &AuctionWatchlistSyncService{
-		auctionRepo: repository.NewAuctionLotRepository(db),
-		quickAccess: quickAccess,
-	}
-	if _, err := syncSvc.upsertWithQuickAccessCleanup(&scheduledLot); err != nil {
-		t.Fatal(err)
-	}
-	scheduledPin, _, err := quickAccess.Pin(userID, models.QuickAccessTargetAuctionLot, scheduledLot.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	scheduledLotID := scheduledLot.ID
-	var scheduledPinRow models.QuickAccessPin
-	if err := db.Where("user_id = ? AND target_type = ? AND target_id = ?", userID, models.QuickAccessTargetAuctionLot, scheduledLotID).First(&scheduledPinRow).Error; err != nil {
-		t.Fatal(err)
-	}
-	scheduledLot.ID = 0
-	scheduledLot.Status = models.AuctionStatusBidding
-	if _, err := syncSvc.upsertWithQuickAccessCleanup(&scheduledLot); err != nil {
-		t.Fatal(err)
-	}
-	var scheduledPreserved models.QuickAccessPin
-	if err := db.Where("user_id = ? AND target_type = ? AND target_id = ?", userID, models.QuickAccessTargetAuctionLot, scheduledLotID).First(&scheduledPreserved).Error; err != nil {
-		t.Fatal(err)
-	}
-	if scheduledPreserved.ID != scheduledPinRow.ID || !scheduledPreserved.PinnedAt.Equal(scheduledPin.PinnedAt) {
-		t.Fatalf("scheduled watching-to-bidding transition changed pin identity/time: before=%#v after=%#v", scheduledPinRow, scheduledPreserved)
-	}
-	scheduledLot.ID = 0
-	scheduledLot.Status = models.AuctionStatusLost
-	if _, err := syncSvc.upsertWithQuickAccessCleanup(&scheduledLot); err != nil {
-		t.Fatal(err)
-	}
-	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetAuctionLot, scheduledLotID, 0)
-
-	event := models.AuctionEvent{UserID: userID, Title: "Manual Event"}
-	calendarSvc := NewCalendarService(repository.NewAuctionEventRepository(db), quickAccess)
-	if err := calendarSvc.Create(&event); err != nil {
-		t.Fatal(err)
-	}
-	if event.Origin != models.AuctionEventOriginManual {
-		t.Fatalf("origin=%q", event.Origin)
-	}
-	autoEventLot := models.AuctionLot{
-		UserID: userID, Title: "Auto Event Lot", NumisBidsURL: "https://example.test/auto-event",
-		Source: models.AuctionSourceNumisBids, SourceURL: "https://example.test/auto-event",
-		Status: models.AuctionStatusWatching,
-	}
-	autoEventResult, err := lotSvc.UpsertSyncedLot(&autoEventLot)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if autoEventResult.EventID == nil {
-		t.Fatal("auction upsert did not create an event")
-	}
-	var autoEvent models.AuctionEvent
-	if err := db.First(&autoEvent, *autoEventResult.EventID).Error; err != nil {
-		t.Fatal(err)
-	}
-	if autoEvent.Origin != models.AuctionEventOriginAuction {
-		t.Fatalf("auto event origin=%q", autoEvent.Origin)
-	}
-	if _, _, err := quickAccess.Pin(userID, models.QuickAccessTargetCalendarEvent, autoEvent.ID); !errors.Is(err, ErrQuickAccessTargetNotFound) {
-		t.Fatalf("auction event pin error=%v", err)
-	}
-	if _, _, err := quickAccess.Pin(userID, models.QuickAccessTargetCalendarEvent, event.ID); err != nil {
-		t.Fatal(err)
-	}
-	if err := calendarSvc.Delete(event.ID, userID); err != nil {
-		t.Fatal(err)
-	}
-	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetCalendarEvent, event.ID, 0)
-	if err := calendarSvc.Delete(event.ID, userID); !errors.Is(err, ErrCalendarEventNotFound) {
-		t.Fatalf("missing event error=%v", err)
-	}
-	foreignEvent := models.AuctionEvent{UserID: userID + 1, Title: "Foreign Event", Origin: models.AuctionEventOriginManual}
-	if err := db.Create(&foreignEvent).Error; err != nil {
-		t.Fatal(err)
-	}
-	if err := calendarSvc.Delete(foreignEvent.ID, userID); !errors.Is(err, ErrCalendarEventNotFound) {
-		t.Fatalf("foreign event error=%v", err)
-	}
 
 	set := models.CoinSet{UserID: userID, Name: "Delete Me"}
 	if err := db.Create(&set).Error; err != nil {
@@ -423,47 +255,6 @@ func TestQuickAccessLifecycleCleanupAndPreservation(t *testing.T) {
 		t.Fatalf("set delete was not rolled back: %v", err)
 	}
 	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetCoinSet, rollbackSet.ID, 1)
-
-	rollbackLot := models.AuctionLot{
-		UserID: userID, Title: "Rollback Lot", NumisBidsURL: "https://example.test/rollback",
-		Status: models.AuctionStatusWatching,
-	}
-	if err := db.Create(&rollbackLot).Error; err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := quickAccess.Pin(userID, models.QuickAccessTargetAuctionLot, rollbackLot.ID); err != nil {
-		t.Fatal(err)
-	}
-	installQuickAccessDeleteFailure(t, db)
-	if err := lotSvc.UpdateStatus(rollbackLot.ID, userID, models.AuctionStatusWon); err == nil {
-		t.Fatal("expected lot cleanup failure")
-	}
-	removeQuickAccessDeleteFailure(t, db)
-	var reloadedRollbackLot models.AuctionLot
-	if err := db.First(&reloadedRollbackLot, rollbackLot.ID).Error; err != nil {
-		t.Fatal(err)
-	}
-	if reloadedRollbackLot.Status != models.AuctionStatusWatching {
-		t.Fatalf("lot status was not rolled back: %s", reloadedRollbackLot.Status)
-	}
-	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetAuctionLot, rollbackLot.ID, 1)
-
-	rollbackEvent := models.AuctionEvent{UserID: userID, Title: "Rollback Event"}
-	if err := calendarSvc.Create(&rollbackEvent); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := quickAccess.Pin(userID, models.QuickAccessTargetCalendarEvent, rollbackEvent.ID); err != nil {
-		t.Fatal(err)
-	}
-	installQuickAccessDeleteFailure(t, db)
-	if err := calendarSvc.Delete(rollbackEvent.ID, userID); err == nil {
-		t.Fatal("expected event cleanup failure")
-	}
-	removeQuickAccessDeleteFailure(t, db)
-	if err := db.First(&models.AuctionEvent{}, rollbackEvent.ID).Error; err != nil {
-		t.Fatalf("event delete was not rolled back: %v", err)
-	}
-	assertQuickAccessPinCount(t, db, userID, models.QuickAccessTargetCalendarEvent, rollbackEvent.ID, 1)
 }
 
 func assertQuickAccessPinCount(t *testing.T, db *gorm.DB, userID uint, targetType models.QuickAccessTargetType, targetID uint, want int64) {
@@ -499,10 +290,8 @@ func TestQuickAccessServicePinListAndIdempotency(t *testing.T) {
 	otherUserID := uint(12)
 	coin := models.Coin{UserID: userID, Name: "Wishlist Coin", IsWishlist: true}
 	set := models.CoinSet{UserID: userID, Name: "Roman Set"}
-	lot := models.AuctionLot{UserID: userID, Title: "Hadrian Aureus", NumisBidsURL: "https://example.test/lot", Status: models.AuctionStatusBidding}
-	event := models.AuctionEvent{UserID: userID, Title: "Coin Show", Origin: models.AuctionEventOriginManual}
 	foreign := models.Coin{UserID: otherUserID, Name: "Foreign Coin"}
-	for _, value := range []interface{}{&coin, &set, &lot, &event, &foreign} {
+	for _, value := range []interface{}{&coin, &set, &foreign} {
 		if err := db.Create(value).Error; err != nil {
 			t.Fatal(err)
 		}
@@ -523,14 +312,8 @@ func TestQuickAccessServicePinListAndIdempotency(t *testing.T) {
 		t.Fatalf("foreign pin error = %v", err)
 	}
 
-	for targetType, id := range map[models.QuickAccessTargetType]uint{
-		models.QuickAccessTargetCoinSet:       set.ID,
-		models.QuickAccessTargetAuctionLot:    lot.ID,
-		models.QuickAccessTargetCalendarEvent: event.ID,
-	} {
-		if _, created, err := svc.Pin(userID, targetType, id); err != nil || !created {
-			t.Fatalf("pin %s: created=%v err=%v", targetType, created, err)
-		}
+	if _, created, err := svc.Pin(userID, models.QuickAccessTargetCoinSet, set.ID); err != nil || !created {
+		t.Fatalf("pin set: created=%v err=%v", created, err)
 	}
 
 	queryCount := 0
@@ -548,15 +331,15 @@ func TestQuickAccessServicePinListAndIdempotency(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if queryCount != 5 {
-		t.Fatalf("list queries=%d want 5 (pins plus one bounded query per target type)", queryCount)
+	if queryCount != 3 {
+		t.Fatalf("list queries=%d want 3 (pins plus one bounded query per target type)", queryCount)
 	}
-	if len(list.Items) != 4 {
-		t.Fatalf("items=%d want 4", len(list.Items))
+	if len(list.Items) != 2 {
+		t.Fatalf("items=%d want 2", len(list.Items))
 	}
 	for _, item := range list.Items {
 		payloads := 0
-		for _, present := range []bool{item.Coin != nil, item.CoinSet != nil, item.AuctionLot != nil, item.CalendarEvent != nil} {
+		for _, present := range []bool{item.Coin != nil, item.CoinSet != nil} {
 			if present {
 				payloads++
 			}
@@ -596,22 +379,18 @@ func TestQuickAccessServiceEligibilityAndSetCap(t *testing.T) {
 	if _, err := ParseQuickAccessTargetType("invalid"); !errors.Is(err, ErrInvalidQuickAccessTarget) {
 		t.Fatalf("invalid type error=%v", err)
 	}
-	sold := models.Coin{UserID: userID, Name: "Sold", IsSold: true}
-	terminal := models.AuctionLot{UserID: userID, Title: "Closed", NumisBidsURL: "https://example.test/closed", Status: models.AuctionStatusWon}
-	autoEvent := models.AuctionEvent{UserID: userID, Title: "Auction", Origin: models.AuctionEventOriginAuction}
-	for _, value := range []interface{}{&sold, &terminal, &autoEvent} {
-		if err := db.Create(value).Error; err != nil {
-			t.Fatal(err)
+	// Auction lots and calendar events were retired: no longer pinnable.
+	for _, retired := range []string{"auction_lot", "calendar_event"} {
+		if _, err := ParseQuickAccessTargetType(retired); !errors.Is(err, ErrInvalidQuickAccessTarget) {
+			t.Fatalf("%s type error=%v", retired, err)
 		}
 	}
-	for targetType, id := range map[models.QuickAccessTargetType]uint{
-		models.QuickAccessTargetCoin:          sold.ID,
-		models.QuickAccessTargetAuctionLot:    terminal.ID,
-		models.QuickAccessTargetCalendarEvent: autoEvent.ID,
-	} {
-		if _, _, err := svc.Pin(userID, targetType, id); !errors.Is(err, ErrQuickAccessTargetNotFound) {
-			t.Fatalf("%s ineligible error=%v", targetType, err)
-		}
+	sold := models.Coin{UserID: userID, Name: "Sold", IsSold: true}
+	if err := db.Create(&sold).Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := svc.Pin(userID, models.QuickAccessTargetCoin, sold.ID); !errors.Is(err, ErrQuickAccessTargetNotFound) {
+		t.Fatalf("sold coin ineligible error=%v", err)
 	}
 
 	for i := 0; i < maxQuickAccessCoinSets+1; i++ {

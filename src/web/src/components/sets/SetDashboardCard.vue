@@ -40,6 +40,7 @@ const setDescription = computed(() => {
   const normalizedType = normalizeCoinSetType(props.set.setType)
   if (normalizedType === 'goal') return t('sets.card.goal')
   if (normalizedType === 'smart') return t('sets.card.smart')
+  if (normalizedType === 'checklist') return t('sets.card.checklist', { percent: Math.round(props.set.completionPercentage ?? 0) })
   if (normalizedType === 'agentic') return props.set.agenticStatus === 'generating' ? t('sets.card.agenticGenerating') : t('sets.card.agentic')
   return props.set.coinCount > 0 ? t('sets.card.standard') : t('sets.card.ready')
 })

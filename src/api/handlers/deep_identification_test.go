@@ -56,7 +56,7 @@ func setupDeepIdentificationHandlerTest(t *testing.T, userID uint, enabled bool)
 		t.Fatalf("open db: %v", err)
 	}
 	if err := db.AutoMigrate(
-		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.ValueSnapshot{}, &models.CoinJournal{}, &models.AppSetting{},
+		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CoinJournal{}, &models.AppSetting{},
 		&models.CatalogRegistry{},
 		&models.DeepIdentificationJob{}, &models.DeepIdentificationEvent{},
 		&models.DeepIdentificationProviderRun{}, &models.DeepIdentificationArtifact{},
@@ -84,7 +84,7 @@ func setupDeepIdentificationHandlerTest(t *testing.T, userID uint, enabled bool)
 	notifRepo := repository.NewNotificationRepository(db)
 	socialRepo := repository.NewSocialRepository(db)
 	userRepo := repository.NewUserRepository(db)
-	notifSvc := services.NewNotificationService(notifRepo, socialRepo, userRepo, services.NewPushoverService(settingsSvc, services.NewLogger(10)), services.NewLogger(10))
+	notifSvc := services.NewNotificationService(notifRepo, socialRepo, userRepo, services.NewLogger(10))
 	coinSvc := services.NewCoinService(coinRepo, notifSvc)
 	quickCaptureRepo := repository.NewQuickCaptureRepository(db)
 	quickCaptureSvc := services.NewQuickCaptureService(quickCaptureRepo, uploadDir).WithCoinValidation(coinSvc)

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Coin, CoinMutationPayload, StatsResponse, ValueSnapshot, CollectionHealthSummary, CoinHealthItem } from '@/types'
+import type { Coin, CoinMutationPayload, StatsResponse, CollectionHealthSummary, CoinHealthItem } from '@/types'
 import * as api from '@/api/client'
 
 // Grouped views load the whole filtered collection in pages of 100, up to a limit.
@@ -13,7 +13,6 @@ export const useCoinsStore = defineStore('coins', () => {
   const total = ref(0)
   const loading = ref(false)
   const stats = ref<StatsResponse | null>(null)
-  const valueHistory = ref<ValueSnapshot[]>([])
   const selectedEra = ref('')
   const searchQuery = ref('')
   const activeSortKey = ref('')
@@ -123,11 +122,6 @@ export const useCoinsStore = defineStore('coins', () => {
     stats.value = res.data
   }
 
-  async function fetchValueHistory() {
-    const res = await api.getValueHistory()
-    valueHistory.value = res.data
-  }
-
   async function fetchCollectionHealth() {
     healthLoading.value = true
     try {
@@ -158,7 +152,6 @@ export const useCoinsStore = defineStore('coins', () => {
     total,
     loading,
     stats,
-    valueHistory,
     selectedEra,
     searchQuery,
     activeSortKey,
@@ -180,7 +173,6 @@ export const useCoinsStore = defineStore('coins', () => {
     editCoin,
     removeCoin,
     fetchStats,
-    fetchValueHistory,
     fetchCollectionHealth,
     fetchCoinHealthList,
   }

@@ -74,14 +74,12 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
             <tr><th>Tab</th><th>What is there</th></tr>
           </thead>
           <tbody>
-            <tr><td><strong>Account</strong></td><td>Profile, password, Pushover, Coin of the Day, connected sign-in providers, biometric login</td></tr>
-            <tr><td><strong>Connections</strong></td><td>NumisBids, CNG Auctions, and ParcelApp credentials</td></tr>
+            <tr><td><strong>Account</strong></td><td>Profile, password, Coin of the Day, connected sign-in providers, biometric login</td></tr>
             <tr><td><strong>Appearance</strong></td><td>Theme, language, and display preferences</td></tr>
             <tr><td><strong>Data</strong></td><td>Tags and open sets, storage locations, custom mint locations, catalog reference migration</td></tr>
             <tr><td><strong>Keys</strong></td><td>API keys for external AI clients</td></tr>
             <tr><td><strong>Tools</strong></td><td>Image processor settings and blocked users</td></tr>
             <tr><td><strong>Conversations</strong></td><td>Saved agent chats</td></tr>
-            <tr><td><strong>Shipments</strong></td><td>Shipments not yet delivered</td></tr>
             <tr><td><strong>Backups</strong></td><td>Collection import, ZIP export, PDF catalog export, CSV template</td></tr>
             <tr><td><strong>Help</strong></td><td>This guide</td></tr>
           </tbody>
@@ -92,7 +90,7 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
     <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim">
       <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Using Aurearia - Coin Collection Features</summary>
       <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>Aurearia - Coin Collection supports collection cataloging, acquisition planning, auctions, social sharing, and AI-assisted research. These workflows are optional; start with collection import or Quick Capture, then enable integrations as needed.</p>
+        <p>Aurearia - Coin Collection supports collection cataloging, acquisition planning, social sharing, and AI-assisted research. These workflows are optional; start with collection import or Quick Capture, then enable integrations as needed.</p>
 
         <h4>Fast Intake</h4>
         <ul>
@@ -100,15 +98,6 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Coin Lookup</strong> — Photograph a coin or NGC Ancients slab, review extracted details, and save the result to your collection or wish list. <strong>Identify Coin → Analysis History</strong> keeps past deep identification jobs, including their artifacts and provider runs.</li>
           <li><strong>Voice notes</strong> — On supported browsers, use <strong>Dictate notes</strong> in Quick Identify or saved-coin Deep Analysis, review the English transcript, then submit with the existing action. Your browser or device provider may process the audio; Aurearia does not store it. Typing remains available.</li>
           <li><strong>Quick Capture</strong> — Save show-floor photos and notes as drafts, resume them later, and promote a completed draft into either your collection or wish list. Drafts stay out of collection, wish list, stats, and health totals until promotion.</li>
-        </ul>
-
-        <h4>Auctions</h4>
-        <ul>
-          <li><strong>Manual import</strong> — Paste a NumisBids or CNG Auctions lot URL from the Auctions page.</li>
-          <li><strong>Watchlist sync</strong> — Add NumisBids and/or CNG credentials in <strong>Settings → Connections</strong>, then use <strong>Sync Watchlists</strong> on the Auctions page.</li>
-          <li><strong>Provider capabilities</strong> — CNG Auctions supports richer hosted-auction sync and can auto-detect won/lost outcomes where CNG provides the data. NumisBids supports watchlist/import tracking only today; check NumisBids after the sale and manually update won/lost, winning bid, and max-bid details.</li>
-          <li><strong>Source filters</strong> — Filter auction lots by All, NumisBids, or CNG in addition to status.</li>
-          <li><strong>Security</strong> — Stored auction-provider passwords are encrypted on the server. Existing plaintext values are migrated automatically the next time they are saved or used for sync.</li>
         </ul>
 
         <h4>Sharing and Discovery</h4>
@@ -133,11 +122,10 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Learn more</strong> — See the collector's guide <em>How Coin Copilot Works</em> in the project documentation.</li>
         </ul>
 
-        <h4>Coin Agent and Notes</h4>
+        <h4>Coin Agent</h4>
         <ul>
           <li><strong>Coin Agent</strong> — When Coin Copilot is off, open the chat from <strong>Agent</strong> in the sidebar (or the draggable launcher in PWA mode) to search listings, find shows, ask portfolio questions, or ask collection cleanup questions such as which coins are missing an era.</li>
           <li><strong>Starter prompts</strong> — The drawer includes acquisition examples plus a collection cleanup starter for missing era metadata.</li>
-          <li><strong>Save to Notes</strong> — Completed assistant answers can be reviewed as markdown, edited, previewed, and saved to Notes only after you click Create Note.</li>
         </ul>
 
         <h4>Sets and Agentic Proposals</h4>
@@ -153,7 +141,6 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Summary</strong> — Collection totals, rankings, distribution charts, and portfolio overview.</li>
           <li><strong>Timeline and Map</strong> — Chronological collection history plus mint geography for mapped coins.</li>
           <li><strong>Health</strong> — Scorecards for missing images, metadata gaps, AI analysis gaps, stale valuations, and cleanup suggestions.</li>
-          <li><strong>Value Details and Investment Breakdown</strong> — Value snapshots, allocation, acquisition-year performance, top increases/drops, and stale valuation rows.</li>
           <li><strong>Time Machine</strong> — Scrub back through time to see the collection as it stood on any date.</li>
           <li><strong>Emperor Tracker</strong> — Optional Roman emperor/figure progress with agent search actions for missing or suggested targets. It lives under <strong>Sets → Emperors</strong>, not Stats, and appears once enabled for your account.</li>
         </ul>
@@ -175,16 +162,12 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Bulk operations</strong> — Enter select mode from the collection toolbar to tag, add to sets, or change several coins at once instead of opening each one.</li>
           <li><strong>Storage locations</strong> — Record where a coin physically lives; managed in <strong>Settings → Data</strong>.</li>
           <li><strong>Journal and timeline</strong> — Each coin keeps a dated journal and a lifecycle timeline of what happened to it, including external tool writes.</li>
-          <li><strong>Notes</strong> — Standalone research notes live under <strong>Notes</strong>; agent answers can be saved into them.</li>
           <li><strong>Sold coins</strong> — Sell a coin from its detail page to record the sale price and buyer; <strong>Sold</strong> then tracks profit and loss against what you paid.</li>
         </ul>
 
-        <h4>Shipments and Reminders</h4>
+        <h4>Reminders</h4>
         <ul>
-          <li><strong>Shipment tracker</strong> — Track an incoming purchase from the coin's <strong>Shipment Tracker</strong> page. Adding a ParcelApp API key in <strong>Settings → Connections</strong> lets tracking be created from a tracking number and synced automatically when the admin enables it.</li>
-          <li><strong>Shipments overview</strong> — <strong>Settings → Shipments</strong> lists every shipment that has not been delivered yet.</li>
           <li><strong>Purchase reminders</strong> — Schedule a reminder against a coin you mean to buy, and get notified when it comes due.</li>
-          <li><strong>Calendar</strong> — <strong>Calendar</strong> shows auction sale dates from tracked lots alongside your own events, such as shows and research tasks.</li>
         </ul>
 
         <h4>Backups and Export</h4>
@@ -204,9 +187,8 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
 
         <h4>Notifications and Alerts</h4>
         <ul>
-          <li><strong>In-app notifications</strong> — The notification badge tracks unread social, auction, wishlist, set milestone, and Coin of the Day activity.</li>
-          <li><strong>Pushover</strong> — Add a user key in Settings → Account after the admin configures the Pushover app token and public app URL.</li>
-          <li><strong>Alert review</strong> — Wishlist search alerts create candidate runs for review; auction alerts and digests help track watched and bidding lots.</li>
+          <li><strong>In-app notifications</strong> — The notification badge tracks unread social, wishlist, set, and Coin of the Day activity.</li>
+          <li><strong>Alert review</strong> — Wishlist search alerts create candidate runs for review.</li>
         </ul>
       </div>
     </details>

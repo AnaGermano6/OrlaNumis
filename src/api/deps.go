@@ -27,79 +27,64 @@ import (
 // given its cycle repo before the scheduler reads it), and hand-wiring keeps
 // that order explicit and greppable.
 type appDeps struct {
-	cfg                            *config.Config
-	logger                         *services.Logger
-	settingsSvc                    *services.SettingsService
-	securitySvc                    *services.SecurityService
-	oidcSvc                        *services.OIDCService
-	authHandler                    *handlers.AuthHandler
-	webauthnHandler                *handlers.WebAuthnHandler
-	apiKeyRepo                     *repository.ApiKeyRepository
-	apiKeyAuth                     middleware.ApiKeyAuthenticator
-	imageSvc                       *services.ImageService
-	imageHandler                   *handlers.ImageHandler
-	internalTokenSvc               *services.InternalTokenService
-	credentialEncryptionSvc        *services.CredentialEncryptionService
-	numistaLookupSvc               *services.NumistaLookupService
-	numistaTelemetry               *services.NumistaTelemetry
-	exchangeRates                  *services.ExchangeRateService
-	authRateLimit                  gin.HandlerFunc
-	apiRateLimit                   gin.HandlerFunc
-	writeRateLimit                 gin.HandlerFunc
-	agentProxy                     *services.AgentProxy
-	coinRepo                       *repository.CoinRepository
-	journalRepo                    *repository.JournalRepository
-	noteRepo                       *repository.NoteRepository
-	collectorProfileHandler        *handlers.CollectorProfileHandler
-	wishlistURLHandler             *handlers.WishlistURLHandler
-	socialRepo                     *repository.SocialRepository
-	notifRepo                      *repository.NotificationRepository
-	notifSvc                       *services.NotificationService
-	pushoverSvc                    *services.PushoverService
-	collectionSvc                  *services.CollectionToolsService
-	mcpSvc                         *services.MCPService
-	availRepo                      *repository.AvailabilityRepository
-	availCycleRepo                 *repository.AvailabilityCycleRepository
-	availSvc                       *services.AvailabilityService
-	availScheduler                 *services.AvailabilityScheduler
-	valRepo                        *repository.ValuationRepository
-	valSvc                         *services.ValuationService
-	aiJobSvc                       *services.AIJobService
-	setBuilderSvc                  *services.SetBuilderService
-	coinLookupSvc                  *services.CoinLookupService
-	deepIdentificationRepo         *repository.DeepIdentificationRepository
-	deepIdentificationSvc          *services.DeepIdentificationService
-	coinCopilotRepo                *repository.CoinCopilotRepository
-	coinCopilotSvc                 *services.CoinCopilotService
-	deepAnalysisHandoffSvc         *services.DeepAnalysisHandoffService
-	healthSvc                      *services.HealthService
-	healthScheduler                *services.CollectionHealthScheduler
-	shipmentSvc                    *services.ShipmentService
-	wishlistSearchAlertSvc         *services.WishlistSearchAlertService
-	auctionLotRepo                 *repository.AuctionLotRepository
-	auctionWatchlistSyncSvc        *services.AuctionWatchlistSyncService
-	auctionEventRepo               *repository.AuctionEventRepository
-	quickAccessSvc                 *services.QuickAccessService
-	auctionEndingRepo              *repository.AuctionEndingRepository
-	auctionEndingScheduler         *services.AuctionEndingScheduler
-	auctionWatchBidDigestRepo      *repository.AuctionWatchBidDigestRepository
-	auctionWatchBidDigestScheduler *services.AuctionWatchBidDigestScheduler
-	auctionAlertRunRepo            *repository.AuctionAlertRunRepository
-	auctionAlertScheduler          *services.AuctionAlertScheduler
-	priceAlertRepo                 *repository.PriceAlertRepository
-	bidReminderRepo                *repository.BidReminderRepository
-	featuredCoinRepo               *repository.FeaturedCoinRepository
-	coinOfDayScheduler             *services.CoinOfDayScheduler
-	schedulerRegistry              *SchedulerRegistry
-	purchaseReminderRepo           *repository.PurchaseReminderRepository
-	purchaseReminderSvc            *services.PurchaseReminderService
-	timeMachineSvc                 *services.TimeMachineService
-	externalToolsRateLimit         gin.HandlerFunc
-	numistaClient                  *services.HTTPNumistaClient
-	deepNomismaClient              *services.HTTPNomismaClient
-	deepOCREClient                 *services.HTTPOCREClient
-	deepOCRECache                  *services.OCRECache
-	deepProviderBudgets            *services.DeepProviderBudgetTracker
+	cfg                     *config.Config
+	logger                  *services.Logger
+	settingsSvc             *services.SettingsService
+	securitySvc             *services.SecurityService
+	oidcSvc                 *services.OIDCService
+	authHandler             *handlers.AuthHandler
+	webauthnHandler         *handlers.WebAuthnHandler
+	apiKeyRepo              *repository.ApiKeyRepository
+	apiKeyAuth              middleware.ApiKeyAuthenticator
+	imageSvc                *services.ImageService
+	imageHandler            *handlers.ImageHandler
+	internalTokenSvc        *services.InternalTokenService
+	numistaLookupSvc        *services.NumistaLookupService
+	numistaTelemetry        *services.NumistaTelemetry
+	exchangeRates           *services.ExchangeRateService
+	authRateLimit           gin.HandlerFunc
+	apiRateLimit            gin.HandlerFunc
+	writeRateLimit          gin.HandlerFunc
+	agentProxy              *services.AgentProxy
+	coinRepo                *repository.CoinRepository
+	journalRepo             *repository.JournalRepository
+	collectorProfileHandler *handlers.CollectorProfileHandler
+	wishlistURLHandler      *handlers.WishlistURLHandler
+	socialRepo              *repository.SocialRepository
+	notifRepo               *repository.NotificationRepository
+	notifSvc                *services.NotificationService
+	collectionSvc           *services.CollectionToolsService
+	mcpSvc                  *services.MCPService
+	availRepo               *repository.AvailabilityRepository
+	availCycleRepo          *repository.AvailabilityCycleRepository
+	availSvc                *services.AvailabilityService
+	availScheduler          *services.AvailabilityScheduler
+	valRepo                 *repository.ValuationRepository
+	valSvc                  *services.ValuationService
+	aiJobSvc                *services.AIJobService
+	setBuilderSvc           *services.SetBuilderService
+	coinLookupSvc           *services.CoinLookupService
+	deepIdentificationRepo  *repository.DeepIdentificationRepository
+	deepIdentificationSvc   *services.DeepIdentificationService
+	coinCopilotRepo         *repository.CoinCopilotRepository
+	coinCopilotSvc          *services.CoinCopilotService
+	deepAnalysisHandoffSvc  *services.DeepAnalysisHandoffService
+	healthSvc               *services.HealthService
+	healthScheduler         *services.CollectionHealthScheduler
+	wishlistSearchAlertSvc  *services.WishlistSearchAlertService
+	quickAccessSvc          *services.QuickAccessService
+	featuredCoinRepo        *repository.FeaturedCoinRepository
+	coinOfDayScheduler      *services.CoinOfDayScheduler
+	schedulerRegistry       *SchedulerRegistry
+	purchaseReminderRepo    *repository.PurchaseReminderRepository
+	purchaseReminderSvc     *services.PurchaseReminderService
+	timeMachineSvc          *services.TimeMachineService
+	externalToolsRateLimit  gin.HandlerFunc
+	numistaClient           *services.HTTPNumistaClient
+	deepNomismaClient       *services.HTTPNomismaClient
+	deepOCREClient          *services.HTTPOCREClient
+	deepOCRECache           *services.OCRECache
+	deepProviderBudgets     *services.DeepProviderBudgetTracker
 }
 
 // buildDeps constructs every repository, service, scheduler, and shared piece
@@ -146,14 +131,6 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	// DeepIdentificationOCREEnabled setting via the provider catalog).
 	deepOCREClient := services.NewHTTPOCREClient()
 	deepOCRECache := services.NewOCRECache()
-	credentialEncryptionSvc := services.NewDisabledCredentialEncryptionService()
-	if cfg.AuctionCredentialEncryptionKey != "" {
-		var err error
-		credentialEncryptionSvc, err = services.NewCredentialEncryptionService(cfg.AuctionCredentialEncryptionKey)
-		if err != nil {
-			log.Fatalf("Failed to configure auction credential encryption: %v", err)
-		}
-	}
 
 	logger.Info("startup", "Application starting")
 	logger.Info("startup", "Database connected: %s", cfg.DBPath)
@@ -200,19 +177,15 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	socialRepo := repository.NewSocialRepository(database.DB)
 	notifRepo := repository.NewNotificationRepository(database.DB)
 	valRepo := repository.NewValuationRepository(database.DB)
-	auctionEndingRepo := repository.NewAuctionEndingRepository(database.DB)
 	userRepoForVal := repository.NewUserRepository(database.DB)
-	auctionLotRepo := repository.NewAuctionLotRepository(database.DB)
-	auctionEventRepo := repository.NewAuctionEventRepository(database.DB)
 	quickAccessRepo := repository.NewQuickAccessRepository(database.DB)
 	quickAccessSvc := services.NewQuickAccessService(quickAccessRepo, logger)
-	pushoverSvc := services.NewPushoverService(settingsSvc, logger)
-	notifSvc := services.NewNotificationService(notifRepo, socialRepo, userRepoForVal, pushoverSvc, logger)
-	availSvc := services.NewAvailabilityService(coinRepo, availRepo, agentProxy, notifSvc, pushoverSvc, userRepoForVal, settingsSvc, logger).WithCycleRepo(availCycleRepo)
+	notifSvc := services.NewNotificationService(notifRepo, socialRepo, userRepoForVal, logger)
+	availSvc := services.NewAvailabilityService(coinRepo, availRepo, agentProxy, notifSvc, userRepoForVal, settingsSvc, logger).WithCycleRepo(availCycleRepo)
 	wishlistSearchAlertSvc := services.NewWishlistSearchAlertService(wishlistSearchAlertRepo).WithDiscovery(agentProxy, settingsSvc)
 	wishlistSearchAlertSvc.StartWorkers(1)
 	wishlistSearchAlertScheduler := services.NewWishlistSearchAlertScheduler(wishlistSearchAlertSvc, wishlistSearchAlertRepo, settingsSvc, logger)
-	valSvc := services.NewValuationService(coinRepo, valRepo, agentProxy, userRepoForVal, pushoverSvc, notifSvc, settingsSvc, logger)
+	valSvc := services.NewValuationService(coinRepo, valRepo, agentProxy, userRepoForVal, notifSvc, settingsSvc, logger)
 	aiJobRepo := repository.NewAIJobRepository(database.DB)
 	aiJobSvc := services.NewAIJobService(aiJobRepo, agentProxy, userRepoForVal, settingsSvc, notifSvc, logger)
 	aiJobSvc.StartWorkers(1)
@@ -234,33 +207,11 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	timeMachineSvc := services.NewTimeMachineService(timeMachineRepo)
 	healthRepo := repository.NewHealthRepository(database.DB)
 	healthSvc := services.NewHealthService(healthRepo, logger)
-	auctionWatchBidDigestRepo := repository.NewAuctionWatchBidDigestRepository(database.DB)
-	priceAlertRepo := repository.NewPriceAlertRepository(database.DB)
-	bidReminderRepo := repository.NewBidReminderRepository(database.DB)
-	auctionAlertRunRepo := repository.NewAuctionAlertRunRepository(database.DB)
-	shipmentRepo := repository.NewShipmentRepository(database.DB)
-	shipmentSvc := services.NewShipmentService(
-		shipmentRepo,
-		coinRepo,
-		services.NewShipmentCarrierClientRegistry(buildShipmentCarrierClients(settingsSvc, logger)...),
-		notifSvc,
-		logger,
-	).WithParcelAppSupport(userRepoForVal, settingsSvc, credentialEncryptionSvc, services.NewHTTPParcelAppClient())
 
 	// Create schedulers before routes so they can be passed to admin handlers
 	availScheduler := services.NewAvailabilityScheduler(availSvc, coinRepo, availRepo, settingsSvc, logger).WithCycleRepo(availCycleRepo)
 	availScheduler.StartWorkers(1)
 	valScheduler := services.NewValuationScheduler(valSvc, coinRepo, valRepo, settingsSvc, logger)
-	nbWatchSyncSvc := services.NewNumisBidsService(logger)
-	cngWatchSyncSvc := services.NewCNGAuctionService(logger)
-	auctionWatchlistSyncSvc := services.NewAuctionWatchlistSyncService(auctionLotRepo, userRepoForVal, nbWatchSyncSvc, cngWatchSyncSvc, credentialEncryptionSvc, logger).
-		WithNotifications(notifSvc).
-		WithQuickAccessSupport(quickAccessSvc)
-	auctionEndingScheduler := services.NewAuctionEndingScheduler(auctionLotRepo, auctionEndingRepo, userRepoForVal, pushoverSvc, notifSvc, settingsSvc, logger)
-	auctionWatchBidDigestScheduler := services.NewAuctionWatchBidDigestScheduler(auctionLotRepo, auctionWatchBidDigestRepo, userRepoForVal, pushoverSvc, auctionWatchlistSyncSvc, settingsSvc, logger)
-	auctionAlertEvaluator := services.NewAuctionAlertEvaluator(priceAlertRepo, bidReminderRepo, notifSvc, logger)
-	auctionAlertScheduler := services.NewAuctionAlertScheduler(auctionAlertEvaluator, auctionAlertRunRepo, auctionWatchlistSyncSvc, settingsSvc, logger)
-	shipmentScheduler := services.NewShipmentScheduler(shipmentSvc, settingsSvc, logger)
 	collectionHealthSnapshotRunRepo := repository.NewCollectionHealthSnapshotRunRepository(database.DB)
 	healthScheduler := services.NewCollectionHealthScheduler(healthSvc, collectionHealthSnapshotRunRepo, settingsSvc, logger)
 	featuredCoinRepo := repository.NewFeaturedCoinRepository(database.DB)
@@ -274,10 +225,6 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	reminderScheduler := services.NewReminderScheduler(purchaseReminderRepo, notifSvc, settingsSvc, logger)
 	schedulerRegistry.Register(availScheduler)
 	schedulerRegistry.Register(valScheduler)
-	schedulerRegistry.Register(auctionEndingScheduler)
-	schedulerRegistry.Register(auctionWatchBidDigestScheduler)
-	schedulerRegistry.Register(auctionAlertScheduler)
-	schedulerRegistry.Register(shipmentScheduler)
 	schedulerRegistry.Register(healthScheduler)
 	schedulerRegistry.Register(wishlistSearchAlertScheduler)
 	schedulerRegistry.Register(reminderScheduler)
@@ -285,7 +232,6 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	// Create shared repositories for cross-group access
 	journalRepo := repository.NewJournalRepository(database.DB)
 	collectionProposalRepo := repository.NewCollectionUpdateRepository(database.DB)
-	noteRepo := repository.NewNoteRepository(database.DB)
 	collectorProfileRepo := repository.NewCollectorProfileRepository(database.DB)
 	collectorProfileSvc := services.NewCollectorProfileService(collectorProfileRepo)
 	collectorProfileHandler := handlers.NewCollectorProfileHandler(collectorProfileSvc)
@@ -301,84 +247,69 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 		deepIdentificationSvc, settingsSvc, cfg.UploadDir,
 	)
 	coinCopilotSvc.StartWorkers(backgroundCtx)
-	mcpSvc := services.NewMCPService(collectionSvc, coinRepo, auctionLotRepo, coinCopilotSvc)
+	mcpSvc := services.NewMCPService(collectionSvc, coinRepo, coinCopilotSvc)
 
 	// #218 external tool server: per-key rate limiter shared by the
 	// authenticated /api/v1/tools routes.
 	externalToolsRateLimit := middleware.ExternalAPIKeyRateLimit(50, 1*time.Minute)
 
 	return &appDeps{
-		cfg:                            cfg,
-		logger:                         logger,
-		settingsSvc:                    settingsSvc,
-		securitySvc:                    securitySvc,
-		oidcSvc:                        oidcSvc,
-		authHandler:                    authHandler,
-		webauthnHandler:                webauthnHandler,
-		apiKeyRepo:                     apiKeyRepo,
-		apiKeyAuth:                     apiKeyAuth,
-		imageSvc:                       imageSvc,
-		imageHandler:                   imageHandler,
-		internalTokenSvc:               internalTokenSvc,
-		credentialEncryptionSvc:        credentialEncryptionSvc,
-		numistaLookupSvc:               numistaLookupSvc,
-		numistaTelemetry:               numistaTelemetry,
-		exchangeRates:                  exchangeRates,
-		authRateLimit:                  authRateLimit,
-		apiRateLimit:                   apiRateLimit,
-		writeRateLimit:                 writeRateLimit,
-		agentProxy:                     agentProxy,
-		coinRepo:                       coinRepo,
-		journalRepo:                    journalRepo,
-		noteRepo:                       noteRepo,
-		collectorProfileHandler:        collectorProfileHandler,
-		wishlistURLHandler:             wishlistURLHandler,
-		socialRepo:                     socialRepo,
-		notifRepo:                      notifRepo,
-		notifSvc:                       notifSvc,
-		pushoverSvc:                    pushoverSvc,
-		collectionSvc:                  collectionSvc,
-		mcpSvc:                         mcpSvc,
-		availRepo:                      availRepo,
-		availCycleRepo:                 availCycleRepo,
-		availSvc:                       availSvc,
-		availScheduler:                 availScheduler,
-		valRepo:                        valRepo,
-		valSvc:                         valSvc,
-		aiJobSvc:                       aiJobSvc,
-		coinLookupSvc:                  coinLookupSvc,
-		deepIdentificationRepo:         deepIdentificationRepo,
-		deepIdentificationSvc:          deepIdentificationSvc,
-		coinCopilotRepo:                coinCopilotRepo,
-		coinCopilotSvc:                 coinCopilotSvc,
-		deepAnalysisHandoffSvc:         deepAnalysisHandoffSvc,
-		healthSvc:                      healthSvc,
-		healthScheduler:                healthScheduler,
-		shipmentSvc:                    shipmentSvc,
-		wishlistSearchAlertSvc:         wishlistSearchAlertSvc,
-		auctionLotRepo:                 auctionLotRepo,
-		auctionWatchlistSyncSvc:        auctionWatchlistSyncSvc,
-		auctionEventRepo:               auctionEventRepo,
-		quickAccessSvc:                 quickAccessSvc,
-		auctionEndingRepo:              auctionEndingRepo,
-		auctionEndingScheduler:         auctionEndingScheduler,
-		auctionWatchBidDigestRepo:      auctionWatchBidDigestRepo,
-		auctionWatchBidDigestScheduler: auctionWatchBidDigestScheduler,
-		auctionAlertRunRepo:            auctionAlertRunRepo,
-		auctionAlertScheduler:          auctionAlertScheduler,
-		priceAlertRepo:                 priceAlertRepo,
-		bidReminderRepo:                bidReminderRepo,
-		featuredCoinRepo:               featuredCoinRepo,
-		coinOfDayScheduler:             coinOfDayScheduler,
-		schedulerRegistry:              schedulerRegistry,
-		purchaseReminderRepo:           purchaseReminderRepo,
-		purchaseReminderSvc:            purchaseReminderSvc,
-		timeMachineSvc:                 timeMachineSvc,
-		externalToolsRateLimit:         externalToolsRateLimit,
-		numistaClient:                  numistaClient,
-		deepNomismaClient:              deepNomismaClient,
-		deepOCREClient:                 deepOCREClient,
-		deepOCRECache:                  deepOCRECache,
-		deepProviderBudgets:            deepProviderBudgets,
+		cfg:                     cfg,
+		logger:                  logger,
+		settingsSvc:             settingsSvc,
+		securitySvc:             securitySvc,
+		oidcSvc:                 oidcSvc,
+		authHandler:             authHandler,
+		webauthnHandler:         webauthnHandler,
+		apiKeyRepo:              apiKeyRepo,
+		apiKeyAuth:              apiKeyAuth,
+		imageSvc:                imageSvc,
+		imageHandler:            imageHandler,
+		internalTokenSvc:        internalTokenSvc,
+		numistaLookupSvc:        numistaLookupSvc,
+		numistaTelemetry:        numistaTelemetry,
+		exchangeRates:           exchangeRates,
+		authRateLimit:           authRateLimit,
+		apiRateLimit:            apiRateLimit,
+		writeRateLimit:          writeRateLimit,
+		agentProxy:              agentProxy,
+		coinRepo:                coinRepo,
+		journalRepo:             journalRepo,
+		collectorProfileHandler: collectorProfileHandler,
+		wishlistURLHandler:      wishlistURLHandler,
+		socialRepo:              socialRepo,
+		notifRepo:               notifRepo,
+		notifSvc:                notifSvc,
+		collectionSvc:           collectionSvc,
+		mcpSvc:                  mcpSvc,
+		availRepo:               availRepo,
+		availCycleRepo:          availCycleRepo,
+		availSvc:                availSvc,
+		availScheduler:          availScheduler,
+		valRepo:                 valRepo,
+		valSvc:                  valSvc,
+		aiJobSvc:                aiJobSvc,
+		coinLookupSvc:           coinLookupSvc,
+		deepIdentificationRepo:  deepIdentificationRepo,
+		deepIdentificationSvc:   deepIdentificationSvc,
+		coinCopilotRepo:         coinCopilotRepo,
+		coinCopilotSvc:          coinCopilotSvc,
+		deepAnalysisHandoffSvc:  deepAnalysisHandoffSvc,
+		healthSvc:               healthSvc,
+		healthScheduler:         healthScheduler,
+		wishlistSearchAlertSvc:  wishlistSearchAlertSvc,
+		quickAccessSvc:          quickAccessSvc,
+		featuredCoinRepo:        featuredCoinRepo,
+		coinOfDayScheduler:      coinOfDayScheduler,
+		schedulerRegistry:       schedulerRegistry,
+		purchaseReminderRepo:    purchaseReminderRepo,
+		purchaseReminderSvc:     purchaseReminderSvc,
+		timeMachineSvc:          timeMachineSvc,
+		externalToolsRateLimit:  externalToolsRateLimit,
+		numistaClient:           numistaClient,
+		deepNomismaClient:       deepNomismaClient,
+		deepOCREClient:          deepOCREClient,
+		deepOCRECache:           deepOCRECache,
+		deepProviderBudgets:     deepProviderBudgets,
 	}, cancelBackground
 }

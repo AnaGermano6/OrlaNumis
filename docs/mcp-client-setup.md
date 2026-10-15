@@ -29,8 +29,8 @@ Choose the least-privilege capability:
 
 | Client need | Capability | Expected tools |
 |---|---|---:|
-| Collection, wishlist, auction, and statistics reads | `read` | 8 |
-| Reads plus Coin Copilot lifecycle | `read,copilot` | 12 |
+| Collection, wishlist, and statistics reads | `read` | 5 |
+| Reads plus Coin Copilot lifecycle | `read,copilot` | 9 |
 
 Do not choose `write` for an MCP-only client. `write` applies to the separate
 OpenAPI adapter and never implies `copilot`.
@@ -232,11 +232,8 @@ After connecting:
 Expected read tools:
 
 ```text
-auction_counts
 collection_stats
-get_auction_lot
 get_coin
-list_auction_lots
 list_wishlist
 search_collection
 top_coins_by_value

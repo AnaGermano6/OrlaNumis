@@ -95,27 +95,6 @@ func (h *OfficialPhotoHandler) Add(c *gin.Context) {
 	c.JSON(http.StatusOK, OfficialPhotosResponse{Images: images})
 }
 
-// officialPhotoQuery describes a coin for the photo search: its Numista type,
-// year, country, denomination and subject (what follows " – " in its name,
-// unless that is just the country).
-func officialPhotoQuery(coin *models.Coin) services.CoinPhotoQuery {
-	query := services.CoinPhotoQuery{Country: coin.Country, Denomination: coin.Denomination, Material: string(coin.Material), Lang: "en"}
-	if coin.Year != nil {
-		query.Year = *coin.Year
-	}
-	if _, detail, found := strings.Cut(coin.Name, " – "); found && !strings.EqualFold(strings.TrimSpace(detail), strings.TrimSpace(coin.Country)) {
-		query.Subject = strings.TrimSpace(detail)
-	}
-	for _, ref := range coin.References {
-		if strings.EqualFold(ref.Catalog, "Numista") {
-			if id, err := strconv.Atoi(strings.TrimSpace(ref.Number)); err == nil && id > 0 {
-				query.NumistaTypeID = id
-			}
-		}
-	}
-	return query
-}
-
 // Attach adds the coin's official images for the given sides it has no image
 // of and returns them; found is false when the user has no such coin.
 func (h *OfficialPhotoHandler) Attach(ctx context.Context, coinID, userID uint, sides []models.ImageType) (added []models.CoinImage, found bool) {
@@ -129,7 +108,7 @@ func (h *OfficialPhotoHandler) Attach(ctx context.Context, coinID, userID uint, 
 	if coin.Year == nil {
 		return added, true
 	}
-	obverse, reverse := h.photos.OfficialPhotos(ctx, officialPhotoQuery(coin))
+	obverse, reverse := h.photos.OfficialPhotos(ctx, services.CoinPhotoQueryFor(coin))
 	var credits []string
 	for _, side := range []models.ImageType{models.ImageTypeObverse, models.ImageTypeReverse} {
 		photo := obverse

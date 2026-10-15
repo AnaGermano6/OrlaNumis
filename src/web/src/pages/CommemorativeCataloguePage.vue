@@ -57,10 +57,25 @@
       <section v-if="selected" class="mt-6" aria-labelledby="catalogue-country-title" data-testid="catalogue-country">
         <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="catalogue-country-title" class="m-0 font-display text-lg font-medium text-heading">{{ selectedSummary ? entryName(selectedSummary) : '' }}</h2>
-          <span v-if="selectedSummary" class="text-body text-text-secondary" data-testid="catalogue-owned">
-            {{ t('sets.catalogue.owned', { owned: owned(selectedSummary), total: total(selectedSummary) }) }}
+          <span class="flex flex-wrap items-center gap-3">
+            <span v-if="selectedSummary" class="text-body text-text-secondary" data-testid="catalogue-owned">
+              {{ t('sets.catalogue.owned', { owned: owned(selectedSummary), total: total(selectedSummary) }) }}
+            </span>
+            <!-- A set of these coins (of the face value chosen), kept up to date by itself. -->
+            <button
+              v-if="selectedSummary && coins.length"
+              type="button"
+              class="btn btn-secondary btn-sm"
+              :disabled="creatingSet"
+              :title="t('sets.catalogue.createSetHint')"
+              data-testid="catalogue-create-set"
+              @click="createChecklistSet"
+            >
+              <Layers3 :size="16" /> {{ t('sets.catalogue.createSet') }}
+            </button>
           </span>
         </div>
+        <p v-if="createSetFailed" class="mb-3 mt-0 text-body text-error-bg" role="alert">{{ t('sets.catalogue.createSetFailed') }}</p>
 
         <div class="mb-4 flex flex-wrap items-center gap-2">
           <!-- A filter for each face value the country's coins have. -->
@@ -116,7 +131,7 @@
               <span class="text-chip text-text-muted">· {{ t('sets.catalogue.progress', { owned: group.owned, total: group.coins.length }) }}</span>
             </h3>
             <ul class="m-0 grid list-none grid-cols-2 gap-3 p-0 md:grid-cols-4 xl:grid-cols-6">
-              <CoinReleaseCard v-for="coin in group.coins" :key="coin.source + coin.imageUrl + coin.title" :release="coin" :show-country="false" />
+              <CoinReleaseCard v-for="coin in group.coins" :key="coin.source + coin.imageUrl + coin.title" :release="coin" :show-country="false" wishlistable />
             </ul>
           </section>
           <button
@@ -143,11 +158,13 @@
 // The country (and currency) chosen is kept in the address.
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCoinCatalogue, getCoinCatalogueCountries, type CatalogueCountry, type CoinRelease } from '@/api/client'
+import { Layers3 } from 'lucide-vue-next'
+import { createSet, getCoinCatalogue, getCoinCatalogueCountries, type CatalogueCountry, type CoinRelease } from '@/api/client'
 import CoinReleaseCard from '@/components/collection/CoinReleaseCard.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { intlLocale, t } from '@/i18n'
 import { formatFaceValue, releaseCountryName } from '@/utils/coinReleases'
+import { randomSetColor } from '@/utils/setColors'
 
 const OWNED = ['all', 'owned', 'missing'] as const
 /** Coins shown at first, and added by "Show more". */
@@ -169,6 +186,8 @@ const countryFailed = ref(false)
 const faceValue = ref<number | null>(null)
 const ownedFilter = ref<(typeof OWNED)[number]>('all')
 const limit = ref(PAGE)
+const creatingSet = ref(false)
+const createSetFailed = ref(false)
 
 function total(country: CatalogueCountry): number {
   return country.commemoratives + country.collector
@@ -235,11 +254,35 @@ const byYear = computed(() => {
   return years
 })
 
+// A checklist set of the country's coins (of the face value chosen): its
+// page shows them all, the collection's and the missing, as an album.
+async function createChecklistSet() {
+  const entry = selectedSummary.value
+  if (!entry || creatingSet.value) return
+  creatingSet.value = true
+  createSetFailed.value = false
+  const value = faceValue.value
+  try {
+    const { data } = await createSet({
+      name: value === null ? entryName(entry) : `${entryName(entry)} · ${formatFaceValue(value, entry.currency)}`,
+      color: randomSetColor(),
+      setType: 'checklist',
+      checklist: { source: 'catalogue', country: entry.country, ...(entry.currency ? { currency: entry.currency } : {}), ...(value === null ? {} : { faceValue: value }) },
+    })
+    void router.push({ name: 'set-detail', params: { id: data.id } })
+  } catch {
+    createSetFailed.value = true
+  } finally {
+    creatingSet.value = false
+  }
+}
+
 async function choose(key: string) {
   if (key === selected.value && coins.value.length) return
   const entry = countries.value.find((candidate) => entryKey(candidate) === key)
   if (!entry) return
   selected.value = key
+  createSetFailed.value = false
   faceValue.value = null
   ownedFilter.value = 'all'
   limit.value = PAGE

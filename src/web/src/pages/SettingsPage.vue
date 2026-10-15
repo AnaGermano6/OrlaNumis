@@ -47,10 +47,9 @@
         </div>
 
         <template v-if="activeTab === 'account'">
-          <SettingsAccountSection ref="accountSection" :show-connections="false" />
+          <SettingsAccountSection ref="accountSection" />
           <CollectorProfileSection />
         </template>
-        <SettingsConnectionsSection v-if="activeTab === 'connections'" />
 
         <SettingsAppearanceSection
           v-if="activeTab === 'appearance'"
@@ -125,15 +124,13 @@ import SettingsBackupsSection from '@/components/settings/SettingsBackupsSection
 import SettingsApiKeysSection from '@/components/settings/SettingsApiKeysSection.vue'
 import SavedConversationsSection from '@/components/settings/SavedConversationsSection.vue'
 import SettingsToolsSection from '@/components/settings/SettingsToolsSection.vue'
-import SettingsConnectionsSection from '@/components/settings/SettingsConnectionsSection.vue'
 import CollectorProfileSection from '@/components/settings/CollectorProfileSection.vue'
-import { User, Palette, Database, MessageSquare, HelpCircle, Wrench, Menu, ShieldCheck, Archive, KeyRound, Link } from 'lucide-vue-next'
+import { User, Palette, Database, MessageSquare, HelpCircle, Wrench, Menu, ShieldCheck, Archive, KeyRound } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { t, type MessageKey } from '@/i18n'
 
 const tabIcons: Record<string, Component> = {
   account: User,
-  connections: Link,
   appearance: Palette,
   data: Database,
   backups: Archive,
@@ -161,7 +158,6 @@ const apiKeysSection = ref<InstanceType<typeof SettingsApiKeysSection> | null>(n
 
 const tabLabelKeys: Record<string, MessageKey> = {
   account: 'settings.tabs.account',
-  connections: 'settings.tabs.connections',
   appearance: 'settings.tabs.appearance',
   data: 'settings.tabs.data',
   apikeys: 'settings.tabs.apikeys',
@@ -171,7 +167,7 @@ const tabLabelKeys: Record<string, MessageKey> = {
   help: 'settings.tabs.help',
   admin: 'nav.admin',
 }
-const baseTabIds = ['account', 'connections', 'appearance', 'data', 'apikeys', 'tools', 'conversations', 'backups', 'help']
+const baseTabIds = ['account', 'appearance', 'data', 'apikeys', 'tools', 'conversations', 'backups', 'help']
 const validTabIds = baseTabIds.concat('admin')
 // In the installed app, admins reach Admin through the settings menu, right after Account.
 const tabs = computed(() => {

@@ -59,10 +59,11 @@
           <Key v-else-if="n.type === 'api_key_rotation_required'" :size="20" />
           <FolderOpen v-else-if="n.type === 'set_milestone' || n.type === 'agentic_set_proposal_ready' || n.type === 'agentic_set_created'" :size="20" />
           <BellRing v-else-if="n.type === 'purchase_reminder'" :size="20" />
+          <Coins v-else-if="n.type === 'set_new_coins'" :size="20" />
           <Bell v-else :size="20" />
         </div>
         <div class="min-w-0 flex-1">
-          <div class="mb-[0.2rem] text-base font-semibold text-text-primary">{{ n.title }}</div>
+          <div class="mb-[0.2rem] text-base font-semibold text-text-primary">{{ notificationTitle(n) }}</div>
           <!-- Notification bodies are composed line by line server-side (lot headline, sale, bid);
                without whitespace-pre-line the browser collapses those newlines into one paragraph. -->
           <div class="whitespace-pre-line text-body leading-[1.4] text-text-secondary">{{ n.message }}</div>
@@ -98,7 +99,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, BellOff, BellRing, AlertTriangle, UserPlus, Sparkles, Key, X, FolderOpen, ShieldCheck, CheckCheck } from 'lucide-vue-next'
+import { Bell, BellOff, BellRing, AlertTriangle, UserPlus, Sparkles, Key, X, FolderOpen, ShieldCheck, CheckCheck, Coins } from 'lucide-vue-next'
 import {
   getNotifications,
   markNotificationRead,
@@ -176,6 +177,11 @@ async function handleClick(n: Notification) {
   }
 }
 
+// The server names the set in a new-coins notice; the app says the rest in the user's language.
+function notificationTitle(n: Notification): string {
+  return n.type === 'set_new_coins' ? t('notifications.setNewCoins', { set: n.title }) : n.title
+}
+
 function notificationHint(n: Notification): string {
   if (n.type === 'agentic_set_proposal_failed') {
     const runLabel = n.referenceId ? ` ${t('notifications.runNumber', { id: n.referenceId })}` : ''
@@ -186,6 +192,9 @@ function notificationHint(n: Notification): string {
   }
   if (n.type === 'agentic_set_creation_failed') {
     return t('notifications.hints.creationFailed')
+  }
+  if (n.type === 'set_new_coins') {
+    return t('notifications.hints.setNewCoins')
   }
   return ''
 }

@@ -49,7 +49,6 @@ type AvailabilityService struct {
 	availCycleRepo *repository.AvailabilityCycleRepository
 	agentProxy     *AgentProxy
 	notifSvc       *NotificationService
-	pushoverSvc    *PushoverService
 	userRepo       *repository.UserRepository
 	settingsSvc    *SettingsService
 	logger         *Logger
@@ -61,7 +60,6 @@ func NewAvailabilityService(
 	availRepo *repository.AvailabilityRepository,
 	agentProxy *AgentProxy,
 	notifSvc *NotificationService,
-	pushoverSvc *PushoverService,
 	userRepo *repository.UserRepository,
 	settingsSvc *SettingsService,
 	logger *Logger,
@@ -71,7 +69,6 @@ func NewAvailabilityService(
 		availRepo:   availRepo,
 		agentProxy:  agentProxy,
 		notifSvc:    notifSvc,
-		pushoverSvc: pushoverSvc,
 		userRepo:    userRepo,
 		settingsSvc: settingsSvc,
 		logger:      logger,
@@ -327,10 +324,10 @@ func (s *AvailabilityService) CheckWishlistForUser(
 	return run, nil
 }
 
-// notifyRunTerminal fires the owner-facing terminal-outcome notification (in-app + best-effort
-// Pushover) for every terminal child run, and — for admin-triggered children that end up
-// failed — an additional notification to the triggering admin. Called only after the terminal
-// transition has already committed (FR-011: Pushover failures can never regress run status).
+// notifyRunTerminal fires the owner-facing terminal-outcome in-app notification for every
+// terminal child run, and — for admin-triggered children that end up failed — an additional
+// notification to the triggering admin. Called only after the terminal transition has
+// already committed (FR-011: notification failures can never regress run status).
 func (s *AvailabilityService) notifyRunTerminal(run *models.AvailabilityRun, newlyUnavailableCoinNames []string) {
 	if s.notifSvc == nil {
 		return

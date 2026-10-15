@@ -55,12 +55,8 @@ const router = createRouter({
       component: () => import('@/pages/CoinDetailJournalPage.vue'),
       meta: { requiresAuth: true },
     },
-    {
-      path: '/coin/:id/shipment',
-      name: 'coin-detail-shipment',
-      component: () => import('@/pages/CoinDetailShipmentPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    // Shipment tracking was removed; old links open the coin.
+    { path: '/coin/:id/shipment', name: 'coin-detail-shipment', redirect: (to) => `/coin/${String(to.params.id)}` },
     {
       path: '/coin/:id/health',
       name: 'coin-detail-health',
@@ -175,8 +171,9 @@ const router = createRouter({
       component: () => import('@/pages/WishlistAvailabilityHistoryPage.vue'),
       meta: { requiresAuth: true },
     },
-    // Sold, Auctions, Followers, Calendar and Showcases are not used in this
-    // collection; their addresses (and links to them) lead to the gallery.
+    // Sold, Followers and Showcases are not used in this collection, and
+    // auctions were removed; their addresses (and links to them) lead to the
+    // gallery.
     { path: '/sold', name: 'sold', redirect: '/' },
     { path: '/auctions', name: 'auctions', redirect: '/' },
     {
@@ -209,18 +206,10 @@ const router = createRouter({
       component: () => import('@/pages/StatsHealthPage.vue'),
       meta: { requiresAuth: true },
     },
-    {
-      path: '/stats/value-trends',
-      name: 'stats-value-trends',
-      component: () => import('@/pages/StatsValueTrendsPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/stats/investment-breakdown',
-      name: 'stats-investment-breakdown',
-      component: () => import('@/pages/StatsInvestmentBreakdownPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    // The value details page is gone; old links open Stats.
+    { path: '/stats/value-trends', name: 'stats-value-trends', redirect: '/stats' },
+    // The investment breakdown page is gone too; old links open Stats.
+    { path: '/stats/investment-breakdown', name: 'stats-investment-breakdown', redirect: '/stats' },
     {
       path: '/stats/distribution',
       name: 'stats-distribution',
@@ -242,12 +231,8 @@ const router = createRouter({
       name: 'timeline',
       redirect: '/stats/timeline',
     },
-    {
-      path: '/notes',
-      name: 'notes',
-      component: () => import('@/pages/NotesPage.vue'),
-      meta: { requiresAuth: true },
-    },
+    // The Notes page is gone; old links open the collection.
+    { path: '/notes', name: 'notes', redirect: '/' },
     {
       path: '/settings',
       name: 'settings',
@@ -292,6 +277,7 @@ const router = createRouter({
       name: 'public-showcase',
       component: () => import('@/pages/PublicShowcasePage.vue'),
     },
+    // The calendar was removed; old links open the gallery.
     { path: '/calendar', name: 'calendar', redirect: '/' },
     // The tray views were removed; old links open the gallery.
     { path: '/tray', name: 'tray', redirect: '/' },

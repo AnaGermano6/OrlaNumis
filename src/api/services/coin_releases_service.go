@@ -80,6 +80,8 @@ type CoinRelease struct {
 	Upcoming bool `json:"upcoming"`
 	// Owned is true when a coin of the collection is this one.
 	Owned bool `json:"owned"`
+	// Wishlist is true when a coin of the wishlist is this one.
+	Wishlist bool `json:"wishlist"`
 	// Keys identify the coin in the official photos found for a collection
 	// coin: the ECB images of a €2 commemorative, the shop pages of a mint's design.
 	Keys []string `json:"-"`
@@ -155,30 +157,50 @@ func (s *CoinReleasesService) MarkOwned(ctx context.Context, groups []CoinReleas
 }
 
 // MarkOwnedReleases flags the releases one of the owned keys (see OwnedKeys) identifies.
-func MarkOwnedReleases(releases []CoinRelease, owned map[string]bool) {
+func MarkOwnedReleases(releases []CoinRelease, owned map[string]uint) {
 	for r := range releases {
-		for _, key := range releases[r].Keys {
-			if owned[key] {
-				releases[r].Owned = true
-				break
-			}
+		releases[r].Owned = releases[r].Owned || identified(releases[r], owned)
+	}
+}
+
+// MarkWishlistReleases flags the releases one of the wishlist's keys (see
+// OwnedKeys, given the wishlist's coins) identifies.
+func MarkWishlistReleases(releases []CoinRelease, wishlist map[string]uint) {
+	for r := range releases {
+		releases[r].Wishlist = releases[r].Wishlist || identified(releases[r], wishlist)
+	}
+}
+
+func identified(release CoinRelease, keys map[string]uint) bool {
+	for _, key := range release.Keys {
+		if _, ok := keys[key]; ok {
+			return true
 		}
+	}
+	return false
+}
+
+// MarkWishlist flags the releases a coin of the wishlist is.
+func (s *CoinReleasesService) MarkWishlist(ctx context.Context, groups []CoinReleaseGroup, coins []CoinPhotoQuery, photos *CoinPhotoSearchService) {
+	wishlist := s.OwnedKeys(ctx, coins, photos)
+	for g := range groups {
+		MarkWishlistReleases(groups[g].Releases, wishlist)
 	}
 }
 
 // OwnedKeys finds what identifies each collection coin among the releases:
 // its Numista type, and the ECB image of a €2 commemorative or the mint's
 // page of a collector coin that the official photo search (when given) finds
-// for it.
-func (s *CoinReleasesService) OwnedKeys(ctx context.Context, coins []CoinPhotoQuery, photos *CoinPhotoSearchService) map[string]bool {
-	owned := map[string]bool{}
+// for it. Each key maps to the coin (its CoinID).
+func (s *CoinReleasesService) OwnedKeys(ctx context.Context, coins []CoinPhotoQuery, photos *CoinPhotoSearchService) map[string]uint {
+	owned := map[string]uint{}
 	mintCountries := map[string]bool{}
 	for _, mint := range s.mints {
 		mintCountries[mint.Country()] = true
 	}
 	for _, coin := range coins {
 		if coin.NumistaTypeID > 0 {
-			owned[numistaReleaseKey(coin.NumistaTypeID)] = true
+			owned[numistaReleaseKey(coin.NumistaTypeID)] = coin.CoinID
 		}
 		// Only €2 coins and coins of a mint's country can be one of the releases.
 		if photos == nil || !twoEuroDenomination.MatchString(coin.Denomination) && !mintCountries[EcbCountryName(coin.Country)] {
@@ -190,9 +212,9 @@ func (s *CoinReleasesService) OwnedKeys(ctx context.Context, coins []CoinPhotoQu
 		}
 		switch obverse.Source {
 		case models.CoinPhotoSourceECB:
-			owned[obverse.ImageURL] = true
+			owned[obverse.ImageURL] = coin.CoinID
 		case models.CoinPhotoSourceINCM, models.CoinPhotoSourceMDP, models.CoinPhotoSourceMOE:
-			owned[obverse.PageURL] = true
+			owned[obverse.PageURL] = coin.CoinID
 		}
 	}
 	return owned
@@ -503,7 +525,7 @@ func ecbCatalogue(photos []EcbCoinPhoto, year int, now time.Time) []CoinRelease 
 	page := ecbBaseURL + fmt.Sprintf(ecbCommemorativePagePath, year)
 	current := now.Format("2006-01")
 	coins := []CoinRelease{}
-	for _, photo := range photos {
+	for _, photo := range withJointIssueCountries(photos, year) {
 		country := ecbCountryCodes[photo.Country]
 		if country == "" {
 			continue
@@ -526,6 +548,130 @@ func ecbCatalogue(photos []EcbCoinPhoto, year int, now time.Time) []CoinRelease 
 		})
 	}
 	return coins
+}
+
+// jointIssueMinCountries: a joint issue of the euro area is one design many
+// countries issue together; a theme two or four countries share (Louis
+// Braille, the Élysée Treaty, human rights) is not one.
+const jointIssueMinCountries = 5
+
+// euroMicrostates issue the euro by agreement, outside the European Union.
+var euroMicrostates = map[string]bool{"Andorra": true, "Monaco": true, "San Marino": true, "Vatican City": true}
+
+// JointIssue is a €2 coin the euro area's countries issued together (the
+// Treaty of Rome in 2007, the EU flag in 2015): one design, each country's
+// own version.
+type JointIssue struct {
+	Year int `json:"year" example:"2007"`
+	// Title is the ECB's feature, in English.
+	Title   string           `json:"title" example:"50th anniversary of the Treaty of Rome"`
+	PageURL string           `json:"pageUrl"`
+	Coins   []JointIssueCoin `json:"coins"`
+}
+
+// JointIssueCoin is a country's version of a joint issue.
+type JointIssueCoin struct {
+	// Country is an ISO code.
+	Country  string `json:"country" example:"PT"`
+	ImageURL string `json:"imageUrl"`
+}
+
+// jointIssueGroups groups a year's coins by feature, keeping the groups of a
+// joint issue.
+func jointIssueGroups(photos []EcbCoinPhoto) [][]int {
+	byFeature := map[string][]int{}
+	order := []string{}
+	for i, photo := range photos {
+		if _, seen := byFeature[photo.Feature]; !seen {
+			order = append(order, photo.Feature)
+		}
+		byFeature[photo.Feature] = append(byFeature[photo.Feature], i)
+	}
+	groups := [][]int{}
+	for _, feature := range order {
+		if len(byFeature[feature]) >= jointIssueMinCountries {
+			groups = append(groups, byFeature[feature])
+		}
+	}
+	return groups
+}
+
+// withJointIssueCountries names the country of the joint-issue images the
+// page did not: from the file name when it says it in another language, or,
+// when one image is left and one member state of that year is missing, that
+// member state (2022's "EU1-erasmus" is Germany's).
+func withJointIssueCountries(photos []EcbCoinPhoto, year int) []EcbCoinPhoto {
+	resolved := append([]EcbCoinPhoto{}, photos...)
+	for _, group := range jointIssueGroups(resolved) {
+		known := map[string]bool{}
+		unknown := []int{}
+		for _, i := range group {
+			if resolved[i].Country == "" {
+				resolved[i].Country = ecbCountryFromFile(resolved[i].ImageURL)
+			}
+			if resolved[i].Country == "" {
+				unknown = append(unknown, i)
+			}
+			known[resolved[i].Country] = true
+		}
+		if len(unknown) != 1 {
+			continue
+		}
+		missing := []string{}
+		for country, first := range euroCoinFirstYear {
+			if !euroMicrostates[country] && first <= year && !known[country] {
+				missing = append(missing, country)
+			}
+		}
+		if len(missing) == 1 {
+			resolved[unknown[0]].Country = missing[0]
+		}
+	}
+	return resolved
+}
+
+// JointIssue is the euro area's joint issue of a year; nil when it had none.
+func (s *CoinReleasesService) JointIssue(ctx context.Context, year int) *JointIssue {
+	if s.ecb == nil {
+		return nil
+	}
+	photos, err := s.ecb.Commemoratives(ctx, year)
+	if err != nil {
+		return nil
+	}
+	photos = withJointIssueCountries(photos, year)
+	var issue *JointIssue
+	for _, group := range jointIssueGroups(photos) {
+		candidate := &JointIssue{Year: year, Title: photos[group[0]].Feature, PageURL: ecbBaseURL + fmt.Sprintf(ecbCommemorativePagePath, year), Coins: []JointIssueCoin{}}
+		seen := map[string]bool{}
+		for _, i := range group {
+			code := ecbCountryCodes[photos[i].Country]
+			if code == "" || seen[code] {
+				continue
+			}
+			seen[code] = true
+			candidate.Coins = append(candidate.Coins, JointIssueCoin{Country: code, ImageURL: photos[i].ImageURL})
+		}
+		sort.Slice(candidate.Coins, func(a, b int) bool { return candidate.Coins[a].Country < candidate.Coins[b].Country })
+		if issue == nil || len(candidate.Coins) > len(issue.Coins) {
+			issue = candidate
+		}
+	}
+	return issue
+}
+
+// JointIssues lists the euro area's joint issues, newest first.
+func (s *CoinReleasesService) JointIssues(ctx context.Context) []JointIssue {
+	issues := []JointIssue{}
+	if s.ecb == nil {
+		return issues
+	}
+	for year := s.now().Year(); year >= ecbFirstCommemorativeYear; year-- {
+		if issue := s.JointIssue(ctx, year); issue != nil {
+			issues = append(issues, *issue)
+		}
+	}
+	return issues
 }
 
 // CatalogueCountryName is the ECB name of a country of the catalogue (an ISO

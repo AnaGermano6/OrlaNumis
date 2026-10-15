@@ -24,7 +24,7 @@ func setupValuationSourceTestDB(t *testing.T) *gorm.DB {
 	if err := db.AutoMigrate(
 		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{},
 		&models.CatalogRegistry{}, &models.AppSetting{}, &models.MintLocation{},
-		&models.StorageLocation{}, &models.ValueSnapshot{}, &models.CoinJournal{},
+		&models.StorageLocation{}, &models.CoinJournal{},
 		&models.CoinValueHistory{},
 	); err != nil {
 		t.Fatalf("failed to migrate: %v", err)

@@ -23,7 +23,7 @@ func newDeepProposalTestDeps(t *testing.T) (*DeepIdentificationProposalService, 
 		t.Fatalf("open db: %v", err)
 	}
 	if err := db.AutoMigrate(
-		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.ValueSnapshot{}, &models.CoinJournal{}, &models.AppSetting{},
+		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CoinJournal{}, &models.AppSetting{},
 		&models.CatalogRegistry{},
 		&models.DeepIdentificationJob{}, &models.DeepIdentificationEvent{},
 		&models.DeepIdentificationProviderRun{}, &models.DeepIdentificationArtifact{},
@@ -33,7 +33,7 @@ func newDeepProposalTestDeps(t *testing.T) (*DeepIdentificationProposalService, 
 	}
 	repo := repository.NewDeepIdentificationRepository(db)
 	coinRepo := repository.NewCoinRepository(db)
-	notifSvc := NewNotificationService(repository.NewNotificationRepository(db), repository.NewSocialRepository(db), repository.NewUserRepository(db), NewPushoverService(NewSettingsService(repository.NewSettingsRepository(db)), NewLogger(10)), NewLogger(10))
+	notifSvc := NewNotificationService(repository.NewNotificationRepository(db), repository.NewSocialRepository(db), repository.NewUserRepository(db), NewLogger(10))
 	coinSvc := NewCoinService(coinRepo, notifSvc)
 	coinRefSvc := NewCoinReferenceService(repository.NewCoinReferenceRepository(db), repository.NewCatalogRegistryRepository(db))
 	quickCaptureSvc := NewQuickCaptureService(repository.NewQuickCaptureRepository(db), t.TempDir()).
@@ -311,10 +311,7 @@ func TestDeepIdentificationProposal_FieldAllowlistRejectsUnknownField(t *testing
 // (Principle IV / FR-033). Proven here two ways: (1) only the
 // UpdateCoinWithFields-selected fields change - everything else (Notes) is
 // untouched, which a raw ad-hoc SQL write would have no reason to respect;
-// (2) a ValueSnapshot row is recorded, a side effect CoinService's private
-// updateCoin transaction always performs and which nothing outside
-// CoinService can trigger, proving the write passed through that exact
-// code path.
+// (2) the journal entry CoinService's update writes is there.
 func TestDeepIdentificationProposal_ApplyRoutesThroughCoinServiceOnly(t *testing.T) {
 	svc, _, db := newDeepProposalTestDeps(t)
 	userID := seedDeepProposalUser(t, db)
@@ -331,11 +328,6 @@ func TestDeepIdentificationProposal_ApplyRoutesThroughCoinServiceOnly(t *testing
 		"mint":         {Accepted: acceptTrue()},
 	}); err != nil {
 		t.Fatalf("update proposal: %v", err)
-	}
-
-	var snapshotCountBefore int64
-	if err := db.Model(&models.ValueSnapshot{}).Where("user_id = ?", userID).Count(&snapshotCountBefore).Error; err != nil {
-		t.Fatal(err)
 	}
 
 	result, err := svc.Apply(jobID, userID, "coin", nil)
@@ -355,14 +347,6 @@ func TestDeepIdentificationProposal_ApplyRoutesThroughCoinServiceOnly(t *testing
 	}
 	if updated.Notes != "original" {
 		t.Fatalf("expected Notes untouched (not in applied fields), got %q", updated.Notes)
-	}
-
-	var snapshotCountAfter int64
-	if err := db.Model(&models.ValueSnapshot{}).Where("user_id = ?", userID).Count(&snapshotCountAfter).Error; err != nil {
-		t.Fatal(err)
-	}
-	if snapshotCountAfter <= snapshotCountBefore {
-		t.Fatal("expected CoinService.UpdateCoinWithFields' RecordValueSnapshot side effect to have run, proving the write passed through CoinService and not a direct SQL write")
 	}
 
 	var journal models.CoinJournal

@@ -59,7 +59,6 @@ func newCoinOfDaySchedulerForTest(db *gorm.DB) *CoinOfDayScheduler {
 		repository.NewNotificationRepository(db),
 		nil,
 		repository.NewUserRepository(db),
-		NewPushoverService(settingsSvc, logger),
 		logger,
 	)
 	return NewCoinOfDayScheduler(

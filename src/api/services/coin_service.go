@@ -278,7 +278,7 @@ func (s *CoinService) createPreparedCoinInTx(tx *gorm.DB, coin *models.Coin, all
 			coin.References = normalized
 		}
 
-		return txRepo.RecordValueSnapshot(coin.UserID)
+		return nil
 	}
 	if tx != nil {
 		return create(tx)
@@ -473,7 +473,7 @@ func (s *CoinService) updateCoin(existing *models.Coin, updates *models.Coin, up
 			}
 		}
 
-		return txRepo.RecordValueSnapshot(userID)
+		return nil
 	})
 }
 
@@ -506,13 +506,7 @@ func (s *CoinService) DeleteCoin(id, userID uint) (int64, error) {
 			}
 		}
 		rows, err = txRepo.DeleteInTx(id, userID)
-		if err != nil {
-			return err
-		}
-		if rows > 0 {
-			return txRepo.RecordValueSnapshot(userID)
-		}
-		return nil
+		return err
 	})
 	return rows, err
 }
@@ -524,9 +518,6 @@ func (s *CoinService) DuplicateCoin(id, userID uint) (*models.Coin, error) {
 		txRepo := s.repo.WithTx(tx)
 		created, err := txRepo.Duplicate(id, userID)
 		if err != nil {
-			return err
-		}
-		if err := txRepo.RecordValueSnapshot(userID); err != nil {
 			return err
 		}
 		duplicate = created
@@ -556,11 +547,11 @@ func (s *CoinService) PurchaseCoin(coin *models.Coin, userID uint) error {
 				return err
 			}
 		}
-		return txRepo.RecordValueSnapshot(userID)
+		return nil
 	})
 }
 
-// SellCoin applies sale updates to a coin and records a value snapshot.
+// SellCoin applies sale updates to a coin.
 func (s *CoinService) SellCoin(coin *models.Coin, updates map[string]interface{}, userID uint) error {
 	return s.repo.DB().Transaction(func(tx *gorm.DB) error {
 		txRepo := s.repo.WithTx(tx)
@@ -572,7 +563,7 @@ func (s *CoinService) SellCoin(coin *models.Coin, updates map[string]interface{}
 				return err
 			}
 		}
-		return txRepo.RecordValueSnapshot(userID)
+		return nil
 	})
 }
 

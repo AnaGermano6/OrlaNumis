@@ -77,7 +77,6 @@ func newTestReminderScheduler(t *testing.T, db *gorm.DB) *ReminderScheduler {
 		repository.NewNotificationRepository(db),
 		nil,
 		repository.NewUserRepository(db),
-		NewPushoverService(settingsSvc, logger),
 		logger,
 	)
 	reminderRepo := repository.NewPurchaseReminderRepository(db)

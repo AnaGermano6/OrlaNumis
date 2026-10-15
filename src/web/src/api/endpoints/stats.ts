@@ -7,8 +7,6 @@ import type {
   CollectionHealthSummary,
   EmperorTrackerResult,
   FeaturedCoin,
-  InvestmentBreakdownDimension,
-  InvestmentBreakdownResponse,
   StatsResponse,
 } from '@/types'
 
@@ -22,9 +20,6 @@ export const updateEmperorTrackerHighlight = (figureId: number, coinId: number |
 export const getStats = () => api.get<StatsResponse>('/stats')
 
 export const getDistribution = () => api.get<{ cells: { era: string; category: string; count: number }[] }>('/stats/distribution')
-
-export const getInvestmentBreakdown = (dimension: InvestmentBreakdownDimension) =>
-  api.get<InvestmentBreakdownResponse>('/stats/investment-breakdown', { params: { dimension } })
 
 export const getCollectionHealthSummary = () => api.get<CollectionHealthSummary>('/stats/health')
 

@@ -14,7 +14,6 @@ export * from '@/api/http'
 
 export * from '@/api/endpoints/admin'
 export * from '@/api/endpoints/agent'
-export * from '@/api/endpoints/auctions'
 export * from '@/api/endpoints/auth'
 export * from '@/api/endpoints/coins'
 export * from '@/api/endpoints/numistaCatalog'

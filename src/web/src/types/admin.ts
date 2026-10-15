@@ -16,9 +16,6 @@ export interface AppSettings extends Partial<NumistaSettings> {
   DealerSearchSources?: string
   AuctionSearchSources?: string
   RegistrationMode?: string
-  AuctionAlertsCheckEnabled?: string
-  AuctionAlertsCheckStartTime?: string
-  AuctionAlertsCheckInterval?: string
   WishlistSearchAlertsCheckEnabled?: string
   WishlistSearchAlertsCheckStartTime?: string
   ReminderCheckEnabled?: string

@@ -69,9 +69,10 @@ describe('App sidebar navigation', () => {
     expect(source).toContain("labelKey: 'nav.timeline', to: '/stats/timeline'")
     expect(source).toContain("labelKey: 'nav.map', to: '/stats/mint-map'")
     expect(source).toContain("labelKey: 'nav.health', to: '/stats/health'")
-    expect(source).toContain("labelKey: 'nav.valueDetails', to: '/stats/value-trends'")
-    expect([en.nav.stats, en.nav.timeline, en.nav.map, en.nav.health, en.nav.valueDetails])
-      .toEqual(['Stats', 'Timeline', 'Map', 'Health', 'Value Details'])
+    // The value details page was removed.
+    expect(source).not.toContain("to: '/stats/value-trends'")
+    expect([en.nav.stats, en.nav.timeline, en.nav.map, en.nav.health])
+      .toEqual(['Stats', 'Timeline', 'Map', 'Health'])
     expect(source).not.toContain("id: 'stats-emperors'")
     expect(source).not.toContain("to: '/stats/emperors'")
     expect(source).not.toContain("id: 'timeline'")
@@ -116,12 +117,16 @@ describe('App sidebar navigation', () => {
     expect(routerSource).not.toContain('/quick-capture/ai')
   })
 
-  it('keeps shipment tracker under coin-scoped routes, not top-level sidebar navigation', () => {
+  it('has no shipment tracker, auctions or calendar: their old addresses lead elsewhere', () => {
     const source = fs.readFileSync(appPath, 'utf8')
     const routerSource = fs.readFileSync(path.resolve(__dirname, '../router/index.ts'), 'utf8')
 
-    expect(source).not.toContain("id: 'shipments'")
-    expect(routerSource).toContain("path: '/coin/:id/shipment'")
+    for (const id of ['shipments', 'auctions', 'calendar']) expect(source).not.toContain(`id: '${id}'`)
+    expect(routerSource).not.toContain('CoinDetailShipmentPage')
+    expect(routerSource).not.toContain('CalendarPage')
+    expect(routerSource).toContain("{ path: '/coin/:id/shipment', name: 'coin-detail-shipment', redirect: (to) => `/coin/${String(to.params.id)}` }")
+    expect(routerSource).toContain("{ path: '/auctions', name: 'auctions', redirect: '/' }")
+    expect(routerSource).toContain("{ path: '/calendar', name: 'calendar', redirect: '/' }")
   })
 
   it('keeps the same app-wide Agent drawer entry points for legacy chat and Coin Copilot', () => {
@@ -200,7 +205,6 @@ describe('App sidebar pinned sets', () => {
         { path: '/quick-access', name: 'quick-access', component: QuickAccessPage },
         { path: '/context', name: 'context', component: ContextPage },
         { path: '/plain', name: 'plain', component: { template: '<div>Plain page</div>' } },
-        { path: '/notes', name: 'notes', component: { template: '<div />' } },
         { path: '/login', name: 'login', component: { template: '<div />' } },
         { path: '/:pathMatch(.*)*', name: 'catch-all', component: { template: '<div />' } },
       ],
@@ -502,7 +506,7 @@ describe('App sidebar pinned sets', () => {
     expect(pwaActions.map((link) => link.attributes('aria-label'))).toEqual(['Quick Access', 'Add Coin'])
 
     mockIsPwa.value = false
-    await router.push('/notes')
+    await router.push('/plain')
     await flushPromises()
     expect(wrapper!.find('nav a[aria-label="Quick Access"]').exists()).toBe(true)
   })

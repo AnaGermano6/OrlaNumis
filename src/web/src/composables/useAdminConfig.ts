@@ -11,10 +11,16 @@ import { formatOptionList } from '@/utils/options'
 import { t } from '@/i18n'
 import { loadCoinVocabulary } from '@/i18n/coinVocabulary'
 
-const legacyAuctionAlertSettingKeys = [
-  'PriceAlertCheckEnabled',
-  'PriceAlertCheckStartTime',
-  'PriceAlertCheckInterval',
+// Settings of retired features (auction tracking, shipments) that an older
+// database may still hold: dropped so the page does not save them back.
+const retiredSettingKeys = [
+  'PriceAlertCheckEnabled', 'PriceAlertCheckStartTime', 'PriceAlertCheckInterval',
+  'AuctionAlertsCheckEnabled', 'AuctionAlertsCheckStartTime', 'AuctionAlertsCheckInterval',
+  'AuctionEndingCheckEnabled', 'AuctionEndingCheckStartTime', 'AuctionEndingCheckInterval',
+  'ShipmentSyncEnabled', 'ShipmentSyncStartTime', 'ShipmentSyncInterval', 'ShipmentSyncBatchSize',
+  'USPSAPIBaseURL', 'USPSAPIKey', 'USPSAPIKeyHeader',
+  'UPSAPIBaseURL', 'UPSTokenURL', 'UPSClientID', 'UPSClientSecret', 'UPSScope',
+  'FedExAPIBaseURL', 'FedExTokenURL', 'FedExClientID', 'FedExClientSecret', 'FedExScope',
 ] as const
 
 export function useAdminConfig() {
@@ -50,26 +56,6 @@ export function useAdminConfig() {
     CoinCopilotCheckpointRetentionDays: '30',
     CoinCopilotResumeWindowHours: '168',
     PublicAppURL: '',
-    USPSAPIBaseURL: '',
-    USPSAPIKey: '',
-    USPSAPIKeyHeader: 'X-API-Key',
-    UPSAPIBaseURL: '',
-    UPSTokenURL: '',
-    UPSClientID: '',
-    UPSClientSecret: '',
-    UPSScope: '',
-    FedExAPIBaseURL: '',
-    FedExTokenURL: '',
-    FedExClientID: '',
-    FedExClientSecret: '',
-    FedExScope: '',
-    ShipmentSyncEnabled: 'false',
-    ShipmentSyncStartTime: '09:00',
-    ShipmentSyncInterval: '60',
-    ShipmentSyncBatchSize: '100',
-    AuctionAlertsCheckEnabled: 'false',
-    AuctionAlertsCheckStartTime: '08:00',
-    AuctionAlertsCheckInterval: '60',
     WishlistSearchAlertsCheckEnabled: 'false',
     WishlistSearchAlertsCheckStartTime: '03:00',
     CoinCategories: '',
@@ -107,26 +93,6 @@ export function useAdminConfig() {
     CoinCopilotCheckpointRetentionDays: '30',
     CoinCopilotResumeWindowHours: '168',
     PublicAppURL: '',
-    USPSAPIBaseURL: '',
-    USPSAPIKey: '',
-    USPSAPIKeyHeader: 'X-API-Key',
-    UPSAPIBaseURL: '',
-    UPSTokenURL: '',
-    UPSClientID: '',
-    UPSClientSecret: '',
-    UPSScope: '',
-    FedExAPIBaseURL: '',
-    FedExTokenURL: '',
-    FedExClientID: '',
-    FedExClientSecret: '',
-    FedExScope: '',
-    ShipmentSyncEnabled: 'false',
-    ShipmentSyncStartTime: '09:00',
-    ShipmentSyncInterval: '60',
-    ShipmentSyncBatchSize: '100',
-    AuctionAlertsCheckEnabled: 'false',
-    AuctionAlertsCheckStartTime: '08:00',
-    AuctionAlertsCheckInterval: '60',
     WishlistSearchAlertsCheckEnabled: 'false',
     WishlistSearchAlertsCheckStartTime: '03:00',
     CoinCategories: '',
@@ -167,12 +133,6 @@ export function useAdminConfig() {
   // Schedule-tab save messages (cleared alongside main settingsMsg)
   const availSettingsMsg = ref('')
   const availSettingsError = ref(false)
-  const auctionSettingsMsg = ref('')
-  const auctionSettingsError = ref(false)
-  const alertReminderSettingsMsg = ref('')
-  const alertReminderSettingsError = ref(false)
-  const watchBidDigestSettingsMsg = ref('')
-  const watchBidDigestSettingsError = ref(false)
   const healthSettingsMsg = ref('')
   const healthSettingsError = ref(false)
   const valSettingsMsg = ref('')
@@ -187,7 +147,7 @@ export function useAdminConfig() {
       settingDefaults.value = { ...settingDefaults.value, ...defaultsRes.data }
       settings.value = { ...settings.value, ...settingsRes.data }
       savedAnthropicAPIKey = settings.value.AnthropicAPIKey ?? ''
-      legacyAuctionAlertSettingKeys.forEach(key => {
+      retiredSettingKeys.forEach(key => {
         delete settings.value[key]
       })
 
@@ -199,39 +159,12 @@ export function useAdminConfig() {
         settings.value.CoinEras = formatOptionList(COIN_ERAS)
       }
 
-      // Apply defaults for auction settings if not set
-      if (!settings.value.AuctionEndingCheckEnabled) {
-        settings.value.AuctionEndingCheckEnabled = 'false'
-      }
-      if (!settings.value.AuctionEndingCheckStartTime) {
-        settings.value.AuctionEndingCheckStartTime = '08:00'
-      }
-      if (!settings.value.AuctionEndingCheckInterval) {
-        settings.value.AuctionEndingCheckInterval = '1440'
-      }
-      if (!settings.value.AuctionAlertsCheckEnabled) {
-        settings.value.AuctionAlertsCheckEnabled = 'false'
-      }
-      if (!settings.value.AuctionAlertsCheckStartTime) {
-        settings.value.AuctionAlertsCheckStartTime = '08:00'
-      }
-      if (!settings.value.AuctionAlertsCheckInterval) {
-        settings.value.AuctionAlertsCheckInterval = '60'
-      }
+      // Apply defaults for schedule settings if not set
       if (!settings.value.WishlistSearchAlertsCheckEnabled) {
         settings.value.WishlistSearchAlertsCheckEnabled = 'false'
       }
       if (!settings.value.WishlistSearchAlertsCheckStartTime) {
         settings.value.WishlistSearchAlertsCheckStartTime = '03:00'
-      }
-      if (!settings.value.AuctionWatchBidDigestEnabled) {
-        settings.value.AuctionWatchBidDigestEnabled = 'false'
-      }
-      if (!settings.value.AuctionWatchBidDigestStartTime) {
-        settings.value.AuctionWatchBidDigestStartTime = '08:00'
-      }
-      if (!settings.value.AuctionWatchBidDigestInterval) {
-        settings.value.AuctionWatchBidDigestInterval = '1440'
       }
 
       // Apply defaults for collection health snapshot settings if not set
@@ -282,12 +215,6 @@ export function useAdminConfig() {
     settingsError.value = false
     availSettingsMsg.value = ''
     availSettingsError.value = false
-    auctionSettingsMsg.value = ''
-    auctionSettingsError.value = false
-    alertReminderSettingsMsg.value = ''
-    alertReminderSettingsError.value = false
-    watchBidDigestSettingsMsg.value = ''
-    watchBidDigestSettingsError.value = false
     healthSettingsMsg.value = ''
     healthSettingsError.value = false
     valSettingsMsg.value = ''
@@ -304,24 +231,15 @@ export function useAdminConfig() {
       void loadCoinVocabulary()
       settingsMsg.value = t('admin.config.saved')
       availSettingsMsg.value = t('admin.config.saved')
-      auctionSettingsMsg.value = t('admin.config.saved')
-      alertReminderSettingsMsg.value = t('admin.config.saved')
-      watchBidDigestSettingsMsg.value = t('admin.config.saved')
       healthSettingsMsg.value = t('admin.config.saved')
       valSettingsMsg.value = t('admin.config.saved')
       if (saveTimerId) clearTimeout(saveTimerId)
-      saveTimerId = setTimeout(() => { availSettingsMsg.value = ''; auctionSettingsMsg.value = ''; alertReminderSettingsMsg.value = ''; watchBidDigestSettingsMsg.value = ''; healthSettingsMsg.value = ''; valSettingsMsg.value = '' }, 3000)
+      saveTimerId = setTimeout(() => { availSettingsMsg.value = ''; healthSettingsMsg.value = ''; valSettingsMsg.value = '' }, 3000)
     } catch {
       settingsMsg.value = t('admin.config.saveFailed')
       settingsError.value = true
       availSettingsMsg.value = t('admin.config.saveFailed')
       availSettingsError.value = true
-      auctionSettingsMsg.value = t('admin.config.saveFailed')
-      auctionSettingsError.value = true
-      alertReminderSettingsMsg.value = t('admin.config.saveFailed')
-      alertReminderSettingsError.value = true
-      watchBidDigestSettingsMsg.value = t('admin.config.saveFailed')
-      watchBidDigestSettingsError.value = true
       healthSettingsMsg.value = t('admin.config.saveFailed')
       healthSettingsError.value = true
       valSettingsMsg.value = t('admin.config.saveFailed')
@@ -408,12 +326,6 @@ export function useAdminConfig() {
     // Schedule messages
     availSettingsMsg,
     availSettingsError,
-    auctionSettingsMsg,
-    auctionSettingsError,
-    alertReminderSettingsMsg,
-    alertReminderSettingsError,
-    watchBidDigestSettingsMsg,
-    watchBidDigestSettingsError,
     healthSettingsMsg,
     healthSettingsError,
     valSettingsMsg,

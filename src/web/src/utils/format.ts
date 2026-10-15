@@ -66,18 +66,6 @@ export function alertCadenceLabel(cadence: string): string {
   }
 }
 
-/** Display label for an auction lot status (`watching`, `bidding`, `won`, `lost`, `passed`). */
-export function auctionStatusLabel(status: string): string {
-  switch (status) {
-    case 'watching': return t('auctions.statuses.watching')
-    case 'bidding': return t('auctions.statuses.bidding')
-    case 'won': return t('auctions.statuses.won')
-    case 'lost': return t('auctions.statuses.lost')
-    case 'passed': return t('auctions.statuses.passed')
-    default: return status
-  }
-}
-
 /** Display label for a scheduler run trigger (manual/scheduled). */
 export function runTriggerLabel(trigger: string): string {
   switch (trigger) {
@@ -162,24 +150,6 @@ export function imageTypeLabel(type: string): string {
     case 'detail': return t('imageTypes.detail')
     case 'other': return t('imageTypes.other')
     default: return type ? type.charAt(0).toUpperCase() + type.slice(1) : ''
-  }
-}
-
-/**
- * Display label for a shipment status code (e.g. `in_transit` → "In Transit").
- * Unknown carrier codes fall back to a title-cased version of the code.
- */
-export function shipmentStatusLabel(status: string): string {
-  switch (status) {
-    case 'pending': return t('shipment.statuses.pending')
-    case 'label_created': return t('shipment.statuses.labelCreated')
-    case 'in_transit': return t('shipment.statuses.inTransit')
-    case 'out_for_delivery': return t('shipment.statuses.outForDelivery')
-    case 'delivered': return t('shipment.statuses.delivered')
-    case 'exception': return t('shipment.statuses.exception')
-    case 'returned': return t('shipment.statuses.returned')
-    case 'unknown': return t('shipment.statuses.unknown')
-    default: return status.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())
   }
 }
 

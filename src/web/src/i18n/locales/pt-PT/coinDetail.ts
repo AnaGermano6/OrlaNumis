@@ -49,10 +49,6 @@ const messages: Messages['coinDetail'] = {
     lastChecked: 'Última verificação: {date}',
   },
   sections: {
-    shipment: {
-      title: 'Seguimento de envio',
-      description: 'Estado do envio e atualizações de seguimento manuais',
-    },
     journal: {
       title: 'Diário de atividade',
       description: 'Cronologia de eventos e ações',

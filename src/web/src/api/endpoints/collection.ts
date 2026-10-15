@@ -5,21 +5,9 @@ import type {
   GeocodeCandidate,
   ImperialFigureRole,
   MintLocation,
-  NoteInput,
-  NoteListResponse,
   RomanImperialFigure,
   Tag,
-  UserNote,
 } from '@/types'
-
-// User notes
-export const getNotes = () => api.get<NoteListResponse>('/notes')
-
-export const createNote = (note: NoteInput) => api.post<UserNote>('/notes', note)
-
-export const updateNote = (id: number, note: NoteInput) => api.put<UserNote>(`/notes/${id}`, note)
-
-export const deleteNote = (id: number) => api.delete(`/notes/${id}`)
 
 // Tags
 export const getTags = () => api.get<{ tags: Tag[] }>('/tags')

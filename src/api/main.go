@@ -37,40 +37,9 @@ func (r *SchedulerRegistry) StopAll() {
 	}
 }
 
-func buildShipmentCarrierClients(settingsSvc *services.SettingsService, logger *services.Logger) []services.ShipmentCarrierClient {
-	carrierClients := make([]services.ShipmentCarrierClient, 0, 3)
-
-	if strings.TrimSpace(settingsSvc.GetSetting(services.SettingUSPSAPIBaseURL)) != "" {
-		uspsClient, err := services.NewUSPSShipmentCarrierClient(services.USPSShipmentClientConfigFromSettings(settingsSvc), nil)
-		if err != nil {
-			logger.Warn("shipment", "USPS client not configured: %v", err)
-		} else {
-			carrierClients = append(carrierClients, uspsClient)
-		}
-	}
-	if strings.TrimSpace(settingsSvc.GetSetting(services.SettingUPSAPIBaseURL)) != "" {
-		upsClient, err := services.NewUPSShipmentCarrierClient(services.UPSShipmentClientConfigFromSettings(settingsSvc), nil)
-		if err != nil {
-			logger.Warn("shipment", "UPS client not configured: %v", err)
-		} else {
-			carrierClients = append(carrierClients, upsClient)
-		}
-	}
-	if strings.TrimSpace(settingsSvc.GetSetting(services.SettingFedExAPIBaseURL)) != "" {
-		fedexClient, err := services.NewFedExShipmentCarrierClient(services.FedExShipmentClientConfigFromSettings(settingsSvc), nil)
-		if err != nil {
-			logger.Warn("shipment", "FedEx client not configured: %v", err)
-		} else {
-			carrierClients = append(carrierClients, fedexClient)
-		}
-	}
-
-	return carrierClients
-}
-
 //	@title						Aurearia API
 //	@version					4.3.0
-//	@description				REST API for managing a personal coin collection. Supports coin CRUD, image uploads, AI-powered analysis, user management, auction tracking, and admin features.
+//	@description				REST API for managing a personal coin collection. Supports coin CRUD, image uploads, AI-powered analysis, user management, and admin features.
 //	@BasePath					/api
 //	@securityDefinitions.apikey	BearerAuth
 //	@in							header

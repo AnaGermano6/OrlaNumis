@@ -19,4 +19,4 @@ Ask the agent about market movement for a ruler, denomination, type, or collecti
 - [Wish List](wish-list.md)
 - [Coin Details](coin-details.md)
 
-See also: [Collection Statistics](statistics.md), [Auction Tracking](auction-tracking.md), [Similar Lot Finder](similar-lots.md)
+See also: [Collection Statistics](statistics.md), [Similar Lot Finder](similar-lots.md)

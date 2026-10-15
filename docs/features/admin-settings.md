@@ -39,7 +39,6 @@ Admin Settings are accessed by admins and provide configuration for AI providers
 **Application Settings:**
 - **Log Level** — trace, debug, info, warn, error
 - **Numista API Key** — For coin catalog lookups
-- **Pushover App Token** — Enables push notifications for configured users
 - **Public App URL** — Used in outbound links and notifications
 - **Version Info** — Displays app version/build date
 
@@ -90,8 +89,6 @@ Centralized schedule configuration for background jobs:
 
 - **Wishlist Availability** — Automatic URL availability checks and run history
 - **Wishlist Search Alerts** — Scheduled alert discovery for non-manual alerts
-- **Auction Ending** — Reminders for watched/bidding auction lots ending soon
-- **Auction Watch Bid Digest** — Digest notifications for watched auction bidding activity, comparing each lot's current high bid with the previous digest
 - **Coin of the Day** — Daily featured coin notifications and manual run
 - **Collection Health** — Daily health snapshots
 - **Collection Valuation** — Scheduled valuation runs, manual trigger, and cancellation
@@ -149,4 +146,4 @@ POST   /admin/coin-of-day/run        # Trigger coin-of-day asynchronously
 - Sensitive settings such as provider secrets are write-only after saving
 - Most settings are per-instance; user-specific preferences remain in user/account settings
 
-See also: [AI Coin Analysis](ai-analysis.md), [Auction Tracking](auction-tracking.md), [Coin Lookup](coin-lookup.md), [Authentication](../authentication.md)
+See also: [AI Coin Analysis](ai-analysis.md), [Coin Lookup](coin-lookup.md), [Authentication](../authentication.md)

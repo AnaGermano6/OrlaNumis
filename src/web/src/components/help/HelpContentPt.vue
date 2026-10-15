@@ -74,14 +74,12 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
             <tr><th>Separador</th><th>O que contém</th></tr>
           </thead>
           <tbody>
-            <tr><td><strong>Conta</strong></td><td>Perfil, palavra-passe, Pushover, Moeda do dia, fornecedores de início de sessão associados, início de sessão biométrico</td></tr>
-            <tr><td><strong>Ligações</strong></td><td>Credenciais do NumisBids, dos CNG Auctions e do ParcelApp</td></tr>
+            <tr><td><strong>Conta</strong></td><td>Perfil, palavra-passe, Moeda do dia, fornecedores de início de sessão associados, início de sessão biométrico</td></tr>
             <tr><td><strong>Aparência</strong></td><td>Tema, idioma e preferências de apresentação</td></tr>
             <tr><td><strong>Dados</strong></td><td>Etiquetas e conjuntos abertos, locais de armazenamento, localizações personalizadas de casas da moeda, migração de referências de catálogo</td></tr>
             <tr><td><strong>Chaves</strong></td><td>Chaves de API para clientes de IA externos</td></tr>
             <tr><td><strong>Ferramentas</strong></td><td>Definições do processador de imagens e utilizadores bloqueados</td></tr>
             <tr><td><strong>Conversas</strong></td><td>Conversas guardadas com o agente</td></tr>
-            <tr><td><strong>Envios</strong></td><td>Envios ainda não entregues</td></tr>
             <tr><td><strong>Cópias de segurança</strong></td><td>Importação da coleção, exportação ZIP, exportação do catálogo em PDF, modelo CSV</td></tr>
             <tr><td><strong>Ajuda</strong></td><td>Este guia</td></tr>
           </tbody>
@@ -92,7 +90,7 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
     <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim">
       <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Usar as funcionalidades do Aurearia</summary>
       <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>O Aurearia permite catalogar a coleção, planear aquisições, acompanhar leilões, partilhar com outros colecionadores e pesquisar com ajuda de IA. Estes fluxos são opcionais: comece por importar a coleção ou pela Captura rápida e ative as integrações quando precisar.</p>
+        <p>O Aurearia permite catalogar a coleção, planear aquisições, partilhar com outros colecionadores e pesquisar com ajuda de IA. Estes fluxos são opcionais: comece por importar a coleção ou pela Captura rápida e ative as integrações quando precisar.</p>
 
         <h4>Registo rápido</h4>
         <ul>
@@ -100,15 +98,6 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Identificação de moedas</strong> — Fotografe uma moeda ou uma cápsula NGC Ancients, reveja os dados extraídos e guarde o resultado na coleção ou na lista de desejos. <strong>Identificar moeda → Histórico de análises</strong> guarda as identificações aprofundadas anteriores, incluindo os resultados e as consultas a cada fornecedor.</li>
           <li><strong>Notas por voz</strong> — Nos navegadores compatíveis, use <strong>Ditar notas</strong> na identificação rápida ou na Análise aprofundada de uma moeda guardada, reveja a transcrição (no idioma da interface) e submeta com a ação habitual. O fornecedor do navegador ou do dispositivo pode processar o áudio; o Aurearia não o guarda. Pode sempre escrever.</li>
           <li><strong>Captura rápida</strong> — Guarde fotografias e notas tiradas numa feira como rascunhos, retome-os mais tarde e promova um rascunho completo para a coleção ou para a lista de desejos. Os rascunhos ficam fora dos totais da coleção, da lista de desejos, das estatísticas e da saúde até serem promovidos.</li>
-        </ul>
-
-        <h4>Leilões</h4>
-        <ul>
-          <li><strong>Importação manual</strong> — Cole o URL de um lote do NumisBids ou dos CNG Auctions na página Leilões.</li>
-          <li><strong>Sincronização das listas de observação</strong> — Adicione as credenciais do NumisBids e/ou do CNG em <strong>Definições → Ligações</strong> e use <strong>Sincronizar listas de observação</strong> na página Leilões.</li>
-          <li><strong>Capacidades de cada fornecedor</strong> — Os CNG Auctions permitem uma sincronização mais completa dos leilões que alojam e podem detetar automaticamente se ganhou ou perdeu, quando o CNG fornece esses dados. O NumisBids, por agora, só permite acompanhar a lista de observação e as importações; depois do leilão, verifique no NumisBids e atualize manualmente o resultado, a licitação vencedora e a licitação máxima.</li>
-          <li><strong>Filtros por origem</strong> — Filtre os lotes de leilão por Todos, NumisBids ou CNG, além do estado.</li>
-          <li><strong>Segurança</strong> — As palavras-passe dos fornecedores de leilões são guardadas encriptadas no servidor. Os valores antigos em texto simples são migrados automaticamente da próxima vez que forem guardados ou usados numa sincronização.</li>
         </ul>
 
         <h4>Partilha e descoberta</h4>
@@ -133,11 +122,10 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Saber mais</strong> — Consulte o guia do colecionador <em>How Coin Copilot Works</em> na documentação do projeto.</li>
         </ul>
 
-        <h4>Agente de moedas e notas</h4>
+        <h4>Agente de moedas</h4>
         <ul>
           <li><strong>Agente de moedas</strong> — Quando o Coin Copilot está desligado, abra a conversa em <strong>Agente</strong> na barra lateral (ou no botão arrastável no modo PWA) para pesquisar anúncios, encontrar feiras, fazer perguntas sobre o portefólio ou pedir ajuda a arrumar a coleção, por exemplo que moedas não têm época.</li>
           <li><strong>Sugestões iniciais</strong> — O painel inclui exemplos de aquisição e uma sugestão de arrumação para moedas sem época.</li>
-          <li><strong>Guardar nas notas</strong> — As respostas terminadas do assistente podem ser revistas em markdown, editadas, pré-visualizadas e guardadas nas Notas só depois de clicar em Criar nota.</li>
         </ul>
 
         <h4>Conjuntos e propostas do agente</h4>
@@ -153,7 +141,6 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Resumo</strong> — Totais da coleção, classificações, gráficos de distribuição e visão geral do portefólio.</li>
           <li><strong>Cronologia e Mapa</strong> — Histórico cronológico da coleção e geografia das casas da moeda das moedas mapeadas.</li>
           <li><strong>Saúde</strong> — Indicadores de imagens em falta, lacunas de metadados, lacunas de análise por IA, avaliações desatualizadas e sugestões de arrumação.</li>
-          <li><strong>Detalhes de valor e Repartição do investimento</strong> — Evolução do valor, distribuição, desempenho por ano de aquisição, maiores subidas/descidas e avaliações desatualizadas.</li>
           <li><strong>Máquina do tempo</strong> — Recue no tempo para ver a coleção tal como estava em qualquer data.</li>
           <li><strong>Registo de imperadores</strong> — Progresso opcional por imperador/figura romana, com ações de pesquisa do agente para alvos em falta ou sugeridos. Está em <strong>Conjuntos → Imperadores</strong>, não nas Estatísticas, e aparece depois de ativado para a sua conta.</li>
         </ul>
@@ -175,16 +162,12 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Operações em lote</strong> — Entre no modo de seleção na barra da coleção para etiquetar, adicionar a conjuntos ou alterar várias moedas de uma vez, sem abrir cada uma.</li>
           <li><strong>Locais de armazenamento</strong> — Registe onde cada moeda está fisicamente; geridos em <strong>Definições → Dados</strong>.</li>
           <li><strong>Diário e cronologia</strong> — Cada moeda tem um diário datado e uma cronologia do que lhe aconteceu, incluindo alterações feitas por ferramentas externas.</li>
-          <li><strong>Notas</strong> — As notas de pesquisa independentes estão em <strong>Notas</strong>; as respostas do agente podem ser guardadas lá.</li>
           <li><strong>Moedas vendidas</strong> — Venda uma moeda na página de detalhe para registar o preço e o comprador; <strong>Vendidas</strong> acompanha depois o lucro ou prejuízo face ao que pagou.</li>
         </ul>
 
-        <h4>Envios e lembretes</h4>
+        <h4>Lembretes</h4>
         <ul>
-          <li><strong>Seguimento de envios</strong> — Acompanhe uma compra a caminho na página <strong>Seguimento de envio</strong> da moeda. Se adicionar uma chave de API do ParcelApp em <strong>Definições → Ligações</strong>, o seguimento pode ser criado a partir de um número de seguimento e sincronizado automaticamente quando o administrador o ativa.</li>
-          <li><strong>Resumo de envios</strong> — <strong>Definições → Envios</strong> lista todos os envios ainda não entregues.</li>
           <li><strong>Lembretes de compra</strong> — Agende um lembrete para uma moeda que pretende comprar e receba uma notificação quando chegar a data.</li>
-          <li><strong>Calendário</strong> — O <strong>Calendário</strong> mostra as datas dos leilões dos lotes acompanhados, juntamente com os seus próprios eventos, como feiras e tarefas de pesquisa.</li>
         </ul>
 
         <h4>Cópias de segurança e exportação</h4>
@@ -204,9 +187,8 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
 
         <h4>Notificações e alertas</h4>
         <ul>
-          <li><strong>Notificações na aplicação</strong> — O contador de notificações acompanha a atividade não lida de seguidores, leilões, lista de desejos, marcos de conjuntos e Moeda do dia.</li>
-          <li><strong>Pushover</strong> — Adicione uma chave de utilizador em Definições → Conta depois de o administrador configurar o token da aplicação Pushover e o URL público da aplicação.</li>
-          <li><strong>Revisão de alertas</strong> — Os alertas de pesquisa da lista de desejos criam execuções com candidatos para rever; os alertas e resumos de leilões ajudam a acompanhar os lotes observados e licitados.</li>
+          <li><strong>Notificações na aplicação</strong> — O contador de notificações acompanha a atividade não lida de seguidores, lista de desejos, conjuntos e Moeda do dia.</li>
+          <li><strong>Revisão de alertas</strong> — Os alertas de pesquisa da lista de desejos criam execuções com candidatos para rever.</li>
         </ul>
       </div>
     </details>

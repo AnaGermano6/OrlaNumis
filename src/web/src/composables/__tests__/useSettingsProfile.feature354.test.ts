@@ -27,8 +27,6 @@ vi.mock('@/api/client', () => ({
   uploadAvatar: vi.fn(),
   deleteAvatar: vi.fn(),
   updateProfile: vi.fn(),
-  validateNumisBidsCredentials: vi.fn(),
-  testPushover: vi.fn(),
   onTokenRefreshed: vi.fn(),
   login: vi.fn(),
   register: vi.fn(),

@@ -19,29 +19,22 @@ describe('Quick Access endpoints', () => {
 
   it.each([200, 201])('pins with PUT and no request body and preserves a %i response', async (status) => {
     const item: QuickAccessItem = {
-      type: 'auction_lot',
+      type: 'coin_set',
       id: 19,
       pinnedAt: '2026-09-10T12:30:00Z',
-      auctionLot: {
-        title: 'Hadrian Aureus',
-        status: 'bidding',
-        auctionHouse: 'CNG',
-        saleDate: null,
-        auctionEndTime: '2026-10-01T19:00:00Z',
-        imageUrl: '',
-      },
+      coinSet: { name: 'Twelve Caesars', setType: 'goal', color: '#6b7280', icon: 'Crown' },
     }
     api.put.mockResolvedValue({ status, data: item })
-    const response = await pinQuickAccess('auction_lot', 19)
+    const response = await pinQuickAccess('coin_set', 19)
 
-    expect(api.put).toHaveBeenCalledWith('/quick-access/auction_lot/19')
+    expect(api.put).toHaveBeenCalledWith('/quick-access/coin_set/19')
     expect(response).toMatchObject({ status, data: item })
     expectTypeOf(response.data).toEqualTypeOf<QuickAccessItem>()
   })
 
   it('unpins with DELETE and accepts a no-content response', async () => {
     api.delete.mockResolvedValue({ status: 204, data: undefined })
-    await unpinQuickAccess('calendar_event', 11)
-    expect(api.delete).toHaveBeenCalledWith('/quick-access/calendar_event/11')
+    await unpinQuickAccess('coin', 11)
+    expect(api.delete).toHaveBeenCalledWith('/quick-access/coin/11')
   })
 })

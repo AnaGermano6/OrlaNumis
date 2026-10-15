@@ -40,7 +40,6 @@
   - [Core Domain Models](#core-domain-models)
   - [Authentication Models](#authentication-models)
   - [Social and Notification Models](#social-and-notification-models)
-  - [Auction and Marketplace Models](#auction-and-marketplace-models)
   - [AI and Agent Models](#ai-and-agent-models)
   - [System Models](#system-models)
 - [Authentication and Authorization](#authentication-and-authorization)
@@ -224,7 +223,7 @@ Three route groups with distinct auth levels:
 | Group | Prefix | Auth | Example Routes |
 |-------|--------|------|----------------|
 | `api` (public) | `/api` | None (rate-limited) | `/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/webauthn/*`, `/showcase/:slug` |
-| `protected` | `/api` | JWT or API Key | `/coins`, `/coins/bulk`, `/sets`, `/agent/chat`, `/deep-identification/*`, `/auctions`, `/stats`, `/social/*`, `/notifications`, `/calendar/*`, `/showcases/*`, `/api-keys`, `/wishlist/availability-runs`, `/wishlist/availability-runs/:id` |
+| `protected` | `/api` | JWT or API Key | `/coins`, `/coins/bulk`, `/sets`, `/agent/chat`, `/deep-identification/*`, `/stats`, `/social/*`, `/notifications`, `/showcases/*`, `/api-keys`, `/wishlist/availability-runs`, `/wishlist/availability-runs/:id` |
 | `admin` | `/api/admin` | JWT + admin role | `/users`, `/settings`, `/logs`, `/availability-runs` (legacy), `/availability-runs/:id` (legacy), `/availability/run`, `/availability-cycles`, `/availability-cycles/:id`, `/valuation-runs`, `/deep-identification/ocre/health`, `/deep-identification/observability`, `/mint-locations/:id/nomisma/*`, `/test-anthropic`, `/test-searxng` |
 
 ### Shared GORM Scopes
@@ -296,7 +295,7 @@ src/web/src/
 
 Routes are lazy-loaded. Auth-protected routes use `meta: { requiresAuth: true }` enforced by a `beforeEach` guard.
 
-**Key pages:** Collection, CoinDetail, AddCoin, EditCoin, Wishlist, Sold, Auctions, Stats, Timeline, Calendar, Showcases, Followers, Notifications, Settings, Admin.
+**Key pages:** Collection, CoinDetail, AddCoin, EditCoin, Wishlist, Sold, Stats, Timeline, Showcases, Followers, Notifications, Settings, Admin.
 
 **Public pages:** Login, Register, PublicShowcase.
 
@@ -550,7 +549,6 @@ handlers.MCPHandler
   ▼
 services.MCPService
   ├─ CollectionToolsService / CoinRepository
-  ├─ AuctionLotRepository
   └─ CoinCopilotService
 ```
 
@@ -560,8 +558,7 @@ boundaries. It never reaches SQLite directly. A fresh stateless MCP server is
 created per authenticated request, so protocol sessions cannot cross API-key
 or owner boundaries.
 
-Eight tools expose read-only collection, wishlist, auction, and statistics
-data. Four Coin Copilot lifecycle tools are registered only when the API key
+Five tools expose read-only collection, wishlist, and statistics data. Four Coin Copilot lifecycle tools are registered only when the API key
 contains the exact `copilot` token. These tools reuse the durable Go-owned
 Copilot service and preserve its feature flags, admission limits,
 idempotency, checkpoint versions, cancellation, and owner checks. The Python
@@ -673,7 +670,6 @@ SQLite via GORM. All tables are auto-migrated from Go model structs in `database
 | `CoinSetMilestoneAlert` | `coin_set_milestone_alerts` | SetID, UserID, Metric, Threshold, Direction, LastTriggeredAt | Snapshot-triggered milestone notifications |
 | `CoinJournal` | `coin_journals` | CoinID, UserID, Entry, CreatedAt | |
 | `CoinValueHistory` | `coin_value_histories` | CoinID, UserID, Value, Confidence, RecordedAt | |
-| `ValueSnapshot` | `value_snapshots` | UserID, TotalValue, TotalInvested, CoinCount, RecordedAt | |
 
 ### Authentication Models
 
@@ -693,23 +689,6 @@ SQLite via GORM. All tables are auto-migrated from Go model structs in `database
 | `Notification` | `notifications` | UserID, Type, Title, Message, ReferenceID, IsRead |
 | `Showcase` | `showcases` | UserID, Slug, Title, Description, IsActive |
 | `ShowcaseCoin` | `showcase_coins` | ShowcaseID, CoinID, SortOrder |
-
-### Auction and Marketplace Models
-
-| Model | Table | Key Fields |
-|-------|-------|-----------|
-| `AuctionLot` | `auction_lots` | Source (`numisbids`/`cng`), SourceURL, SourceSaleID, SourceLotID, NumisBidsURL (legacy compatibility), AuctionHouse, SaleName, Title, Estimate, CurrentBid, MaxBid, Status, CoinID (optional), EventID (optional), UserID |
-| `AuctionEvent` | `auction_events` | UserID, Title, AuctionHouse, StartDate, EndDate, URL |
-| `PriceAlert` | `price_alerts` | AuctionLotID, UserID, TargetPrice |
-| `BidReminder` | `bid_reminders` | AuctionLotID, UserID, RemindAt |
-
-Auction provider services intentionally have asymmetric capabilities:
-
-| Service | Provider | Capability boundary |
-|---|---|---|
-| `CNGAuctionService` | CNG Auctions | Authenticated watched-lot sync with richer hosted-auction fields where CNG exposes them, including current bid, absentee/max bid, close time, and closed-lot outcome signals used by `AuctionWatchlistSyncService` to auto-detect won/lost status. |
-| `NumisBidsService` | NumisBids | Watchlist/import tracking from available NumisBids HTML. It does not currently expose or parse a reliable max-bid or final won/lost outcome signal, so NumisBids terminal status and winning bid data are manual unless future verified site data adds those fields. |
-| `AuctionWatchlistSyncService` | Provider orchestration | Keeps provider-specific scraping/parsing in the provider services, then applies source-aware upserts and status transitions. Sync writes set `statusSource = sync`; user overrides set `statusSource = manual`. |
 
 ### AI and Agent Models
 

@@ -35,8 +35,6 @@ type mcpRouteFixture struct {
 	ownerUserID   uint
 	ownerCoinID   uint
 	foreignCoinID uint
-	ownerLotID    uint
-	foreignLotID  uint
 }
 
 type apiKeyRoundTripper struct {
@@ -67,7 +65,7 @@ func setupMCPRouteFixture(t *testing.T, rateLimit int) *mcpRouteFixture {
 	if err := db.AutoMigrate(
 		&models.User{}, &models.ApiKey{}, &models.AppSetting{}, &models.Coin{}, &models.CoinImage{},
 		&models.CoinReference{}, &models.Tag{}, &models.CoinSet{}, &models.CoinSetMembership{},
-		&models.StorageLocation{}, &models.MintLocation{}, &models.AuctionLot{},
+		&models.StorageLocation{}, &models.MintLocation{},
 		&models.CoinCopilotThread{}, &models.CoinCopilotRun{}, &models.CoinCopilotCheckpoint{},
 		&models.CoinCopilotEvent{}, &models.CoinCopilotResumeRequest{}, &models.DeepIdentificationJob{},
 		&models.CoinCopilotDeepHandoff{},
@@ -84,11 +82,6 @@ func setupMCPRouteFixture(t *testing.T, rateLimit int) *mcpRouteFixture {
 	ownerWishlist := models.Coin{UserID: owner.ID, Name: "Owner wishlist", IsWishlist: true}
 	foreignCoin := models.Coin{UserID: foreign.ID, Name: "Foreign coin"}
 	if err := db.Create(&[]*models.Coin{&ownerCoin, &ownerWishlist, &foreignCoin}).Error; err != nil {
-		t.Fatal(err)
-	}
-	ownerLot := models.AuctionLot{UserID: owner.ID, Title: "Owner lot", NumisBidsURL: "https://example.test/owner"}
-	foreignLot := models.AuctionLot{UserID: foreign.ID, Title: "Foreign lot", NumisBidsURL: "https://example.test/foreign"}
-	if err := db.Create(&[]*models.AuctionLot{&ownerLot, &foreignLot}).Error; err != nil {
 		t.Fatal(err)
 	}
 
@@ -122,7 +115,6 @@ func setupMCPRouteFixture(t *testing.T, rateLimit int) *mcpRouteFixture {
 	mcpSvc := services.NewMCPService(
 		services.NewCollectionToolsService(coinRepo, nil),
 		coinRepo,
-		repository.NewAuctionLotRepository(db),
 		copilotSvc,
 	)
 	handler := NewMCPHandler(mcpSvc, services.NewLogger(10))
@@ -166,7 +158,6 @@ func setupMCPRouteFixture(t *testing.T, rateLimit int) *mcpRouteFixture {
 		db: db, server: server, settings: settings, keys: keys,
 		ownerUserID: owner.ID,
 		ownerCoinID: ownerCoin.ID, foreignCoinID: foreignCoin.ID,
-		ownerLotID: ownerLot.ID, foreignLotID: foreignLot.ID,
 	}
 }
 
@@ -224,8 +215,7 @@ func TestMCPToolDiscoveryRequiresExactCopilotCapability(t *testing.T) {
 			sort.Strings(names)
 
 			for _, readTool := range []string{
-				"auction_counts", "collection_stats", "get_auction_lot", "get_coin",
-				"list_auction_lots", "list_wishlist", "search_collection", "top_coins_by_value",
+				"collection_stats", "get_coin", "list_wishlist", "search_collection", "top_coins_by_value",
 			} {
 				if !containsString(names, readTool) {
 					t.Fatalf("tools %v missing read tool %q", names, readTool)
@@ -238,9 +228,9 @@ func TestMCPToolDiscoveryRequiresExactCopilotCapability(t *testing.T) {
 					t.Fatalf("tool %q present=%v, want %v; tools=%v", copilotTool, got, tc.wantCopilot, names)
 				}
 			}
-			wantCount := 8
+			wantCount := 5
 			if tc.wantCopilot {
-				wantCount = 12
+				wantCount = 9
 			}
 			if len(names) != wantCount {
 				t.Fatalf("tool count=%d, want %d: %v", len(names), wantCount, names)
@@ -261,9 +251,6 @@ func TestMCPRouteInvokesEveryToolAndPreservesOwnerBoundary(t *testing.T) {
 		{name: "list_wishlist", arguments: map[string]any{}},
 		{name: "collection_stats", arguments: map[string]any{}},
 		{name: "top_coins_by_value", arguments: map[string]any{"limit": 1}},
-		{name: "list_auction_lots", arguments: map[string]any{}},
-		{name: "get_auction_lot", arguments: map[string]any{"auctionLotId": fixture.ownerLotID}},
-		{name: "auction_counts", arguments: map[string]any{}},
 	}
 	for _, call := range readCalls {
 		if result := callMCPTool(t, session, call.name, call.arguments); result.IsError {
@@ -276,7 +263,6 @@ func TestMCPRouteInvokesEveryToolAndPreservesOwnerBoundary(t *testing.T) {
 		arguments any
 	}{
 		{name: "get_coin", arguments: map[string]any{"coinId": fixture.foreignCoinID}},
-		{name: "get_auction_lot", arguments: map[string]any{"auctionLotId": fixture.foreignLotID}},
 		{name: "get_copilot_run", arguments: map[string]any{"runId": "foreign-run"}},
 		{name: "resume_copilot_run", arguments: map[string]any{
 			"runId": "foreign-run", "answer": "continue",
@@ -451,8 +437,9 @@ func TestMCPToolSurfaceContainsNoMutationOrArbitraryExecutionTools(t *testing.T)
 			}
 		}
 	}
-	if len(result.Tools) != 12 {
-		t.Fatalf("tools=%d, want 12", len(result.Tools))
+	// Five read tools (the auction tools were removed) and four Copilot tools.
+	if len(result.Tools) != 9 {
+		t.Fatalf("tools=%d, want 9", len(result.Tools))
 	}
 }
 

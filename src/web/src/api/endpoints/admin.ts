@@ -5,9 +5,6 @@ import type {
   AdminHealthSummaryResponse,
   AdminWishlistSearchAlertRunListResponse,
   AppSettings,
-  AuctionAlertReminderRun,
-  AuctionEndingRun,
-  AuctionWatchBidDigestRun,
   AvailabilityCycleDetail,
   AvailabilityCycleListResponse,
   AvailabilityCycleTriggerResponse,
@@ -203,30 +200,6 @@ export const triggerValuation = () =>
 
 export const cancelValuationRun = (runId: number) =>
   api.post<{ message: string }>(`/admin/valuation-runs/${runId}/cancel`)
-
-// Auction Ending Runs
-export const getAuctionEndingRuns = (page = 1, limit = 20) =>
-  api.get<{ runs: AuctionEndingRun[]; total: number; page: number; limit: number }>('/admin/auction-ending-runs', { params: { page, limit } })
-
-export const getAuctionEndingRun = (id: number) =>
-  api.get<AuctionEndingRun>(`/admin/auction-ending-runs/${id}`)
-
-export const triggerAuctionEndingCheck = () =>
-  api.post<{ runId: number; status: string }>('/admin/auction-ending/run')
-
-// Auction Alert and Reminder Runs
-export const getAuctionAlertReminderRuns = (page = 1, limit = 20) =>
-  api.get<{ runs: AuctionAlertReminderRun[]; total: number; page: number; limit: number }>('/admin/auction-alert-runs', { params: { page, limit } })
-
-export const triggerAuctionAlertReminderCheck = () =>
-  api.post<{ message?: string; runId?: number; lotsChecked?: number; alertsTriggered?: number; alertsSent?: number; priceAlertsTriggered?: number; remindersNotified?: number; remindersSent?: number; bidRemindersSent?: number; status?: string; durationMs?: number }>('/admin/auction-alerts/run')
-
-// Auction Watch Bid Digest Runs
-export const getAuctionWatchBidDigestRuns = (page = 1, limit = 20) =>
-  api.get<{ runs: AuctionWatchBidDigestRun[]; total: number; page: number; limit: number }>('/admin/auction-watch-bid-digest-runs', { params: { page, limit } })
-
-export const triggerAuctionWatchBidDigest = () =>
-  api.post<{ message: string }>('/admin/auction-watch-bid-digest/run')
 
 // Collection Health Snapshots
 export const triggerCollectionHealthSnapshots = () =>

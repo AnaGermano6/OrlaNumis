@@ -51,7 +51,7 @@
       <p v-if="current && !current.releases.length" class="m-0 text-body text-text-secondary">{{ t('collectionOverview.releases.unavailable') }}</p>
       <p v-else-if="!filtered.length" class="m-0 text-body text-text-secondary" data-testid="releases-empty">{{ t('collectionOverview.releases.empty') }}</p>
       <ul v-else class="m-0 grid list-none grid-cols-2 gap-3 p-0 md:grid-cols-3 xl:grid-cols-4">
-        <CoinReleaseCard v-for="release in filtered.slice(0, limit)" :key="release.source + release.imageUrl" :release="release" />
+        <CoinReleaseCard v-for="release in filtered.slice(0, limit)" :key="release.source + release.imageUrl" :release="release" addable wishlistable />
       </ul>
       <button
         v-if="filtered.length > limit"

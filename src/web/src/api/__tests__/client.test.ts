@@ -640,23 +640,6 @@ describe('API Client', () => {
       expect(mockApi.post).toHaveBeenCalledWith('/coins/99/duplicate')
     })
 
-    it('notes CRUD methods use the /notes contract', async () => {
-      mockApi.get.mockResolvedValue({ data: { notes: [] } })
-      mockApi.post.mockResolvedValue({ data: {} })
-      mockApi.put.mockResolvedValue({ data: {} })
-      mockApi.delete.mockResolvedValue({ data: {} })
-
-      await client.getNotes()
-      await client.createNote({ title: 'Research links', body: '- Dealer listing' })
-      await client.updateNote(7, { title: 'Updated links', body: '**Important**' })
-      await client.deleteNote(7)
-
-      expect(mockApi.get).toHaveBeenCalledWith('/notes')
-      expect(mockApi.post).toHaveBeenCalledWith('/notes', { title: 'Research links', body: '- Dealer listing' })
-      expect(mockApi.put).toHaveBeenCalledWith('/notes/7', { title: 'Updated links', body: '**Important**' })
-      expect(mockApi.delete).toHaveBeenCalledWith('/notes/7')
-    })
-
     it('searchNumista sends GET with query param', async () => {
       mockApi.get.mockResolvedValue({ data: {} })
       await client.searchNumista('denarius')
@@ -667,14 +650,6 @@ describe('API Client', () => {
       mockApi.get.mockResolvedValue({ data: {} })
       await client.getStats()
       expect(mockApi.get).toHaveBeenCalledWith('/stats')
-    })
-
-    it('getInvestmentBreakdown sends GET with dimension param', async () => {
-      mockApi.get.mockResolvedValue({ data: [] })
-      await client.getInvestmentBreakdown('purchase-year')
-      expect(mockApi.get).toHaveBeenCalledWith('/stats/investment-breakdown', {
-        params: { dimension: 'purchase-year' },
-      })
     })
 
     it('sellCoin sends POST with soldPrice and soldTo', async () => {

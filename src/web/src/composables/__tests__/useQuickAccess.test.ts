@@ -38,7 +38,7 @@ describe('useQuickAccess', () => {
 
     expect(state.items.value).toEqual([coinItem, setItem])
     expect(state.isPinned('coin', 42).value).toBe(true)
-    expect(state.isPinned('auction_lot', 42).value).toBe(false)
+    expect(state.isPinned('coin_set', 42).value).toBe(false)
   })
 
   it('retains prior items and exposes a recoverable refresh error', async () => {

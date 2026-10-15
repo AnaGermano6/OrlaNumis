@@ -237,7 +237,7 @@ import { useCoinShareCard } from '@/composables/useCoinShareCard'
 import { usePurchaseReminder, formatReminderDateValue } from '@/composables/usePurchaseReminder'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import { useCoinDetailSwipeNav } from '@/composables/useCoinDetailSwipeNav'
-import type { CoinDetailMetadataRow, CoinImage, ShipmentUpsertInput } from '@/types'
+import type { CoinDetailMetadataRow, CoinImage } from '@/types'
 import { t } from '@/i18n'
 import { categoryLabel } from '@/i18n/coinVocabulary'
 
@@ -388,7 +388,7 @@ async function handleShare() {
   await shareCoinCard(coin.value)
 }
 
-async function confirmPurchase(data: { purchasePrice?: number; purchaseDate?: string; purchaseLocation?: string; shipment?: ShipmentUpsertInput }) {
+async function confirmPurchase(data: { purchasePrice?: number; purchaseDate?: string; purchaseLocation?: string }) {
   if (!coin.value) return
   try {
     await purchaseCoin(coin.value.id, data)

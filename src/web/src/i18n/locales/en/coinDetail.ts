@@ -47,10 +47,6 @@ export default {
     lastChecked: 'Last checked: {date}',
   },
   sections: {
-    shipment: {
-      title: 'Shipment Tracker',
-      description: 'Manual shipment status and tracking updates',
-    },
     journal: {
       title: 'Activity Journal',
       description: 'Timeline of events and actions',

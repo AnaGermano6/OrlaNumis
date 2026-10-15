@@ -59,494 +59,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/auction-alert-runs": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns paginated history of price alert and bid reminder scheduler runs.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "List auction alert runs",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "Items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-alerts/run": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Refreshes watched auction lots and evaluates price alerts and bid reminders.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Trigger manual auction alert check",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-alerts/status": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns runtime status for the auction alert scheduler.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Get auction alert scheduler status",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/services.SchedulerStatus"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-ending-runs": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns paginated history of auction ending check runs.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "List auction ending runs",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "Items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-ending-runs/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns a single auction ending run by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Get auction ending run",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Run ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.AuctionEndingRun"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-ending/debug": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns diagnostic info: current time, next 24h window, total lots, lots by status, lots matching the scheduler query, and all BIDDING lots with all their date fields populated",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Debug auction ending scheduler",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-ending/run": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Enqueues an auction ending check for all users and returns 202 Accepted with the queued run ID. Poll /admin/auction-ending-runs/{id} until status is terminal (success or error).",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Trigger manual auction ending check",
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-watch-bid-digest-runs": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns paginated history of auction watch bid digest runs.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "List auction watch bid digest runs",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-watch-bid-digest/run": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Refreshes watched auction lots and sends current-bid digest notifications.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Trigger manual auction watch bid digest",
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/auction-watch-bid-digest/status": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns runtime status for the auction watch bid digest scheduler.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Get auction watch bid digest scheduler status",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/services.SchedulerStatus"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/admin/availability-cycles": {
             "get": {
                 "security": [
@@ -4306,881 +3818,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns price alerts owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Alerts"
-                ],
-                "summary": "List price alerts",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a one-shot price alert for an auction lot watched by the authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Alerts"
-                ],
-                "summary": "Create price alert",
-                "parameters": [
-                    {
-                        "description": "Request payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/services.PriceAlertCreateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/alerts/{id}": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deletes a price alert owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Alerts"
-                ],
-                "summary": "Delete price alert",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Alert ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns a paginated list of auction lots belonging to the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "List auction lots",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by status (watching, bidding, won, lost, passed)",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by auction source (numisbids, cng)",
-                        "name": "source",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search across title, description, auction house",
-                        "name": "search",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 50,
-                        "description": "Items per page",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "default": "updated_at",
-                        "description": "Sort field",
-                        "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "default": "desc",
-                        "description": "Sort order",
-                        "name": "order",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.AuctionLotListResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a new auction lot for tracking.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Create auction lot",
-                "parameters": [
-                    {
-                        "description": "Auction lot data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.AuctionLot"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.AuctionLot"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/bulk-link-event": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Partial success: commits each distinct owned lot independently; returns confirmed updated count and per-lot failures.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Bulk link lots to calendar event",
-                "parameters": [
-                    {
-                        "description": "Lot IDs and event ID",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.BulkLinkEventRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/services.BulkEventLinkResult"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/counts": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns a map of status → count for the authenticated user, optionally scoped to one auction source.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Get auction lot counts by status",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by auction source (numisbids, cng)",
-                        "name": "source",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "integer",
-                                "format": "int64"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/import": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Scrapes a NumisBids lot page and creates an auction lot entry.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Import lot from NumisBids URL",
-                "parameters": [
-                    {
-                        "description": "NumisBids lot URL",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ImportLotRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.AuctionLot"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/sync": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Logs into NumisBids or CNG with the user's stored credentials, fetches the selected watchlist, and upserts each lot. Defaults to NumisBids when source is omitted.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Sync auction watchlist",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Auction source (numisbids, cng)",
-                        "name": "source",
-                        "in": "query"
-                    },
-                    {
-                        "description": "Auction source request",
-                        "name": "body",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SyncWatchlistRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SyncWatchlistResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/validate-credentials": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Attempts to log in to NumisBids or CNG with the provided credentials. Defaults to NumisBids when source is omitted.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Validate auction provider credentials",
-                "parameters": [
-                    {
-                        "description": "Auction provider credentials",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ValidateNumisBidsRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "boolean"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns a single auction lot by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Get auction lot",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Auction lot ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.AuctionLot"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Updates editable fields on an auction lot owned by the authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Update auction lot",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Auction lot ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated lot data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.UpdateLotRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.AuctionLot"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Removes an auction lot from tracking.",
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Delete auction lot",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Auction lot ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/{id}/bid-recommendation": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Suggests a maximum bid for a lot based on the user's own won/lost auction history in the same category. This is an aid only — the app does not place bids.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Suggest a maximum bid",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Auction lot ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/services.BidRecommendation"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/{id}/convert": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates an owned Coin from a won auction lot.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Convert won lot to coin",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Auction lot ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Optional shipment attachment",
-                        "name": "body",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ConvertToCoinRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.Coin"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/{id}/event": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Sets or clears the calendar event association for an auction lot.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Link lot to calendar event",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Auction lot ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Event ID (null to unlink)",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.LinkEventRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.AuctionLot"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/{id}/market-signal": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Searches live auction results for coins comparable to this lot and returns a structured trend signal (rising/stable/declining, price range, rationale). Best-effort: degrades to status \"unavailable\" rather than erroring if the AI provider isn't configured or the search fails.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Get current market trend signal for a lot",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Auction lot ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/services.MarketSignal"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auctions/{id}/status": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Transitions an auction lot to a new status.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auctions"
-                ],
-                "summary": "Update auction lot status",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Auction lot ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "New status",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.UpdateStatusRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.AuctionLot"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/auth/api-keys": {
             "get": {
                 "security": [
@@ -6235,289 +4872,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/calendar": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns auction lots and calendar events in a date range.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Calendar"
-                ],
-                "summary": "Get calendar",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Start date YYYY-MM-DD",
-                        "name": "start",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "End date YYYY-MM-DD",
-                        "name": "end",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/calendar/events": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns calendar events owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Calendar"
-                ],
-                "summary": "List calendar events",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a calendar event for the authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Calendar"
-                ],
-                "summary": "Create calendar event",
-                "parameters": [
-                    {
-                        "description": "Request payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/calendar/events/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns a calendar event and linked auction lots.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Calendar"
-                ],
-                "summary": "Get calendar event",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Event ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Updates a calendar event owned by the authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Calendar"
-                ],
-                "summary": "Update calendar event",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Event ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Request payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deletes a calendar event owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Calendar"
-                ],
-                "summary": "Delete calendar event",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Event ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/catalogs": {
             "get": {
                 "security": [
@@ -6646,6 +5000,37 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coin-catalogue/joint-issues": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The €2 coins the euro area's countries issued together (the Treaty of Rome in 2007, the EU flag in 2015…), newest first, each with every country's version.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Joint issues of the euro area",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.JointIssuesResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -9780,316 +8165,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/coins/{id}/shipment": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns the shipment record and timeline for a coin owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "Get coin shipment",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Coin ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ShipmentEnvelopeResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Attaches or updates a shipment record (carrier, tracking, notes) for a coin owned by the authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "Create or update coin shipment",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Coin ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Shipment payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ShipmentUpsertRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ShipmentEnvelopeResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deletes a shipment record attached to a coin owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "Delete coin shipment",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Coin ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/coins/{id}/shipment/manual-override": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Enables/disables manual shipment status override for a coin shipment.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "Set shipment manual override",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Coin ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Manual override payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ShipmentManualOverrideRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ShipmentEnvelopeResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/coins/{id}/shipment/sync": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Fetches latest shipment status/events from the configured carrier integration for the coin shipment.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "Sync coin shipment status",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Coin ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ShipmentEnvelopeResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/coins/{id}/status": {
             "get": {
                 "security": [
@@ -12150,235 +10225,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/notes": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns all notes owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Notes"
-                ],
-                "summary": "List notes",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.NoteListResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a Markdown-capable note for the authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Notes"
-                ],
-                "summary": "Create note",
-                "parameters": [
-                    {
-                        "description": "Note",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.noteRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.Note"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/notes/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns one note owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Notes"
-                ],
-                "summary": "Get note",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Note ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Note"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Updates one note owned by the authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Notes"
-                ],
-                "summary": "Update note",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Note ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Note",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.noteRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Note"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deletes one note owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Notes"
-                ],
-                "summary": "Delete note",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Note ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/notifications": {
             "get": {
                 "security": [
@@ -12445,49 +10291,6 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/notifications/test-pushover": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Sends a test Pushover notification using the authenticated user's saved Pushover configuration.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "User"
-                ],
-                "summary": "Test Pushover notification",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "502": {
-                        "description": "Bad Gateway",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -13233,7 +11036,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Target type: coin, coin_set, auction_lot, calendar_event",
+                        "description": "Target type: coin, coin_set",
                         "name": "type",
                         "in": "path",
                         "required": true
@@ -13299,7 +11102,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Target type: coin, coin_set, auction_lot, calendar_event",
+                        "description": "Target type: coin, coin_set",
                         "name": "type",
                         "in": "path",
                         "required": true
@@ -13884,132 +11687,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/reminders": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns bid reminders owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Alerts"
-                ],
-                "summary": "List bid reminders",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a one-shot bid reminder for an auction lot watched by the authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Alerts"
-                ],
-                "summary": "Create bid reminder",
-                "parameters": [
-                    {
-                        "description": "Request payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/services.BidReminderCreateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/reminders/{id}": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deletes a bid reminder owned by the authenticated user.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Alerts"
-                ],
-                "summary": "Delete bid reminder",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Reminder ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -15647,6 +13324,64 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/sets/{id}/checklist": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Every coin a checklist set lists (a country's coins in the catalogue, or a challenge's), each filled by a coin of the collection when it has one.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sets"
+                ],
+                "summary": "Get a checklist set's slots",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Set ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SetChecklistResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -17513,62 +15248,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/stats/investment-breakdown": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns investment, current value, gain/loss, confidence counts, top valuation movement, and stale valuations for the authenticated user's active collection.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "Get investment breakdown",
-                "parameters": [
-                    {
-                        "enum": [
-                            "purchase-year",
-                            "material"
-                        ],
-                        "type": "string",
-                        "description": "Breakdown dimension",
-                        "name": "dimension",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.InvestmentBreakdownResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/stats/time-machine": {
             "get": {
                 "security": [
@@ -18697,7 +16376,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates profile, privacy, NumisBids, Pushover, coin-of-day, emperor-tracker, and PWA swipe navigation preferences for the authenticated user.",
+                "description": "Updates profile, privacy, coin-of-day, emperor-tracker, and PWA swipe navigation preferences for the authenticated user.",
                 "consumes": [
                     "application/json"
                 ],
@@ -19323,40 +17002,6 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/value-history": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns value snapshots over time for charting collection value trends.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "Get value history",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.ValueSnapshot"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -20486,20 +18131,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.AuctionLotListResponse": {
-            "type": "object",
-            "properties": {
-                "lots": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.AuctionLot"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
         "handlers.AuthResponse": {
             "type": "object",
             "properties": {
@@ -20557,23 +18188,6 @@ const docTemplate = `{
                 },
                 "tagId": {
                     "type": "integer"
-                }
-            }
-        },
-        "handlers.BulkLinkEventRequest": {
-            "type": "object",
-            "required": [
-                "lotIds"
-            ],
-            "properties": {
-                "eventId": {
-                    "type": "integer"
-                },
-                "lotIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
                 }
             }
         },
@@ -21675,14 +19289,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ConvertToCoinRequest": {
-            "type": "object",
-            "properties": {
-                "shipment": {
-                    "$ref": "#/definitions/handlers.ShipmentAttachRequest"
-                }
-            }
-        },
         "handlers.DailyCoinResponse": {
             "type": "object",
             "properties": {
@@ -21810,47 +19416,6 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Image deleted"
-                }
-            }
-        },
-        "handlers.ImportLotRequest": {
-            "type": "object",
-            "required": [
-                "url"
-            ],
-            "properties": {
-                "auctionHouse": {
-                    "type": "string"
-                },
-                "category": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "currentBid": {
-                    "type": "number"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "estimate": {
-                    "type": "number"
-                },
-                "imageUrl": {
-                    "type": "string"
-                },
-                "saleName": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
                 }
             }
         },
@@ -21985,35 +19550,13 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.InvestmentBreakdownResponse": {
+        "handlers.JointIssuesResponse": {
             "type": "object",
             "properties": {
-                "dimension": {
-                    "type": "string",
-                    "example": "purchase-year"
-                },
-                "segments": {
+                "issues": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.InvestmentBreakdownSegment"
-                    }
-                },
-                "staleValuations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.StaleValuationCoin"
-                    }
-                },
-                "topDrops": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.InvestmentMovementCoin"
-                    }
-                },
-                "topIncreases": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.InvestmentMovementCoin"
+                        "$ref": "#/definitions/services.JointIssue"
                     }
                 }
             }
@@ -22029,14 +19572,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.LegacyNumistaType"
                     }
-                }
-            }
-        },
-        "handlers.LinkEventRequest": {
-            "type": "object",
-            "properties": {
-                "eventId": {
-                    "type": "integer"
                 }
             }
         },
@@ -22308,17 +19843,6 @@ const docTemplate = `{
                 },
                 "query": {
                     "type": "string"
-                }
-            }
-        },
-        "handlers.NoteListResponse": {
-            "type": "object",
-            "properties": {
-                "notes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Note"
-                    }
                 }
             }
         },
@@ -22683,9 +20207,6 @@ const docTemplate = `{
                 },
                 "purchasePrice": {
                     "type": "number"
-                },
-                "shipment": {
-                    "$ref": "#/definitions/handlers.ShipmentAttachRequest"
                 }
             }
         },
@@ -22713,6 +20234,20 @@ const docTemplate = `{
                 },
                 "query": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.SetChecklistResponse": {
+            "type": "object",
+            "properties": {
+                "complete": {
+                    "type": "boolean"
+                },
+                "slots": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.ChecklistSlot"
+                    }
                 }
             }
         },
@@ -22744,73 +20279,6 @@ const docTemplate = `{
                 "needsSetup": {
                     "type": "boolean",
                     "example": false
-                }
-            }
-        },
-        "handlers.ShipmentAttachRequest": {
-            "type": "object",
-            "properties": {
-                "carrier": {
-                    "type": "string"
-                },
-                "manualCarrierName": {
-                    "type": "string"
-                },
-                "notes": {
-                    "type": "string"
-                },
-                "trackingNumber": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.ShipmentEnvelopeResponse": {
-            "type": "object",
-            "properties": {
-                "shipment": {
-                    "$ref": "#/definitions/models.Shipment"
-                },
-                "trackingUrl": {
-                    "type": "string",
-                    "example": "https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=94001000"
-                }
-            }
-        },
-        "handlers.ShipmentManualOverrideRequest": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "note": {
-                    "type": "string",
-                    "example": "Carrier text confirmed by seller message"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "out_for_delivery"
-                }
-            }
-        },
-        "handlers.ShipmentUpsertRequest": {
-            "type": "object",
-            "properties": {
-                "carrier": {
-                    "type": "string",
-                    "example": "usps"
-                },
-                "manualCarrierName": {
-                    "type": "string",
-                    "example": "DHL"
-                },
-                "notes": {
-                    "type": "string",
-                    "example": "Seller ships next business day"
-                },
-                "trackingNumber": {
-                    "type": "string",
-                    "example": "94001000"
                 }
             }
         },
@@ -22945,28 +20413,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.SyncWatchlistRequest": {
-            "type": "object",
-            "properties": {
-                "source": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.SyncWatchlistResponse": {
-            "type": "object",
-            "properties": {
-                "lots": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.AuctionLot"
-                    }
-                },
-                "synced": {
-                    "type": "integer"
-                }
-            }
-        },
         "handlers.TopCoinsByValueRequest": {
             "type": "object",
             "properties": {
@@ -22987,77 +20433,6 @@ const docTemplate = `{
                 },
                 "text": {
                     "type": "string"
-                }
-            }
-        },
-        "handlers.UpdateLotRequest": {
-            "description": "Updates an existing auction lot.",
-            "type": "object",
-            "properties": {
-                "auctionEndTime": {
-                    "type": "string"
-                },
-                "auctionHouse": {
-                    "type": "string"
-                },
-                "category": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "currentBid": {
-                    "type": "number"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "estimate": {
-                    "type": "number"
-                },
-                "initialBid": {
-                    "type": "number"
-                },
-                "lotNumber": {
-                    "type": "integer"
-                },
-                "maxBid": {
-                    "type": "number"
-                },
-                "notes": {
-                    "type": "string"
-                },
-                "numisBidsUrl": {
-                    "type": "string"
-                },
-                "saleDate": {
-                    "type": "string"
-                },
-                "saleName": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "winningBid": {
-                    "type": "number"
-                }
-            }
-        },
-        "handlers.UpdateStatusRequest": {
-            "type": "object",
-            "required": [
-                "status"
-            ],
-            "properties": {
-                "maxBid": {
-                    "type": "number"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "winningBid": {
-                    "type": "number"
                 }
             }
         },
@@ -23120,24 +20495,6 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "admin"
-                }
-            }
-        },
-        "handlers.ValidateNumisBidsRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         },
@@ -24130,17 +21487,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.noteRequest": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
         "handlers.oidcAdminProviderListResponse": {
             "type": "object",
             "properties": {
@@ -24696,242 +22042,6 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
-        },
-        "models.AuctionEndingRun": {
-            "type": "object",
-            "properties": {
-                "alertsSent": {
-                    "type": "integer"
-                },
-                "completedAt": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "durationMs": {
-                    "type": "integer"
-                },
-                "errorMessage": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "lotsChecked": {
-                    "type": "integer"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "triggerType": {
-                    "type": "string"
-                },
-                "triggerUserId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.AuctionEvent": {
-            "type": "object",
-            "properties": {
-                "auctionHouse": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "endDate": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "notes": {
-                    "type": "string"
-                },
-                "origin": {
-                    "$ref": "#/definitions/models.AuctionEventOrigin"
-                },
-                "startDate": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                },
-                "userId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.AuctionEventOrigin": {
-            "type": "string",
-            "enum": [
-                "manual",
-                "auction"
-            ],
-            "x-enum-varnames": [
-                "AuctionEventOriginManual",
-                "AuctionEventOriginAuction"
-            ]
-        },
-        "models.AuctionLot": {
-            "type": "object",
-            "properties": {
-                "auctionEndTime": {
-                    "type": "string"
-                },
-                "auctionHouse": {
-                    "type": "string"
-                },
-                "category": {
-                    "$ref": "#/definitions/models.Category"
-                },
-                "coin": {
-                    "$ref": "#/definitions/models.Coin"
-                },
-                "coinId": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "currentBid": {
-                    "type": "number"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "estimate": {
-                    "type": "number"
-                },
-                "event": {
-                    "$ref": "#/definitions/models.AuctionEvent"
-                },
-                "eventId": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "imageUrl": {
-                    "type": "string"
-                },
-                "initialBid": {
-                    "type": "number"
-                },
-                "isOutbid": {
-                    "description": "IsOutbid reports whether someone else holds the winning bid on a lot this user is\nbidding on. Set from the provider's own winning-bidder identity, never from a\nmaxBid/currentBid comparison; see outbidByProvider (specs/_backlog/F034).",
-                    "type": "boolean"
-                },
-                "lotNumber": {
-                    "type": "integer"
-                },
-                "maxBid": {
-                    "type": "number"
-                },
-                "notes": {
-                    "type": "string"
-                },
-                "numisBidsUrl": {
-                    "type": "string"
-                },
-                "saleDate": {
-                    "type": "string"
-                },
-                "saleId": {
-                    "type": "string"
-                },
-                "saleName": {
-                    "type": "string"
-                },
-                "source": {
-                    "$ref": "#/definitions/models.AuctionSource"
-                },
-                "sourceLotId": {
-                    "type": "string"
-                },
-                "sourceSaleId": {
-                    "type": "string"
-                },
-                "sourceUrl": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/models.AuctionLotStatus"
-                },
-                "statusSource": {
-                    "description": "StatusSource records whether the current Status was set by watchlist sync\nauto-detecting a provider-reported outcome, or by an explicit manual override.\nOnly meaningful once Status is won/lost; see specs/_backlog/F024.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.AuctionLotStatusSource"
-                        }
-                    ]
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userId": {
-                    "type": "integer"
-                },
-                "winningBid": {
-                    "type": "number"
-                }
-            }
-        },
-        "models.AuctionLotStatus": {
-            "type": "string",
-            "enum": [
-                "watching",
-                "bidding",
-                "won",
-                "lost",
-                "passed"
-            ],
-            "x-enum-varnames": [
-                "AuctionStatusWatching",
-                "AuctionStatusBidding",
-                "AuctionStatusWon",
-                "AuctionStatusLost",
-                "AuctionStatusPassed"
-            ]
-        },
-        "models.AuctionLotStatusSource": {
-            "type": "string",
-            "enum": [
-                "sync",
-                "manual"
-            ],
-            "x-enum-varnames": [
-                "AuctionLotStatusSourceSync",
-                "AuctionLotStatusSourceManual"
-            ]
-        },
-        "models.AuctionSource": {
-            "type": "string",
-            "enum": [
-                "numisbids",
-                "cng"
-            ],
-            "x-enum-varnames": [
-                "AuctionSourceNumisBids",
-                "AuctionSourceCNG"
-            ]
         },
         "models.CandidateProvenance": {
             "type": "object",
@@ -25615,6 +22725,14 @@ const docTemplate = `{
                 "agenticStatus": {
                     "type": "string"
                 },
+                "checklist": {
+                    "description": "Checklist defines a checklist set's slots (see services.ChecklistDefinition).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.JSONObject"
+                        }
+                    ]
+                },
                 "color": {
                     "type": "string"
                 },
@@ -25683,6 +22801,7 @@ const docTemplate = `{
                 "smart",
                 "goal",
                 "agentic",
+                "checklist",
                 "standard",
                 "goal",
                 "agentic"
@@ -25692,6 +22811,7 @@ const docTemplate = `{
                 "CoinSetTypeSmart",
                 "CoinSetTypeGoal",
                 "CoinSetTypeAgentic",
+                "CoinSetTypeChecklist",
                 "CoinSetTypeOpen",
                 "CoinSetTypeDefined",
                 "CoinSetTypeTracker"
@@ -26030,29 +23150,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "region": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.Note": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "title": {
                     "type": "string"
                 },
                 "updatedAt": {
@@ -26884,15 +23981,11 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "coin",
-                "coin_set",
-                "auction_lot",
-                "calendar_event"
+                "coin_set"
             ],
             "x-enum-varnames": [
                 "QuickAccessTargetCoin",
-                "QuickAccessTargetCoinSet",
-                "QuickAccessTargetAuctionLot",
-                "QuickAccessTargetCalendarEvent"
+                "QuickAccessTargetCoinSet"
             ]
         },
         "models.QuickCaptureDraft": {
@@ -27299,166 +24392,6 @@ const docTemplate = `{
                 "SetProposalStatusCreationFailed"
             ]
         },
-        "models.Shipment": {
-            "type": "object",
-            "properties": {
-                "carrier": {
-                    "$ref": "#/definitions/models.ShipmentCarrier"
-                },
-                "coinId": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "currentStatus": {
-                    "$ref": "#/definitions/models.ShipmentStatus"
-                },
-                "currentStatusSource": {
-                    "$ref": "#/definitions/models.ShipmentStatusSource"
-                },
-                "deliveredAt": {
-                    "type": "string"
-                },
-                "estimatedDeliveryAt": {
-                    "type": "string"
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.ShipmentEvent"
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "lastSyncError": {
-                    "type": "string"
-                },
-                "lastSyncedAt": {
-                    "type": "string"
-                },
-                "manualCarrierName": {
-                    "type": "string"
-                },
-                "manualOverrideEnabled": {
-                    "type": "boolean"
-                },
-                "manualOverrideNote": {
-                    "type": "string"
-                },
-                "manualOverrideStatus": {
-                    "$ref": "#/definitions/models.ShipmentStatus"
-                },
-                "manualOverrideUpdatedAt": {
-                    "type": "string"
-                },
-                "notes": {
-                    "type": "string"
-                },
-                "trackingNumber": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.ShipmentCarrier": {
-            "type": "string",
-            "enum": [
-                "usps",
-                "ups",
-                "fedex",
-                "parcel",
-                "other"
-            ],
-            "x-enum-varnames": [
-                "ShipmentCarrierUSPS",
-                "ShipmentCarrierUPS",
-                "ShipmentCarrierFedEx",
-                "ShipmentCarrierParcel",
-                "ShipmentCarrierOther"
-            ]
-        },
-        "models.ShipmentEvent": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "eventKey": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "location": {
-                    "type": "string"
-                },
-                "occurredAt": {
-                    "type": "string"
-                },
-                "rawPayload": {
-                    "type": "string"
-                },
-                "rawStatus": {
-                    "type": "string"
-                },
-                "shipmentId": {
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/models.ShipmentStatus"
-                },
-                "statusSource": {
-                    "$ref": "#/definitions/models.ShipmentStatusSource"
-                },
-                "userId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.ShipmentStatus": {
-            "type": "string",
-            "enum": [
-                "pending",
-                "label_created",
-                "in_transit",
-                "out_for_delivery",
-                "delivered",
-                "exception",
-                "returned",
-                "unknown"
-            ],
-            "x-enum-varnames": [
-                "ShipmentStatusPending",
-                "ShipmentStatusLabelCreated",
-                "ShipmentStatusInTransit",
-                "ShipmentStatusOutForDelivery",
-                "ShipmentStatusDelivered",
-                "ShipmentStatusException",
-                "ShipmentStatusReturned",
-                "ShipmentStatusUnknown"
-            ]
-        },
-        "models.ShipmentStatusSource": {
-            "type": "string",
-            "enum": [
-                "manual",
-                "carrier_api"
-            ],
-            "x-enum-varnames": [
-                "ShipmentStatusSourceManual",
-                "ShipmentStatusSourceAPI"
-            ]
-        },
         "models.StorageLocation": {
             "type": "object",
             "properties": {
@@ -27547,29 +24480,6 @@ const docTemplate = `{
                 "RoleAdmin",
                 "RoleUser"
             ]
-        },
-        "models.ValueSnapshot": {
-            "type": "object",
-            "properties": {
-                "coinCount": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "recordedAt": {
-                    "type": "string"
-                },
-                "totalInvested": {
-                    "type": "number"
-                },
-                "totalValue": {
-                    "type": "number"
-                },
-                "userId": {
-                    "type": "integer"
-                }
-            }
         },
         "models.WebAuthnCredential": {
             "type": "object",
@@ -27767,81 +24677,6 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.InvestmentBreakdownSegment": {
-            "type": "object",
-            "properties": {
-                "coinCount": {
-                    "type": "integer"
-                },
-                "currentValue": {
-                    "type": "number"
-                },
-                "gainLoss": {
-                    "type": "number"
-                },
-                "gainLossPct": {
-                    "type": "number"
-                },
-                "invested": {
-                    "type": "number"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "missingCurrentValueCount": {
-                    "type": "integer"
-                },
-                "missingPurchasePriceCount": {
-                    "type": "integer"
-                },
-                "month": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "integer"
-                }
-            }
-        },
-        "repository.InvestmentMovementCoin": {
-            "type": "object",
-            "properties": {
-                "changeAmount": {
-                    "type": "number"
-                },
-                "changeExplanation": {
-                    "type": "string"
-                },
-                "changePct": {
-                    "type": "number"
-                },
-                "coinId": {
-                    "type": "integer"
-                },
-                "currentValue": {
-                    "type": "number"
-                },
-                "initialValue": {
-                    "type": "number"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "repository.StaleValuationCoin": {
-            "type": "object",
-            "properties": {
-                "coinId": {
-                    "type": "integer"
-                },
-                "lastValuationAt": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "repository.TrayAggregate": {
             "type": "object",
             "properties": {
@@ -27985,52 +24820,6 @@ const docTemplate = `{
                 }
             }
         },
-        "services.BidRecommendation": {
-            "type": "object",
-            "properties": {
-                "confidence": {
-                    "$ref": "#/definitions/services.BidRecommendationConfidence"
-                },
-                "rationale": {
-                    "type": "string"
-                },
-                "sampleSize": {
-                    "type": "integer"
-                },
-                "suggestedMaxBid": {
-                    "type": "number"
-                }
-            }
-        },
-        "services.BidRecommendationConfidence": {
-            "type": "string",
-            "enum": [
-                "insufficient_data",
-                "low",
-                "medium",
-                "high"
-            ],
-            "x-enum-varnames": [
-                "ConfidenceInsufficientData",
-                "ConfidenceLow",
-                "ConfidenceMedium",
-                "ConfidenceHigh"
-            ]
-        },
-        "services.BidReminderCreateRequest": {
-            "type": "object",
-            "required": [
-                "auctionLotId"
-            ],
-            "properties": {
-                "auctionLotId": {
-                    "type": "integer"
-                },
-                "minutesBefore": {
-                    "type": "integer"
-                }
-            }
-        },
         "services.BreakdownEntry": {
             "type": "object",
             "properties": {
@@ -28042,20 +24831,6 @@ const docTemplate = `{
                 },
                 "value": {
                     "type": "number"
-                }
-            }
-        },
-        "services.BulkEventLinkResult": {
-            "type": "object",
-            "properties": {
-                "failures": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/services.EventLinkFailure"
-                    }
-                },
-                "updated": {
-                    "type": "integer"
                 }
             }
         },
@@ -28126,6 +24901,60 @@ const docTemplate = `{
                 "ChecklistSeverityMedium",
                 "ChecklistSeverityLow"
             ]
+        },
+        "services.ChecklistSlot": {
+            "type": "object",
+            "properties": {
+                "coinId": {
+                    "description": "The collection's coin filling the slot.",
+                    "type": "integer"
+                },
+                "coinImage": {
+                    "type": "string"
+                },
+                "coinName": {
+                    "type": "string"
+                },
+                "coinValue": {
+                    "description": "CoinValue is the current value of the coin filling the slot.",
+                    "type": "number"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "faceValue": {
+                    "type": "number"
+                },
+                "faceValues": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "imageUrl": {
+                    "description": "ImageURL and PageURL show the coin as its source does.",
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "owned": {
+                    "type": "boolean"
+                },
+                "pageUrl": {
+                    "type": "string"
+                },
+                "title": {
+                    "description": "Title names the coin; a challenge's country slots leave it empty (the\ncountry says it).",
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
         },
         "services.CoinCopilotCapability": {
             "type": "object",
@@ -28301,6 +25130,10 @@ const docTemplate = `{
                 "volume": {
                     "description": "Volume is how many are struck, when the source says.",
                     "type": "integer"
+                },
+                "wishlist": {
+                    "description": "Wishlist is true when a coin of the wishlist is this one.",
+                    "type": "boolean"
                 }
             }
         },
@@ -28532,20 +25365,6 @@ const docTemplate = `{
                 }
             }
         },
-        "services.EventLinkFailure": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "error": {
-                    "type": "string"
-                },
-                "lotId": {
-                    "type": "integer"
-                }
-            }
-        },
         "services.ExchangeRate": {
             "type": "object",
             "properties": {
@@ -28687,48 +25506,41 @@ const docTemplate = `{
                 }
             }
         },
-        "services.MarketSignal": {
+        "services.JointIssue": {
             "type": "object",
             "properties": {
-                "currency": {
-                    "type": "string"
-                },
-                "priceHigh": {
-                    "type": "number"
-                },
-                "priceLow": {
-                    "type": "number"
-                },
-                "rationale": {
-                    "type": "string"
-                },
-                "sampleSize": {
-                    "type": "integer"
-                },
-                "sources": {
+                "coins": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/services.JointIssueCoin"
                     }
                 },
-                "status": {
-                    "$ref": "#/definitions/services.MarketSignalStatus"
-                },
-                "trendDirection": {
+                "pageUrl": {
                     "type": "string"
+                },
+                "title": {
+                    "description": "Title is the ECB's feature, in English.",
+                    "type": "string",
+                    "example": "50th anniversary of the Treaty of Rome"
+                },
+                "year": {
+                    "type": "integer",
+                    "example": 2007
                 }
             }
         },
-        "services.MarketSignalStatus": {
-            "type": "string",
-            "enum": [
-                "unavailable",
-                "ok"
-            ],
-            "x-enum-varnames": [
-                "MarketSignalUnavailable",
-                "MarketSignalOK"
-            ]
+        "services.JointIssueCoin": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "description": "Country is an ISO code.",
+                    "type": "string",
+                    "example": "PT"
+                },
+                "imageUrl": {
+                    "type": "string"
+                }
+            }
         },
         "services.MissingChecklistItem": {
             "type": "object",
@@ -29013,64 +25825,6 @@ const docTemplate = `{
                 }
             }
         },
-        "services.PriceAlertCreateRequest": {
-            "type": "object",
-            "required": [
-                "auctionLotId",
-                "targetPrice"
-            ],
-            "properties": {
-                "auctionLotId": {
-                    "type": "integer"
-                },
-                "direction": {
-                    "type": "string"
-                },
-                "targetPrice": {
-                    "type": "number"
-                }
-            }
-        },
-        "services.QuickAccessAuctionLotDTO": {
-            "type": "object",
-            "properties": {
-                "auctionEndTime": {
-                    "type": "string"
-                },
-                "auctionHouse": {
-                    "type": "string"
-                },
-                "imageUrl": {
-                    "type": "string"
-                },
-                "saleDate": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/models.AuctionLotStatus"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "services.QuickAccessCalendarEventDTO": {
-            "type": "object",
-            "properties": {
-                "auctionHouse": {
-                    "type": "string"
-                },
-                "endDate": {
-                    "type": "string"
-                },
-                "startDate": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
         "services.QuickAccessCoinDTO": {
             "type": "object",
             "properties": {
@@ -29105,12 +25859,6 @@ const docTemplate = `{
         "services.QuickAccessItemDTO": {
             "type": "object",
             "properties": {
-                "auctionLot": {
-                    "$ref": "#/definitions/services.QuickAccessAuctionLotDTO"
-                },
-                "calendarEvent": {
-                    "$ref": "#/definitions/services.QuickAccessCalendarEventDTO"
-                },
                 "coin": {
                     "$ref": "#/definitions/services.QuickAccessCoinDTO"
                 },
@@ -29409,7 +26157,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Aurearia API",
-	Description:      "REST API for managing a personal coin collection. Supports coin CRUD, image uploads, AI-powered analysis, user management, auction tracking, and admin features.",
+	Description:      "REST API for managing a personal coin collection. Supports coin CRUD, image uploads, AI-powered analysis, user management, and admin features.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

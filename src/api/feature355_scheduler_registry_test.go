@@ -50,7 +50,7 @@ func TestFeature355_SchedulerRegistry_StopAllReachesAllSlots(t *testing.T) {
 	existing := []*countingScheduler{
 		{name: "Availability"},
 		{name: "CoinOfDay"},
-		{name: "AuctionEnding"},
+		{name: "Valuation"},
 		{name: "WishlistSearchAlerts"},
 	}
 	reminder := &countingScheduler{name: "ReminderCheck"}
@@ -122,7 +122,7 @@ func TestFeature355_SchedulerRegistry_StopAllStopsAllSchedulers(t *testing.T) {
 	}
 
 	registry := &SchedulerRegistry{}
-	for _, name := range []string{"Availability", "CoinOfDay", "AuctionEnding", "ReminderCheck"} {
+	for _, name := range []string{"Availability", "CoinOfDay", "Valuation", "ReminderCheck"} {
 		registry.Register(makeOrdered(name))
 	}
 	registry.StopAll()

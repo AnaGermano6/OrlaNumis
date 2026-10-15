@@ -46,7 +46,7 @@ func (h *QuickAccessHandler) List(c *gin.Context) {
 //	@Description	Idempotently pins one eligible user-owned target while preserving its original pin time.
 //	@Tags			Quick Access
 //	@Produce		json
-//	@Param			type	path		string	true	"Target type: coin, coin_set, auction_lot, calendar_event"
+//	@Param			type	path		string	true	"Target type: coin, coin_set"
 //	@Param			id		path		int		true	"Target ID"
 //	@Success		200		{object}	services.QuickAccessItemDTO
 //	@Success		201		{object}	services.QuickAccessItemDTO
@@ -88,7 +88,7 @@ func (h *QuickAccessHandler) Pin(c *gin.Context) {
 //	@Summary		Unpin a Quick Access target
 //	@Description	Idempotently removes one target from the authenticated user's Quick Access list.
 //	@Tags			Quick Access
-//	@Param			type	path	string	true	"Target type: coin, coin_set, auction_lot, calendar_event"
+//	@Param			type	path	string	true	"Target type: coin, coin_set"
 //	@Param			id		path	int		true	"Target ID"
 //	@Success		204
 //	@Failure		400	{object}	ErrorResponse

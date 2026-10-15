@@ -25,9 +25,9 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	err = db.AutoMigrate(
 		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CatalogRegistry{}, &models.AppSetting{},
 		&models.MintLocation{},
-		&models.StorageLocation{}, &models.ValueSnapshot{}, &models.CoinJournal{},
+		&models.StorageLocation{}, &models.CoinJournal{},
 		&models.CoinValueHistory{}, &models.CoinComment{},
-		&models.AvailabilityResult{}, &models.AuctionLot{},
+		&models.AvailabilityResult{},
 		&models.Tag{}, &models.CoinTag{},
 		&models.CoinSet{}, &models.CoinSetMembership{},
 		&models.Showcase{}, &models.ShowcaseCoin{},
@@ -99,16 +99,6 @@ func TestCreateCoin_Success(t *testing.T) {
 	}
 	if found.Name != "Denarius of Augustus" {
 		t.Errorf("expected name 'Denarius of Augustus', got %q", found.Name)
-	}
-
-	// Verify value snapshot was recorded
-	var snapshots []models.ValueSnapshot
-	db.Where("user_id = ?", 1).Find(&snapshots)
-	if len(snapshots) == 0 {
-		t.Fatal("expected a value snapshot to be recorded")
-	}
-	if snapshots[0].CoinCount != 1 {
-		t.Errorf("expected snapshot coin count 1, got %d", snapshots[0].CoinCount)
 	}
 }
 
@@ -413,14 +403,6 @@ func TestUpdateCoin_RecordsValueHistory(t *testing.T) {
 	db.Where("coin_id = ?", coin.ID).Find(&journals)
 	if len(journals) != 1 {
 		t.Fatalf("expected 1 journal entry, got %d", len(journals))
-	}
-
-	var snapshots []models.ValueSnapshot
-	if err := db.Where("user_id = ?", uint(1)).Find(&snapshots).Error; err != nil {
-		t.Fatalf("failed to query value snapshots: %v", err)
-	}
-	if len(snapshots) != 2 {
-		t.Fatalf("expected create and update value snapshots, got %d", len(snapshots))
 	}
 }
 

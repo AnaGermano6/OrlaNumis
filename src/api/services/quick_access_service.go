@@ -28,30 +28,12 @@ type QuickAccessCoinSetDTO struct {
 	Icon    string             `json:"icon"`
 }
 
-type QuickAccessAuctionLotDTO struct {
-	Title          string                  `json:"title"`
-	Status         models.AuctionLotStatus `json:"status"`
-	AuctionHouse   string                  `json:"auctionHouse"`
-	SaleDate       *time.Time              `json:"saleDate"`
-	AuctionEndTime *time.Time              `json:"auctionEndTime"`
-	ImageURL       string                  `json:"imageUrl"`
-}
-
-type QuickAccessCalendarEventDTO struct {
-	Title        string     `json:"title"`
-	AuctionHouse string     `json:"auctionHouse"`
-	StartDate    *time.Time `json:"startDate"`
-	EndDate      *time.Time `json:"endDate"`
-}
-
 type QuickAccessItemDTO struct {
-	Type          models.QuickAccessTargetType `json:"type"`
-	ID            uint                         `json:"id"`
-	PinnedAt      time.Time                    `json:"pinnedAt"`
-	Coin          *QuickAccessCoinDTO          `json:"coin,omitempty"`
-	CoinSet       *QuickAccessCoinSetDTO       `json:"coinSet,omitempty"`
-	AuctionLot    *QuickAccessAuctionLotDTO    `json:"auctionLot,omitempty"`
-	CalendarEvent *QuickAccessCalendarEventDTO `json:"calendarEvent,omitempty"`
+	Type     models.QuickAccessTargetType `json:"type"`
+	ID       uint                         `json:"id"`
+	PinnedAt time.Time                    `json:"pinnedAt"`
+	Coin     *QuickAccessCoinDTO          `json:"coin,omitempty"`
+	CoinSet  *QuickAccessCoinSetDTO       `json:"coinSet,omitempty"`
 }
 
 type QuickAccessListDTO struct {
@@ -100,14 +82,6 @@ func (s *QuickAccessService) List(userID uint) (QuickAccessListDTO, error) {
 	if err != nil {
 		return QuickAccessListDTO{}, err
 	}
-	lots, err := s.repo.FindAuctionLots(userID, idsByType[models.QuickAccessTargetAuctionLot])
-	if err != nil {
-		return QuickAccessListDTO{}, err
-	}
-	events, err := s.repo.FindCalendarEvents(userID, idsByType[models.QuickAccessTargetCalendarEvent])
-	if err != nil {
-		return QuickAccessListDTO{}, err
-	}
 
 	coinByID := make(map[uint]repository.QuickAccessCoinRow, len(coins))
 	for _, row := range coins {
@@ -116,14 +90,6 @@ func (s *QuickAccessService) List(userID uint) (QuickAccessListDTO, error) {
 	setByID := make(map[uint]repository.QuickAccessSetRow, len(sets))
 	for _, row := range sets {
 		setByID[row.ID] = row
-	}
-	lotByID := make(map[uint]repository.QuickAccessAuctionLotRow, len(lots))
-	for _, row := range lots {
-		lotByID[row.ID] = row
-	}
-	eventByID := make(map[uint]repository.QuickAccessCalendarEventRow, len(events))
-	for _, row := range events {
-		eventByID[row.ID] = row
 	}
 
 	items := make([]QuickAccessItemDTO, 0, len(pins))
@@ -141,18 +107,6 @@ func (s *QuickAccessService) List(userID uint) (QuickAccessListDTO, error) {
 			row, found := setByID[pin.TargetID]
 			if found {
 				item = coinSetItem(pin, row)
-				ok = true
-			}
-		case models.QuickAccessTargetAuctionLot:
-			row, found := lotByID[pin.TargetID]
-			if found && auctionLotIsQuickAccessEligible(row.Status) {
-				item = auctionLotItem(pin, row)
-				ok = true
-			}
-		case models.QuickAccessTargetCalendarEvent:
-			row, found := eventByID[pin.TargetID]
-			if found && row.Origin == models.AuctionEventOriginManual {
-				item = calendarEventItem(pin, row)
 				ok = true
 			}
 		}
@@ -297,22 +251,6 @@ func validateQuickAccessTarget(repo *repository.QuickAccessRepository, userID ui
 		if _, err := repo.FindCoinSet(userID, targetID); err != nil {
 			return err
 		}
-	case models.QuickAccessTargetAuctionLot:
-		row, err := repo.FindAuctionLot(userID, targetID)
-		if err != nil {
-			return err
-		}
-		if !auctionLotIsQuickAccessEligible(row.Status) {
-			return ErrQuickAccessTargetNotFound
-		}
-	case models.QuickAccessTargetCalendarEvent:
-		row, err := repo.FindCalendarEvent(userID, targetID)
-		if err != nil {
-			return err
-		}
-		if row.Origin != models.AuctionEventOriginManual {
-			return ErrQuickAccessTargetNotFound
-		}
 	default:
 		return ErrInvalidQuickAccessTarget
 	}
@@ -324,10 +262,6 @@ func normalizeQuickAccessTargetError(err error) error {
 		return ErrQuickAccessTargetNotFound
 	}
 	return err
-}
-
-func auctionLotIsQuickAccessEligible(status models.AuctionLotStatus) bool {
-	return status == models.AuctionStatusWatching || status == models.AuctionStatusBidding
 }
 
 func (s *QuickAccessService) hydratePin(userID uint, pin models.QuickAccessPin) (QuickAccessItemDTO, error) {
@@ -344,18 +278,6 @@ func (s *QuickAccessService) hydratePin(userID uint, pin models.QuickAccessPin) 
 			return QuickAccessItemDTO{}, normalizeQuickAccessTargetError(err)
 		}
 		return coinSetItem(pin, *row), nil
-	case models.QuickAccessTargetAuctionLot:
-		row, err := s.repo.FindAuctionLot(userID, pin.TargetID)
-		if err != nil {
-			return QuickAccessItemDTO{}, normalizeQuickAccessTargetError(err)
-		}
-		return auctionLotItem(pin, *row), nil
-	case models.QuickAccessTargetCalendarEvent:
-		row, err := s.repo.FindCalendarEvent(userID, pin.TargetID)
-		if err != nil {
-			return QuickAccessItemDTO{}, normalizeQuickAccessTargetError(err)
-		}
-		return calendarEventItem(pin, *row), nil
 	default:
 		return QuickAccessItemDTO{}, ErrInvalidQuickAccessTarget
 	}
@@ -385,29 +307,6 @@ func coinSetItem(pin models.QuickAccessPin, row repository.QuickAccessSetRow) Qu
 		PinnedAt: pin.PinnedAt,
 		CoinSet: &QuickAccessCoinSetDTO{
 			Name: row.Name, SetType: row.SetType, Color: row.Color, Icon: row.Icon,
-		},
-	}
-}
-
-func auctionLotItem(pin models.QuickAccessPin, row repository.QuickAccessAuctionLotRow) QuickAccessItemDTO {
-	return QuickAccessItemDTO{
-		Type:     pin.TargetType,
-		ID:       pin.TargetID,
-		PinnedAt: pin.PinnedAt,
-		AuctionLot: &QuickAccessAuctionLotDTO{
-			Title: row.Title, Status: row.Status, AuctionHouse: row.AuctionHouse,
-			SaleDate: row.SaleDate, AuctionEndTime: row.AuctionEndTime, ImageURL: row.ImageURL,
-		},
-	}
-}
-
-func calendarEventItem(pin models.QuickAccessPin, row repository.QuickAccessCalendarEventRow) QuickAccessItemDTO {
-	return QuickAccessItemDTO{
-		Type:     pin.TargetType,
-		ID:       pin.TargetID,
-		PinnedAt: pin.PinnedAt,
-		CalendarEvent: &QuickAccessCalendarEventDTO{
-			Title: row.Title, AuctionHouse: row.AuctionHouse, StartDate: row.StartDate, EndDate: row.EndDate,
 		},
 	}
 }

@@ -59,7 +59,6 @@ func nullableScalarFieldPresence(raw map[string]json.RawMessage) map[string]bool
 type CoinHandler struct {
 	repo        *repository.CoinRepository
 	svc         *services.CoinService
-	shipmentSvc *services.ShipmentService
 	logger      *services.Logger
 	settingsSvc *services.SettingsService
 	circulation *services.CoinCirculationService
@@ -80,12 +79,6 @@ func NewCoinHandler(repo *repository.CoinRepository, svc *services.CoinService, 
 // CoinCategories/CoinEras lists in addition to the built-in defaults.
 func (h *CoinHandler) WithSettingsSupport(settingsSvc *services.SettingsService) *CoinHandler {
 	h.settingsSvc = settingsSvc
-	return h
-}
-
-// WithShipmentSupport enables optional shipment creation on purchase flows.
-func (h *CoinHandler) WithShipmentSupport(shipmentSvc *services.ShipmentService) *CoinHandler {
-	h.shipmentSvc = shipmentSvc
 	return h
 }
 
@@ -204,18 +197,9 @@ func (h *CoinHandler) GetCoinOptions(c *gin.Context) {
 
 // PurchaseRequest holds optional details when purchasing a wishlist coin.
 type PurchaseRequest struct {
-	PurchasePrice    *float64               `json:"purchasePrice"`
-	PurchaseDate     string                 `json:"purchaseDate"`
-	PurchaseLocation string                 `json:"purchaseLocation"`
-	Shipment         *ShipmentAttachRequest `json:"shipment,omitempty"`
-}
-
-// ShipmentAttachRequest allows optional shipment creation in purchase/conversion flows.
-type ShipmentAttachRequest struct {
-	Carrier           string `json:"carrier"`
-	TrackingNumber    string `json:"trackingNumber"`
-	Notes             string `json:"notes"`
-	ManualCarrierName string `json:"manualCarrierName,omitempty"`
+	PurchasePrice    *float64 `json:"purchasePrice"`
+	PurchaseDate     string   `json:"purchaseDate"`
+	PurchaseLocation string   `json:"purchaseLocation"`
 }
 
 // List returns a paginated list of coins for the authenticated user.
@@ -733,19 +717,6 @@ func (h *CoinHandler) Purchase(c *gin.Context) {
 		return
 	}
 
-	if req.Shipment != nil && h.shipmentSvc != nil {
-		if _, err := h.shipmentSvc.UpsertShipmentForCoin(
-			userID,
-			coin.ID,
-			models.ShipmentCarrier(req.Shipment.Carrier),
-			req.Shipment.TrackingNumber,
-			req.Shipment.Notes,
-			req.Shipment.ManualCarrierName,
-		); err != nil {
-			h.logger.Warn("coins", "Shipment attach failed for purchased coin %d user %d: %v", coin.ID, userID, err)
-		}
-	}
-
 	c.JSON(http.StatusOK, coin)
 }
 
@@ -891,58 +862,6 @@ func (h *CoinHandler) Distribution(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"cells": cells})
 }
 
-// InvestmentBreakdown returns active-collection investment aggregates for charting.
-//
-//	@Summary		Get investment breakdown
-//	@Description	Returns investment, current value, gain/loss, confidence counts, top valuation movement, and stale valuations for the authenticated user's active collection.
-//	@Tags			Coins
-//	@Produce		json
-//	@Param			dimension	query		string	true	"Breakdown dimension"	Enums(purchase-year, material)
-//	@Success		200			{object}	InvestmentBreakdownResponse
-//	@Failure		400			{object}	ErrorResponse
-//	@Failure		401			{object}	ErrorResponse
-//	@Failure		500			{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/stats/investment-breakdown [get]
-func (h *CoinHandler) InvestmentBreakdown(c *gin.Context) {
-	userID := c.GetUint("userId")
-	dimension := c.Query("dimension")
-	switch dimension {
-	case repository.InvestmentBreakdownPurchaseYear, repository.InvestmentBreakdownMaterial:
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "dimension must be one of: purchase-year, material"})
-		return
-	}
-
-	segments, err := h.repo.GetInvestmentBreakdown(userID, dimension)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch investment breakdown"})
-		return
-	}
-	topIncreases, err := h.repo.GetTopInvestmentIncreases(userID, 5)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch investment movement"})
-		return
-	}
-	topDrops, err := h.repo.GetTopInvestmentDrops(userID, 5)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch investment movement"})
-		return
-	}
-	staleValuations, err := h.repo.GetStaleValuationCoins(userID, 5)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch stale valuations"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"dimension":       dimension,
-		"segments":        segments,
-		"topIncreases":    topIncreases,
-		"topDrops":        topDrops,
-		"staleValuations": staleValuations,
-	})
-}
-
 // Suggestions returns distinct values for autocomplete fields.
 //
 //	@Summary		Get autocomplete suggestions
@@ -986,28 +905,6 @@ func (h *CoinHandler) Suggestions(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, values)
-}
-
-// ValueHistory returns historical value snapshots for the authenticated user.
-//
-//	@Summary		Get value history
-//	@Description	Returns value snapshots over time for charting collection value trends.
-//	@Tags			Coins
-//	@Produce		json
-//	@Success		200	{array}		models.ValueSnapshot
-//	@Failure		401	{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/value-history [get]
-func (h *CoinHandler) ValueHistory(c *gin.Context) {
-	userID := c.GetUint("userId")
-
-	snapshots, err := h.repo.GetValueHistory(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch value history"})
-		return
-	}
-
-	c.JSON(http.StatusOK, snapshots)
 }
 
 // CoinValueHistory returns value history entries for a specific coin.

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,19 +18,13 @@ import (
 )
 
 type UserHandler struct {
-	UploadDir   string
-	repo        *repository.UserRepository
-	pushoverSvc *services.PushoverService
-	logger      *services.Logger
-	credentials *services.CredentialEncryptionService
+	UploadDir string
+	repo      *repository.UserRepository
+	logger    *services.Logger
 }
 
-func NewUserHandler(uploadDir string, repo *repository.UserRepository, pushoverSvc *services.PushoverService, logger *services.Logger, credentialSvc ...*services.CredentialEncryptionService) *UserHandler {
-	credentials := services.NewDisabledCredentialEncryptionService()
-	if len(credentialSvc) > 0 && credentialSvc[0] != nil {
-		credentials = credentialSvc[0]
-	}
-	return &UserHandler{UploadDir: uploadDir, repo: repo, pushoverSvc: pushoverSvc, logger: logger, credentials: credentials}
+func NewUserHandler(uploadDir string, repo *repository.UserRepository, logger *services.Logger) *UserHandler {
+	return &UserHandler{UploadDir: uploadDir, repo: repo, logger: logger}
 }
 
 // ChangePassword allows a user to change their own password.
@@ -120,12 +113,6 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 		"zipCode":                        user.ZipCode,
 		"emailMissing":                   user.Email == "",
 		"createdAt":                      user.CreatedAt,
-		"numisBidsUsername":              user.NumisBidsUsername,
-		"numisBidsConfigured":            user.NumisBidsUsername != "" && user.NumisBidsPassword != "",
-		"cngUsername":                    user.CNGUsername,
-		"cngConfigured":                  user.CNGUsername != "" && user.CNGPassword != "",
-		"parcelAppConfigured":            user.ParcelAppAPIKey != "",
-		"pushoverEnabled":                user.PushoverEnabled,
 		"coinOfDayEnabled":               user.CoinOfDayEnabled,
 		"coinOfDayIncludeWishlist":       user.CoinOfDayIncludeWishlist,
 		"emperorTrackerEnabled":          user.EmperorTrackerEnabled,
@@ -233,7 +220,7 @@ func (h *UserHandler) ImportCollection(c *gin.Context) {
 // UpdateProfile updates the authenticated user's profile info.
 //
 //	@Summary		Update profile
-//	@Description	Updates profile, privacy, NumisBids, Pushover, coin-of-day, emperor-tracker, and PWA swipe navigation preferences for the authenticated user.
+//	@Description	Updates profile, privacy, coin-of-day, emperor-tracker, and PWA swipe navigation preferences for the authenticated user.
 //	@Tags			User
 //	@Accept			json
 //	@Produce		json
@@ -254,12 +241,6 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		Bio                            *string `json:"bio"`
 		IsPublic                       *bool   `json:"isPublic"`
 		ZipCode                        *string `json:"zipCode"`
-		NumisBidsUsername              *string `json:"numisBidsUsername"`
-		NumisBidsPassword              *string `json:"numisBidsPassword"`
-		CNGUsername                    *string `json:"cngUsername"`
-		CNGPassword                    *string `json:"cngPassword"`
-		ParcelAppAPIKey                *string `json:"parcelAppAPIKey"`
-		PushoverUserKey                *string `json:"pushoverUserKey"`
 		CoinOfDayEnabled               *bool   `json:"coinOfDayEnabled"`
 		CoinOfDayIncludeWishlist       *bool   `json:"coinOfDayIncludeWishlist"`
 		EmperorTrackerEnabled          *bool   `json:"emperorTrackerEnabled"`
@@ -302,42 +283,6 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 	if req.ZipCode != nil {
 		updates["zip_code"] = strings.TrimSpace(*req.ZipCode)
-	}
-	if req.NumisBidsUsername != nil {
-		updates["numis_bids_username"] = strings.TrimSpace(*req.NumisBidsUsername)
-	}
-	if req.NumisBidsPassword != nil {
-		encrypted, err := h.credentials.EncryptStringWithAAD(*req.NumisBidsPassword, services.AuctionCredentialAAD(user.ID, "numis_bids_password"))
-		if err != nil {
-			respondError(c, http.StatusInternalServerError, "Failed to protect NumisBids credentials", err)
-			return
-		}
-		updates["numis_bids_password"] = encrypted
-	}
-	if req.CNGUsername != nil {
-		updates["cng_username"] = strings.TrimSpace(*req.CNGUsername)
-	}
-	if req.CNGPassword != nil {
-		encrypted, err := h.credentials.EncryptStringWithAAD(*req.CNGPassword, services.AuctionCredentialAAD(user.ID, "cng_password"))
-		if err != nil {
-			respondError(c, http.StatusInternalServerError, "Failed to protect CNG credentials", err)
-			return
-		}
-		updates["cng_password"] = encrypted
-	}
-	if req.ParcelAppAPIKey != nil {
-		key := strings.TrimSpace(*req.ParcelAppAPIKey)
-		encrypted, err := h.credentials.EncryptStringWithAAD(key, services.UserCredentialAAD(user.ID, "parcel_app_api_key"))
-		if err != nil {
-			respondError(c, http.StatusInternalServerError, "Failed to protect ParcelApp credentials", err)
-			return
-		}
-		updates["parcel_app_api_key"] = encrypted
-	}
-	if req.PushoverUserKey != nil {
-		key := strings.TrimSpace(*req.PushoverUserKey)
-		updates["pushover_user_key"] = key
-		updates["pushover_enabled"] = key != ""
 	}
 	if req.CoinOfDayEnabled != nil {
 		updates["coin_of_day_enabled"] = *req.CoinOfDayEnabled
@@ -395,12 +340,6 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		"isPublic":                       user.IsPublic,
 		"bio":                            user.Bio,
 		"zipCode":                        user.ZipCode,
-		"numisBidsUsername":              user.NumisBidsUsername,
-		"numisBidsConfigured":            user.NumisBidsUsername != "" && user.NumisBidsPassword != "",
-		"cngUsername":                    user.CNGUsername,
-		"cngConfigured":                  user.CNGUsername != "" && user.CNGPassword != "",
-		"parcelAppConfigured":            user.ParcelAppAPIKey != "",
-		"pushoverEnabled":                user.PushoverEnabled,
 		"coinOfDayEnabled":               user.CoinOfDayEnabled,
 		"coinOfDayIncludeWishlist":       user.CoinOfDayIncludeWishlist,
 		"emperorTrackerEnabled":          user.EmperorTrackerEnabled,
@@ -508,43 +447,4 @@ func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Avatar removed"})
-}
-
-// TestPushover sends a test notification via Pushover to verify the user's configuration.
-//
-//	@Summary		Test Pushover notification
-//	@Description	Sends a test Pushover notification using the authenticated user's saved Pushover configuration.
-//	@Tags			User
-//	@Produce		json
-//	@Success		200	{object}	MessageResponse
-//	@Failure		400	{object}	ErrorResponse
-//	@Failure		404	{object}	ErrorResponse
-//	@Failure		502	{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/notifications/test-pushover [post]
-func (h *UserHandler) TestPushover(c *gin.Context) {
-	userID := c.GetUint("userId")
-
-	user, err := h.repo.FindByID(userID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-
-	if !user.PushoverEnabled || user.PushoverUserKey == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Pushover is not configured. Save your User Key first."})
-		return
-	}
-
-	if err := h.pushoverSvc.SendNotification(user.PushoverUserKey, "Ancient Coins", "Pushover notifications are working!", ""); err != nil {
-		if errors.Is(err, services.ErrPushoverNotConfigured) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Pushover app token not configured. Ask your admin to set PushoverAppToken in Admin Settings."})
-			return
-		}
-		h.logger.Error("pushover", "Test notification failed for user %d: %v", userID, err)
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to send test notification"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Test notification sent"})
 }

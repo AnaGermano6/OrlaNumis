@@ -39,12 +39,13 @@ async function openPage() {
     routes: [
       { path: '/sets/:id', component: SetDetailPage },
       { path: '/sets', name: 'sets', component: { template: '<p>Sets</p>' } },
+      { path: '/coin/:id', name: 'coin-detail', component: { template: '<p>Coin</p>' } },
     ],
   })
   await router.push('/sets/1')
   await router.isReady()
   const wrapper = mount({ template: '<router-view />' }, {
-    global: { plugins: [router], stubs: { MuseumTray: true, SetCompletionChecklist: true, TrayControls: true } },
+    global: { plugins: [router], stubs: { AuthenticatedImage: true, SetCompletionChecklist: true } },
   })
   await flushPromises()
   return { router, wrapper }
@@ -186,7 +187,8 @@ it.each(['assign', 'clear'])('keeps agentic slot %s scoped across navigation', a
   const pending = deferred<void>()
   try {
     await router.push('/sets/2'); await flushPromises()
-    wrapper.findComponent({ name: 'MuseumTray' }).vm.$emit('coin-clicked', 20)
+    // The album's first place: its target, filled by coin 20.
+    await wrapper.findAll('[data-testid="album-slot"] button')[0]!.trigger('click')
     await flushPromises()
     expect(wrapper.find('option[value="21"]').exists()).toBe(false)
     expect(wrapper.get<HTMLSelectElement>('#slotCoinToAssign').element.value).toBe('20')

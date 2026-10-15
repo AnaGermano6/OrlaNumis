@@ -99,7 +99,7 @@
 <script setup lang="ts">
 import type { Component, StyleValue } from 'vue'
 import { useRouter } from 'vue-router'
-import { CalendarDays, CircleDot, Coins, Crown, Gavel, Landmark, Layers3, Pin, PinOff, RefreshCw, Star, Target, Trophy } from 'lucide-vue-next'
+import { CircleDot, Coins, Crown, Landmark, Layers3, Pin, PinOff, RefreshCw, Star, Target, Trophy } from 'lucide-vue-next'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import PullToRefresh from '@/components/PullToRefresh.vue'
 import BaseEmptyState from '@/components/ui/BaseEmptyState.vue'
@@ -109,7 +109,6 @@ import { useQuickAccess } from '@/composables/useQuickAccess'
 import { useToast } from '@/composables/useToast'
 import type { QuickAccessItem, QuickAccessTargetType } from '@/types'
 import { t, intlLocale } from '@/i18n'
-import { auctionStatusLabel } from '@/utils/format'
 
 const router = useRouter()
 const { showToast } = useToast()
@@ -119,14 +118,11 @@ function titleFor(item: QuickAccessItem) {
   switch (item.type) {
     case 'coin': return item.coin.name
     case 'coin_set': return item.coinSet.name
-    case 'auction_lot': return item.auctionLot.title
-    case 'calendar_event': return item.calendarEvent.title
   }
 }
 
 function imageFor(item: QuickAccessItem) {
   if (item.type === 'coin') return item.coin.primaryImageUrl
-  if (item.type === 'auction_lot') return item.auctionLot.imageUrl
   return null
 }
 
@@ -134,8 +130,6 @@ function iconFor(item: QuickAccessItem): Component {
   switch (item.type) {
     case 'coin': return Coins
     case 'coin_set': return setIconFor(item.coinSet.icon)
-    case 'auction_lot': return Gavel
-    case 'calendar_event': return CalendarDays
   }
 }
 
@@ -162,21 +156,13 @@ function typeLabel(type: QuickAccessTargetType) {
   return {
     coin: t('quickAccessPage.types.coin'),
     coin_set: t('quickAccessPage.types.coinSet'),
-    auction_lot: t('quickAccessPage.types.auctionLot'),
-    calendar_event: t('quickAccessPage.types.calendarEvent'),
   }[type]
-}
-
-function formatOptionalDate(value: string | null) {
-  return value ? new Date(value).toLocaleDateString(intlLocale()) : t('quickAccessPage.dateNotSet')
 }
 
 function metadataFor(item: QuickAccessItem) {
   switch (item.type) {
     case 'coin': return item.coin.classification === 'wishlist' ? t('quickAccessPage.wishlistCoin') : t('quickAccessPage.collectionCoin')
     case 'coin_set': return item.coinSet.setType
-    case 'auction_lot': return [item.auctionLot.status ? auctionStatusLabel(item.auctionLot.status) : '', item.auctionLot.auctionHouse, formatOptionalDate(item.auctionLot.auctionEndTime ?? item.auctionLot.saleDate)].filter(Boolean).join(' · ')
-    case 'calendar_event': return [item.calendarEvent.auctionHouse, formatOptionalDate(item.calendarEvent.startDate)].filter(Boolean).join(' · ')
   }
 }
 
@@ -188,8 +174,6 @@ function openItem(item: QuickAccessItem) {
   switch (item.type) {
     case 'coin': void router.push(`/coin/${item.id}`); break
     case 'coin_set': void router.push(`/sets/${item.id}`); break
-    case 'auction_lot': void router.push({ path: '/auctions', query: { lot: String(item.id) } }); break
-    case 'calendar_event': void router.push({ path: '/calendar', query: { event: String(item.id) } }); break
   }
 }
 

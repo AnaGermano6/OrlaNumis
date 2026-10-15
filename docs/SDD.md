@@ -218,7 +218,7 @@ The Go API serves the Vue SPA as static files and proxies AI requests to the Pyt
 │  Collection │ Detail │ Add/Edit │ Wishlist    │
 │  Sold │ Stats │ Timeline │ Settings │ Admin   │
 │  Followers │ Gallery │ Login │ Register       │
-│  Showcases │ Calendar │ Notifications │ Chat  │
+│  Showcases │ Notifications │ Chat           │
 ├──────────────────────────────────────────────┤
 │                Components                     │
 │  CoinCard │ CoinForm │ CoinSearchChat         │
@@ -440,7 +440,7 @@ Each handler is a thin struct receiving repositories and services via constructo
 | OllamaService | `services/ollama_service.go` | Direct Ollama API client for image analysis and text extraction |
 | Settings | `services/settings_service.go` | Runtime settings CRUD with defaults, backed by `AppSetting` table |
 | Logger | `services/logger.go` | In-memory ring-buffer logger (1000 entries), runtime log level changes |
-| MCPService | `services/mcp_service.go` | Bounded owner-scoped collection, wishlist, auction, statistics, and Coin Copilot lifecycle operations |
+| MCPService | `services/mcp_service.go` | Bounded owner-scoped collection, wishlist, statistics, and Coin Copilot lifecycle operations |
 
 #### 5.1.3 Repositories (Data Access)
 
@@ -627,7 +627,6 @@ Rate limit: 10 requests per minute per IP on auth endpoints.
 | DELETE | `/api/coins/:id` | Delete coin and all related data |
 | GET | `/api/stats` | Collection statistics |
 | GET | `/api/suggestions` | Autocomplete suggestions for form fields |
-| GET | `/api/value-history` | Collection value snapshots over time |
 | GET | `/api/coins/:id/value-history` | Individual coin value history |
 
 #### 6.1.4 Images (Protected)
@@ -732,8 +731,8 @@ Rate limit: 10 requests per minute per IP on auth endpoints.
 | POST | `/api/mcp` | Stateless Streamable HTTP MCP endpoint |
 
 The route is default-off, requires `read`, uses per-key external rate limiting,
-and caps request bodies at 128 KiB. Eight tools expose read-only collection,
-wishlist, auction, and statistics data. Four Coin Copilot lifecycle tools are
+and caps request bodies at 128 KiB. Five tools expose read-only collection,
+wishlist, and statistics data. Four Coin Copilot lifecycle tools are
 registered only for keys with the exact `copilot` capability.
 
 #### 6.1.12 Admin (Admin Only)

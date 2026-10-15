@@ -3,6 +3,7 @@
 import { api } from '@/api/http'
 import type {
   AddCoinToSetRequest,
+  ChecklistResponse,
   Coin,
   CoinSetAnalytics,
   CoinSetComparison,
@@ -52,6 +53,9 @@ export const updateSet = (id: number, data: UpdateCoinSetRequest) => api.put<Coi
 export const deleteSet = (id: number) => api.delete(`/sets/${id}`)
 
 export const getCoinsInSet = (id: number) => api.get<{ coins: Coin[] }>(`/sets/${id}/coins`)
+
+/** A checklist set's slots: every coin it lists, each filled by a coin of the collection or not. */
+export const getSetChecklist = (id: number) => api.get<ChecklistResponse>(`/sets/${id}/checklist`)
 
 export const addCoinToSet = (setId: number, data: AddCoinToSetRequest) => api.post(`/sets/${setId}/coins`, data)
 

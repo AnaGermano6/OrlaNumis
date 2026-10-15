@@ -36,7 +36,6 @@ func setupAdminHandlerRecoveryTest(t *testing.T) (*gin.Engine, *gorm.DB) {
 		&models.CoinValueHistory{},
 		&models.CoinComment{},
 		&models.AgentConversation{},
-		&models.ValueSnapshot{},
 		&models.ApiKey{},
 		&models.RefreshToken{},
 		&models.WebAuthnCredential{},

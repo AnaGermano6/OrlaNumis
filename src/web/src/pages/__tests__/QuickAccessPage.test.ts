@@ -34,8 +34,6 @@ vi.mock('@/composables/useToast', () => ({
 const mixedItems: QuickAccessItem[] = [
   { type: 'coin', id: 1, pinnedAt: '2026-09-10T04:00:00Z', coin: { name: 'Coin One', classification: 'owned', primaryImageUrl: '' } },
   { type: 'coin_set', id: 2, pinnedAt: '2026-09-09T04:00:00Z', coinSet: { name: 'Set Two', setType: 'goal', color: '#6b7280', icon: 'Crown' } },
-  { type: 'auction_lot', id: 3, pinnedAt: '2026-09-08T04:00:00Z', auctionLot: { title: 'Lot Three', status: 'bidding', auctionHouse: 'CNG', saleDate: null, auctionEndTime: null, imageUrl: '' } },
-  { type: 'calendar_event', id: 4, pinnedAt: '2026-09-07T04:00:00Z', calendarEvent: { title: 'Event Four', auctionHouse: '', startDate: null, endDate: null } },
 ]
 
 function mountPage() {
@@ -62,15 +60,12 @@ describe('QuickAccessPage', () => {
     unpin.mockResolvedValue(undefined)
   })
 
-  it('renders all variants in server order with null metadata safely', () => {
+  it('renders both variants in server order', () => {
     items.value = mixedItems
     const wrapper = mountPage()
     const text = wrapper.text()
 
     expect(text.indexOf('Coin One')).toBeLessThan(text.indexOf('Set Two'))
-    expect(text.indexOf('Set Two')).toBeLessThan(text.indexOf('Lot Three'))
-    expect(text.indexOf('Lot Three')).toBeLessThan(text.indexOf('Event Four'))
-    expect(text).toContain('Date not set')
     const setMedia = wrapper.findAll('article')[1]!.find('[style]')
     expect(setMedia.attributes('style')).toContain('rgb(107, 114, 128)')
     expect(setMedia.find('svg').classes()).toContain('lucide-crown')
@@ -115,8 +110,6 @@ describe('QuickAccessPage', () => {
     expect(push.mock.calls).toEqual([
       ['/coin/1'],
       ['/sets/2'],
-      [{ path: '/auctions', query: { lot: '3' } }],
-      [{ path: '/calendar', query: { event: '4' } }],
     ])
   })
 

@@ -60,11 +60,32 @@ func (h *CoinReleasesHandler) Releases(c *gin.Context) {
 	}
 	queries := make([]services.CoinPhotoQuery, 0, len(coins))
 	for i := range coins {
-		query := officialPhotoQuery(&coins[i])
+		query := services.CoinPhotoQueryFor(&coins[i])
 		// Its Numista type as cached: no request to Numista for this list.
 		query.CachedTypesOnly = true
 		queries = append(queries, query)
 	}
 	h.releases.MarkOwned(c.Request.Context(), groups, queries, h.photos)
+	wishlist, err := h.coins.WishlistCoinsWithReferences(c.GetUint("userId"), models.CoinKindCoin)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list the coin releases"})
+		return
+	}
+	h.releases.MarkWishlist(c.Request.Context(), groups, wishlistQueries(wishlist, years), h.photos)
 	c.JSON(http.StatusOK, CoinReleasesResponse{Groups: groups})
+}
+
+// wishlistQueries describes the wishlist's coins (of these years, when
+// given) to find them among the releases, from the cache only.
+func wishlistQueries(coins []models.Coin, years map[int]bool) []services.CoinPhotoQuery {
+	queries := []services.CoinPhotoQuery{}
+	for i := range coins {
+		if years != nil && (coins[i].Year == nil || !years[*coins[i].Year]) {
+			continue
+		}
+		query := services.CoinPhotoQueryFor(&coins[i])
+		query.CachedTypesOnly = true
+		queries = append(queries, query)
+	}
+	return queries
 }

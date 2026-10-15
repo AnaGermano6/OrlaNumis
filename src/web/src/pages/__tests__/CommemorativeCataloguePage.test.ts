@@ -7,11 +7,16 @@ import type { CatalogueCountry, CoinRelease } from '@/api/client'
 const mocks = vi.hoisted(() => ({
   getCoinCatalogueCountries: vi.fn(),
   getCoinCatalogue: vi.fn(),
+  createSet: vi.fn(),
   replace: vi.fn(),
+  push: vi.fn(),
+  saveToWishlist: vi.fn(),
   route: { query: {} as Record<string, string> },
 }))
-vi.mock('@/api/client', () => ({ getCoinCatalogueCountries: mocks.getCoinCatalogueCountries, getCoinCatalogue: mocks.getCoinCatalogue }))
-vi.mock('vue-router', () => ({ useRoute: () => mocks.route, useRouter: () => ({ replace: mocks.replace }) }))
+vi.mock('@/api/client', () => ({ getCoinCatalogueCountries: mocks.getCoinCatalogueCountries, getCoinCatalogue: mocks.getCoinCatalogue, createSet: mocks.createSet }))
+vi.mock('vue-router', () => ({ useRoute: () => mocks.route, useRouter: () => ({ replace: mocks.replace, push: mocks.push }) }))
+vi.mock('@/composables/useReleaseWishlist', () => ({ useReleaseWishlist: () => ({ saveToWishlist: mocks.saveToWishlist }) }))
+vi.mock('@/composables/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }))
 
 function country(code: string, commemoratives: number, ownedCommemoratives: number, collector = 0, ownedCollector = 0, currency?: string): CatalogueCountry {
   return { country: code, currency, commemoratives, ownedCommemoratives, collector, ownedCollector }
@@ -25,7 +30,7 @@ function coin(fields: Partial<CoinRelease>): CoinRelease {
 const PORTUGAL = [
   coin({ source: 'incm', title: 'Rotary', from: '2026-07', to: '2026-07', owned: true }),
   coin({ title: 'World scouting', owned: true }),
-  coin({ title: 'Sustainable development', from: '2025-01', to: '2025-03' }),
+  coin({ title: 'Sustainable development', from: '2025-01', to: '2025-03', wishlist: true }),
   coin({ source: 'incm', title: 'Faróis', faceValue: 5, faceValues: [5, 10], from: '2025-11', to: '2025-11' }),
   coin({ source: 'numista', title: 'Mosteiro dos Jerónimos', faceValue: 10, imageUrl: '', from: '2004-01', to: '2004-12' }),
 ]
@@ -131,6 +136,63 @@ describe('CommemorativeCataloguePage', () => {
     expect(cards(wrapper)).toEqual(['Notre-Dame'])
     // One face value: no value filter.
     expect(wrapper.find('[data-testid="catalogue-value-all"]').exists()).toBe(false)
+  })
+
+  it("makes a set of the country's coins, of the face value chosen, and opens it", async () => {
+    mocks.createSet.mockResolvedValue({ data: { id: 31 } })
+    const wrapper = mount(CommemorativeCataloguePage)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="catalogue-create-set"]').trigger('click')
+    await flushPromises()
+    expect(mocks.createSet).toHaveBeenLastCalledWith(expect.objectContaining({
+      name: 'Portugal', setType: 'checklist', checklist: { source: 'catalogue', country: 'PT' },
+    }))
+    expect(mocks.push).toHaveBeenLastCalledWith({ name: 'set-detail', params: { id: 31 } })
+
+    await wrapper.get('[data-testid="catalogue-value-10"]').trigger('click')
+    await wrapper.get('[data-testid="catalogue-create-set"]').trigger('click')
+    await flushPromises()
+    expect(mocks.createSet).toHaveBeenLastCalledWith(expect.objectContaining({
+      // Intl puts a no-break space before the euro sign.
+      name: expect.stringMatching(/^Portugal · 10\s€$/), checklist: { source: 'catalogue', country: 'PT', faceValue: 10 },
+    }))
+
+    // The escudos: their currency goes with them.
+    await wrapper.get('[data-testid="catalogue-country-PT-PTE"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="catalogue-create-set"]').trigger('click')
+    await flushPromises()
+    expect(mocks.createSet).toHaveBeenLastCalledWith(expect.objectContaining({
+      name: 'Portugal · Escudos', checklist: { source: 'catalogue', country: 'PT', currency: 'PTE' },
+    }))
+
+    mocks.createSet.mockRejectedValue(new Error('offline'))
+    await wrapper.get('[data-testid="catalogue-create-set"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[role="alert"]').text()).toBe('Não foi possível criar o conjunto. Tente novamente.')
+  })
+
+  it('saves a coin the collection does not have to the wishlist', async () => {
+    mocks.saveToWishlist.mockResolvedValue('saved')
+    const wrapper = mount(CommemorativeCataloguePage)
+    await flushPromises()
+
+    const card = (title: string) => wrapper.findAll('[data-testid="release"]').find((node) => node.find('.line-clamp-3').text() === title)!
+    // Had: nothing to save. On the wishlist already: marked.
+    expect(card('Rotary').find('[data-testid="release-wishlist"]').exists()).toBe(false)
+    expect(card('Sustainable development').get('[data-testid="release-on-wishlist"]').text()).toBe('Na lista de desejos')
+    expect(card('Sustainable development').get('[data-testid="release-wishlist"]').attributes('disabled')).toBeDefined()
+    // No other button here: the wishlist's has its words.
+    const faróis = card('Faróis').get('[data-testid="release-wishlist"]')
+    expect(faróis.text()).toBe('Lista de desejos')
+    expect(faróis.attributes('aria-label')).toBe('Guardar na lista de desejos')
+    expect(card('Faróis').find('[data-testid="release-add"]').exists()).toBe(false)
+
+    await faróis.trigger('click')
+    await flushPromises()
+    expect(mocks.saveToWishlist).toHaveBeenCalledWith(expect.objectContaining({ title: 'Faróis' }))
+    expect(card('Faróis').get('[data-testid="release-wishlist"]').text()).toBe('Na lista de desejos')
   })
 
   it('says so when the catalogue cannot be loaded', async () => {

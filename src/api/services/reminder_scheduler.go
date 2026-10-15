@@ -7,8 +7,8 @@ import (
 	"github.com/briandenicola/ancient-coins-api/repository"
 )
 
-// ReminderScheduler runs a daily job that fires in-app (and best-effort Pushover)
-// notifications for purchase reminders whose remind_date has arrived.
+// ReminderScheduler runs a daily job that fires in-app notifications for
+// purchase reminders whose remind_date has arrived.
 type ReminderScheduler struct {
 	repo        *repository.PurchaseReminderRepository
 	notifSvc    *NotificationService

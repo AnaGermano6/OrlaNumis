@@ -33,25 +33,20 @@ describe('HelpSection', () => {
     }
   })
 
-  it('documents auction provider capability differences', () => {
-    const wrapper = mount(HelpSection)
-
-    expect(wrapper.text()).toContain('CNG Auctions supports richer hosted-auction sync')
-    expect(wrapper.text()).toContain('NumisBids supports watchlist/import tracking only today')
-    expect(wrapper.text()).toContain('manually update won/lost')
-  })
-
   it('documents current app help for stats, capture, notifications, and external tools', () => {
     const wrapper = mount(HelpSection)
     const text = wrapper.text()
 
     expect(text).toContain('Stats Views')
-    expect(text).toContain('Value snapshots, allocation, acquisition-year performance')
+    // The value details, investment breakdown and Notes pages, auction
+    // tracking, the calendar and shipments were removed.
+    for (const removed of ['Value Details', 'Investment Breakdown', 'Save to Notes', 'Calendar', 'Shipment', 'auction alerts']) {
+      expect(text).not.toContain(removed)
+    }
     expect(text).toContain('Quick Capture, Coin Lookup, and image upload flows start the camera only after you tap')
-    expect(text).toContain('The notification badge tracks unread social, auction, wishlist, set milestone')
+    expect(text).toContain('The notification badge tracks unread social, wishlist, set, and Coin of the Day activity')
     expect(text).toContain('Header Name: X-API-Key')
     expect(text).toContain('Owned coins show purchase dates in YYYY-MM-DD')
-    expect(text).toContain('Completed assistant answers can be reviewed as markdown')
     expect(text).toContain('Only approval creates the Agentic set')
   })
 
@@ -92,23 +87,17 @@ describe('HelpSection', () => {
     expect(text).not.toContain('Settings → Data → Import')
   })
 
-  it('sends users to the settings tab that actually holds auction credentials', () => {
+  it('has no Connections tab: its integrations were removed', () => {
     const text = mount(HelpSection).text()
     const settingsPage = readSource('pages/SettingsPage.vue')
-    const connections = readSource('components/settings/SettingsConnectionsSection.vue')
 
-    expect(settingsPage).toContain("connections: 'settings.tabs.connections'")
-    expect(en.settings.tabs.connections).toBe('Connections')
-    // The Account section renders the provider blocks only when it owns them, which it does
-    // not on the settings page — so the help must not point at Account for credentials.
-    expect(settingsPage).toContain(':show-connections="false"')
-    expect(connections).toContain("t('settings.connections.numisbids.title')")
-    expect(connections).toContain("t('settings.connections.cng.title')")
-    expect(connections).toContain("t('settings.connections.parcel.title')")
-    expect(en.settings.connections.numisbids.title).toBe('NumisBids Integration')
-    expect(en.settings.connections.cng.title).toBe('CNG Auctions Integration')
-    expect(en.settings.connections.parcel.title).toBe('ParcelApp Integration')
-    expect(text).toContain('credentials in Settings → Connections')
+    expect(settingsPage).not.toContain("'connections'")
+    expect(settingsPage).not.toContain('SettingsConnectionsSection')
+    expect('connections' in en.settings.tabs).toBe(false)
+    expect(text).not.toContain('Settings → Connections')
+    expect(text).not.toContain('NumisBids')
+    expect(text).not.toContain('ParcelApp')
+    expect(text).not.toContain('Pushover')
   })
 
   it('names entry points that exist in the sidebar', () => {
@@ -124,7 +113,7 @@ describe('HelpSection', () => {
     expect(app).not.toContain("to: '/quick-capture'")
     expect(text).toContain('Both intake flows live under Identify Coin')
 
-    for (const view of ['Time Machine', 'Analysis History', 'Notes', 'Calendar', 'Showcases']) {
+    for (const view of ['Time Machine', 'Analysis History', 'Showcases']) {
       expect(Object.values(en.nav)).toContain(view)
       expect(text).toContain(view)
     }

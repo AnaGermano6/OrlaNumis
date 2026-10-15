@@ -1,11 +1,14 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, RouterLinkStub } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CoinReleases from '../CoinReleases.vue'
 import { setLocale } from '@/i18n'
 import type { CoinRelease } from '@/api/client'
+import { releaseAddRoute } from '@/utils/releasePrefill'
 
-const mocks = vi.hoisted(() => ({ getCoinReleases: vi.fn() }))
+const mocks = vi.hoisted(() => ({ getCoinReleases: vi.fn(), saveToWishlist: vi.fn(), showToast: vi.fn() }))
 vi.mock('@/api/client', () => ({ getCoinReleases: mocks.getCoinReleases }))
+vi.mock('@/composables/useReleaseWishlist', () => ({ useReleaseWishlist: () => ({ saveToWishlist: mocks.saveToWishlist }) }))
+vi.mock('@/composables/useToast', () => ({ useToast: () => ({ showToast: mocks.showToast }) }))
 
 // Text with the non-breaking spaces of formatted numbers as plain spaces.
 function text(element: { text: () => string }): string {
@@ -37,7 +40,7 @@ describe('CoinReleases', () => {
   })
 
   it("shows the ECB's latest list, what is to come and what the collection has", async () => {
-    const wrapper = mount(CoinReleases)
+    const wrapper = mount(CoinReleases, { global: { stubs: { RouterLink: RouterLinkStub } } })
     await flushPromises()
 
     expect(wrapper.get('[data-testid="releases-tab-ecb"]').text()).toBe('2 € comemorativas 2025')
@@ -58,8 +61,47 @@ describe('CoinReleases', () => {
     expect(cards[0]!.get('a').attributes()).toMatchObject({ href: 'https://www.ecb.europa.eu/p', target: '_blank', rel: 'noopener noreferrer' })
   })
 
+  it('offers to add each coin to the collection, and to save it to the wishlist at once', async () => {
+    const wrapper = mount(CoinReleases, { global: { stubs: { RouterLink: RouterLinkStub } } })
+    await flushPromises()
+
+    const cards = wrapper.findAll('[data-testid="release"]')
+    // Still to come: the wishlist only, with its words.
+    expect(cards[0]!.find('[data-testid="release-add"]').exists()).toBe(false)
+    expect(cards[0]!.get('[data-testid="release-wishlist"]').text()).toBe('Lista de desejos')
+    expect(cards[0]!.get('[data-testid="release-wishlist"]').attributes('aria-label')).toBe('Guardar na lista de desejos')
+    // Had: to the collection again, not to the wishlist.
+    expect(cards[1]!.get('[data-testid="release-add"]').attributes('aria-label')).toBe('Adicionar à coleção')
+    expect(cards[1]!.getComponent(RouterLinkStub).props('to')).toEqual(releaseAddRoute(GROUPS[0]!.releases[1]! as CoinRelease))
+    expect(cards[1]!.find('[data-testid="release-wishlist"]').exists()).toBe(false)
+    // Neither: both, the wishlist as a heart.
+    expect(cards[2]!.find('[data-testid="release-add"]').exists()).toBe(true)
+    const heart = cards[2]!.get('[data-testid="release-wishlist"]')
+    expect(heart.text()).toBe('')
+    expect(heart.attributes('aria-label')).toBe('Guardar na lista de desejos')
+  })
+
+  it('saves a coin to the wishlist and marks it, or says it could not', async () => {
+    mocks.saveToWishlist.mockResolvedValueOnce('saved').mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(CoinReleases, { global: { stubs: { RouterLink: RouterLinkStub } } })
+    await flushPromises()
+
+    const card = () => wrapper.findAll('[data-testid="release"]')[2]!
+    await card().get('[data-testid="release-wishlist"]').trigger('click')
+    await flushPromises()
+    expect(mocks.saveToWishlist).toHaveBeenCalledWith(GROUPS[0]!.releases[2])
+    expect(mocks.showToast).toHaveBeenCalledWith('Guardada na lista de desejos: 35 years of the Erasmus programme', 'success')
+    expect(card().get('[data-testid="release-on-wishlist"]').text()).toBe('Na lista de desejos')
+    expect(card().get('[data-testid="release-wishlist"]').attributes()).toMatchObject({ disabled: '', 'aria-label': 'Na lista de desejos' })
+
+    await wrapper.findAll('[data-testid="release"]')[0]!.get('[data-testid="release-wishlist"]').trigger('click')
+    await flushPromises()
+    expect(mocks.showToast).toHaveBeenLastCalledWith('Não foi possível guardar na lista de desejos. Tente novamente.', 'error')
+    expect(wrapper.findAll('[data-testid="release"]')[0]!.find('[data-testid="release-on-wishlist"]').exists()).toBe(false)
+  })
+
   it("filters what is to come and what is missing, and shows the mints' list", async () => {
-    const wrapper = mount(CoinReleases)
+    const wrapper = mount(CoinReleases, { global: { stubs: { RouterLink: RouterLinkStub } } })
     await flushPromises()
 
     await wrapper.get('[data-testid="releases-filter-upcoming"]').trigger('click')
@@ -84,7 +126,7 @@ describe('CoinReleases', () => {
   })
 
   it('filters each list by country, and starts again with every country on another list', async () => {
-    const wrapper = mount(CoinReleases)
+    const wrapper = mount(CoinReleases, { global: { stubs: { RouterLink: RouterLinkStub } } })
     await flushPromises()
 
     const select = wrapper.get('[data-testid="releases-country"]')
@@ -107,7 +149,7 @@ describe('CoinReleases', () => {
 
   it('says so when the lists cannot be loaded', async () => {
     mocks.getCoinReleases.mockRejectedValue(new Error('offline'))
-    const wrapper = mount(CoinReleases)
+    const wrapper = mount(CoinReleases, { global: { stubs: { RouterLink: RouterLinkStub } } })
     await flushPromises()
     expect(wrapper.get('[role="alert"]').text()).toBe('Não foi possível carregar os lançamentos.')
   })

@@ -1,9 +1,6 @@
 package handlers
 
-import (
-	"github.com/briandenicola/ancient-coins-api/models"
-	"github.com/briandenicola/ancient-coins-api/repository"
-)
+import "github.com/briandenicola/ancient-coins-api/models"
 
 // Swagger response types for documentation
 
@@ -97,10 +94,6 @@ type CoinListResponse struct {
 	Limit int           `json:"limit" example:"50"`
 }
 
-type NoteListResponse struct {
-	Notes []models.Note `json:"notes"`
-}
-
 type WishlistSearchAlertCriteriaRequest struct {
 	RulerOrIssuer    string   `json:"rulerOrIssuer" example:"Domitian"`
 	CoinType         string   `json:"coinType" example:"Denarius"`
@@ -187,38 +180,12 @@ type WishlistSearchAlertCriteriaAdjustRequest struct {
 	Criteria     WishlistSearchAlertCriteriaRequest `json:"criteria"`
 }
 
-type ShipmentUpsertRequest struct {
-	Carrier           string `json:"carrier" example:"usps"`
-	TrackingNumber    string `json:"trackingNumber" example:"94001000"`
-	Notes             string `json:"notes" example:"Seller ships next business day"`
-	ManualCarrierName string `json:"manualCarrierName,omitempty" example:"DHL"`
-}
-
-type ShipmentManualOverrideRequest struct {
-	Enabled bool   `json:"enabled" example:"true"`
-	Status  string `json:"status" example:"out_for_delivery"`
-	Note    string `json:"note" example:"Carrier text confirmed by seller message"`
-}
-
-type ShipmentEnvelopeResponse struct {
-	Shipment    *models.Shipment `json:"shipment"`
-	TrackingURL string           `json:"trackingUrl" example:"https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=94001000"`
-}
-
 type StatsResponse struct {
 	TotalCoins    int64           `json:"totalCoins" example:"25"`
 	TotalWishlist int64           `json:"totalWishlist" example:"5"`
 	ByCategory    []CategoryCount `json:"byCategory"`
 	ByMaterial    []MaterialCount `json:"byMaterial"`
 	Values        ValueSummary    `json:"values"`
-}
-
-type InvestmentBreakdownResponse struct {
-	Dimension       string                                  `json:"dimension" example:"purchase-year"`
-	Segments        []repository.InvestmentBreakdownSegment `json:"segments"`
-	TopIncreases    []repository.InvestmentMovementCoin     `json:"topIncreases"`
-	TopDrops        []repository.InvestmentMovementCoin     `json:"topDrops"`
-	StaleValuations []repository.StaleValuationCoin         `json:"staleValuations"`
 }
 
 type CategoryCount struct {

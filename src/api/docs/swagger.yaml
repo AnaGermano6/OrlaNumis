@@ -96,15 +96,6 @@ definitions:
           $ref: '#/definitions/handlers.CoinSuggestion'
         type: array
     type: object
-  handlers.AuctionLotListResponse:
-    properties:
-      lots:
-        items:
-          $ref: '#/definitions/models.AuctionLot'
-        type: array
-      total:
-        type: integer
-    type: object
   handlers.AuthResponse:
     properties:
       refreshToken:
@@ -145,17 +136,6 @@ definitions:
     required:
     - action
     - coinIds
-    type: object
-  handlers.BulkLinkEventRequest:
-    properties:
-      eventId:
-        type: integer
-      lotIds:
-        items:
-          type: integer
-        type: array
-    required:
-    - lotIds
     type: object
   handlers.CandidateReferenceDTORef:
     properties:
@@ -965,11 +945,6 @@ definitions:
       updatedAt:
         type: string
     type: object
-  handlers.ConvertToCoinRequest:
-    properties:
-      shipment:
-        $ref: '#/definitions/handlers.ShipmentAttachRequest'
-    type: object
   handlers.DailyCoinResponse:
     properties:
       coin:
@@ -1057,33 +1032,6 @@ definitions:
       message:
         example: Image deleted
         type: string
-    type: object
-  handlers.ImportLotRequest:
-    properties:
-      auctionHouse:
-        type: string
-      category:
-        type: string
-      currency:
-        type: string
-      currentBid:
-        type: number
-      description:
-        type: string
-      estimate:
-        type: number
-      imageUrl:
-        type: string
-      saleName:
-        type: string
-      source:
-        type: string
-      title:
-        type: string
-      url:
-        type: string
-    required:
-    - url
     type: object
   handlers.ImportResponse:
     properties:
@@ -1177,26 +1125,11 @@ definitions:
         example: Trajan
         type: string
     type: object
-  handlers.InvestmentBreakdownResponse:
+  handlers.JointIssuesResponse:
     properties:
-      dimension:
-        example: purchase-year
-        type: string
-      segments:
+      issues:
         items:
-          $ref: '#/definitions/repository.InvestmentBreakdownSegment'
-        type: array
-      staleValuations:
-        items:
-          $ref: '#/definitions/repository.StaleValuationCoin'
-        type: array
-      topDrops:
-        items:
-          $ref: '#/definitions/repository.InvestmentMovementCoin'
-        type: array
-      topIncreases:
-        items:
-          $ref: '#/definitions/repository.InvestmentMovementCoin'
+          $ref: '#/definitions/services.JointIssue'
         type: array
     type: object
   handlers.LegacyNumistaSearchResponseSwagger:
@@ -1207,11 +1140,6 @@ definitions:
         items:
           $ref: '#/definitions/models.LegacyNumistaType'
         type: array
-    type: object
-  handlers.LinkEventRequest:
-    properties:
-      eventId:
-        type: integer
     type: object
   handlers.LocationReferencedErrorResponse:
     properties:
@@ -1404,13 +1332,6 @@ definitions:
         type: string
     required:
     - query
-    type: object
-  handlers.NoteListResponse:
-    properties:
-      notes:
-        items:
-          $ref: '#/definitions/models.Note'
-        type: array
     type: object
   handlers.NumistaCandidateSwagger:
     properties:
@@ -1655,8 +1576,6 @@ definitions:
         type: string
       purchasePrice:
         type: number
-      shipment:
-        $ref: '#/definitions/handlers.ShipmentAttachRequest'
     type: object
   handlers.ResetPasswordRequest:
     properties:
@@ -1675,6 +1594,15 @@ definitions:
         type: string
     required:
     - query
+    type: object
+  handlers.SetChecklistResponse:
+    properties:
+      complete:
+        type: boolean
+      slots:
+        items:
+          $ref: '#/definitions/services.ChecklistSlot'
+        type: array
     type: object
   handlers.SettingInput:
     properties:
@@ -1696,52 +1624,6 @@ definitions:
       needsSetup:
         example: false
         type: boolean
-    type: object
-  handlers.ShipmentAttachRequest:
-    properties:
-      carrier:
-        type: string
-      manualCarrierName:
-        type: string
-      notes:
-        type: string
-      trackingNumber:
-        type: string
-    type: object
-  handlers.ShipmentEnvelopeResponse:
-    properties:
-      shipment:
-        $ref: '#/definitions/models.Shipment'
-      trackingUrl:
-        example: https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=94001000
-        type: string
-    type: object
-  handlers.ShipmentManualOverrideRequest:
-    properties:
-      enabled:
-        example: true
-        type: boolean
-      note:
-        example: Carrier text confirmed by seller message
-        type: string
-      status:
-        example: out_for_delivery
-        type: string
-    type: object
-  handlers.ShipmentUpsertRequest:
-    properties:
-      carrier:
-        example: usps
-        type: string
-      manualCarrierName:
-        example: DHL
-        type: string
-      notes:
-        example: Seller ships next business day
-        type: string
-      trackingNumber:
-        example: "94001000"
-        type: string
     type: object
   handlers.SlotOccupiedErrorResponse:
     properties:
@@ -1838,20 +1720,6 @@ definitions:
       sortOrder:
         type: integer
     type: object
-  handlers.SyncWatchlistRequest:
-    properties:
-      source:
-        type: string
-    type: object
-  handlers.SyncWatchlistResponse:
-    properties:
-      lots:
-        items:
-          $ref: '#/definitions/models.AuctionLot'
-        type: array
-      synced:
-        type: integer
-    type: object
   handlers.TopCoinsByValueRequest:
     properties:
       limit:
@@ -1866,53 +1734,6 @@ definitions:
         type: string
       text:
         type: string
-    type: object
-  handlers.UpdateLotRequest:
-    description: Updates an existing auction lot.
-    properties:
-      auctionEndTime:
-        type: string
-      auctionHouse:
-        type: string
-      category:
-        type: string
-      currency:
-        type: string
-      currentBid:
-        type: number
-      description:
-        type: string
-      estimate:
-        type: number
-      initialBid:
-        type: number
-      lotNumber:
-        type: integer
-      maxBid:
-        type: number
-      notes:
-        type: string
-      numisBidsUrl:
-        type: string
-      saleDate:
-        type: string
-      saleName:
-        type: string
-      title:
-        type: string
-      winningBid:
-        type: number
-    type: object
-  handlers.UpdateStatusRequest:
-    properties:
-      maxBid:
-        type: number
-      status:
-        type: string
-      winningBid:
-        type: number
-    required:
-    - status
     type: object
   handlers.UpdateUserRoleRequest:
     properties:
@@ -1953,18 +1774,6 @@ definitions:
       username:
         example: admin
         type: string
-    type: object
-  handlers.ValidateNumisBidsRequest:
-    properties:
-      password:
-        type: string
-      source:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
     type: object
   handlers.ValidationErrorResponse:
     properties:
@@ -2635,13 +2444,6 @@ definitions:
       status:
         $ref: '#/definitions/services.NomismaSearchStatus'
     type: object
-  handlers.noteRequest:
-    properties:
-      body:
-        type: string
-      title:
-        type: string
-    type: object
   handlers.oidcAdminProviderListResponse:
     properties:
       providers:
@@ -3019,172 +2821,6 @@ definitions:
       userId:
         type: integer
     type: object
-  models.AuctionEndingRun:
-    properties:
-      alertsSent:
-        type: integer
-      completedAt:
-        type: string
-      createdAt:
-        type: string
-      durationMs:
-        type: integer
-      errorMessage:
-        type: string
-      id:
-        type: integer
-      lotsChecked:
-        type: integer
-      startedAt:
-        type: string
-      status:
-        type: string
-      triggerType:
-        type: string
-      triggerUserId:
-        type: integer
-    type: object
-  models.AuctionEvent:
-    properties:
-      auctionHouse:
-        type: string
-      createdAt:
-        type: string
-      endDate:
-        type: string
-      id:
-        type: integer
-      notes:
-        type: string
-      origin:
-        $ref: '#/definitions/models.AuctionEventOrigin'
-      startDate:
-        type: string
-      title:
-        type: string
-      updatedAt:
-        type: string
-      url:
-        type: string
-      userId:
-        type: integer
-    type: object
-  models.AuctionEventOrigin:
-    enum:
-    - manual
-    - auction
-    type: string
-    x-enum-varnames:
-    - AuctionEventOriginManual
-    - AuctionEventOriginAuction
-  models.AuctionLot:
-    properties:
-      auctionEndTime:
-        type: string
-      auctionHouse:
-        type: string
-      category:
-        $ref: '#/definitions/models.Category'
-      coin:
-        $ref: '#/definitions/models.Coin'
-      coinId:
-        type: integer
-      createdAt:
-        type: string
-      currency:
-        type: string
-      currentBid:
-        type: number
-      description:
-        type: string
-      estimate:
-        type: number
-      event:
-        $ref: '#/definitions/models.AuctionEvent'
-      eventId:
-        type: integer
-      id:
-        type: integer
-      imageUrl:
-        type: string
-      initialBid:
-        type: number
-      isOutbid:
-        description: |-
-          IsOutbid reports whether someone else holds the winning bid on a lot this user is
-          bidding on. Set from the provider's own winning-bidder identity, never from a
-          maxBid/currentBid comparison; see outbidByProvider (specs/_backlog/F034).
-        type: boolean
-      lotNumber:
-        type: integer
-      maxBid:
-        type: number
-      notes:
-        type: string
-      numisBidsUrl:
-        type: string
-      saleDate:
-        type: string
-      saleId:
-        type: string
-      saleName:
-        type: string
-      source:
-        $ref: '#/definitions/models.AuctionSource'
-      sourceLotId:
-        type: string
-      sourceSaleId:
-        type: string
-      sourceUrl:
-        type: string
-      status:
-        $ref: '#/definitions/models.AuctionLotStatus'
-      statusSource:
-        allOf:
-        - $ref: '#/definitions/models.AuctionLotStatusSource'
-        description: |-
-          StatusSource records whether the current Status was set by watchlist sync
-          auto-detecting a provider-reported outcome, or by an explicit manual override.
-          Only meaningful once Status is won/lost; see specs/_backlog/F024.
-      title:
-        type: string
-      updatedAt:
-        type: string
-      userId:
-        type: integer
-      winningBid:
-        type: number
-    type: object
-  models.AuctionLotStatus:
-    enum:
-    - watching
-    - bidding
-    - won
-    - lost
-    - passed
-    type: string
-    x-enum-varnames:
-    - AuctionStatusWatching
-    - AuctionStatusBidding
-    - AuctionStatusWon
-    - AuctionStatusLost
-    - AuctionStatusPassed
-  models.AuctionLotStatusSource:
-    enum:
-    - sync
-    - manual
-    type: string
-    x-enum-varnames:
-    - AuctionLotStatusSourceSync
-    - AuctionLotStatusSourceManual
-  models.AuctionSource:
-    enum:
-    - numisbids
-    - cng
-    type: string
-    x-enum-varnames:
-    - AuctionSourceNumisBids
-    - AuctionSourceCNG
   models.CandidateProvenance:
     properties:
       candidateId:
@@ -3679,6 +3315,10 @@ definitions:
         type: string
       agenticStatus:
         type: string
+      checklist:
+        allOf:
+        - $ref: '#/definitions/models.JSONObject'
+        description: Checklist defines a checklist set's slots (see services.ChecklistDefinition).
       color:
         type: string
       createdAt:
@@ -3726,6 +3366,7 @@ definitions:
     - smart
     - goal
     - agentic
+    - checklist
     - standard
     - goal
     - agentic
@@ -3735,6 +3376,7 @@ definitions:
     - CoinSetTypeSmart
     - CoinSetTypeGoal
     - CoinSetTypeAgentic
+    - CoinSetTypeChecklist
     - CoinSetTypeOpen
     - CoinSetTypeDefined
     - CoinSetTypeTracker
@@ -3984,21 +3626,6 @@ definitions:
           "not linked".
         type: string
       region:
-        type: string
-      updatedAt:
-        type: string
-      userId:
-        type: integer
-    type: object
-  models.Note:
-    properties:
-      body:
-        type: string
-      createdAt:
-        type: string
-      id:
-        type: integer
-      title:
         type: string
       updatedAt:
         type: string
@@ -4583,14 +4210,10 @@ definitions:
     enum:
     - coin
     - coin_set
-    - auction_lot
-    - calendar_event
     type: string
     x-enum-varnames:
     - QuickAccessTargetCoin
     - QuickAccessTargetCoinSet
-    - QuickAccessTargetAuctionLot
-    - QuickAccessTargetCalendarEvent
   models.QuickCaptureDraft:
     properties:
       acquisitionSource:
@@ -4872,120 +4495,6 @@ definitions:
     - SetProposalStatusRejected
     - SetProposalStatusExpired
     - SetProposalStatusCreationFailed
-  models.Shipment:
-    properties:
-      carrier:
-        $ref: '#/definitions/models.ShipmentCarrier'
-      coinId:
-        type: integer
-      createdAt:
-        type: string
-      currentStatus:
-        $ref: '#/definitions/models.ShipmentStatus'
-      currentStatusSource:
-        $ref: '#/definitions/models.ShipmentStatusSource'
-      deliveredAt:
-        type: string
-      estimatedDeliveryAt:
-        type: string
-      events:
-        items:
-          $ref: '#/definitions/models.ShipmentEvent'
-        type: array
-      id:
-        type: integer
-      lastSyncError:
-        type: string
-      lastSyncedAt:
-        type: string
-      manualCarrierName:
-        type: string
-      manualOverrideEnabled:
-        type: boolean
-      manualOverrideNote:
-        type: string
-      manualOverrideStatus:
-        $ref: '#/definitions/models.ShipmentStatus'
-      manualOverrideUpdatedAt:
-        type: string
-      notes:
-        type: string
-      trackingNumber:
-        type: string
-      updatedAt:
-        type: string
-      userId:
-        type: integer
-    type: object
-  models.ShipmentCarrier:
-    enum:
-    - usps
-    - ups
-    - fedex
-    - parcel
-    - other
-    type: string
-    x-enum-varnames:
-    - ShipmentCarrierUSPS
-    - ShipmentCarrierUPS
-    - ShipmentCarrierFedEx
-    - ShipmentCarrierParcel
-    - ShipmentCarrierOther
-  models.ShipmentEvent:
-    properties:
-      createdAt:
-        type: string
-      description:
-        type: string
-      eventKey:
-        type: string
-      id:
-        type: integer
-      location:
-        type: string
-      occurredAt:
-        type: string
-      rawPayload:
-        type: string
-      rawStatus:
-        type: string
-      shipmentId:
-        type: integer
-      status:
-        $ref: '#/definitions/models.ShipmentStatus'
-      statusSource:
-        $ref: '#/definitions/models.ShipmentStatusSource'
-      userId:
-        type: integer
-    type: object
-  models.ShipmentStatus:
-    enum:
-    - pending
-    - label_created
-    - in_transit
-    - out_for_delivery
-    - delivered
-    - exception
-    - returned
-    - unknown
-    type: string
-    x-enum-varnames:
-    - ShipmentStatusPending
-    - ShipmentStatusLabelCreated
-    - ShipmentStatusInTransit
-    - ShipmentStatusOutForDelivery
-    - ShipmentStatusDelivered
-    - ShipmentStatusException
-    - ShipmentStatusReturned
-    - ShipmentStatusUnknown
-  models.ShipmentStatusSource:
-    enum:
-    - manual
-    - carrier_api
-    type: string
-    x-enum-varnames:
-    - ShipmentStatusSourceManual
-    - ShipmentStatusSourceAPI
   models.StorageLocation:
     properties:
       capacity:
@@ -5050,21 +4559,6 @@ definitions:
     x-enum-varnames:
     - RoleAdmin
     - RoleUser
-  models.ValueSnapshot:
-    properties:
-      coinCount:
-        type: integer
-      id:
-        type: integer
-      recordedAt:
-        type: string
-      totalInvested:
-        type: number
-      totalValue:
-        type: number
-      userId:
-        type: integer
-    type: object
   models.WebAuthnCredential:
     properties:
       attestationType:
@@ -5196,55 +4690,6 @@ definitions:
       era:
         type: string
     type: object
-  repository.InvestmentBreakdownSegment:
-    properties:
-      coinCount:
-        type: integer
-      currentValue:
-        type: number
-      gainLoss:
-        type: number
-      gainLossPct:
-        type: number
-      invested:
-        type: number
-      label:
-        type: string
-      missingCurrentValueCount:
-        type: integer
-      missingPurchasePriceCount:
-        type: integer
-      month:
-        type: integer
-      year:
-        type: integer
-    type: object
-  repository.InvestmentMovementCoin:
-    properties:
-      changeAmount:
-        type: number
-      changeExplanation:
-        type: string
-      changePct:
-        type: number
-      coinId:
-        type: integer
-      currentValue:
-        type: number
-      initialValue:
-        type: number
-      name:
-        type: string
-    type: object
-  repository.StaleValuationCoin:
-    properties:
-      coinId:
-        type: integer
-      lastValuationAt:
-        type: string
-      name:
-        type: string
-    type: object
   repository.TrayAggregate:
     properties:
       capacity:
@@ -5346,38 +4791,6 @@ definitions:
           $ref: '#/definitions/services.MissingFieldStat'
         type: array
     type: object
-  services.BidRecommendation:
-    properties:
-      confidence:
-        $ref: '#/definitions/services.BidRecommendationConfidence'
-      rationale:
-        type: string
-      sampleSize:
-        type: integer
-      suggestedMaxBid:
-        type: number
-    type: object
-  services.BidRecommendationConfidence:
-    enum:
-    - insufficient_data
-    - low
-    - medium
-    - high
-    type: string
-    x-enum-varnames:
-    - ConfidenceInsufficientData
-    - ConfidenceLow
-    - ConfidenceMedium
-    - ConfidenceHigh
-  services.BidReminderCreateRequest:
-    properties:
-      auctionLotId:
-        type: integer
-      minutesBefore:
-        type: integer
-    required:
-    - auctionLotId
-    type: object
   services.BreakdownEntry:
     properties:
       count:
@@ -5386,15 +4799,6 @@ definitions:
         type: string
       value:
         type: number
-    type: object
-  services.BulkEventLinkResult:
-    properties:
-      failures:
-        items:
-          $ref: '#/definitions/services.EventLinkFailure'
-        type: array
-      updated:
-        type: integer
     type: object
   services.CancelCollectionProposalResult:
     properties:
@@ -5444,6 +4848,45 @@ definitions:
     - ChecklistSeverityHigh
     - ChecklistSeverityMedium
     - ChecklistSeverityLow
+  services.ChecklistSlot:
+    properties:
+      coinId:
+        description: The collection's coin filling the slot.
+        type: integer
+      coinImage:
+        type: string
+      coinName:
+        type: string
+      coinValue:
+        description: CoinValue is the current value of the coin filling the slot.
+        type: number
+      country:
+        type: string
+      currency:
+        type: string
+      faceValue:
+        type: number
+      faceValues:
+        items:
+          type: number
+        type: array
+      imageUrl:
+        description: ImageURL and PageURL show the coin as its source does.
+        type: string
+      key:
+        type: string
+      owned:
+        type: boolean
+      pageUrl:
+        type: string
+      title:
+        description: |-
+          Title names the coin; a challenge's country slots leave it empty (the
+          country says it).
+        type: string
+      year:
+        type: integer
+    type: object
   services.CoinCopilotCapability:
     properties:
       enabled:
@@ -5577,6 +5020,9 @@ definitions:
       volume:
         description: Volume is how many are struck, when the source says.
         type: integer
+      wishlist:
+        description: Wishlist is true when a coin of the wishlist is this one.
+        type: boolean
     type: object
   services.CoinReleaseGroup:
     properties:
@@ -5739,15 +5185,6 @@ definitions:
       usurpers:
         $ref: '#/definitions/services.CategoryProgress'
     type: object
-  services.EventLinkFailure:
-    properties:
-      code:
-        type: string
-      error:
-        type: string
-      lotId:
-        type: integer
-    type: object
   services.ExchangeRate:
     properties:
       date:
@@ -5845,35 +5282,31 @@ definitions:
       highlightedCoinId:
         type: integer
     type: object
-  services.MarketSignal:
+  services.JointIssue:
     properties:
-      currency:
-        type: string
-      priceHigh:
-        type: number
-      priceLow:
-        type: number
-      rationale:
-        type: string
-      sampleSize:
-        type: integer
-      sources:
+      coins:
         items:
-          type: string
+          $ref: '#/definitions/services.JointIssueCoin'
         type: array
-      status:
-        $ref: '#/definitions/services.MarketSignalStatus'
-      trendDirection:
+      pageUrl:
+        type: string
+      title:
+        description: Title is the ECB's feature, in English.
+        example: 50th anniversary of the Treaty of Rome
+        type: string
+      year:
+        example: 2007
+        type: integer
+    type: object
+  services.JointIssueCoin:
+    properties:
+      country:
+        description: Country is an ISO code.
+        example: PT
+        type: string
+      imageUrl:
         type: string
     type: object
-  services.MarketSignalStatus:
-    enum:
-    - unavailable
-    - ok
-    type: string
-    x-enum-varnames:
-    - MarketSignalUnavailable
-    - MarketSignalOK
   services.MissingChecklistItem:
     properties:
       actionHint:
@@ -6060,44 +5493,6 @@ definitions:
       expiresAt:
         type: string
     type: object
-  services.PriceAlertCreateRequest:
-    properties:
-      auctionLotId:
-        type: integer
-      direction:
-        type: string
-      targetPrice:
-        type: number
-    required:
-    - auctionLotId
-    - targetPrice
-    type: object
-  services.QuickAccessAuctionLotDTO:
-    properties:
-      auctionEndTime:
-        type: string
-      auctionHouse:
-        type: string
-      imageUrl:
-        type: string
-      saleDate:
-        type: string
-      status:
-        $ref: '#/definitions/models.AuctionLotStatus'
-      title:
-        type: string
-    type: object
-  services.QuickAccessCalendarEventDTO:
-    properties:
-      auctionHouse:
-        type: string
-      endDate:
-        type: string
-      startDate:
-        type: string
-      title:
-        type: string
-    type: object
   services.QuickAccessCoinDTO:
     properties:
       classification:
@@ -6120,10 +5515,6 @@ definitions:
     type: object
   services.QuickAccessItemDTO:
     properties:
-      auctionLot:
-        $ref: '#/definitions/services.QuickAccessAuctionLotDTO'
-      calendarEvent:
-        $ref: '#/definitions/services.QuickAccessCalendarEventDTO'
       coin:
         $ref: '#/definitions/services.QuickAccessCoinDTO'
       coinSet:
@@ -6310,8 +5701,7 @@ definitions:
 info:
   contact: {}
   description: REST API for managing a personal coin collection. Supports coin CRUD,
-    image uploads, AI-powered analysis, user management, auction tracking, and admin
-    features.
+    image uploads, AI-powered analysis, user management, and admin features.
   title: Aurearia API
   version: 4.3.0
 paths:
@@ -6342,324 +5732,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Create API key rotation notifications
-      tags:
-      - Admin
-  /admin/auction-alert-runs:
-    get:
-      description: Returns paginated history of price alert and bid reminder scheduler
-        runs.
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 20
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: List auction alert runs
-      tags:
-      - Admin
-  /admin/auction-alerts/run:
-    post:
-      description: Refreshes watched auction lots and evaluates price alerts and bid
-        reminders.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Trigger manual auction alert check
-      tags:
-      - Admin
-  /admin/auction-alerts/status:
-    get:
-      description: Returns runtime status for the auction alert scheduler.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/services.SchedulerStatus'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get auction alert scheduler status
-      tags:
-      - Admin
-  /admin/auction-ending-runs:
-    get:
-      description: Returns paginated history of auction ending check runs.
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 20
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: List auction ending runs
-      tags:
-      - Admin
-  /admin/auction-ending-runs/{id}:
-    get:
-      description: Returns a single auction ending run by ID.
-      parameters:
-      - description: Run ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.AuctionEndingRun'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get auction ending run
-      tags:
-      - Admin
-  /admin/auction-ending/debug:
-    get:
-      description: 'Returns diagnostic info: current time, next 24h window, total
-        lots, lots by status, lots matching the scheduler query, and all BIDDING lots
-        with all their date fields populated'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Debug auction ending scheduler
-      tags:
-      - Admin
-  /admin/auction-ending/run:
-    post:
-      description: Enqueues an auction ending check for all users and returns 202
-        Accepted with the queued run ID. Poll /admin/auction-ending-runs/{id} until
-        status is terminal (success or error).
-      produces:
-      - application/json
-      responses:
-        "202":
-          description: Accepted
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Trigger manual auction ending check
-      tags:
-      - Admin
-  /admin/auction-watch-bid-digest-runs:
-    get:
-      description: Returns paginated history of auction watch bid digest runs.
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: List auction watch bid digest runs
-      tags:
-      - Admin
-  /admin/auction-watch-bid-digest/run:
-    post:
-      description: Refreshes watched auction lots and sends current-bid digest notifications.
-      produces:
-      - application/json
-      responses:
-        "202":
-          description: Accepted
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Trigger manual auction watch bid digest
-      tags:
-      - Admin
-  /admin/auction-watch-bid-digest/status:
-    get:
-      description: Returns runtime status for the auction watch bid digest scheduler.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/services.SchedulerStatus'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get auction watch bid digest scheduler status
       tags:
       - Admin
   /admin/availability-cycles:
@@ -9092,572 +8164,6 @@ paths:
       summary: Check AI provider status
       tags:
       - Analysis
-  /alerts:
-    get:
-      description: Returns price alerts owned by the authenticated user.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: List price alerts
-      tags:
-      - Alerts
-    post:
-      consumes:
-      - application/json
-      description: Creates a one-shot price alert for an auction lot watched by the
-        authenticated user.
-      parameters:
-      - description: Request payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/services.PriceAlertCreateRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Create price alert
-      tags:
-      - Alerts
-  /alerts/{id}:
-    delete:
-      description: Deletes a price alert owned by the authenticated user.
-      parameters:
-      - description: Alert ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete price alert
-      tags:
-      - Alerts
-  /auctions:
-    get:
-      description: Returns a paginated list of auction lots belonging to the authenticated
-        user.
-      parameters:
-      - description: Filter by status (watching, bidding, won, lost, passed)
-        in: query
-        name: status
-        type: string
-      - description: Filter by auction source (numisbids, cng)
-        in: query
-        name: source
-        type: string
-      - description: Search across title, description, auction house
-        in: query
-        name: search
-        type: string
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 50
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      - default: updated_at
-        description: Sort field
-        in: query
-        name: sort
-        type: string
-      - default: desc
-        description: Sort order
-        in: query
-        name: order
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.AuctionLotListResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: List auction lots
-      tags:
-      - Auctions
-    post:
-      consumes:
-      - application/json
-      description: Creates a new auction lot for tracking.
-      parameters:
-      - description: Auction lot data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/models.AuctionLot'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.AuctionLot'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Create auction lot
-      tags:
-      - Auctions
-  /auctions/{id}:
-    delete:
-      description: Removes an auction lot from tracking.
-      parameters:
-      - description: Auction lot ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "204":
-          description: No Content
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete auction lot
-      tags:
-      - Auctions
-    get:
-      description: Returns a single auction lot by ID.
-      parameters:
-      - description: Auction lot ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.AuctionLot'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get auction lot
-      tags:
-      - Auctions
-    put:
-      consumes:
-      - application/json
-      description: Updates editable fields on an auction lot owned by the authenticated
-        user.
-      parameters:
-      - description: Auction lot ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Updated lot data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.UpdateLotRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.AuctionLot'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Update auction lot
-      tags:
-      - Auctions
-  /auctions/{id}/bid-recommendation:
-    get:
-      description: Suggests a maximum bid for a lot based on the user's own won/lost
-        auction history in the same category. This is an aid only — the app does not
-        place bids.
-      parameters:
-      - description: Auction lot ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/services.BidRecommendation'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Suggest a maximum bid
-      tags:
-      - Auctions
-  /auctions/{id}/convert:
-    post:
-      consumes:
-      - application/json
-      description: Creates an owned Coin from a won auction lot.
-      parameters:
-      - description: Auction lot ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Optional shipment attachment
-        in: body
-        name: body
-        schema:
-          $ref: '#/definitions/handlers.ConvertToCoinRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.Coin'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Convert won lot to coin
-      tags:
-      - Auctions
-  /auctions/{id}/event:
-    put:
-      consumes:
-      - application/json
-      description: Sets or clears the calendar event association for an auction lot.
-      parameters:
-      - description: Auction lot ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Event ID (null to unlink)
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.LinkEventRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.AuctionLot'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Link lot to calendar event
-      tags:
-      - Auctions
-  /auctions/{id}/market-signal:
-    post:
-      description: 'Searches live auction results for coins comparable to this lot
-        and returns a structured trend signal (rising/stable/declining, price range,
-        rationale). Best-effort: degrades to status "unavailable" rather than erroring
-        if the AI provider isn''t configured or the search fails.'
-      parameters:
-      - description: Auction lot ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/services.MarketSignal'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get current market trend signal for a lot
-      tags:
-      - Auctions
-  /auctions/{id}/status:
-    put:
-      consumes:
-      - application/json
-      description: Transitions an auction lot to a new status.
-      parameters:
-      - description: Auction lot ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: New status
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.UpdateStatusRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.AuctionLot'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Update auction lot status
-      tags:
-      - Auctions
-  /auctions/bulk-link-event:
-    put:
-      consumes:
-      - application/json
-      description: 'Partial success: commits each distinct owned lot independently;
-        returns confirmed updated count and per-lot failures.'
-      parameters:
-      - description: Lot IDs and event ID
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.BulkLinkEventRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/services.BulkEventLinkResult'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Bulk link lots to calendar event
-      tags:
-      - Auctions
-  /auctions/counts:
-    get:
-      description: Returns a map of status → count for the authenticated user, optionally
-        scoped to one auction source.
-      parameters:
-      - description: Filter by auction source (numisbids, cng)
-        in: query
-        name: source
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              format: int64
-              type: integer
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get auction lot counts by status
-      tags:
-      - Auctions
-  /auctions/import:
-    post:
-      consumes:
-      - application/json
-      description: Scrapes a NumisBids lot page and creates an auction lot entry.
-      parameters:
-      - description: NumisBids lot URL
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.ImportLotRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.AuctionLot'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Import lot from NumisBids URL
-      tags:
-      - Auctions
-  /auctions/sync:
-    post:
-      description: Logs into NumisBids or CNG with the user's stored credentials,
-        fetches the selected watchlist, and upserts each lot. Defaults to NumisBids
-        when source is omitted.
-      parameters:
-      - description: Auction source (numisbids, cng)
-        in: query
-        name: source
-        type: string
-      - description: Auction source request
-        in: body
-        name: body
-        schema:
-          $ref: '#/definitions/handlers.SyncWatchlistRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.SyncWatchlistResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Sync auction watchlist
-      tags:
-      - Auctions
-  /auctions/validate-credentials:
-    post:
-      consumes:
-      - application/json
-      description: Attempts to log in to NumisBids or CNG with the provided credentials.
-        Defaults to NumisBids when source is omitted.
-      parameters:
-      - description: Auction provider credentials
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.ValidateNumisBidsRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: boolean
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Validate auction provider credentials
-      tags:
-      - Auctions
   /auth/api-keys:
     get:
       description: Returns all API keys for the authenticated user. Key values are
@@ -10361,185 +8867,6 @@ paths:
       summary: Finish WebAuthn registration
       tags:
       - WebAuthn
-  /calendar:
-    get:
-      description: Returns auction lots and calendar events in a date range.
-      parameters:
-      - description: Start date YYYY-MM-DD
-        in: query
-        name: start
-        type: string
-      - description: End date YYYY-MM-DD
-        in: query
-        name: end
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get calendar
-      tags:
-      - Calendar
-  /calendar/events:
-    get:
-      description: Returns calendar events owned by the authenticated user.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: List calendar events
-      tags:
-      - Calendar
-    post:
-      consumes:
-      - application/json
-      description: Creates a calendar event for the authenticated user.
-      parameters:
-      - description: Request payload
-        in: body
-        name: body
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Create calendar event
-      tags:
-      - Calendar
-  /calendar/events/{id}:
-    delete:
-      description: Deletes a calendar event owned by the authenticated user.
-      parameters:
-      - description: Event ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete calendar event
-      tags:
-      - Calendar
-    get:
-      description: Returns a calendar event and linked auction lots.
-      parameters:
-      - description: Event ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get calendar event
-      tags:
-      - Calendar
-    put:
-      consumes:
-      - application/json
-      description: Updates a calendar event owned by the authenticated user.
-      parameters:
-      - description: Event ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Request payload
-        in: body
-        name: body
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Update calendar event
-      tags:
-      - Calendar
   /catalogs:
     get:
       description: Returns all catalog registry entries.
@@ -10632,6 +8959,27 @@ paths:
       security:
       - BearerAuth: []
       summary: Countries of the coin catalogue
+      tags:
+      - Coins
+  /coin-catalogue/joint-issues:
+    get:
+      description: The €2 coins the euro area's countries issued together (the Treaty
+        of Rome in 2007, the EU flag in 2015…), newest first, each with every country's
+        version.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.JointIssuesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Joint issues of the euro area
       tags:
       - Coins
   /coin-options:
@@ -12326,209 +10674,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Mark coin as sold
-      tags:
-      - Coins
-  /coins/{id}/shipment:
-    delete:
-      description: Deletes a shipment record attached to a coin owned by the authenticated
-        user.
-      parameters:
-      - description: Coin ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete coin shipment
-      tags:
-      - Coins
-    get:
-      description: Returns the shipment record and timeline for a coin owned by the
-        authenticated user.
-      parameters:
-      - description: Coin ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.ShipmentEnvelopeResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get coin shipment
-      tags:
-      - Coins
-    put:
-      consumes:
-      - application/json
-      description: Attaches or updates a shipment record (carrier, tracking, notes)
-        for a coin owned by the authenticated user.
-      parameters:
-      - description: Coin ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Shipment payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.ShipmentUpsertRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.ShipmentEnvelopeResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Create or update coin shipment
-      tags:
-      - Coins
-  /coins/{id}/shipment/manual-override:
-    put:
-      consumes:
-      - application/json
-      description: Enables/disables manual shipment status override for a coin shipment.
-      parameters:
-      - description: Coin ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Manual override payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.ShipmentManualOverrideRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.ShipmentEnvelopeResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Set shipment manual override
-      tags:
-      - Coins
-  /coins/{id}/shipment/sync:
-    post:
-      description: Fetches latest shipment status/events from the configured carrier
-        integration for the coin shipment.
-      parameters:
-      - description: Coin ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.ShipmentEnvelopeResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Sync coin shipment status
       tags:
       - Coins
   /coins/{id}/status:
@@ -14320,151 +12465,6 @@ paths:
       summary: Geocode a mint name
       tags:
       - Mint Locations
-  /notes:
-    get:
-      description: Returns all notes owned by the authenticated user.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.NoteListResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: List notes
-      tags:
-      - Notes
-    post:
-      consumes:
-      - application/json
-      description: Creates a Markdown-capable note for the authenticated user.
-      parameters:
-      - description: Note
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.noteRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.Note'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Create note
-      tags:
-      - Notes
-  /notes/{id}:
-    delete:
-      description: Deletes one note owned by the authenticated user.
-      parameters:
-      - description: Note ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete note
-      tags:
-      - Notes
-    get:
-      description: Returns one note owned by the authenticated user.
-      parameters:
-      - description: Note ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Note'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get note
-      tags:
-      - Notes
-    put:
-      consumes:
-      - application/json
-      description: Updates one note owned by the authenticated user.
-      parameters:
-      - description: Note ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Note
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.noteRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Note'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Update note
-      tags:
-      - Notes
   /notifications:
     get:
       description: Returns notifications for the current user, newest first.
@@ -14558,34 +12558,6 @@ paths:
       summary: Mark all notifications read
       tags:
       - Notifications
-  /notifications/test-pushover:
-    post:
-      description: Sends a test Pushover notification using the authenticated user's
-        saved Pushover configuration.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "502":
-          description: Bad Gateway
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Test Pushover notification
-      tags:
-      - User
   /notifications/unread-count:
     get:
       description: Returns the count of unread notifications.
@@ -15020,7 +12992,7 @@ paths:
       description: Idempotently removes one target from the authenticated user's Quick
         Access list.
       parameters:
-      - description: 'Target type: coin, coin_set, auction_lot, calendar_event'
+      - description: 'Target type: coin, coin_set'
         in: path
         name: type
         required: true
@@ -15054,7 +13026,7 @@ paths:
       description: Idempotently pins one eligible user-owned target while preserving
         its original pin time.
       parameters:
-      - description: 'Target type: coin, coin_set, auction_lot, calendar_event'
+      - description: 'Target type: coin, coin_set'
         in: path
         name: type
         required: true
@@ -15465,86 +13437,6 @@ paths:
       summary: Migrate legacy references
       tags:
       - Coin References
-  /reminders:
-    get:
-      description: Returns bid reminders owned by the authenticated user.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: List bid reminders
-      tags:
-      - Alerts
-    post:
-      consumes:
-      - application/json
-      description: Creates a one-shot bid reminder for an auction lot watched by the
-        authenticated user.
-      parameters:
-      - description: Request payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/services.BidReminderCreateRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Create bid reminder
-      tags:
-      - Alerts
-  /reminders/{id}:
-    delete:
-      description: Deletes a bid reminder owned by the authenticated user.
-      parameters:
-      - description: Reminder ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete bid reminder
-      tags:
-      - Alerts
   /roman-imperial-figures:
     get:
       description: Returns curated Roman imperial figures (emperors, empresses, Caesars,
@@ -16302,6 +14194,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Get set analytics
+      tags:
+      - sets
+  /sets/{id}/checklist:
+    get:
+      description: Every coin a checklist set lists (a country's coins in the catalogue,
+        or a challenge's), each filled by a coin of the collection when it has one.
+      parameters:
+      - description: Set ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SetChecklistResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a checklist set's slots
       tags:
       - sets
   /sets/{id}/coins:
@@ -17768,44 +15698,6 @@ paths:
       summary: Get collection health summary
       tags:
       - Health
-  /stats/investment-breakdown:
-    get:
-      description: Returns investment, current value, gain/loss, confidence counts,
-        top valuation movement, and stale valuations for the authenticated user's
-        active collection.
-      parameters:
-      - description: Breakdown dimension
-        enum:
-        - purchase-year
-        - material
-        in: query
-        name: dimension
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.InvestmentBreakdownResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get investment breakdown
-      tags:
-      - Coins
   /stats/time-machine:
     get:
       description: Reconstructs the collection as it stood on the requested date from
@@ -18552,8 +16444,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Updates profile, privacy, NumisBids, Pushover, coin-of-day, emperor-tracker,
-        and PWA swipe navigation preferences for the authenticated user.
+      description: Updates profile, privacy, coin-of-day, emperor-tracker, and PWA
+        swipe navigation preferences for the authenticated user.
       parameters:
       - description: Profile fields to update
         in: body
@@ -18979,28 +16871,6 @@ paths:
       summary: Get top coins by current value (external)
       tags:
       - External Tools
-  /value-history:
-    get:
-      description: Returns value snapshots over time for charting collection value
-        trends.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.ValueSnapshot'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get value history
-      tags:
-      - Coins
   /wishlist/availability-runs:
     get:
       description: Returns paginated availability check run history scoped to the

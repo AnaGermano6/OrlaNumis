@@ -1,24 +1,6 @@
 // collection types. Split out of the former single-file src/types/index.ts;
 // re-exported from '@/types' so existing imports keep working.
 
-export interface UserNote {
-  id: number
-  userId: number
-  title: string
-  body: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface NoteInput {
-  title: string
-  body: string
-}
-
-export interface NoteListResponse {
-  notes: UserNote[]
-}
-
 export interface Tag {
   id: number
   userId: number

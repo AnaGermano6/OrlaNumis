@@ -17,7 +17,7 @@ func newQuickCaptureRepositoryTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.ValueSnapshot{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
 	return db
@@ -324,18 +324,15 @@ func TestQuickCaptureRepositoryPromoteDraftTransactionCreatesCoinImagesSnapshotA
 	if promoted.Status != models.QuickCaptureDraftStatusPromoted || promoted.PromotedCoinID == nil || *promoted.PromotedCoinID != createdCoin.ID {
 		t.Fatalf("draft not linked as promoted: status=%s promotedCoinId=%v coin=%d", promoted.Status, promoted.PromotedCoinID, createdCoin.ID)
 	}
-	var coinCount, coinImageCount, snapshotCount int64
+	var coinCount, coinImageCount int64
 	if err := db.Model(&models.Coin{}).Where("user_id = ?", userID).Count(&coinCount).Error; err != nil {
 		t.Fatalf("count coins: %v", err)
 	}
 	if err := db.Model(&models.CoinImage{}).Where("coin_id = ?", createdCoin.ID).Count(&coinImageCount).Error; err != nil {
 		t.Fatalf("count coin images: %v", err)
 	}
-	if err := db.Model(&models.ValueSnapshot{}).Where("user_id = ?", userID).Count(&snapshotCount).Error; err != nil {
-		t.Fatalf("count snapshots: %v", err)
-	}
-	if coinCount != 1 || coinImageCount != 1 || snapshotCount != 1 {
-		t.Fatalf("expected one coin, image, and snapshot; got coins=%d images=%d snapshots=%d", coinCount, coinImageCount, snapshotCount)
+	if coinCount != 1 || coinImageCount != 1 {
+		t.Fatalf("expected one coin and image; got coins=%d images=%d", coinCount, coinImageCount)
 	}
 
 	_, _, err = repo.PromoteDraftTransaction(draft.ID, userID, &models.Coin{UserID: userID, Name: "Duplicate"})

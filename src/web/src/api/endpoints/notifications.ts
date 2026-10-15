@@ -5,10 +5,6 @@ import type {
   NotificationListResponse,
 } from '@/types'
 
-// Pushover notifications
-export const testPushover = () =>
-  api.post<{ message: string }>('/notifications/test-pushover')
-
 // Notifications
 export const getNotifications = (page = 1, limit = 20) =>
   api.get<NotificationListResponse>('/notifications', { params: { page, limit } })

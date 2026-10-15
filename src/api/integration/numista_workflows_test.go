@@ -77,7 +77,7 @@ func newNumistaIntegrationHarness(t *testing.T) *numistaIntegrationHarness {
 	}
 	if err := db.AutoMigrate(
 		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{},
-		&models.CatalogRegistry{}, &models.ValueSnapshot{}, &models.QuickCaptureDraft{},
+		&models.CatalogRegistry{}, &models.QuickCaptureDraft{},
 		&models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{},
 		&models.DraftLifecycleEvent{},
 	); err != nil {

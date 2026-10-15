@@ -1,6 +1,6 @@
 import { computed, ref, nextTick, onMounted, onBeforeUnmount, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { agentChatStream, cancelCollectionProposal, commitCollectionProposal, createCoin, getApiErrorMessage, matchCategoryEra, proxyImage, scrapeImage, uploadImage, saveConversation, getPortfolioSummary, getAgentStatus, createCalendarEvent } from '@/api/client'
+import { agentChatStream, cancelCollectionProposal, commitCollectionProposal, createCoin, getApiErrorMessage, matchCategoryEra, proxyImage, scrapeImage, uploadImage, saveConversation, getPortfolioSummary, getAgentStatus } from '@/api/client'
 import type { CoinMutationPayload, CoinSuggestion, CoinShow, AgentChatAppContext, AgentChatMessage, Category, CollectionChatResponse, Material } from '@/types'
 import { useDialog } from '@/composables/useDialog'
 import { useCoinOptions } from '@/composables/useCoinOptions'
@@ -214,8 +214,6 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
   const loading = ref(false)
   const addingIdx = ref<string | null>(null)
   const addedSet = ref<Set<string>>(new Set())
-  const savedShows = ref<Set<string>>(new Set())
-  const savingShow = ref<string | null>(null)
   const conversationId = ref<number | null>(null)
   const saving = ref(false)
   const scrapedImages = ref<Map<string, string>>(new Map())
@@ -264,7 +262,7 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
 
   const newChatDisabled = computed(() =>
     initializing.value || resetting.value || resolvingMode.value || copilot.starting.value ||
-    saving.value || addingIdx.value !== null || savingShow.value !== null || copilotCancelling.value)
+    saving.value || addingIdx.value !== null || copilotCancelling.value)
 
   async function newChat(): Promise<boolean> {
     if (newChatDisabled.value) return false
@@ -290,7 +288,6 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
       conversationId.value = null
       saveState.value = 'idle'
       addedSet.value = new Set()
-      savedShows.value = new Set()
       scrapedImages.value = new Map()
       copilotResuming.value = false
       await nextTick()
@@ -633,81 +630,6 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
     return 'dates' in first || 'venue' in first
   }
 
-  function showKey(show: CoinShow): string {
-    return `${show.name}|${show.dates}`
-  }
-
-  function parseDateRange(dateStr: string): { start?: string; end?: string } {
-    if (!dateStr) return {}
-
-    const isoMatch = dateStr.match(/(\d{4}-\d{2}-\d{2})/)
-    if (isoMatch) {
-      return { start: isoMatch[1]! + 'T00:00:00Z' }
-    }
-
-    const rangeMatch = dateStr.match(/([A-Z][a-z]+)\s+(\d{1,2})\s*[-–]\s*(\d{1,2}),?\s*(\d{4})/)
-    if (rangeMatch) {
-      const [, month, startDay, endDay, year] = rangeMatch
-      const s = new Date(`${month} ${startDay}, ${year}`)
-      const e = new Date(`${month} ${endDay}, ${year}`)
-      if (!isNaN(s.getTime())) {
-        return {
-          start: s.toISOString().split('T')[0]! + 'T00:00:00Z',
-          end: !isNaN(e.getTime()) ? e.toISOString().split('T')[0]! + 'T00:00:00Z' : undefined,
-        }
-      }
-    }
-
-    const crossMonthMatch = dateStr.match(/([A-Z][a-z]+)\s+(\d{1,2})\s*[-–]\s*([A-Z][a-z]+)\s+(\d{1,2}),?\s*(\d{4})/)
-    if (crossMonthMatch) {
-      const [, month1, day1, month2, day2, year] = crossMonthMatch
-      const s = new Date(`${month1} ${day1}, ${year}`)
-      const e = new Date(`${month2} ${day2}, ${year}`)
-      if (!isNaN(s.getTime())) {
-        return {
-          start: s.toISOString().split('T')[0]! + 'T00:00:00Z',
-          end: !isNaN(e.getTime()) ? e.toISOString().split('T')[0]! + 'T00:00:00Z' : undefined,
-        }
-      }
-    }
-
-    const singleMatch = dateStr.match(/([A-Z][a-z]+)\s+(\d{1,2}),?\s*(\d{4})/)
-    if (singleMatch) {
-      const d = new Date(`${singleMatch[1]} ${singleMatch[2]}, ${singleMatch[3]}`)
-      if (!isNaN(d.getTime())) {
-        return { start: d.toISOString().split('T')[0]! + 'T00:00:00Z' }
-      }
-    }
-
-    const d = new Date(dateStr)
-    if (!isNaN(d.getTime())) {
-      return { start: d.toISOString().split('T')[0]! + 'T00:00:00Z' }
-    }
-    return {}
-  }
-
-  async function saveShowToCalendar(show: CoinShow) {
-    const key = showKey(show)
-    if (savedShows.value.has(key)) return
-    savingShow.value = key
-    try {
-      const { start, end } = parseDateRange(show.dates)
-      const location = [show.venue, show.location].filter(Boolean).join(', ')
-      await createCalendarEvent({
-        title: show.name,
-        startDate: start,
-        endDate: end,
-        url: show.url || undefined,
-        notes: [location, show.entryFee ? t('chat.entry', { fee: show.entryFee }) : '', show.description].filter(Boolean).join('\n'),
-      })
-      savedShows.value.add(key)
-    } catch {
-      await showAlert(t('chat.calendarFailed'))
-    } finally {
-      savingShow.value = null
-    }
-  }
-
   async function confirmCollectionProposal(msg: ChatMsg) {
     const proposal = msg.collection?.proposal
     if (!proposal) return
@@ -815,8 +737,6 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
     loading,
     addingIdx,
     addedSet,
-    savedShows,
-    savingShow,
     conversationId,
     saving,
     saveLabel,
@@ -849,6 +769,5 @@ export function useCoinSearchChat(options: UseCoinSearchChatOptions) {
     pickDisambiguationCandidate,
     formatMessage,
     isCoinShowResults,
-    saveShowToCalendar,
   }
 }

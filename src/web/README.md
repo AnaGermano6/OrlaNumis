@@ -79,18 +79,18 @@ src/
 | `/wishlist` | WishlistPage | Yes |
 | `/wishlist/search-alerts` | WishlistAlertsPage | Yes |
 | `/sold` | SoldPage | Yes |
-| `/auctions` | AuctionsPage | Yes |
+| `/auctions` | Redirects to `/` | Yes |
 | `/stats` | StatsPage | Yes |
 | `/stats/timeline` | TimelinePage | Yes |
 | `/stats/mint-map` | MintMapPage | Yes |
 | `/stats/health` | StatsHealthPage | Yes |
-| `/stats/value-trends` | StatsValueTrendsPage | Yes |
-| `/stats/investment-breakdown` | StatsInvestmentBreakdownPage | Yes |
+| `/stats/value-trends` | Redirects to `/stats` | Yes |
+| `/stats/investment-breakdown` | Redirects to `/stats` | Yes |
 | `/stats/distribution` | CollectionDistributionPage | Yes |
 | `/stats/emperors` | Redirects to `/sets/emperors` | Yes + Emperor Tracker |
 | `/mint-map` | Redirects to `/stats/mint-map` | Yes |
 | `/timeline` | Redirects to `/stats/timeline` | Yes |
-| `/notes` | NotesPage | Yes |
+| `/notes` | Redirects to `/` | Yes |
 | `/settings` | SettingsPage | Yes |
 | `/settings/oidc/link/callback/:providerId` | OIDCLinkCallbackPage | Yes |
 | `/auth/oidc/callback/:providerId` | OIDCLoginCallbackPage | No |
@@ -102,8 +102,8 @@ src/
 | `/showcases` | ShowcasesPage | Yes |
 | `/showcases/:id/edit` | ShowcaseEditPage | Yes |
 | `/s/:slug` | PublicShowcasePage | No |
-| `/calendar` | CalendarPage | Yes |
-| `/tray` | TrayViewPage | Yes |
+| `/calendar` | Redirects to `/` | Yes |
+| `/tray` | Redirects to `/` | Yes |
 | `/sets` | SetsPage | Yes |
 | `/sets/emperors` | EmperorTrackerPage | Yes + Emperor Tracker |
 | `/sets/:id` | SetDetailPage | Yes |

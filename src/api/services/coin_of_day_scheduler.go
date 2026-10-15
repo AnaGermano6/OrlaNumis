@@ -11,7 +11,7 @@ import (
 )
 
 // CoinOfDayScheduler runs a daily job that selects one coin per opted-in user
-// and sends them a "Coin of the Day" notification + Pushover alert.
+// and sends them a "Coin of the Day" notification.
 type CoinOfDayScheduler struct {
 	featuredRepo          *repository.FeaturedCoinRepository
 	runRepo               *repository.CoinOfDayRunRepository

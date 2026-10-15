@@ -14,6 +14,10 @@ const (
 	CoinSetTypeSmart    CoinSetType = "smart"
 	CoinSetTypeGoal     CoinSetType = "goal"
 	CoinSetTypeAgentic  CoinSetType = "agentic"
+	// CoinSetTypeChecklist sets are lists of coins to collect (a country's
+	// coins in the catalogue, or a challenge): their slots are worked out
+	// from Checklist, and the collection's coins fill them by themselves.
+	CoinSetTypeChecklist CoinSetType = "checklist"
 
 	// Legacy aliases normalized during create/update and DB migration.
 	CoinSetTypeOpen    CoinSetType = CoinSetTypeStandard
@@ -43,11 +47,13 @@ type CoinSet struct {
 	IsPublic             bool                `gorm:"default:false" json:"isPublic"`
 	ShareToken           *string             `gorm:"type:varchar(64);uniqueIndex" json:"shareToken"`
 	SmartCriteria        *JSONObject         `gorm:"type:text" json:"smartCriteria"`
-	AgenticPrompt        string              `gorm:"type:text" json:"agenticPrompt,omitempty"`
-	AgenticStatus        string              `gorm:"type:varchar(20);default:'ready'" json:"agenticStatus,omitempty"`
-	PinnedAt             *time.Time          `gorm:"index" json:"pinnedAt"`
-	CreatedAt            time.Time           `json:"createdAt"`
-	UpdatedAt            time.Time           `json:"updatedAt"`
+	// Checklist defines a checklist set's slots (see services.ChecklistDefinition).
+	Checklist     *JSONObject `gorm:"type:text" json:"checklist,omitempty"`
+	AgenticPrompt string      `gorm:"type:text" json:"agenticPrompt,omitempty"`
+	AgenticStatus string      `gorm:"type:varchar(20);default:'ready'" json:"agenticStatus,omitempty"`
+	PinnedAt      *time.Time  `gorm:"index" json:"pinnedAt"`
+	CreatedAt     time.Time   `json:"createdAt"`
+	UpdatedAt     time.Time   `json:"updatedAt"`
 }
 
 // CoinSetMembership represents manual membership for standard and goal sets.
@@ -57,6 +63,14 @@ type CoinSetMembership struct {
 	AddedAt   time.Time `gorm:"not null" json:"addedAt"`
 	SortOrder int       `gorm:"not null;default:0" json:"sortOrder"`
 	Notes     string    `gorm:"type:text" json:"notes"`
+}
+
+// CoinSetChecklistKey is a coin of the catalogue a checklist set has already
+// listed, so a coin added to the catalogue later can be announced once.
+type CoinSetChecklistKey struct {
+	SetID     uint      `gorm:"primaryKey" json:"setId"`
+	Key       string    `gorm:"primaryKey;type:varchar(200)" json:"key"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 // CoinSetTarget defines expected coins for completion tracking.

@@ -18,7 +18,6 @@
 - [**Coin Lookup**](features/coin-lookup.md) — Photo-based lookup for NGC Ancients slabs and Numista matches
 - [**Wish List**](features/wish-list.md) — Track coins with AI search and availability checking
 - [**Wishlist Search Alerts**](features/wish-list.md#wishlist-search-alerts) — Saved search criteria with manual or scheduled candidate discovery
-- [**Auction Tracking**](features/auction-tracking.md) — Monitor NumisBids and CNG Auctions lots with provider-aware sync and status tracking
 - [**Sold Coins**](features/sold-coins.md) — Track sales with profit/loss analysis
 
 ### 🤖 AI Features
@@ -60,7 +59,6 @@
 - [**Bulk Operations**](features/bulk-operations.md) — Multi-select batch actions
 - [**Notifications**](features/notifications.md) — In-app alerts
 - [**Numista Catalog**](features/numista-integration.md) — Catalog reference integration
-- [**Auction Calendar**](features/auction-calendar.md) — Visual event calendar
 - [**Data Import/Export**](features/import-export.md) — JSON backup/restore
 
 ---
@@ -110,22 +108,13 @@ Track coins you've sold with profit/loss visibility:
 - **Sold Gallery** — A dedicated gallery page showing all sold coins with their sale history, accessible from the navigation bar.
 - **Stats Integration** — Sold coins are excluded from active collection totals while their sold values are tracked separately.
 
-## Auction Tracking
+## Auction Tracking (removed)
 
-Track auction lots from NumisBids and CNG Auctions through a provider-aware bidding lifecycle:
-
-- **Add Lots** — Manually add lots by pasting a NumisBids or CNG Auctions URL. The app detects the provider and scrapes the lot page for title, image, estimate, auction house, and sale name.
-- **Watchlist Sync** — Connect your NumisBids and/or CNG account in Settings → Account and sync configured watchlists with one click. Stored provider passwords are encrypted at rest and legacy plaintext values migrate on next use.
-- **Provider Capabilities** — CNG Auctions supports richer hosted-auction sync and can auto-detect won/lost outcomes where provider data is available. NumisBids supports watchlist/import tracking only today; final outcome and max-bid data require manual updates unless future site data exposes those signals.
-- **Status Workflow** — Lots progress through statuses: Watching → Bidding → Won / Lost / Passed. Status transitions are validated (e.g., only Bidding lots can be marked Won), and terminal statuses show whether they were auto-detected or manually set. When marking a lot Won you can record the winning bid you paid; when marking it Lost you can record the winning bid it sold for, which feeds the bid recommendation for that category.
-- **Filtered Views** — Filter the auctions page by status and source. Counts for each status appear as badges on filter buttons.
-- **Won → Collection** — When a lot is marked as Won, use **Add to Collection** to create a collection coin from mapped auction data such as title, category, auction house, sale date, and bid price.
-- **AI Auction Search** — Ask the AI agent to search supported auction sources such as NumisBids and CNG Auctions for coins matching a description. The agent (Team 5) searches, fetches lot details, and formats results.
-- **Credential Validation** — NumisBids and CNG credentials are validated against the live provider before being saved. The Settings page shows connected/error/validating status indicators.
-- **Watch Bid Digest** — A scheduled digest of every active watched or bidding lot, grouped by sale. Each lot shows its title, its lot number linked to the lot on the auction site, and its current high bid compared with the bid the previous digest reported (`up from 75.00`, `down from 95.00`, `no change`); a lot reported for the first time shows its bid alone. The comparison baseline advances only when a digest is delivered, so an undelivered or length-trimmed lot keeps its change for the next digest.
-- **Outbid Notifications** — When CNG reports someone else holding the winning bid on a lot you are bidding on, the background sync sends one batched alert naming each lot, where the bidding stands, and how long is left to respond. It fires once per time you lose the lead and re-arms if you retake it. Outbid state comes from the provider's winning-bidder data, not from comparing your max bid with the current bid.
-- **New Lot Notifications** — When the background watchlist sync starts tracking lots you watched or bid on at the provider, it sends one batched notification for the whole run. The Pushover push is rich HTML naming each lot's coin name, auction house and sale, lot number, and whether it is watched or bid on, and links straight to the lot in the app (`/auctions?lot=<id>`). The manual sync button does not notify.
-- **Now Bidding Alerts** — When the sync sees a lot you were only watching move to Bidding (the provider now reports a bid of yours on it), it sends a separate batched notification carrying the current high bid and your max bid. CNG only in practice, since NumisBids exposes no bid data.
+Auction tracking was removed in 2026-10: the Auctions page, NumisBids and CNG
+lots, price alerts, bid reminders, ending-soon alerts and the auction calendar,
+with their endpoints, schedules and MCP tools. See
+[Auction Tracking](features/auction-tracking.md). The AI agent's auction
+search (the auction search sources in Admin → System) is separate and stays.
 
 ## Coin Details
 
@@ -318,8 +307,8 @@ The External Tool Server exposes Aurearia through two distinct adapters:
 - `/api/v1/tools/*` provides OpenAPI operations for OpenWebUI, LibreChat, and
   automation, including explicitly authorized two-phase collection updates.
 - `/api/mcp` provides native stateless Streamable HTTP MCP for agentic
-  harnesses, with read-only collection, wishlist, auction, and statistics
-  tools plus explicitly scoped Coin Copilot lifecycle operations.
+  harnesses, with read-only collection, wishlist, and statistics tools plus
+  explicitly scoped Coin Copilot lifecycle operations.
 
 **Key Features:**
 
@@ -342,8 +331,7 @@ The External Tool Server exposes Aurearia through two distinct adapters:
 - Read: `search_my_collection`, `get_coin`, `collection_summary`, `top_coins_by_value`
 - Write: `propose_update`, `commit_update`
 - MCP read: `search_collection`, `get_coin`, `list_wishlist`,
-  `collection_stats`, `top_coins_by_value`, `list_auction_lots`,
-  `get_auction_lot`, `auction_counts`
+  `collection_stats`, `top_coins_by_value`
 - MCP Copilot: `start_copilot_run`, `get_copilot_run`,
   `resume_copilot_run`, `cancel_copilot_run`
 
@@ -413,32 +401,6 @@ Create curated subsets of your collection to share publicly. Each showcase gets 
 - **Public View** — The public showcase page is read-only and requires no authentication. It displays coin images and basic metadata.
 - **API Endpoints** — `GET/POST /showcases`, `GET/PUT/DELETE /showcases/:id`, `PUT /showcases/:id/coins`. Public endpoint: `GET /api/showcase/:slug` (no auth required).
 
-## Auction Calendar
-
-A monthly calendar view showing auction lot end dates and custom events.
-
-- **Calendar View** — Visual month-by-month calendar with lot indicators showing which days have scheduled auctions.
-- **Date Range Filter** — Filter events by date range using query parameters.
-- **Custom Events** — Add custom auction events with a title, description, date, and optional URL (e.g., for auction house registration links).
-- **Lot Indicators** — Days with tracked auction lots display visual indicators on the calendar.
-- **API Endpoints** — `GET /calendar`, `POST/PUT/DELETE /calendar/events`.
-
-## Price Alerts
-
-Set target prices on watched auction lots and get notified when bidding crosses your threshold.
-
-- **Target Price** — Set a price threshold and direction (above or below) for any tracked auction lot.
-- **Triggered Notifications** — When bidding crosses the threshold, a notification is generated in your notification inbox. It leads with the lot title and lot number, names the sale, and states the current high bid against your target (`475.00 USD (275.00 over target)`); the Pushover push links the lot number to the lot on the auction site.
-- **API Endpoints** — `GET/POST /alerts`, `DELETE /alerts/:id`. Each alert tracks the lot ID, target price, direction, and triggered status.
-
-## Bid Sniping Reminders
-
-Set reminders for a configurable number of minutes before a watched lot's auction session closes.
-
-- **Configurable Lead Time** — Choose how many minutes before the auction close you want to be reminded.
-- **Notification Integration** — Reminders appear in the in-app notification inbox when triggered.
-- **API Endpoints** — `GET/POST /reminders`, `DELETE /reminders/:id`. Each reminder tracks the lot ID, remind-before minutes, and triggered status.
-
 ## Custom Tags and Labels
 
 Create user-defined categories beyond the built-in fields. Tags provide flexible, personal organization for your collection.
@@ -461,9 +423,6 @@ Multi-select coins for batch operations across your collection.
 An in-app notification system with an unread badge count in the navigation bar.
 
 - **Social Notifications** — Follow requests, comments, and star ratings generate notifications.
-- **Alert and Reminder Triggers** — Price alert and bid sniping reminder triggers create notifications.
-- **New Auction Lots** — The background auction watchlist sync creates one batched `auction_lots_tracked` notification per run listing the lots it started tracking; clicking it opens the lot (`referenceUrl` is `/auctions?lot=<id>` for a single lot, `/auctions` for a batch).
-- **Now Bidding** — The same sync creates one batched `auction_lots_bidding` notification per run for lots that moved from watching to bidding, using the same reference URL scheme.
 - **Mark as Read** — Mark individual notifications or all at once as read.
 - **Delete** — Remove notifications you no longer need.
 - **Real-Time Badge** — The unread count badge polls automatically using a shared composable.

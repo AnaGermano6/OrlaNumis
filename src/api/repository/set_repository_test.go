@@ -49,6 +49,60 @@ func TestSetRepository_GetCoinsMatchingCriteria_FiltersByStorageLocation(t *test
 	}
 }
 
+func TestSetRepository_GetCoinsMatchingCriteria_SimpleFiltersAndKindOfCoin(t *testing.T) {
+	db := setupTestDB(t)
+	year := func(value int) *int { return &value }
+	coins := []models.Coin{
+		{Name: "Gago Coutinho", UserID: 1, Country: "Portugal", Denomination: "2 euro", Year: year(2022)},
+		{Name: "Euro 2004", UserID: 1, Country: "Portugal", Denomination: "1 euro", Year: year(2004)},
+		{Name: "Faróis", UserID: 1, Country: "Portugal", Denomination: "5 euro", Year: year(2025), Presentation: "proof_set"},
+		{Name: "Marianne", UserID: 1, Country: "France", Denomination: "2 euro", Year: year(2022)},
+	}
+	if err := db.Create(&coins).Error; err != nil {
+		t.Fatalf("create coins: %v", err)
+	}
+	// The app's classifier (here: names) says which coins are of a kind.
+	asked := []string{}
+	repo := NewSetRepository(db).WithCoinClassifier(func(userID uint, kind string) ([]uint, error) {
+		asked = append(asked, kind)
+		switch kind {
+		case "commemorative":
+			return []uint{coins[0].ID, coins[3].ID}, nil
+		case "collector":
+			return []uint{coins[2].ID}, nil
+		}
+		return nil, nil
+	})
+	match := func(rules ...interface{}) []string {
+		t.Helper()
+		got, err := repo.GetCoinsMatchingCriteria(1, map[string]interface{}{"operator": "and", "rules": rules})
+		if err != nil {
+			t.Fatalf("GetCoinsMatchingCriteria failed: %v", err)
+		}
+		return coinNames(got)
+	}
+	rule := func(field, op string, value interface{}) map[string]interface{} {
+		return map[string]interface{}{"field": field, "op": op, "value": value}
+	}
+
+	if names := match(rule("country", "eq", "Portugal"), rule("year", "between", []interface{}{float64(2004), float64(2022)})); !reflect.DeepEqual(names, []string{"Euro 2004", "Gago Coutinho"}) {
+		t.Fatalf("Portugal 2004–2022 = %v", names)
+	}
+	if names := match(rule("denomination", "eq", "2 euro"), rule("classification", "eq", "commemorative")); !reflect.DeepEqual(names, []string{"Gago Coutinho", "Marianne"}) {
+		t.Fatalf("2 € commemoratives = %v", names)
+	}
+	if names := match(rule("presentation", "eq", "proof_set"), rule("classification", "eq", "collector")); !reflect.DeepEqual(names, []string{"Faróis"}) {
+		t.Fatalf("proof collector coins = %v", names)
+	}
+	// A kind no coin is of matches nothing.
+	if names := match(rule("classification", "eq", "circulation")); len(names) != 0 {
+		t.Fatalf("circulation coins = %v", names)
+	}
+	if !reflect.DeepEqual(asked, []string{"commemorative", "collector", "circulation"}) {
+		t.Fatalf("asked = %v", asked)
+	}
+}
+
 func TestSetRepository_GetCoinsInSet_UsesManualSortOrder(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewSetRepository(db)

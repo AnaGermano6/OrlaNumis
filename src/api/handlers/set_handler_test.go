@@ -307,3 +307,65 @@ func TestSetHandler_Update_InternalErrorReturnsGeneric500(t *testing.T) {
 		t.Fatalf("response leaked internal database details: %s", body)
 	}
 }
+
+func TestSetHandler_GetChecklist(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := setupSetHandlerTestDB(t)
+	if err := db.AutoMigrate(&models.CoinReference{}); err != nil {
+		t.Fatalf("failed to migrate: %v", err)
+	}
+	createTestUser(t, db, 1, "owner")
+	setRepo := repository.NewSetRepository(db)
+	checklist := services.NewSetChecklistService(services.NewCoinReleasesService(nil), repository.NewCoinRepository(db), nil)
+	handler := NewSetHandler(setRepo, services.NewSetService(setRepo, repository.NewTagRepository(db)).WithChecklist(checklist))
+	r := gin.New()
+	protected := r.Group("/api")
+	protected.Use(coinTestAuthMiddleware())
+	protected.GET("/sets/:id/checklist", handler.GetChecklist)
+
+	year := 2002
+	if err := db.Create(&models.Coin{UserID: 1, Name: "1 euro", Country: "Portugal", Denomination: "1 euro", Year: &year}).Error; err != nil {
+		t.Fatalf("create coin: %v", err)
+	}
+	series := models.JSONObject{"source": "challenge", "challenge": "annual-series", "country": "PT", "year": 2002}
+	set := models.CoinSet{UserID: 1, Name: "Portugal 2002", SetType: models.CoinSetTypeChecklist, Checklist: &series}
+	standard := models.CoinSet{UserID: 1, Name: "Mine", SetType: models.CoinSetTypeStandard}
+	if err := db.Create(&[]*models.CoinSet{&set, &standard}).Error; err != nil {
+		t.Fatalf("create sets: %v", err)
+	}
+	get := func(path string, userID uint) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/api/sets/"+path+"/checklist", nil)
+		req.Header.Set("Authorization", authHeader(userID))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		return w
+	}
+
+	w := get(strconvUint(set.ID), 1)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	var body SetChecklistResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	owned := []string{}
+	for _, slot := range body.Slots {
+		if slot.Owned {
+			owned = append(owned, slot.Key)
+		}
+	}
+	if len(body.Slots) != 8 || !body.Complete || !equalStrings(owned, []string{"annual:1euro"}) {
+		t.Fatalf("checklist = %+v", body)
+	}
+	for path, want := range map[string]int{strconvUint(standard.ID): http.StatusBadRequest, "nine": http.StatusBadRequest, "999": http.StatusNotFound} {
+		if w := get(path, 1); w.Code != want {
+			t.Fatalf("GET %s: expected %d, got %d: %s", path, want, w.Code, w.Body.String())
+		}
+	}
+	// Another user's set is not found.
+	createTestUser(t, db, 2, "other")
+	if w := get(strconvUint(set.ID), 2); w.Code != http.StatusNotFound {
+		t.Fatalf("other user: expected 404, got %d", w.Code)
+	}
+}

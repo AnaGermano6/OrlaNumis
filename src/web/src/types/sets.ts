@@ -10,7 +10,7 @@ export interface CollectionSetOption {
   source: 'tag' | 'set'
 }
 
-export type CoinSetType = 'standard' | 'goal' | 'smart' | 'agentic'
+export type CoinSetType = 'standard' | 'goal' | 'smart' | 'agentic' | 'checklist'
 
 export type LegacyCoinSetType = 'open' | 'defined' | 'tracker' | 'dynamic'
 
@@ -54,6 +54,10 @@ export interface CoinSetSummary {
 
 export interface CoinSetDetail extends CoinSetSummary {
   description?: string
+  /** A checklist set's definition: the coins it lists. */
+  checklist?: ChecklistDefinition | null
+  /** A smart set's filters. */
+  smartCriteria?: SmartCriteriaGroup | null
   parentSetId?: number | null
   targetCompletionDate?: string | null
   totalInvested: number
@@ -89,6 +93,55 @@ export interface CreateCoinSetRequest {
   smartCriteria?: Record<string, unknown> | null
   templateId?: string | null
   agenticPrompt?: string | null
+  checklist?: ChecklistDefinition
+}
+
+/** The challenges a checklist set can be. */
+export type ChecklistChallenge = 'euro-countries' | 'joint-issue' | 'annual-series'
+
+/**
+ * What a checklist set lists: a country's coins in the catalogue (all, or
+ * of one face value), or a challenge. Its slots are worked out on the
+ * server, and fill by themselves as the collection grows.
+ */
+export interface ChecklistDefinition {
+  source: 'catalogue' | 'challenge'
+  /** ISO code: the catalogue's country, or the annual series'. */
+  country?: string
+  /** "PTE" for Portugal's escudos; the euro otherwise. */
+  currency?: string
+  faceValue?: number
+  challenge?: ChecklistChallenge
+  /** The annual series' or the joint issue's year. */
+  year?: number
+}
+
+/** A coin a checklist set lists, filled by a coin of the collection or not. */
+export interface ChecklistSlot {
+  key: string
+  /** The coin's name; a challenge's country slots leave it empty. */
+  title?: string
+  /** ISO code. */
+  country?: string
+  year?: number
+  faceValue?: number
+  faceValues?: number[]
+  currency?: string
+  /** The catalogue's picture and page. */
+  imageUrl?: string
+  pageUrl?: string
+  owned: boolean
+  /** The collection's coin filling the slot. */
+  coinId?: number
+  coinName?: string
+  coinImage?: string
+  coinValue?: number
+}
+
+export interface ChecklistResponse {
+  slots: ChecklistSlot[]
+  /** False while the catalogue behind the slots is partly listed. */
+  complete: boolean
 }
 
 export interface CreateCoinSetFromCsvRequest extends CreateCoinSetRequest {

@@ -78,62 +78,43 @@
         :completion="completion"
       />
 
+      <!-- A checklist set: what it lists, kept up to date by itself. -->
+      <div v-if="checklistDefinition" class="rounded-md border border-border-subtle bg-card p-4" data-testid="set-checklist-info">
+        <p class="m-0 text-base font-medium text-text-primary">{{ checklistDescription(checklistDefinition) }}</p>
+        <p class="mb-0 mt-1 text-body text-text-secondary">{{ t('sets.album.checklistUpdates') }}</p>
+        <p v-if="checklist && !checklist.complete" class="mb-0 mt-2 text-chip text-text-muted" data-testid="set-checklist-partial">{{ t('sets.catalogue.partialNumista') }}</p>
+      </div>
+      <div v-else-if="normalizedSetType === 'smart'" class="rounded-md border border-border-subtle bg-card p-4" data-testid="set-smart-info">
+        <p v-if="smartFilters" class="m-0 text-base font-medium text-text-primary">{{ filtersName(smartFilters) }}</p>
+        <p class="mb-0 mt-1 text-body text-text-secondary">{{ t('sets.album.smartUpdates') }}</p>
+      </div>
+
       <div class="space-y-4">
-        <p v-if="canReorderCoins && coins.length > 1" class="m-0 max-w-none text-left text-body text-text-secondary md:text-right" :class="{ 'text-confidence-low': orderError }" aria-live="polite">
-          <span v-if="savingOrder">{{ t('sets.detail.savingOrder') }}</span>
-          <span v-else-if="orderError">{{ orderError }}</span>
-          <span v-else>{{ t('sets.detail.dragHint') }}</span>
-        </p>
         <p v-if="normalizedSetType === 'agentic'" class="m-0 text-body text-text-secondary">
           {{ t('sets.detail.agenticHint') }}
         </p>
-        <div v-if="displayTrayCoins.length === 0" class="card space-y-4 py-8 text-center">
+        <div v-if="albumSlots.length === 0" class="card space-y-4 py-8 text-center">
           <p class="m-0 text-base text-text-secondary">{{ emptySetMessage }}</p>
           <button v-if="canManageMembership" class="btn btn-primary" @click="openAddCoinModal">{{ t('sets.detail.addCoins') }}</button>
         </div>
-        <div
-          v-else
-          class="space-y-4"
-          :class="{ 'opacity-80': savingOrder }"
-          :aria-label="t('sets.detail.coinsInSet')"
-        >
-          <div class="flex flex-col gap-4">
-            <div class="flex justify-center md:justify-center">
-              <label class="inline-flex w-full items-center justify-between gap-3 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.04)] px-3 py-2 text-label font-semibold uppercase tracking-[0.08em] text-text-secondary md:w-auto md:justify-start">
-                <span>{{ t('sets.detail.coinSize') }}</span>
-                <input
-                  id="set-tray-size-slider"
-                  v-model.number="traySizeScale"
-                  class="w-[140px] accent-[var(--accent-gold)]"
-                  type="range"
-                  min="0.75"
-                  max="2.5"
-                  step="0.05"
-                />
-                <span class="min-w-[3.2rem] text-right text-text-primary">{{ traySizeScale.toFixed(2) }}x</span>
-              </label>
-            </div>
-            <MuseumTray
-              :coins="currentDrawerCoins"
-              :felt-theme="feltColor"
-              :size-scale="traySizeScale"
-              :show-names="true"
-              @coin-clicked="handleTrayCoinClick"
-            />
-            <TrayControls
-              v-if="totalDrawers > 1"
-              :drawer-index="drawerIndex"
-              :total-drawers="totalDrawers"
-              :fixed="false"
-              @prev="handlePrevDrawer"
-              @next="handleNextDrawer"
-            />
-          </div>
+        <template v-else>
+          <SetAlbum
+            :key="setId"
+            :slots="albumSlots"
+            :default-group="albumGroup"
+            :selectable="normalizedSetType === 'agentic'"
+            @select="selectSlot"
+          />
           <div
             v-if="canManageMembership"
             class="mt-4 flex flex-col gap-2"
             :aria-label="t('sets.detail.manageOrder')"
           >
+            <p v-if="canReorderCoins" class="m-0 text-body text-text-secondary" :class="{ 'text-confidence-low': orderError }" aria-live="polite">
+              <span v-if="savingOrder">{{ t('sets.detail.savingOrder') }}</span>
+              <span v-else-if="orderError">{{ orderError }}</span>
+              <span v-else>{{ t('sets.detail.dragHint') }}</span>
+            </p>
             <div
               v-for="(coin, index) in coins"
               :key="coin.id"
@@ -191,7 +172,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </template>
       </div>
     </div>
 
@@ -227,7 +208,7 @@
     </div>
 
     <div v-if="showEditModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4" @click.self="showEditModal = false">
-      <div class="card w-[90%] max-w-[500px] p-8">
+      <div class="card max-h-[90vh] w-[90%] max-w-[560px] overflow-y-auto p-8">
         <h2 class="mt-0">{{ t('sets.detail.editSet') }}</h2>
         <form @submit.prevent="updateSet">
           <div class="form-group">
@@ -242,6 +223,12 @@
             <label for="editColor" class="form-label">{{ t('common.color') }}</label>
             <input id="editColor" v-model="editForm.color" type="color" class="form-input h-11 cursor-pointer p-1" />
           </div>
+          <!-- A smart set's filters; rules the filters cannot show stay as they are. -->
+          <div v-if="editFilters" class="form-group">
+            <span class="form-label">{{ t('sets.filters.title') }}</span>
+            <SetSimpleFilters v-model="editFilters" />
+          </div>
+          <p v-else-if="normalizedSetType === 'smart'" class="text-chip text-text-muted" data-testid="edit-advanced-rules">{{ t('sets.filters.advanced') }}</p>
           <div class="mt-6 flex justify-end gap-2">
             <button type="button" class="btn btn-secondary" @click="showEditModal = false">{{ t('common.cancel') }}</button>
             <button type="submit" class="btn btn-primary">{{ t('common.update') }}</button>
@@ -266,17 +253,17 @@ import {
 } from '@/api/client'
 import { normalizeCoinSetType } from '@/types'
 import type { Coin } from '@/types'
+import SetAlbum from '@/components/sets/SetAlbum.vue'
 import SetCoinPicker from '@/components/sets/SetCoinPicker.vue'
+import SetSimpleFilters from '@/components/sets/SetSimpleFilters.vue'
 import { useSetDetails } from '@/composables/useSetDetails'
 import SetCompletionChecklist from '@/components/sets/SetCompletionChecklist.vue'
-import MuseumTray from '@/components/tray/MuseumTray.vue'
-import TrayControls from '@/components/tray/TrayControls.vue'
 import { usePinnedSets } from '@/composables/usePinnedSets'
 import { useQuickAccess } from '@/composables/useQuickAccess'
 import { usePwa } from '@/composables/usePwa'
 import { useToast } from '@/composables/useToast'
-import { useTrayPreference } from '@/composables/useTrayPreference'
-import { getDrawerCoins, getTotalDrawers, type TrayCoin } from '@/utils/trayLayout'
+import { agenticAlbumSlots, checklistAlbumSlot, checklistDescription, coinAlbumSlot, type AlbumSlot } from '@/utils/setAlbum'
+import { criteriaToFilters, filtersName, filtersToCriteria, type SimpleSetFilters } from '@/utils/setFilters'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { t } from '@/i18n'
@@ -284,7 +271,6 @@ import { t } from '@/i18n'
 const router = useRouter()
 const route = useRoute()
 const { isPwa } = usePwa()
-const { feltColor } = useTrayPreference()
 const { pinLimitReached, refresh: refreshPinnedSets } = usePinnedSets()
 const {
   error: quickAccessError,
@@ -297,10 +283,7 @@ const {
 } = useQuickAccess()
 const { showToast } = useToast()
 const setId = computed(() => Number(route.params.id))
-const { loading, set, coins, completion, error: loadError, load: loadSetDetails, capture } = useSetDetails(setId)
-const drawerIndex = ref(0)
-const coinsPerDrawer = 12
-const traySizeScale = ref(1)
+const { loading, set, coins, completion, checklist, error: loadError, load: loadSetDetails, capture } = useSetDetails(setId)
 const savingOrder = ref(false)
 const orderError = ref<string | null>(null)
 const draggingCoinId = ref<number | null>(null)
@@ -321,11 +304,13 @@ const editForm = ref({
   description: '',
   color: '#6b7280',
 })
+/** A smart set's filters while it is edited; null for other sets, or rules the filters cannot show. */
+const editFilters = ref<SimpleSetFilters | null>(null)
 
 const canManageMembership = computed(() => {
   if (!set.value) return false
   const normalizedType = normalizeCoinSetType(set.value.setType)
-  return normalizedType !== 'smart' && normalizedType !== 'agentic'
+  return normalizedType !== 'smart' && normalizedType !== 'agentic' && normalizedType !== 'checklist'
 })
 const setPinned = computed(() => isPinned('coin_set', setId.value).value)
 const setPinBusy = computed(() => isBusy('coin_set', setId.value).value)
@@ -338,65 +323,24 @@ const pinButtonLabel = computed(() => {
 })
 const canReorderCoins = computed(() => canManageMembership.value && coins.value.length > 1)
 const normalizedSetType = computed(() => set.value ? normalizeCoinSetType(set.value.setType) : null)
-type AgenticTrayCoin = TrayCoin & { targetId: number; assignedCoinId?: number | null }
-const trayCoins = computed((): TrayCoin[] =>
-  coins.value.map((coin) => ({
-    id: coin.id,
-    name: coin.name,
-    diameterMm: coin.diameterMm,
-    images: coin.images ?? [],
-    purchaseDate: coin.purchaseDate,
-    wishlistPlaceholder: normalizedSetType.value === 'goal' && coin.isWishlist,
-  })),
-)
-const agenticTrayCoins = computed((): AgenticTrayCoin[] => {
-  if (normalizedSetType.value !== 'agentic') return []
-  const targetMatches = completion.value?.targetMatches
-  if (targetMatches && targetMatches.length > 0) {
-    return targetMatches.map(({ target, coin }) => {
-      if (coin) {
-        return {
-          id: coin.id,
-          targetId: target.id,
-          assignedCoinId: coin.id,
-          name: coin.name,
-          diameterMm: coin.diameterMm,
-          images: coin.images ?? [],
-          purchaseDate: coin.purchaseDate,
-        }
-      }
-      return {
-        id: target.id,
-        targetId: target.id,
-        assignedCoinId: null,
-        name: target.label,
-        diameterMm: null,
-        images: [],
-        placeholder: true,
-        placeholderLabel: target.year != null ? String(target.year) : target.label,
-      }
-    })
-  }
-  const targets = completion.value?.targets ?? completion.value?.missingTargets ?? []
-  return targets.map((target) => ({
-    id: target.id,
-    targetId: target.id,
-    assignedCoinId: null,
-    name: target.label,
-    diameterMm: null,
-    images: [],
-    placeholder: true,
-    placeholderLabel: target.year != null ? String(target.year) : target.label,
-  }))
+const checklistDefinition = computed(() => normalizedSetType.value === 'checklist' ? set.value?.checklist ?? null : null)
+const smartFilters = computed(() => normalizedSetType.value === 'smart' ? criteriaToFilters(set.value?.smartCriteria) : null)
+// The album's places: a checklist's slots, an agentic set's targets, or the set's coins.
+const albumSlots = computed((): AlbumSlot[] => {
+  const definition = checklistDefinition.value
+  if (definition) return (checklist.value?.slots ?? []).map((slot) => checklistAlbumSlot(slot, definition))
+  if (normalizedSetType.value === 'agentic') return agenticAlbumSlots(completion.value)
+  return coins.value.map((coin) => coinAlbumSlot(coin, normalizedSetType.value === 'goal'))
 })
-const displayTrayCoins = computed(() => normalizedSetType.value === 'agentic' ? agenticTrayCoins.value : trayCoins.value)
-const currentDrawerCoins = computed(() => getDrawerCoins(displayTrayCoins.value, drawerIndex.value, coinsPerDrawer))
-const totalDrawers = computed(() => getTotalDrawers(displayTrayCoins.value.length, coinsPerDrawer))
+// A country's catalogue goes by year; a challenge's places are its countries or coins.
+const albumGroup = computed(() => checklistDefinition.value?.source === 'catalogue' ? 'year' : 'none')
 const emptySetMessage = computed(() => {
   if (normalizedSetType.value === 'agentic' && set.value?.agenticStatus === 'generating') {
     return t('sets.detail.empty.generating')
   }
   if (normalizedSetType.value === 'agentic') return t('sets.detail.empty.noSlots')
+  if (normalizedSetType.value === 'checklist') return t('sets.album.emptyChecklist')
+  if (normalizedSetType.value === 'smart') return t('sets.album.emptySmart')
   return t('sets.detail.empty.noCoins')
 })
 
@@ -418,7 +362,6 @@ watch(setId, () => {
   slotAssignmentError.value = null
   savingOrder.value = false
   orderError.value = null
-  drawerIndex.value = 0
   resetDragState()
 }, { flush: 'sync' })
 
@@ -426,28 +369,7 @@ watch(set, value => {
   editForm.value = { name: value?.name ?? '', description: value?.description ?? '', color: value?.color ?? '' }
 })
 
-watch(totalDrawers, (drawers) => {
-  if (drawers === 0) {
-    drawerIndex.value = 0
-    return
-  }
-  drawerIndex.value = Math.min(drawerIndex.value, drawers - 1)
-})
-
-watch(traySizeScale, (value) => {
-  const normalizedValue = Math.min(2.5, Math.max(0.75, Number(value) || 1))
-  traySizeScale.value = normalizedValue
-  localStorage.setItem('tray:sizeScale', normalizedValue.toString())
-})
-
 onMounted(async () => {
-  const storedScale = localStorage.getItem('tray:sizeScale')
-  if (storedScale !== null) {
-    const parsedScale = Number(storedScale)
-    if (Number.isFinite(parsedScale)) {
-      traySizeScale.value = Math.min(2.5, Math.max(0.75, parsedScale))
-    }
-  }
   await refreshQuickAccess()
 })
 
@@ -458,6 +380,7 @@ function openSetInfoPage() {
 
 function openEditModal() {
   menuOpen.value = false
+  editFilters.value = smartFilters.value ? { ...smartFilters.value } : null
   showEditModal.value = true
 }
 
@@ -481,7 +404,10 @@ async function togglePin() {
 async function updateSet() {
   const resource = capture()
   try {
-    await updateSetApi(resource.id, { ...editForm.value })
+    const filters = editFilters.value
+    await updateSetApi(resource.id, filters
+      ? { ...editForm.value, smartCriteria: filtersToCriteria(filters) as unknown as Record<string, unknown> }
+      : { ...editForm.value })
     if (!resource.isCurrent()) return
     showEditModal.value = false
     await Promise.all([loadSetDetails(), refreshQuickAccess(), refreshPinnedSets()])
@@ -676,26 +602,14 @@ function resetDragState() {
   dragOverCoinId.value = null
 }
 
-function handlePrevDrawer() {
-  drawerIndex.value = Math.max(0, drawerIndex.value - 1)
-}
-
-function handleNextDrawer() {
-  drawerIndex.value = Math.min(totalDrawers.value - 1, drawerIndex.value + 1)
-}
-
 function goToCoin(coinId: number) {
   router.push({ name: 'coin-detail', params: { id: coinId } })
 }
 
-function handleTrayCoinClick(coinOrTargetId: number) {
-  if (normalizedSetType.value !== 'agentic') {
-    goToCoin(coinOrTargetId)
-    return
-  }
-  const slot = currentDrawerCoins.value.find((coin) => coin.id === coinOrTargetId) as AgenticTrayCoin | undefined
-  if (!slot || slot.targetId == null) return
-  openAssignSlotModal(slot.targetId, slot.name, slot.assignedCoinId ?? null)
+// An agentic set's place: a coin to assign to its target, or to replace.
+function selectSlot(slot: AlbumSlot) {
+  if (slot.targetId == null) return
+  openAssignSlotModal(slot.targetId, slot.coinId ? (slot.detail ?? slot.title) : slot.title, slot.coinId ?? null)
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {

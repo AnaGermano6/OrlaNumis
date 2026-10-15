@@ -3,12 +3,10 @@ import addCoin from './addCoin'
 import admin from './admin'
 import agent from './agent'
 import app from './app'
-import auctions from './auctions'
 import auth from './auth'
 import availability from './availability'
 import banknoteForm from './banknoteForm'
 import banknotes from './banknotes'
-import calendar from './calendar'
 import camera from './camera'
 import catalog from './catalog'
 import chat from './chat'
@@ -41,7 +39,6 @@ import map from './map'
 import materials from './materials'
 import mint from './mint'
 import nav from './nav'
-import notes from './notes'
 import notifications from './notifications'
 import numista from './numista'
 import numistaGrades from './numistaGrades'
@@ -55,7 +52,6 @@ import quickCapture from './quickCapture'
 import sets from './sets'
 import settings from './settings'
 import shareCard from './shareCard'
-import shipment from './shipment'
 import showcases from './showcases'
 import social from './social'
 import sold from './sold'
@@ -77,12 +73,10 @@ const messages: Messages = {
   admin,
   agent,
   app,
-  auctions,
   auth,
   availability,
   banknoteForm,
   banknotes,
-  calendar,
   camera,
   catalog,
   chat,
@@ -115,7 +109,6 @@ const messages: Messages = {
   materials,
   mint,
   nav,
-  notes,
   notifications,
   numista,
   numistaGrades,
@@ -129,7 +122,6 @@ const messages: Messages = {
   sets,
   settings,
   shareCard,
-  shipment,
   showcases,
   social,
   sold,

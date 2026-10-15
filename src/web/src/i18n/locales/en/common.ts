@@ -48,7 +48,6 @@ export default {
   confidenceLabel: '{level} confidence',
   remove: 'Remove',
   add: 'Add',
-  removing: 'Removing...',
   checking: 'Checking...',
   date: 'Date',
   value: 'Value',
