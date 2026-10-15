@@ -8,17 +8,17 @@
             {{ t('timeline.title') }}
           </h1>
           <div class="flex gap-2 max-sm:w-full sm:justify-end">
-            <select v-model="filterType" class="form-input form-select min-w-[150px] max-sm:w-full sm:w-auto">
-              <option value="all">{{ t('timeline.allCoins') }}</option>
-              <option value="collection">{{ t('timeline.collectionOnly') }}</option>
+            <select v-model="kind" class="form-input form-select min-w-[150px] max-sm:w-full sm:w-auto" data-testid="timeline-kind">
+              <option value="coin">{{ t('timeline.allCoins') }}</option>
+              <option value="banknote">{{ t('timeline.allBanknotes') }}</option>
             </select>
           </div>
         </div>
         <template #desktop>
           <div class="mb-6 flex justify-end">
-            <select v-model="filterType" class="form-input form-select min-w-[150px]">
-              <option value="all">{{ t('timeline.allCoins') }}</option>
-              <option value="collection">{{ t('timeline.collectionOnly') }}</option>
+            <select v-model="kind" class="form-input form-select min-w-[150px]" data-testid="timeline-kind">
+              <option value="coin">{{ t('timeline.allCoins') }}</option>
+              <option value="banknote">{{ t('timeline.allBanknotes') }}</option>
             </select>
           </div>
         </template>
@@ -32,14 +32,14 @@
       <div v-else-if="timelineGroups.length === 0" class="empty-state">
         <Clock :size="48" />
         <h3>{{ t('timeline.empty.title') }}</h3>
-        <p>{{ t('timeline.empty.body') }}</p>
+        <p>{{ kind === 'banknote' ? t('timeline.empty.bodyBanknotes') : t('timeline.empty.body') }}</p>
       </div>
 
       <div v-else>
         <div class="mb-8 flex flex-wrap justify-around gap-4 rounded-md border border-border-subtle bg-card p-4 shadow-[var(--shadow-card)]">
           <div class="flex flex-col items-center gap-1">
             <span class="font-display text-lg font-bold text-gold">{{ totalCoins }}</span>
-            <span class="section-label">{{ t('timeline.coins') }}</span>
+            <span class="section-label">{{ kind === 'banknote' ? t('timeline.banknotes') : t('timeline.coins') }}</span>
           </div>
           <div class="flex flex-col items-center gap-1">
             <span class="font-display text-lg font-bold text-gold">{{ yearSpan }}</span>
@@ -62,7 +62,7 @@
               <div class="absolute -left-6 z-10 h-3 w-3 rounded-full border-2 border-surface bg-gold shadow-[0_0_0_2px_var(--accent-gold-dim)] max-sm:-left-[0.95rem] max-sm:h-2.5 max-sm:w-2.5" />
               <div class="font-display text-base font-semibold text-text-primary max-sm:text-base">{{ group.label }}</div>
               <div class="rounded-full bg-surface-secondary px-2 py-0.5 text-sm text-text-muted">
-                {{ t('common.coinCount', { count: group.coins.length }) }}
+                {{ kind === 'banknote' ? t('timeline.banknoteCount', { count: group.coins.length }) : t('common.coinCount', { count: group.coins.length }) }}
               </div>
             </div>
             <div class="grid grid-cols-1 gap-3 sm:[grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
@@ -116,7 +116,7 @@ import { Clock, Image as ImageIcon } from 'lucide-vue-next'
 import { t, intlLocale } from '@/i18n'
 import { categoryLabel } from '@/i18n/coinVocabulary'
 import { getCoins } from '@/api/client'
-import type { Coin } from '@/types'
+import type { Coin, CoinKind } from '@/types'
 import { CATEGORY_COLORS } from '@/types'
 import PullToRefresh from '@/components/PullToRefresh.vue'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
@@ -124,7 +124,8 @@ import DesktopPageContext from '@/components/DesktopPageContext.vue'
 
 const loading = ref(true)
 const allCoins = ref<Coin[]>([])
-const filterType = ref<'all' | 'collection'>('all')
+// The timeline shows the coins or the banknotes, never both at once.
+const kind = ref<CoinKind>('coin')
 
 function categoryColor(cat: string): string {
   return (CATEGORY_COLORS as Record<string, string>)[cat] || '#888'
@@ -153,10 +154,7 @@ function monthYearKey(dateStr: string): string {
 }
 
 const filteredCoins = computed(() => {
-  let coins = allCoins.value.filter(c => !c.isWishlist && c.purchaseDate)
-  if (filterType.value === 'collection') {
-    coins = coins.filter(c => !c.isSold)
-  }
+  const coins = allCoins.value.filter(c => !c.isWishlist && c.purchaseDate && (c.kind ?? 'coin') === kind.value)
   return coins.sort((a, b) => {
     const da = new Date(b.purchaseDate!).getTime()
     const db = new Date(a.purchaseDate!).getTime()
