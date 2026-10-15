@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { COIN_ERAS } from '@/types'
-import { getCoinOptions, getCoins, getSets, getTags } from '@/api/client'
+import { getCoinDenominations, getCoinOptions, getCoins, getSets, getTags } from '@/api/client'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
 import { resetCoinVocabulary } from '@/i18n/coinVocabulary'
 import { useCollectionFilters } from '../useCollectionFilters'
 
 vi.mock('@/api/client', () => ({
   getCoins: vi.fn(),
+  getCoinDenominations: vi.fn(),
   getCoinOptions: vi.fn(),
   getSets: vi.fn(),
   getTags: vi.fn(),
@@ -66,7 +66,6 @@ describe('useCollectionFilters', () => {
         source: 'set',
       },
     ])
-    expect(filters.eraOptions.value).toEqual(COIN_ERAS)
     wrapper.unmount()
   })
 
@@ -101,12 +100,13 @@ describe('useCollectionFilters', () => {
     wrapper.unmount()
   })
 
-  it('uses the configured era choices', async () => {
+  it("offers the collection's face values and filters by one", async () => {
     vi.mocked(getTags).mockResolvedValue({ data: { tags: [] } } as unknown as Awaited<ReturnType<typeof getTags>>)
     vi.mocked(getSets).mockResolvedValue({ data: { sets: [] } } as unknown as Awaited<ReturnType<typeof getSets>>)
-    vi.mocked(getCoinOptions).mockResolvedValue({
-      data: { categories: ['Roman'], eras: ['ancient', 'Republican'], labels: {} },
-    } as unknown as Awaited<ReturnType<typeof getCoinOptions>>)
+    vi.mocked(getCoins).mockResolvedValue({ data: { coins: [], total: 0 } } as unknown as Awaited<ReturnType<typeof getCoins>>)
+    vi.mocked(getCoinDenominations).mockResolvedValue({
+      data: [{ denomination: '2 euro', count: 92 }, { denomination: '5 euro', count: 36 }],
+    } as unknown as Awaited<ReturnType<typeof getCoinDenominations>>)
 
     let filters!: ReturnType<typeof useCollectionFilters>
     const wrapper = mount(defineComponent({
@@ -117,7 +117,10 @@ describe('useCollectionFilters', () => {
     }))
     await filters.fetchUserTags()
 
-    expect(filters.eraOptions.value).toEqual(['ancient', 'Republican'])
+    expect(getCoinDenominations).toHaveBeenCalledWith('coin')
+    expect(filters.denominationOptions.value.map((option) => option.denomination)).toEqual(['2 euro', '5 euro'])
+    filters.selectedDenomination.value = '2 euro'
+    await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ denomination: '2 euro', kind: 'coin' }))
     wrapper.unmount()
   })
 })

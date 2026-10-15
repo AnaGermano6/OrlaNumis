@@ -131,7 +131,15 @@
               <span class="text-chip text-text-muted">· {{ t('sets.catalogue.progress', { owned: group.owned, total: group.coins.length }) }}</span>
             </h3>
             <ul class="m-0 grid list-none grid-cols-2 gap-3 p-0 md:grid-cols-4 xl:grid-cols-6">
-              <CoinReleaseCard v-for="coin in group.coins" :key="coin.source + coin.imageUrl + coin.title" :release="coin" :show-country="false" wishlistable />
+              <CoinReleaseCard
+                v-for="coin in group.coins"
+                :key="coin.source + coin.imageUrl + coin.title"
+                :release="coin"
+                :show-country="false"
+                wishlistable
+                :manageable="Boolean(coin.id)"
+                @manage="openOptions(coin)"
+              />
             </ul>
           </section>
           <button
@@ -144,8 +152,30 @@
             {{ t('sets.catalogue.more', { count: filtered.length - limit }) }}
           </button>
         </template>
+
+        <!-- The coins hidden, or joined to another: each can be listed again. -->
+        <details v-if="!loadingCountry && hidden.length" class="mt-6 rounded-md border border-border-subtle bg-card px-4 py-3" data-testid="catalogue-hidden">
+          <summary class="cursor-pointer text-body font-medium text-text-secondary">{{ t('sets.catalogue.hidden.title', { count: hidden.length }) }}</summary>
+          <p class="mb-1 mt-2 text-chip text-text-muted">{{ t('sets.catalogue.hidden.body') }}</p>
+          <ul class="m-0 list-none p-0">
+            <li v-for="coin in hidden" :key="coin.id" class="flex items-center gap-3 border-t border-border-subtle py-2 first:border-t-0" data-testid="catalogue-hidden-coin">
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-body text-text-primary">{{ coin.title }}</span>
+                <span class="block text-chip text-text-muted">
+                  {{ releaseFaceValues(coin) }} · {{ coin.from.slice(0, 4) }}<template v-if="coin.sameAs"> · {{ t('sets.catalogue.hidden.sameAs', { title: titleOf(coin.sameAs) }) }}</template>
+                </span>
+              </span>
+              <button type="button" class="btn btn-secondary btn-sm shrink-0" :disabled="saving" data-testid="catalogue-show" @click="showAgain(coin)">
+                <Eye :size="14" /> {{ t('sets.catalogue.hidden.show') }}
+              </button>
+            </li>
+          </ul>
+          <p v-if="showFailed" class="mb-0 mt-2 text-body text-loss" role="alert">{{ t('sets.catalogue.manage.failed') }}</p>
+        </details>
       </section>
     </template>
+
+    <CatalogueCoinOptions :coin="options" :coins="coins" :saving="saving" :failed="optionsFailed" @hide="hide" @join="join" @close="options = null" />
   </div>
 </template>
 
@@ -155,15 +185,21 @@
 // Portugal, France and Austria sell. Other coins apart: Portugal's
 // commemorative and collector coins in escudos. The collection's own are
 // marked "In my collection"; a filter for each face value narrows the list.
-// The country (and currency) chosen is kept in the address.
+// A coin can be hidden, or said to be the same as another (one coin listed
+// twice); those are listed apart, to show again. The country (and currency)
+// chosen is kept in the address.
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Layers3 } from 'lucide-vue-next'
-import { createSet, getCoinCatalogue, getCoinCatalogueCountries, type CatalogueCountry, type CoinRelease } from '@/api/client'
+import { Eye, Layers3 } from 'lucide-vue-next'
+import {
+  createSet, getCoinCatalogue, getCoinCatalogueCountries, hideCatalogueCoin, joinCatalogueCoin, showCatalogueCoin,
+  type CatalogueCountry, type CoinRelease,
+} from '@/api/client'
+import CatalogueCoinOptions from '@/components/collection/CatalogueCoinOptions.vue'
 import CoinReleaseCard from '@/components/collection/CoinReleaseCard.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { intlLocale, t } from '@/i18n'
-import { formatFaceValue, releaseCountryName } from '@/utils/coinReleases'
+import { formatFaceValue, releaseCountryName, releaseFaceValues } from '@/utils/coinReleases'
 import { randomSetColor } from '@/utils/setColors'
 
 const OWNED = ['all', 'owned', 'missing'] as const
@@ -188,6 +224,13 @@ const ownedFilter = ref<(typeof OWNED)[number]>('all')
 const limit = ref(PAGE)
 const creatingSet = ref(false)
 const createSetFailed = ref(false)
+/** The coins hidden, or joined to another (sameAs). */
+const hidden = ref<CoinRelease[]>([])
+/** The coin whose options are open. */
+const options = ref<CoinRelease | null>(null)
+const saving = ref(false)
+const optionsFailed = ref(false)
+const showFailed = ref(false)
 
 function total(country: CatalogueCountry): number {
   return country.commemoratives + country.collector
@@ -283,6 +326,7 @@ async function choose(key: string) {
   if (!entry) return
   selected.value = key
   createSetFailed.value = false
+  showFailed.value = false
   faceValue.value = null
   ownedFilter.value = 'all'
   limit.value = PAGE
@@ -295,14 +339,77 @@ async function choose(key: string) {
     const { data } = await getCoinCatalogue(entry.country, entry.currency)
     if (selected.value === key) {
       coins.value = data.coins
+      hidden.value = data.hidden ?? []
       complete.value = data.complete !== false
     }
   } catch {
     countryFailed.value = true
     coins.value = []
+    hidden.value = []
   } finally {
     loadingCountry.value = false
   }
+}
+
+// The title of a coin of the country, shown or not.
+function titleOf(id: string): string {
+  return [...coins.value, ...hidden.value].find((coin) => coin.id === id)?.title ?? ''
+}
+
+function openOptions(coin: CoinRelease) {
+  optionsFailed.value = false
+  options.value = coin
+}
+
+// After a coin is hidden, joined or shown again: the country's coins and
+// every country's counts as they now are.
+async function reload() {
+  const entry = selectedSummary.value
+  if (!entry) return
+  const key = selected.value
+  const [list, catalogue] = await Promise.all([getCoinCatalogueCountries(), getCoinCatalogue(entry.country, entry.currency)])
+  countries.value = list.data.countries
+  if (selected.value === key) {
+    coins.value = catalogue.data.coins
+    hidden.value = catalogue.data.hidden ?? []
+    complete.value = catalogue.data.complete !== false
+  }
+}
+
+async function change(request: () => Promise<unknown>): Promise<boolean> {
+  if (saving.value) return false
+  saving.value = true
+  try {
+    await request()
+    await reload()
+    return true
+  } catch {
+    return false
+  } finally {
+    saving.value = false
+  }
+}
+
+async function hide() {
+  const id = options.value?.id
+  if (!id) return
+  optionsFailed.value = false
+  if (await change(() => hideCatalogueCoin(id))) options.value = null
+  else optionsFailed.value = true
+}
+
+async function join(sameAs: string) {
+  const id = options.value?.id
+  if (!id) return
+  optionsFailed.value = false
+  if (await change(() => joinCatalogueCoin(id, sameAs))) options.value = null
+  else optionsFailed.value = true
+}
+
+async function showAgain(coin: CoinRelease) {
+  if (!coin.id) return
+  showFailed.value = false
+  if (!(await change(() => showCatalogueCoin(coin.id!)))) showFailed.value = true
 }
 
 onMounted(async () => {

@@ -11,9 +11,19 @@ const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
   push: vi.fn(),
   saveToWishlist: vi.fn(),
+  hideCatalogueCoin: vi.fn(),
+  joinCatalogueCoin: vi.fn(),
+  showCatalogueCoin: vi.fn(),
   route: { query: {} as Record<string, string> },
 }))
-vi.mock('@/api/client', () => ({ getCoinCatalogueCountries: mocks.getCoinCatalogueCountries, getCoinCatalogue: mocks.getCoinCatalogue, createSet: mocks.createSet }))
+vi.mock('@/api/client', () => ({
+  getCoinCatalogueCountries: mocks.getCoinCatalogueCountries,
+  getCoinCatalogue: mocks.getCoinCatalogue,
+  createSet: mocks.createSet,
+  hideCatalogueCoin: mocks.hideCatalogueCoin,
+  joinCatalogueCoin: mocks.joinCatalogueCoin,
+  showCatalogueCoin: mocks.showCatalogueCoin,
+}))
 vi.mock('vue-router', () => ({ useRoute: () => mocks.route, useRouter: () => ({ replace: mocks.replace, push: mocks.push }) }))
 vi.mock('@/composables/useReleaseWishlist', () => ({ useReleaseWishlist: () => ({ saveToWishlist: mocks.saveToWishlist }) }))
 vi.mock('@/composables/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }))
@@ -193,6 +203,63 @@ describe('CommemorativeCataloguePage', () => {
     await flushPromises()
     expect(mocks.saveToWishlist).toHaveBeenCalledWith(expect.objectContaining({ title: 'Faróis' }))
     expect(card('Faróis').get('[data-testid="release-wishlist"]').text()).toBe('Na lista de desejos')
+  })
+
+  it('hides a coin, or joins it to another, and shows it again', async () => {
+    // The server: Portugal's coins with ids, less those hidden or joined.
+    const withIds = PORTUGAL.map((release) => ({ ...release, id: release.title }))
+    let hidden: CoinRelease[] = []
+    const find = (id: string) => withIds.find((release) => release.id === id)!
+    mocks.getCoinCatalogue.mockImplementation(async () => ({ data: {
+      country: 'PT', coins: withIds.filter((release) => !hidden.some((other) => other.id === release.id)), hidden, complete: true,
+    } }))
+    mocks.hideCatalogueCoin.mockImplementation(async (id: string) => { hidden = [...hidden, find(id)] })
+    mocks.joinCatalogueCoin.mockImplementation(async (id: string, sameAs: string) => { hidden = [...hidden, { ...find(id), sameAs }] })
+    mocks.showCatalogueCoin.mockImplementation(async (id: string) => { hidden = hidden.filter((release) => release.id !== id) })
+    const wrapper = mount(CommemorativeCataloguePage, { global: { stubs: { teleport: true } } })
+    await flushPromises()
+    const card = (title: string) => wrapper.findAll('[data-testid="release"]').find((node) => node.find('.line-clamp-3').text() === title)!
+    expect(wrapper.find('[data-testid="catalogue-hidden"]').exists()).toBe(false)
+
+    // Faróis, of 2025: the other coins, those of its year first.
+    await card('Faróis').get('[data-testid="release-manage"]').trigger('click')
+    const options = () => wrapper.get('[data-testid="catalogue-options"]')
+    expect(options().get('h3').text()).toBe('Faróis')
+    const choices = () => options().findAll('[data-testid="catalogue-same-option"]').map((option) => option.find('.truncate').text())
+    expect(choices()).toEqual(['World scouting', 'Sustainable development', 'Rotary', 'Mosteiro dos Jerónimos'])
+    await options().get('[data-testid="catalogue-same-search"]').setValue('jeronimos')
+    expect(choices()).toEqual(['Mosteiro dos Jerónimos'])
+
+    // Not saved: said, and the options stay open.
+    mocks.hideCatalogueCoin.mockRejectedValueOnce(new Error('offline'))
+    await options().get('[data-testid="catalogue-hide"]').trigger('click')
+    await flushPromises()
+    expect(options().get('[role="alert"]').text()).toBe('Não foi possível guardar a alteração. Tente novamente.')
+
+    await options().get('[data-testid="catalogue-hide"]').trigger('click')
+    await flushPromises()
+    expect(mocks.hideCatalogueCoin).toHaveBeenLastCalledWith('Faróis')
+    expect(wrapper.find('[data-testid="catalogue-options"]').exists()).toBe(false)
+    expect(cards(wrapper)).not.toContain('Faróis')
+    expect(wrapper.get('[data-testid="catalogue-hidden"] summary').text()).toBe('1 moeda escondida ou juntada')
+    // The counts of every country again.
+    expect(mocks.getCoinCatalogueCountries).toHaveBeenCalledTimes(2)
+
+    await card('Rotary').get('[data-testid="release-manage"]').trigger('click')
+    await options().findAll('[data-testid="catalogue-same-option"]').find((option) => option.text().includes('World scouting'))!.trigger('click')
+    await flushPromises()
+    expect(mocks.joinCatalogueCoin).toHaveBeenCalledWith('Rotary', 'World scouting')
+    const rows = () => wrapper.findAll('[data-testid="catalogue-hidden-coin"]')
+    expect(rows().map((row) => text(row))).toEqual([
+      expect.stringMatching(/^Faróis.* 2025 Mostrar$/),
+      expect.stringMatching(/^Rotary.* 2026 · a mesma que «World scouting» Mostrar$/),
+    ])
+
+    await rows()[0].get('[data-testid="catalogue-show"]').trigger('click')
+    await flushPromises()
+    expect(mocks.showCatalogueCoin).toHaveBeenCalledWith('Faróis')
+    expect(cards(wrapper)).toContain('Faróis')
+    expect(rows()).toHaveLength(1)
   })
 
   it('says so when the catalogue cannot be loaded', async () => {

@@ -264,6 +264,25 @@ export default {
     createSet: 'Create set',
     createSetHint: 'A set of these coins that keeps itself up to date',
     createSetFailed: 'The set could not be created. Try again.',
+    manage: {
+      open: 'Catalogue options for {title}',
+      hide: 'Hide from the catalogue',
+      hideHint: 'It leaves this catalogue and the sets made from it. You can show it again below the list.',
+      sameAs: 'It is the same coin as…',
+      sameAsHint: 'When the catalogue lists one coin twice: choose the other, which stays in its place and counts as yours if you have either.',
+      search: 'Search this country\'s coins',
+      noMatch: 'No coin of this country matches.',
+      failed: 'The change could not be saved. Try again.',
+    },
+    hidden: {
+      title: {
+        one: '{count} coin hidden or joined',
+        other: '{count} coins hidden or joined',
+      },
+      body: 'Coins you hid, or said are the same as another. Show one to list it again.',
+      sameAs: 'same as “{title}”',
+      show: 'Show',
+    },
   },
   challenges: {
     euroCountries: {

@@ -153,7 +153,6 @@ export default {
     newTagPlaceholder: 'New tag name...',
     createTag: 'Create Tag',
     noTags: 'No tags created yet. Create your first tag above.',
-    createLocation: 'Create Location',
     mintTitle: 'Custom Mint Locations',
     mintIntro: 'Add your own mint coordinates for coins you attribute. These appear in the map alongside global locations.',
     locationCount: { one: '{count} location', other: '{count} locations' },

@@ -72,6 +72,26 @@ func withNumistaOperationRecorder(ctx context.Context) (context.Context, *numist
 	return context.WithValue(ctx, numistaOperationRecorderKey{}, recorder), recorder
 }
 
+type numistaBackgroundKey struct{}
+
+// WithNumistaBackground marks the requests nobody is waiting for (the
+// catalogue, market values): they are not made once the month's quota runs low.
+func WithNumistaBackground(ctx context.Context) context.Context {
+	return context.WithValue(ctx, numistaBackgroundKey{}, true)
+}
+
+func numistaBackground(ctx context.Context) bool {
+	background, _ := ctx.Value(numistaBackgroundKey{}).(bool)
+	return background
+}
+
+// NumistaUsageRecorder counts the requests made and tells when the
+// background ones should wait.
+type NumistaUsageRecorder interface {
+	Record()
+	BackgroundPaused() bool
+}
+
 func recordNumistaAttempt(ctx context.Context) {
 	if recorder, ok := ctx.Value(numistaOperationRecorderKey{}).(*numistaOperationRecorder); ok {
 		recorder.attempts.Add(1)
@@ -105,6 +125,13 @@ type HTTPNumistaClient struct {
 	detailTimeout func() time.Duration
 	retryJitter   func(minimum, maximum time.Duration) time.Duration
 	retrySleeper  func(context.Context, time.Duration) error
+	usage         NumistaUsageRecorder
+}
+
+// WithUsage counts every request made against the monthly quota.
+func (c *HTTPNumistaClient) WithUsage(usage NumistaUsageRecorder) *HTTPNumistaClient {
+	c.usage = usage
+	return c
 }
 
 func NewHTTPNumistaClient(config NumistaClientConfig) (*HTTPNumistaClient, error) {
@@ -271,6 +298,9 @@ func (c *HTTPNumistaClient) getLimited(ctx context.Context, path string, timeout
 	if apiKey == "" {
 		return nil, &NumistaError{Kind: NumistaErrorUnconfigured}
 	}
+	if c.usage != nil && numistaBackground(ctx) && c.usage.BackgroundPaused() {
+		return nil, &NumistaError{Kind: NumistaErrorQuotaLimited}
+	}
 	requestCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -282,6 +312,9 @@ func (c *HTTPNumistaClient) getLimited(ctx context.Context, path string, timeout
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("Numista-API-Key", apiKey)
 		recordNumistaAttempt(ctx)
+		if c.usage != nil {
+			c.usage.Record()
+		}
 		resp, err := c.client.Do(req)
 		if err != nil {
 			if requestCtx.Err() != nil {

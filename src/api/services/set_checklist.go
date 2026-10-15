@@ -141,16 +141,24 @@ func (s ChecklistSummary) Completion() float64 {
 
 // SetChecklistService works out a checklist set's slots.
 type SetChecklistService struct {
-	releases *CoinReleasesService
-	coins    *repository.CoinRepository
-	photos   *CoinPhotoSearchService
-	now      func() time.Time
+	releases  *CoinReleasesService
+	coins     *repository.CoinRepository
+	photos    *CoinPhotoSearchService
+	overrides *repository.CatalogueOverrideRepository
+	now       func() time.Time
 }
 
 // NewSetChecklistService creates the service; photos finds which catalogue
 // coins the collection's are, and may be nil.
 func NewSetChecklistService(releases *CoinReleasesService, coins *repository.CoinRepository, photos *CoinPhotoSearchService) *SetChecklistService {
 	return &SetChecklistService{releases: releases, coins: coins, photos: photos, now: time.Now}
+}
+
+// WithOverrides makes a catalogue checklist leave out the coins its user hid
+// in the catalogue, and list once those the user joined.
+func (s *SetChecklistService) WithOverrides(overrides *repository.CatalogueOverrideRepository) *SetChecklistService {
+	s.overrides = overrides
+	return s
 }
 
 // Complete tells whether the catalogue behind the slots lists everything.
@@ -178,14 +186,26 @@ func Summarize(slots []ChecklistSlot) ChecklistSummary {
 // CatalogueSlots lists a catalogue checklist's coins, newest first, without
 // looking at the collection.
 func (s *SetChecklistService) CatalogueSlots(ctx context.Context, definition ChecklistDefinition) []ChecklistSlot {
-	slots := []ChecklistSlot{}
 	if definition.Source != ChecklistSourceCatalogue {
-		return slots
+		return []ChecklistSlot{}
 	}
+	return catalogueSlots(s.checklistCatalogue(ctx, definition), definition)
+}
+
+// checklistCatalogue is the catalogue's coins of a checklist's country and currency.
+func (s *SetChecklistService) checklistCatalogue(ctx context.Context, definition ChecklistDefinition) []CoinRelease {
+	coins := []CoinRelease{}
 	for _, coin := range s.releases.Catalogue(ctx) {
-		if coin.Country != definition.Country || coin.Currency != definition.Currency {
-			continue
+		if coin.Country == definition.Country && coin.Currency == definition.Currency {
+			coins = append(coins, coin)
 		}
+	}
+	return coins
+}
+
+func catalogueSlots(coins []CoinRelease, definition ChecklistDefinition) []ChecklistSlot {
+	slots := []ChecklistSlot{}
+	for _, coin := range coins {
 		if definition.FaceValue != 0 && !releaseHasFaceValue(coin, definition.FaceValue) {
 			continue
 		}
@@ -216,7 +236,7 @@ func (s *SetChecklistService) Slots(ctx context.Context, userID uint, definition
 	}
 	switch {
 	case definition.Source == ChecklistSourceCatalogue:
-		return s.catalogueChecklist(ctx, definition, coins, byID), nil
+		return s.catalogueChecklist(ctx, userID, definition, coins, byID)
 	case definition.Challenge == ChallengeEuroCountries:
 		return s.euroCountries(coins), nil
 	case definition.Challenge == ChallengeJointIssue:
@@ -243,17 +263,23 @@ func (s *SetChecklistService) ownedCatalogueKeys(ctx context.Context, coins []mo
 	return s.releases.OwnedKeys(ctx, queries, s.photos)
 }
 
-func (s *SetChecklistService) catalogueChecklist(ctx context.Context, definition ChecklistDefinition, coins []models.Coin, byID map[uint]*models.Coin) []ChecklistSlot {
-	slots := s.CatalogueSlots(ctx, definition)
+func (s *SetChecklistService) catalogueChecklist(ctx context.Context, userID uint, definition ChecklistDefinition, coins []models.Coin, byID map[uint]*models.Coin) ([]ChecklistSlot, error) {
+	catalogue := s.checklistCatalogue(ctx, definition)
+	if s.overrides != nil {
+		overrides, err := s.overrides.List(userID)
+		if err != nil {
+			return nil, err
+		}
+		catalogue, _ = ApplyCatalogueOverrides(catalogue, overrides)
+	}
+	slots := catalogueSlots(catalogue, definition)
 	if len(slots) == 0 {
-		return slots
+		return slots, nil
 	}
 	owned := s.ownedCatalogueKeys(ctx, coins, definition.Country)
 	keys := map[string][]string{}
-	for _, coin := range s.releases.Catalogue(ctx) {
-		if coin.Country == definition.Country && coin.Currency == definition.Currency {
-			keys[coin.Keys[0]] = coin.Keys
-		}
+	for _, coin := range catalogue {
+		keys[coin.Keys[0]] = coin.Keys
 	}
 	for i := range slots {
 		for _, key := range keys[slots[i].Key] {
@@ -263,7 +289,7 @@ func (s *SetChecklistService) catalogueChecklist(ctx context.Context, definition
 			}
 		}
 	}
-	return slots
+	return slots, nil
 }
 
 // fill puts a collection coin in a slot (or marks it filled when the coin

@@ -211,6 +211,8 @@ type NumistaHealthSummary struct {
 	RelaxedAttemptCount   int                         `json:"relaxedAttemptCount,omitempty"`
 	LastQuotaLimitedAt    *time.Time                  `json:"lastQuotaLimitedAt,omitempty"`
 	LastRetryAfterSeconds *int                        `json:"lastRetryAfterSeconds,omitempty"`
+	// Usage is this month's request count against the quota.
+	Usage *NumistaUsageSummary `json:"usage,omitempty"`
 }
 
 func (r *NumistaLookupRequest) Validate() error {

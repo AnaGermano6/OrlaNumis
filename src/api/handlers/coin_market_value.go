@@ -107,5 +107,7 @@ func (h *CoinMarketValueHandler) MarketValue(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, h.svc.ForCoin(c.Request.Context(), coin, issueID, currency, lang))
+	// A coin's page asks for its market value on its own: it waits when the
+	// month's Numista quota runs low.
+	c.JSON(http.StatusOK, h.svc.ForCoin(services.WithNumistaBackground(c.Request.Context()), coin, issueID, currency, lang))
 }

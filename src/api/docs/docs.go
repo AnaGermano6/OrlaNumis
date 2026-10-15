@@ -1495,7 +1495,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns redacted Numista configuration validity and bounded rolling status, latency, cache, quota, and enrichment aggregates. Admin only.",
+                "description": "Returns redacted Numista configuration validity and bounded rolling status, latency, cache, quota, and enrichment aggregates, and this month's request count against the quota. Admin only.",
                 "produces": [
                     "application/json"
                 ],
@@ -4916,7 +4916,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "A country's coins in one currency, newest first: in euros, its €2 commemoratives (every one the ECB has published since 2004), its €5, €10 and €20 coins and the collector coins its mint sells (Portugal, France, Austria); in escudos (currency PTE), Portugal's commemorative and collector coins of 1911–2001. Each says whether a coin of the collection is it.",
+                "description": "A country's coins in one currency, newest first: in euros, its €2 commemoratives (every one the ECB has published since 2004), its €5, €10 and €20 coins and the collector coins its mint sells (Portugal, France, Austria); in escudos (currency PTE), Portugal's commemorative and collector coins of 1911–2001. Each says whether a coin of the collection is it. The coins the user hid, or joined to another, are listed apart.",
                 "produces": [
                     "application/json"
                 ],
@@ -5031,6 +5031,101 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coin-catalogue/overrides": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Hides a coin of the catalogue from the user's catalogue and checklist sets; or, with sameAs, says it is the same coin as another of the same country and currency, which is then listed in its place (and is the user's when the user has either). It replaces what the user had chosen for the coin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Hide a coin of the catalogue, or join it to another",
+                "parameters": [
+                    {
+                        "description": "The coin's id, and the other's",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CatalogueOverrideRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Forgets the user's choice for a coin of the catalogue: hidden, it is listed again; joined to another, it is listed apart again.",
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Show a coin of the catalogue again",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The coin's id",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -5218,6 +5313,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by country (exact)",
                         "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by face value, as written (\\",
+                        "name": "denomination",
                         "in": "query"
                     },
                     {
@@ -5651,6 +5752,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/coins/denominations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns each face value of the user's collection coins (excluding wishlist and sold), as written, with how many coins have it, the most common first.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "List collection face values",
+                "parameters": [
+                    {
+                        "enum": [
+                            "coin",
+                            "banknote"
+                        ],
+                        "type": "string",
+                        "description": "Only coins or only banknotes (every item when omitted)",
+                        "name": "kind",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.DenominationCount"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/coins/health": {
             "get": {
                 "security": [
@@ -5967,6 +6120,88 @@ const docTemplate = `{
                                     "type": "string"
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/official-photos/batch": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Looks at up to limit (default 10, at most 20) of the user's coins without any image, after afterId, and adds the official images each has (as for one coin): the ECB's images of a euro coin, or its mint's photos. Numista types are read from the cache only, so no Numista request is made. Call again with nextAfterId until done.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Add official images to coins without photos",
+                "parameters": [
+                    {
+                        "description": "Where to start",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.OfficialPhotosBatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.OfficialPhotosBatchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/official-photos/missing": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Counts the user's coins (not banknotes, not sold) that have no image at all: the ones the official photos batch looks at.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Count coins without photos",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MissingPhotosResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -18258,6 +18493,22 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CatalogueOverrideRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "maxLength": 600
+                },
+                "sameAs": {
+                    "type": "string",
+                    "maxLength": 600
+                }
+            }
+        },
         "handlers.CategoryCount": {
             "type": "object",
             "properties": {
@@ -18315,6 +18566,13 @@ const docTemplate = `{
                 "country": {
                     "type": "string",
                     "example": "PT"
+                },
+                "hidden": {
+                    "description": "Hidden are the coins the user hid, and those the user joined to\nanother (sameAs), which is listed in their place.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.CoinRelease"
+                    }
                 }
             }
         },
@@ -19807,6 +20065,15 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.MissingPhotosResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 326
+                }
+            }
+        },
         "handlers.NGCDataSwagger": {
             "type": "object",
             "properties": {
@@ -20116,6 +20383,48 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.OfficialPhotosBatchRequest": {
+            "type": "object",
+            "properties": {
+                "afterId": {
+                    "description": "AfterID is the last coin the previous batch looked at (0 to start).",
+                    "type": "integer",
+                    "example": 0
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 20,
+                    "minimum": 1,
+                    "example": 10
+                }
+            }
+        },
+        "handlers.OfficialPhotosBatchResponse": {
+            "type": "object",
+            "properties": {
+                "checked": {
+                    "description": "Checked is how many coins the batch looked at; WithPhotos how many of\nthem got at least one image, Images how many images in all.",
+                    "type": "integer",
+                    "example": 10
+                },
+                "done": {
+                    "type": "boolean"
+                },
+                "images": {
+                    "type": "integer",
+                    "example": 13
+                },
+                "nextAfterId": {
+                    "description": "NextAfterID starts the next batch; Done is true when no coin is left.",
+                    "type": "integer",
+                    "example": 431
+                },
+                "withPhotos": {
+                    "type": "integer",
+                    "example": 7
                 }
             }
         },
@@ -23651,6 +23960,14 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "usage": {
+                    "description": "Usage is this month's request count against the quota.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.NumistaUsageSummary"
+                        }
+                    ]
+                },
                 "userEditedQueryCount": {
                     "type": "integer"
                 }
@@ -23833,6 +24150,30 @@ const docTemplate = `{
                 "NumistaSearchAttemptPrimary",
                 "NumistaSearchAttemptRelaxed"
             ]
+        },
+        "models.NumistaUsageSummary": {
+            "type": "object",
+            "properties": {
+                "backgroundPaused": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 2000
+                },
+                "month": {
+                    "type": "string",
+                    "example": "2026-10"
+                },
+                "pauseAt": {
+                    "type": "integer",
+                    "example": 1800
+                },
+                "requests": {
+                    "type": "integer",
+                    "example": 1234
+                }
+            }
         },
         "models.OCREHealthSummary": {
             "type": "object",
@@ -24663,6 +25004,17 @@ const docTemplate = `{
                 }
             }
         },
+        "repository.DenominationCount": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "denomination": {
+                    "type": "string"
+                }
+            }
+        },
         "repository.DistributionCell": {
             "type": "object",
             "properties": {
@@ -25077,6 +25429,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2025-10"
                 },
+                "id": {
+                    "description": "ID identifies a coin of the catalogue (its first key), to hide it or\njoin it to another.",
+                    "type": "string"
+                },
                 "imageUrl": {
                     "type": "string"
                 },
@@ -25096,6 +25452,10 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "pageUrl": {
+                    "type": "string"
+                },
+                "sameAs": {
+                    "description": "SameAs is, for a coin the user joined to another, that one's id.",
                     "type": "string"
                 },
                 "source": {

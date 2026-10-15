@@ -298,6 +298,27 @@ describe('AdminSystemSection Numista configuration and health', () => {
     expect(wrapper.text()).not.toContain('Status Counts')
   })
 
+  it("shows this month's requests against the quota, and when the background waits", async () => {
+    const health = (await mocks.getAdminNumistaHealth()).data
+    mocks.getAdminNumistaHealth.mockReset().mockResolvedValue({
+      data: { ...health, usage: { month: '2026-10', requests: 1234, limit: 2000, pauseAt: 1800, backgroundPaused: false } },
+    })
+    const wrapper = mount(AdminSystemSection, { props: baseProps() })
+    await flushPromises()
+    const usage = wrapper.get('[data-testid="numista-usage"]')
+    expect(usage.text()).toContain('Requests this month')
+    expect(usage.text()).toContain('1,234 of 2,000')
+    expect(usage.text()).toContain('From 1,800, the catalogue, market values and country filling stop asking Numista')
+    expect(usage.get('[role="progressbar"] > div').attributes('style')).toContain('width: 61.7')
+
+    mocks.getAdminNumistaHealth.mockReset().mockResolvedValue({
+      data: { ...health, usage: { month: '2026-10', requests: 1950, limit: 2000, pauseAt: 1800, backgroundPaused: true } },
+    })
+    const paused = mount(AdminSystemSection, { props: baseProps() })
+    await flushPromises()
+    expect(paused.get('[data-testid="numista-usage"]').text()).toContain('Past 1,800: the catalogue, market values and country filling wait for next month')
+  })
+
   it('does not claim remaining quota or render sensitive response fields', async () => {
     const wrapper = mount(AdminSystemSection, { props: baseProps() })
     await flushPromises()

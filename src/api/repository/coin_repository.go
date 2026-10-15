@@ -20,6 +20,8 @@ type CoinListFilters struct {
 	Category string
 	Era      string
 	Country  string
+	// Denomination keeps the coins of one face value, as written ("2 euro").
+	Denomination string
 	// Countries, when not nil, keeps only coins of these countries (none
 	// when empty), e.g. the collection's extinct countries.
 	Countries []string
@@ -245,6 +247,9 @@ func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Co
 	}
 	if filters.Country != "" {
 		query = query.Where("country = ?", filters.Country)
+	}
+	if denomination := strings.TrimSpace(filters.Denomination); denomination != "" {
+		query = query.Where("TRIM(denomination) = ?", denomination)
 	}
 	if filters.Presentation != "" {
 		query = query.Where("presentation = ?", filters.Presentation)
@@ -976,6 +981,46 @@ func (r *CoinRepository) CountryCounts(userID uint, kind string) ([]CountryCount
 		Select("country, COUNT(*) AS count").
 		Where("country IS NOT NULL AND country <> '' AND is_wishlist = ? AND is_sold = ?", false, false).
 		Group("country").Order("country").Scan(&counts).Error
+	return counts, err
+}
+
+// withoutImages keeps the user's coins (not banknotes, not sold) with no image at all.
+func withoutImages(userID uint) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Scopes(OwnedBy(userID), OfKind(models.CoinKindCoin)).
+			Where("is_sold = ? AND NOT EXISTS (SELECT 1 FROM coin_images WHERE coin_images.coin_id = coins.id)", false)
+	}
+}
+
+// CountWithoutImages counts the user's coins (not banknotes, not sold) with no image.
+func (r *CoinRepository) CountWithoutImages(userID uint) (int64, error) {
+	var count int64
+	err := r.db.Model(&models.Coin{}).Scopes(withoutImages(userID)).Count(&count).Error
+	return count, err
+}
+
+// IDsWithoutImages lists, in order, up to limit of those coins after afterID.
+func (r *CoinRepository) IDsWithoutImages(userID, afterID uint, limit int) ([]uint, error) {
+	var ids []uint
+	err := r.db.Model(&models.Coin{}).Scopes(withoutImages(userID)).
+		Where("coins.id > ?", afterID).Order("coins.id").Limit(limit).Pluck("coins.id", &ids).Error
+	return ids, err
+}
+
+// DenominationCount is a face value of the collection and how many coins have it.
+type DenominationCount struct {
+	Denomination string `json:"denomination"`
+	Count        int64  `json:"count"`
+}
+
+// DenominationCounts lists the face values of the user's collection coins
+// (not wishlist or sold) of a kind ("" for every item), the most common first.
+func (r *CoinRepository) DenominationCounts(userID uint, kind string) ([]DenominationCount, error) {
+	var counts []DenominationCount
+	err := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID), OfKind(kind)).
+		Select("TRIM(denomination) AS denomination, COUNT(*) AS count").
+		Where("TRIM(COALESCE(denomination, '')) <> '' AND is_wishlist = ? AND is_sold = ?", false, false).
+		Group("TRIM(denomination)").Order("count DESC, denomination").Scan(&counts).Error
 	return counts, err
 }
 

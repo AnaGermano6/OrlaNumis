@@ -266,6 +266,25 @@ const messages: Messages['sets'] = {
     createSet: 'Criar conjunto',
     createSetHint: 'Um conjunto com estas moedas, que se atualiza sozinho',
     createSetFailed: 'Não foi possível criar o conjunto. Tente novamente.',
+    manage: {
+      open: 'Opções do catálogo para {title}',
+      hide: 'Esconder do catálogo',
+      hideHint: 'Sai deste catálogo e dos conjuntos feitos a partir dele. Pode voltar a mostrá-la por baixo da lista.',
+      sameAs: 'É a mesma moeda que…',
+      sameAsHint: 'Quando o catálogo lista a mesma moeda duas vezes: escolha a outra, que fica no lugar desta e conta como sua se tiver qualquer uma das duas.',
+      search: 'Procurar nas moedas deste país',
+      noMatch: 'Nenhuma moeda deste país corresponde.',
+      failed: 'Não foi possível guardar a alteração. Tente novamente.',
+    },
+    hidden: {
+      title: {
+        one: '{count} moeda escondida ou juntada',
+        other: '{count} moedas escondidas ou juntadas',
+      },
+      body: 'Moedas que escondeu, ou que disse serem a mesma que outra. Mostre uma para voltar a vê-la na lista.',
+      sameAs: 'a mesma que «{title}»',
+      show: 'Mostrar',
+    },
   },
   challenges: {
     euroCountries: {

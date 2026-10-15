@@ -50,6 +50,35 @@ func (h *CoinCountryHandler) Countries(c *gin.Context) {
 	c.JSON(http.StatusOK, counts)
 }
 
+// Denominations lists the collection's face values with coin counts.
+//
+//	@Summary		List collection face values
+//	@Description	Returns each face value of the user's collection coins (excluding wishlist and sold), as written, with how many coins have it, the most common first.
+//	@Tags			Coins
+//	@Produce		json
+//	@Param			kind	query		string	false	"Only coins or only banknotes (every item when omitted)"	Enums(coin, banknote)
+//	@Success		200		{array}		repository.DenominationCount
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/coins/denominations [get]
+func (h *CoinCountryHandler) Denominations(c *gin.Context) {
+	kind, ok := coinKindQuery(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "kind must be 'coin' or 'banknote'"})
+		return
+	}
+	counts, err := h.coins.DenominationCounts(c.GetUint("userId"), kind)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list face values"})
+		return
+	}
+	if counts == nil {
+		counts = []repository.DenominationCount{}
+	}
+	c.JSON(http.StatusOK, counts)
+}
+
 // FillFromNumista sets missing countries from the coins' Numista types.
 //
 //	@Summary		Fill coin countries from Numista
@@ -76,5 +105,7 @@ func (h *CoinCountryHandler) FillFromNumista(c *gin.Context) {
 		}
 		coinID = parsed
 	}
-	c.JSON(http.StatusOK, h.svc.FillFromNumista(c.Request.Context(), c.GetUint("userId"), uint(coinID), lang))
+	// The gallery fills countries on its own when grouped by country: it
+	// waits when the month's Numista quota runs low.
+	c.JSON(http.StatusOK, h.svc.FillFromNumista(services.WithNumistaBackground(c.Request.Context()), c.GetUint("userId"), uint(coinID), lang))
 }

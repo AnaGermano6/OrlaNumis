@@ -221,6 +221,7 @@ type PurchaseRequest struct {
 //	@Param			category	query		string	false	"Filter by category (Roman, Greek, Byzantine, Modern, Other)"
 //	@Param			era			query		string	false	"Filter by era (ancient, medieval, modern)"
 //	@Param			country		query		string	false	"Filter by country (exact)"
+//	@Param			denomination	query		string	false	"Filter by face value, as written (\"2 euro\")"
 //	@Param			presentation	query	string	false	"Filter by presentation"	Enums(loose, coincard, capsule, flip, proof_set, blister, slab)
 //	@Param			repeated		query	bool	false	"Only coins held more than once (a quantity above one), the copies there to trade"
 //	@Param			extinct			query	bool	false	"Only coins of countries that no longer exist (USSR, Yugoslavia, Ottoman Empire…)"
@@ -290,6 +291,7 @@ func (h *CoinHandler) List(c *gin.Context) {
 		Category:     c.Query("category"),
 		Era:          c.Query("era"),
 		Country:      models.NormalizeCoinCountry(c.Query("country")),
+		Denomination: c.Query("denomination"),
 		Presentation: strings.TrimSpace(c.Query("presentation")),
 		Repeated:     c.Query("repeated") == "true",
 		Rarity:       strings.TrimSpace(c.Query("rarity")),

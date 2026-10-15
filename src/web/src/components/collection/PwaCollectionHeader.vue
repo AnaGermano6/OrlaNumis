@@ -21,8 +21,8 @@
             </button>
           </div>
           <div class="flex flex-col gap-[0.4rem]">
-            <span class="section-label mb-0">{{ t('collection.menu.era') }}</span>
-            <EraFilter :model-value="selectedEra" :eras="eraOptions" @update:model-value="$emit('update:selectedEra', $event)" />
+            <span class="section-label mb-0">{{ t('collection.menu.denomination') }}</span>
+            <DenominationFilter :model-value="selectedDenomination" :denominations="denominationOptions" @update:model-value="$emit('update:selectedDenomination', $event)" />
           </div>
           <div v-if="userTags.length" class="flex flex-col gap-[0.4rem]">
             <span class="section-label mb-0">{{ t('collection.menu.set') }}</span>
@@ -65,7 +65,8 @@
 
 <script setup lang="ts">
 import type { CollectionSetOption, ImageType } from '@/types'
-import EraFilter from '@/components/collection/EraFilter.vue'
+import type { CoinDenominationCount } from '@/api/client'
+import DenominationFilter from '@/components/collection/DenominationFilter.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import SortSelect from '@/components/SortSelect.vue'
 import { Layers, LayoutGrid, SlidersHorizontal } from 'lucide-vue-next'
@@ -75,10 +76,10 @@ defineProps<{
   search: string
   selectMode: boolean
   menuOpen: boolean
-  selectedEra: string
+  selectedDenomination: string
   selectedTag: string
   userTags: CollectionSetOption[]
-  eraOptions: string[]
+  denominationOptions: CoinDenominationCount[]
   sortKey: string
   viewMode: 'grid' | 'swipe'
   gridSide: ImageType | null
@@ -87,7 +88,7 @@ defineProps<{
 defineEmits<{
   'update:search': [value: string]
   'update:menuOpen': [value: boolean]
-  'update:selectedEra': [value: string]
+  'update:selectedDenomination': [value: string]
   'update:selectedTag': [value: string]
   'update:sortKey': [value: string]
   'update:viewMode': [value: 'grid' | 'swipe']

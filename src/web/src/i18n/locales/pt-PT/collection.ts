@@ -2,7 +2,7 @@ import type { Messages } from '../../types'
 
 const messages: Messages['collection'] = {
   searchPlaceholder: 'Pesquisar moedas por nome, governante, inscrição...',
-  allEras: 'Todas as épocas',
+  allDenominations: 'Todos os valores',
   allSets: 'Todos os conjuntos',
   sort: {
     lastUpdated: 'Atualizadas recentemente',
@@ -18,7 +18,7 @@ const messages: Messages['collection'] = {
     exitSelection: 'Sair do modo de seleção',
     enableSelection: 'Ativar modo de seleção',
     category: 'Categoria',
-    era: 'Época',
+    denomination: 'Valor facial',
     set: 'Conjunto',
     sort: 'Ordenar',
     view: 'Vista',

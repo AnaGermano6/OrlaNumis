@@ -45,6 +45,7 @@
       />
       <CollectionHighlights :summary="coins" :title="t('collectionOverview.coins.highlights')" />
       <CollectionRepeated kind="coin" :summary="coins" />
+      <CollectionMissingPhotos />
     </section>
 
     <!-- Banknotes: their numbers and highlights -->
@@ -79,6 +80,7 @@ import BanknoteKpis from '@/components/collection/BanknoteKpis.vue'
 import CollectionHighlights from '@/components/collection/CollectionHighlights.vue'
 import CollectionKpis from '@/components/collection/CollectionKpis.vue'
 import CollectionDaily from '@/components/collection/CollectionDaily.vue'
+import CollectionMissingPhotos from '@/components/collection/CollectionMissingPhotos.vue'
 import CollectionRepeated from '@/components/collection/CollectionRepeated.vue'
 import CoinReleases from '@/components/collection/CoinReleases.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
@@ -113,7 +115,7 @@ const totals = computed(() => [
 // A coin card opens the gallery with only that card's filter on.
 function openGallery(filter: { circulation?: string; commemorative?: string; presentation?: string; country?: string }) {
   store.searchQuery = ''
-  store.selectedEra = ''
+  store.selectedDenomination = ''
   store.selectedRarity = ''
   store.selectedClassification = ''
   store.selectedCirculation = filter.circulation ?? ''

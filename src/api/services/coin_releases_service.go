@@ -86,6 +86,11 @@ type CoinRelease struct {
 	// Keys identify the coin in the official photos found for a collection
 	// coin: the ECB images of a €2 commemorative, the shop pages of a mint's design.
 	Keys []string `json:"-"`
+	// ID identifies a coin of the catalogue (its first key), to hide it or
+	// join it to another.
+	ID string `json:"id,omitempty"`
+	// SameAs is, for a coin the user joined to another, that one's id.
+	SameAs string `json:"sameAs,omitempty"`
 }
 
 // CoinReleaseGroup is the ECB's releases, or the mints'.
@@ -256,6 +261,9 @@ func (s *CoinReleasesService) CatalogueComplete() bool {
 }
 
 func (s *CoinReleasesService) readCatalogue(ctx context.Context) []CoinRelease {
+	// Nobody waits for the catalogue's Numista searches: they stop when the
+	// month's quota runs low.
+	ctx = WithNumistaBackground(ctx)
 	now := s.now()
 	coins := []CoinRelease{}
 	if s.ecb != nil {
@@ -293,6 +301,9 @@ func (s *CoinReleasesService) readCatalogue(ctx context.Context) []CoinRelease {
 	}
 	s.numistaComplete = complete
 	sortReleases(coins)
+	for i := range coins {
+		coins[i].ID = coins[i].Keys[0]
+	}
 	return coins
 }
 
@@ -458,7 +469,7 @@ func (s *CoinReleasesService) lookUpTopics(missing []topicLookup) {
 		defer s.topics.Done()
 		found := 0
 		for _, lookup := range missing {
-			if _, err := s.numista.TypeTopic(context.Background(), lookup.typeID, lookup.lang); err != nil {
+			if _, err := s.numista.TypeTopic(WithNumistaBackground(context.Background()), lookup.typeID, lookup.lang); err != nil {
 				break
 			}
 			found++
