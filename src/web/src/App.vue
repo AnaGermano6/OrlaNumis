@@ -123,10 +123,6 @@
             <Settings :size="20" />
             <span>{{ t('nav.settings') }}</span>
           </router-link>
-          <button class="sidebar-link flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-5 py-[0.7rem] text-left font-sans text-base text-text-secondary transition-colors hover:bg-gold-glow hover:text-gold" @click="openOnboardingGuide">
-            <BookOpen :size="20" />
-            <span>{{ t('nav.gettingStarted') }}</span>
-          </button>
           <router-link v-if="auth.isAdmin" to="/admin" class="sidebar-link flex w-full items-center gap-3 border-0 bg-transparent px-5 py-[0.7rem] text-left font-sans text-base text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" active-class="border-r-[3px] border-gold bg-gold-glow text-gold" @click="sidebarOpen = false">
             <ShieldCheck :size="20" />
             <span>{{ t('nav.admin') }}</span>
@@ -206,7 +202,7 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted, markRaw, type Component } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
-import { Landmark, Bookmark, BadgeDollarSign, BarChart3, CirclePlus, Settings, ShieldCheck, LogOut, Users as UsersIcon, Bot, X, Bell, Plus, Share2, GripVertical, BookOpen, Layers3, Search, ChevronRight, ChevronDown, CheckSquare, Pin } from 'lucide-vue-next'
+import { Landmark, Bookmark, BadgeDollarSign, BarChart3, CirclePlus, Settings, ShieldCheck, LogOut, Users as UsersIcon, Bot, X, Bell, Plus, Share2, GripVertical, Layers3, Search, ChevronRight, ChevronDown, CheckSquare, Pin } from 'lucide-vue-next'
 import { updateProfile, getMe } from '@/api/client'
 import { useNotifications } from '@/composables/useNotifications'
 import { usePinnedSets } from '@/composables/usePinnedSets'

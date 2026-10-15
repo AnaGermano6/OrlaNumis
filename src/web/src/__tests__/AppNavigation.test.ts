@@ -117,6 +117,15 @@ describe('App sidebar navigation', () => {
     expect(routerSource).not.toContain('/quick-capture/ai')
   })
 
+  it('has no Getting Started link: the guide opens from the first-login prompt and Settings → Help', () => {
+    const source = fs.readFileSync(appPath, 'utf8')
+
+    expect(source).not.toContain('gettingStarted')
+    // The first-login prompt still opens the guide.
+    expect(source).toContain('@click="openOnboardingGuide"')
+    expect(source).toContain("query: { tab: 'help' }")
+  })
+
   it('has no shipment tracker, auctions or calendar: their old addresses lead elsewhere', () => {
     const source = fs.readFileSync(appPath, 'utf8')
     const routerSource = fs.readFileSync(path.resolve(__dirname, '../router/index.ts'), 'utf8')

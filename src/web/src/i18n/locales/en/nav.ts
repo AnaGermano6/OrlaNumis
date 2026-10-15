@@ -20,7 +20,6 @@ export default {
   showcases: 'Showcases',
   notifications: 'Notifications',
   settings: 'Settings',
-  gettingStarted: 'Getting Started',
   admin: 'Admin',
   logout: 'Logout',
   banknotes: 'Banknotes',

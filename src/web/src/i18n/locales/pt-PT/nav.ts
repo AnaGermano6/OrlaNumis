@@ -22,7 +22,6 @@ const messages: Messages['nav'] = {
   showcases: 'Vitrinas',
   notifications: 'Notificações',
   settings: 'Definições',
-  gettingStarted: 'Primeiros passos',
   admin: 'Administração',
   logout: 'Terminar sessão',
   banknotes: 'Notas de banco',

@@ -8,7 +8,7 @@
     <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim" open>
       <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Getting Started in the App</summary>
       <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>If this is a new account, you can open this guide from the first-login prompt or anytime from the sidebar under <strong>Getting Started</strong>.</p>
+        <p>If this is a new account, you can open this guide from the first-login prompt or anytime in <strong>Settings → Help</strong>.</p>
 
         <h4>Recommended First Steps</h4>
         <ol>
