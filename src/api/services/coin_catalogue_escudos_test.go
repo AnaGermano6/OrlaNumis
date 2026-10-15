@@ -51,6 +51,11 @@ type escudoNumista struct {
 	values   map[string]string
 	failFrom int
 	calls    int
+	// details are the types described, by "id|lang"; asked counts the
+	// types asked for, and detailsFail makes every one fail.
+	details     map[string]string
+	asked       []string
+	detailsFail bool
 }
 
 func (n *escudoNumista) SearchTypes(_ context.Context, search NumistaTypeSearch) ([]byte, error) {
@@ -67,7 +72,12 @@ func (n *escudoNumista) SearchTypes(_ context.Context, search NumistaTypeSearch)
 	return []byte(`{"count": 0, "types": []}`), nil
 }
 
-func (n *escudoNumista) TypeDetail(context.Context, int, string) ([]byte, error) {
+func (n *escudoNumista) TypeDetail(_ context.Context, typeID int, lang string) ([]byte, error) {
+	key := fmt.Sprintf("%d|%s", typeID, lang)
+	n.asked = append(n.asked, key)
+	if body, ok := n.details[key]; ok && !n.detailsFail {
+		return []byte(body), nil
+	}
 	return nil, errors.New("not asked")
 }
 func (n *escudoNumista) Issuers(context.Context, string) ([]byte, error) { return []byte(`[]`), nil }
@@ -81,6 +91,13 @@ func newEscudoCatalogue(t *testing.T, client *escudoNumista, mints ...MintReleas
 	if err != nil {
 		t.Fatal(err)
 	}
+	// One connection: topics are read in the background too, and a second
+	// connection would open another, empty, in-memory database.
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
 	if err := db.AutoMigrate(&models.NumistaCacheEntry{}); err != nil {
 		t.Fatal(err)
 	}
@@ -186,9 +203,11 @@ func TestCoinCatalogue_EuroCollectorCoins(t *testing.T) {
 			{"id": 501, "title": "10 Euro Cents (1st map)", "issuer": {"code": "germany"}, "min_year": 2002, "max_year": 2006},
 			{"id": 502, "title": "10 Euros (Albert Einstein)", "issuer": {"code": "germany"}, "min_year": 2005, "max_year": 2005},
 			{"id": 503, "title": "10 Euros (Franz Kafka)", "issuer": {"code": "germany"}, "min_year": 2008, "max_year": 2008}]}`,
-		"france|10 euro": `{"count": 2, "types": [
+		"france|10 euro": `{"count": 4, "types": [
 			{"id": 701, "title": "10 Euros (10 euros Asterix aux jeux Olympiques)", "issuer": {"code": "france"}, "min_year": 2024, "max_year": 2024},
-			{"id": 702, "title": "10 Euros (JO 2024 Paris - Eiffel Tower)", "issuer": {"code": "france"}, "min_year": 2024, "max_year": 2024}]}`,
+			{"id": 702, "title": "10 Euros (JO 2024 Paris - Eiffel Tower)", "issuer": {"code": "france"}, "min_year": 2024, "max_year": 2024},
+			{"id": 703, "title": "10 Euros (10 euros Coupe du Monde FIFA 2026)", "issuer": {"code": "france"}, "min_year": 2025, "max_year": 2025},
+			{"id": 704, "title": "10 Euros (JO 2024 Paris - handball)", "issuer": {"code": "france"}, "min_year": 2024, "max_year": 2024}]}`,
 		"portugal|5 euro": `{"count": 2, "types": [
 			{"id": 601, "title": "5 Euros (Faróis de Portugal - Cabo de São Vicente)", "issuer": {"code": "portugal"}, "min_year": 2025, "max_year": 2025},
 			{"id": 602, "title": "5 Euros (Mosteiro dos Jerónimos)", "issuer": {"code": "portugal"}, "min_year": 2004, "max_year": 2004}]}`,
@@ -200,6 +219,7 @@ func TestCoinCatalogue_EuroCollectorCoins(t *testing.T) {
 		{Title: "Asterix and the Olympic Games", DesignKey: "asterix olympic games", Value: 10, Year: 2024, PageURL: "https://www.monnaiedeparis.fr/en/asterix-10", Obverse: "https://mdp/asterix-10.jpg"},
 		{Title: "Asterix and the Olympic Games", DesignKey: "asterix olympic games gold", Value: 200, Year: 2024, PageURL: "https://www.monnaiedeparis.fr/en/asterix-200", Obverse: "https://mdp/asterix-200.jpg"},
 		{Title: "French Excellence - Notre-Dame de Paris", Value: 10, Year: 2024, PageURL: "https://www.monnaiedeparis.fr/en/notre-dame-10", Obverse: "https://mdp/notre-dame.jpg"},
+		{Title: "FIFA – World Cup 2026", Value: 10, Year: 2025, PageURL: "https://www.monnaiedeparis.fr/en/fifa-10", Obverse: "https://mdp/fifa.jpg"},
 	}}
 	catalogue := newEscudoCatalogue(t, client, portugal, france)
 
@@ -231,7 +251,173 @@ func TestCoinCatalogue_EuroCollectorCoins(t *testing.T) {
 	if eiffel := byKey["numista:702"]; eiffel.Source != CoinReleaseSourceNumista || eiffel.Title != "JO 2024 Paris - Eiffel Tower" {
 		t.Fatalf("Eiffel Tower = %+v", eiffel)
 	}
+	// A name's year counts: "FIFA" and "2026" make the World Cup coin the
+	// Monnaie de Paris's, and "JO 2024 Paris - handball" shares too little
+	// with Notre-Dame without it.
+	if fifa := byKey["numista:703"]; fifa.Source != "mdp" {
+		t.Fatalf("FIFA World Cup = %+v", fifa)
+	}
+	if handball := byKey["numista:704"]; handball.Source != CoinReleaseSourceNumista {
+		t.Fatalf("handball = %+v", handball)
+	}
 	if !catalogue.CatalogueComplete() {
 		t.Fatal("the catalogue is complete")
 	}
+}
+
+// The INCM names its coins in Portuguese and Numista's searches in English:
+// a coin is the INCM's when what Numista says it commemorates, in
+// Portuguese, is the INCM's name, or when it is a version of a type the
+// INCM's coin is known by.
+func TestCoinCatalogue_EuroCollectorCoinsNamedInTheMintsLanguage(t *testing.T) {
+	newClient := func() *escudoNumista {
+		return &escudoNumista{
+			values: map[string]string{
+				"portugal|5 euro": `{"count": 5, "types": [
+					{"id": 801, "title": "5 Euro (The knowledge, cupronickel)", "issuer": {"code": "portugal"}, "min_year": 2024, "max_year": 2024},
+					{"id": 802, "title": "5 Euro (The knowledge, Silver)", "issuer": {"code": "portugal"}, "min_year": 2024, "max_year": 2024},
+					{"id": 803, "title": "5 Euro (Skating Federation)", "issuer": {"code": "portugal"}, "min_year": 2024, "max_year": 2024},
+					{"id": 804, "title": "5 Euro (Phoenix; cupronickel)", "issuer": {"code": "portugal"}, "min_year": 2025, "max_year": 2025},
+					{"id": 805, "title": "5 Euro (Iberian Lynx)", "issuer": {"code": "portugal"}, "min_year": 2016, "max_year": 2016}]}`,
+				"portugal|10 euro": `{"count": 3, "types": [
+					{"id": 811, "title": "10 Euro (Liberdade, Liberdade!)", "issuer": {"code": "portugal"}, "min_year": 2024, "max_year": 2024},
+					{"id": 812, "title": "10 Euro (Freedom, freedom! Proof issue - silver 1000g)", "issuer": {"code": "portugal"}, "min_year": 2024, "max_year": 2024},
+					{"id": 813, "title": "10 Euros (Free Elections)", "issuer": {"code": "portugal"}, "min_year": 2025, "max_year": 2025}]}`,
+			},
+			details: map[string]string{
+				"801|pt": `{"id": 801, "commemorated_topic": "O conhecimento", "related_types": [{"id": 802}]}`,
+				"802|pt": `{"id": 802, "related_types": [{"id": 801}]}`,
+				"803|pt": `{"id": 803, "commemorated_topic": "Centenário da Federação de Patinagem de Portugal"}`,
+				"804|pt": `{"id": 804, "commemorated_topic": "Heróis e criaturas da mitologia: Fénix"}`,
+				"812|pt": `{"id": 812, "commemorated_topic": "50 anos do 25 de Abril", "related_types": [{"id": 811}]}`,
+				"813|pt": `{"id": 813, "commemorated_topic": "50 anos de eleições livres Livre para escolher"}`,
+			},
+		}
+	}
+	portugal := fakeMint{country: "Portugal", source: "incm", coins: []mintCoin{
+		{Title: "O Conhecimento (Prata Proof)", Value: 5, Year: 2024, Released: "2024-09", PageURL: "https://loja.incm.pt/products/conhecimento", Obverse: "https://cdn/conhecimento.jpg"},
+		{Title: "Fénix — Heróis e Criaturas da Mitologia", Value: 5, Year: 2025, Released: "2025-05", PageURL: "https://loja.incm.pt/products/fenix", Obverse: "https://cdn/fenix.jpg"},
+		{Title: "Liberdade, Liberdade! (Prata Proof)", Value: 10, Year: 2024, Released: "2024-04", PageURL: "https://loja.incm.pt/products/liberdade", Obverse: "https://cdn/liberdade.jpg"},
+		{Title: "50 anos de Eleições em Liberdade – 1975.2025 (Prata Proof)", Value: 10, Year: 2025, Released: "2025-04", PageURL: "https://loja.incm.pt/products/eleicoes", Obverse: "https://cdn/eleicoes.jpg"},
+	}}
+
+	client := newClient()
+	catalogue := newEscudoCatalogue(t, client, portugal)
+	// The first reading has no topics yet: the catalogue says it is partial,
+	// asks Numista in the background, and reads them the next time.
+	coins := catalogue.Catalogue(context.Background())
+	if catalogue.CatalogueComplete() || numistaListed(coins) != 7 {
+		t.Fatalf("first reading: %d Numista coins, complete %v", numistaListed(coins), catalogue.CatalogueComplete())
+	}
+	catalogue.topics.Wait()
+	coins = catalogue.Catalogue(context.Background())
+	byKey := map[string]CoinRelease{}
+	for _, coin := range coins {
+		for _, key := range coin.Keys {
+			byKey[key] = coin
+		}
+	}
+	for key, want := range map[string]string{
+		// Its Portuguese topic, and the version related to it.
+		"numista:801": "O Conhecimento", "numista:802": "O Conhecimento",
+		"numista:804": "Fénix — Heróis e Criaturas da Mitologia",
+		// Matched by its name; the proof issue relates to it.
+		"numista:811": "Liberdade, Liberdade!", "numista:812": "Liberdade, Liberdade!",
+		// Its topic, the years on the INCM's name left out.
+		"numista:813": "50 anos de Eleições em Liberdade – 1975.2025",
+	} {
+		if coin := byKey[key]; coin.Source != "incm" || coin.Title != want {
+			t.Errorf("%s = %+v, want the INCM's %q", key, coin, want)
+		}
+	}
+	// A coin the INCM does not sell stays Numista's.
+	if skating := byKey["numista:803"]; skating.Source != CoinReleaseSourceNumista || skating.Title != "Skating Federation" {
+		t.Errorf("Skating Federation = %+v", skating)
+	}
+	// Only coins of a year and face value the INCM has are looked up, in
+	// Portuguese, once: the next readings find them in the cache.
+	catalogue.Catalogue(context.Background())
+	if fmt.Sprint(client.asked) != "[801|pt 802|pt 803|pt 804|pt 812|pt 813|pt]" || !catalogue.CatalogueComplete() {
+		t.Fatalf("asked %v, complete %v", client.asked, catalogue.CatalogueComplete())
+	}
+
+	// Out of quota: Numista is asked once, and the catalogue keeps listing
+	// every coin its name did not match (all but "Liberdade, Liberdade!"),
+	// partial, until its next reading.
+	offline := newClient()
+	offline.detailsFail = true
+	catalogue = newEscudoCatalogue(t, offline, portugal)
+	catalogue.Catalogue(context.Background())
+	catalogue.topics.Wait()
+	coins = catalogue.Catalogue(context.Background())
+	if numistaListed(coins) != 7 || len(offline.asked) != 1 || catalogue.CatalogueComplete() {
+		t.Fatalf("listed %d Numista coins after asking %v, complete %v", numistaListed(coins), offline.asked, catalogue.CatalogueComplete())
+	}
+}
+
+// Münze Österreich names its coins in German: "Wasserkraft" is Numista's
+// "Waterpower", "Bergbau" its "Salt Mining" ("Salzbergbau"), and
+// "Einsteinring" the "Einstein Ring" whose reverse says so.
+func TestCoinCatalogue_AustrianCoinsNamedInGerman(t *testing.T) {
+	client := &escudoNumista{
+		values: map[string]string{
+			"autriche|5 euro": `{"count": 2, "types": [
+				{"id": 901, "title": "5 Euros (Waterpower)", "issuer": {"code": "autriche"}, "min_year": 2003, "max_year": 2003},
+				{"id": 902, "title": "5 Euros (Peace and freedom)", "issuer": {"code": "autriche"}, "min_year": 2005, "max_year": 2005}]}`,
+			"autriche|20 euro": `{"count": 3, "types": [
+				{"id": 921, "title": "20 Euros (Salt Mining)", "issuer": {"code": "autriche"}, "min_year": 2024, "max_year": 2024},
+				{"id": 922, "title": "20 Euros (Einstein Ring)", "issuer": {"code": "autriche"}, "min_year": 2025, "max_year": 2025},
+				{"id": 923, "title": "20 Euros (Leo)", "issuer": {"code": "autriche"}, "min_year": 2025, "max_year": 2025}]}`,
+		},
+		details: map[string]string{
+			"901|de": `{"id": 901, "commemorated_topic": "Wasserkraft"}`,
+			"902|de": `{"id": 902, "commemorated_topic": "Frieden und Freiheit"}`,
+			"921|de": `{"id": 921, "commemorated_topic": "Salzbergbau"}`,
+			"922|de": `{"id": 922, "commemorated_topic": "Die Schönheit des Universums", "reverse": {"lettering": "EINSTEINRING"}}`,
+			// No topic; the obverse names every other sign, the bull's among them.
+			"923|de": `{"id": 923, "obverse": {"lettering": "REPUBLIK ÖSTERREICH 20 EURO WIDDER STIER ZWILLINGE KREBS"}}`,
+		},
+	}
+	austria := fakeMint{country: "Austria", source: "moe", coins: []mintCoin{
+		{Title: "Wasserkraft", Value: 5, Year: 2003, PageURL: "https://www.muenzeoesterreich.at/wasserkraft", Obverse: "https://moe/wasserkraft.jpg"},
+		{Title: "100 Jahre Skisport", Value: 5, Year: 2005, PageURL: "https://www.muenzeoesterreich.at/skisport", Obverse: "https://moe/skisport.jpg"},
+		{Title: "Bergbau", Value: 20, Year: 2024, PageURL: "https://www.muenzeoesterreich.at/bergbau", Obverse: "https://moe/bergbau.jpg"},
+		{Title: "Einsteinring", Value: 20, Year: 2025, PageURL: "https://www.muenzeoesterreich.at/einsteinring", Obverse: "https://moe/einsteinring.jpg"},
+		{Title: "Stier", Value: 20, Year: 2025, PageURL: "https://www.muenzeoesterreich.at/stier", Obverse: "https://moe/stier.jpg"},
+	}}
+	catalogue := newEscudoCatalogue(t, client, austria)
+	catalogue.Catalogue(context.Background())
+	catalogue.topics.Wait()
+	coins := catalogue.Catalogue(context.Background())
+
+	byKey := map[string]CoinRelease{}
+	for _, coin := range coins {
+		for _, key := range coin.Keys {
+			byKey[key] = coin
+		}
+	}
+	for key, want := range map[string]string{"numista:901": "Wasserkraft", "numista:921": "Bergbau", "numista:922": "Einsteinring"} {
+		if coin := byKey[key]; coin.Source != "moe" || coin.Title != want {
+			t.Errorf("%s = %+v, want Münze Österreich's %q", key, coin, want)
+		}
+	}
+	for _, key := range []string{"numista:902", "numista:923"} {
+		if coin := byKey[key]; coin.Source != CoinReleaseSourceNumista {
+			t.Errorf("%s = %+v, want Numista's", key, coin)
+		}
+	}
+	if fmt.Sprint(client.asked) != "[901|de 902|de 921|de 922|de 923|de]" || !catalogue.CatalogueComplete() {
+		t.Fatalf("asked %v, complete %v", client.asked, catalogue.CatalogueComplete())
+	}
+}
+
+// numistaListed counts the euro coins listed by Numista.
+func numistaListed(coins []CoinRelease) int {
+	listed := 0
+	for _, coin := range coins {
+		if coin.Source == CoinReleaseSourceNumista && coin.Currency == "" {
+			listed++
+		}
+	}
+	return listed
 }

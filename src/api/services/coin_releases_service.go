@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -112,8 +113,15 @@ type CoinReleasesService struct {
 	catalogue         []CoinRelease
 	catalogueLoadedAt time.Time
 	// numistaComplete is true once Numista has listed everything the
-	// catalogue asks it for (Portugal's escudos, every country's €5, €10 and €20).
+	// catalogue asks it for (Portugal's escudos, every country's €5, €10 and
+	// €20) and described the coins a mint may name in its own language.
 	numistaComplete bool
+
+	// topicsRunning is true while topics are asked for in the background;
+	// topics waits for them.
+	topicsMu      sync.Mutex
+	topicsRunning bool
+	topics        sync.WaitGroup
 }
 
 // WithNumista adds Portugal's coins in escudos, from Numista's catalogue, to
@@ -233,9 +241,11 @@ func (s *CoinReleasesService) Catalogue(ctx context.Context) []CoinRelease {
 	return append([]CoinRelease{}, s.catalogue...)
 }
 
-// CatalogueComplete tells whether the catalogue lists all its coins: those
-// from Numista (Portugal's escudos, the €5, €10 and €20 coins) are partly
-// listed until Numista has answered every search.
+// CatalogueComplete tells whether the catalogue lists all its coins, once
+// each: those from Numista (Portugal's escudos, the €5, €10 and €20 coins)
+// are partly listed until Numista has answered every search, and some may
+// be listed twice (by Numista and by a mint, in its language) until Numista
+// has described them.
 func (s *CoinReleasesService) CatalogueComplete() bool {
 	if s.numista == nil {
 		return true
@@ -310,6 +320,7 @@ func (s *CoinReleasesService) euroCollectorCoins(ctx context.Context, coins []Co
 	}
 	sort.Strings(countries)
 	seen := map[int]bool{}
+	var unmatched []numistaEuroCoin
 	for _, country := range countries {
 		for _, value := range catalogueEuroValues {
 			types, err := s.numista.IssuerEuroTypes(ctx, numistaEuroIssuers[country], value, "en")
@@ -325,11 +336,179 @@ func (s *CoinReleasesService) euroCollectorCoins(ctx context.Context, coins []Co
 				if knownToMint(coins, coin) {
 					continue
 				}
-				coins = append(coins, coin)
+				unmatched = append(unmatched, numistaEuroCoin{coin: coin, typeID: item.ID})
 			}
 		}
 	}
-	return coins, true
+	unmatched, complete := s.knownToMintByTopic(coins, unmatched)
+	for _, numista := range unmatched {
+		coins = append(coins, numista.coin)
+	}
+	return coins, complete
+}
+
+// numistaEuroCoin is a collector coin from Numista and its type.
+type numistaEuroCoin struct {
+	coin   CoinRelease
+	typeID int
+}
+
+// mintTopicLangs are the languages of the mints that do not name their coins
+// in English, as Numista's searches do: the INCM names "The knowledge" "O
+// Conhecimento", Münze Österreich "Waterpower" "Wasserkraft". The Monnaie de
+// Paris names its coins in English already.
+var mintTopicLangs = map[string]string{models.CoinPhotoSourceINCM: "pt", models.CoinPhotoSourceMOE: "de"}
+
+// topicLookup is a type whose topic the catalogue has not read yet, and the
+// language to read it in.
+type topicLookup struct {
+	typeID int
+	lang   string
+}
+
+// knownToMintByTopic leaves out the coins a mint lists under a name in its
+// own language. What Numista says a coin commemorates, in that language, or
+// its reverse's lettering, shares the words of the mint's name ("Heróis e
+// criaturas da mitologia: Fénix" and "Fénix — Heróis e Criaturas da
+// Mitologia"; "EINSTEINRING" and "Einsteinring"); or the coin is a
+// version of a type the mint's coin is known by already (Numista's related
+// types: "Freedom, freedom! Proof issue" of "Liberdade, Liberdade!"). Only a
+// coin of a year and face value its mint has is looked up. Topics come from
+// the cache; those not read yet are asked for in the background, and
+// complete is false until they are.
+func (s *CoinReleasesService) knownToMintByTopic(coins []CoinRelease, unmatched []numistaEuroCoin) ([]numistaEuroCoin, bool) {
+	type lookedUp struct {
+		numistaEuroCoin
+		related []int
+	}
+	var kept []numistaEuroCoin
+	var versions []lookedUp
+	var missing []topicLookup
+	for _, numista := range unmatched {
+		lang := mintTopicLang(coins, numista.coin)
+		if lang == "" {
+			kept = append(kept, numista)
+			continue
+		}
+		topic, ok := s.numista.CachedTypeTopic(numista.typeID, lang)
+		if !ok {
+			missing = append(missing, topicLookup{numista.typeID, lang})
+			kept = append(kept, numista)
+			continue
+		}
+		if knownToMintByName(coins, numista.coin, topic.Topic, topic.ReverseLettering) {
+			continue
+		}
+		versions = append(versions, lookedUp{numista, topic.Related})
+	}
+	// A version is known once the type it relates to is; that one may be a
+	// version found here too.
+	for found := true; found; {
+		found = false
+		left := versions[:0]
+		for _, version := range versions {
+			if mint := mintKnownByType(coins, version.coin, version.related); mint != nil {
+				mint.Keys = append(mint.Keys, version.coin.Keys...)
+				found = true
+				continue
+			}
+			left = append(left, version)
+		}
+		versions = left
+	}
+	for _, version := range versions {
+		kept = append(kept, version.numistaEuroCoin)
+	}
+	if len(missing) > 0 {
+		s.lookUpTopics(missing)
+		return kept, false
+	}
+	return kept, true
+}
+
+// lookUpTopics asks Numista, in the background, for the topics the catalogue
+// has not read yet: a few hundred types the first time, too many to wait
+// for. It stops at the first refusal (out of quota) and tries again at the
+// next reading; the catalogue is read again once some topics are known.
+func (s *CoinReleasesService) lookUpTopics(missing []topicLookup) {
+	s.topicsMu.Lock()
+	defer s.topicsMu.Unlock()
+	if s.topicsRunning {
+		return
+	}
+	s.topicsRunning = true
+	s.topics.Add(1)
+	go func() {
+		defer s.topics.Done()
+		found := 0
+		for _, lookup := range missing {
+			if _, err := s.numista.TypeTopic(context.Background(), lookup.typeID, lookup.lang); err != nil {
+				break
+			}
+			found++
+		}
+		s.topicsMu.Lock()
+		s.topicsRunning = false
+		s.topicsMu.Unlock()
+		if found > 0 {
+			s.catalogueMu.Lock()
+			s.catalogue = nil
+			s.catalogueMu.Unlock()
+		}
+	}()
+}
+
+// knownToMintByName tells whether the mint lists the coin under one of the
+// names Numista gives it in the mint's language: what it commemorates, or the
+// lettering of its reverse ("EINSTEINRING"). Its obverse often lists every
+// coin of a series (the other signs of the zodiac), and is left out.
+func knownToMintByName(coins []CoinRelease, coin CoinRelease, names ...string) bool {
+	for _, name := range names {
+		if name == "" {
+			continue
+		}
+		named := coin
+		named.Title = name
+		if knownToMintBy(coins, named, topicWords, topicSimilarWords) {
+			return true
+		}
+	}
+	return false
+}
+
+// mintTopicLang is the language to read a coin's topic in: its mint's, when
+// the mint has a coin of the same country, year and face value and does not
+// name its coins in English; "" otherwise.
+func mintTopicLang(coins []CoinRelease, coin CoinRelease) string {
+	for _, mint := range coins {
+		if lang := mintTopicLangs[mint.Source]; lang != "" && sameMintIssue(mint, coin) {
+			return lang
+		}
+	}
+	return ""
+}
+
+// mintKnownByType returns the mint's coin of the same issue known by one of
+// the types, or nil.
+func mintKnownByType(coins []CoinRelease, coin CoinRelease, typeIDs []int) *CoinRelease {
+	for i := range coins {
+		mint := &coins[i]
+		if !sameMintIssue(*mint, coin) {
+			continue
+		}
+		for _, typeID := range typeIDs {
+			if slices.Contains(mint.Keys, numistaReleaseKey(typeID)) {
+				return mint
+			}
+		}
+	}
+	return nil
+}
+
+// sameMintIssue tells whether mint is a mint's coin of the coin's country,
+// year and face value.
+func sameMintIssue(mint, coin CoinRelease) bool {
+	return mintReleaseSources[mint.Source] && mint.Country == coin.Country && mint.From[:4] == coin.From[:4] && releaseHasFaceValue(mint, coin.FaceValue)
 }
 
 // knownToMint tells whether the country's mint lists the coin already: a
@@ -339,22 +518,71 @@ func (s *CoinReleasesService) euroCollectorCoins(ctx context.Context, coins []Co
 // and "Asterix and the Olympic Games"). The mint's coin is then known by the
 // coin's Numista type as well.
 func knownToMint(coins []CoinRelease, coin CoinRelease) bool {
-	words := uniqueStrings(mintWords(coin.Title))
+	return knownToMintBy(coins, coin, func(name string) []string { return uniqueStrings(mintWords(name)) }, mintSimilarWords)
+}
+
+// knownToMintBy is knownToMint with the words each name is read as, and
+// when two words are alike.
+func knownToMintBy(coins []CoinRelease, coin CoinRelease, nameWords func(string) []string, similar func(a, b string) bool) bool {
+	words := nameWords(coin.Title)
 	if len(words) == 0 {
 		return false
 	}
 	for i := range coins {
 		mint := &coins[i]
-		if !mintReleaseSources[mint.Source] || mint.Country != coin.Country || mint.From[:4] != coin.From[:4] || !releaseHasFaceValue(*mint, coin.FaceValue) {
+		if !sameMintIssue(*mint, coin) {
 			continue
 		}
-		shorter := min(len(words), len(uniqueStrings(mintWords(mint.Title))))
-		if shorter > 0 && mintOverlap(words, mint.Title) >= (shorter+1)/2 {
+		mintNameWords := nameWords(mint.Title)
+		shorter := min(len(words), len(mintNameWords))
+		if shorter > 0 && wordOverlap(words, mintNameWords, similar) >= (shorter+1)/2 {
 			mint.Keys = append(mint.Keys, coin.Keys...)
 			return true
 		}
 	}
 	return false
+}
+
+// wordOverlap counts the words of other found among words.
+func wordOverlap(words, other []string, similar func(a, b string) bool) int {
+	count := 0
+	for _, word := range other {
+		for _, candidate := range words {
+			if similar(word, candidate) {
+				count++
+				break
+			}
+		}
+	}
+	return count
+}
+
+// topicSimilarWords allows, besides small spelling differences, for German
+// compounds: "Salzbergbau" is "Bergbau", "Bienentanz" "Tanz der Bienen".
+func topicSimilarWords(a, b string) bool {
+	if mintSimilarWords(a, b) {
+		return true
+	}
+	if len(a) < len(b) {
+		a, b = b, a
+	}
+	return len(b) >= 5 && (strings.HasPrefix(a, b) || strings.HasSuffix(a, b))
+}
+
+// topicWords are the distinctive words of a name without its years: the
+// coins compared are of the same year, and a topic says it in words ("50
+// anos de eleições livres" for "50 anos de Eleições em Liberdade –
+// 1975.2025"). Names, unlike topics, keep them: "FIFA World Cup 2026"
+// against "Coupe du Monde FIFA 2026".
+func topicWords(name string) []string {
+	var words []string
+	for _, word := range uniqueStrings(mintWords(name)) {
+		if year, err := strconv.Atoi(word); err == nil && year >= 1900 && year <= 2100 {
+			continue
+		}
+		words = append(words, word)
+	}
+	return words
 }
 
 // mintReleaseSources are the mints whose catalogues the releases come from.
