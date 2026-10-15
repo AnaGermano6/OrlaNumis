@@ -99,4 +99,72 @@ func TestRetiredTablesHaveNoModel(t *testing.T) {
 			}
 		}
 	}
+	if err := stmt.Parse(&models.User{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, column := range retiredUserColumns {
+		if stmt.Schema.LookUpField(column) != nil {
+			t.Fatalf("the user model still has the retired column %s", column)
+		}
+	}
+}
+
+// An older database's users still have the integration columns; they are
+// dropped, with foreign keys on, and every other column keeps its value.
+func TestDropRetiredUserColumnsKeepsTheRest(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "legacy.db")), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, _ := db.DB()
+	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB.SetMaxOpenConns(1)
+	if err := db.Exec("PRAGMA foreign_keys=ON").Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, column := range []string{
+		"numis_bids_username varchar(100)", "numis_bids_password text", "cng_username varchar(100)", "cng_password text",
+		"parcel_app_api_key text", "pushover_user_key varchar(100)", "pushover_enabled numeric DEFAULT false",
+	} {
+		if err := db.Exec("ALTER TABLE users ADD COLUMN " + column).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.Create(&models.User{Username: "collector", Email: "collector@example.test", Bio: "Roman bronzes"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec("UPDATE users SET cng_username = 'old', pushover_enabled = true").Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&models.Coin{Name: "Follis", UserID: 1}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	// A second run (every later start) finds nothing to drop.
+	for run := 1; run <= 2; run++ {
+		if err := dropRetiredUserColumns(db); err != nil {
+			t.Fatalf("run %d: %v", run, err)
+		}
+	}
+
+	for _, column := range retiredUserColumns {
+		if db.Migrator().HasColumn("users", column) {
+			t.Fatalf("users.%s was not dropped", column)
+		}
+	}
+	var user models.User
+	if err := db.First(&user).Error; err != nil {
+		t.Fatal(err)
+	}
+	if user.Username != "collector" || user.Email != "collector@example.test" || user.Bio != "Roman bronzes" {
+		t.Fatalf("user=%+v, want its other columns kept", user)
+	}
+	var coins int64
+	db.Model(&models.Coin{}).Where("user_id = ?", user.ID).Count(&coins)
+	if coins != 1 {
+		t.Fatalf("coins=%d, want the user's coin kept", coins)
+	}
 }

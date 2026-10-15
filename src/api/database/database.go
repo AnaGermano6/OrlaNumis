@@ -118,6 +118,9 @@ func Connect(dbPath string) {
 	if err := dropRetiredTables(DB); err != nil {
 		log.Fatalf("Failed to drop retired tables: %v", err)
 	}
+	if err := dropRetiredUserColumns(DB); err != nil {
+		log.Fatalf("Failed to drop retired user columns: %v", err)
+	}
 
 	// 353-wishlist-availability-run-observability: AvailabilityCycle is a brand-new table and
 	// AvailabilityRun.CycleID is a brand-new nullable column. This AutoMigrate call is the
@@ -212,6 +215,28 @@ func dropRetiredTables(db *gorm.DB) error {
 		for _, table := range retiredTables {
 			if err := tx.Exec("DROP TABLE IF EXISTS " + table).Error; err != nil {
 				return fmt.Errorf("drop %s: %w", table, err)
+			}
+		}
+		return nil
+	})
+}
+
+// retiredUserColumns held the accounts and keys of the integrations removed
+// in 2026-10 (NumisBids, CNG, ParcelApp, Pushover).
+var retiredUserColumns = []string{
+	"numis_bids_username", "numis_bids_password", "cng_username", "cng_password",
+	"parcel_app_api_key", "pushover_user_key", "pushover_enabled",
+}
+
+// dropRetiredUserColumns drops the retired columns of users, all or none.
+func dropRetiredUserColumns(db *gorm.DB) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, column := range retiredUserColumns {
+			if !tx.Migrator().HasColumn("users", column) {
+				continue
+			}
+			if err := tx.Exec("ALTER TABLE users DROP COLUMN " + column).Error; err != nil {
+				return fmt.Errorf("drop users.%s: %w", column, err)
 			}
 		}
 		return nil
