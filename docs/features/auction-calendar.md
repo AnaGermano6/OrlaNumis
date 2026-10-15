@@ -5,7 +5,7 @@
 > coin shows and the calendar pins in Quick Access are gone; `/api/calendar`
 > answers 404 and `/calendar` opens the gallery.
 
-Events saved before stay in the `auction_events` table, which is no longer
-migrated.
+The API drops the old `auction_events` table, with the events saved in it, at
+startup.
 
 See also: [Notifications](notifications.md)

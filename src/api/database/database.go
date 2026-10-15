@@ -115,6 +115,9 @@ func Connect(dbPath string) {
 	if err := migrateQuickAccessPins(DB); err != nil {
 		log.Fatalf("Failed to migrate quick access pins: %v", err)
 	}
+	if err := dropRetiredTables(DB); err != nil {
+		log.Fatalf("Failed to drop retired tables: %v", err)
+	}
 
 	// 353-wishlist-availability-run-observability: AvailabilityCycle is a brand-new table and
 	// AvailabilityRun.CycleID is a brand-new nullable column. This AutoMigrate call is the
@@ -190,6 +193,29 @@ func backfillRequiredDefaults(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+// retiredTables are the tables of features removed in 2026-10: value
+// history, notes, auction tracking (lots, the calendar, price alerts, bid
+// reminders and their run logs) and shipments. A table comes before the
+// retired tables it points at, so each drop passes the foreign key checks.
+var retiredTables = []string{
+	"price_alerts", "bid_reminders", "auction_lots", "auction_events",
+	"auction_alert_runs", "auction_ending_runs", "auction_watch_bid_digest_runs",
+	"shipment_events", "shipments",
+	"notes", "value_snapshots",
+}
+
+// dropRetiredTables drops the retired tables, all or none.
+func dropRetiredTables(db *gorm.DB) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, table := range retiredTables {
+			if err := tx.Exec("DROP TABLE IF EXISTS " + table).Error; err != nil {
+				return fmt.Errorf("drop %s: %w", table, err)
+			}
+		}
+		return nil
+	})
 }
 
 func migrateFeature362(db *gorm.DB) error {

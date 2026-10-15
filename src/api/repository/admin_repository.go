@@ -137,18 +137,6 @@ func deleteUserCascadeInTx(tx *gorm.DB, userID uint) (*gorm.DB, error) {
 			return nil, err
 		}
 	}
-	// The tables of retired features (value history, notes, auction
-	// tracking, shipments) are no longer migrated; their old rows go with
-	// their user, before the coins they point at, and those pointing at
-	// others first.
-	for _, table := range []string{"value_snapshots", "notes", "price_alerts", "bid_reminders", "shipment_events", "shipments", "auction_lots", "auction_events"} {
-		if !tx.Migrator().HasTable(table) {
-			continue
-		}
-		if err := tx.Exec("DELETE FROM "+table+" WHERE user_id = ?", userID).Error; err != nil {
-			return nil, err
-		}
-	}
 	var coinIDs []uint
 	if err := tx.Model(&models.Coin{}).Where("user_id = ?", userID).Pluck("id", &coinIDs).Error; err != nil {
 		return nil, err

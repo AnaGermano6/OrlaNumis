@@ -668,37 +668,11 @@ func (r *CoinRepository) DeleteInTx(id uint, userID uint) (int64, error) {
 			return 0, err
 		}
 	}
-	if err := clearRetiredCoinRows(r.db, []uint{id}); err != nil {
-		return 0, err
-	}
 	result := r.db.Scopes(OwnedByID(id, userID)).Delete(&models.Coin{})
 	if result.Error != nil {
 		return 0, result.Error
 	}
 	return result.RowsAffected, nil
-}
-
-// clearRetiredCoinRows lets go of coins in the tables of retired features
-// (auction tracking, shipments): no longer migrated, they may still exist
-// with rows whose foreign keys would refuse the coins' deletion. An auction
-// lot only forgets the coin; a shipment, and its events, go with it.
-func clearRetiredCoinRows(db *gorm.DB, coinIDs []uint) error {
-	if db.Migrator().HasTable("auction_lots") {
-		if err := db.Exec("UPDATE auction_lots SET coin_id = NULL WHERE coin_id IN ?", coinIDs).Error; err != nil {
-			return err
-		}
-	}
-	if db.Migrator().HasTable("shipments") {
-		if db.Migrator().HasTable("shipment_events") {
-			if err := db.Exec("DELETE FROM shipment_events WHERE shipment_id IN (SELECT id FROM shipments WHERE coin_id IN ?)", coinIDs).Error; err != nil {
-				return err
-			}
-		}
-		if err := db.Exec("DELETE FROM shipments WHERE coin_id IN ?", coinIDs).Error; err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // BulkDelete removes multiple coins and all associated data in a single transaction.
@@ -725,9 +699,6 @@ func (r *CoinRepository) BulkDeleteInTx(coinIDs []uint, userID uint) (int64, err
 		if err := r.db.Where("coin_id IN ?", ownedIDs).Delete(model).Error; err != nil {
 			return 0, err
 		}
-	}
-	if err := clearRetiredCoinRows(r.db, ownedIDs); err != nil {
-		return 0, err
 	}
 	result := r.db.Where("id IN ? AND user_id = ?", ownedIDs, userID).Delete(&models.Coin{})
 	if result.Error != nil {

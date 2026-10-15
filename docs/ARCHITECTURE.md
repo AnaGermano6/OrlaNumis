@@ -670,7 +670,6 @@ SQLite via GORM. All tables are auto-migrated from Go model structs in `database
 | `CoinSetMilestoneAlert` | `coin_set_milestone_alerts` | SetID, UserID, Metric, Threshold, Direction, LastTriggeredAt | Snapshot-triggered milestone notifications |
 | `CoinJournal` | `coin_journals` | CoinID, UserID, Entry, CreatedAt | |
 | `CoinValueHistory` | `coin_value_histories` | CoinID, UserID, Value, Confidence, RecordedAt | |
-| `ValueSnapshot` | `value_snapshots` | UserID, TotalValue, TotalInvested, CoinCount, RecordedAt | |
 
 ### Authentication Models
 

@@ -13,11 +13,11 @@ gallery.
 
 ## Saved data
 
-Lots, alerts, reminders and calendar events saved before stay in their tables
-(`auction_lots`, `price_alerts`, `bid_reminders`, `auction_events`,
-`auction_alert_runs`, `auction_ending_runs`), which are no longer migrated.
-Deleting a coin clears the old lots' link to it, and deleting a user removes
-their old rows.
+The API drops the old tables at startup (`dropRetiredTables` in
+`database/database.go`): `auction_lots`, `auction_events`, `price_alerts`,
+`bid_reminders`, `auction_alert_runs`, `auction_ending_runs` and
+`auction_watch_bid_digest_runs`, with the lots, calendar events, alerts and
+reminders saved in them.
 
 ## What stays
 
