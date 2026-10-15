@@ -476,6 +476,64 @@ func (s *NumistaCatalogService) knownTypeDetail(ctx context.Context, typeID int,
 	return s.typeDetail(ctx, typeID, lang)
 }
 
+// NumistaTypeTopic is what a type commemorates, in the language asked for
+// ("O conhecimento"), the lettering of its reverse ("EINSTEINRING"), and the
+// types Numista relates to it: its other versions (silver, gold, proof).
+type NumistaTypeTopic struct {
+	Topic            string
+	ReverseLettering string
+	Related          []int
+}
+
+// numistaTopicCacheTTL keeps a type's topic for a year: it does not change.
+const numistaTopicCacheTTL = 365 * 24 * time.Hour
+
+// TypeTopic returns what a type commemorates and its related types, from a
+// type described in that language within the year, else asked of Numista.
+func (s *NumistaCatalogService) TypeTopic(ctx context.Context, typeID int, lang string) (NumistaTypeTopic, error) {
+	body, _, _, err := s.cache.Get(ctx, fmt.Sprintf("type:%d:%s", typeID, lang), numistaTopicCacheTTL, func(ctx context.Context) ([]byte, error) {
+		return s.client.TypeDetail(ctx, typeID, lang)
+	})
+	if err != nil {
+		return NumistaTypeTopic{}, err
+	}
+	return parseTypeTopic(body, typeID)
+}
+
+// CachedTypeTopic is TypeTopic from the cache only: ok is false when the
+// type was not described in that language. It never asks Numista.
+func (s *NumistaCatalogService) CachedTypeTopic(typeID int, lang string) (topic NumistaTypeTopic, ok bool) {
+	entry := s.cache.find(fmt.Sprintf("type:%d:%s", typeID, lang))
+	if entry == nil {
+		return NumistaTypeTopic{}, false
+	}
+	topic, err := parseTypeTopic([]byte(entry.Payload), typeID)
+	return topic, err == nil
+}
+
+func parseTypeTopic(body []byte, typeID int) (NumistaTypeTopic, error) {
+	var raw struct {
+		ID                int    `json:"id"`
+		CommemoratedTopic string `json:"commemorated_topic"`
+		Reverse           struct {
+			Lettering string `json:"lettering"`
+		} `json:"reverse"`
+		RelatedTypes []struct {
+			ID int `json:"id"`
+		} `json:"related_types"`
+	}
+	if err := json.Unmarshal(body, &raw); err != nil || raw.ID != typeID {
+		return NumistaTypeTopic{}, &NumistaError{Kind: NumistaErrorMalformedResponse}
+	}
+	topic := NumistaTypeTopic{Topic: strings.TrimSpace(raw.CommemoratedTopic), ReverseLettering: strings.Join(strings.Fields(raw.Reverse.Lettering), " ")}
+	for _, related := range raw.RelatedTypes {
+		if related.ID > 0 {
+			topic.Related = append(topic.Related, related.ID)
+		}
+	}
+	return topic, nil
+}
+
 // cachedTypeDetail returns a type from the cache, preferring the given
 // languages and then Portuguese and English; nil when it is not there.
 func (s *NumistaCatalogService) cachedTypeDetail(typeID int, langs ...string) *models.NumistaCatalogType {

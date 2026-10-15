@@ -34,11 +34,12 @@
       </DesktopPageContext>
 
       <div class="mx-auto flex max-w-[800px] flex-col gap-6">
-        <div v-if="!isPwa" class="flex flex-wrap gap-1 rounded-md border border-border-subtle bg-card p-[0.3rem]">
+        <!-- Rows of equal columns (2, then 4 on wide screens), so every tab has the same width and spacing. -->
+        <div v-if="!isPwa" class="grid grid-cols-2 gap-1 rounded-md border border-border-subtle bg-card p-[0.3rem] lg:grid-cols-4" data-testid="settings-tabs">
           <button
             v-for="tab in tabs"
             :key="tab.id"
-            class="flex flex-1 items-center justify-center gap-1.5 rounded-sm px-2.5 py-2 text-chip font-medium text-text-secondary transition-colors hover:text-text-primary md:px-4 md:py-2.5 md:text-body"
+            class="flex min-w-0 items-center justify-center gap-1.5 rounded-sm px-1.5 py-2 text-center text-chip font-medium text-text-secondary transition-colors hover:text-text-primary md:px-3 md:py-2.5 md:text-body"
             :class="{ 'bg-[var(--accent-gold-dim)] text-gold hover:text-gold': activeTab === tab.id }"
             @click="selectTab(tab.id)"
           >
