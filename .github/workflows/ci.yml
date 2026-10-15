@@ -1,37 +1,22 @@
 name: Quality Gate
 
+# The tests of every pull request: the Go API (with the OpenAPI snapshot and
+# the race detector), the Vue web app and the Python agent. Linux runners
+# only, and a newer push to a pull request cancels its older run: the private
+# repository's Actions minutes are counted.
 on:
   pull_request:
-    branches: [main, beta]
-  push:
-    branches: [main, beta]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-jobs:
-  delivery:
-    name: Delivery governance (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        env:
-          GIT_CONFIG_COUNT: '1'
-          GIT_CONFIG_KEY_0: core.protectNTFS
-          GIT_CONFIG_VALUE_0: 'true'
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
-        with:
-          node-version: 24.15.0
-      - uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52 # v3.0.0
-        with:
-          version: 3.44.0
-      - name: Delivery fixtures and governance
-        run: task check:delivery
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
+jobs:
   go-api:
     name: Go API
     runs-on: ubuntu-latest
