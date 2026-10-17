@@ -24,7 +24,7 @@ func NewCoinCountryHandler(coins *repository.CoinRepository, svc *services.CoinC
 // Countries lists the collection's countries with coin counts.
 //
 //	@Summary		List collection countries
-//	@Description	Returns each country of the user's collection coins (excluding wishlist and sold) with how many coins it has, alphabetically.
+//	@Description	Returns each country of the user's collection coins (excluding the wishlist) with how many coins it has, alphabetically.
 //	@Tags			Coins
 //	@Produce		json
 //	@Param			kind	query		string	false	"Only coins or only banknotes (every item when omitted)"	Enums(coin, banknote)
@@ -53,7 +53,7 @@ func (h *CoinCountryHandler) Countries(c *gin.Context) {
 // Denominations lists the collection's face values with coin counts.
 //
 //	@Summary		List collection face values
-//	@Description	Returns each face value of the user's collection coins (excluding wishlist and sold), as written, with how many coins have it, the most common first.
+//	@Description	Returns each face value of the user's collection coins (excluding the wishlist), as written, with how many coins have it, the most common first.
 //	@Tags			Coins
 //	@Produce		json
 //	@Param			kind	query		string	false	"Only coins or only banknotes (every item when omitted)"	Enums(coin, banknote)

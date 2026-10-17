@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/briandenicola/ancient-coins-api/models"
-	"github.com/briandenicola/ancient-coins-api/repository"
-	"github.com/briandenicola/ancient-coins-api/services"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/golang-jwt/jwt/v5"
@@ -23,7 +21,7 @@ func setupMiddlewareTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
-	err = db.AutoMigrate(&models.User{}, &models.ApiKey{})
+	err = db.AutoMigrate(&models.User{})
 	if err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
@@ -59,8 +57,7 @@ func makeExpiredJWT(userID uint) string {
 func setupAuthRouter(db *gorm.DB) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	apiKeyAuth := repository.NewApiKeyRepository(db)
-	r.Use(AuthRequired(testSecret, apiKeyAuth))
+	r.Use(AuthRequired(testSecret))
 	r.GET("/protected", func(c *gin.Context) {
 		userID := c.GetUint("userId")
 		role, _ := c.Get("userRole")
@@ -170,92 +167,12 @@ func TestAuthMiddleware_NoBearerPrefix(t *testing.T) {
 	}
 }
 
-// --- API Key Tests ---
-
-func TestAuthMiddleware_ValidAPIKey(t *testing.T) {
-	db := setupMiddlewareTestDB(t)
-
-	user := models.User{ID: 1, Username: "apiuser", PasswordHash: "hash", Role: models.RoleUser}
-	db.Create(&user)
-
-	plainKey := "ak_test_valid_key_12345"
-	keyHash := services.HashAPIKey(plainKey, testSecret)
-
-	apiKey := models.ApiKey{
-		UserID:    user.ID,
-		KeyHash:   keyHash,
-		KeyPrefix: "ak_test",
-		Name:      "Test Key",
-	}
-	db.Create(&apiKey)
-
-	router := setupAuthRouter(db)
-	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-	req.Header.Set("X-API-Key", plainKey)
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
-	}
-}
-
-func TestAuthMiddleware_InvalidAPIKey(t *testing.T) {
-	db := setupMiddlewareTestDB(t)
-	router := setupAuthRouter(db)
-
-	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-	req.Header.Set("X-API-Key", "ak_nonexistent_key")
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401, got %d", w.Code)
-	}
-}
-
-func TestAuthMiddleware_RevokedAPIKey(t *testing.T) {
-	db := setupMiddlewareTestDB(t)
-
-	user := models.User{ID: 1, Username: "revokeuser", PasswordHash: "hash", Role: models.RoleUser}
-	db.Create(&user)
-
-	plainKey := "ak_test_revoked_key"
-	keyHash := services.HashAPIKey(plainKey, testSecret)
-
-	now := time.Now()
-	apiKey := models.ApiKey{
-		UserID:    user.ID,
-		KeyHash:   keyHash,
-		KeyPrefix: "ak_test",
-		Name:      "Revoked Key",
-		RevokedAt: &now,
-	}
-	db.Create(&apiKey)
-
-	router := setupAuthRouter(db)
-	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-	req.Header.Set("X-API-Key", plainKey)
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401 for revoked key, got %d", w.Code)
-	}
-}
-
 // --- Token via query param ---
 
 func TestAuthMiddleware_TokenQueryParamRejected(t *testing.T) {
-	db := setupMiddlewareTestDB(t)
-
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	apiKeyAuth := repository.NewApiKeyRepository(db)
-	r.Use(AuthRequired(testSecret, apiKeyAuth))
+	r.Use(AuthRequired(testSecret))
 	r.GET("/protected", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})

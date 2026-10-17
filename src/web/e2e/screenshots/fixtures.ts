@@ -109,8 +109,6 @@ function toMutationPayload(fixture: ScreenshotFixtureCoin) {
     reverseDescription: fixture.reverseDescription,
     rarityRating: fixture.rarityRating,
     isWishlist: fixture.isWishlist,
-    isSold: false,
-    isPrivate: false,
     notes: fixture.notes,
     // Deliberately no price/valuation/purchase data — sanitized public fixtures only.
     purchasePrice: null,
@@ -121,7 +119,6 @@ function toMutationPayload(fixture: ScreenshotFixtureCoin) {
     vendorInvoice: '',
     referenceUrl: '',
     referenceText: '',
-    storageLocationId: null,
   }
 }
 

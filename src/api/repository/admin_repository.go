@@ -28,12 +28,6 @@ func (r *AdminRepository) ListUsers() ([]models.User, error) {
 	return users, nil
 }
 
-func (r *AdminRepository) GetUserByID(userID uint) (*models.User, error) {
-	var user models.User
-	err := r.db.First(&user, userID).Error
-	return &user, err
-}
-
 func (r *AdminRepository) CountLocalRecoveryAdmins() (int64, error) {
 	return countLocalRecoveryAdmins(r.db)
 }
@@ -132,11 +126,6 @@ func userHasUsableLocalAdminCredentials(user models.User) bool {
 }
 
 func deleteUserCascadeInTx(tx *gorm.DB, userID uint) (*gorm.DB, error) {
-	if tx.Migrator().HasTable(&models.CollectorProfile{}) {
-		if err := tx.Scopes(OwnedBy(userID)).Delete(&models.CollectorProfile{}).Error; err != nil {
-			return nil, err
-		}
-	}
 	var coinIDs []uint
 	if err := tx.Model(&models.Coin{}).Where("user_id = ?", userID).Pluck("id", &coinIDs).Error; err != nil {
 		return nil, err
@@ -151,12 +140,6 @@ func deleteUserCascadeInTx(tx *gorm.DB, userID uint) (*gorm.DB, error) {
 		if err := tx.Where("coin_id IN ?", coinIDs).Delete(&models.CoinValueHistory{}).Error; err != nil {
 			return nil, err
 		}
-		if err := tx.Where("coin_id IN ?", coinIDs).Delete(&models.CoinComment{}).Error; err != nil {
-			return nil, err
-		}
-	}
-	if err := tx.Where("user_id = ?", userID).Delete(&models.CoinComment{}).Error; err != nil {
-		return nil, err
 	}
 	if err := tx.Where("user_id = ?", userID).Delete(&models.Coin{}).Error; err != nil {
 		return nil, err
@@ -164,35 +147,13 @@ func deleteUserCascadeInTx(tx *gorm.DB, userID uint) (*gorm.DB, error) {
 	if err := tx.Where("user_id = ?", userID).Delete(&models.AgentConversation{}).Error; err != nil {
 		return nil, err
 	}
-	if err := tx.Where("user_id = ?", userID).Delete(&models.ApiKey{}).Error; err != nil {
-		return nil, err
-	}
 	if err := tx.Where("user_id = ?", userID).Delete(&models.RefreshToken{}).Error; err != nil {
-		return nil, err
-	}
-	if err := tx.Where("user_id = ?", userID).Delete(&models.WebAuthnCredential{}).Error; err != nil {
-		return nil, err
-	}
-	if err := tx.Where("user_id = ?", userID).Delete(&models.QuickAccessPin{}).Error; err != nil {
 		return nil, err
 	}
 	if tx.Migrator().HasTable(&models.CatalogueOverride{}) {
 		if err := tx.Where("user_id = ?", userID).Delete(&models.CatalogueOverride{}).Error; err != nil {
 			return nil, err
 		}
-	}
-	if tx.Migrator().HasTable(&models.ExternalIdentity{}) {
-		if err := tx.Where("user_id = ?", userID).Delete(&models.ExternalIdentity{}).Error; err != nil {
-			return nil, err
-		}
-	}
-	if tx.Migrator().HasTable(&models.OIDCAuthState{}) {
-		if err := tx.Where("user_id = ?", userID).Delete(&models.OIDCAuthState{}).Error; err != nil {
-			return nil, err
-		}
-	}
-	if err := tx.Where("follower_id = ? OR following_id = ?", userID, userID).Delete(&models.Follow{}).Error; err != nil {
-		return nil, err
 	}
 	return tx.Delete(&models.User{}, userID), nil
 }

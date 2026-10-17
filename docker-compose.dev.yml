@@ -4,7 +4,7 @@
 #   docker compose -f docker-compose.dev.yml up -d --build   # build + start
 #   docker compose -f docker-compose.dev.yml logs -f app      # follow API logs
 #   docker compose -f docker-compose.dev.yml down             # stop (keeps data)
-#   docker compose -f docker-compose.dev.yml down -v          # stop + wipe DB/uploads
+#   docker compose -f docker-compose.dev.yml down -v          # stop + wipe DB/uploads (not the backups)
 #
 # Secrets come from .env (JWT_SECRET, AGENT_INTERNAL_SERVICE_TOKEN). GIN_MODE is left unset (debug), so the
 # production-only startup checks are skipped and localhost origins are allowed.
@@ -22,12 +22,12 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       DB_PATH: /app/data/ancientcoins.db
       UPLOAD_DIR: /app/uploads
+      BACKUP_DIR: /app/backups
+      BACKUP_DIR_LABEL: ${AUREARIA_BACKUP_DIR:-~/Aurearia-backups/${COMPOSE_PROJECT_NAME}}
       PORT: "8080"
       AGENT_SERVICE_URL: http://agent:8081
       AGENT_INTERNAL_SERVICE_TOKEN: ${AGENT_INTERNAL_SERVICE_TOKEN:?Set AGENT_INTERNAL_SERVICE_TOKEN in .env}
       AGENT_INTERNAL_CALLBACK_URL: http://app:8080
-      WEBAUTHN_RP_ID: localhost
-      WEBAUTHN_ORIGIN: http://localhost:8080
     ports:
       # Loopback only: reachable from this Mac, not from the rest of the network.
       # APP_PORT lets a second stack run alongside, e.g.
@@ -36,6 +36,9 @@ services:
     volumes:
       - db-data:/app/data
       - uploads:/app/uploads
+      # The full backups (Settings › Backups), in a folder of this Mac outside
+      # Docker and the project, one per stack: they outlive `down -v`.
+      - ${AUREARIA_BACKUP_DIR:-${HOME}/Aurearia-backups/${COMPOSE_PROJECT_NAME}}:/app/backups
     depends_on:
       agent:
         condition: service_healthy

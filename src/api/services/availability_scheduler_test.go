@@ -198,7 +198,6 @@ func setupAvailSchedulerWithService(t *testing.T, listingURL string) (*Availabil
 		&models.AvailabilityRun{},
 		&models.AvailabilityResult{},
 		&models.AppSetting{},
-		&models.Notification{},
 	); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
@@ -219,7 +218,7 @@ func setupAvailSchedulerWithService(t *testing.T, listingURL string) (*Availabil
 	settingsRepo := repository.NewSettingsRepository(db)
 	settingsSvc := NewSettingsService(settingsRepo)
 	logger := NewLogger(100)
-	availSvc := NewAvailabilityService(coinRepo, availRepo, nil, nil, nil, settingsSvc, logger).WithCycleRepo(availCycleRepo)
+	availSvc := NewAvailabilityService(coinRepo, availRepo, nil, settingsSvc, logger).WithCycleRepo(availCycleRepo)
 	scheduler := NewAvailabilityScheduler(availSvc, coinRepo, availRepo, settingsSvc, logger).WithCycleRepo(availCycleRepo)
 	return scheduler, availCycleRepo, db
 }

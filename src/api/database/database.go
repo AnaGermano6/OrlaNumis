@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -84,11 +85,7 @@ func Connect(dbPath string) {
 		log.Fatalf("Failed to migrate coin_references column: %v", err)
 	}
 
-	// Note: MintLocation.NomismaURI/-Label/-LinkedAt are new nullable/
-	// optional columns (343-nomisma-mint-authority-linking). SQLite
-	// AutoMigrate adds them additively with no backfill and no destructive
-	// migration - every existing row simply starts unlinked.
-	err = DB.AutoMigrate(&models.User{}, &models.CollectorProfile{}, &models.StorageLocation{}, &models.MintLocation{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CatalogRegistry{}, &models.AppSetting{}, &models.ApiKey{}, &models.RefreshToken{}, &models.WebAuthnCredential{}, &models.SecurityEvent{}, &models.IPRule{}, &models.OIDCProvider{}, &models.ExternalIdentity{}, &models.OIDCAuthState{}, &models.CoinJournal{}, &models.CoinIntakeDraft{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}, &models.AgentConversation{}, &models.CollectionUpdateProposal{}, &models.SetBuilderRun{}, &models.SetProposal{}, &models.ProposalSlot{}, &models.Follow{}, &models.CoinComment{}, &models.CoinValueHistory{}, &models.AvailabilityCycle{}, &models.AvailabilityRun{}, &models.AvailabilityResult{}, &models.WishlistSearchAlert{}, &models.AlertRun{}, &models.AlertCandidate{}, &models.CandidateProvenance{}, &models.CandidateReviewAction{}, &models.Notification{}, &models.AIJob{}, &models.Tag{}, &models.CoinTag{}, &models.CoinSet{}, &models.CoinSetMembership{}, &models.CoinSetTarget{}, &models.CoinSetChecklistKey{}, &models.CoinSetValuationSnapshot{}, &models.CoinSetMilestoneAlert{}, &models.SmartCriteriaTemplate{}, &models.CoinRecommendation{}, &models.RecommendationFeedback{}, &models.Showcase{}, &models.ShowcaseCoin{}, &models.QuickAccessPin{}, &models.ValuationRun{}, &models.ValuationResult{}, &models.FeaturedCoin{}, &models.CoinOfDayRun{}, &models.CollectionHealthSnapshot{}, &models.CollectionHealthSnapshotRun{}, &models.RomanImperialFigure{}, &models.RomanImperialFigureHighlight{}, &models.DeepIdentificationEvent{}, &models.DeepIdentificationProviderRun{}, &models.DeepIdentificationArtifact{}, &models.PurchaseReminder{}, &models.CoinCopilotThread{}, &models.CoinCopilotRun{}, &models.CoinCopilotCheckpoint{}, &models.CoinCopilotEvent{}, &models.CoinCopilotResumeRequest{})
+	err = DB.AutoMigrate(&models.User{}, &models.MintLocation{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CatalogRegistry{}, &models.AppSetting{}, &models.RefreshToken{}, &models.SecurityEvent{}, &models.CoinJournal{}, &models.CoinIntakeDraft{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}, &models.AgentConversation{}, &models.CollectionUpdateProposal{}, &models.SetBuilderRun{}, &models.SetProposal{}, &models.ProposalSlot{}, &models.CoinValueHistory{}, &models.AvailabilityCycle{}, &models.AvailabilityRun{}, &models.AvailabilityResult{}, &models.WishlistSearchAlert{}, &models.AlertRun{}, &models.AlertCandidate{}, &models.CandidateProvenance{}, &models.CandidateReviewAction{}, &models.AIJob{}, &models.CoinSet{}, &models.CoinSetMembership{}, &models.CoinSetTarget{}, &models.CoinSetValuationSnapshot{}, &models.CoinRecommendation{}, &models.RecommendationFeedback{}, &models.ValuationRun{}, &models.ValuationResult{}, &models.DeepIdentificationEvent{}, &models.DeepIdentificationProviderRun{}, &models.DeepIdentificationArtifact{}, &models.CoinCopilotThread{}, &models.CoinCopilotRun{}, &models.CoinCopilotCheckpoint{}, &models.CoinCopilotEvent{}, &models.CoinCopilotResumeRequest{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
@@ -121,18 +118,29 @@ func Connect(dbPath string) {
 	if err := migrateFeature362(DB); err != nil {
 		log.Fatalf("Failed to migrate Feature 362 schema: %v", err)
 	}
-	if err := migrateStructuredStorage(DB); err != nil {
-		log.Fatalf("Failed to migrate structured storage: %v", err)
-	}
-
-	if err := migrateQuickAccessPins(DB); err != nil {
-		log.Fatalf("Failed to migrate quick access pins: %v", err)
-	}
 	if err := dropRetiredTables(DB); err != nil {
 		log.Fatalf("Failed to drop retired tables: %v", err)
 	}
 	if err := dropRetiredUserColumns(DB); err != nil {
 		log.Fatalf("Failed to drop retired user columns: %v", err)
+	}
+	if err := dropRetiredCoinColumns(DB); err != nil {
+		log.Fatalf("Failed to drop retired coin columns: %v", err)
+	}
+	if err := dropRetiredSetColumns(DB); err != nil {
+		log.Fatalf("Failed to drop retired set columns: %v", err)
+	}
+	if err := dropRetiredMintLocationColumns(DB); err != nil {
+		log.Fatalf("Failed to drop retired mint location columns: %v", err)
+	}
+	if err := dropRetiredCriteriaRules(DB); err != nil {
+		log.Fatalf("Failed to drop retired smart set rules: %v", err)
+	}
+	if err := dropRetiredSettings(DB); err != nil {
+		log.Fatalf("Failed to drop retired settings: %v", err)
+	}
+	if err := dropRetiredCategories(DB); err != nil {
+		log.Fatalf("Failed to drop retired categories: %v", err)
 	}
 
 	// 353-wishlist-availability-run-observability: AvailabilityCycle is a brand-new table and
@@ -186,9 +194,6 @@ func Connect(dbPath string) {
 	if err := backfillCoinMintLocations(DB); err != nil {
 		log.Fatalf("Failed to backfill coin mint locations: %v", err)
 	}
-	if err := seedRomanImperialFigures(DB); err != nil {
-		log.Fatalf("Failed to seed Roman imperial figures: %v", err)
-	}
 
 	log.Println("Database connected and migrated")
 }
@@ -199,9 +204,6 @@ func backfillRequiredDefaults(db *gorm.DB) error {
 		sql  string
 		args []interface{}
 	}{
-		{"API key capabilities", "UPDATE api_keys SET capabilities='read' WHERE capabilities IS NULL OR capabilities=''", nil},
-		{"featured coin source", "UPDATE featured_coins SET source_type='owned' WHERE source_type IS NULL OR source_type=''", nil},
-		{"coin of day wishlist preference", "UPDATE users SET coin_of_day_include_wishlist=1 WHERE coin_of_day_include_wishlist IS NULL", nil},
 		{"completed identification retention", "UPDATE deep_identification_jobs SET expires_at=? WHERE status IN (?, ?)", []interface{}{models.DeepIdentificationNoExpirySentinel, models.DeepJobStatusCompleted, models.DeepJobStatusPartial}},
 	} {
 		if err := db.Exec(step.sql, step.args...).Error; err != nil {
@@ -242,13 +244,27 @@ func seedNumistaUsage(db *gorm.DB, now time.Time) error {
 
 // retiredTables are the tables of features removed in 2026-10: value
 // history, notes, auction tracking (lots, the calendar, price alerts, bid
-// reminders and their run logs) and shipments. A table comes before the
-// retired tables it points at, so each drop passes the foreign key checks.
+// reminders and their run logs), shipments, followers (with the coins'
+// comments and ratings), showcases, storage locations, saved smart-set
+// criteria; then single sign-on (OIDC), passkeys, API keys and IP rules;
+// notifications, with what only made them (purchase reminders, set
+// milestone alerts, the coins a set had announced); the Coin of the Day,
+// collection health snapshots, Quick Access pins, the collector profile, the
+// emperor tracker and tags. A table comes before the retired tables it
+// points at, so each drop passes the foreign key checks.
 var retiredTables = []string{
 	"price_alerts", "bid_reminders", "auction_lots", "auction_events",
 	"auction_alert_runs", "auction_ending_runs", "auction_watch_bid_digest_runs",
 	"shipment_events", "shipments",
 	"notes", "value_snapshots",
+	"follows", "coin_comments", "showcase_coins", "showcases", "storage_locations",
+	"smart_criteria_templates",
+	"external_identities", "o_id_c_auth_states", "o_id_c_providers", "web_authn_credentials",
+	"api_keys", "ip_rules",
+	"notifications", "purchase_reminders", "coin_set_milestone_alerts", "coin_set_checklist_keys",
+	"featured_coins", "coin_of_day_runs", "collection_health_snapshots", "collection_health_snapshot_runs",
+	"quick_access_pins", "collector_profiles", "roman_imperial_figure_highlights", "roman_imperial_figures",
+	"coin_tags", "tags",
 }
 
 // dropRetiredTables drops the retired tables, all or none.
@@ -264,25 +280,215 @@ func dropRetiredTables(db *gorm.DB) error {
 }
 
 // retiredUserColumns held the accounts and keys of the integrations removed
-// in 2026-10 (NumisBids, CNG, ParcelApp, Pushover).
+// in 2026-10 (NumisBids, CNG, ParcelApp, Pushover), whether the collection
+// was public to followers, and the Coin of the Day's and the emperor
+// tracker's preferences, removed with them.
 var retiredUserColumns = []string{
 	"numis_bids_username", "numis_bids_password", "cng_username", "cng_password",
 	"parcel_app_api_key", "pushover_user_key", "pushover_enabled",
+	"is_public",
+	"coin_of_day_enabled", "coin_of_day_include_wishlist",
+	"emperor_tracker_enabled", "emperor_tracker_show_usurpers", "emperor_tracker_show_empresses", "emperor_tracker_show_other_figures",
 }
 
 // dropRetiredUserColumns drops the retired columns of users, all or none.
 func dropRetiredUserColumns(db *gorm.DB) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		for _, column := range retiredUserColumns {
-			if !tx.Migrator().HasColumn("users", column) {
-				continue
-			}
-			if err := tx.Exec("ALTER TABLE users DROP COLUMN " + column).Error; err != nil {
-				return fmt.Errorf("drop users.%s: %w", column, err)
+		return dropColumns(tx, "users", retiredUserColumns)
+	})
+}
+
+// retiredCoinColumns held a coin's storage location (and its tray slot), its
+// sale, whether followers could see it and its emperor, removed in 2026-10;
+// retiredCoinIndexes are their indexes, dropped first, as SQLite drops no
+// indexed column.
+var (
+	retiredCoinColumns = []string{"storage_location_id", "storage_slot", "is_sold", "sold_price", "sold_date", "sold_to", "is_private", "roman_imperial_figure_id"}
+	retiredCoinIndexes = []string{"idx_coins_storage_location_slot_unique", "idx_coins_roman_imperial_figure_id"}
+)
+
+// dropRetiredCoinColumns drops the retired columns of coins, all or none.
+func dropRetiredCoinColumns(db *gorm.DB) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, index := range retiredCoinIndexes {
+			if err := tx.Exec("DROP INDEX IF EXISTS " + index).Error; err != nil {
+				return fmt.Errorf("drop index %s: %w", index, err)
 			}
 		}
-		return nil
+		return dropColumns(tx, "coins", retiredCoinColumns)
 	})
+}
+
+// retiredSetColumns held whether a set was public, removed with the
+// showcases in 2026-10, and when it was pinned to Quick Access;
+// retiredSetIndexes are their indexes, dropped first.
+var (
+	retiredSetColumns = []string{"is_public", "pinned_at"}
+	retiredSetIndexes = []string{"idx_coin_sets_pinned_at"}
+)
+
+// dropRetiredSetColumns drops the retired columns of sets, all or none.
+func dropRetiredSetColumns(db *gorm.DB) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, index := range retiredSetIndexes {
+			if err := tx.Exec("DROP INDEX IF EXISTS " + index).Error; err != nil {
+				return fmt.Errorf("drop index %s: %w", index, err)
+			}
+		}
+		return dropColumns(tx, "coin_sets", retiredSetColumns)
+	})
+}
+
+// retiredMintLocationColumns held a mint's link to Nomisma.org, removed in
+// 2026-10.
+var retiredMintLocationColumns = []string{"nomisma_uri", "nomisma_label", "nomisma_linked_at"}
+
+// dropRetiredMintLocationColumns drops the retired columns of mint
+// locations, all or none.
+func dropRetiredMintLocationColumns(db *gorm.DB) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		return dropColumns(tx, "mint_locations", retiredMintLocationColumns)
+	})
+}
+
+// retiredCriteriaFields are smart-set criteria fields of the coin columns
+// removed in 2026-10: no coin is sold, stored in a location or private any
+// more, so their rules ("not sold", "in this location", "private") are left
+// out of the sets.
+var retiredCriteriaFields = map[string]bool{"isSold": true, "storageLocationId": true, "isPrivate": true}
+
+// dropRetiredCriteriaRules takes the retired fields' rules out of the smart
+// sets' criteria, which would otherwise no longer be valid.
+func dropRetiredCriteriaRules(db *gorm.DB) error {
+	var sets []models.CoinSet
+	if err := db.Select("id", "smart_criteria").Where("smart_criteria IS NOT NULL").Find(&sets).Error; err != nil {
+		return err
+	}
+	for _, set := range sets {
+		if set.SmartCriteria == nil {
+			continue
+		}
+		before, _ := json.Marshal(*set.SmartCriteria)
+		cleaned := models.JSONObject(withoutRetiredRules(*set.SmartCriteria))
+		after, _ := json.Marshal(cleaned)
+		if string(before) == string(after) {
+			continue
+		}
+		if err := db.Model(&models.CoinSet{}).Where("id = ?", set.ID).Update("smart_criteria", cleaned).Error; err != nil {
+			return fmt.Errorf("set %d: %w", set.ID, err)
+		}
+	}
+	return nil
+}
+
+// withoutRetiredRules is a criteria group without the retired fields' rules,
+// nor the groups left empty by it.
+func withoutRetiredRules(group map[string]interface{}) map[string]interface{} {
+	rules, ok := group["rules"].([]interface{})
+	if !ok {
+		return group
+	}
+	kept := make([]interface{}, 0, len(rules))
+	for _, raw := range rules {
+		rule, ok := raw.(map[string]interface{})
+		if !ok {
+			kept = append(kept, raw)
+			continue
+		}
+		if field, _ := rule["field"].(string); retiredCriteriaFields[field] {
+			continue
+		}
+		if _, isGroup := rule["rules"]; isGroup {
+			rule = withoutRetiredRules(rule)
+			if inner, _ := rule["rules"].([]interface{}); len(inner) == 0 {
+				continue
+			}
+		}
+		kept = append(kept, rule)
+	}
+	group["rules"] = kept
+	return group
+}
+
+// retiredSettings are the stored admin settings of features removed in
+// 2026-10 (auction alerts, shipment tracking and its carriers' credentials,
+// Pushover, API key rotation, the Coin of the Day, collection health
+// snapshots, OCRE, the external tool server, purchase reminders), and the
+// emperor list's seed version.
+var retiredSettings = []string{
+	"AuctionAlertsCheckEnabled", "AuctionAlertsCheckInterval", "AuctionAlertsCheckStartTime",
+	"AuctionEndingCheckEnabled", "AuctionEndingCheckInterval", "AuctionEndingCheckStartTime",
+	"AuctionWatchBidDigestEnabled", "AuctionWatchBidDigestInterval", "AuctionWatchBidDigestStartTime",
+	"ShipmentSyncBatchSize", "ShipmentSyncEnabled", "ShipmentSyncInterval", "ShipmentSyncStartTime",
+	"FedExAPIBaseURL", "FedExClientID", "FedExClientSecret", "FedExScope", "FedExTokenURL",
+	"UPSAPIBaseURL", "UPSClientID", "UPSClientSecret", "UPSScope", "UPSTokenURL",
+	"USPSAPIBaseURL", "USPSAPIKey", "USPSAPIKeyHeader",
+	"ParcelAppEnabled", "PushoverAppToken",
+	"APIKeyRotationCutoffAt",
+	"CoinOfDayEnabled", "CoinOfDayStartTime", "CoinOfDayTimezone",
+	"CollectionHealthSnapshotsEnabled", "CollectionHealthSnapshotsStartTime",
+	"DeepIdentificationOCREEnabled", "DeepIdentificationOCRECallBudget",
+	"ExternalToolServerEnabled",
+	"ReminderCheckEnabled", "ReminderCheckStartTime",
+	"RomanImperialFigureSeedVersion",
+}
+
+// dropRetiredSettings deletes the retired settings' stored values.
+func dropRetiredSettings(db *gorm.DB) error {
+	return db.Where("key IN ?", retiredSettings).Delete(&models.AppSetting{}).Error
+}
+
+// retiredCategories are the ancient coin categories removed in 2026-10: they
+// leave the admin's category list and its labels, and a coin of one becomes
+// "Other".
+var retiredCategories = []string{"Roman", "Greek", "Byzantine"}
+
+// dropRetiredCategories takes the retired categories out of the category
+// list, its Portuguese labels and the coins, all or none.
+func dropRetiredCategories(db *gorm.DB) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		retired := map[string]bool{}
+		for _, category := range retiredCategories {
+			retired[category] = true
+		}
+		for key, name := range map[string]func(line string) string{
+			"CoinCategories":         func(line string) string { return strings.TrimSpace(line) },
+			"CoinCategoryLabelsPtPT": func(line string) string { return strings.TrimSpace(strings.SplitN(line, "=", 2)[0]) },
+		} {
+			var setting models.AppSetting
+			if err := tx.Where("key = ?", key).Limit(1).Find(&setting).Error; err != nil {
+				return err
+			}
+			if setting.Key == "" {
+				continue
+			}
+			kept := []string{}
+			for _, line := range strings.Split(setting.Value, "\n") {
+				if !retired[name(line)] {
+					kept = append(kept, line)
+				}
+			}
+			if value := strings.Join(kept, "\n"); value != setting.Value {
+				if err := tx.Model(&models.AppSetting{}).Where("key = ?", key).Update("value", value).Error; err != nil {
+					return err
+				}
+			}
+		}
+		return tx.Model(&models.Coin{}).Where("category IN ?", retiredCategories).Update("category", string(models.CategoryOther)).Error
+	})
+}
+
+// dropColumns drops those of the columns the table still has.
+func dropColumns(tx *gorm.DB, table string, columns []string) error {
+	for _, column := range columns {
+		if !tx.Migrator().HasColumn(table, column) {
+			continue
+		}
+		if err := tx.Exec("ALTER TABLE " + table + " DROP COLUMN " + column).Error; err != nil {
+			return fmt.Errorf("drop %s.%s: %w", table, column, err)
+		}
+	}
+	return nil
 }
 
 func migrateFeature362(db *gorm.DB) error {
@@ -290,60 +496,6 @@ func migrateFeature362(db *gorm.DB) error {
 		&models.DeepIdentificationJob{},
 		&models.CoinCopilotDeepHandoff{},
 	)
-}
-
-func migrateQuickAccessPins(db *gorm.DB) error {
-	return db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Exec(`
-			INSERT INTO quick_access_pins (user_id, target_type, target_id, pinned_at, created_at)
-			SELECT user_id, ?, id, pinned_at, pinned_at
-			FROM coin_sets
-			WHERE pinned_at IS NOT NULL
-			  AND NOT EXISTS (
-				SELECT 1 FROM quick_access_pins
-				WHERE quick_access_pins.user_id = coin_sets.user_id
-				  AND quick_access_pins.target_type = ?
-				  AND quick_access_pins.target_id = coin_sets.id
-			  )`,
-			models.QuickAccessTargetCoinSet,
-			models.QuickAccessTargetCoinSet,
-		).Error; err != nil {
-			return fmt.Errorf("backfill coin set pins: %w", err)
-		}
-		if err := tx.Exec(`
-			UPDATE coin_sets
-			SET pinned_at = (
-				SELECT pinned_at FROM quick_access_pins
-				WHERE quick_access_pins.user_id = coin_sets.user_id
-				  AND quick_access_pins.target_type = ?
-				  AND quick_access_pins.target_id = coin_sets.id
-			)
-			WHERE EXISTS (
-				SELECT 1 FROM quick_access_pins
-				WHERE quick_access_pins.user_id = coin_sets.user_id
-				  AND quick_access_pins.target_type = ?
-				  AND quick_access_pins.target_id = coin_sets.id
-			)`,
-			models.QuickAccessTargetCoinSet,
-			models.QuickAccessTargetCoinSet,
-		).Error; err != nil {
-			return fmt.Errorf("reconcile pinned set mirrors: %w", err)
-		}
-		if err := tx.Exec(`
-			UPDATE coin_sets SET pinned_at = NULL
-			WHERE pinned_at IS NOT NULL
-			  AND NOT EXISTS (
-				SELECT 1 FROM quick_access_pins
-				WHERE quick_access_pins.user_id = coin_sets.user_id
-				  AND quick_access_pins.target_type = ?
-				  AND quick_access_pins.target_id = coin_sets.id
-			)`,
-			models.QuickAccessTargetCoinSet,
-		).Error; err != nil {
-			return fmt.Errorf("clear stale pinned set mirrors: %w", err)
-		}
-		return nil
-	})
 }
 
 // logLegacyAvailabilityRunCount logs an informational (non-fatal) count of pre-existing legacy
@@ -381,64 +533,6 @@ func backfillCoinValueHistorySources(db *gorm.DB) error {
 	// Defensive: stamp any row still holding NULL or empty source as manual.
 	if result := db.Exec("UPDATE coin_value_histories SET source='manual' WHERE source IS NULL OR source=''"); result.Error != nil {
 		return fmt.Errorf("manual default backfill: %w", result.Error)
-	}
-	return nil
-}
-
-// migrateStructuredStorage completes Feature 358's additive migration after
-// AutoMigrate has added the nullable columns. It intentionally creates no
-// physical foreign key, preserves IDs/associations, and fails on malformed
-// mixed rows rather than silently rewriting them.
-func migrateStructuredStorage(db *gorm.DB) error {
-	if err := db.Exec(
-		"UPDATE storage_locations SET type = ? WHERE type IS NULL OR TRIM(type) = ''",
-		models.StorageLocationTypeStandard,
-	).Error; err != nil {
-		return fmt.Errorf("backfill storage location type: %w", err)
-	}
-	var invalid int64
-	if err := db.Raw(`
-		SELECT COUNT(*) FROM storage_locations
-		WHERE type NOT IN (?, ?)
-		   OR (type = ? AND (rows IS NOT NULL OR columns IS NOT NULL))
-		   OR (type = ? AND (
-				rows IS NULL OR columns IS NULL OR
-				rows < 1 OR rows > 20 OR columns < 1 OR columns > 20 OR
-				rows * columns > 400
-		   ))`,
-		models.StorageLocationTypeStandard,
-		models.StorageLocationTypeTray,
-		models.StorageLocationTypeStandard,
-		models.StorageLocationTypeTray,
-	).Scan(&invalid).Error; err != nil {
-		return fmt.Errorf("validate storage location rows: %w", err)
-	}
-	if invalid > 0 {
-		return fmt.Errorf("validate storage location rows: %d malformed row(s)", invalid)
-	}
-	var duplicateNames int64
-	if err := db.Raw(`
-		SELECT COUNT(*) FROM (
-			SELECT user_id, name COLLATE NOCASE
-			FROM storage_locations
-			GROUP BY user_id, name COLLATE NOCASE
-			HAVING COUNT(*) > 1
-		)`).Scan(&duplicateNames).Error; err != nil {
-		return fmt.Errorf("validate storage location names: %w", err)
-	}
-	if duplicateNames > 0 {
-		return fmt.Errorf("validate storage location names: %d case-insensitive duplicate name group(s)", duplicateNames)
-	}
-	if err := db.Exec(`
-		CREATE UNIQUE INDEX IF NOT EXISTS idx_storage_locations_user_name_nocase
-		ON storage_locations(user_id, name COLLATE NOCASE)`).Error; err != nil {
-		return fmt.Errorf("create storage location name unique index: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE UNIQUE INDEX IF NOT EXISTS idx_coins_storage_location_slot_unique
-		ON coins(storage_location_id, storage_slot)
-		WHERE storage_slot IS NOT NULL`).Error; err != nil {
-		return fmt.Errorf("create storage slot unique index: %w", err)
 	}
 	return nil
 }

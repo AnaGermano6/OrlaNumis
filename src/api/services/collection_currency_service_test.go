@@ -65,8 +65,8 @@ func TestCollectionCurrencyChangeConvertsStoredAmounts(t *testing.T) {
 
 	var coin models.Coin
 	db.First(&coin, priced.ID)
-	if *coin.PurchasePrice != 10 || *coin.CurrentValue != 2.7 || coin.SoldPrice != nil {
-		t.Fatalf("coin amounts = %v %v %v", *coin.PurchasePrice, *coin.CurrentValue, coin.SoldPrice)
+	if *coin.PurchasePrice != 10 || *coin.CurrentValue != 2.7 {
+		t.Fatalf("coin amounts = %v %v", *coin.PurchasePrice, *coin.CurrentValue)
 	}
 	var other models.Coin
 	db.First(&other, unpriced.ID)

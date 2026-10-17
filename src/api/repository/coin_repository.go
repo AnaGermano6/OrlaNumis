@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -10,8 +9,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
-
-var ErrStorageSlotOccupied = errors.New("storage slot is occupied")
 
 // CoinListFilters holds optional filters for listing coins.
 type CoinListFilters struct {
@@ -34,8 +31,6 @@ type CoinListFilters struct {
 	Rarity       string
 	Search       string
 	Wishlist     *bool
-	Sold         *bool
-	TagID        *uint
 	SetID        *uint
 	SortField    string
 	SortOrder    string
@@ -51,7 +46,6 @@ type OwnedCoinFilters struct {
 	Era           string
 	Ruler         string
 	Wishlist      *bool
-	Sold          *bool
 	Search        string
 	MissingFields []string
 }
@@ -100,17 +94,10 @@ type ValueSummary struct {
 	AvgCurrentValue    float64 `json:"avgCurrentValue"`
 }
 
-// SoldSummary holds aggregate sold coin metrics.
-type SoldSummary struct {
-	TotalSoldPrice    float64 `json:"totalSoldPrice"`
-	TotalPurchaseCost float64 `json:"totalPurchaseCost"`
-}
-
 // CollectionStats holds all aggregate statistics for a user's collection.
 type CollectionStats struct {
 	TotalCoins    int64           `json:"totalCoins"`
 	TotalWishlist int64           `json:"totalWishlist"`
-	TotalSold     int64           `json:"totalSold"`
 	ByCategory    []CategoryCount `json:"byCategory"`
 	ByMaterial    []MaterialCount `json:"byMaterial"`
 	ByGrade       []GradeCount    `json:"byGrade"`
@@ -118,7 +105,6 @@ type CollectionStats struct {
 	ByRuler       []RulerCount    `json:"byRuler"`
 	ByPriceRange  []PriceRange    `json:"byPriceRange"`
 	Values        ValueSummary    `json:"values"`
-	SoldValues    SoldSummary     `json:"soldValues"`
 }
 
 // DistributionCell holds a single cell in the era × category heat map.
@@ -149,7 +135,7 @@ func (r *CoinRepository) DB() *gorm.DB {
 }
 
 func omitCoinRelationships(db *gorm.DB) *gorm.DB {
-	return db.Omit("Tags", "Sets")
+	return db.Omit("Sets")
 }
 
 func applyOwnedFilterConditions(query *gorm.DB, filters OwnedCoinFilters) *gorm.DB {
@@ -167,9 +153,6 @@ func applyOwnedFilterConditions(query *gorm.DB, filters OwnedCoinFilters) *gorm.
 	}
 	if filters.Wishlist != nil {
 		query = query.Where("is_wishlist = ?", *filters.Wishlist)
-	}
-	if filters.Sold != nil {
-		query = query.Where("is_sold = ?", *filters.Sold)
 	}
 	if filters.Search != "" {
 		term := "%" + strings.TrimSpace(filters.Search) + "%"
@@ -191,21 +174,20 @@ func applyOwnedFilterConditions(query *gorm.DB, filters OwnedCoinFilters) *gorm.
 }
 
 var ownedMissingFieldConditions = map[string]string{
-	"denomination":    "denomination = ''",
-	"ruler":           "ruler = ''",
-	"era":             "era = ''",
-	"mint":            "mint = ''",
-	"material":        "material = '' OR material = 'Other'",
-	"weightGrams":     "weight_grams IS NULL OR weight_grams <= 0",
-	"diameterMm":      "diameter_mm IS NULL OR diameter_mm <= 0",
-	"grade":           "grade = ''",
-	"purchasePrice":   "purchase_price IS NULL",
-	"currentValue":    "current_value IS NULL",
-	"purchaseDate":    "purchase_date IS NULL",
-	"storageLocation": "storage_location_id IS NULL",
-	"notes":           "notes = ''",
-	"referenceUrl":    "reference_url = ''",
-	"referenceText":   "reference_text = ''",
+	"denomination":  "denomination = ''",
+	"ruler":         "ruler = ''",
+	"era":           "era = ''",
+	"mint":          "mint = ''",
+	"material":      "material = '' OR material = 'Other'",
+	"weightGrams":   "weight_grams IS NULL OR weight_grams <= 0",
+	"diameterMm":    "diameter_mm IS NULL OR diameter_mm <= 0",
+	"grade":         "grade = ''",
+	"purchasePrice": "purchase_price IS NULL",
+	"currentValue":  "current_value IS NULL",
+	"purchaseDate":  "purchase_date IS NULL",
+	"notes":         "notes = ''",
+	"referenceUrl":  "reference_url = ''",
+	"referenceText": "reference_text = ''",
 }
 
 var allowedSortFields = map[string]string{
@@ -226,7 +208,7 @@ var searchFields = []string{
 
 // List returns a paginated, filtered list of coins for a user.
 func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Coin, int64, error) {
-	query := r.db.Scopes(OwnedBy(userID), OfKind(filters.Kind)).Preload("Images").Preload("Tags").Preload("Sets").Preload("References").Preload("StorageLocation").Preload("MintLocation")
+	query := r.db.Scopes(OwnedBy(userID), OfKind(filters.Kind)).Preload("Images").Preload("Sets").Preload("References").Preload("MintLocation")
 
 	if filters.Category != "" {
 		query = query.Where("category = ?", filters.Category)
@@ -265,12 +247,6 @@ func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Co
 	}
 	if filters.Wishlist != nil {
 		query = query.Where("is_wishlist = ?", *filters.Wishlist)
-	}
-	if filters.Sold != nil {
-		query = query.Where("is_sold = ?", *filters.Sold)
-	}
-	if filters.TagID != nil {
-		query = query.Where("id IN (SELECT coin_id FROM coin_tags WHERE tag_id = ?)", *filters.TagID)
 	}
 	if filters.SetID != nil {
 		query = query.Where("id IN (SELECT coin_id FROM coin_set_memberships WHERE set_id = ?)", *filters.SetID)
@@ -343,24 +319,11 @@ func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Co
 // FindByID returns a single coin owned by the user, with images preloaded.
 func (r *CoinRepository) FindByID(id uint, userID uint) (*models.Coin, error) {
 	var coin models.Coin
-	err := r.db.Scopes(OwnedByID(id, userID)).Preload("Images").Preload("Tags").Preload("Sets").Preload("References").Preload("StorageLocation").Preload("MintLocation").First(&coin).Error
+	err := r.db.Scopes(OwnedByID(id, userID)).Preload("Images").Preload("Sets").Preload("References").Preload("MintLocation").First(&coin).Error
 	if err != nil {
 		return nil, err
 	}
 	return &coin, nil
-}
-
-// ListMatchedImperialFigures returns the user's active-collection coins
-// (non-wishlist, non-sold) that have been matched to a RomanImperialFigure,
-// with images preloaded, for F028's emperor tracker.
-func (r *CoinRepository) ListMatchedImperialFigures(userID uint) ([]models.Coin, error) {
-	var coins []models.Coin
-	err := r.db.Scopes(ActiveRomanCollection(userID)).
-		Where("roman_imperial_figure_id IS NOT NULL").
-		Preload("Images").
-		Order("id ASC").
-		Find(&coins).Error
-	return coins, err
 }
 
 // FindOwnedByNameCandidates returns up to limit owned coins with name matches.
@@ -423,24 +386,10 @@ func (r *CoinRepository) TopOwnedByCurrentValue(userID uint, limit int) ([]model
 // Create inserts a new coin and returns it with images preloaded.
 func (r *CoinRepository) Create(coin *models.Coin) error {
 	if err := r.db.Omit("References").Create(coin).Error; err != nil {
-		if isStorageSlotConflict(err, coin.StorageSlot) {
-			return ErrStorageSlotOccupied
-		}
 		return err
 	}
 
-	return r.db.Preload("Images").Preload("References").Preload("StorageLocation").Preload("MintLocation").First(coin, coin.ID).Error
-}
-
-func isStorageSlotConflict(err error, storageSlot *int) bool {
-	if err == nil || storageSlot == nil {
-		return false
-	}
-	message := strings.ToLower(err.Error())
-	return strings.Contains(message, "idx_coins_storage_location_slot_unique") ||
-		(strings.Contains(message, "unique constraint failed") &&
-			strings.Contains(message, "coins.storage_location_id") &&
-			strings.Contains(message, "coins.storage_slot"))
+	return r.db.Preload("Images").Preload("References").Preload("MintLocation").First(coin, coin.ID).Error
 }
 
 // Duplicate creates an owner-scoped copy of a coin without copying media or card state rows.
@@ -448,7 +397,7 @@ func (r *CoinRepository) Duplicate(id uint, userID uint) (*models.Coin, error) {
 	var source models.Coin
 	if err := r.db.Scopes(OwnedByID(id, userID)).
 		Preload("References").
-		Preload("StorageLocation").Preload("MintLocation").
+		Preload("MintLocation").
 		First(&source).Error; err != nil {
 		return nil, err
 	}
@@ -501,23 +450,12 @@ func (r *CoinRepository) Duplicate(id uint, userID uint) (*models.Coin, error) {
 		ReferenceURL:          source.ReferenceURL,
 		ReferenceText:         source.ReferenceText,
 		IsWishlist:            source.IsWishlist,
-		IsSold:                source.IsSold,
-		SoldPrice:             source.SoldPrice,
-		SoldDate:              source.SoldDate,
-		SoldTo:                source.SoldTo,
 		ListingStatus:         source.ListingStatus,
 		ListingCheckedAt:      source.ListingCheckedAt,
 		ListingCheckReason:    source.ListingCheckReason,
-		StorageLocationID:     source.StorageLocationID,
-		StorageSlot:           source.StorageSlot,
-		IsPrivate:             source.IsPrivate,
 		UserID:                source.UserID,
 	}
-	if source.StorageLocation != nil && source.StorageLocation.Type == models.StorageLocationTypeTray {
-		duplicate.StorageLocationID = nil
-		duplicate.StorageSlot = nil
-	}
-	if err := r.db.Omit("Images", "References", "Tags", "Sets", "StorageLocation", "User").Create(&duplicate).Error; err != nil {
+	if err := r.db.Omit("Images", "References", "Sets", "User").Create(&duplicate).Error; err != nil {
 		return nil, err
 	}
 
@@ -533,24 +471,6 @@ func (r *CoinRepository) Duplicate(id uint, userID uint) (*models.Coin, error) {
 			})
 		}
 		if err := r.db.Create(&references).Error; err != nil {
-			return nil, err
-		}
-	}
-
-	var tagIDs []uint
-	if err := r.db.Table("coin_tags").
-		Select("coin_tags.tag_id").
-		Joins("JOIN tags ON tags.id = coin_tags.tag_id").
-		Where("coin_tags.coin_id = ? AND tags.user_id = ?", source.ID, userID).
-		Scan(&tagIDs).Error; err != nil {
-		return nil, err
-	}
-	if len(tagIDs) > 0 {
-		coinTags := make([]models.CoinTag, 0, len(tagIDs))
-		for _, tagID := range tagIDs {
-			coinTags = append(coinTags, models.CoinTag{CoinID: duplicate.ID, TagID: tagID})
-		}
-		if err := r.db.Create(&coinTags).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -579,7 +499,7 @@ func (r *CoinRepository) Duplicate(id uint, userID uint) (*models.Coin, error) {
 		}
 	}
 
-	if err := r.db.Preload("Images").Preload("References").Preload("Tags").Preload("Sets").Preload("StorageLocation").Preload("MintLocation").First(&duplicate, duplicate.ID).Error; err != nil {
+	if err := r.db.Preload("Images").Preload("References").Preload("Sets").Preload("MintLocation").First(&duplicate, duplicate.ID).Error; err != nil {
 		return nil, err
 	}
 	return &duplicate, nil
@@ -598,7 +518,7 @@ func (r *CoinRepository) Update(existing *models.Coin, updates *models.Coin, sel
 	if err := query.Updates(updates).Error; err != nil {
 		return err
 	}
-	return r.db.Preload("Images").Preload("References").Preload("StorageLocation").Preload("MintLocation").First(existing, existing.ID).Error
+	return r.db.Preload("Images").Preload("References").Preload("MintLocation").First(existing, existing.ID).Error
 }
 
 // UpdateField updates one explicit column without syncing loaded associations.
@@ -606,7 +526,7 @@ func (r *CoinRepository) UpdateField(coin *models.Coin, field string, value inte
 	if err := omitCoinRelationships(r.db.Model(coin)).Update(field, value).Error; err != nil {
 		return err
 	}
-	return r.db.Preload("Images").Preload("References").Preload("StorageLocation").Preload("MintLocation").First(coin, coin.ID).Error
+	return r.db.Preload("Images").Preload("References").Preload("MintLocation").First(coin, coin.ID).Error
 }
 
 // UpdateFields updates multiple explicit columns, including zero/nil values, without syncing loaded associations.
@@ -614,36 +534,7 @@ func (r *CoinRepository) UpdateFields(coin *models.Coin, updates map[string]inte
 	if err := omitCoinRelationships(r.db.Model(coin)).Updates(updates).Error; err != nil {
 		return err
 	}
-	return r.db.Preload("Images").Preload("References").Preload("StorageLocation").Preload("MintLocation").First(coin, coin.ID).Error
-}
-
-// UpdateStorageLocationID updates only the storage-location foreign key, including clearing it.
-func (r *CoinRepository) UpdateStorageLocationID(coin *models.Coin, storageLocationID *uint) error {
-	return r.UpdateStorageAssignment(coin, storageLocationID, nil)
-}
-
-// UpdateStorageAssignment atomically persists location and one-based slot.
-func (r *CoinRepository) UpdateStorageAssignment(coin *models.Coin, storageLocationID *uint, storageSlot *int) error {
-	query := r.db.Model(&models.Coin{}).Where("id = ? AND user_id = ?", coin.ID, coin.UserID)
-	err := query.Updates(map[string]interface{}{
-		"storage_location_id": storageLocationID,
-		"storage_slot":        storageSlot,
-	}).Error
-	if err != nil {
-		if isStorageSlotConflict(err, storageSlot) {
-			return ErrStorageSlotOccupied
-		}
-		return err
-	}
-	if err := r.db.Preload("Images").Preload("References").Preload("StorageLocation").Preload("MintLocation").First(coin, coin.ID).Error; err != nil {
-		return err
-	}
-	if storageLocationID == nil {
-		coin.StorageLocation = nil
-	}
-	coin.StorageLocationID = storageLocationID
-	coin.StorageSlot = storageSlot
-	return nil
+	return r.db.Preload("Images").Preload("References").Preload("MintLocation").First(coin, coin.ID).Error
 }
 
 // Delete removes a coin and all associated data (images, journals, value
@@ -668,7 +559,7 @@ func (r *CoinRepository) DeleteInTx(id uint, userID uint) (int64, error) {
 	}
 	// Rows pointing at the coin go first: SQLite enforces the foreign keys of
 	// images and catalogue references, so deleting the coin before them fails.
-	for _, model := range []interface{}{&models.CoinImage{}, &models.CoinReference{}, &models.CoinJournal{}, &models.CoinValueHistory{}, &models.CoinComment{}, &models.AvailabilityResult{}} {
+	for _, model := range []interface{}{&models.CoinImage{}, &models.CoinReference{}, &models.CoinJournal{}, &models.CoinValueHistory{}, &models.AvailabilityResult{}} {
 		if err := r.db.Where("coin_id = ?", id).Delete(model).Error; err != nil {
 			return 0, err
 		}
@@ -700,7 +591,7 @@ func (r *CoinRepository) BulkDeleteInTx(coinIDs []uint, userID uint) (int64, err
 		return 0, nil
 	}
 	// Dependent rows first, as in DeleteInTx.
-	for _, model := range []interface{}{&models.CoinImage{}, &models.CoinReference{}, &models.CoinJournal{}, &models.CoinValueHistory{}, &models.CoinComment{}, &models.AvailabilityResult{}, &models.CoinTag{}} {
+	for _, model := range []interface{}{&models.CoinImage{}, &models.CoinReference{}, &models.CoinJournal{}, &models.CoinValueHistory{}, &models.AvailabilityResult{}} {
 		if err := r.db.Where("coin_id IN ?", ownedIDs).Delete(model).Error; err != nil {
 			return 0, err
 		}
@@ -712,38 +603,11 @@ func (r *CoinRepository) BulkDeleteInTx(coinIDs []uint, userID uint) (int64, err
 	return result.RowsAffected, nil
 }
 
-// BulkMarkSold marks multiple coins as sold in a single transaction.
-func (r *CoinRepository) BulkMarkSold(coinIDs []uint, userID uint) (int64, error) {
-	result := r.db.Model(&models.Coin{}).
-		Where("id IN ? AND user_id = ? AND is_sold = ?", coinIDs, userID, false).
-		Updates(map[string]interface{}{
-			"is_sold":   true,
-			"sold_date": time.Now(),
-		})
-	return result.RowsAffected, result.Error
-}
-
-func (r *CoinRepository) OwnedActiveIDs(coinIDs []uint, userID uint) ([]uint, error) {
-	var ids []uint
-	err := r.db.Model(&models.Coin{}).
-		Where("id IN ? AND user_id = ? AND is_sold = ?", coinIDs, userID, false).
-		Pluck("id", &ids).Error
-	return ids, err
-}
-
-// BulkAssignLocation assigns a storage location to multiple coins. A nil storageLocationID clears the location.
-func (r *CoinRepository) BulkAssignLocation(coinIDs []uint, storageLocationID *uint, userID uint) (int64, error) {
-	result := r.db.Model(&models.Coin{}).
-		Where("id IN ? AND user_id = ?", coinIDs, userID).
-		Updates(map[string]interface{}{"storage_location_id": storageLocationID, "storage_slot": nil})
-	return result.RowsAffected, result.Error
-}
-
 // GetByIDs returns coins matching the given IDs for the given user.
 func (r *CoinRepository) GetByIDs(coinIDs []uint, userID uint) ([]models.Coin, error) {
 	var coins []models.Coin
 	err := r.db.Where("id IN ? AND user_id = ?", coinIDs, userID).
-		Preload("Images").Preload("Tags").Preload("References").Preload("StorageLocation").Preload("MintLocation").Find(&coins).Error
+		Preload("Images").Preload("References").Preload("MintLocation").Find(&coins).Error
 	return coins, err
 }
 
@@ -754,7 +618,6 @@ func (r *CoinRepository) GetStats(userID uint) (*CollectionStats, error) {
 
 	r.db.Model(&models.Coin{}).Scopes(active).Count(&stats.TotalCoins)
 	r.db.Model(&models.Coin{}).Where("user_id = ? AND is_wishlist = ?", userID, true).Count(&stats.TotalWishlist)
-	r.db.Model(&models.Coin{}).Where("user_id = ? AND is_sold = ?", userID, true).Count(&stats.TotalSold)
 
 	r.db.Model(&models.Coin{}).
 		Select("category, count(*) as count").
@@ -768,19 +631,19 @@ func (r *CoinRepository) GetStats(userID uint) (*CollectionStats, error) {
 
 	r.db.Model(&models.Coin{}).
 		Select("grade, count(*) as count").
-		Where("user_id = ? AND is_wishlist = ? AND is_sold = ? AND grade != ''", userID, false, false).
+		Where("user_id = ? AND is_wishlist = ? AND grade != ''", userID, false).
 		Group("grade").Order("count DESC").
 		Scan(&stats.ByGrade)
 
 	r.db.Model(&models.Coin{}).
 		Select("era, count(*) as count").
-		Where("user_id = ? AND is_wishlist = ? AND is_sold = ? AND era != ''", userID, false, false).
+		Where("user_id = ? AND is_wishlist = ? AND era != ''", userID, false).
 		Group("era").Order("count DESC").
 		Scan(&stats.ByEra)
 
 	r.db.Model(&models.Coin{}).
 		Select("ruler, count(*) as count").
-		Where("user_id = ? AND is_wishlist = ? AND is_sold = ? AND ruler != ''", userID, false, false).
+		Where("user_id = ? AND is_wishlist = ? AND ruler != ''", userID, false).
 		Group("ruler").Order("count DESC").Limit(10).
 		Scan(&stats.ByRuler)
 
@@ -792,7 +655,7 @@ func (r *CoinRepository) GetStats(userID uint) (*CollectionStats, error) {
 			WHEN purchase_price >= 500 AND purchase_price < 1000 THEN '$500 - $1K'
 			ELSE '$1K+'
 		END as `+"`range`"+`, count(*) as count`).
-		Where("user_id = ? AND is_wishlist = ? AND is_sold = ? AND purchase_price IS NOT NULL", userID, false, false).
+		Where("user_id = ? AND is_wishlist = ? AND purchase_price IS NOT NULL", userID, false).
 		Group("`range`").
 		Scan(&stats.ByPriceRange)
 
@@ -800,11 +663,6 @@ func (r *CoinRepository) GetStats(userID uint) (*CollectionStats, error) {
 		Select("COALESCE(SUM(purchase_price), 0) as total_purchase_price, COALESCE(SUM(current_value), 0) as total_current_value, COALESCE(AVG(purchase_price), 0) as avg_purchase_price, COALESCE(AVG(current_value), 0) as avg_current_value").
 		Scopes(active).
 		Scan(&stats.Values)
-
-	r.db.Model(&models.Coin{}).
-		Select("COALESCE(SUM(sold_price), 0) as total_sold_price, COALESCE(SUM(purchase_price), 0) as total_purchase_cost").
-		Where("user_id = ? AND is_sold = ?", userID, true).
-		Scan(&stats.SoldValues)
 
 	return stats, nil
 }
@@ -814,7 +672,7 @@ func (r *CoinRepository) GetDistribution(userID uint) ([]DistributionCell, error
 	var cells []DistributionCell
 	err := r.db.Model(&models.Coin{}).
 		Select("era, category, COUNT(*) as count").
-		Where("user_id = ? AND is_wishlist = ? AND is_sold = ? AND era != '' AND category != ''", userID, false, false).
+		Where("user_id = ? AND is_wishlist = ? AND era != '' AND category != ''", userID, false).
 		Group("era, category").
 		Order("era, category").
 		Scan(&cells).Error
@@ -973,26 +831,26 @@ type CountryCount struct {
 }
 
 // CountryCounts lists the countries of the user's collection coins (not
-// wishlist or sold) of a kind ("" for all) with how many each has,
+// the wishlist's) of a kind ("" for all) with how many each has,
 // alphabetically.
 func (r *CoinRepository) CountryCounts(userID uint, kind string) ([]CountryCount, error) {
 	var counts []CountryCount
 	err := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID), OfKind(kind)).
 		Select("country, COUNT(*) AS count").
-		Where("country IS NOT NULL AND country <> '' AND is_wishlist = ? AND is_sold = ?", false, false).
+		Where("country IS NOT NULL AND country <> '' AND is_wishlist = ?", false).
 		Group("country").Order("country").Scan(&counts).Error
 	return counts, err
 }
 
-// withoutImages keeps the user's coins (not banknotes, not sold) with no image at all.
+// withoutImages keeps the user's coins (not banknotes) with no image at all.
 func withoutImages(userID uint) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Scopes(OwnedBy(userID), OfKind(models.CoinKindCoin)).
-			Where("is_sold = ? AND NOT EXISTS (SELECT 1 FROM coin_images WHERE coin_images.coin_id = coins.id)", false)
+			Where("NOT EXISTS (SELECT 1 FROM coin_images WHERE coin_images.coin_id = coins.id)")
 	}
 }
 
-// CountWithoutImages counts the user's coins (not banknotes, not sold) with no image.
+// CountWithoutImages counts the user's coins (not banknotes) with no image.
 func (r *CoinRepository) CountWithoutImages(userID uint) (int64, error) {
 	var count int64
 	err := r.db.Model(&models.Coin{}).Scopes(withoutImages(userID)).Count(&count).Error
@@ -1014,12 +872,12 @@ type DenominationCount struct {
 }
 
 // DenominationCounts lists the face values of the user's collection coins
-// (not wishlist or sold) of a kind ("" for every item), the most common first.
+// (not the wishlist's) of a kind ("" for every item), the most common first.
 func (r *CoinRepository) DenominationCounts(userID uint, kind string) ([]DenominationCount, error) {
 	var counts []DenominationCount
 	err := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID), OfKind(kind)).
 		Select("TRIM(denomination) AS denomination, COUNT(*) AS count").
-		Where("TRIM(COALESCE(denomination, '')) <> '' AND is_wishlist = ? AND is_sold = ?", false, false).
+		Where("TRIM(COALESCE(denomination, '')) <> '' AND is_wishlist = ?", false).
 		Group("TRIM(denomination)").Order("count DESC, denomination").Scan(&counts).Error
 	return counts, err
 }
@@ -1034,8 +892,8 @@ type CoinNumistaType struct {
 	Circulation string
 }
 
-// CollectionNumistaTypes lists the user's collection coins (not wishlist or
-// sold) with their Numista type.
+// CollectionNumistaTypes lists the user's collection coins (not the
+// wishlist's) with their Numista type.
 func (r *CoinRepository) CollectionNumistaTypes(userID uint) ([]CoinNumistaType, error) {
 	var refs []CoinNumistaType
 	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID)).
@@ -1047,7 +905,7 @@ func (r *CoinRepository) CollectionNumistaTypes(userID uint) ([]CoinNumistaType,
 }
 
 // DistinctCountries lists the countries of the user's coins (any, wishlist
-// and sold included), as written on the coins.
+// included), as written on the coins.
 func (r *CoinRepository) DistinctCountries(userID uint) ([]string, error) {
 	var countries []string
 	err := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID)).
@@ -1057,7 +915,7 @@ func (r *CoinRepository) DistinctCountries(userID uint) ([]string, error) {
 }
 
 // CollectionSummary holds the headline numbers of the user's collection
-// (coins not on the wishlist and not sold).
+// (coins not on the wishlist).
 // The counts and the value count every coin held: a coin with a quantity of
 // three counts three, and its value three times. UniqueCoins counts each
 // different coin once.
@@ -1087,8 +945,8 @@ type CollectionSummary struct {
 // quantities existed count as one.
 const coinQuantitySQL = "(CASE WHEN quantity > 0 THEN quantity ELSE 1 END)"
 
-// CollectionQuantities maps the user's collection coins (not wishlist or
-// sold) of a kind ("" for all) to how many of each are held.
+// CollectionQuantities maps the user's collection coins (not the
+// wishlist's) of a kind ("" for all) to how many of each are held.
 func (r *CoinRepository) CollectionQuantities(userID uint, kind string) (map[uint]int64, error) {
 	var rows []struct {
 		ID       uint
@@ -1103,8 +961,8 @@ func (r *CoinRepository) CollectionQuantities(userID uint, kind string) (map[uin
 	return quantities, err
 }
 
-// CollectionCoinsOfYears lists the user's collection coins (not wishlist or
-// sold) of a kind and of these years, with their catalogue references.
+// CollectionCoinsOfYears lists the user's collection coins (not the
+// wishlist's) of a kind and of these years, with their catalogue references.
 func (r *CoinRepository) CollectionCoinsOfYears(userID uint, kind string, years []int) ([]models.Coin, error) {
 	coins := []models.Coin{}
 	if len(years) == 0 {
@@ -1114,24 +972,24 @@ func (r *CoinRepository) CollectionCoinsOfYears(userID uint, kind string, years 
 	return coins, err
 }
 
-// WishlistCoinsWithReferences lists the user's wishlist coins (not sold) of
+// WishlistCoinsWithReferences lists the user's wishlist coins of
 // a kind, with their catalogue references.
 func (r *CoinRepository) WishlistCoinsWithReferences(userID uint, kind string) ([]models.Coin, error) {
 	coins := []models.Coin{}
-	err := r.db.Scopes(OwnedBy(userID), OfKind(kind)).Where("is_wishlist = ? AND is_sold = ?", true, false).
+	err := r.db.Scopes(OwnedBy(userID), OfKind(kind)).Where("is_wishlist = ?", true).
 		Preload("References").Order("id").Find(&coins).Error
 	return coins, err
 }
 
 // CollectionCoinsWithReferences lists the user's collection coins (not
-// wishlist or sold) of a kind, with their catalogue references and photos.
+// the wishlist's) of a kind, with their catalogue references and photos.
 func (r *CoinRepository) CollectionCoinsWithReferences(userID uint, kind string) ([]models.Coin, error) {
 	coins := []models.Coin{}
 	err := r.db.Scopes(ActiveCollection(userID), OfKind(kind)).Preload("References").Preload("Images").Order("id").Find(&coins).Error
 	return coins, err
 }
 
-// DailyCoin picks one of the user's collection coins (not wishlist or sold)
+// DailyCoin picks one of the user's collection coins (not the wishlist's)
 // of a kind by seed, among those with a photo when there are any; nil when
 // the collection has none. The same seed picks the same coin.
 func (r *CoinRepository) DailyCoin(userID uint, kind string, seed uint32) (*models.Coin, error) {
@@ -1193,7 +1051,7 @@ type CoinHighlight struct {
 }
 
 // CollectionHighlights names the rarest, oldest and most valuable coins of the
-// collection (not wishlist or sold); each is nil when no coin qualifies.
+// collection (not the wishlist); each is nil when no coin qualifies.
 type CollectionHighlights struct {
 	Rarest       *CoinHighlight `json:"rarest"`
 	Oldest       *CoinHighlight `json:"oldest"`

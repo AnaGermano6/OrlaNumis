@@ -25,12 +25,10 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	err = db.AutoMigrate(
 		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CatalogRegistry{}, &models.AppSetting{},
 		&models.MintLocation{},
-		&models.StorageLocation{}, &models.CoinJournal{},
-		&models.CoinValueHistory{}, &models.CoinComment{},
+		&models.CoinJournal{},
+		&models.CoinValueHistory{},
 		&models.AvailabilityResult{},
-		&models.Tag{}, &models.CoinTag{},
 		&models.CoinSet{}, &models.CoinSetMembership{},
-		&models.Showcase{}, &models.ShowcaseCoin{},
 	)
 	if err != nil {
 		t.Fatalf("failed to migrate: %v", err)
@@ -40,25 +38,19 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 func newTestCoinService(db *gorm.DB) *CoinService {
 	repo := repository.NewCoinRepository(db)
-	return NewCoinService(repo, nil)
+	return NewCoinService(repo)
 }
 
 func newTestCoinServiceWithCatalogRegistry(db *gorm.DB) *CoinService {
 	repo := repository.NewCoinRepository(db)
 	catalogRepo := repository.NewCatalogRegistryRepository(db)
-	return NewCoinService(repo, nil).WithCatalogRegistrySupport(catalogRepo)
+	return NewCoinService(repo).WithCatalogRegistrySupport(catalogRepo)
 }
 
 func newTestCoinServiceWithSettings(db *gorm.DB) *CoinService {
 	repo := repository.NewCoinRepository(db)
 	settingsRepo := repository.NewSettingsRepository(db)
-	return NewCoinService(repo, nil).WithSettingsSupport(NewSettingsService(settingsRepo))
-}
-
-func newTestCoinServiceWithStorage(db *gorm.DB) *CoinService {
-	repo := repository.NewCoinRepository(db)
-	storageRepo := repository.NewStorageLocationRepository(db)
-	return NewCoinService(repo, nil).WithStorageLocationSupport(storageRepo)
+	return NewCoinService(repo).WithSettingsSupport(NewSettingsService(settingsRepo))
 }
 
 func newTestCoinServiceWithReferences(db *gorm.DB) *CoinService {
@@ -66,7 +58,7 @@ func newTestCoinServiceWithReferences(db *gorm.DB) *CoinService {
 	catalogRepo := repository.NewCatalogRegistryRepository(db)
 	refRepo := repository.NewCoinReferenceRepository(db)
 	refSvc := NewCoinReferenceService(refRepo, catalogRepo)
-	return NewCoinService(repo, nil).WithReferenceSupport(refRepo, refSvc)
+	return NewCoinService(repo).WithReferenceSupport(refRepo, refSvc)
 }
 
 func ptrFloat(v float64) *float64 { return &v }
@@ -77,7 +69,7 @@ func TestCreateCoin_Success(t *testing.T) {
 
 	coin := &models.Coin{
 		Name:          "Denarius of Augustus",
-		Category:      models.CategoryRoman,
+		Category:      models.CategoryModern,
 		Material:      models.MaterialSilver,
 		PurchasePrice: ptrFloat(250.0),
 		CurrentValue:  ptrFloat(300.0),
@@ -108,14 +100,14 @@ func TestCreateCoin_RejectsSameOwnerWishlistReferenceURLDuplicate(t *testing.T) 
 	sourceURL := "https://dealer.example/coin/123"
 
 	first := &models.Coin{
-		Name: "First listing", Category: models.CategoryRoman, Material: models.MaterialSilver,
+		Name: "First listing", Category: models.CategoryModern, Material: models.MaterialSilver,
 		ReferenceURL: sourceURL, IsWishlist: true, UserID: 1,
 	}
 	if err := svc.CreateCoin(first); err != nil {
 		t.Fatal(err)
 	}
 	duplicate := &models.Coin{
-		Name: "Duplicate listing", Category: models.CategoryRoman, Material: models.MaterialSilver,
+		Name: "Duplicate listing", Category: models.CategoryModern, Material: models.MaterialSilver,
 		ReferenceURL: sourceURL, IsWishlist: true, UserID: 1,
 	}
 	if err := svc.CreateCoin(duplicate); !errors.Is(err, ErrWishlistReferenceDuplicate) {
@@ -123,9 +115,9 @@ func TestCreateCoin_RejectsSameOwnerWishlistReferenceURLDuplicate(t *testing.T) 
 	}
 
 	for _, allowed := range []*models.Coin{
-		{Name: "Other owner", Category: models.CategoryRoman, ReferenceURL: sourceURL, IsWishlist: true, UserID: 2},
-		{Name: "URL-less wishlist", Category: models.CategoryRoman, IsWishlist: true, UserID: 1},
-		{Name: "Collection coin", Category: models.CategoryRoman, ReferenceURL: sourceURL, UserID: 1},
+		{Name: "Other owner", Category: models.CategoryModern, ReferenceURL: sourceURL, IsWishlist: true, UserID: 2},
+		{Name: "URL-less wishlist", Category: models.CategoryModern, IsWishlist: true, UserID: 1},
+		{Name: "Collection coin", Category: models.CategoryModern, ReferenceURL: sourceURL, UserID: 1},
 	} {
 		if err := svc.CreateCoin(allowed); err != nil {
 			t.Fatalf("ordinary create was changed for %q: %v", allowed.Name, err)
@@ -144,7 +136,7 @@ func TestCreateCoin_ConcurrentWishlistReferenceURLCreatesAtMostOne(t *testing.T)
 		go func(index int) {
 			<-start
 			errs <- svc.CreateCoin(&models.Coin{
-				Name: fmt.Sprintf("Concurrent listing %d", index), Category: models.CategoryRoman,
+				Name: fmt.Sprintf("Concurrent listing %d", index), Category: models.CategoryModern,
 				ReferenceURL: "https://dealer.example/coin/concurrent", IsWishlist: true, UserID: 1,
 			})
 		}(i)
@@ -174,13 +166,9 @@ func TestDuplicateCoin_CopiesFieldsAssociationsAndExcludesMediaAndCardState(t *t
 	weight := 3.42
 	diameter := 19.5
 	now := time.Now().UTC().Truncate(time.Second)
-	storageLocation := models.StorageLocation{UserID: 1, Name: "Tray A"}
-	if err := db.Create(&storageLocation).Error; err != nil {
-		t.Fatalf("failed to seed storage location: %v", err)
-	}
 	source := models.Coin{
 		Name:                  "Augustus Denarius",
-		Category:              models.CategoryRoman,
+		Category:              models.CategoryModern,
 		Denomination:          "Denarius",
 		Ruler:                 "Augustus",
 		Era:                   models.EraAncient,
@@ -205,15 +193,9 @@ func TestDuplicateCoin_CopiesFieldsAssociationsAndExcludesMediaAndCardState(t *t
 		ReverseAnalysis:       "Reverse analysis",
 		ReferenceURL:          "https://example.test/ref",
 		ReferenceText:         "Reference text",
-		IsSold:                true,
-		SoldPrice:             &currentValue,
-		SoldDate:              &now,
-		SoldTo:                "Collector",
 		ListingStatus:         "available",
 		ListingCheckedAt:      &now,
 		ListingCheckReason:    "checked",
-		StorageLocationID:     &storageLocation.ID,
-		IsPrivate:             true,
 		UserID:                1,
 	}
 	if err := db.Create(&source).Error; err != nil {
@@ -225,26 +207,12 @@ func TestDuplicateCoin_CopiesFieldsAssociationsAndExcludesMediaAndCardState(t *t
 	if err := db.Create(&models.CoinReference{CoinID: source.ID, Catalog: "RIC", Volume: "I", Number: "167a", URI: "https://example.test/ric"}).Error; err != nil {
 		t.Fatalf("failed to seed reference: %v", err)
 	}
-	tag := models.Tag{UserID: 1, Name: "Silver", Color: "#cccccc"}
-	if err := db.Create(&tag).Error; err != nil {
-		t.Fatalf("failed to seed tag: %v", err)
-	}
-	if err := db.Create(&models.CoinTag{CoinID: source.ID, TagID: tag.ID}).Error; err != nil {
-		t.Fatalf("failed to seed coin tag: %v", err)
-	}
 	set := models.CoinSet{UserID: 1, Name: "Twelve Caesars", SetType: models.CoinSetTypeOpen}
 	if err := db.Create(&set).Error; err != nil {
 		t.Fatalf("failed to seed set: %v", err)
 	}
 	if err := db.Create(&models.CoinSetMembership{CoinID: source.ID, SetID: set.ID, AddedAt: now, SortOrder: 7, Notes: "set note"}).Error; err != nil {
 		t.Fatalf("failed to seed set membership: %v", err)
-	}
-	showcase := models.Showcase{UserID: 1, Slug: "public-tray", Title: "Public Tray"}
-	if err := db.Create(&showcase).Error; err != nil {
-		t.Fatalf("failed to seed showcase: %v", err)
-	}
-	if err := db.Create(&models.ShowcaseCoin{ShowcaseID: showcase.ID, CoinID: source.ID, SortOrder: 3}).Error; err != nil {
-		t.Fatalf("failed to seed showcase coin: %v", err)
 	}
 
 	duplicate, err := svc.DuplicateCoin(source.ID, 1)
@@ -264,9 +232,6 @@ func TestDuplicateCoin_CopiesFieldsAssociationsAndExcludesMediaAndCardState(t *t
 	if duplicate.AIAnalysis != source.AIAnalysis || duplicate.ObverseAnalysis != source.ObverseAnalysis || duplicate.ReverseAnalysis != source.ReverseAnalysis {
 		t.Fatalf("duplicate did not preserve analysis fields")
 	}
-	if duplicate.StorageLocationID == nil || *duplicate.StorageLocationID != storageLocation.ID {
-		t.Fatalf("expected storage location %d, got %v", storageLocation.ID, duplicate.StorageLocationID)
-	}
 	if duplicate.CurrentValue == nil || *duplicate.CurrentValue != currentValue || duplicate.PurchasePrice == nil || *duplicate.PurchasePrice != purchasePrice {
 		t.Fatalf("duplicate did not preserve value fields")
 	}
@@ -275,9 +240,6 @@ func TestDuplicateCoin_CopiesFieldsAssociationsAndExcludesMediaAndCardState(t *t
 	}
 	if len(duplicate.References) != 1 || duplicate.References[0].CoinID != duplicate.ID || duplicate.References[0].Catalog != "RIC" {
 		t.Fatalf("expected copied reference for duplicate, got %#v", duplicate.References)
-	}
-	if len(duplicate.Tags) != 1 || duplicate.Tags[0].ID != tag.ID {
-		t.Fatalf("expected copied tag association, got %#v", duplicate.Tags)
 	}
 	if len(duplicate.Sets) != 1 || duplicate.Sets[0].ID != set.ID {
 		t.Fatalf("expected copied set association, got %#v", duplicate.Sets)
@@ -289,15 +251,12 @@ func TestDuplicateCoin_CopiesFieldsAssociationsAndExcludesMediaAndCardState(t *t
 	if copiedMembership.SortOrder != 7 || copiedMembership.Notes != "set note" || !copiedMembership.AddedAt.Equal(now) {
 		t.Fatalf("membership metadata was not copied correctly: %#v", copiedMembership)
 	}
-	var imageCount, showcaseCount int64
+	var imageCount int64
 	if err := db.Model(&models.CoinImage{}).Where("coin_id = ?", duplicate.ID).Count(&imageCount).Error; err != nil {
 		t.Fatalf("failed to count duplicate images: %v", err)
 	}
-	if err := db.Model(&models.ShowcaseCoin{}).Where("coin_id = ?", duplicate.ID).Count(&showcaseCount).Error; err != nil {
-		t.Fatalf("failed to count duplicate showcase rows: %v", err)
-	}
-	if imageCount != 0 || showcaseCount != 0 {
-		t.Fatalf("expected media/card state to be excluded, got images=%d showcaseRows=%d", imageCount, showcaseCount)
+	if imageCount != 0 {
+		t.Fatalf("expected media to be excluded, got images=%d", imageCount)
 	}
 }
 
@@ -305,7 +264,7 @@ func TestDuplicateCoin_RejectsOtherUsersCoin(t *testing.T) {
 	db := setupTestDB(t)
 	svc := newTestCoinService(db)
 
-	source := models.Coin{Name: "Private Coin", Category: models.CategoryGreek, UserID: 1}
+	source := models.Coin{Name: "Private Coin", Category: models.CategoryOther, UserID: 1}
 	if err := db.Create(&source).Error; err != nil {
 		t.Fatalf("failed to seed source coin: %v", err)
 	}
@@ -323,50 +282,13 @@ func TestDuplicateCoin_RejectsOtherUsersCoin(t *testing.T) {
 	}
 }
 
-func TestDuplicateCoin_ClearsTrayAssignmentButPreservesStandardAssignment(t *testing.T) {
-	db := setupTestDB(t)
-	service := newTestCoinServiceWithStorage(db)
-	rows, columns := 2, 2
-	tray := models.StorageLocation{UserID: 1, Name: "Tray", Type: models.StorageLocationTypeTray, Rows: &rows, Columns: &columns}
-	standard := models.StorageLocation{UserID: 1, Name: "Cabinet", Type: models.StorageLocationTypeStandard}
-	if err := db.Create(&tray).Error; err != nil {
-		t.Fatal(err)
-	}
-	if err := db.Create(&standard).Error; err != nil {
-		t.Fatal(err)
-	}
-	slot := 1
-	trayCoin := models.Coin{UserID: 1, Name: "Tray coin", StorageLocationID: &tray.ID, StorageSlot: &slot}
-	standardCoin := models.Coin{UserID: 1, Name: "Standard coin", StorageLocationID: &standard.ID}
-	if err := db.Create(&trayCoin).Error; err != nil {
-		t.Fatal(err)
-	}
-	if err := db.Create(&standardCoin).Error; err != nil {
-		t.Fatal(err)
-	}
-	trayCopy, err := service.DuplicateCoin(trayCoin.ID, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if trayCopy.StorageLocationID != nil || trayCopy.StorageSlot != nil {
-		t.Fatalf("tray assignment leaked to duplicate: %#v", trayCopy)
-	}
-	standardCopy, err := service.DuplicateCoin(standardCoin.ID, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if standardCopy.StorageLocationID == nil || *standardCopy.StorageLocationID != standard.ID || standardCopy.StorageSlot != nil {
-		t.Fatalf("standard assignment was not preserved: %#v", standardCopy)
-	}
-}
-
 func TestUpdateCoin_RecordsValueHistory(t *testing.T) {
 	db := setupTestDB(t)
 	svc := newTestCoinService(db)
 
 	coin := &models.Coin{
 		Name:         "Tetradrachm",
-		Category:     models.CategoryGreek,
+		Category:     models.CategoryOther,
 		Material:     models.MaterialSilver,
 		CurrentValue: ptrFloat(500.0),
 		UserID:       1,
@@ -406,183 +328,6 @@ func TestUpdateCoin_RecordsValueHistory(t *testing.T) {
 	}
 }
 
-func TestCreateCoin_RejectsNonOwnedStorageLocation(t *testing.T) {
-	db := setupTestDB(t)
-	svc := newTestCoinServiceWithStorage(db)
-
-	otherLocation := models.StorageLocation{UserID: 2, Name: "Other Cabinet"}
-	if err := db.Create(&otherLocation).Error; err != nil {
-		t.Fatalf("failed to seed storage location: %v", err)
-	}
-	coin := &models.Coin{
-		Name:              "Stored Coin",
-		Category:          models.CategoryRoman,
-		Material:          models.MaterialBronze,
-		UserID:            1,
-		StorageLocationID: &otherLocation.ID,
-	}
-
-	if err := svc.CreateCoin(coin); !errors.Is(err, ErrStorageLocationNotFound) {
-		t.Fatalf("expected ErrStorageLocationNotFound, got %v", err)
-	}
-
-	var count int64
-	if err := db.Model(&models.Coin{}).Where("name = ?", "Stored Coin").Count(&count).Error; err != nil {
-		t.Fatalf("failed to count coins: %v", err)
-	}
-	if count != 0 {
-		t.Fatalf("expected rejected coin not to be created, got %d rows", count)
-	}
-}
-
-func TestCoinService_StorageAssignmentContractsAndLegacyClear(t *testing.T) {
-	db := setupTestDB(t)
-	svc := newTestCoinServiceWithStorage(db)
-
-	ownedLocation := models.StorageLocation{UserID: 1, Name: "Owned Cabinet"}
-	otherLocation := models.StorageLocation{UserID: 2, Name: "Other Cabinet"}
-	if err := db.Create(&ownedLocation).Error; err != nil {
-		t.Fatalf("failed to seed owned storage location: %v", err)
-	}
-
-	t.Run("storage assignment create contract", func(t *testing.T) {
-		db := setupTestDB(t)
-		if err := db.Exec(`CREATE UNIQUE INDEX idx_coins_storage_location_slot_unique
-			ON coins(storage_location_id, storage_slot) WHERE storage_slot IS NOT NULL`).Error; err != nil {
-			t.Fatal(err)
-		}
-		svc := newTestCoinServiceWithStorage(db)
-		rows, columns := 2, 2
-		tray := models.StorageLocation{UserID: 1, Name: "Tray", Type: models.StorageLocationTypeTray, Rows: &rows, Columns: &columns}
-		standard := models.StorageLocation{UserID: 1, Name: "Safe", Type: models.StorageLocationTypeStandard}
-		foreign := models.StorageLocation{UserID: 2, Name: "Foreign", Type: models.StorageLocationTypeStandard}
-		if err := db.Create(&[]*models.StorageLocation{&tray, &standard, &foreign}).Error; err != nil {
-			t.Fatal(err)
-		}
-		first, last, zero, overflow := 1, 4, 0, 5
-
-		tests := []struct {
-			name     string
-			location *uint
-			slot     *int
-			wantErr  error
-		}{
-			{name: "unassigned"},
-			{name: "standard", location: &standard.ID},
-			{name: "standard with slot", location: &standard.ID, slot: &first, wantErr: ErrStorageSlotInvalid},
-			{name: "tray missing slot", location: &tray.ID, wantErr: ErrStorageSlotRequired},
-			{name: "tray first boundary", location: &tray.ID, slot: &first},
-			{name: "tray last boundary", location: &tray.ID, slot: &last},
-			{name: "tray zero", location: &tray.ID, slot: &zero, wantErr: ErrStorageSlotInvalid},
-			{name: "tray overflow", location: &tray.ID, slot: &overflow, wantErr: ErrStorageSlotInvalid},
-			{name: "cross owner", location: &foreign.ID, wantErr: ErrStorageLocationNotFound},
-			{name: "slot without location", slot: &first, wantErr: ErrStorageSlotInvalid},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				coin := &models.Coin{UserID: 1, Name: "Assignment " + tt.name, Category: models.CategoryRoman, StorageLocationID: tt.location, StorageSlot: tt.slot}
-				err := svc.CreateCoin(coin)
-				if tt.wantErr != nil {
-					if !errors.Is(err, tt.wantErr) {
-						t.Fatalf("CreateCoin error = %v, want %v", err, tt.wantErr)
-					}
-					return
-				}
-				if err != nil {
-					t.Fatalf("CreateCoin: %v", err)
-				}
-			})
-		}
-	})
-
-	t.Run("storage assignment update presence and conflicts", func(t *testing.T) {
-		db := setupTestDB(t)
-		if err := db.Exec(`CREATE UNIQUE INDEX idx_coins_storage_location_slot_unique
-			ON coins(storage_location_id, storage_slot) WHERE storage_slot IS NOT NULL`).Error; err != nil {
-			t.Fatal(err)
-		}
-		svc := newTestCoinServiceWithStorage(db)
-		rows, columns := 2, 2
-		trayA := models.StorageLocation{UserID: 1, Name: "Tray A", Type: models.StorageLocationTypeTray, Rows: &rows, Columns: &columns}
-		trayB := models.StorageLocation{UserID: 1, Name: "Tray B", Type: models.StorageLocationTypeTray, Rows: &rows, Columns: &columns}
-		standard := models.StorageLocation{UserID: 1, Name: "Safe", Type: models.StorageLocationTypeStandard}
-		if err := db.Create(&[]*models.StorageLocation{&trayA, &trayB, &standard}).Error; err != nil {
-			t.Fatal(err)
-		}
-		slotOne, slotTwo := 1, 2
-		coin := &models.Coin{UserID: 1, Name: "Current", Category: models.CategoryRoman, StorageLocationID: &trayA.ID, StorageSlot: &slotOne}
-		blocker := &models.Coin{UserID: 1, Name: "Blocker", Category: models.CategoryRoman, StorageLocationID: &trayA.ID, StorageSlot: &slotTwo}
-		if err := db.Create(&[]*models.Coin{coin, blocker}).Error; err != nil {
-			t.Fatal(err)
-		}
-
-		if err := svc.UpdateCoinWithAssignmentFields(coin, &models.Coin{Name: "Renamed"}, []string{"Name"}, 1, "manual", false, false); err != nil {
-			t.Fatalf("omitted assignment update: %v", err)
-		}
-		if coin.StorageLocationID == nil || *coin.StorageLocationID != trayA.ID || coin.StorageSlot == nil || *coin.StorageSlot != slotOne {
-			t.Fatalf("omitted assignment fields changed placement: %#v", coin)
-		}
-
-		if err := svc.UpdateCoinWithAssignmentFields(coin, &models.Coin{StorageSlot: &slotOne}, nil, 1, "manual", false, true); err != nil {
-			t.Fatalf("current coin should retain its own slot: %v", err)
-		}
-		if err := svc.UpdateCoinWithAssignmentFields(coin, &models.Coin{StorageSlot: &slotTwo}, nil, 1, "manual", false, true); !errors.Is(err, ErrStorageSlotOccupied) {
-			t.Fatalf("occupied slot error = %v, want %v", err, ErrStorageSlotOccupied)
-		}
-		if err := svc.UpdateCoinWithAssignmentFields(coin, &models.Coin{StorageLocationID: &trayB.ID}, nil, 1, "manual", true, false); !errors.Is(err, ErrStorageSlotRequired) {
-			t.Fatalf("changing trays without a new slot error = %v, want %v", err, ErrStorageSlotRequired)
-		}
-		var persisted models.Coin
-		if err := db.First(&persisted, coin.ID).Error; err != nil {
-			t.Fatal(err)
-		}
-		if persisted.StorageLocationID == nil || *persisted.StorageLocationID != trayA.ID || persisted.StorageSlot == nil || *persisted.StorageSlot != slotOne {
-			t.Fatalf("rejected move did not preserve original assignment: %#v", persisted)
-		}
-
-		if err := svc.UpdateCoinWithAssignmentFields(coin, &models.Coin{StorageLocationID: &standard.ID}, nil, 1, "manual", true, false); err != nil {
-			t.Fatalf("move to standard: %v", err)
-		}
-		if coin.StorageLocationID == nil || *coin.StorageLocationID != standard.ID || coin.StorageSlot != nil {
-			t.Fatalf("move to standard did not clear stale slot: %#v", coin)
-		}
-	})
-	if err := db.Create(&otherLocation).Error; err != nil {
-		t.Fatalf("failed to seed other storage location: %v", err)
-	}
-	coin := &models.Coin{
-		Name:              "Stored Coin",
-		Category:          models.CategoryRoman,
-		Material:          models.MaterialSilver,
-		UserID:            1,
-		StorageLocationID: &ownedLocation.ID,
-	}
-	if err := db.Create(coin).Error; err != nil {
-		t.Fatalf("failed to seed coin: %v", err)
-	}
-
-	if err := svc.UpdateCoinWithFields(coin, &models.Coin{StorageLocationID: &otherLocation.ID}, nil, 1, "manual", true); !errors.Is(err, ErrStorageLocationNotFound) {
-		t.Fatalf("expected ErrStorageLocationNotFound for non-owned location, got %v", err)
-	}
-	var found models.Coin
-	if err := db.First(&found, coin.ID).Error; err != nil {
-		t.Fatalf("coin not found: %v", err)
-	}
-	if found.StorageLocationID == nil || *found.StorageLocationID != ownedLocation.ID {
-		t.Fatalf("expected original storage location %d after rejected update, got %v", ownedLocation.ID, found.StorageLocationID)
-	}
-
-	if err := svc.UpdateCoinWithFields(coin, &models.Coin{}, nil, 1, "manual", true); err != nil {
-		t.Fatalf("expected explicit storage-location clear to succeed: %v", err)
-	}
-	if err := db.First(&found, coin.ID).Error; err != nil {
-		t.Fatalf("coin not found after clear: %v", err)
-	}
-	if found.StorageLocationID != nil {
-		t.Fatalf("expected storage location to be cleared, got %v", found.StorageLocationID)
-	}
-}
-
 func TestUpdateCoin_NormalizesAndReplacesReferences(t *testing.T) {
 	db := setupTestDB(t)
 	svc := newTestCoinServiceWithReferences(db)
@@ -595,7 +340,7 @@ func TestUpdateCoin_NormalizesAndReplacesReferences(t *testing.T) {
 		t.Fatalf("failed to seed catalog registry: %v", err)
 	}
 
-	coin := &models.Coin{Name: "Reference Coin", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: 1}
+	coin := &models.Coin{Name: "Reference Coin", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: 1}
 	if err := svc.CreateCoin(coin); err != nil {
 		t.Fatalf("setup: CreateCoin failed: %v", err)
 	}
@@ -608,7 +353,7 @@ func TestUpdateCoin_NormalizesAndReplacesReferences(t *testing.T) {
 			{Catalog: " ric ", Volume: " II ", Number: " 12 "},
 		},
 	}
-	if err := svc.UpdateCoinWithFields(coin, updates, []string{}, 1, "manual", false); err != nil {
+	if err := svc.UpdateCoinWithFields(coin, updates, []string{}, 1, "manual"); err != nil {
 		t.Fatalf("UpdateCoinWithFields failed: %v", err)
 	}
 
@@ -644,7 +389,7 @@ func TestCreateCoin_PersistsReferencesForWishlist(t *testing.T) {
 		t.Fatalf("failed to seed catalog registry: %v", err)
 	}
 
-	existing := models.Coin{Name: "Existing", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: 1}
+	existing := models.Coin{Name: "Existing", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: 1}
 	if err := svc.CreateCoin(&existing); err != nil {
 		t.Fatalf("seed existing coin: %v", err)
 	}
@@ -655,7 +400,7 @@ func TestCreateCoin_PersistsReferencesForWishlist(t *testing.T) {
 
 	wishlist := &models.Coin{
 		Name:       "Gordian III Denarius",
-		Category:   models.CategoryRoman,
+		Category:   models.CategoryModern,
 		Material:   models.MaterialSilver,
 		UserID:     1,
 		IsWishlist: true,
@@ -719,7 +464,7 @@ func TestCreateCoin_WishlistAgentStylePayload_PersistsNormalizedReferences(t *te
 
 	// Seed a real reference row — its ID represents an occupied primary key
 	// that the agent might have looked up from an existing collection coin.
-	sourceCoin := &models.Coin{Name: "Source", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: 1}
+	sourceCoin := &models.Coin{Name: "Source", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: 1}
 	if err := svc.CreateCoin(sourceCoin); err != nil {
 		t.Fatalf("seed source coin: %v", err)
 	}
@@ -732,7 +477,7 @@ func TestCreateCoin_WishlistAgentStylePayload_PersistsNormalizedReferences(t *te
 	// non-zero ID copied from the source coin's reference.
 	wishlist := &models.Coin{
 		Name:       "Domitian RIC 1",
-		Category:   models.CategoryRoman,
+		Category:   models.CategoryModern,
 		Era:        models.EraAncient,
 		Material:   models.MaterialSilver,
 		UserID:     1,
@@ -776,7 +521,7 @@ func TestUpdateCoin_EstimateWritesHistoryWithAIEstimateSource(t *testing.T) {
 
 	coin := &models.Coin{
 		Name:         "Follis",
-		Category:     models.CategoryByzantine,
+		Category:     models.CategoryOther,
 		Material:     models.MaterialBronze,
 		CurrentValue: ptrFloat(100.0),
 		UserID:       1,
@@ -814,7 +559,7 @@ func TestDeleteCoin_RemovesCoinAndImages(t *testing.T) {
 
 	coin := &models.Coin{
 		Name:     "Sestertius",
-		Category: models.CategoryRoman,
+		Category: models.CategoryModern,
 		Material: models.MaterialBronze,
 		UserID:   1,
 	}
@@ -854,7 +599,7 @@ func TestDeleteCoin_WrongUser_NoEffect(t *testing.T) {
 
 	coin := &models.Coin{
 		Name:     "Stater",
-		Category: models.CategoryGreek,
+		Category: models.CategoryOther,
 		Material: models.MaterialGold,
 		UserID:   1,
 	}
@@ -886,7 +631,7 @@ func TestPurchaseCoin_UpdatesFields(t *testing.T) {
 	now := time.Now()
 	coin := &models.Coin{
 		Name:       "Aureus Wishlist",
-		Category:   models.CategoryRoman,
+		Category:   models.CategoryModern,
 		Material:   models.MaterialGold,
 		IsWishlist: true,
 		UserID:     1,
@@ -914,47 +659,6 @@ func TestPurchaseCoin_UpdatesFields(t *testing.T) {
 	}
 	if updated.PurchaseLocation != "Auction House" {
 		t.Errorf("expected PurchaseLocation 'Auction House', got %q", updated.PurchaseLocation)
-	}
-}
-
-func TestSellCoin_UpdatesFields(t *testing.T) {
-	db := setupTestDB(t)
-	svc := newTestCoinService(db)
-
-	coin := &models.Coin{
-		Name:          "Solidus",
-		Category:      models.CategoryByzantine,
-		Material:      models.MaterialGold,
-		PurchasePrice: ptrFloat(2000.0),
-		UserID:        1,
-	}
-
-	if err := svc.CreateCoin(coin); err != nil {
-		t.Fatalf("setup: CreateCoin failed: %v", err)
-	}
-
-	now := time.Now()
-	updates := map[string]interface{}{
-		"is_sold":    true,
-		"sold_price": 3000.0,
-		"sold_date":  now,
-		"sold_to":    "Private Collector",
-	}
-
-	if err := svc.SellCoin(coin, updates, 1); err != nil {
-		t.Fatalf("SellCoin failed: %v", err)
-	}
-
-	var sold models.Coin
-	db.First(&sold, coin.ID)
-	if !sold.IsSold {
-		t.Error("expected IsSold to be true")
-	}
-	if sold.SoldPrice == nil || *sold.SoldPrice != 3000.0 {
-		t.Error("expected SoldPrice to be 3000")
-	}
-	if sold.SoldTo != "Private Collector" {
-		t.Errorf("expected SoldTo 'Private Collector', got %q", sold.SoldTo)
 	}
 }
 
@@ -1089,7 +793,7 @@ func TestUpdateCoin_AcceptsBuiltInCategoryEvenIfRemovedFromSetting(t *testing.T)
 		t.Fatalf("setup: CreateCoin failed: %v", err)
 	}
 
-	updates := &models.Coin{Category: models.CategoryRoman}
+	updates := &models.Coin{Category: models.CategoryModern}
 	if err := svc.UpdateCoin(coin, updates, 1, "manual"); err != nil {
 		t.Fatalf("UpdateCoin should accept built-in category Roman regardless of setting contents: %v", err)
 	}

@@ -267,7 +267,7 @@ func TestNumistaRoutesRequireAuthenticationAndApplyRateLimit(t *testing.T) {
 	numistaHandler := NewNumistaHandler(lookup)
 	router := gin.New()
 	protected := router.Group("/api")
-	protected.Use(middleware.AuthRequired(jwtSecret, nil))
+	protected.Use(middleware.AuthRequired(jwtSecret))
 	protected.Use(middleware.AuthenticatedRateLimit(2, time.Minute))
 	protected.POST("/numista/query-proposal", numistaHandler.QueryProposal)
 	protected.POST("/numista/lookup", numistaHandler.Lookup)

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { clearPrivateMediaBlobCache, fetchPrivateMediaBlob, privateMediaUrl, publicShowcaseMediaUrl } from '@/utils/media'
+import { clearPrivateMediaBlobCache, fetchPrivateMediaBlob, privateMediaUrl } from '@/utils/media'
 
 vi.mock('@/api/client', () => ({
   refreshAccessToken: vi.fn(),
@@ -31,11 +31,8 @@ describe('media helpers', () => {
     expect(headers.get('Cache-Control')).toBe('no-store')
   })
 
-  it('builds private and public showcase media routes', () => {
+  it('builds private media routes', () => {
     expect(privateMediaUrl('coins/denarius.webp')).toBe('/api/uploads/coins/denarius.webp')
-    expect(publicShowcaseMediaUrl('featured-set', '/uploads/coins/denarius.webp')).toBe(
-      '/api/showcase/featured-set/uploads/coins/denarius.webp',
-    )
   })
 
   it('deduplicates concurrent private upload fetches for the same media path', async () => {

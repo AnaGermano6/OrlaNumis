@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -52,27 +51,6 @@ func (h *ImageHandler) ServeUpload(c *gin.Context) {
 		if variant := h.svc.ResolveVariantPath(fullPath, size); variant != "" {
 			fullPath = variant
 		}
-	}
-	c.File(fullPath)
-}
-
-// ServePublicShowcaseUpload serves uploaded coin media that is explicitly included
-// in an active public showcase.
-//
-//	@Summary		Serve public showcase uploaded media
-//	@Description	Serves a DB-backed uploaded coin image only when it belongs to the active public showcase identified by slug.
-//	@Tags			Showcases
-//	@Produce		image/*
-//	@Param			slug		path	string	true	"Showcase slug"
-//	@Param			filepath	path	string	true	"Upload-relative file path"
-//	@Success		200		"Image binary data"
-//	@Failure		404		{object}	ErrorResponse
-//	@Router			/showcase/{slug}/uploads/{filepath} [get]
-func (h *ImageHandler) ServePublicShowcaseUpload(c *gin.Context) {
-	fullPath, err := h.svc.ResolvePublicShowcaseMediaPath(c.Param("slug"), c.Param("filepath"))
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Media not found"})
-		return
 	}
 	c.File(fullPath)
 }
@@ -186,137 +164,6 @@ func (h *ImageHandler) Upload(c *gin.Context) {
 
 	logger.Info("images", "Uploaded %s image for coin %d: %s", imageType, coinID, image.FilePath)
 	c.JSON(http.StatusCreated, image)
-}
-
-type base64ImageRequest struct {
-	Image         string `json:"image" binding:"required" example:"/9j/4AAQSkZJRgABAQ..."`
-	FileExtension string `json:"fileExtension" binding:"required" example:".jpg"`
-	ImageType     string `json:"imageType" example:"obverse"`
-	IsPrimary     bool   `json:"isPrimary" example:"false"`
-	CircleClip    bool   `json:"circleClip" example:"false"`
-}
-
-// UploadBase64 adds an image to a coin from a base64-encoded string.
-//
-//	@Summary		Upload a coin image (base64)
-//	@Description	Upload a raw base64-encoded image for a specific coin. The image field must contain only raw base64 data (no data URI prefix). The fileExtension field (e.g. ".jpg", ".png") tells the API how to save the file. Max 20MB decoded.
-//	@Tags			Images
-//	@Accept			json
-//	@Produce		json
-//	@Param			id		path		int					true	"Coin ID"
-//	@Param			body	body		base64ImageRequest	true	"Base64 image data"
-//	@Success		201		{object}	models.CoinImage
-//	@Failure		400		{object}	ErrorResponse
-//	@Failure		401		{object}	ErrorResponse
-//	@Failure		404		{object}	ErrorResponse
-//	@Failure		500		{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Security		ApiKeyAuth
-//	@Router			/coins/{id}/images/base64 [post]
-func (h *ImageHandler) UploadBase64(c *gin.Context) {
-	logger := h.logger
-	userID := c.GetUint("userId")
-	coinID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid coin ID"})
-		return
-	}
-
-	var req base64ImageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid request payload", err)
-		return
-	}
-
-	// Validate file extension
-	ext := req.FileExtension
-	if !strings.HasPrefix(ext, ".") {
-		ext = "." + ext
-	}
-	allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true}
-	if !allowed[strings.ToLower(ext)] {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "fileExtension must be one of: .jpg, .jpeg, .png, .gif, .webp"})
-		return
-	}
-
-	imageType := "other"
-	if req.ImageType != "" {
-		imageType = req.ImageType
-	}
-
-	// Verify coin ownership BEFORE decoding/clipping base64 data
-	if _, err := h.repo.FindCoinByOwner(uint(coinID), userID); err != nil {
-		logger.Warn("images", "Ownership check failed for coin %d (user %d): %v", coinID, userID, err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Coin not found"})
-		return
-	}
-
-	// If clipping requested for obverse/reverse, decode and clip (ownership already verified)
-	if req.CircleClip && (imageType == "obverse" || imageType == "reverse") {
-		decoded, decodeErr := h.decodeBase64(req.Image)
-		if decodeErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid base64 image data"})
-			return
-		}
-
-		const maxSize = 20 * 1024 * 1024
-		if len(decoded) > maxSize {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Image exceeds 20MB limit"})
-			return
-		}
-
-		clippedData, clipErr := capture.ClipBytesToCirclePNG(decoded, capture.DefaultGuide)
-		if clipErr != nil {
-			logger.Warn("images", "Failed to clip base64 image for coin %d: %v, storing original", coinID, clipErr)
-			// Fall through to normal service call with original data
-		} else {
-			// Use clipped PNG data
-			image, err := h.svc.UploadImage(uint(coinID), userID, clippedData, ".png", imageType, req.IsPrimary)
-			if err != nil {
-				handleUploadError(c, logger, coinID, err)
-				return
-			}
-			logger.Info("images", "Uploaded clipped base64 %s image for coin %d: %s", imageType, coinID, image.FilePath)
-			c.JSON(http.StatusCreated, image)
-			return
-		}
-	}
-
-	// Standard path (no clipping)
-	image, err := h.svc.UploadBase64Image(uint(coinID), userID, req.Image, ext, imageType, req.IsPrimary)
-	if err != nil {
-		logger.Error("images", "Base64 upload failed for coin %d: %v", coinID, err)
-		switch err {
-		case services.ErrCoinNotFound:
-			c.JSON(http.StatusNotFound, gin.H{"error": "Coin not found"})
-		case services.ErrInvalidBase64:
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid base64 image data"})
-		case services.ErrImageTooLarge:
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Image exceeds 20MB limit"})
-		case services.ErrInvalidImageType:
-			c.JSON(http.StatusBadRequest, gin.H{"error": "imageType must be one of: obverse, reverse, detail, other"})
-		case services.ErrInvalidFileExt:
-			c.JSON(http.StatusBadRequest, gin.H{"error": "fileExtension must be one of: .jpg, .jpeg, .png, .gif, .webp"})
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image"})
-		}
-		return
-	}
-
-	logger.Info("images", "Uploaded base64 %s image for coin %d: %s", imageType, coinID, image.FilePath)
-	c.JSON(http.StatusCreated, image)
-}
-
-// decodeBase64 decodes base64 string, trying both standard and raw URL encoding.
-func (h *ImageHandler) decodeBase64(base64Data string) ([]byte, error) {
-	decoded, err := base64.StdEncoding.DecodeString(base64Data)
-	if err != nil {
-		decoded, err = base64.RawStdEncoding.DecodeString(base64Data)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return decoded, nil
 }
 
 // handleUploadError centralizes error response for upload failures.

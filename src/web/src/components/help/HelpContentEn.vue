@@ -27,14 +27,14 @@
           </thead>
           <tbody>
             <tr><td><code>name</code></td><td>text</td><td>Required</td></tr>
-            <tr><td><code>category</code></td><td>text</td><td>One of your admin-configured categories (defaults: Roman, Greek, Byzantine, Modern, Other)</td></tr>
+            <tr><td><code>category</code></td><td>text</td><td>One of your admin-configured categories (defaults: Modern, Other)</td></tr>
             <tr><td><code>material</code></td><td>text</td><td>Gold, Silver, Bronze, Copper, Electrum, Other</td></tr>
             <tr><td><code>denomination</code>, <code>ruler</code>, <code>mint</code>, <code>grade</code></td><td>text</td><td>Free text fields</td></tr>
             <tr><td><code>era</code></td><td>text</td><td>One of your admin-configured eras (defaults: <code>ancient</code>, <code>medieval</code>, <code>modern</code>). Put the coin's actual dates in <code>ruler</code> or <code>notes</code> — an era outside your configured list will not match era filters.</td></tr>
-            <tr><td><code>weightGrams</code>, <code>diameterMm</code>, <code>purchasePrice</code>, <code>currentValue</code>, <code>soldPrice</code></td><td>number</td><td>Use decimal values. <code>currentValue</code> defaults to <code>purchasePrice</code> when left blank.</td></tr>
-            <tr><td><code>purchaseDate</code>, <code>soldDate</code></td><td>date</td><td>Use <code>YYYY-MM-DD</code></td></tr>
-            <tr><td><code>isWishlist</code>, <code>isSold</code>, <code>isPrivate</code></td><td>boolean</td><td>Use true/false</td></tr>
-            <tr><td><code>purchaseLocation</code>, <code>soldTo</code>, <code>vendorSku</code>, <code>vendorInvoice</code></td><td>text</td><td>Acquisition and sale bookkeeping</td></tr>
+            <tr><td><code>weightGrams</code>, <code>diameterMm</code>, <code>purchasePrice</code>, <code>currentValue</code></td><td>number</td><td>Use decimal values. <code>currentValue</code> defaults to <code>purchasePrice</code> when left blank.</td></tr>
+            <tr><td><code>purchaseDate</code></td><td>date</td><td>Use <code>YYYY-MM-DD</code></td></tr>
+            <tr><td><code>isWishlist</code></td><td>boolean</td><td>Use true/false</td></tr>
+            <tr><td><code>purchaseLocation</code>, <code>vendorSku</code>, <code>vendorInvoice</code></td><td>text</td><td>Acquisition bookkeeping</td></tr>
             <tr><td><code>obverseInscription</code>, <code>reverseInscription</code>, <code>obverseDescription</code>, <code>reverseDescription</code>, <code>rarityRating</code></td><td>text</td><td>Attribution detail, if you already have it</td></tr>
             <tr><td><code>notes</code>, <code>referenceUrl</code>, <code>referenceText</code></td><td>text</td><td>Optional metadata (legacy reference fallback fields)</td></tr>
           </tbody>
@@ -58,15 +58,15 @@
             <tr><td><code>vendorSku</code>, <code>vendorInvoice</code></td><td><code>sku</code>/<code>vendorCode</code>, <code>invoice</code>/<code>invoiceNumber</code></td></tr>
             <tr><td><code>rarityRating</code></td><td><code>reference</code>, <code>catalogReference</code></td></tr>
             <tr><td><code>referenceUrl</code></td><td><code>url</code></td></tr>
-            <tr><td><code>isWishlist</code>, <code>isSold</code>, <code>isPrivate</code></td><td><code>wishlist</code>, <code>sold</code>, <code>private</code></td></tr>
+            <tr><td><code>isWishlist</code></td><td><code>wishlist</code></td></tr>
           </tbody>
         </table>
         <p>Rows with no <code>name</code> are skipped, and the import reports how many it skipped.</p>
 
         <h4>CSV Example</h4>
         <pre>name,category,material,denomination,ruler,era,mint,weightGrams,diameterMm,grade,purchasePrice,currentValue,purchaseDate,purchaseLocation,isWishlist
-Augustus Denarius,Roman,Silver,Denarius,Augustus (27 BC - 14 AD),ancient,Rome,3.82,19.5,VF,450,600,2024-03-15,Heritage Auctions,false
-Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,Antioch,2.90,18.1,F,35,45,2025-01-20,Local Show,false</pre>
+2 Euro 2007 EU Presidency,Modern,Other,2 Euro,Portugal,modern,Lisbon,8.5,25.75,UNC,3,4,2024-03-15,Coin shop,false
+1 Escudo 1986,Modern,Other,1 Escudo,Portugal,modern,Lisbon,1.7,16,VF,0.5,1,2025-01-20,Local show,false</pre>
 
         <h4>Where Things Live in Settings</h4>
         <table>
@@ -74,11 +74,10 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
             <tr><th>Tab</th><th>What is there</th></tr>
           </thead>
           <tbody>
-            <tr><td><strong>Account</strong></td><td>Profile, password, Coin of the Day, connected sign-in providers, biometric login</td></tr>
+            <tr><td><strong>Account</strong></td><td>Profile and password</td></tr>
             <tr><td><strong>Appearance</strong></td><td>Theme, language, and display preferences</td></tr>
-            <tr><td><strong>Data</strong></td><td>Tags and open sets, storage locations, custom mint locations, catalog reference migration</td></tr>
-            <tr><td><strong>Keys</strong></td><td>API keys for external AI clients</td></tr>
-            <tr><td><strong>Tools</strong></td><td>Image processor settings and blocked users</td></tr>
+            <tr><td><strong>Data</strong></td><td>Custom mint locations, catalog reference migration</td></tr>
+            <tr><td><strong>Tools</strong></td><td>Image processor settings</td></tr>
             <tr><td><strong>Conversations</strong></td><td>Saved agent chats</td></tr>
             <tr><td><strong>Backups</strong></td><td>Collection import, ZIP export, PDF catalog export, CSV template</td></tr>
             <tr><td><strong>Help</strong></td><td>This guide</td></tr>
@@ -102,15 +101,10 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
 
         <h4>Sharing and Discovery</h4>
         <ul>
-          <li><strong>Public showcases</strong> — Build curated public sets with shareable links from <strong>Showcases</strong> in the sidebar. Only public-safe coin fields are exposed; private notes, prices, and AI analysis stay hidden.</li>
-          <li><strong>Followers</strong> — Follow other collectors from <strong>Followers</strong>, browse their shared galleries, and comment on or rate individual coins. Your own visibility is controlled per coin and by the profile privacy setting in Settings → Account.</li>
           <li><strong>Wishlist search alerts</strong> — Save search criteria, run alerts on a schedule or manually, review candidates, dismiss poor matches, and convert accepted candidates into wish list items.</li>
-          <li><strong>Collection health</strong> — Use Stats health views to track score trends, missing images, metadata gaps, AI coverage gaps, and suggested improvements.</li>
+          <li><strong>Collection health</strong> — Use Stats health views to track the score, missing images, metadata gaps, AI coverage gaps, and suggested improvements.</li>
           <li><strong>Museum Tray</strong> — Use the Tray view to arrange coins visually with size-aware spacing for a cabinet-style browsing experience. Owned coins show purchase dates in <code>YYYY-MM-DD</code>; wishlist placeholders are more transparent and show <code>TBD</code>.</li>
           <li><strong>Mint Map</strong> — Use Stats → Map to see mint locations and geographic distribution for coins with mapped mint data.</li>
-          <li><strong>Coin of the Day</strong> — Enable daily featured coin notifications in Settings → Account to rediscover coins from your own collection.</li>
-          <li><strong>Connected sign-in providers</strong> — After signing in locally, open Settings → Account → Connected Sign-in Providers to link Microsoft Entra ID, Pocket ID, or another configured OIDC provider.</li>
-          <li><strong>Biometric login</strong> — Register a passkey under Settings → Account → Biometric Login to sign in with Face ID, Touch ID, Windows Hello, or a security key.</li>
         </ul>
 
         <h4 data-testid="help-coin-copilot">Coin Copilot (Beta)</h4>
@@ -131,9 +125,9 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
         <h4>Sets and Agentic Proposals</h4>
         <ul>
           <li><strong>Set types</strong> — Create Standard sets for manual organization, Goal sets where wishlist items represent remaining work, Smart sets from rules, and Agentic sets from a reviewed proposal workflow.</li>
-          <li><strong>Agentic proposal workflow</strong> — Creating an Agentic set submits a request instead of creating a set immediately. A notification opens the review page when the proposal is ready.</li>
+          <li><strong>Agentic proposal workflow</strong> — Creating an Agentic set submits a request instead of creating a set immediately.</li>
           <li><strong>Human review</strong> — Review scope, slots, and agent notes; edit, regenerate with feedback, reject, or approve. Only approval creates the Agentic set.</li>
-          <li><strong>Automatic matching</strong> — Approved Agentic sets match owned collection coins to the proposed roster automatically, similar to the Roman Emperors tracker.</li>
+          <li><strong>Automatic matching</strong> — Approved Agentic sets match owned collection coins to the proposed roster automatically.</li>
         </ul>
 
         <h4>Stats Views</h4>
@@ -142,7 +136,6 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Timeline and Map</strong> — Chronological collection history plus mint geography for mapped coins.</li>
           <li><strong>Health</strong> — Scorecards for missing images, metadata gaps, AI analysis gaps, stale valuations, and cleanup suggestions.</li>
           <li><strong>Time Machine</strong> — Scrub back through time to see the collection as it stood on any date.</li>
-          <li><strong>Emperor Tracker</strong> — Optional Roman emperor/figure progress with agent search actions for missing or suggested targets. It lives under <strong>Sets → Emperors</strong>, not Stats, and appears once enabled for your account.</li>
         </ul>
 
         <h4>AI Assistants</h4>
@@ -156,18 +149,10 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Similar lots</strong> — Find auction listings matching a coin or wish list entry.</li>
         </ul>
 
-        <h4>Organizing and Selling</h4>
+        <h4>Organizing</h4>
         <ul>
-          <li><strong>Custom tags</strong> — Create colour-coded tags in <strong>Settings → Data</strong> under Tags and Open Sets, then filter the collection by them.</li>
-          <li><strong>Bulk operations</strong> — Enter select mode from the collection toolbar to tag, add to sets, or change several coins at once instead of opening each one.</li>
-          <li><strong>Storage locations</strong> — Record where a coin physically lives; managed in <strong>Settings → Data</strong>.</li>
-          <li><strong>Journal and timeline</strong> — Each coin keeps a dated journal and a lifecycle timeline of what happened to it, including external tool writes.</li>
-          <li><strong>Sold coins</strong> — Sell a coin from its detail page to record the sale price and buyer; <strong>Sold</strong> then tracks profit and loss against what you paid.</li>
-        </ul>
-
-        <h4>Reminders</h4>
-        <ul>
-          <li><strong>Purchase reminders</strong> — Schedule a reminder against a coin you mean to buy, and get notified when it comes due.</li>
+          <li><strong>Bulk operations</strong> — Enter select mode from the collection toolbar to add several coins to a set, or delete them, at once instead of opening each one.</li>
+          <li><strong>Journal and timeline</strong> — Each coin keeps a dated journal and a lifecycle timeline of what happened to it.</li>
         </ul>
 
         <h4>Backups and Export</h4>
@@ -185,9 +170,8 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>PWA/offline</strong> — Install Aurearia as a PWA for mobile-style navigation, offline read access, cached collection browsing, and a draggable agent launcher in PWA mode.</li>
         </ul>
 
-        <h4>Notifications and Alerts</h4>
+        <h4>Alerts</h4>
         <ul>
-          <li><strong>In-app notifications</strong> — The notification badge tracks unread social, wishlist, set, and Coin of the Day activity.</li>
           <li><strong>Alert review</strong> — Wishlist search alerts create candidate runs for review.</li>
         </ul>
       </div>
@@ -451,112 +435,6 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
     </details>
 
     <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim">
-      <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Connecting AI Tools (External Tool Server)</summary>
-      <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>The External Tool Server exposes your collection to external AI clients (OpenWebUI, LibreChat, n8n, and MCP-compatible clients) over a secure API. External clients can search your collection, retrieve statistics, and optionally propose updates through a two-phase confirmation workflow.</p>
-        <p>For the complete technical walkthrough, see <code>docs/external-tool-server.md</code> in the repository.</p>
-
-        <h4>For Admins</h4>
-        <p><strong>Enabling the Server:</strong> The external tool server is disabled by default. To enable it:</p>
-        <ol>
-          <li>Navigate to <strong>Admin → AI</strong></li>
-          <li>Toggle <strong>External Tool Server Enabled</strong> to ON</li>
-          <li>Save AI Settings</li>
-        </ol>
-        <p>When disabled, all external tool requests fail with <code>503 Service Unavailable</code>. This default-off posture protects your instance until you explicitly choose to expose the API.</p>
-        <p><strong>What to Tell Users:</strong> Once enabled, users can create scoped API keys in <strong>Settings → Keys</strong>. Each key can be read-only (safe for exploration) or read+write (for trusted automation). External writes are journaled and appear in each coin's activity log.</p>
-
-        <h4>For Users</h4>
-        <p><strong>Creating an API Key:</strong> To connect an external AI client to your collection:</p>
-        <ol>
-          <li>Navigate to <strong>Settings → Keys</strong></li>
-          <li>Enter a descriptive name (e.g., "OpenWebUI Read-Only")</li>
-          <li>
-            Choose a capability:
-            <ul>
-              <li><strong>Read</strong> (default) — Allows queries: search, get coin, summaries, top coins</li>
-              <li><strong>Read/Write</strong> — Allows queries plus update proposals and commits</li>
-            </ul>
-          </li>
-          <li>Click <strong>Generate</strong></li>
-          <li>Copy the displayed key (starts with <code>ak_</code>; shown only once)</li>
-        </ol>
-        <p><strong>Connecting to a Client:</strong> In your external AI client (OpenWebUI, LibreChat, n8n):</p>
-        <ol>
-          <li>
-            Import the OpenAPI URL:
-            <pre>http://your-ancient-coins-host:8080/api/v1/tools/openapi.json</pre>
-          </li>
-          <li>
-            Add a custom header:
-            <ul>
-              <li><strong>Header Name:</strong> <code>X-API-Key</code></li>
-              <li><strong>Header Value:</strong> <code>ak_your_key_here</code></li>
-            </ul>
-          </li>
-          <li>The six collection tools appear in your tool list</li>
-        </ol>
-        <p><strong>Write Safety:</strong> If you created a read+write key, external writes require two steps: first propose the change (returns a preview), then commit with <code>confirm=true</code>. This prevents accidental auto-writes during casual conversation. All commits are journaled.</p>
-
-        <h4>For Developers</h4>
-        <p><strong>Base Path:</strong> <code>/api/v1/tools/*</code></p>
-        <p><strong>Authentication:</strong> Send your API key in the <code>X-API-Key</code> header.</p>
-        <p><strong>Available Tools:</strong></p>
-        <table>
-          <thead>
-            <tr><th>Tool</th><th>Capability</th><th>Purpose</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>search_my_collection</code></td><td>read</td><td>Search coins by query string</td></tr>
-            <tr><td><code>get_coin</code></td><td>read</td><td>Retrieve a single coin by ID</td></tr>
-            <tr><td><code>collection_summary</code></td><td>read</td><td>Aggregate statistics (total coins, value)</td></tr>
-            <tr><td><code>top_coins_by_value</code></td><td>read</td><td>Top coins sorted by current value</td></tr>
-            <tr><td><code>propose_update</code></td><td>write</td><td>Phase 1: Propose allowlisted field changes</td></tr>
-            <tr><td><code>commit_update</code></td><td>write</td><td>Phase 2: Commit with <code>confirm=true</code></td></tr>
-          </tbody>
-        </table>
-        <p><strong>OpenAPI Spec:</strong> <code>GET /api/v1/tools/openapi.json</code> returns the full schema (unauthenticated, respects admin kill switch only).</p>
-        <p><strong>Native MCP:</strong> MCP clients that support Streamable HTTP and a custom <code>X-API-Key</code> header can connect directly to:</p>
-        <pre>http://localhost:8080/api/mcp</pre>
-        <p><strong>Security:</strong> All operations are user-scoped (tenant isolation). Rate limited at 50 requests/minute per key. External writes are restricted to the same allowlist as in-app updates (grade, currentValue, notes, tags, references). Identity fields are rejected.</p>
-      </div>
-    </details>
-
-    <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim" :open="route.query.section === 'oidc'">
-      <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Setting Up OIDC Login</summary>
-      <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>OIDC login lets administrators add Microsoft Entra ID, Pocket ID, or another OpenID Connect provider while keeping local password recovery available.</p>
-        <p>For the complete technical walkthrough, see <code>docs/oidc-setup.md</code> in the repository.</p>
-
-        <h4>Before You Start</h4>
-        <ul>
-          <li>Keep at least one admin account with usable local credentials for recovery.</li>
-          <li>Register both frontend callback URIs with the provider: login and account linking.</li>
-          <li>Use scopes <code>openid profile email</code> unless your provider requires additional scopes.</li>
-          <li>Store the client secret only in Admin Settings. It is write-only after saving.</li>
-        </ul>
-
-        <h4>Microsoft Entra ID</h4>
-        <ol>
-          <li>Create an app registration in the Entra admin center.</li>
-          <li>Add Web redirect URIs for <code>/auth/oidc/callback/{providerId}</code> and <code>/settings/oidc/link/callback/{providerId}</code>.</li>
-          <li>Enter the Tenant ID in Admin Settings; Aurearia derives the Microsoft issuer URL.</li>
-          <li>Copy the Application client ID and the client secret <strong>Value</strong>, not the Secret ID.</li>
-        </ol>
-
-        <h4>Pocket ID</h4>
-        <ol>
-          <li>Create an OIDC client in Pocket ID.</li>
-          <li>Set the issuer URL to your Pocket ID base URL.</li>
-          <li>Register both frontend callback paths as allowed redirect URIs.</li>
-          <li>Save the client ID and secret in Admin Settings, then run the provider test.</li>
-        </ol>
-
-        <p><strong>Account linking:</strong> Existing users should sign in locally, open Settings → Account, then link the provider. Matching email addresses are not merged automatically.</p>
-      </div>
-    </details>
-
-    <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim">
       <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Helpful Resources</summary>
       <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
         <h4>Online Databases & References</h4>
@@ -587,9 +465,3 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
     </details>
   </section>
 </template>
-
-<script setup lang="ts">
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-</script>

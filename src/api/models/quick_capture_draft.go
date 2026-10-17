@@ -92,14 +92,3 @@ func IsValidQuickCaptureDraftStatus(status QuickCaptureDraftStatus) bool {
 		return false
 	}
 }
-
-func IsValidDraftLifecycleEventType(eventType DraftLifecycleEventType) bool {
-	switch eventType {
-	case DraftLifecycleEventCreated, DraftLifecycleEventUpdated, DraftLifecycleEventImageAdded, DraftLifecycleEventImageRemoved,
-		DraftLifecycleEventPromotionStarted, DraftLifecycleEventPromoted, DraftLifecycleEventPromotionReused,
-		DraftLifecycleEventDiscarded, DraftLifecycleEventPromotionFailedValidation:
-		return true
-	default:
-		return false
-	}
-}

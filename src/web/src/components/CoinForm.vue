@@ -126,15 +126,6 @@
           </select>
           <p id="coin-circulation-hint" class="mt-1 text-chip text-text-muted">{{ t('coinForm.circulationHint') }}</p>
         </div>
-        <div v-if="form.category === 'Roman'" class="form-group min-w-0">
-          <label class="form-label">{{ t('coinForm.imperialFigure') }}</label>
-          <ImperialFigurePicker v-model="form.romanImperialFigureId!" />
-          <p class="mt-1 text-sm text-text-muted">
-            <I18nT keypath="coinForm.imperialFigureHint">
-              <template #link><router-link to="/sets/emperors" class="underline">{{ t('coinForm.emperorTracker') }}</router-link></template>
-            </I18nT>
-          </p>
-        </div>
       </fieldset>
 
       <!-- Physical Details -->
@@ -300,18 +291,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { getMintLocations, type MintLocationsResponse } from '@/api/client'
 import type { Coin, CoinKind, MintLocation } from '@/types'
 import AutocompleteInput from '@/components/AutocompleteInput.vue'
 import QuantityInput from '@/components/ui/QuantityInput.vue'
-import ImperialFigurePicker from '@/components/ImperialFigurePicker.vue'
 import CreateMintModal from '@/components/CreateMintModal.vue'
 import { X, Camera } from 'lucide-vue-next'
 import { usePwa } from '@/composables/usePwa'
 import { useCoinOptions } from '@/composables/useCoinOptions'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
-import I18nT from '@/components/I18nT.vue'
 import { materialLabel } from '@/utils/format'
 import { t } from '@/i18n'
 import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
@@ -439,12 +428,6 @@ const displayedEraOptions = computed(() => {
     return [currentEra, ...eraOptions.value]
   }
   return eraOptions.value
-})
-
-watch(() => props.form.category, (category) => {
-  if (category !== 'Roman') {
-    props.form.romanImperialFigureId = null
-  }
 })
 
 onMounted(async () => {

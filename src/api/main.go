@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,11 +47,6 @@ func (r *SchedulerRegistry) StopAll() {
 //	@name						Authorization
 //	@description				Enter your JWT token with the Bearer prefix, e.g. "Bearer eyJhbGci..."
 
-//	@securityDefinitions.apikey	ApiKeyAuth
-//	@in							header
-//	@name						X-API-Key
-//	@description				Enter your API key, e.g. "ak_a1b2c3d4..."
-
 // loadAppVersion resolves the running build's version from the single
 // canonical root VERSION file (F9/T096) so the live Swagger UI, the
 // generated OpenAPI doc, and the Vue UI never drift from one another again.
@@ -73,13 +69,22 @@ func main() {
 
 	docs.SwaggerInfo.Version = loadAppVersion()
 
+	// A backup restored from the admin pages replaces the database and the
+	// uploads here, before anything opens them.
+	if result := services.ApplyPendingRestore(cfg.DBPath, cfg.UploadDir); result != nil {
+		if result.OK {
+			log.Printf("Restored the backup %s", result.Name)
+		} else {
+			log.Printf("Could not restore the backup %s: %s", result.Name, result.Error)
+		}
+	}
 	database.Connect(cfg.DBPath)
 
 	d, cancelBackground := buildDeps(cfg)
 
 	r := newHTTPRouter(cfg)
-	r.Use(middleware.IPDenyRules(d.securitySvc))
-	r.GET("/uploads/*filepath", middleware.AuthRequiredWithSecurity(cfg.JWTSecret, d.apiKeyAuth, d.securitySvc), d.apiRateLimit, d.imageHandler.ServeUpload)
+	r.Use(middleware.BlockFailingIPs(d.securitySvc))
+	r.GET("/uploads/*filepath", middleware.AuthRequired(cfg.JWTSecret), d.apiRateLimit, d.imageHandler.ServeUpload)
 
 	api := r.Group("/api")
 	api.Use(middleware.RequestBodyLimit(middleware.DefaultRequestBodyLimitBytes))
@@ -87,7 +92,7 @@ func main() {
 	registerPublicRoutes(api, d)
 	registerProtectedRoutes(api, d)
 	registerAdminRoutes(api, d)
-	registerExternalToolRoutes(api, d)
+	registerBackupUploadRoute(r, d)
 	registerInternalToolRoutes(r, d)
 	handlers.RegisterInternalExplorationRoute(
 		r,
@@ -97,17 +102,13 @@ func main() {
 	)
 
 	runServer(serverRuntime{
-		router:             r,
-		config:             cfg,
-		logger:             d.logger,
-		settings:           d.settingsSvc,
-		schedulers:         d.schedulerRegistry,
-		coinOfDayScheduler: d.coinOfDayScheduler,
-		apiKeys:            d.apiKeyRepo,
-		notifications:      d.notifRepo,
-		notificationSvc:    d.notifSvc,
-		cancelBackground:   cancelBackground,
-		workers:            []workerStopper{d.aiJobSvc, d.setBuilderSvc, d.wishlistSearchAlertSvc},
+		router:           r,
+		config:           cfg,
+		logger:           d.logger,
+		settings:         d.settingsSvc,
+		schedulers:       d.schedulerRegistry,
+		cancelBackground: cancelBackground,
+		workers:          []workerStopper{d.aiJobSvc, d.setBuilderSvc, d.wishlistSearchAlertSvc},
 	})
 }
 

@@ -14,7 +14,6 @@ import (
 
 	"github.com/briandenicola/ancient-coins-api/config"
 	"github.com/briandenicola/ancient-coins-api/middleware"
-	"github.com/briandenicola/ancient-coins-api/repository"
 	"github.com/briandenicola/ancient-coins-api/services"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -61,7 +60,7 @@ func corsMiddleware(allowedOrigins []string) gin.HandlerFunc {
 			c.Header("Access-Control-Allow-Credentials", "true")
 		}
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -76,15 +75,11 @@ type workerStopper interface {
 }
 
 type serverRuntime struct {
-	router             *gin.Engine
-	config             *config.Config
-	logger             *services.Logger
-	settings           *services.SettingsService
-	schedulers         *SchedulerRegistry
-	coinOfDayScheduler *services.CoinOfDayScheduler
-	apiKeys            *repository.ApiKeyRepository
-	notifications      *repository.NotificationRepository
-	notificationSvc    *services.NotificationService
+	router     *gin.Engine
+	config     *config.Config
+	logger     *services.Logger
+	settings   *services.SettingsService
+	schedulers *SchedulerRegistry
 	// cancelBackground stops context-aware background work (currently the
 	// deep-identification workers and janitor) during shutdown.
 	cancelBackground context.CancelFunc
@@ -105,16 +100,6 @@ func runServer(runtime serverRuntime) {
 	checkOllamaAtStartup(runtime.settings, runtime.logger)
 
 	runtime.schedulers.StartAll()
-	go runtime.coinOfDayScheduler.Start()
-
-	apiKeyRotationSvc := services.NewAPIKeyRotationService(
-		runtime.apiKeys,
-		runtime.notifications,
-		runtime.notificationSvc,
-		runtime.settings,
-		runtime.logger,
-	)
-	apiKeyRotationSvc.SyncFromStartup()
 
 	runtime.logger.Info("startup", "Application ready")
 	log.Println("Application ready")
@@ -167,9 +152,6 @@ func shutdownRuntime(runtime serverRuntime, srv *http.Server) {
 
 	if runtime.schedulers != nil {
 		runtime.schedulers.StopAll()
-	}
-	if runtime.coinOfDayScheduler != nil {
-		runtime.coinOfDayScheduler.Stop()
 	}
 	if runtime.cancelBackground != nil {
 		runtime.cancelBackground()

@@ -127,10 +127,6 @@ func (r *QuickCaptureRepository) ListDraftsForOwner(userID uint, status models.Q
 	return drafts, total, err
 }
 
-func (r *QuickCaptureRepository) AddDraftImage(image *models.QuickCaptureDraftImage) error {
-	return r.db.Create(image).Error
-}
-
 func (r *QuickCaptureRepository) AddLifecycleEvent(event *models.DraftLifecycleEvent) error {
 	return r.db.Create(event).Error
 }

@@ -125,7 +125,6 @@ func newNumistaIntegrationHarness(t *testing.T) *numistaIntegrationHarness {
 	router.POST("/api/numista/lookup", numistaHandler.Lookup)
 	router.GET("/api/numista/search", numistaHandler.Search)
 	router.POST("/api/coins/:id/references", refHandler.Create)
-	router.GET("/api/coins/:id/references", refHandler.List)
 	router.POST("/api/quick-capture/drafts", quickHandler.CreateDraft)
 	router.GET("/api/quick-capture/drafts/:id", quickHandler.GetDraft)
 	router.PUT("/api/quick-capture/drafts/:id", quickHandler.UpdateDraft)
@@ -174,7 +173,7 @@ func promoteDraft(t *testing.T, h *numistaIntegrationHarness, draftID uint, targ
 	body := map[string]any{"confirm": true, "target": target}
 	if overrides {
 		body["overrides"] = map[string]any{
-			"category": "Roman", "material": "Silver", "era": "ancient",
+			"category": "Modern", "material": "Silver", "era": "ancient",
 		}
 	}
 	encoded, _ := json.Marshal(body)
@@ -192,7 +191,7 @@ func promoteDraft(t *testing.T, h *numistaIntegrationHarness, draftID uint, targ
 func TestNumistaWorkflowDirectPersistsOnlyExplicitSelection(t *testing.T) {
 	h := newNumistaIntegrationHarness(t)
 	coin := models.Coin{
-		UserID: h.userID, Name: "Trajan Denarius", Category: models.CategoryRoman,
+		UserID: h.userID, Name: "Trajan Denarius", Category: models.CategoryModern,
 		Material: models.MaterialSilver, Era: models.EraAncient,
 	}
 	if err := h.db.Create(&coin).Error; err != nil {

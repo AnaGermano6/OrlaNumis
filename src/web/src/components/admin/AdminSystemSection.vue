@@ -137,7 +137,7 @@
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div class="rounded-sm border border-border-subtle bg-card p-3">
                 <div class="section-label">{{ t('admin.groups.configuration') }}</div>
-                <div class="mt-1 font-semibold text-text-primary">{{ health.configured ? t('admin.oidc.configured') : t('admin.oidc.notConfigured') }}</div>
+                <div class="mt-1 font-semibold text-text-primary">{{ health.configured ? t('admin.system.configured') : t('admin.system.notConfigured') }}</div>
                 <div class="mt-1 text-sm text-text-secondary">{{ health.configurationValid ? t('admin.system.configValid') : t('admin.system.configInvalid') }}</div>
               </div>
               <div class="rounded-sm border border-border-subtle bg-card p-3">
@@ -270,15 +270,12 @@
 
       <section
         class="mt-6 min-w-0 rounded-md border border-border-subtle bg-input p-4 md:p-6"
-        aria-labelledby="ocre-section-heading"
-        data-testid="ocre-section"
+        aria-labelledby="deep-section-heading"
+        data-testid="deep-section"
       >
         <div class="mb-5">
           <p class="section-label">{{ t('admin.system.deepProvider') }}</p>
-          <h3 id="ocre-section-heading" class="m-0 text-lg font-medium text-heading">{{ t('admin.system.ocreTitle') }}</h3>
-          <p class="mt-1 text-sm text-text-muted">
-            {{ t('admin.system.ocreIntro') }}
-          </p>
+          <h3 id="deep-section-heading" class="m-0 text-lg font-medium text-heading">{{ t('admin.system.deepTitle') }}</h3>
         </div>
 
         <div class="form-group min-w-0">
@@ -319,79 +316,7 @@
           </div>
         </fieldset>
 
-        <div class="form-group min-w-0">
-          <label class="flex items-center gap-3">
-            <input
-              id="ocre-enabled"
-              v-model="localOCREEnabled"
-              type="checkbox"
-              name="DeepIdentificationOCREEnabled"
-              data-testid="ocre-enabled-toggle"
-              aria-describedby="ocre-enabled-help"
-            />
-            <span class="form-label m-0">{{ t('admin.system.enableOcre') }}</span>
-          </label>
-          <span id="ocre-enabled-help" class="mt-1 block text-sm text-text-muted">
-            {{ t('admin.system.enableOcreHint') }}
-          </span>
-        </div>
-
-        <fieldset class="mb-2 min-w-0">
-          <legend class="section-label mb-3">{{ t('admin.system.ocreLimits') }}</legend>
-          <div class="grid min-w-0 gap-4 md:grid-cols-2">
-            <div class="form-group min-w-0">
-              <label class="form-label" for="ocre-call-budget">{{ t('admin.system.perJobBudget') }}</label>
-              <input
-                id="ocre-call-budget"
-                v-model="localOCRECallBudget"
-                class="form-input"
-                type="number"
-                name="DeepIdentificationOCRECallBudget"
-                :min="1"
-                :max="20"
-                step="1"
-                required
-              />
-              <span class="mt-1 block text-sm text-text-muted">{{ t('admin.system.hints.requestsPerJob', { min: 1, max: 20, default: 3 }) }}</span>
-            </div>
-          </div>
-        </fieldset>
-
-        <section class="border-t border-border-subtle pt-6" aria-labelledby="ocre-health-heading">
-          <div class="mb-4 flex items-center justify-between gap-3">
-            <h3 id="ocre-health-heading" class="m-0 text-lg font-medium text-heading">{{ t('admin.system.ocreHealth') }}</h3>
-            <button type="button" class="btn btn-secondary btn-xs" :disabled="ocreHealthLoading" @click="loadOCREHealth">
-              {{ ocreHealthLoading ? t('admin.system.refreshing') : t('admin.logs.refresh') }}
-            </button>
-          </div>
-
-          <div v-if="ocreHealthLoading" class="flex items-center gap-3 py-6 text-sm text-text-secondary" role="status">
-            <span class="sr-only">{{ t('admin.system.loadingOcre') }}</span>
-            {{ t('admin.system.loadingOcre') }}
-          </div>
-          <p v-else-if="ocreHealthError" class="rounded-sm border border-[var(--color-negative)] p-3 text-sm text-loss" role="alert">
-            {{ t('admin.system.ocreUnavailable') }}
-          </p>
-          <div v-else-if="ocreHealth" class="grid gap-4 md:grid-cols-3" data-testid="ocre-health">
-            <div class="rounded-sm border border-border-subtle bg-card p-4">
-              <p class="section-label m-0">{{ t('admin.system.provider') }}</p>
-              <div class="mt-1 font-semibold text-text-primary">{{ ocreHealth.enabled ? t('admin.oidc.enabled') : t('admin.oidc.disabled') }}</div>
-              <div class="mt-1 text-sm text-text-secondary">{{ ocreHealth.gateValidated ? t('admin.system.configValid') : t('admin.system.configInvalid') }}</div>
-            </div>
-            <div class="rounded-sm border border-border-subtle bg-card p-4">
-              <p class="section-label m-0">{{ t('admin.system.callBudget') }}</p>
-              <div class="mt-1 text-sm text-text-primary">{{ t('admin.system.perJob', { count: ocreHealth.callBudget }) }}</div>
-            </div>
-            <div class="rounded-sm border border-border-subtle bg-card p-4">
-              <p class="section-label m-0">{{ t('admin.system.lastOutcome') }}</p>
-              <div class="mt-1 font-semibold text-text-primary">{{ formatOCREOutcome(ocreHealth.lastOutcome) }}</div>
-              <div class="mt-1 text-sm text-text-secondary">{{ formatTimestamp(ocreHealth.lastCheckedAt) }}</div>
-            </div>
-          </div>
-          <p v-else class="py-6 text-sm text-text-muted">{{ t('admin.system.noOcreData') }}</p>
-        </section>
-
-        <section class="mt-6 border-t border-border-subtle pt-6" aria-labelledby="deep-observability-heading">
+        <section class="border-t border-border-subtle pt-6" aria-labelledby="deep-observability-heading">
           <div class="mb-4 flex items-center justify-between gap-3">
             <h3 id="deep-observability-heading" class="m-0 text-lg font-medium text-heading">{{ t('admin.system.deepOps') }}</h3>
             <button type="button" class="btn btn-secondary btn-xs min-h-[44px]" :disabled="deepMetricsLoading" @click="loadDeepMetrics">
@@ -466,8 +391,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { getAdminDeepIdentificationObservability, getAdminNumistaHealth, getAdminOCREHealth } from '@/api/client'
-import type { DeepIdentificationObservabilitySummary, NumistaHealthSummary, NumistaLookupStatus, OCREHealthSummary } from '@/types'
+import { getAdminDeepIdentificationObservability, getAdminNumistaHealth } from '@/api/client'
+import type { DeepIdentificationObservabilitySummary, NumistaHealthSummary, NumistaLookupStatus } from '@/types'
 import I18nT from '@/components/I18nT.vue'
 import { t, intlLocale, type MessageKey } from '@/i18n'
 import { deepProviderStatusLabel } from '@/utils/format'
@@ -489,8 +414,6 @@ const props = withDefaults(defineProps<{
   deepIdentificationResultRetentionDays?: string
   deepIdentificationMaxProviders?: string
   deepIdentificationNumistaCallBudget?: string
-  deepIdentificationOCREEnabled: string
-  deepIdentificationOCRECallBudget: string
   coinCopilotEnabled?: string
   coinCopilotAttributionEnabled?: string
   coinCopilotWorkerCount?: string
@@ -557,8 +480,6 @@ const emit = defineEmits<{
     deepIdentificationResultRetentionDays: string
     deepIdentificationMaxProviders: string
     deepIdentificationNumistaCallBudget: string
-    deepIdentificationOCREEnabled: string
-    deepIdentificationOCRECallBudget: string
     coinCopilotEnabled: string
     coinCopilotAttributionEnabled: string
     coinCopilotWorkerCount: string
@@ -594,8 +515,6 @@ const localDeepIdentificationEventRetentionHours = ref(props.deepIdentificationE
 const localDeepIdentificationResultRetentionDays = ref(props.deepIdentificationResultRetentionDays)
 const localDeepIdentificationMaxProviders = ref(props.deepIdentificationMaxProviders)
 const localDeepIdentificationNumistaCallBudget = ref(props.deepIdentificationNumistaCallBudget)
-const localOCREEnabled = ref((props.deepIdentificationOCREEnabled || 'false') === 'true')
-const localOCRECallBudget = ref(props.deepIdentificationOCRECallBudget || '3')
 const localCoinCopilotEnabled = ref((props.coinCopilotEnabled || 'false') === 'true')
 const localCoinCopilotAttributionEnabled = ref((props.coinCopilotAttributionEnabled || 'false') === 'true')
 const localCoinCopilotWorkerCount = ref(props.coinCopilotWorkerCount)
@@ -615,9 +534,6 @@ const localLogLevel = ref(props.logLevel)
 const health = ref<NumistaHealthSummary | null>(null)
 const healthLoading = ref(true)
 const healthError = ref(false)
-const ocreHealth = ref<OCREHealthSummary | null>(null)
-const ocreHealthLoading = ref(true)
-const ocreHealthError = ref(false)
 const deepMetrics = ref<DeepIdentificationObservabilitySummary | null>(null)
 const deepMetricsLoading = ref(true)
 const deepMetricsError = ref(false)
@@ -704,7 +620,6 @@ function save() {
   for (const setting of coinCopilotSettingFields) {
     setting.model.value = boundedValue(setting.model.value, setting.min, setting.max, setting.fallback)
   }
-  localOCRECallBudget.value = boundedValue(localOCRECallBudget.value, 1, 20, 3)
   emit('save', {
     numistaApiKey: localNumistaApiKey.value,
     numistaSearchTTLHours: localNumistaSearchTTLHours.value,
@@ -722,8 +637,6 @@ function save() {
     deepIdentificationResultRetentionDays: localDeepIdentificationResultRetentionDays.value,
     deepIdentificationMaxProviders: localDeepIdentificationMaxProviders.value,
     deepIdentificationNumistaCallBudget: localDeepIdentificationNumistaCallBudget.value,
-    deepIdentificationOCREEnabled: localOCREEnabled.value ? 'true' : 'false',
-    deepIdentificationOCRECallBudget: localOCRECallBudget.value,
     coinCopilotEnabled: localCoinCopilotEnabled.value ? 'true' : 'false',
     coinCopilotAttributionEnabled: localCoinCopilotAttributionEnabled.value ? 'true' : 'false',
     coinCopilotWorkerCount: localCoinCopilotWorkerCount.value,
@@ -757,20 +670,6 @@ async function loadHealth() {
   }
 }
 
-async function loadOCREHealth() {
-  ocreHealthLoading.value = true
-  ocreHealthError.value = false
-  try {
-    const response = await getAdminOCREHealth()
-    ocreHealth.value = response.data
-  } catch {
-    ocreHealth.value = null
-    ocreHealthError.value = true
-  } finally {
-    ocreHealthLoading.value = false
-  }
-}
-
 async function loadDeepMetrics() {
   deepMetricsLoading.value = true
   deepMetricsError.value = false
@@ -798,11 +697,11 @@ function formatDuration(milliseconds: number) {
 function formatStatusCounts(counts: Record<string, number>) {
   const entries = Object.entries(counts).filter(([, count]) => count > 0)
   return entries.length
-    ? entries.map(([status, count]) => `${formatOCREOutcome(status)} ${count}`).join(', ')
+    ? entries.map(([status, count]) => `${formatProviderOutcome(status)} ${count}`).join(', ')
     : t('admin.system.noAttempts')
 }
 
-function formatOCREOutcome(status?: string | null) {
+function formatProviderOutcome(status?: string | null) {
   if (!status) return t('admin.system.noRecentOutcome')
   return deepProviderStatusLabel(status)
 }
@@ -848,8 +747,6 @@ watch(() => props.deepIdentificationEventRetentionHours, (value) => { localDeepI
 watch(() => props.deepIdentificationResultRetentionDays, (value) => { localDeepIdentificationResultRetentionDays.value = value })
 watch(() => props.deepIdentificationMaxProviders, (value) => { localDeepIdentificationMaxProviders.value = value })
 watch(() => props.deepIdentificationNumistaCallBudget, (value) => { localDeepIdentificationNumistaCallBudget.value = value })
-watch(() => props.deepIdentificationOCREEnabled, (value) => { localOCREEnabled.value = (value || 'false') === 'true' })
-watch(() => props.deepIdentificationOCRECallBudget, (value) => { localOCRECallBudget.value = value || '3' })
 watch(() => props.coinCopilotEnabled, (value) => { localCoinCopilotEnabled.value = (value || 'false') === 'true' })
 watch(() => props.coinCopilotAttributionEnabled, (value) => { localCoinCopilotAttributionEnabled.value = (value || 'false') === 'true' })
 watch(() => props.coinCopilotWorkerCount, (value) => { localCoinCopilotWorkerCount.value = value })
@@ -869,7 +766,6 @@ watch(() => props.logLevel, (value) => { localLogLevel.value = value })
 
 onMounted(() => {
   loadHealth()
-  loadOCREHealth()
   loadDeepMetrics()
 })
 </script>

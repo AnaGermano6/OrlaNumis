@@ -62,11 +62,9 @@ var deepProposalCoinFieldAllowlist = map[string]string{
 	"reverseDescription": "ReverseDescription",
 	"grade":              "Grade",
 	"rarityRating":       "RarityRating",
-	// coin_type carries the OCRE RIC-style catalog type label (e.g.
-	// "RIC II Hadrian 39b"). It reuses the existing ReferenceText column —
-	// no schema migration — because a coin-type is a catalogue reference.
-	// The canonical numismatics.org/ocre citation lives in the claim
-	// evidence, never on the Coin row itself (Feature 345, data-model §5).
+	// coin_type carries a catalogue type label (e.g. "RIC II Hadrian 39b").
+	// It reuses the existing ReferenceText column — no schema migration —
+	// because a coin-type is a catalogue reference.
 	"coin_type": "ReferenceText",
 }
 
@@ -104,10 +102,8 @@ const deepProposalCatalogReferencesMaxElements = 10
 // legal only as evidence origin, never as a provider catalog entry
 // (FR-004, FR-044).
 var deepProposalCatalogReferenceSourceProviders = map[string]struct{}{
-	string(models.DeepProviderNomisma): {},
 	string(models.DeepProviderNumista): {},
 	string(models.DeepProviderNGC):     {},
-	string(models.DeepProviderOCRE):    {},
 	string(models.DeepProviderRPC):     {},
 	"image":                            {},
 }
@@ -635,7 +631,7 @@ func (s *DeepIdentificationProposalService) applyToCoin(job *models.DeepIdentifi
 			txCoinSvc := *s.coinSvc
 			txCoinSvc.repo = txCoinRepo
 			txReferenceSvc := &CoinReferenceService{repo: txReferenceRepo, registryRepo: txRegistryRepo}
-			if err := txCoinSvc.UpdateCoinWithFields(currentCoin, updates, goFields, userID, "deep_identification", false); err != nil {
+			if err := txCoinSvc.UpdateCoinWithFields(currentCoin, updates, goFields, userID, "deep_identification"); err != nil {
 				return err
 			}
 			if applyCatalogReferences {
@@ -1163,8 +1159,8 @@ func setCoinFieldFromProposalValue(coin *models.Coin, field string, value any) e
 	case "Notes":
 		coin.Notes = deepProposalValueToString(value)
 	case "ReferenceText":
-		// Feature 345: OCRE coin_type RIC-style catalog label reuses the
-		// existing ReferenceText column (no schema migration).
+		// A coin_type catalogue label reuses the existing ReferenceText
+		// column (no schema migration).
 		coin.ReferenceText = deepProposalValueToString(value)
 	default:
 		return fmt.Errorf("%w: %q", ErrDeepProposalFieldNotAllowed, field)

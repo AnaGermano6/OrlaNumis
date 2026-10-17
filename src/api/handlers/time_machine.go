@@ -20,7 +20,7 @@ func NewTimeMachineHandler(svc *services.TimeMachineService) *TimeMachineHandler
 // GetSnapshot returns the collection as it stood on a past date.
 //
 //	@Summary		Get the collection as of a past date
-//	@Description	Reconstructs the collection as it stood on the requested date from purchase/sold dates and recorded valuation history. Coins without a purchase date cannot be placed on the timeline and are reported separately in undatedCoinCount.
+//	@Description	Reconstructs the collection as it stood on the requested date from purchase dates and recorded valuation history. Coins without a purchase date cannot be placed on the timeline and are reported separately in undatedCoinCount.
 //	@Tags			Stats
 //	@Produce		json
 //	@Param			date	query		string	true	"Target date (YYYY-MM-DD)"

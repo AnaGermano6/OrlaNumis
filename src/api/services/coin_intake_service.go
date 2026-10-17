@@ -285,11 +285,6 @@ var allowedOverrideFields = map[string]struct{}{
 	"purchase_location":    {},
 	"notes":                {},
 	"is_wishlist":          {},
-	"is_sold":              {},
-	"is_private":           {},
-	"sale_price":           {},
-	"sale_date":            {},
-	"sale_notes":           {},
 	"currency":             {},
 	"year":                 {},
 	"country":              {},
@@ -330,13 +325,9 @@ func mergeCandidateAndOverrides(draftPayload string, overrides map[string]interf
 	coerceNumericField(merged, "purchase_price")
 	coerceNumericField(merged, "current_value")
 	coerceNumericField(merged, "estimated_value")
-	coerceNumericField(merged, "sale_price")
 	coerceIntField(merged, "year")
 	coerceBoolField(merged, "is_wishlist")
-	coerceBoolField(merged, "is_sold")
-	coerceBoolField(merged, "is_private")
 	coerceDateField(merged, "purchase_date")
-	coerceDateField(merged, "sale_date")
 	coerceDateField(merged, "listed_date")
 	coerceDateField(merged, "listing_checked_at")
 	return merged, nil

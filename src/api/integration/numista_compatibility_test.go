@@ -136,7 +136,7 @@ func TestNumistaCompatibilityPhotoFieldsAreAdditiveAndNGCReferencesRemain(t *tes
 func TestNumistaCompatibilityOwnershipDedupAndRollbackReadableRecords(t *testing.T) {
 	h := newNumistaIntegrationHarness(t)
 	coin := models.Coin{
-		UserID: h.userID, Name: "Owner coin", Category: models.CategoryRoman,
+		UserID: h.userID, Name: "Owner coin", Category: models.CategoryModern,
 		Material: models.MaterialSilver, Era: models.EraAncient,
 	}
 	if err := h.db.Create(&coin).Error; err != nil {

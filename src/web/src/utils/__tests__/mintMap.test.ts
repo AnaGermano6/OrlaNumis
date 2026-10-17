@@ -1,88 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import {
-  findMintReference,
-  groupCoinsByMint,
-  normalizeMintName,
-} from '@/utils/mintMap'
-import { buildMintMapFixtureCoins, buildRomanDenariusCore, buildTestMintLocations } from '@/test/fixtures/coins'
+import { normalizeMintName } from '@/utils/mintMap'
 
 describe('mintMap utilities', () => {
-  const mintLocations = buildTestMintLocations()
-
   it('normalizes case, punctuation, diacritics, and whitespace', () => {
     expect(normalizeMintName('  RÓMA--Mint  ')).toBe('roma mint')
     expect(normalizeMintName('Lugdunum / Lyon')).toBe('lugdunum lyon')
-  })
-
-  it('matches canonical mints and aliases', () => {
-    expect(findMintReference('Rome', mintLocations)?.id).toBe(1)
-    expect(findMintReference('Roma', mintLocations)?.id).toBe(1)
-    expect(findMintReference('Byzantium', mintLocations)?.id).toBe(2)
-    expect(findMintReference('not a known mint', mintLocations)).toBeNull()
-  })
-
-  it('groups aliases with their canonical mint and sorts by count', () => {
-    const grouped = groupCoinsByMint(buildMintMapFixtureCoins(), mintLocations)
-
-    expect(grouped.matched[0]?.mint.id).toBe(1)
-    expect(grouped.matched[0]?.count).toBe(2)
-    expect(grouped.matched.some((group) => group.mint.id === 2)).toBe(true)
-    expect(grouped.unmatched).toHaveLength(1)
-    expect(grouped.unmatched[0]?.originalNames).toEqual(['Traveling Camp'])
-    expect(grouped.unknown.map((coin) => coin.name)).toEqual(['Unknown Mint Fraction'])
-  })
-
-  it('keeps duplicate unmatched names together', () => {
-    const grouped = groupCoinsByMint([
-      buildRomanDenariusCore({ id: 1, name: 'Camp One', mint: 'Traveling Camp' }),
-      buildRomanDenariusCore({ id: 2, name: 'Camp Two', mint: 'traveling-camp' }),
-    ], mintLocations)
-
-    expect(grouped.unmatched).toHaveLength(1)
-    expect(grouped.unmatched[0]?.coins).toHaveLength(2)
-    expect(grouped.unknown).toHaveLength(0)
-  })
-
-  it('groups a coin by its mintLocationId FK even when the free-text mint would not fuzzy-match', () => {
-    const grouped = groupCoinsByMint([
-      buildRomanDenariusCore({ id: 1, name: 'Linked Coin', mint: 'Some Old Typo Text', mintLocationId: 1 }),
-    ], mintLocations)
-
-    expect(grouped.matched).toHaveLength(1)
-    expect(grouped.matched[0]?.mint.id).toBe(1)
-    expect(grouped.unmatched).toHaveLength(0)
-    expect(grouped.unknown).toHaveLength(0)
-  })
-
-  it('falls back to fuzzy text matching only for coins with no mintLocationId', () => {
-    const grouped = groupCoinsByMint([
-      buildRomanDenariusCore({ id: 1, name: 'Linked Coin', mint: 'irrelevant', mintLocationId: 2 }),
-      buildRomanDenariusCore({ id: 2, name: 'Legacy Coin', mint: 'Roma', mintLocationId: null }),
-    ], mintLocations)
-
-    const byzantiumGroup = grouped.matched.find((g) => g.mint.id === 2)
-    const romeGroup = grouped.matched.find((g) => g.mint.id === 1)
-    expect(byzantiumGroup?.coins.map((c) => c.name)).toEqual(['Linked Coin'])
-    expect(romeGroup?.coins.map((c) => c.name)).toEqual(['Legacy Coin'])
-  })
-
-  it('does not depend on the static seed list at runtime', () => {
-    const customLocations = [{
-      id: 99,
-      displayName: 'Custom Camp',
-      lat: 10,
-      lng: 20,
-      region: 'Field Notes',
-      aliases: ['Traveling Camp'],
-      createdAt: '2026-06-18T00:00:00Z',
-      updatedAt: '2026-06-18T00:00:00Z',
-    }]
-
-    const grouped = groupCoinsByMint([
-      buildRomanDenariusCore({ id: 1, name: 'Camp Coin', mint: 'Traveling Camp' }),
-    ], customLocations)
-
-    expect(grouped.matched[0]?.mint.id).toBe(99)
-    expect(grouped.unmatched).toHaveLength(0)
   })
 })

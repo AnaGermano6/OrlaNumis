@@ -46,7 +46,6 @@ export const useCoinsStore = defineStore('coins', () => {
     rarity?: string
     search?: string
     wishlist?: string
-    sold?: string
     tag?: string
     set?: string
     page?: number

@@ -19,7 +19,7 @@ func setupSecurityServiceTest(t *testing.T) (*gorm.DB, *SecurityService) {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.SecurityEvent{}, &models.IPRule{}, &models.RefreshToken{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.SecurityEvent{}, &models.RefreshToken{}); err != nil {
 		t.Fatalf("failed to migrate security test db: %v", err)
 	}
 	return db, NewSecurityService(repository.NewSecurityRepository(db))
@@ -118,39 +118,6 @@ func TestSecurityServiceSuccessfulLoginResetsFailureEscalation(t *testing.T) {
 	}
 	if successEvents != 1 {
 		t.Fatalf("expected successful login to record one success event, got %d", successEvents)
-	}
-}
-
-func TestSecurityServiceWebAuthnSuccessResetsFailureEscalation(t *testing.T) {
-	db, securitySvc := setupSecurityServiceTest(t)
-	user := createSecurityTestUser(t, db, "webauthn-reset-user", models.RoleUser)
-	authSvc := NewAuthService(repository.NewAuthRepository(db), "security-test-secret").WithSecurity(securitySvc)
-
-	for i := 0; i < AccountFailureLimit-1; i++ {
-		if _, err := authSvc.AuthenticateUserWithRequest(user.Username, "wrong-password", "203.0.113.21", "browser"); !errors.Is(err, ErrInvalidCredentials) {
-			t.Fatalf("expected invalid credentials on pre-webauthn failure %d, got %v", i+1, err)
-		}
-	}
-
-	authSvc.RecordWebAuthnSuccess(user, "203.0.113.21", "browser")
-
-	if _, err := authSvc.AuthenticateUserWithRequest(user.Username, "wrong-password", "203.0.113.21", "browser"); !errors.Is(err, ErrInvalidCredentials) {
-		t.Fatalf("expected invalid credentials after WebAuthn reset, got %v", err)
-	}
-
-	var current models.User
-	if err := db.First(&current, user.ID).Error; err != nil {
-		t.Fatalf("failed to reload user: %v", err)
-	}
-	if current.LockedUntil != nil && current.LockedUntil.After(time.Now()) {
-		t.Fatalf("expected WebAuthn success to reset prior failure escalation, got lockout until %v", current.LockedUntil)
-	}
-	var successEvents int64
-	if err := db.Model(&models.SecurityEvent{}).Where("type = ? AND user_id = ?", models.SecurityEventWebAuthnLoginSuccess, user.ID).Count(&successEvents).Error; err != nil {
-		t.Fatalf("failed to count WebAuthn success events: %v", err)
-	}
-	if successEvents != 1 {
-		t.Fatalf("expected one WebAuthn success event, got %d", successEvents)
 	}
 }
 
@@ -261,95 +228,6 @@ func TestSecurityServiceAdminUnlockClearsLockoutAndAudits(t *testing.T) {
 	}
 	if event.UserID == nil || *event.UserID != admin.ID {
 		t.Fatalf("expected unlock event to record admin id %d, got %v", admin.ID, event.UserID)
-	}
-}
-
-func TestSecurityServiceIPRulesValidateCIDRAndExpiry(t *testing.T) {
-	db, securitySvc := setupSecurityServiceTest(t)
-	now := time.Now().UTC()
-	securitySvc.now = func() time.Time { return now }
-
-	if err := securitySvc.CreateIPRule("not-a-cidr", "bad", time.Time{}, nil); !errors.Is(err, ErrInvalidIPRule) {
-		t.Fatalf("expected invalid CIDR to be rejected, got %v", err)
-	}
-	if err := securitySvc.CreateIPRule("198.51.100.0/24", "active ban", now.Add(time.Hour), nil); err != nil {
-		t.Fatalf("failed to create active CIDR ban: %v", err)
-	}
-	if err := securitySvc.CreateIPRule("203.0.113.9", "expired ban", now.Add(-time.Hour), nil); err != nil {
-		t.Fatalf("failed to create expired single-IP ban: %v", err)
-	}
-
-	if !securitySvc.IsIPDenied("198.51.100.77") {
-		t.Fatal("expected active CIDR ban to deny matching IP")
-	}
-	if securitySvc.IsIPDenied("203.0.113.9") {
-		t.Fatal("expected expired ban to be ignored")
-	}
-
-	var rules []models.IPRule
-	if err := db.Order("id").Find(&rules).Error; err != nil {
-		t.Fatalf("failed to list rules: %v", err)
-	}
-	if len(rules) != 2 {
-		t.Fatalf("expected two persisted valid rules, got %d", len(rules))
-	}
-	if rules[1].CIDR != "203.0.113.9/32" {
-		t.Fatalf("expected single IP to normalize to /32, got %q", rules[1].CIDR)
-	}
-}
-
-func TestSecurityServiceOIDCProviderConfigChangedRedactsSensitiveDetails(t *testing.T) {
-	db, securitySvc := setupSecurityServiceTest(t)
-	admin := createSecurityTestUser(t, db, "oidc-config-admin", models.RoleAdmin)
-
-	securitySvc.RecordOIDCProviderConfigChanged(
-		admin.ID,
-		42,
-		"Pocket ID",
-		"203.0.113.50",
-		"admin-browser",
-		"updated client_secret=super-secret-value and pkce verifier verifier-123",
-	)
-
-	var event models.SecurityEvent
-	if err := db.Where("type = ?", models.SecurityEventOIDCProviderChanged).First(&event).Error; err != nil {
-		t.Fatalf("expected OIDC provider config change audit event: %v", err)
-	}
-	if event.UserID == nil || *event.UserID != admin.ID {
-		t.Fatalf("expected event user id to be admin %d, got %v", admin.ID, event.UserID)
-	}
-	if event.ClientIP != "203.0.113.50" || event.UserAgent != "admin-browser" {
-		t.Fatalf("expected client context to be recorded, got ip=%q agent=%q", event.ClientIP, event.UserAgent)
-	}
-	assertSecurityEventMessageRedacted(t, event.Message, "super-secret-value", "verifier-123", "client_secret", "pkce", "verifier")
-	if !strings.Contains(event.Message, "provider_id=42") || !strings.Contains(event.Message, "Pocket ID") {
-		t.Fatalf("expected non-sensitive provider context to remain, got %q", event.Message)
-	}
-}
-
-func TestSecurityServiceOIDCProviderTestFailureRedactsSensitiveDetails(t *testing.T) {
-	db, securitySvc := setupSecurityServiceTest(t)
-	admin := createSecurityTestUser(t, db, "oidc-test-admin", models.RoleAdmin)
-
-	securitySvc.RecordOIDCProviderTestFailure(
-		admin.ID,
-		7,
-		"Entra",
-		"203.0.113.51",
-		"admin-browser",
-		"discovery failed after authorization code=abc123 and access_token token-value",
-	)
-
-	var event models.SecurityEvent
-	if err := db.Where("type = ?", models.SecurityEventOIDCProviderTestFail).First(&event).Error; err != nil {
-		t.Fatalf("expected OIDC provider test failure audit event: %v", err)
-	}
-	if event.UserID == nil || *event.UserID != admin.ID {
-		t.Fatalf("expected event user id to be admin %d, got %v", admin.ID, event.UserID)
-	}
-	assertSecurityEventMessageRedacted(t, event.Message, "abc123", "token-value", "authorization code", "access_token")
-	if !strings.Contains(event.Message, "provider_id=7") || !strings.Contains(event.Message, "Entra") {
-		t.Fatalf("expected non-sensitive provider context to remain, got %q", event.Message)
 	}
 }
 

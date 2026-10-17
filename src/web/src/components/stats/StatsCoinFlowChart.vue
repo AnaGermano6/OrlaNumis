@@ -226,7 +226,6 @@ async function loadCoins() {
     while (true) {
       const res = await getCoins({
         wishlist: 'false',
-        sold: 'false',
         page,
         limit,
         sort: 'purchase_date',

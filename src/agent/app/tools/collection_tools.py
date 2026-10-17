@@ -99,7 +99,7 @@ def build_collection_tools(tools_base_url: str, internal_token: str) -> list[Str
         """Search the user's coin collection with flexible filters.
 
         Use this to find coins the user already owns. Searches across name,
-        ruler, era, denomination, category, material, notes, and tags. Also use
+        ruler, era, denomination, category, material, and notes. Also use
         this for data-quality questions like "missing size", "missing diameter",
         "missing weight", "missing grade", "missing value", or "missing
         metadata"; size means diameter_mm / diameterMm.
@@ -176,7 +176,7 @@ def build_collection_tools(tools_base_url: str, internal_token: str) -> list[Str
     async def propose_update_fn(coin_id: int, changes: dict[str, Any]) -> str:
         """Create an update proposal for a coin (allowlisted fields only).
 
-        Use this to propose changes to: notes, grade, tags.
+        Use this to propose changes to: notes, grade.
         Returns a proposal preview with proposal_id and token for commit_update.
 
         Args:

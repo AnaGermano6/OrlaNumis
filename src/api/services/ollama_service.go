@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/briandenicola/ancient-coins-api/models"
 )
 
 type OllamaService struct {
@@ -149,21 +147,4 @@ func (s *OllamaService) CheckModel(model string) (bool, string) {
 
 	logger.Info("ollama", "Model '%s' is available", model)
 	return true, fmt.Sprintf("Model '%s' is available and ready", model)
-}
-
-func buildCoinContext(coin models.Coin) string {
-	var sb strings.Builder
-	if coin.Name != "" {
-		sb.WriteString(fmt.Sprintf("The coin is cataloged as: %s\n", coin.Name))
-	}
-	if coin.Category != "" {
-		sb.WriteString(fmt.Sprintf("Category: %s\n", coin.Category))
-	}
-	if coin.Denomination != "" {
-		sb.WriteString(fmt.Sprintf("Denomination: %s\n", coin.Denomination))
-	}
-	if coin.Ruler != "" {
-		sb.WriteString(fmt.Sprintf("Ruler: %s\n", coin.Ruler))
-	}
-	return sb.String()
 }

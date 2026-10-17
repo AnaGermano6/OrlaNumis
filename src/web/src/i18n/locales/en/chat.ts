@@ -39,7 +39,6 @@ export default {
   aggregate: {
     active: 'Active: {count}',
     wishlist: 'Wishlist: {count}',
-    sold: 'Sold: {count}',
     value: 'Value: {value}',
   },
   listingIneligible: 'This listing is no longer eligible for Add to Wishlist.',

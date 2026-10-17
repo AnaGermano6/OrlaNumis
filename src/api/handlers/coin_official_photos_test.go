@@ -193,7 +193,6 @@ func TestOfficialPhotos_Batch(t *testing.T) {
 	france := newCoin(models.Coin{Name: "2 euro 2022 – França", Country: "França", Denomination: "2 euro"})
 	photographed := newCoin(models.Coin{Name: "2 euro 2022 – Itália", Country: "Itália", Denomination: "2 euro"})
 	db.Create(&models.CoinImage{CoinID: photographed.ID, FilePath: "mine.jpg", ImageType: models.ImageTypeObverse, IsPrimary: true})
-	newCoin(models.Coin{Name: "2 euro 2022 – Bélgica", Country: "Bélgica", Denomination: "2 euro", IsSold: true})
 	newCoin(models.Coin{Name: "5 euro note", Country: "Portugal", Denomination: "5 euro", Kind: models.CoinKindBanknote})
 	newCoin(models.Coin{Name: "2 euro 2022 – Áustria", Country: "Áustria", Denomination: "2 euro", UserID: 2})
 

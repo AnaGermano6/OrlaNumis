@@ -23,8 +23,6 @@ func setupRecommendationHandlerRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	if err := db.AutoMigrate(
 		&models.User{},
 		&models.Coin{},
-		&models.Tag{},
-		&models.CoinTag{},
 		&models.CoinSet{},
 		&models.CoinSetMembership{},
 		&models.CoinRecommendation{},
@@ -34,7 +32,7 @@ func setupRecommendationHandlerRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	}
 
 	repo := repository.NewCoinRecommendationRepository(db)
-	service := services.NewCoinRecommendationService(repo, repository.NewTagRepository(db), repository.NewSetRepository(db))
+	service := services.NewCoinRecommendationService(repo, repository.NewSetRepository(db))
 	handler := NewCoinRecommendationHandler(service)
 
 	r := gin.New()
@@ -52,9 +50,9 @@ func TestCoinRecommendationHandler_ListAndReject(t *testing.T) {
 		t.Fatalf("failed to create user: %v", err)
 	}
 
-	target := models.Coin{Name: "Julia Domna denarius", Ruler: "Julia Domna", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
-	peer1 := models.Coin{Name: "Peer 1", Ruler: "Julia Domna", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
-	peer2 := models.Coin{Name: "Peer 2", Ruler: "Julia Domna", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
+	target := models.Coin{Name: "Julia Domna denarius", Ruler: "Julia Domna", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
+	peer1 := models.Coin{Name: "Peer 1", Ruler: "Julia Domna", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
+	peer2 := models.Coin{Name: "Peer 2", Ruler: "Julia Domna", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
 	if err := db.Create(&[]models.Coin{target, peer1, peer2}).Error; err != nil {
 		t.Fatalf("failed to create coins: %v", err)
 	}

@@ -26,7 +26,7 @@ func setupImageMediaRouter(t *testing.T) (*gin.Engine, *gorm.DB, string) {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.Follow{}, &models.Showcase{}, &models.ShowcaseCoin{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{}); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
 
@@ -49,7 +49,7 @@ func setupImageMediaRouter(t *testing.T) (*gin.Engine, *gorm.DB, string) {
 	return r, db, uploadDir
 }
 
-func createStoredCoinImage(t *testing.T, db *gorm.DB, uploadDir string, ownerID uint, private bool) string {
+func createStoredCoinImage(t *testing.T, db *gorm.DB, uploadDir string, ownerID uint) string {
 	t.Helper()
 
 	owner := models.User{ID: ownerID, Username: fmt.Sprintf("owner-%d", ownerID), Email: fmt.Sprintf("owner-%d@example.com", ownerID), PasswordHash: "hash"}
@@ -64,11 +64,10 @@ func createStoredCoinImage(t *testing.T, db *gorm.DB, uploadDir string, ownerID 
 	}
 
 	coin := models.Coin{
-		Name:      "Private Denarius",
-		Category:  models.CategoryRoman,
-		Material:  models.MaterialSilver,
-		UserID:    ownerID,
-		IsPrivate: private,
+		Name:     "Private Denarius",
+		Category: models.CategoryModern,
+		Material: models.MaterialSilver,
+		UserID:   ownerID,
 	}
 	if err := db.Create(&coin).Error; err != nil {
 		t.Fatalf("failed to create coin: %v", err)
@@ -123,7 +122,7 @@ func createStoredDraftImage(t *testing.T, db *gorm.DB, uploadDir string, ownerID
 
 func TestImageHandler_ServeUpload_AuthorizesPrivateCoinMedia(t *testing.T) {
 	router, db, uploadDir := setupImageMediaRouter(t)
-	relPath := createStoredCoinImage(t, db, uploadDir, 1, true)
+	relPath := createStoredCoinImage(t, db, uploadDir, 1)
 	url := "/uploads/" + relPath
 
 	t.Run("unauthenticated request is rejected", func(t *testing.T) {
@@ -190,7 +189,7 @@ func TestImageHandler_ServeUpload_AuthorizesDraftMediaByOwnerOnly(t *testing.T) 
 
 func TestImageHandler_ServeUpload_RejectsTraversal(t *testing.T) {
 	router, db, uploadDir := setupImageMediaRouter(t)
-	createStoredCoinImage(t, db, uploadDir, 1, true)
+	createStoredCoinImage(t, db, uploadDir, 1)
 
 	req := httptest.NewRequest(http.MethodGet, "/uploads/coin-1/%2e%2e/coin-1/private.jpg", nil)
 	req.Header.Set("Authorization", authHeader(1))

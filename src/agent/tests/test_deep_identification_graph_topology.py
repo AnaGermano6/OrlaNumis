@@ -30,7 +30,6 @@ from app.models.requests import (
     LLMConfig,
 )
 from app.models.responses import ProviderClaim, ProviderEvidence
-from app.teams.deep_identification.providers.ocre import OCRE_ATTRIBUTION
 from app.teams.deep_identification.synthesis import _build_attributions, synthesize
 
 
@@ -126,53 +125,46 @@ async def test_production_stream_visits_the_five_nodes_in_order(monkeypatch):
 
 # --- Feature 345 (T026): deterministic provider attribution synthesis ---
 
-_OCRE_CITATION = "https://numismatics.org/ocre/id/ric.1(2).aug.1"
-_NOMISMA_CITATION = "https://nomisma.org/id/augustus"
+_NUMISTA_CITATION = "https://en.numista.com/catalogue/pieces1490.html"
+_NUMISTA_ATTRIBUTION = "Data: Numista"
+_NGC_CITATION = "https://www.ngccoin.com/certlookup/1234567-001/"
 
 
-def _ocre_contributed():
+def _numista_contributed():
     return ProviderEvidence(
-        provider="ocre", status="contributed", automatable=True, confidence=0.8, call_count=1,
-        attribution=OCRE_ATTRIBUTION,
-        claims=[ProviderClaim(field="coin_type", value="RIC I Augustus 1", confidence=0.8, citation=_OCRE_CITATION)],
+        provider="numista", status="contributed", automatable=True, confidence=0.8, call_count=1,
+        attribution=_NUMISTA_ATTRIBUTION,
+        claims=[ProviderClaim(field="coin_type", value="KM# 742", confidence=0.8, citation=_NUMISTA_CITATION)],
     )
 
 
-def _nomisma_contributed():
+def _ngc_contributed():
     return ProviderEvidence(
-        provider="nomisma", status="contributed", automatable=True, confidence=0.7, call_count=1,
-        attribution="Data: Nomisma.org (CC BY)",
-        claims=[ProviderClaim(field="mint_authority", value="Augustus", confidence=0.7, citation=_NOMISMA_CITATION)],
+        provider="ngc", status="contributed", automatable=False, confidence=0.7, call_count=0,
+        attribution="Certification: NGC",
+        claims=[ProviderClaim(field="certification", value="1234567-001", confidence=0.7, citation=_NGC_CITATION)],
     )
 
 
 def test_attribution_present_only_when_provider_contributed_a_claim():
-    attributions = _build_attributions([_ocre_contributed()])
+    attributions = _build_attributions([_numista_contributed()])
     assert len(attributions) == 1
-    assert attributions[0].provider == "ocre"
-    assert attributions[0].text == OCRE_ATTRIBUTION
-    assert attributions[0].identifier == _OCRE_CITATION
-
-
-def test_ocre_attribution_text_is_exact_odbl_ans_string():
-    attributions = _build_attributions([_ocre_contributed()])
-    assert attributions[0].text == (
-        "Coin type data: Online Coins of the Roman Empire (OCRE), "
-        "American Numismatic Society \u2014 ODbL 1.0."
-    )
+    assert attributions[0].provider == "numista"
+    assert attributions[0].text == _NUMISTA_ATTRIBUTION
+    assert attributions[0].identifier == _NUMISTA_CITATION
 
 
 def test_multiple_providers_produce_distinct_unmerged_attributions():
-    attributions = _build_attributions([_ocre_contributed(), _nomisma_contributed()])
+    attributions = _build_attributions([_numista_contributed(), _ngc_contributed()])
     providers = [a.provider for a in attributions]
     texts = {a.text for a in attributions}
-    assert providers == ["ocre", "nomisma"]
+    assert providers == ["numista", "ngc"]
     assert len(texts) == 2  # distinct, never merged
 
 
 def test_no_attribution_for_no_match_failed_or_not_automated():
     rows = [
-        ProviderEvidence(provider="ocre", status="no_match", automatable=True, attribution=OCRE_ATTRIBUTION),
+        ProviderEvidence(provider="numista", status="no_match", automatable=True, attribution=_NUMISTA_ATTRIBUTION),
         ProviderEvidence(provider="numista", status="failed", automatable=True, error_kind="upstream"),
         ProviderEvidence(provider="rpc", status="not_automated", automatable=False,
                          attribution="RPC — not yet automated"),
@@ -184,12 +176,12 @@ def test_synthesize_wires_attributions_into_report():
     report = asyncio.run(
         synthesize(
             model=None,
-            evidence=[_ocre_contributed()],
+            evidence=[_numista_contributed()],
             disagreements=[],
             unresolved_questions=[],
             partial_success=False,
         )
     )
     assert len(report.attributions) == 1
-    assert report.attributions[0].provider == "ocre"
-    assert report.attributions[0].identifier == _OCRE_CITATION
+    assert report.attributions[0].provider == "numista"
+    assert report.attributions[0].identifier == _NUMISTA_CITATION

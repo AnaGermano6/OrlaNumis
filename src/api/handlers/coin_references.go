@@ -26,39 +26,6 @@ func NewCoinReferenceHandler(
 	return &CoinReferenceHandler{repo: repo, svc: svc, migrationSvc: migrationSvc}
 }
 
-// List returns all references for a coin.
-//
-//	@Summary		List coin references
-//	@Description	Returns all structured references for a user-owned coin.
-//	@Tags			Coin References
-//	@Produce		json
-//	@Param			id	path		int	true	"Coin ID"
-//	@Success		200	{array}		CoinReferenceDTO
-//	@Failure		400	{object}	ErrorResponse
-//	@Failure		401	{object}	ErrorResponse
-//	@Failure		404	{object}	ErrorResponse
-//	@Failure		500	{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/coins/{id}/references [get]
-func (h *CoinReferenceHandler) List(c *gin.Context) {
-	userID := c.GetUint("userId")
-	coinID, ok := parseID(c, "id")
-	if !ok {
-		return
-	}
-	if !h.repo.CoinExists(coinID, userID) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Coin not found"})
-		return
-	}
-
-	refs, err := h.repo.ListByCoin(coinID, userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list references"})
-		return
-	}
-	c.JSON(http.StatusOK, refs)
-}
-
 // Create adds a structured reference to a coin.
 //
 //	@Summary		Create coin reference

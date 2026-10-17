@@ -18,34 +18,30 @@ func TestValuationRepository_GetOwnedCoinsPrioritizesStaleValuations(t *testing.
 
 	coins := []models.Coin{
 		{
-			Name: "recently edited but never valued", Category: models.CategoryRoman, UserID: 1,
+			Name: "recently edited but never valued", Category: models.CategoryModern, UserID: 1,
 			UpdatedAt: now,
 		},
 		{
-			Name: "oldest valuation", Category: models.CategoryRoman, UserID: 1,
+			Name: "oldest valuation", Category: models.CategoryModern, UserID: 1,
 			CurrentValueUpdatedAt: &oldestValuation,
 			UpdatedAt:             now.Add(-time.Hour),
 		},
 		{
-			Name: "stale valuation", Category: models.CategoryRoman, UserID: 1,
+			Name: "stale valuation", Category: models.CategoryModern, UserID: 1,
 			CurrentValueUpdatedAt: &staleValuation,
 			UpdatedAt:             now.Add(-2 * time.Hour),
 		},
 		{
-			Name: "recent valuation", Category: models.CategoryRoman, UserID: 1,
+			Name: "recent valuation", Category: models.CategoryModern, UserID: 1,
 			CurrentValueUpdatedAt: &recentValuation,
 			UpdatedAt:             now.AddDate(0, 0, -30),
 		},
 		{
-			Name: "wishlist never valued", Category: models.CategoryRoman, UserID: 1,
+			Name: "wishlist never valued", Category: models.CategoryModern, UserID: 1,
 			IsWishlist: true,
 		},
 		{
-			Name: "sold never valued", Category: models.CategoryRoman, UserID: 1,
-			IsSold: true,
-		},
-		{
-			Name: "other user never valued", Category: models.CategoryRoman, UserID: 2,
+			Name: "other user never valued", Category: models.CategoryModern, UserID: 2,
 		},
 	}
 	for i := range coins {

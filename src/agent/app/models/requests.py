@@ -8,7 +8,6 @@ import ipaddress
 import json
 import re
 import string
-from datetime import datetime
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError, field_validator, model_validator
@@ -79,7 +78,7 @@ MAX_DEEP_IMAGES = 4  # obverse + reverse + up to MaxDeepIdentificationHintArtifa
 MAX_DEEP_NOTES_LENGTH = 10000
 MAX_DEEP_PROVIDER_CATALOG_ENTRIES = 10
 MAX_DEEP_PROVIDER_OVERRIDE_ENTRIES = 10
-DEEP_PROVIDER_NAMES = {"numista", "nomisma", "ngc", "ocre", "rpc"}
+DEEP_PROVIDER_NAMES = {"numista", "ngc", "rpc"}
 
 BoundedMessage = Annotated[str, StringConstraints(max_length=MAX_MESSAGE_LENGTH)]
 BoundedHistoryMessage = Annotated[str, StringConstraints(max_length=MAX_HISTORY_MESSAGE_LENGTH)]
@@ -390,40 +389,6 @@ class CopilotAppContext(StrictRequestModel):
     active_draft_id: int | None = Field(default=None, alias="activeDraftId", ge=1)
 
 
-class CopilotCollectorContext(StrictRequestModel):
-    """Bounded, owner-supplied advisory context with no identity or action fields."""
-
-    budget_min: float | None = Field(default=None, ge=0, le=100_000_000)
-    budget_max: float | None = Field(default=None, ge=0, le=100_000_000)
-    currency: Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")] | None = None
-    preferred_periods: list[
-        Annotated[str, StringConstraints(min_length=1, max_length=100)]
-    ] = Field(default_factory=list, max_length=20)
-    preferred_categories: list[
-        Annotated[str, StringConstraints(min_length=1, max_length=100)]
-    ] = Field(default_factory=list, max_length=20)
-    excluded_categories: list[
-        Annotated[str, StringConstraints(min_length=1, max_length=100)]
-    ] = Field(default_factory=list, max_length=20)
-    preferred_dealers: list[
-        Annotated[str, StringConstraints(min_length=1, max_length=200)]
-    ] = Field(default_factory=list, max_length=20)
-    collecting_goals: list[
-        Annotated[str, StringConstraints(min_length=1, max_length=500)]
-    ] = Field(default_factory=list, max_length=20)
-    captured_at: datetime
-
-    @model_validator(mode="after")
-    def validate_budget_order(self) -> "CopilotCollectorContext":
-        if (
-            self.budget_min is not None
-            and self.budget_max is not None
-            and self.budget_min > self.budget_max
-        ):
-            raise ValueError("budget_min must not exceed budget_max")
-        return self
-
-
 class CopilotCapabilityRequest(StrictRequestModel):
     """Provider configuration used only to verify fixed Copilot tool binding."""
 
@@ -441,7 +406,6 @@ class CopilotExecuteRequest(StrictRequestModel):
     messages: list[ChatMessage] = Field(min_length=1, max_length=MAX_HISTORY_MESSAGES)
     checkpoint: CopilotCheckpoint
     app_context: CopilotAppContext | None = None
-    collector_context: CopilotCollectorContext | None = None
     llm: LLMConfig
     limits: CopilotLimits
     tools_base_url: BoundedURL
@@ -853,7 +817,7 @@ class DeepProviderCatalogEntry(StrictRequestModel):
     `unavailable` evidence row (FR-025).
     """
 
-    provider: Literal["numista", "nomisma", "ngc", "ocre", "rpc"]
+    provider: Literal["numista", "ngc", "rpc"]
     automatable: bool
     # Wire contract §2 forward-compatibility placeholder (contracts/agent-
     # internal-contract.md §2): Go already sends a per-provider call budget
@@ -922,7 +886,7 @@ class DeepIdentifyRequest(StrictRequestModel):
     obverse_prompt: BoundedPrompt = ""
     reverse_prompt: BoundedPrompt = ""
     quick_evidence: QuickEvidence | None = None
-    provider_override: list[Literal["numista", "nomisma", "ngc", "ocre", "rpc"]] = Field(
+    provider_override: list[Literal["numista", "ngc", "rpc"]] = Field(
         default_factory=list, max_length=MAX_DEEP_PROVIDER_OVERRIDE_ENTRIES
     )
     provider_catalog: list[DeepProviderCatalogEntry] = Field(

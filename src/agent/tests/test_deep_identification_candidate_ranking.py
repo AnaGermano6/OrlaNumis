@@ -1,19 +1,15 @@
-"""Candidate ranking tests (T121/T122/T123).
+"""Candidate ranking tests (T121/T123).
 
 Covers the shared, deterministic `candidate_ranking.rank_candidates` used by
-Numista/Nomisma (T121, new behavior), and the OCRE legend-token widening
-(T122) that draws scoring-only tokens from the hypothesis when quick
-evidence carries no `label_text`. Also asserts `ocre_scoring.go` is left
-untouched by this diff (ADR 0010, RD-4).
+Numista (T121, new behavior).
 """
 
 import asyncio
-from pathlib import Path
 
 from app.models.hypothesis import CoinHypothesis, HypothesisField
 from app.models.requests import DeepProviderCatalogEntry, QuickEvidence
 from app.teams.deep_identification.candidate_ranking import rank_candidates
-from app.teams.deep_identification.providers import numista, ocre
+from app.teams.deep_identification.providers import numista
 
 
 def _field(value: str) -> HypothesisField:
@@ -108,75 +104,3 @@ def test_ties_break_stably_on_provider_original_order():
     ranked = rank_candidates(candidates, hypothesis, ("title",))
 
     assert ranked == candidates
-
-
-# --- T122: OCRE legend-token widening from the hypothesis ---
-
-
-def test_ocre_legend_tokens_draw_from_hypothesis_when_quick_evidence_absent():
-    tools_calls: list[dict] = []
-
-    class Tools:
-        async def ocre_search(self, **kwargs):
-            tools_calls.append(kwargs)
-            return {"status": "empty", "candidates": []}
-
-    hypothesis = CoinHypothesis(
-        obverseInscription=_field("IMP MAXIMINVS PIVS AVG"),
-        reverseInscription=_field("PAX AVGVSTI"),
-        coin_type=_field("Pax standing left"),
-    )
-    quick_evidence = QuickEvidence(coin_fields={"ruler": "Maximinus I"})  # no label_text
-
-    asyncio.run(ocre.run(_entry("ocre"), Tools(), quick_evidence, notes="", hypothesis=hypothesis))
-
-    assert len(tools_calls) == 1
-    tokens = tools_calls[0]["legend_tokens"]
-    assert tokens  # non-empty — the Maximinus defect this task fixes
-    joined = " ".join(tokens)
-    assert "maximinvs" in joined
-    assert "pax" in joined
-
-
-def test_ocre_legend_tokens_prefer_quick_evidence_label_text_when_present():
-    tools_calls: list[dict] = []
-
-    class Tools:
-        async def ocre_search(self, **kwargs):
-            tools_calls.append(kwargs)
-            return {"status": "empty", "candidates": []}
-
-    hypothesis = CoinHypothesis(reverseInscription=_field("HYPOTHESIS ONLY TOKEN"))
-    quick_evidence = QuickEvidence(label_text="LABEL TEXT WINS", coin_fields={"ruler": "Maximinus I"})
-
-    asyncio.run(ocre.run(_entry("ocre"), Tools(), quick_evidence, notes="", hypothesis=hypothesis))
-
-    tokens = tools_calls[0]["legend_tokens"]
-    joined = " ".join(tokens)
-    assert "label" in joined or "text" in joined
-    assert "hypothesis" not in joined
-
-
-def test_ocre_legend_tokens_respect_the_twelve_token_cap():
-    hypothesis = CoinHypothesis(
-        obverseInscription=_field(" ".join(f"tok{i}" for i in range(10))),
-        reverseInscription=_field(" ".join(f"rev{i}" for i in range(10))),
-    )
-
-    tokens = ocre._legend_tokens(None, hypothesis)
-
-    assert len(tokens) <= 12
-
-
-def test_ocre_scoring_go_is_untouched_by_this_diff():
-    """T122/RD-4/ADR-0010: the scoring math itself must not be modified by
-    this batch. This is a structural guard, not a behavioral one — it
-    confirms the file's ADR-anchored symbols are all still present exactly
-    as documented, i.e. nothing here removed or renamed them.
-    """
-    repo_root = Path(__file__).resolve().parents[3]
-    scoring_path = repo_root / "src" / "api" / "services" / "ocre_scoring.go"
-    assert scoring_path.exists()
-    content = scoring_path.read_text(encoding="utf-8")
-    for symbol in ("ocreLegendMatches", "ocreLegendBonusPer", "ocreLegendBonusMax", "sort.SliceStable"):
-        assert symbol in content

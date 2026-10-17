@@ -111,12 +111,10 @@ test('T124: a partial-success terminal job shows an editable proposal that only 
     source: 'intake',
     report: {
       schemaVersion: 1,
-      narrative: 'Nomisma and Numista agree this is a Trajan denarius; NGC could not be automated.',
+      narrative: 'Numista identifies this as a Trajan denarius; NGC could not be automated.',
       coverage: [
-        { provider: 'nomisma', status: 'contributed' },
         { provider: 'numista', status: 'contributed' },
         { provider: 'ngc', status: 'not_automated', note: 'Link out only' },
-        { provider: 'ocre', status: 'not_automated' },
         { provider: 'rpc', status: 'unavailable' },
       ],
       partialSuccess: true,
@@ -167,7 +165,6 @@ test('T124: a completed terminal job for a saved coin applies proposal edits thr
       schemaVersion: 1,
       narrative: 'All automated providers agree on the attribution for this saved coin.',
       coverage: [
-        { provider: 'nomisma', status: 'contributed' },
         { provider: 'numista', status: 'contributed' },
       ],
       partialSuccess: false,
@@ -198,11 +195,9 @@ test('wishlist review selects scalar, notes, and references without bypassing ma
   coin.isWishlist = true
   coin.notes = 'Manual wishlist note'
   coin.purchasePrice = 275
-  coin.storageLocationId = null
   const manualSnapshot = {
     notes: coin.notes,
     purchasePrice: coin.purchasePrice,
-    storageLocationId: coin.storageLocationId,
     isWishlist: coin.isWishlist,
   }
   const jobId = 6003
@@ -215,7 +210,7 @@ test('wishlist review selects scalar, notes, and references without bypassing ma
     report: {
       schemaVersion: 1,
       narrative: 'A bounded wishlist proposal with additive notes and references.',
-      coverage: [{ provider: 'nomisma', status: 'contributed' }],
+      coverage: [{ provider: 'numista', status: 'contributed' }],
       partialSuccess: false,
       generatedAt: '2030-01-01T00:00:00Z',
     },
@@ -260,7 +255,6 @@ test('wishlist review selects scalar, notes, and references without bypassing ma
   expect({
     notes: coin.notes,
     purchasePrice: coin.purchasePrice,
-    storageLocationId: coin.storageLocationId,
     isWishlist: coin.isWishlist,
   }).toEqual(manualSnapshot)
   expect(state.updatePayloads.filter(entry => entry.id === coin.id)).toHaveLength(0)

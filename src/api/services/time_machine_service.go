@@ -67,7 +67,6 @@ type TimeMachineSnapshot struct {
 	ByEra          []BreakdownEntry `json:"byEra"`
 	TopCoins       []TopCoin        `json:"topCoins"`
 	AcquiredInYear int              `json:"acquiredInYear"`
-	HealthScore    *int             `json:"healthScore"`
 	ValueBasis     ValueBasis       `json:"valueBasis"`
 	// UndatedCoinCount is how many owned coins have no purchase date and so
 	// appear at no point on the timeline. Surfaced rather than hidden: a
@@ -103,15 +102,10 @@ func (s *TimeMachineService) GetSnapshot(userID uint, asOf time.Time) (*TimeMach
 	if err != nil {
 		return nil, err
 	}
-	healthScore, err := s.repo.GetHealthScoreAsOf(userID, endOfDay)
-	if err != nil {
-		return nil, err
-	}
 
 	snapshot := &TimeMachineSnapshot{
 		AsOfDate:         endOfDay.Format(dateLayout),
 		CoinCount:        len(coins),
-		HealthScore:      healthScore,
 		UndatedCoinCount: int(undated),
 		ByCategory:       []BreakdownEntry{},
 		ByMaterial:       []BreakdownEntry{},

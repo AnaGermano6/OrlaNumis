@@ -123,7 +123,6 @@ class GetCoinResult(StrictToolModel):
 class CollectionSummary(StrictToolModel):
     totalCoins: int = Field(ge=0)
     totalWishlist: int = Field(ge=0)
-    totalSold: int = Field(ge=0)
     # Totals are in `currency`, the collection currency; the names predate euro collections.
     totalCurrentUsd: float
     totalPurchaseUsd: float

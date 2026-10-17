@@ -16,9 +16,8 @@ const (
 	GreekTetradrachmValued    GoldenCoinFixtureName = "greek-tetradrachm-valued"
 	ByzantineSolidusSetMember GoldenCoinFixtureName = "byzantine-solidus-set-member"
 	WishlistAureusTarget      GoldenCoinFixtureName = "wishlist-aureus-target"
-	SoldSestertiusArchive     GoldenCoinFixtureName = "sold-sestertius-archive"
-	PrivateProvincialBronze   GoldenCoinFixtureName = "private-provincial-bronze"
-	TaggedFollisStorage       GoldenCoinFixtureName = "tagged-follis-storage"
+	LegacyEraProvincialBronze GoldenCoinFixtureName = "legacy-era-provincial-bronze"
+	DiocletianFollis          GoldenCoinFixtureName = "diocletian-follis"
 	ImageHeavyDrachm          GoldenCoinFixtureName = "image-heavy-drachm"
 	ReferenceRichDenarius     GoldenCoinFixtureName = "reference-rich-denarius"
 )
@@ -28,9 +27,8 @@ var goldenCoinFixtureNames = []GoldenCoinFixtureName{
 	GreekTetradrachmValued,
 	ByzantineSolidusSetMember,
 	WishlistAureusTarget,
-	SoldSestertiusArchive,
-	PrivateProvincialBronze,
-	TaggedFollisStorage,
+	LegacyEraProvincialBronze,
+	DiocletianFollis,
 	ImageHeavyDrachm,
 	ReferenceRichDenarius,
 }
@@ -47,11 +45,7 @@ const (
 	TraitGreek           GoldenCoinTrait = "greek"
 	TraitByzantine       GoldenCoinTrait = "byzantine"
 	TraitWishlist        GoldenCoinTrait = "wishlist"
-	TraitSold            GoldenCoinTrait = "sold"
-	TraitPrivate         GoldenCoinTrait = "private"
-	TraitTagged          GoldenCoinTrait = "tagged"
 	TraitSetMember       GoldenCoinTrait = "set-member"
-	TraitStorageLocation GoldenCoinTrait = "storage-location"
 	TraitImageHeavy      GoldenCoinTrait = "image-heavy"
 	TraitLegacyCustomEra GoldenCoinTrait = "legacy-custom-era"
 	TraitValued          GoldenCoinTrait = "valued"
@@ -72,19 +66,13 @@ type CoinFixture struct {
 type CoinOption func(*models.Coin)
 
 type PersistedGoldenCollection struct {
-	Coins            []models.Coin
-	StorageLocations map[string]models.StorageLocation
-	Tags             map[string]models.Tag
-	Sets             map[string]models.CoinSet
+	Coins []models.Coin
+	Sets  map[string]models.CoinSet
 }
 
 const (
-	fixtureTrayAName        = "Cabinet Tray A"
-	fixtureVaultBoxName     = "Vault Box 2"
-	fixturePhotographedName = "Photographed"
-	fixtureNeedsResearch    = "Needs Research"
-	fixtureTwelveCaesars    = "Twelve Caesars"
-	fixtureByzantineGold    = "Byzantine Gold"
+	fixtureTwelveCaesars = "Twelve Caesars"
+	fixtureByzantineGold = "Byzantine Gold"
 )
 
 var fixtureTimestamp = time.Date(2026, 1, 15, 12, 0, 0, 0, time.UTC)
@@ -128,62 +116,8 @@ func BuildGoldenCoinFixtures(userID uint) []CoinFixture {
 	return fixtures
 }
 
-func BuildRomanDenariusCore(userID uint, opts ...CoinOption) models.Coin {
-	return MustBuildGoldenCoinFixture(RomanDenariusCore, userID, opts...).Coin
-}
-
-func BuildGreekTetradrachmValued(userID uint, opts ...CoinOption) models.Coin {
-	return MustBuildGoldenCoinFixture(GreekTetradrachmValued, userID, opts...).Coin
-}
-
-func BuildByzantineSolidusSetMember(userID uint, opts ...CoinOption) models.Coin {
-	return MustBuildGoldenCoinFixture(ByzantineSolidusSetMember, userID, opts...).Coin
-}
-
-func BuildWishlistAureusTarget(userID uint, opts ...CoinOption) models.Coin {
-	return MustBuildGoldenCoinFixture(WishlistAureusTarget, userID, opts...).Coin
-}
-
-func BuildSoldSestertiusArchive(userID uint, opts ...CoinOption) models.Coin {
-	return MustBuildGoldenCoinFixture(SoldSestertiusArchive, userID, opts...).Coin
-}
-
-func BuildPrivateProvincialBronze(userID uint, opts ...CoinOption) models.Coin {
-	return MustBuildGoldenCoinFixture(PrivateProvincialBronze, userID, opts...).Coin
-}
-
-func BuildTaggedFollisStorage(userID uint, opts ...CoinOption) models.Coin {
-	return MustBuildGoldenCoinFixture(TaggedFollisStorage, userID, opts...).Coin
-}
-
-func BuildImageHeavyDrachm(userID uint, opts ...CoinOption) models.Coin {
-	return MustBuildGoldenCoinFixture(ImageHeavyDrachm, userID, opts...).Coin
-}
-
-func BuildReferenceRichDenarius(userID uint, opts ...CoinOption) models.Coin {
-	return MustBuildGoldenCoinFixture(ReferenceRichDenarius, userID, opts...).Coin
-}
-
-func WithCoinMutation(mutator func(*models.Coin)) CoinOption {
-	return func(coin *models.Coin) {
-		if mutator != nil {
-			mutator(coin)
-		}
-	}
-}
-
-func BuildTestStorageLocations(userID uint) []models.StorageLocation {
-	return []models.StorageLocation{
-		{UserID: userID, Name: fixtureTrayAName, SortOrder: 1, CreatedAt: fixtureTimestamp, UpdatedAt: fixtureTimestamp},
-		{UserID: userID, Name: fixtureVaultBoxName, SortOrder: 2, CreatedAt: fixtureTimestamp, UpdatedAt: fixtureTimestamp},
-	}
-}
-
-func BuildTestTags(userID uint) []models.Tag {
-	return []models.Tag{
-		{UserID: userID, Name: fixturePhotographedName, Color: "#c9a84c"},
-		{UserID: userID, Name: fixtureNeedsResearch, Color: "#4682b4"},
-	}
+func BuildDiocletianFollis(userID uint, opts ...CoinOption) models.Coin {
+	return MustBuildGoldenCoinFixture(DiocletianFollis, userID, opts...).Coin
 }
 
 func BuildTestCoinSets(userID uint) []models.CoinSet {
@@ -196,32 +130,18 @@ func BuildTestCoinSets(userID uint) []models.CoinSet {
 
 // PersistGoldenCollection seeds the golden fixtures into a caller-managed test DB.
 // The DB must already be migrated for User, Coin, CoinImage, CoinReference,
-// StorageLocation, Tag, CoinTag, CoinSet, and CoinSetMembership models.
+// CoinSet, and CoinSetMembership models.
 func PersistGoldenCollection(db *gorm.DB, userID uint) (*PersistedGoldenCollection, error) {
 	if db == nil {
 		return nil, fmt.Errorf("db is nil")
 	}
 
 	persisted := &PersistedGoldenCollection{
-		Coins:            make([]models.Coin, 0, len(goldenCoinFixtureNames)),
-		StorageLocations: map[string]models.StorageLocation{},
-		Tags:             map[string]models.Tag{},
-		Sets:             map[string]models.CoinSet{},
+		Coins: make([]models.Coin, 0, len(goldenCoinFixtureNames)),
+		Sets:  map[string]models.CoinSet{},
 	}
 
 	err := db.Transaction(func(tx *gorm.DB) error {
-		for _, location := range BuildTestStorageLocations(userID) {
-			if err := tx.Create(&location).Error; err != nil {
-				return err
-			}
-			persisted.StorageLocations[location.Name] = location
-		}
-		for _, tag := range BuildTestTags(userID) {
-			if err := tx.Create(&tag).Error; err != nil {
-				return err
-			}
-			persisted.Tags[tag.Name] = tag
-		}
 		for _, set := range BuildTestCoinSets(userID) {
 			if err := tx.Create(&set).Error; err != nil {
 				return err
@@ -233,22 +153,12 @@ func PersistGoldenCollection(db *gorm.DB, userID uint) (*PersistedGoldenCollecti
 			coin := cloneCoin(fixture.Coin)
 			images := cloneImages(coin.Images)
 			references := cloneReferences(coin.References)
-			tags := cloneTags(coin.Tags)
 			sets := cloneSets(coin.Sets)
 
 			coin.ID = 0
 			coin.Images = nil
 			coin.References = nil
-			coin.Tags = nil
 			coin.Sets = nil
-			if coin.StorageLocation != nil {
-				location, ok := persisted.StorageLocations[coin.StorageLocation.Name]
-				if !ok {
-					return fmt.Errorf("fixture %s references unknown storage location %q", fixture.Name, coin.StorageLocation.Name)
-				}
-				coin.StorageLocationID = &location.ID
-				coin.StorageLocation = nil
-			}
 
 			if err := tx.Create(&coin).Error; err != nil {
 				return err
@@ -268,15 +178,6 @@ func PersistGoldenCollection(db *gorm.DB, userID uint) (*PersistedGoldenCollecti
 					return err
 				}
 			}
-			for _, tag := range tags {
-				persistedTag, ok := persisted.Tags[tag.Name]
-				if !ok {
-					return fmt.Errorf("fixture %s references unknown tag %q", fixture.Name, tag.Name)
-				}
-				if err := tx.Create(&models.CoinTag{CoinID: coin.ID, TagID: persistedTag.ID}).Error; err != nil {
-					return err
-				}
-			}
 			for _, set := range sets {
 				persistedSet, ok := persisted.Sets[set.Name]
 				if !ok {
@@ -289,7 +190,7 @@ func PersistGoldenCollection(db *gorm.DB, userID uint) (*PersistedGoldenCollecti
 			}
 
 			var loaded models.Coin
-			if err := tx.Preload("Images").Preload("References").Preload("Tags").Preload("Sets").Preload("StorageLocation").First(&loaded, coin.ID).Error; err != nil {
+			if err := tx.Preload("Images").Preload("References").Preload("Sets").First(&loaded, coin.ID).Error; err != nil {
 				return err
 			}
 			persisted.Coins = append(persisted.Coins, loaded)
@@ -307,9 +208,8 @@ var fixtureTraits = map[GoldenCoinFixtureName][]GoldenCoinTrait{
 	GreekTetradrachmValued:    {TraitGreek, TraitValued},
 	ByzantineSolidusSetMember: {TraitByzantine, TraitSetMember},
 	WishlistAureusTarget:      {TraitRoman, TraitWishlist, TraitValued},
-	SoldSestertiusArchive:     {TraitRoman, TraitSold},
-	PrivateProvincialBronze:   {TraitRoman, TraitPrivate, TraitLegacyCustomEra},
-	TaggedFollisStorage:       {TraitRoman, TraitTagged, TraitStorageLocation},
+	LegacyEraProvincialBronze: {TraitRoman, TraitLegacyCustomEra},
+	DiocletianFollis:          {TraitRoman},
 	ImageHeavyDrachm:          {TraitGreek, TraitImageHeavy},
 	ReferenceRichDenarius:     {TraitRoman, TraitReferenceRich, TraitSetMember},
 }
@@ -319,9 +219,8 @@ var fixtureBuilders = map[GoldenCoinFixtureName]func(uint) models.Coin{
 	GreekTetradrachmValued:    greekTetradrachmValued,
 	ByzantineSolidusSetMember: byzantineSolidusSetMember,
 	WishlistAureusTarget:      wishlistAureusTarget,
-	SoldSestertiusArchive:     soldSestertiusArchive,
-	PrivateProvincialBronze:   privateProvincialBronze,
-	TaggedFollisStorage:       taggedFollisStorage,
+	LegacyEraProvincialBronze: legacyEraProvincialBronze,
+	DiocletianFollis:          diocletianFollis,
 	ImageHeavyDrachm:          imageHeavyDrachm,
 	ReferenceRichDenarius:     referenceRichDenarius,
 }
@@ -329,7 +228,7 @@ var fixtureBuilders = map[GoldenCoinFixtureName]func(uint) models.Coin{
 func baseCoin(userID uint, name string) models.Coin {
 	return models.Coin{
 		Name:               name,
-		Category:           models.CategoryRoman,
+		Category:           models.CategoryModern,
 		Denomination:       "Denarius",
 		Ruler:              "Trajan",
 		Era:                models.EraAncient,
@@ -368,7 +267,7 @@ func romanDenariusCore(userID uint) models.Coin {
 
 func greekTetradrachmValued(userID uint) models.Coin {
 	coin := baseCoin(userID, "Athens Owl Tetradrachm Valued")
-	coin.Category = models.CategoryGreek
+	coin.Category = models.CategoryOther
 	coin.Denomination = "Tetradrachm"
 	coin.Ruler = "Athens"
 	coin.Mint = "Athens"
@@ -387,7 +286,7 @@ func greekTetradrachmValued(userID uint) models.Coin {
 
 func byzantineSolidusSetMember(userID uint) models.Coin {
 	coin := baseCoin(userID, "Justinian I Solidus Set Member")
-	coin.Category = models.CategoryByzantine
+	coin.Category = models.CategoryOther
 	coin.Denomination = "Solidus"
 	coin.Ruler = "Justinian I"
 	coin.Mint = "Constantinople"
@@ -416,51 +315,29 @@ func wishlistAureusTarget(userID uint) models.Coin {
 	return coin
 }
 
-func soldSestertiusArchive(userID uint) models.Coin {
-	coin := baseCoin(userID, "Hadrian Sestertius Archive")
-	coin.Denomination = "Sestertius"
-	coin.Ruler = "Hadrian"
-	coin.Material = models.MaterialBronze
-	coin.WeightGrams = ptrFloat(25.1)
-	coin.DiameterMm = ptrFloat(32)
-	coin.PurchasePrice = ptrFloat(240)
-	coin.CurrentValue = ptrFloat(300)
-	coin.IsSold = true
-	coin.SoldPrice = ptrFloat(310)
-	coin.SoldDate = ptrTime(time.Date(2025, 4, 20, 0, 0, 0, 0, time.UTC))
-	coin.SoldTo = "Archive Buyer"
-	return coin
-}
-
-func privateProvincialBronze(userID uint) models.Coin {
-	coin := baseCoin(userID, "Alexandria Provincial Bronze Private")
+func legacyEraProvincialBronze(userID uint) models.Coin {
+	coin := baseCoin(userID, "Alexandria Provincial Bronze")
 	coin.Denomination = "Drachm"
 	coin.Ruler = "Antoninus Pius"
 	coin.Era = models.Era("Roman Provincial Year 12")
 	coin.Mint = "Alexandria"
 	coin.Material = models.MaterialBronze
-	coin.IsPrivate = true
 	coin.ReferenceText = "Legacy handwritten tray note"
-	coin.Notes = "Private coin with a custom legacy era value."
+	coin.Notes = "Coin with a custom legacy era value."
 	return coin
 }
 
-func taggedFollisStorage(userID uint) models.Coin {
-	coin := baseCoin(userID, "Diocletian Follis Tagged Storage")
+func diocletianFollis(userID uint) models.Coin {
+	coin := baseCoin(userID, "Diocletian Follis")
 	coin.Denomination = "Follis"
 	coin.Ruler = "Diocletian"
 	coin.Material = models.MaterialBronze
-	coin.StorageLocation = &models.StorageLocation{UserID: userID, Name: fixtureTrayAName, SortOrder: 1}
-	coin.Tags = []models.Tag{
-		{UserID: userID, Name: fixturePhotographedName, Color: "#c9a84c"},
-		{UserID: userID, Name: fixtureNeedsResearch, Color: "#4682b4"},
-	}
 	return coin
 }
 
 func imageHeavyDrachm(userID uint) models.Coin {
 	coin := baseCoin(userID, "Syracuse Drachm Image Heavy")
-	coin.Category = models.CategoryGreek
+	coin.Category = models.CategoryOther
 	coin.Denomination = "Drachm"
 	coin.Ruler = "Syracuse"
 	coin.Mint = "Syracuse"
@@ -518,17 +395,9 @@ func cloneCoin(coin models.Coin) models.Coin {
 	coin.CurrentValue = cloneFloatPtr(coin.CurrentValue)
 	coin.CurrentValueUpdatedAt = cloneTimePtr(coin.CurrentValueUpdatedAt)
 	coin.PurchaseDate = cloneTimePtr(coin.PurchaseDate)
-	coin.SoldPrice = cloneFloatPtr(coin.SoldPrice)
-	coin.SoldDate = cloneTimePtr(coin.SoldDate)
 	coin.ListingCheckedAt = cloneTimePtr(coin.ListingCheckedAt)
-	coin.StorageLocationID = cloneUintPtr(coin.StorageLocationID)
-	if coin.StorageLocation != nil {
-		location := *coin.StorageLocation
-		coin.StorageLocation = &location
-	}
 	coin.Images = cloneImages(coin.Images)
 	coin.References = cloneReferences(coin.References)
-	coin.Tags = cloneTags(coin.Tags)
 	coin.Sets = cloneSets(coin.Sets)
 	return coin
 }
@@ -548,15 +417,6 @@ func cloneReferences(refs []models.CoinReference) []models.CoinReference {
 	}
 	cloned := make([]models.CoinReference, len(refs))
 	copy(cloned, refs)
-	return cloned
-}
-
-func cloneTags(tags []models.Tag) []models.Tag {
-	if tags == nil {
-		return nil
-	}
-	cloned := make([]models.Tag, len(tags))
-	copy(cloned, tags)
 	return cloned
 }
 
@@ -588,14 +448,6 @@ func cloneTraits(traits []GoldenCoinTrait) []GoldenCoinTrait {
 }
 
 func cloneFloatPtr(v *float64) *float64 {
-	if v == nil {
-		return nil
-	}
-	cloned := *v
-	return &cloned
-}
-
-func cloneUintPtr(v *uint) *uint {
 	if v == nil {
 		return nil
 	}

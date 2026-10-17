@@ -53,7 +53,7 @@ export const importCoinImage = (
   body: { url: string; imageType: 'obverse' | 'reverse'; isPrimary: boolean; credit?: string },
 ) => api.post<CoinImage>(`/coins/${coinId}/images/import`, body)
 
-/** How many of the user's coins (not banknotes or sold) have no photo at all. */
+/** How many of the user's coins (not banknotes) have no photo at all. */
 export const getCoinsWithoutPhotos = () => api.get<{ count: number }>('/coins/official-photos/missing')
 
 /** What a batch of official photos did, and where the next one starts. */

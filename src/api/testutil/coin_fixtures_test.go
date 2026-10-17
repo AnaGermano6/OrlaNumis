@@ -20,11 +20,7 @@ func TestGoldenCoinFixtureCatalogCoversRequiredTraits(t *testing.T) {
 		TraitGreek,
 		TraitByzantine,
 		TraitWishlist,
-		TraitSold,
-		TraitPrivate,
-		TraitTagged,
 		TraitSetMember,
-		TraitStorageLocation,
 		TraitImageHeavy,
 		TraitValued,
 		TraitReferenceRich,
@@ -44,22 +40,14 @@ func TestGoldenCoinFixtureCatalogCoversRequiredTraits(t *testing.T) {
 }
 
 func TestBuildGoldenCoinFixtureReturnsIndependentClones(t *testing.T) {
-	first := BuildTaggedFollisStorage(42)
-	second := BuildTaggedFollisStorage(42)
+	first := BuildDiocletianFollis(42)
+	second := BuildDiocletianFollis(42)
 
 	first.Name = "mutated"
-	first.Tags[0].Name = "mutated tag"
-	first.StorageLocation.Name = "mutated storage"
 	*first.WeightGrams = 99
 
 	if second.Name == "mutated" {
 		t.Fatal("coin name mutation leaked between fixture builds")
-	}
-	if second.Tags[0].Name == "mutated tag" {
-		t.Fatal("tag mutation leaked between fixture builds")
-	}
-	if second.StorageLocation.Name == "mutated storage" {
-		t.Fatal("storage mutation leaked between fixture builds")
 	}
 	if *second.WeightGrams == 99 {
 		t.Fatal("pointer field mutation leaked between fixture builds")
@@ -72,8 +60,8 @@ func TestPersistGoldenCollectionSeedsAssociations(t *testing.T) {
 		t.Fatalf("failed to open test db: %v", err)
 	}
 	if err := db.AutoMigrate(
-		&models.User{}, &models.StorageLocation{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{},
-		&models.Tag{}, &models.CoinTag{}, &models.CoinSet{}, &models.CoinSetMembership{},
+		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{},
+		&models.CoinSet{}, &models.CoinSetMembership{},
 	); err != nil {
 		t.Fatalf("failed to migrate test db: %v", err)
 	}
@@ -90,19 +78,14 @@ func TestPersistGoldenCollectionSeedsAssociations(t *testing.T) {
 		t.Fatalf("expected %d persisted coins, got %d", len(GoldenCoinFixtureNames()), len(collection.Coins))
 	}
 
-	var tagged, imageHeavy, referenceRich models.Coin
+	var imageHeavy, referenceRich models.Coin
 	for _, coin := range collection.Coins {
 		switch coin.Name {
-		case "Diocletian Follis Tagged Storage":
-			tagged = coin
 		case "Syracuse Drachm Image Heavy":
 			imageHeavy = coin
 		case "Vespasian Denarius Reference Rich":
 			referenceRich = coin
 		}
-	}
-	if tagged.ID == 0 || tagged.StorageLocation == nil || len(tagged.Tags) != 2 {
-		t.Fatalf("expected tagged storage fixture to preload storage and two tags, got id=%d storage=%v tags=%d", tagged.ID, tagged.StorageLocation, len(tagged.Tags))
 	}
 	if len(imageHeavy.Images) != 4 {
 		t.Fatalf("expected image-heavy fixture to persist four images, got %d", len(imageHeavy.Images))

@@ -78,7 +78,7 @@ describe('S1: SettingsAppearanceSection renders Swipe Navigation row', () => {
       data: {
         pwaSwipeNavEnabled: true,
         id: 1, username: 'user', role: 'user', email: '', avatarPath: '',
-        isPublic: false, bio: '', zipCode: '',
+        bio: '', zipCode: '',
         numisBidsUsername: '', numisBidsConfigured: false,
         cngUsername: '', cngConfigured: false,
         parcelAppConfigured: false, pushoverEnabled: false,
@@ -107,7 +107,7 @@ describe('S3: toggle issues exactly { pwaSwipeNavEnabled } to PUT /user/profile'
       data: {
         pwaSwipeNavEnabled: true,
         id: 1, username: 'user', role: 'user', email: '', avatarPath: '',
-        isPublic: false, bio: '', zipCode: '',
+        bio: '', zipCode: '',
         numisBidsUsername: '', numisBidsConfigured: false,
         cngUsername: '', cngConfigured: false,
         parcelAppConfigured: false, pushoverEnabled: false,
@@ -131,7 +131,7 @@ describe('S3: toggle issues exactly { pwaSwipeNavEnabled } to PUT /user/profile'
       data: {
         pwaSwipeNavEnabled: false,
         id: 1, username: 'user', role: 'user', email: '', avatarPath: '',
-        isPublic: false, bio: '', zipCode: '',
+        bio: '', zipCode: '',
         numisBidsUsername: '', numisBidsConfigured: false,
         cngUsername: '', cngConfigured: false,
         parcelAppConfigured: false, pushoverEnabled: false,
@@ -153,7 +153,7 @@ describe('S3: toggle issues exactly { pwaSwipeNavEnabled } to PUT /user/profile'
       data: {
         pwaSwipeNavEnabled: true,
         id: 1, username: 'user', role: 'user', email: '', avatarPath: '',
-        isPublic: false, bio: '', zipCode: '',
+        bio: '', zipCode: '',
         numisBidsUsername: '', numisBidsConfigured: false,
         cngUsername: '', cngConfigured: false,
         parcelAppConfigured: false, pushoverEnabled: false,

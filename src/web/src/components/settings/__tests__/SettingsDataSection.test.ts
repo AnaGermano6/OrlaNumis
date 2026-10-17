@@ -207,14 +207,15 @@ describe('SettingsDataSection — Custom Mint Locations', () => {
   })
 })
 
-describe('SettingsDataSection — storage locations', () => {
-  it('no longer offers storage locations or coin trays', async () => {
+describe('SettingsDataSection — removed sections', () => {
+  it('no longer offers storage locations, coin trays or tags', async () => {
     mockGetMintLocations.mockResolvedValue(mintResponse([]))
     const wrapper = mount(SettingsDataSection)
     await flushPromises()
 
     expect(wrapper.find('section[aria-labelledby="storage-locations-heading"]').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('Coin Tray')
-    expect(wrapper.find('section[aria-labelledby="tags-heading"]').exists()).toBe(true)
+    expect(wrapper.find('section[aria-labelledby="tags-heading"]').exists()).toBe(false)
+    expect(wrapper.find('section[aria-labelledby="custom-mint-locations-heading"]').exists()).toBe(true)
   })
 })

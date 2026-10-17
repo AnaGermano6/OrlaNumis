@@ -28,8 +28,8 @@ class ProviderToolError(Exception):
 
 
 class ProviderToolsClient:
-    """Authenticated client for the Go `/api/internal/tools/{numista_*,
-    nomisma_search}` endpoints. One instance is built per job run from the
+    """Authenticated client for the Go `/api/internal/tools/numista_*`
+    endpoints. One instance is built per job run from the
     request's `tools_base_url` + `internal_token` (job-scoped token,
     §1/§7) — never a userID, never a database handle.
     """
@@ -63,38 +63,3 @@ class ProviderToolsClient:
     async def numista_search(self, query: str, limit: int = 5) -> dict:
         """POST /api/internal/tools/numista_search — {status, candidates, attribution}."""
         return await self._post("numista_search", {"query": query, "limit": limit})
-
-    async def nomisma_search(self, query: str, limit: int = 5) -> dict:
-        """POST /api/internal/tools/nomisma_search — {status, candidates, attribution}."""
-        return await self._post("nomisma_search", {"query": query, "limit": limit})
-
-    async def ocre_search(
-        self,
-        *,
-        ruler: str = "",
-        denomination: str = "",
-        mint: str = "",
-        material: str = "",
-        legend_tokens: list[str] | None = None,
-        ocre_id: str = "",
-        limit: int = 5,
-    ) -> dict:
-        """POST /api/internal/tools/ocre_search — {status, candidates, attribution}.
-
-        Feature 345: the OCRE (Nomisma SPARQL) coin-type provider. All query
-        signals are normalized/re-validated Go-side into Nomisma id slugs
-        before any SPARQL is emitted; free text never reaches the query.
-        Raises ProviderToolError on transport failure (never propagates).
-        """
-        return await self._post(
-            "ocre_search",
-            {
-                "ruler": ruler,
-                "denomination": denomination,
-                "mint": mint,
-                "material": material,
-                "legend_tokens": legend_tokens or [],
-                "ocre_id": ocre_id,
-                "limit": limit,
-            },
-        )

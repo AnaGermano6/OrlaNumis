@@ -28,7 +28,6 @@ var routeSourceFiles = []string{
 	"routes_public.go",
 	"routes_protected.go",
 	"routes_admin.go",
-	"routes_tools.go",
 	"routes_internal.go",
 }
 

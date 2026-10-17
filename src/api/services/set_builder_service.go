@@ -27,13 +27,7 @@ const (
 	setBuilderRunTimeout    = 10 * time.Minute
 )
 
-const (
-	NotificationTypeAgenticSetProposalReady   = "agentic_set_proposal_ready"
-	NotificationTypeAgenticSetCreated         = "agentic_set_created"
-	NotificationTypeAgenticSetCreationFailed  = "agentic_set_creation_failed"
-	agenticSetProposalReviewURLFormat         = "/sets/proposals/%d"
-	agenticSetProposalDefaultVerificationNote = "Pending human review"
-)
+const agenticSetProposalDefaultVerificationNote = "Pending human review"
 
 var (
 	ErrSetBuilderPromptRequired       = errors.New("set builder prompt is required")
@@ -58,7 +52,6 @@ type SetBuilderAgent interface {
 // SetBuilderService coordinates Agentic set proposal lifecycle outside of AI inference.
 type SetBuilderService struct {
 	repo        *repository.SetBuilderRepository
-	notifRepo   *repository.NotificationRepository
 	agent       SetBuilderAgent
 	settingsSvc *SettingsService
 	agentRepo   *repository.AgentRepository
@@ -73,16 +66,15 @@ type SetBuilderService struct {
 }
 
 // NewSetBuilderService creates a SetBuilderService.
-func NewSetBuilderService(repo *repository.SetBuilderRepository, notifRepo *repository.NotificationRepository) *SetBuilderService {
+func NewSetBuilderService(repo *repository.SetBuilderRepository) *SetBuilderService {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &SetBuilderService{
-		repo:      repo,
-		notifRepo: notifRepo,
-		wake:      make(chan struct{}, 1),
-		ctx:       ctx,
-		cancel:    cancel,
-		done:      make(chan struct{}),
-		now:       time.Now,
+		repo:   repo,
+		wake:   make(chan struct{}, 1),
+		ctx:    ctx,
+		cancel: cancel,
+		done:   make(chan struct{}),
+		now:    time.Now,
 	}
 }
 
@@ -257,7 +249,6 @@ func (s *SetBuilderService) processRun(runID uint) {
 			s.logError("Failed to persist set builder run %d failure: %v", run.ID, failErr)
 			return
 		}
-		s.notifyRunFailed(run, err.Error())
 	}
 }
 
@@ -407,7 +398,7 @@ func (s *SetBuilderService) FindPendingProposalByPrompt(userID uint, prompt stri
 	return s.repo.FindPendingProposalByIdempotencyKey(userID, setBuilderPromptKey(normalized), s.now())
 }
 
-// CreateProposalFromWorkflow persists a completed workflow proposal and notifies the user for review.
+// CreateProposalFromWorkflow persists a completed workflow proposal for the user to review.
 func (s *SetBuilderService) CreateProposalFromWorkflow(userID, runID uint, draft SetProposalDraft) (*models.SetProposal, error) {
 	run, err := s.repo.GetRunForUser(runID, userID)
 	if err != nil {
@@ -423,14 +414,7 @@ func (s *SetBuilderService) CreateProposalFromWorkflow(userID, runID uint, draft
 	if err := s.repo.CreateProposalWithSlots(proposal, slots); err != nil {
 		return nil, err
 	}
-	if err := s.notifyProposalReady(proposal); err != nil {
-		return nil, err
-	}
 	return proposal, nil
-}
-
-func (s *SetBuilderService) ListProposals(userID uint, limit int) ([]models.SetProposal, error) {
-	return s.repo.ListProposals(userID, limit)
 }
 
 func (s *SetBuilderService) GetProposal(userID, proposalID uint) (*models.SetProposal, error) {
@@ -553,7 +537,6 @@ func (s *SetBuilderService) ApproveProposal(userID, proposalID uint) (*models.Co
 	if err != nil {
 		return nil, err
 	}
-	s.notifySetCreated(userID, proposalID, created)
 	return created, nil
 }
 
@@ -662,52 +645,6 @@ func proposalSlotsToDrafts(slots []models.ProposalSlot) []SetProposalSlotDraft {
 		})
 	}
 	return drafts
-}
-
-func (s *SetBuilderService) notifyProposalReady(proposal *models.SetProposal) error {
-	if s.notifRepo == nil {
-		return nil
-	}
-	return s.notifRepo.Create(&models.Notification{
-		UserID:       proposal.UserID,
-		Type:         NotificationTypeAgenticSetProposalReady,
-		Title:        "Agentic set ready for review",
-		Message:      fmt.Sprintf("%s is ready for review.", proposal.ProposedName),
-		ReferenceID:  proposal.ID,
-		ReferenceURL: fmt.Sprintf(agenticSetProposalReviewURLFormat, proposal.ID),
-	})
-}
-
-func (s *SetBuilderService) notifyRunFailed(run *models.SetBuilderRun, reason string) {
-	if s.notifRepo == nil {
-		return
-	}
-	message := "Agentic set proposal generation failed. Please check AI provider configuration and try again."
-	if reason != "" {
-		message = fmt.Sprintf("Agentic set proposal generation failed for %q: %s", truncateSetBuilderMessage(run.Prompt, 90), userFacingSetBuilderFailure(reason))
-	}
-	_ = s.notifRepo.Create(&models.Notification{
-		UserID:       run.UserID,
-		Type:         "agentic_set_proposal_failed",
-		Title:        "Agentic set proposal failed",
-		Message:      message,
-		ReferenceID:  run.ID,
-		ReferenceURL: "/sets",
-	})
-}
-
-func (s *SetBuilderService) notifySetCreated(userID, proposalID uint, set *models.CoinSet) {
-	if s.notifRepo == nil || set == nil {
-		return
-	}
-	_ = s.notifRepo.Create(&models.Notification{
-		UserID:       userID,
-		Type:         NotificationTypeAgenticSetCreated,
-		Title:        "Agentic set created",
-		Message:      fmt.Sprintf("%s has been added to Sets.", set.Name),
-		ReferenceID:  proposalID,
-		ReferenceURL: fmt.Sprintf("/sets/%d", set.ID),
-	})
 }
 
 func (s *SetBuilderService) logError(format string, args ...interface{}) {

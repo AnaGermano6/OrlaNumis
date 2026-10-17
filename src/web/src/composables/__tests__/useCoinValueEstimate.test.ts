@@ -12,15 +12,10 @@ vi.mock('@/api/client', () => ({
 }))
 
 const showAlert = vi.fn()
-const refreshNotifications = vi.fn()
 const showToast = vi.fn()
 
 vi.mock('@/composables/useDialog', () => ({
   useDialog: () => ({ showAlert }),
-}))
-
-vi.mock('@/composables/useNotifications', () => ({
-  useNotifications: () => ({ refresh: refreshNotifications }),
 }))
 
 vi.mock('@/composables/useToast', () => ({

@@ -23,7 +23,7 @@ func setupTimeMachine(t *testing.T) (*TimeMachineService, *gorm.DB) {
 		t.Fatalf("open db: %v", err)
 	}
 	if err := db.AutoMigrate(
-		&models.Coin{}, &models.CoinValueHistory{}, &models.CollectionHealthSnapshot{},
+		&models.Coin{}, &models.CoinValueHistory{},
 	); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
@@ -38,12 +38,10 @@ func TestTimeMachine_OwnershipWindow(t *testing.T) {
 	svc, db := setupTimeMachine(t)
 
 	purchased := day(2024, time.March, 10)
-	soldOn := day(2025, time.January, 5)
 	laterPurchase := day(2026, time.February, 1)
 
 	coins := []models.Coin{
 		{Name: "Held throughout", UserID: 1, PurchasePrice: money(100), PurchaseDate: &purchased},
-		{Name: "Sold in 2025", UserID: 1, PurchasePrice: money(200), PurchaseDate: &purchased, IsSold: true, SoldDate: &soldOn},
 		{Name: "Bought in 2026", UserID: 1, PurchasePrice: money(300), PurchaseDate: &laterPurchase},
 		{Name: "Wishlist only", UserID: 1, PurchasePrice: money(400), PurchaseDate: &purchased, IsWishlist: true},
 	}
@@ -51,28 +49,19 @@ func TestTimeMachine_OwnershipWindow(t *testing.T) {
 		t.Fatalf("create coins: %v", err)
 	}
 
-	// Mid-2024: only the first two exist, neither sold yet.
+	// Mid-2024: only the first exists (the wishlist coin is not owned).
 	snapshot, err := svc.GetSnapshot(1, day(2024, time.June, 1))
 	if err != nil {
 		t.Fatalf("GetSnapshot: %v", err)
 	}
-	if snapshot.CoinCount != 2 {
-		t.Fatalf("mid-2024 coinCount = %d, want 2", snapshot.CoinCount)
-	}
-	if snapshot.TotalValue != 300 {
-		t.Fatalf("mid-2024 totalValue = %v, want 300", snapshot.TotalValue)
-	}
-
-	// Mid-2025: the sold coin has dropped out; the 2026 purchase is not yet made.
-	snapshot, err = svc.GetSnapshot(1, day(2025, time.June, 1))
-	if err != nil {
-		t.Fatalf("GetSnapshot: %v", err)
-	}
 	if snapshot.CoinCount != 1 {
-		t.Fatalf("mid-2025 coinCount = %d, want 1 (sold coin should be gone)", snapshot.CoinCount)
+		t.Fatalf("mid-2024 coinCount = %d, want 1", snapshot.CoinCount)
+	}
+	if snapshot.TotalValue != 100 {
+		t.Fatalf("mid-2024 totalValue = %v, want 100", snapshot.TotalValue)
 	}
 
-	// Today: the 2026 purchase is included; the sold coin still is not.
+	// Today: the 2026 purchase is included.
 	snapshot, err = svc.GetSnapshot(1, day(2026, time.August, 20))
 	if err != nil {
 		t.Fatalf("GetSnapshot: %v", err)
@@ -234,9 +223,9 @@ func TestTimeMachine_BreakdownsAndGain(t *testing.T) {
 
 	purchased := day(2024, time.March, 1)
 	coins := []models.Coin{
-		{Name: "A", UserID: 1, Category: models.CategoryRoman, Material: models.MaterialSilver, Era: models.EraAncient, PurchasePrice: money(100), PurchaseDate: &purchased},
-		{Name: "B", UserID: 1, Category: models.CategoryRoman, Material: models.MaterialGold, Era: models.EraAncient, PurchasePrice: money(200), PurchaseDate: &purchased},
-		{Name: "C", UserID: 1, Category: models.CategoryGreek, Material: models.MaterialSilver, Era: models.EraAncient, PurchasePrice: money(50), PurchaseDate: &purchased},
+		{Name: "A", UserID: 1, Category: models.CategoryModern, Material: models.MaterialSilver, Era: models.EraAncient, PurchasePrice: money(100), PurchaseDate: &purchased},
+		{Name: "B", UserID: 1, Category: models.CategoryModern, Material: models.MaterialGold, Era: models.EraAncient, PurchasePrice: money(200), PurchaseDate: &purchased},
+		{Name: "C", UserID: 1, Category: models.CategoryOther, Material: models.MaterialSilver, Era: models.EraAncient, PurchasePrice: money(50), PurchaseDate: &purchased},
 	}
 	if err := db.Create(&coins).Error; err != nil {
 		t.Fatalf("create coins: %v", err)
@@ -250,12 +239,12 @@ func TestTimeMachine_BreakdownsAndGain(t *testing.T) {
 	if len(snapshot.ByCategory) != 2 {
 		t.Fatalf("byCategory buckets = %d, want 2", len(snapshot.ByCategory))
 	}
-	// Ordered by count descending: Roman (2) before Greek (1).
-	if snapshot.ByCategory[0].Label != "Roman" || snapshot.ByCategory[0].Count != 2 {
-		t.Fatalf("byCategory[0] = %+v, want Roman x2", snapshot.ByCategory[0])
+	// Ordered by count descending: Modern (2) before Other (1).
+	if snapshot.ByCategory[0].Label != "Modern" || snapshot.ByCategory[0].Count != 2 {
+		t.Fatalf("byCategory[0] = %+v, want Modern x2", snapshot.ByCategory[0])
 	}
 	if snapshot.ByCategory[0].Value != 300 {
-		t.Fatalf("Roman value = %v, want 300", snapshot.ByCategory[0].Value)
+		t.Fatalf("Modern value = %v, want 300", snapshot.ByCategory[0].Value)
 	}
 	if snapshot.TotalInvested != 350 {
 		t.Fatalf("totalInvested = %v, want 350", snapshot.TotalInvested)
@@ -263,42 +252,6 @@ func TestTimeMachine_BreakdownsAndGain(t *testing.T) {
 	// No valuation history, so value == purchase price and gain is zero.
 	if snapshot.UnrealizedGain != 0 {
 		t.Fatalf("unrealizedGain = %v, want 0", snapshot.UnrealizedGain)
-	}
-}
-
-func TestTimeMachine_HealthScoreUsesMostRecentPriorSnapshot(t *testing.T) {
-	svc, db := setupTimeMachine(t)
-
-	snapshots := []models.CollectionHealthSnapshot{
-		{UserID: 1, SnapshotDate: day(2025, time.January, 1), Score: 60},
-		{UserID: 1, SnapshotDate: day(2025, time.June, 1), Score: 75},
-	}
-	if err := db.Create(&snapshots).Error; err != nil {
-		t.Fatalf("create snapshots: %v", err)
-	}
-
-	before, err := svc.GetSnapshot(1, day(2024, time.December, 1))
-	if err != nil {
-		t.Fatalf("GetSnapshot: %v", err)
-	}
-	if before.HealthScore != nil {
-		t.Fatalf("expected no health score before the first snapshot, got %v", *before.HealthScore)
-	}
-
-	between, err := svc.GetSnapshot(1, day(2025, time.March, 1))
-	if err != nil {
-		t.Fatalf("GetSnapshot: %v", err)
-	}
-	if between.HealthScore == nil || *between.HealthScore != 60 {
-		t.Fatalf("expected the January score of 60, got %v", between.HealthScore)
-	}
-
-	after, err := svc.GetSnapshot(1, day(2025, time.August, 1))
-	if err != nil {
-		t.Fatalf("GetSnapshot: %v", err)
-	}
-	if after.HealthScore == nil || *after.HealthScore != 75 {
-		t.Fatalf("expected the June score of 75, got %v", after.HealthScore)
 	}
 }
 

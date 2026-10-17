@@ -103,23 +103,16 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":                             user.ID,
-		"username":                       user.Username,
-		"role":                           user.Role,
-		"email":                          user.Email,
-		"avatarPath":                     user.AvatarPath,
-		"isPublic":                       user.IsPublic,
-		"bio":                            user.Bio,
-		"zipCode":                        user.ZipCode,
-		"emailMissing":                   user.Email == "",
-		"createdAt":                      user.CreatedAt,
-		"coinOfDayEnabled":               user.CoinOfDayEnabled,
-		"coinOfDayIncludeWishlist":       user.CoinOfDayIncludeWishlist,
-		"emperorTrackerEnabled":          user.EmperorTrackerEnabled,
-		"emperorTrackerShowUsurpers":     user.EmperorTrackerShowUsurpers,
-		"emperorTrackerShowEmpresses":    user.EmperorTrackerShowEmpresses,
-		"emperorTrackerShowOtherFigures": user.EmperorTrackerShowOtherFigures,
-		"pwaSwipeNavEnabled":             user.PWASwipeNavEnabled,
+		"id":                 user.ID,
+		"username":           user.Username,
+		"role":               user.Role,
+		"email":              user.Email,
+		"avatarPath":         user.AvatarPath,
+		"bio":                user.Bio,
+		"zipCode":            user.ZipCode,
+		"emailMissing":       user.Email == "",
+		"createdAt":          user.CreatedAt,
+		"pwaSwipeNavEnabled": user.PWASwipeNavEnabled,
 	})
 }
 
@@ -237,17 +230,10 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID := c.GetUint("userId")
 
 	var req struct {
-		Email                          *string `json:"email"`
-		Bio                            *string `json:"bio"`
-		IsPublic                       *bool   `json:"isPublic"`
-		ZipCode                        *string `json:"zipCode"`
-		CoinOfDayEnabled               *bool   `json:"coinOfDayEnabled"`
-		CoinOfDayIncludeWishlist       *bool   `json:"coinOfDayIncludeWishlist"`
-		EmperorTrackerEnabled          *bool   `json:"emperorTrackerEnabled"`
-		EmperorTrackerShowUsurpers     *bool   `json:"emperorTrackerShowUsurpers"`
-		EmperorTrackerShowEmpresses    *bool   `json:"emperorTrackerShowEmpresses"`
-		EmperorTrackerShowOtherFigures *bool   `json:"emperorTrackerShowOtherFigures"`
-		PWASwipeNavEnabled             *bool   `json:"pwaSwipeNavEnabled"`
+		Email              *string `json:"email"`
+		Bio                *string `json:"bio"`
+		ZipCode            *string `json:"zipCode"`
+		PWASwipeNavEnabled *bool   `json:"pwaSwipeNavEnabled"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, "Invalid request payload", err)
@@ -284,41 +270,10 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	if req.ZipCode != nil {
 		updates["zip_code"] = strings.TrimSpace(*req.ZipCode)
 	}
-	if req.CoinOfDayEnabled != nil {
-		updates["coin_of_day_enabled"] = *req.CoinOfDayEnabled
-	}
-	if req.CoinOfDayIncludeWishlist != nil {
-		updates["coin_of_day_include_wishlist"] = *req.CoinOfDayIncludeWishlist
-	}
-	if req.EmperorTrackerEnabled != nil {
-		updates["emperor_tracker_enabled"] = *req.EmperorTrackerEnabled
-	}
-	if req.EmperorTrackerShowUsurpers != nil {
-		updates["emperor_tracker_show_usurpers"] = *req.EmperorTrackerShowUsurpers
-	}
-	if req.EmperorTrackerShowEmpresses != nil {
-		updates["emperor_tracker_show_empresses"] = *req.EmperorTrackerShowEmpresses
-	}
-	if req.EmperorTrackerShowOtherFigures != nil {
-		updates["emperor_tracker_show_other_figures"] = *req.EmperorTrackerShowOtherFigures
-	}
 	if req.PWASwipeNavEnabled != nil {
 		updates["pwa_swipe_nav_enabled"] = *req.PWASwipeNavEnabled
 	}
-	if req.IsPublic != nil {
-		updates["is_public"] = *req.IsPublic
-		goingPrivate := !*req.IsPublic && user.IsPublic
-		if goingPrivate {
-			logger.Info("user", "User %d going private — followers will be removed", userID)
-		}
-		if len(updates) > 0 {
-			if err := h.repo.UpdateProfileWithPrivacy(&user, updates, goingPrivate); err != nil {
-				respondError(c, http.StatusInternalServerError, "Failed to update profile", err)
-				return
-			}
-			logger.Info("user", "Profile updated for user %d", userID)
-		}
-	} else if len(updates) > 0 {
+	if len(updates) > 0 {
 		if err := h.repo.UpdateFields(&user, updates); err != nil {
 			respondError(c, http.StatusInternalServerError, "Failed to update profile", err)
 			return
@@ -332,21 +287,14 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"id":                             user.ID,
-		"username":                       user.Username,
-		"role":                           user.Role,
-		"email":                          user.Email,
-		"avatarPath":                     user.AvatarPath,
-		"isPublic":                       user.IsPublic,
-		"bio":                            user.Bio,
-		"zipCode":                        user.ZipCode,
-		"coinOfDayEnabled":               user.CoinOfDayEnabled,
-		"coinOfDayIncludeWishlist":       user.CoinOfDayIncludeWishlist,
-		"emperorTrackerEnabled":          user.EmperorTrackerEnabled,
-		"emperorTrackerShowUsurpers":     user.EmperorTrackerShowUsurpers,
-		"emperorTrackerShowEmpresses":    user.EmperorTrackerShowEmpresses,
-		"emperorTrackerShowOtherFigures": user.EmperorTrackerShowOtherFigures,
-		"pwaSwipeNavEnabled":             user.PWASwipeNavEnabled,
+		"id":                 user.ID,
+		"username":           user.Username,
+		"role":               user.Role,
+		"email":              user.Email,
+		"avatarPath":         user.AvatarPath,
+		"bio":                user.Bio,
+		"zipCode":            user.ZipCode,
+		"pwaSwipeNavEnabled": user.PWASwipeNavEnabled,
 	})
 }
 

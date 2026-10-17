@@ -142,25 +142,15 @@ func TestScheduleLocationFallbackOrder(t *testing.T) {
 	settings := newScheduleTimingSettings(t)
 	logger := NewLogger(10)
 
-	if got := scheduleLocation(settings, logger, SettingCoinOfDayTimezone); got != time.Local {
+	if got := scheduleLocation(settings, logger); got != time.Local {
 		t.Fatalf("empty settings: got %v, want server time", got)
 	}
 
 	if err := settings.SetSetting(SettingScheduleTimezone, "America/Chicago"); err != nil {
 		t.Fatalf("set schedule zone: %v", err)
 	}
-	if got := scheduleLocation(settings, logger, SettingCoinOfDayTimezone); got.String() != "America/Chicago" {
-		t.Fatalf("schedule zone: got %v", got)
-	}
-
-	if err := settings.SetSetting(SettingCoinOfDayTimezone, "Europe/London"); err != nil {
-		t.Fatalf("set coin of day zone: %v", err)
-	}
-	if got := scheduleLocation(settings, logger, SettingCoinOfDayTimezone); got.String() != "Europe/London" {
-		t.Fatalf("specific zone should win: got %v", got)
-	}
 	if got := scheduleLocation(settings, logger); got.String() != "America/Chicago" {
-		t.Fatalf("other schedulers should ignore the coin of day zone: got %v", got)
+		t.Fatalf("schedule zone: got %v", got)
 	}
 }
 

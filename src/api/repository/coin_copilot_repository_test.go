@@ -186,7 +186,7 @@ func TestCoinCopilotRepositoryRejectsInvalidEventAndTransitionPairs(t *testing.T
 	}
 }
 
-func TestCoinCopilotRepositoryResumeAndDeleteCascade(t *testing.T) {
+func TestCoinCopilotRepositoryResume(t *testing.T) {
 	db, repo := newCopilotRepositoryTestDB(t)
 	run := seedCopilotRun(t, repo, 7, models.CopilotRunPaused)
 	deadline := time.Now().UTC().Add(time.Hour)
@@ -212,18 +212,6 @@ func TestCoinCopilotRepositoryResumeAndDeleteCascade(t *testing.T) {
 	}
 	if len(events) != 1 || events[0].Type != models.CopilotEventRunResumed || events[0].Seq != 1 {
 		t.Fatalf("resume events = %#v", events)
-	}
-	if err := db.Model(resumed).Updates(map[string]interface{}{"status": models.CopilotRunCompleted, "completed_at": time.Now().UTC()}).Error; err != nil {
-		t.Fatal(err)
-	}
-	if err := repo.DeleteThread(run.ThreadID, run.UserID); err != nil {
-		t.Fatal(err)
-	}
-	for _, model := range []any{&models.CoinCopilotRun{}, &models.CoinCopilotCheckpoint{}, &models.CoinCopilotResumeRequest{}, &models.CoinCopilotEvent{}} {
-		var count int64
-		if err := db.Model(model).Count(&count).Error; err != nil || count != 0 {
-			t.Fatalf("%T count=%d err=%v", model, count, err)
-		}
 	}
 }
 

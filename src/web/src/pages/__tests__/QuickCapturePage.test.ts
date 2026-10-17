@@ -13,7 +13,7 @@ describe('QuickCapturePage', () => {
     expect(source).toContain('QuickCaptureForm')
     expect(source).toContain('Draft saved')
     expect(source).toContain("t('quickCapture.draftSavedDetail', { id: lastDraft.id })")
-    expect(en.quickCapture.draftSavedDetail).toContain('excluded from collection, wishlist, sold, stats, and health counts')
+    expect(en.quickCapture.draftSavedDetail).toContain('excluded from collection, wishlist, stats, and health counts')
   })
 
   it('keeps Quick Capture v1 manual and navigates to drafts without AI intake expansion', () => {

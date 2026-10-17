@@ -31,10 +31,6 @@ vi.mock('@/composables/useDialog', () => ({
   useDialog: () => ({ showAlert: vi.fn() }),
 }))
 
-vi.mock('@/composables/useNotifications', () => ({
-  useNotifications: () => ({ refresh: vi.fn() }),
-}))
-
 vi.mock('@/composables/useToast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }))

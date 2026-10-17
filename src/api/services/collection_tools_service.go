@@ -44,7 +44,6 @@ type CollectionCoinSummary struct {
 type CollectionAggregateSummary struct {
 	TotalCoins    int64 `json:"totalCoins"`
 	TotalWishlist int64 `json:"totalWishlist"`
-	TotalSold     int64 `json:"totalSold"`
 	// The totals are in Currency, the collection currency; the field names
 	// predate euro collections.
 	TotalCurrentUSD  float64          `json:"totalCurrentUsd"`
@@ -145,7 +144,7 @@ func (s *CollectionToolsService) SearchMyCollection(userID uint, query string, l
 	return s.searchCollection(userID, query, limit, false)
 }
 
-// SearchActiveCollection searches only owned coins that are neither wishlist nor sold.
+// SearchActiveCollection searches only owned coins, not the wishlist's.
 func (s *CollectionToolsService) SearchActiveCollection(userID uint, query string, limit *int) ([]CollectionCoinSummary, error) {
 	return s.searchCollection(userID, query, limit, true)
 }
@@ -200,14 +199,9 @@ func (s *CollectionToolsService) searchCollection(userID uint, query string, lim
 		v := true
 		filters.Wishlist = &v
 	}
-	if strings.Contains(lower, "sold") {
-		v := true
-		filters.Sold = &v
-	}
 	if activeOnly {
 		active := false
 		filters.Wishlist = &active
-		filters.Sold = &active
 	}
 
 	coins, err := s.coinRepo.ListOwnedByFilters(userID, filters, searchLimit)
@@ -234,11 +228,9 @@ func (s *CollectionToolsService) SearchWishlist(userID uint, query string, limit
 		}
 	}
 	wishlist := true
-	sold := false
 	coins, err := s.coinRepo.ListOwnedByFilters(userID, repository.OwnedCoinFilters{
 		Search:   strings.TrimSpace(query),
 		Wishlist: &wishlist,
-		Sold:     &sold,
 	}, searchLimit)
 	if err != nil {
 		return nil, err
@@ -277,7 +269,6 @@ func (s *CollectionToolsService) CollectionSummary(userID uint) (*CollectionAggr
 		count, err := s.coinRepo.CountOwnedByFilters(userID, repository.OwnedCoinFilters{
 			MissingFields: []string{field},
 			Wishlist:      &active,
-			Sold:          &active,
 		})
 		if err != nil {
 			return nil, err
@@ -290,7 +281,6 @@ func (s *CollectionToolsService) CollectionSummary(userID uint) (*CollectionAggr
 	return &CollectionAggregateSummary{
 		TotalCoins:       stats.TotalCoins,
 		TotalWishlist:    stats.TotalWishlist,
-		TotalSold:        stats.TotalSold,
 		TotalCurrentUSD:  stats.Values.TotalCurrentValue,
 		TotalPurchaseUSD: stats.Values.TotalPurchasePrice,
 		Currency:         s.settingsSvc.CollectionCurrency(),
@@ -330,7 +320,6 @@ func (s *CollectionToolsService) ProposeUpdate(userID uint, coinID uint, changes
 		"grade":         true,
 		"currentValue":  true,
 		"notes":         true,
-		"tags":          true,
 		"referenceText": true,
 		"referenceUrl":  true,
 		"vendorSku":     true,
@@ -408,25 +397,7 @@ func (s *CollectionToolsService) CommitUpdate(
 	proposalToken string,
 	confirm bool,
 ) (*CommitCollectionProposalResult, error) {
-	return s.commitProposalWithSource(userID, proposalID, proposalToken, confirm, "collection_chat", nil)
-}
-
-// CommitUpdateExternal commits a proposal from an external tool server with API key metadata.
-func (s *CollectionToolsService) CommitUpdateExternal(
-	userID uint,
-	proposalID string,
-	proposalToken string,
-	confirm bool,
-	apiKeyID uint,
-	apiKeyName string,
-	apiKeyCapabilities string,
-) (*CommitCollectionProposalResult, error) {
-	metadata := map[string]any{
-		"apiKeyId":           apiKeyID,
-		"apiKeyName":         apiKeyName,
-		"apiKeyCapabilities": apiKeyCapabilities,
-	}
-	return s.commitProposalWithSource(userID, proposalID, proposalToken, confirm, "external_tool_server", metadata)
+	return s.commitProposalWithSource(userID, proposalID, proposalToken, confirm, "collection_chat")
 }
 
 // CommitProposal is the underlying implementation for CommitUpdate.
@@ -437,17 +408,16 @@ func (s *CollectionToolsService) CommitProposal(
 	proposalToken string,
 	confirm bool,
 ) (*CommitCollectionProposalResult, error) {
-	return s.commitProposalWithSource(userID, proposalID, proposalToken, confirm, "collection_chat", nil)
+	return s.commitProposalWithSource(userID, proposalID, proposalToken, confirm, "collection_chat")
 }
 
-// commitProposalWithSource is the core commit implementation that accepts a journal source and optional metadata.
+// commitProposalWithSource is the core commit implementation that accepts a journal source.
 func (s *CollectionToolsService) commitProposalWithSource(
 	userID uint,
 	proposalID string,
 	proposalToken string,
 	confirm bool,
 	journalSource string,
-	metadata map[string]any,
 ) (*CommitCollectionProposalResult, error) {
 	if !confirm {
 		return nil, ErrProposalConfirmationReq
@@ -502,7 +472,7 @@ func (s *CollectionToolsService) commitProposalWithSource(
 		if err := txCoinRepo.CreateJournalEntry(&models.CoinJournal{
 			CoinID: coin.ID,
 			UserID: userID,
-			Entry:  buildJournalEntry(journalSource, changes, metadata),
+			Entry:  buildJournalEntry(journalSource, changes),
 		}); err != nil {
 			return err
 		}
@@ -575,8 +545,6 @@ func applyAllowedFieldChanges(tx *gorm.DB, coin *models.Coin, userID uint, chang
 			updates["vendor_sku"] = strings.TrimSpace(fmt.Sprintf("%v", value))
 		case "vendorInvoice":
 			updates["vendor_invoice"] = strings.TrimSpace(fmt.Sprintf("%v", value))
-		case "tags":
-			// handled after scalar updates
 		default:
 			return fmt.Errorf("field %s is not allowlisted", key)
 		}
@@ -586,67 +554,6 @@ func applyAllowedFieldChanges(tx *gorm.DB, coin *models.Coin, userID uint, chang
 		if err := tx.Model(&models.Coin{}).
 			Where("id = ? AND user_id = ?", coin.ID, userID).
 			Updates(updates).Error; err != nil {
-			return err
-		}
-	}
-
-	if rawTags, ok := changes["tags"]; ok {
-		if err := replaceCoinTags(tx, coin.ID, userID, rawTags); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func replaceCoinTags(tx *gorm.DB, coinID, userID uint, rawTags any) error {
-	tagsAny, ok := rawTags.([]any)
-	if !ok {
-		if tagsString, ok := rawTags.([]string); ok {
-			tagsAny = make([]any, 0, len(tagsString))
-			for _, t := range tagsString {
-				tagsAny = append(tagsAny, t)
-			}
-		}
-	}
-	if !ok && tagsAny == nil {
-		return fmt.Errorf("invalid tags format")
-	}
-
-	tagNames := make([]string, 0, len(tagsAny))
-	seen := map[string]struct{}{}
-	for _, item := range tagsAny {
-		name := strings.TrimSpace(fmt.Sprintf("%v", item))
-		if name == "" {
-			continue
-		}
-		lower := strings.ToLower(name)
-		if _, exists := seen[lower]; exists {
-			continue
-		}
-		seen[lower] = struct{}{}
-		tagNames = append(tagNames, name)
-	}
-
-	if err := tx.Where("coin_id = ?", coinID).Delete(&models.CoinTag{}).Error; err != nil {
-		return err
-	}
-
-	for _, name := range tagNames {
-		var tag models.Tag
-		err := tx.Where("user_id = ? AND LOWER(name) = LOWER(?)", userID, name).First(&tag).Error
-		if repository.IsRecordNotFound(err) {
-			tag = models.Tag{
-				UserID: userID,
-				Name:   name,
-			}
-			if err := tx.Create(&tag).Error; err != nil {
-				return err
-			}
-		} else if err != nil {
-			return err
-		}
-		if err := tx.Create(&models.CoinTag{CoinID: coinID, TagID: tag.ID}).Error; err != nil {
 			return err
 		}
 	}
@@ -698,7 +605,6 @@ var missingFieldNames = []string{
 	"purchasePrice",
 	"currentValue",
 	"purchaseDate",
-	"storageLocation",
 	"vendorSku",
 	"vendorInvoice",
 	"notes",
@@ -748,9 +654,6 @@ func requestedMissingFields(query string) []string {
 	}
 	if strings.Contains(query, "purchase date") {
 		add("purchaseDate")
-	}
-	if strings.Contains(query, "storage") || strings.Contains(query, "location") {
-		add("storageLocation")
 	}
 	if strings.Contains(query, "vendor") || strings.Contains(query, "sku") {
 		add("vendorSku")
@@ -815,9 +718,6 @@ func missingFieldsForCoin(coin models.Coin) []string {
 	if coin.PurchaseDate == nil {
 		missing = append(missing, "purchaseDate")
 	}
-	if coin.StorageLocationID == nil {
-		missing = append(missing, "storageLocation")
-	}
 	if strings.TrimSpace(coin.VendorSKU) == "" {
 		missing = append(missing, "vendorSku")
 	}
@@ -845,18 +745,7 @@ func sortedMapKeys(values map[string]any) []string {
 	return keys
 }
 
-func buildJournalEntry(source string, changes map[string]any, metadata map[string]any) string {
+func buildJournalEntry(source string, changes map[string]any) string {
 	keys := sortedMapKeys(changes)
-	entry := fmt.Sprintf("%s: committed updates (%s)", source, strings.Join(keys, ", "))
-
-	// For external sources, append API key metadata if present
-	if source == "external_tool_server" && metadata != nil {
-		if apiKeyID, ok := metadata["apiKeyId"].(uint); ok {
-			if apiKeyName, ok := metadata["apiKeyName"].(string); ok {
-				entry += fmt.Sprintf(" [API key #%d '%s']", apiKeyID, apiKeyName)
-			}
-		}
-	}
-
-	return entry
+	return fmt.Sprintf("%s: committed updates (%s)", source, strings.Join(keys, ", "))
 }

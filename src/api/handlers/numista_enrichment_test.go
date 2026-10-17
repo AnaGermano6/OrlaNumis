@@ -111,7 +111,7 @@ func newAuthenticatedNumistaEnrichmentRouter(
 	}
 	router := gin.New()
 	protected := router.Group("/api")
-	protected.Use(middleware.AuthRequired(numistaStatusJWTSecret, nil))
+	protected.Use(middleware.AuthRequired(numistaStatusJWTSecret))
 	protected.POST("/numista/enrich", enrichmentHandler.Enrich)
 	return router
 }

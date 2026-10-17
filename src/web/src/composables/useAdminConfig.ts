@@ -40,9 +40,6 @@ export function useAdminConfig() {
     NumistaSearchResultLimit: '20',
     NumistaSearchTimeoutSeconds: '4',
     NumistaDetailTimeoutSeconds: '3',
-    DeepIdentificationOCREEnabled: 'false',
-    DeepIdentificationOCRECallBudget: '3',
-    ExternalToolServerEnabled: 'false',
     CoinCopilotEnabled: 'false',
     CoinCopilotAttributionEnabled: 'false',
     CoinCopilotWorkerCount: '1',
@@ -77,9 +74,6 @@ export function useAdminConfig() {
     NumistaSearchResultLimit: '20',
     NumistaSearchTimeoutSeconds: '4',
     NumistaDetailTimeoutSeconds: '3',
-    DeepIdentificationOCREEnabled: 'false',
-    DeepIdentificationOCRECallBudget: '3',
-    ExternalToolServerEnabled: 'false',
     CoinCopilotEnabled: 'false',
     CoinCopilotAttributionEnabled: 'false',
     CoinCopilotWorkerCount: '1',
@@ -133,8 +127,6 @@ export function useAdminConfig() {
   // Schedule-tab save messages (cleared alongside main settingsMsg)
   const availSettingsMsg = ref('')
   const availSettingsError = ref(false)
-  const healthSettingsMsg = ref('')
-  const healthSettingsError = ref(false)
   const valSettingsMsg = ref('')
   const valSettingsError = ref(false)
 
@@ -168,12 +160,6 @@ export function useAdminConfig() {
       }
 
       // Apply defaults for collection health snapshot settings if not set
-      if (!settings.value.CollectionHealthSnapshotsEnabled) {
-        settings.value.CollectionHealthSnapshotsEnabled = 'false'
-      }
-      if (!settings.value.CollectionHealthSnapshotsStartTime) {
-        settings.value.CollectionHealthSnapshotsStartTime = '04:30'
-      }
 
       const [modelsRes, coinSearchRes, coinShowsRes, valPromptRes] = await Promise.all([
         getAnthropicModels().catch(() => null),
@@ -215,8 +201,6 @@ export function useAdminConfig() {
     settingsError.value = false
     availSettingsMsg.value = ''
     availSettingsError.value = false
-    healthSettingsMsg.value = ''
-    healthSettingsError.value = false
     valSettingsMsg.value = ''
     valSettingsError.value = false
     try {
@@ -231,17 +215,14 @@ export function useAdminConfig() {
       void loadCoinVocabulary()
       settingsMsg.value = t('admin.config.saved')
       availSettingsMsg.value = t('admin.config.saved')
-      healthSettingsMsg.value = t('admin.config.saved')
       valSettingsMsg.value = t('admin.config.saved')
       if (saveTimerId) clearTimeout(saveTimerId)
-      saveTimerId = setTimeout(() => { availSettingsMsg.value = ''; healthSettingsMsg.value = ''; valSettingsMsg.value = '' }, 3000)
+      saveTimerId = setTimeout(() => { availSettingsMsg.value = ''; valSettingsMsg.value = '' }, 3000)
     } catch {
       settingsMsg.value = t('admin.config.saveFailed')
       settingsError.value = true
       availSettingsMsg.value = t('admin.config.saveFailed')
       availSettingsError.value = true
-      healthSettingsMsg.value = t('admin.config.saveFailed')
-      healthSettingsError.value = true
       valSettingsMsg.value = t('admin.config.saveFailed')
       valSettingsError.value = true
     } finally {
@@ -326,8 +307,6 @@ export function useAdminConfig() {
     // Schedule messages
     availSettingsMsg,
     availSettingsError,
-    healthSettingsMsg,
-    healthSettingsError,
     valSettingsMsg,
     valSettingsError,
     // Functions

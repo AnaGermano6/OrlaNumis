@@ -19,7 +19,6 @@ func (r *AIJobRepository) FindCoinWithImages(coinID, userID uint) (*models.Coin,
 	var coin models.Coin
 	err := r.db.Scopes(OwnedByID(coinID, userID)).
 		Preload("Images").
-		Preload("StorageLocation").
 		First(&coin).Error
 	if err != nil {
 		return nil, err

@@ -55,8 +55,6 @@ const router = createRouter({
       component: () => import('@/pages/CoinDetailJournalPage.vue'),
       meta: { requiresAuth: true },
     },
-    // Shipment tracking was removed; old links open the coin.
-    { path: '/coin/:id/shipment', name: 'coin-detail-shipment', redirect: (to) => `/coin/${String(to.params.id)}` },
     {
       path: '/coin/:id/health',
       name: 'coin-detail-health',
@@ -148,12 +146,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/quick-access',
-      name: 'quick-access',
-      component: () => import('@/pages/QuickAccessPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
       path: '/wishlist/search-alerts',
       name: 'wishlist-search-alerts',
       component: () => import('@/pages/WishlistAlertsPage.vue'),
@@ -171,11 +163,6 @@ const router = createRouter({
       component: () => import('@/pages/WishlistAvailabilityHistoryPage.vue'),
       meta: { requiresAuth: true },
     },
-    // Sold, Followers and Showcases are not used in this collection, and
-    // auctions were removed; their addresses (and links to them) lead to the
-    // gallery.
-    { path: '/sold', name: 'sold', redirect: '/' },
-    { path: '/auctions', name: 'auctions', redirect: '/' },
     {
       path: '/stats',
       name: 'stats',
@@ -206,20 +193,11 @@ const router = createRouter({
       component: () => import('@/pages/StatsHealthPage.vue'),
       meta: { requiresAuth: true },
     },
-    // The value details page is gone; old links open Stats.
-    { path: '/stats/value-trends', name: 'stats-value-trends', redirect: '/stats' },
-    // The investment breakdown page is gone too; old links open Stats.
-    { path: '/stats/investment-breakdown', name: 'stats-investment-breakdown', redirect: '/stats' },
     {
       path: '/stats/distribution',
       name: 'stats-distribution',
       component: () => import('@/pages/CollectionDistributionPage.vue'),
       meta: { requiresAuth: true },
-    },
-    {
-      path: '/stats/emperors',
-      name: 'stats-emperors-redirect',
-      redirect: '/sets/emperors',
     },
     {
       path: '/mint-map',
@@ -231,24 +209,11 @@ const router = createRouter({
       name: 'timeline',
       redirect: '/stats/timeline',
     },
-    // The Notes page is gone; old links open the collection.
-    { path: '/notes', name: 'notes', redirect: '/' },
     {
       path: '/settings',
       name: 'settings',
       component: () => import('@/pages/SettingsPage.vue'),
       meta: { requiresAuth: true },
-    },
-    {
-      path: '/settings/oidc/link/callback/:providerId',
-      name: 'oidc-link-callback',
-      component: () => import('@/pages/OIDCLinkCallbackPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/auth/oidc/callback/:providerId',
-      name: 'oidc-login-callback',
-      component: () => import('@/pages/OIDCLoginCallbackPage.vue'),
     },
     {
       path: '/admin',
@@ -261,51 +226,12 @@ const router = createRouter({
       name: 'process-image',
       redirect: { path: '/settings', query: { tab: 'process' } },
     },
-    { path: '/followers', name: 'followers', redirect: '/' },
-    { path: '/followers/:username/gallery', name: 'follower-gallery', redirect: '/' },
-    { path: '/followers/:username/coins/:coinId', name: 'follower-coin-detail', redirect: '/' },
-    {
-      path: '/notifications',
-      name: 'notifications',
-      component: () => import('@/pages/NotificationsPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    { path: '/showcases', name: 'showcases', redirect: '/' },
-    { path: '/showcases/:id/edit', name: 'showcase-edit', redirect: '/' },
-    {
-      path: '/s/:slug',
-      name: 'public-showcase',
-      component: () => import('@/pages/PublicShowcasePage.vue'),
-    },
-    // The calendar was removed; old links open the gallery.
-    { path: '/calendar', name: 'calendar', redirect: '/' },
-    // The tray views were removed; old links open the gallery.
-    { path: '/tray', name: 'tray', redirect: '/' },
-    { path: '/storage-trays', name: 'storage-trays', redirect: '/' },
     // Set routes - placeholder for Phase 2 and Phase 3 implementation
     {
       path: '/sets',
       name: 'sets',
       component: () => import('@/pages/SetsPage.vue'),
       meta: { requiresAuth: true },
-    },
-    {
-      path: '/sets/emperors',
-      name: 'sets-emperors',
-      component: () => import('@/pages/EmperorTrackerPage.vue'),
-      meta: { requiresAuth: true, requiresEmperorTracker: true },
-    },
-    {
-      path: '/sets/emperors/pursuits',
-      name: 'sets-emperors-pursuits',
-      component: () => import('@/pages/EmperorPursuitsPage.vue'),
-      meta: { requiresAuth: true, requiresEmperorTracker: true },
-    },
-    {
-      path: '/sets/emperors/stats',
-      name: 'sets-emperors-stats',
-      component: () => import('@/pages/EmperorStatsPage.vue'),
-      meta: { requiresAuth: true, requiresEmperorTracker: true },
     },
     {
       path: '/sets/commemoratives',
@@ -331,6 +257,8 @@ const router = createRouter({
       component: () => import('@/pages/SetInsightsPage.vue'),
       meta: { requiresAuth: true },
     },
+    // Any other address (a removed page, an old link) opens the gallery.
+    { path: '/:pathMatch(.*)*', name: 'not-found', redirect: '/' },
   ],
 })
 
@@ -341,9 +269,6 @@ router.beforeEach((to) => {
   }
   if (to.meta.requiresAdmin && !auth.isAdmin) {
     return { name: 'collection' }
-  }
-  if (to.meta.requiresEmperorTracker && !auth.user?.emperorTrackerEnabled) {
-    return { name: 'sets' }
   }
 })
 

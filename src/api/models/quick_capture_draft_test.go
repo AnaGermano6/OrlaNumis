@@ -13,12 +13,6 @@ func TestQuickCaptureDraftEnums(t *testing.T) {
 	if IsValidQuickCaptureDraftStatus(QuickCaptureDraftStatus("archived")) {
 		t.Fatal("unexpected status should be invalid")
 	}
-	if !IsValidDraftLifecycleEventType(DraftLifecycleEventImageAdded) {
-		t.Fatal("image_added lifecycle event should be valid")
-	}
-	if IsValidDraftLifecycleEventType(DraftLifecycleEventType("raw filesystem path")) {
-		t.Fatal("unexpected lifecycle event should be invalid")
-	}
 }
 
 func TestSelectedNumistaReferenceValidationAndCanonicalization(t *testing.T) {

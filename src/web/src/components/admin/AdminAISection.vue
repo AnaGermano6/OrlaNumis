@@ -2,23 +2,6 @@
   <section class="admin-section card flex flex-col gap-6">
     <h2 class="mb-0 border-b border-border-subtle pb-3 text-xl font-medium">{{ t('admin.ai.title') }}</h2>
     <form class="flex flex-col gap-6" @submit.prevent="saveSettings">
-      <section class="rounded-sm border border-border-subtle bg-surface p-4" aria-labelledby="external-tool-server-heading">
-        <div class="flex items-center justify-between gap-4">
-          <div>
-            <h3 id="external-tool-server-heading" class="m-0 text-base font-semibold text-text-primary">{{ t('admin.ai.toolServer') }}</h3>
-            <p class="mb-0 mt-1 text-sm text-text-muted">
-              {{ t('admin.ai.toolServerHint') }}
-            </p>
-          </div>
-          <BaseToggle
-            name="ExternalToolServerEnabled"
-            :label="t('admin.ai.enableToolServer')"
-            :model-value="settings.ExternalToolServerEnabled === 'true'"
-            @update:model-value="settings.ExternalToolServerEnabled = $event ? 'true' : 'false'"
-          />
-        </div>
-      </section>
-
       <div class="form-group">
         <label class="form-label">{{ t('admin.ai.provider') }}</label>
         <div class="mt-2 grid gap-4 md:grid-cols-2">
@@ -238,7 +221,6 @@
 <script setup lang="ts">
 import type { AppSettings } from '@/types'
 import type { AnthropicModel } from '@/api/client'
-import { BaseToggle } from '@/components/ui'
 import I18nT from '@/components/I18nT.vue'
 import { t } from '@/i18n'
 

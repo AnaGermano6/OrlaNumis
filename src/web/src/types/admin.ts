@@ -18,15 +18,13 @@ export interface AppSettings extends Partial<NumistaSettings> {
   RegistrationMode?: string
   WishlistSearchAlertsCheckEnabled?: string
   WishlistSearchAlertsCheckStartTime?: string
-  ReminderCheckEnabled?: string
-  ReminderCheckStartTime?: string
+  BackupEnabled?: string
+  BackupStartTime?: string
+  BackupKeep?: string
   CoinCategories?: string
   CoinEras?: string
   CoinCategoryLabelsPtPT?: string
   CoinEraLabelsPtPT?: string
-  DeepIdentificationOCREEnabled?: string
-  DeepIdentificationOCRECallBudget?: string
-  ExternalToolServerEnabled?: string
   CoinCopilotEnabled?: string
   CoinCopilotAttributionEnabled?: string
   CoinCopilotWorkerCount?: string
@@ -43,25 +41,11 @@ export interface AppSettings extends Partial<NumistaSettings> {
   [key: string]: string | undefined
 }
 
-// OCREHealthSummary mirrors the Go models.OCREHealthSummary bounded admin
-// view of the OCRE Deep Analysis provider (Feature 345 US4). It carries only
-// enablement/gate state and the last recorded outcome class — no per-job
-// user content.
-export interface OCREHealthSummary {
-  enabled: boolean
-  callBudget: number
-  gateValidated: boolean
-  lastOutcome?: string | null
-  lastCheckedAt?: string | null
-}
-
 export interface SecuritySummary {
   failedLogins: number
   lockedAccounts: number
-  activeBans: number
   recentEvents: number
   loginFailures?: number
-  activeIpRuleCount?: number
 }
 
 export interface SecurityEvent {
@@ -94,31 +78,12 @@ export interface SecurityEventsResponse {
   total?: number
 }
 
-export interface SecurityIpRule {
-  id: number
-  cidr: string
-  reason: string
-  expiresAt?: string | null
-  createdBy?: string | number | null
-  createdAt?: string
-}
-
-export interface CreateSecurityIpRuleRequest {
-  cidr: string
-  duration?: string
-  durationMinutes?: number
-  expiresAt?: string
-  reason: string
-}
-
 export interface SecurityExposureCheck {
   publicIp?: string
   proxy?: boolean
   proxyWarning?: string
   cors?: boolean
   corsWarning?: string
-  webAuthn?: boolean
-  webAuthnWarning?: string
   publicAppUrl?: boolean
   publicAppURL?: boolean
   publicAppUrlWarning?: string
@@ -130,7 +95,6 @@ export interface SecurityExposureCheck {
   checks?: Record<string, boolean | string | null | undefined>
   config?: {
     publicAppURL?: string
-    webauthnOrigin?: string
     trustedProxiesConfigured?: boolean
     agentInternalTokenSet?: boolean
     registrationMode?: string

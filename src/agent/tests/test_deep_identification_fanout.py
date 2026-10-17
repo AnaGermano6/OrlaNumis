@@ -28,7 +28,6 @@ def _bounds(max_concurrency=2, provider_timeout_s=1, max_providers=5) -> DeepIde
 async def test_fanout_includes_non_automatable_providers_even_if_not_selected(monkeypatch):
     catalog = [
         DeepProviderCatalogEntry(provider="ngc", automatable=False, link_out="https://www.ngccoin.com/verify/"),
-        DeepProviderCatalogEntry(provider="ocre", automatable=False, reason="pending_license_validation"),
         DeepProviderCatalogEntry(provider="rpc", automatable=False, reason="no_public_api"),
     ]
     state = {
@@ -43,7 +42,7 @@ async def test_fanout_includes_non_automatable_providers_even_if_not_selected(mo
     result = await provider_fanout_node(state, tools=None)
 
     providers_seen = {row.provider for row in result["evidence"]}
-    assert providers_seen == {"ngc", "ocre", "rpc"}
+    assert providers_seen == {"ngc", "rpc"}
 
 
 @pytest.mark.asyncio
@@ -64,18 +63,20 @@ async def test_fanout_respects_max_concurrency(monkeypatch):
 
     import app.teams.deep_identification.graph as graph_module
 
+    # Only Numista is automated today: rpc stands in for a second automated provider.
     monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "numista", fake_run)
-    monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "nomisma", fake_run)
+    monkeypatch.delitem(graph_module._TRIVIAL_PROVIDER_NODES, "rpc")
+    monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "rpc", fake_run)
 
     catalog = [
-        DeepProviderCatalogEntry(provider=name, automatable=True) for name in ("numista", "nomisma")
+        DeepProviderCatalogEntry(provider=name, automatable=True) for name in ("numista", "rpc")
     ]
     state = {
         "catalog": catalog,
         "bounds": _bounds(max_concurrency=1),
         "quick_evidence": None,
         "notes": "",
-        "selected": ["numista", "nomisma"],
+        "selected": ["numista", "rpc"],
         "skipped": [],
     }
 
@@ -121,18 +122,19 @@ async def test_fanout_one_failing_provider_does_not_block_others(monkeypatch):
     import app.teams.deep_identification.graph as graph_module
 
     monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "numista", failing_run)
-    monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "nomisma", ok_run)
+    monkeypatch.delitem(graph_module._TRIVIAL_PROVIDER_NODES, "rpc")
+    monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "rpc", ok_run)
 
     catalog = [
         DeepProviderCatalogEntry(provider="numista", automatable=True),
-        DeepProviderCatalogEntry(provider="nomisma", automatable=True),
+        DeepProviderCatalogEntry(provider="rpc", automatable=True),
     ]
     state = {
         "catalog": catalog,
         "bounds": _bounds(),
         "quick_evidence": None,
         "notes": "",
-        "selected": ["numista", "nomisma"],
+        "selected": ["numista", "rpc"],
         "skipped": [],
     }
 
@@ -140,47 +142,13 @@ async def test_fanout_one_failing_provider_does_not_block_others(monkeypatch):
 
     by_provider = {row.provider: row for row in result["evidence"]}
     assert by_provider["numista"].status == "failed"
-    assert by_provider["nomisma"].status == "contributed"
-
-
-@pytest.mark.asyncio
-async def test_fanout_runs_ocre_through_automated_timeout_wrapped_path(monkeypatch):
-    """Feature 345: a selected OCRE now runs via the automated fan-out path
-    (async, timeout/semaphore-wrapped) — invoked with the 5-arg node
-    signature (Phase 5 added `hypothesis`) — not the trivial single-arg dict."""
-    seen_args = {}
-
-    async def spy_ocre(entry, tools, quick_evidence, notes, hypothesis=None):
-        seen_args["argc"] = 5
-        seen_args["provider"] = entry.provider
-        return ProviderEvidence(provider="ocre", status="contributed", automatable=True, call_count=1)
-
-    import app.teams.deep_identification.graph as graph_module
-
-    assert "ocre" in graph_module._AUTOMATED_PROVIDER_NODES
-    assert "ocre" not in graph_module._TRIVIAL_PROVIDER_NODES
-    monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "ocre", spy_ocre)
-
-    catalog = [DeepProviderCatalogEntry(provider="ocre", automatable=True)]
-    state = {
-        "catalog": catalog,
-        "bounds": _bounds(provider_timeout_s=5),
-        "quick_evidence": None,
-        "notes": "",
-        "selected": ["ocre"],
-        "skipped": [],
-    }
-
-    result = await provider_fanout_node(state, tools=object())
-
-    assert seen_args == {"argc": 5, "provider": "ocre"}
-    assert result["evidence"][0].status == "contributed"
+    assert by_provider["rpc"].status == "contributed"
 
 
 @pytest.mark.asyncio
 async def test_fanout_rpc_trivial_path_unaffected_by_dict_split():
-    """RPC remains the sole trivial (single-arg, synchronous) node after the
-    OCRE move; it still emits its typed unavailable row with zero calls."""
+    """RPC is the sole trivial (single-arg, synchronous) node; it emits its
+    typed unavailable row with zero calls."""
     import app.teams.deep_identification.graph as graph_module
 
     assert set(graph_module._TRIVIAL_PROVIDER_NODES) == {"rpc"}
@@ -204,25 +172,26 @@ async def test_fanout_rpc_trivial_path_unaffected_by_dict_split():
 
 
 @pytest.mark.asyncio
-async def test_fanout_ocre_hung_still_yields_already_completed_evidence(monkeypatch):
-    """T036: OCRE hung past its provider timeout must not strand the evidence
+async def test_fanout_hung_provider_still_yields_already_completed_evidence(monkeypatch):
+    """T036: a provider hung past its timeout must not strand the evidence
     other providers already produced — the timed-out row is typed and the
     completed provider's contribution survives (incremental on_result)."""
-    async def hung_ocre(entry, tools, quick_evidence, notes, hypothesis=None):
+    async def hung_provider(entry, tools, quick_evidence, notes, hypothesis=None):
         await asyncio.sleep(10)
-        return ProviderEvidence(provider="ocre", status="contributed", automatable=True)
+        return ProviderEvidence(provider="rpc", status="contributed", automatable=True)
 
     async def fast_numista(entry, tools, quick_evidence, notes, hypothesis=None):
         return ProviderEvidence(provider="numista", status="contributed", automatable=True, call_count=1)
 
     import app.teams.deep_identification.graph as graph_module
 
-    monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "ocre", hung_ocre)
+    monkeypatch.delitem(graph_module._TRIVIAL_PROVIDER_NODES, "rpc")
+    monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "rpc", hung_provider)
     monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "numista", fast_numista)
 
     accumulated: list = []
     catalog = [
-        DeepProviderCatalogEntry(provider="ocre", automatable=True),
+        DeepProviderCatalogEntry(provider="rpc", automatable=True),
         DeepProviderCatalogEntry(provider="numista", automatable=True),
     ]
     state = {
@@ -230,7 +199,7 @@ async def test_fanout_ocre_hung_still_yields_already_completed_evidence(monkeypa
         "bounds": _bounds(provider_timeout_s=1, max_concurrency=2),
         "quick_evidence": None,
         "notes": "",
-        "selected": ["ocre", "numista"],
+        "selected": ["rpc", "numista"],
         "skipped": [],
     }
 
@@ -238,73 +207,9 @@ async def test_fanout_ocre_hung_still_yields_already_completed_evidence(monkeypa
 
     by_provider = {row.provider: row.status for row in result["evidence"]}
     assert by_provider["numista"] == "contributed"
-    assert by_provider["ocre"] == "timed_out"
+    assert by_provider["rpc"] == "timed_out"
     # The completed provider's evidence was accumulated incrementally, before
-    # the hung OCRE task resolved.
+    # the hung task resolved.
     assert any(r.provider == "numista" and r.status == "contributed" for r in accumulated)
 
 
-@pytest.mark.asyncio
-async def test_fanout_ocre_flag_off_makes_zero_tool_calls(monkeypatch):
-    """T036: a flag-off (non-automatable) OCRE goes straight to not_automated
-    with no tool call — proven via a call-count spy on the tools client."""
-    class SpyTools:
-        def __init__(self):
-            self.ocre_calls = 0
-
-        async def ocre_search(self, **kwargs):
-            self.ocre_calls += 1
-            return {"status": "empty", "candidates": []}
-
-    spy = SpyTools()
-    catalog = [DeepProviderCatalogEntry(provider="ocre", automatable=False, reason="pending_license_validation")]
-    state = {
-        "catalog": catalog,
-        "bounds": _bounds(),
-        "quick_evidence": None,
-        "notes": "",
-        "selected": [],
-        "skipped": [],
-    }
-
-    result = await provider_fanout_node(state, tools=spy)
-
-    assert result["evidence"][0].provider == "ocre"
-    assert result["evidence"][0].status == "not_automated"
-    assert result["evidence"][0].call_count == 0
-    assert spy.ocre_calls == 0
-
-
-@pytest.mark.asyncio
-async def test_fanout_flag_off_beats_provider_override_zero_ocre_calls():
-    """T047 (US5, FR-004): the OCRE flag takes precedence over an explicit
-    provider_override. With OCRE non-automatable (flag off), even a caller
-    override selecting "ocre" yields not_automated with zero tool calls."""
-    class SpyTools:
-        def __init__(self):
-            self.ocre_calls = 0
-
-        async def ocre_search(self, **kwargs):
-            self.ocre_calls += 1
-            return {"status": "empty", "candidates": []}
-
-    spy = SpyTools()
-    catalog = [DeepProviderCatalogEntry(provider="ocre", automatable=False, reason="pending_license_validation")]
-    state = {
-        "catalog": catalog,
-        "bounds": _bounds(),
-        "quick_evidence": None,
-        "notes": "",
-        # Router excludes a non-automatable provider from `selected` even under
-        # override; the fanout still runs it via the non-automatable path.
-        "selected": [],
-        "provider_override": ["ocre"],
-        "skipped": [],
-    }
-
-    result = await provider_fanout_node(state, tools=spy)
-
-    ocre_row = next(row for row in result["evidence"] if row.provider == "ocre")
-    assert ocre_row.status == "not_automated"
-    assert ocre_row.call_count == 0
-    assert spy.ocre_calls == 0

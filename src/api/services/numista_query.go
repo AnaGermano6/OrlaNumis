@@ -26,10 +26,6 @@ func NewNumistaQueryBuilder() *NumistaQueryBuilder {
 	}}
 }
 
-func (b *NumistaQueryBuilder) AliasCount() int {
-	return len(b.mintAliases)
-}
-
 func (b *NumistaQueryBuilder) Build(evidence models.NumistaEvidence) NumistaQueryPlan {
 	subject := conciseSubject(evidence)
 	reverse := dedupeQueryTokens(strings.Join(nonEmptyStrings([]string{

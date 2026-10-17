@@ -52,14 +52,13 @@ type CoinCopilotCapability struct {
 }
 
 type CoinCopilotService struct {
-	repo                *repository.CoinCopilotRepository
-	settingsSvc         *SettingsService
-	collectorProfileSvc *CollectorProfileService
-	proxy               *AgentProxy
-	tokenSvc            *InternalTokenService
-	broker              *CoinCopilotBroker
-	logger              *Logger
-	toolsBaseURL        string
+	repo         *repository.CoinCopilotRepository
+	settingsSvc  *SettingsService
+	proxy        *AgentProxy
+	tokenSvc     *InternalTokenService
+	broker       *CoinCopilotBroker
+	logger       *Logger
+	toolsBaseURL string
 
 	wake            chan struct{}
 	cancelMu        sync.Mutex
@@ -85,11 +84,6 @@ func NewCoinCopilotService(repo *repository.CoinCopilotRepository, settingsSvc *
 		wake: make(chan struct{}, 1), cancels: make(map[string]context.CancelFunc),
 		activeToolCalls: make(map[string]*copilotToolCallTracker),
 	}
-}
-
-func (s *CoinCopilotService) WithCollectorProfileService(profileSvc *CollectorProfileService) *CoinCopilotService {
-	s.collectorProfileSvc = profileSvc
-	return s
 }
 
 func (s *CoinCopilotService) Broker() *CoinCopilotBroker { return s.broker }
@@ -203,18 +197,6 @@ func (s *CoinCopilotService) GetThread(userID uint, threadID string) (*models.Co
 		return nil, nil, err
 	}
 	return thread, runs, nil
-}
-
-func (s *CoinCopilotService) DeleteThread(userID uint, threadID string) error {
-	err := s.repo.DeleteThread(threadID, userID)
-	switch {
-	case repository.IsRecordNotFound(err):
-		return ErrCopilotNotFound
-	case errors.Is(err, repository.ErrCopilotThreadActive):
-		return ErrCopilotThreadHasActiveRun
-	default:
-		return err
-	}
 }
 
 func (s *CoinCopilotService) Cancel(userID uint, runID string) (*models.CoinCopilotRun, bool, error) {

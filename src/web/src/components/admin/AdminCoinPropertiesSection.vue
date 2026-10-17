@@ -33,7 +33,7 @@
           v-model="localCategoryOptions"
           class="form-textarea min-h-44 resize-y bg-input text-body leading-6"
           rows="7"
-          placeholder="Roman&#10;Greek&#10;Byzantine&#10;Modern&#10;Other"
+          placeholder="Modern&#10;Other"
         />
         <div class="mt-3 flex flex-wrap gap-[0.35rem]" :aria-label="t('admin.properties.categoryPreview')">
           <span v-for="option in categoryPreview" :key="option" class="chip-sm">{{ option }}</span>
@@ -122,75 +122,6 @@
               </div>
               <span class="block text-body text-text-secondary [overflow-wrap:anywhere]">{{ location.region || t('settings.data.noRegion') }} · {{ location.lat }}, {{ location.lng }}</span>
               <span v-if="location.aliases.length" class="block text-body text-text-secondary [overflow-wrap:anywhere]">{{ location.aliases.join(', ') }}</span>
-
-              <div v-if="!location.userId" class="mt-2 flex flex-col gap-2 border-t border-border-subtle pt-2">
-                <NomismaAttribution :uri="location.nomismaUri" />
-                <div class="flex flex-wrap gap-[0.35rem]">
-                  <button
-                    type="button"
-                    class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                    :disabled="nomismaLinkingId === location.id"
-                    @click="openNomismaSearch(location)"
-                  >
-                    {{ location.nomismaUri ? t('admin.properties.changeNomisma') : t('admin.properties.searchNomisma') }}
-                  </button>
-                  <button
-                    v-if="location.nomismaUri"
-                    type="button"
-                    class="btn btn-danger btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                    :disabled="nomismaLinkingId === location.id"
-                    @click="unlinkNomisma(location)"
-                  >
-                    {{ nomismaLinkingId === location.id ? t('settings.account.unlinking') : t('settings.account.unlink') }}
-                  </button>
-                </div>
-
-                <div v-if="nomismaSearchLocationId === location.id" class="rounded-sm border border-border-subtle bg-card p-3">
-                  <form class="nomisma-search-form flex flex-col gap-2 sm:flex-row sm:items-center" @submit.prevent="searchNomisma(location)">
-                    <label class="flex flex-1 flex-col gap-[0.35rem]">
-                      <span class="form-label">{{ t('admin.properties.nomismaQuery') }}</span>
-                      <input v-model="nomismaQuery" class="form-input" type="text" maxlength="200" required />
-                    </label>
-                    <div class="flex gap-[0.35rem]">
-                      <button type="submit" class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" :disabled="nomismaSearching">
-                        {{ nomismaSearching ? t('common.searching') : t('common.search') }}
-                      </button>
-                      <button type="button" class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="closeNomismaSearch">
-                        {{ t('common.cancel') }}
-                      </button>
-                    </div>
-                  </form>
-
-                  <p v-if="nomismaError" class="mt-2 text-body text-byzantine" role="status" aria-live="polite">{{ nomismaError }}</p>
-                  <p v-else-if="nomismaSearchStatus === 'no_match'" class="mt-2 text-body text-text-secondary" role="status" aria-live="polite">
-                    {{ t('admin.properties.noCandidates') }}
-                  </p>
-                  <p v-else-if="nomismaSearchStatus === 'unavailable'" class="mt-2 text-body text-text-secondary" role="status" aria-live="polite">
-                    {{ t('admin.properties.unavailable') }}
-                  </p>
-
-                  <ul v-if="nomismaCandidates.length" class="mt-2 flex list-none flex-col gap-2 p-0" role="list" :aria-label="t('admin.properties.candidates')">
-                    <li
-                      v-for="candidate in nomismaCandidates"
-                      :key="candidate.uri"
-                      class="flex flex-col gap-2 rounded-sm border border-border-subtle bg-input p-2 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div class="min-w-0 [overflow-wrap:anywhere]">
-                        <span class="block font-medium text-text-primary">{{ candidate.label }}</span>
-                        <span class="block text-chip text-text-secondary">{{ t('admin.properties.score', { score: candidate.score.toFixed(1) }) }}{{ candidate.match ? ' · ' + t('admin.properties.exactMatch') : '' }}</span>
-                      </div>
-                      <button
-                        type="button"
-                        class="btn btn-primary btn-sm shrink-0 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                        :disabled="nomismaLinkingId === location.id"
-                        @click="confirmNomismaCandidate(location, candidate)"
-                      >
-                        {{ t('common.confirm') }}
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -251,17 +182,13 @@ import {
   adminDeleteMintLocation,
   adminUpdateMintLocation,
   getMintLocations,
-  linkNomismaMintLocation,
-  searchNomismaMintCandidates,
-  unlinkNomismaMintLocation,
   type MintLocationInput,
   type MintLocationsResponse,
 } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
 import { parseOptionList } from '@/utils/options'
 import { CATEGORIES, COIN_ERAS } from '@/types'
-import type { MintLocation, NomismaCandidate, NomismaSearchStatus } from '@/types'
-import NomismaAttribution from '@/components/mint/NomismaAttribution.vue'
+import type { MintLocation } from '@/types'
 import CoinOptionNamesEditor from '@/components/admin/CoinOptionNamesEditor.vue'
 import { t } from '@/i18n'
 
@@ -301,13 +228,6 @@ const mintLocationForm = reactive({
 })
 const { showConfirm } = useDialog()
 
-const nomismaSearchLocationId = ref<number | null>(null)
-const nomismaQuery = ref('')
-const nomismaSearching = ref(false)
-const nomismaCandidates = ref<NomismaCandidate[]>([])
-const nomismaSearchStatus = ref<NomismaSearchStatus | null>(null)
-const nomismaError = ref('')
-const nomismaLinkingId = ref<number | null>(null)
 
 watch(() => props.categoryOptions, (v) => { localCategoryOptions.value = v })
 watch(() => props.eraOptions, (v) => { localEraOptions.value = v })
@@ -437,74 +357,6 @@ async function deleteMintLocation(location: MintLocation) {
     mintLocationError.value = apiErrorText(error, t('settings.data.deleteMintFailed'))
   } finally {
     deletingMintLocationId.value = null
-  }
-}
-
-function openNomismaSearch(location: MintLocation) {
-  nomismaSearchLocationId.value = location.id
-  nomismaQuery.value = location.displayName
-  nomismaCandidates.value = []
-  nomismaSearchStatus.value = null
-  nomismaError.value = ''
-}
-
-function closeNomismaSearch() {
-  nomismaSearchLocationId.value = null
-  nomismaQuery.value = ''
-  nomismaCandidates.value = []
-  nomismaSearchStatus.value = null
-  nomismaError.value = ''
-}
-
-async function searchNomisma(location: MintLocation) {
-  const query = nomismaQuery.value.trim()
-  if (!query) return
-  nomismaSearching.value = true
-  nomismaError.value = ''
-  nomismaCandidates.value = []
-  nomismaSearchStatus.value = null
-  try {
-    const res = await searchNomismaMintCandidates(location.id, query)
-    nomismaSearchStatus.value = res.data.status
-    nomismaCandidates.value = res.data.candidates
-  } catch (error: unknown) {
-    nomismaError.value = apiErrorText(error, t('admin.properties.searchFailed'))
-  } finally {
-    nomismaSearching.value = false
-  }
-}
-
-async function confirmNomismaCandidate(location: MintLocation, candidate: NomismaCandidate) {
-  nomismaLinkingId.value = location.id
-  nomismaError.value = ''
-  try {
-    await linkNomismaMintLocation(location.id, candidate.uri, candidate.label)
-    closeNomismaSearch()
-    await loadMintLocations()
-  } catch (error: unknown) {
-    nomismaError.value = apiErrorText(error, t('admin.properties.linkFailed'))
-  } finally {
-    nomismaLinkingId.value = null
-  }
-}
-
-async function unlinkNomisma(location: MintLocation) {
-  const confirmed = await showConfirm(t('admin.properties.confirmUnlink', { name: location.displayName }), {
-    title: t('admin.properties.unlinkTitle'),
-    variant: 'danger',
-  })
-  if (!confirmed) return
-  nomismaLinkingId.value = location.id
-  try {
-    await unlinkNomismaMintLocation(location.id)
-    if (nomismaSearchLocationId.value === location.id) {
-      closeNomismaSearch()
-    }
-    await loadMintLocations()
-  } catch (error: unknown) {
-    mintLocationError.value = apiErrorText(error, t('admin.properties.unlinkFailed'))
-  } finally {
-    nomismaLinkingId.value = null
   }
 }
 

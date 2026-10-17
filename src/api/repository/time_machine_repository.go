@@ -9,7 +9,7 @@ import (
 )
 
 // TimeMachineRepository reconstructs the state of a collection as it stood on a
-// past date, from data the app already records: purchase/sold dates on coins and
+// past date, from data the app already records: purchase dates on coins and
 // the per-coin valuation history written by the valuation scheduler.
 type TimeMachineRepository struct {
 	db *gorm.DB
@@ -46,8 +46,8 @@ type CollectionBounds struct {
 // GetCollectionAsOf returns every coin the user owned on asOf, valued as of that
 // date.
 //
-// "Owned on date D" means: not a wishlist entry, acquired on or before D, and
-// either never sold or sold after D. Coins with no purchase date cannot be
+// "Owned on date D" means: not a wishlist entry and acquired on or before D.
+// Coins with no purchase date cannot be
 // placed on a timeline and are excluded — the caller reports how many were
 // skipped so the UI can say so rather than silently under-counting.
 //
@@ -100,10 +100,9 @@ func (r *TimeMachineRepository) GetCollectionAsOf(userID uint, asOf time.Time) (
 			  AND coins.is_wishlist = 0
 			  AND coins.purchase_date IS NOT NULL
 			  AND coins.purchase_date <= ?
-			  AND (coins.is_sold = 0 OR coins.sold_date IS NULL OR coins.sold_date > ?)
 		) AS owned
 		ORDER BY value_as_of DESC, owned.id ASC
-	`, asOf, userID, asOf, asOf).Scan(&rows).Error
+	`, asOf, userID, asOf).Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
@@ -168,22 +167,4 @@ func (r *TimeMachineRepository) GetBounds(userID uint) (CollectionBounds, error)
 		return CollectionBounds{}, err
 	}
 	return CollectionBounds{EarliestPurchase: earliest, LatestPurchase: latest}, nil
-}
-
-// GetHealthScoreAsOf returns the collection health score from the most recent
-// daily snapshot at or before asOf. Returns nil when no snapshot predates the
-// requested date — health snapshots only began when the feature shipped, so
-// early dates legitimately have none.
-func (r *TimeMachineRepository) GetHealthScoreAsOf(userID uint, asOf time.Time) (*int, error) {
-	var row struct{ Score *int }
-	err := r.db.Raw(`
-		SELECT score FROM collection_health_snapshots
-		WHERE user_id = ? AND snapshot_date <= ?
-		ORDER BY snapshot_date DESC
-		LIMIT 1
-	`, userID, asOf).Scan(&row).Error
-	if err != nil {
-		return nil, err
-	}
-	return row.Score, nil
 }

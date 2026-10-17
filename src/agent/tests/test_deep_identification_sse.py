@@ -71,7 +71,6 @@ def _request(total_timeout_s: int = 30) -> DeepIdentifyRequest:
         provider_catalog=[
             DeepProviderCatalogEntry(provider="numista", automatable=True),
             DeepProviderCatalogEntry(provider="ngc", automatable=False, link_out="https://www.ngccoin.com/verify/"),
-            DeepProviderCatalogEntry(provider="ocre", automatable=False, reason="pending_license_validation"),
             DeepProviderCatalogEntry(provider="rpc", automatable=False, reason="no_public_api"),
         ],
         bounds=DeepIdentifyBounds(
@@ -179,8 +178,8 @@ async def test_evaluator_node_receives_hypothesis_via_the_real_graph_path(monkey
 
 @pytest.mark.asyncio
 async def test_provider_node_receives_hypothesis_via_the_real_graph_path(monkeypatch):
-    """Phase 5 wiring regression: the automated provider nodes' `run()`
-    functions (`providers/numista.py`, `nomisma.py`, `ocre.py`) accepted an
+    """Phase 5 wiring regression: the automated provider node's `run()`
+    function (`providers/numista.py`) accepted an
     optional `hypothesis` parameter when Phase 5 (query terms + candidate
     ranking) landed, defaulting to `None` — which is why a missing call-site
     wire-up in `graph.py`'s `_run_one_provider`/`provider_fanout_node` never
@@ -327,7 +326,7 @@ async def test_timeout_with_partial_evidence_falls_back_to_partial_synthesis(mon
 
     monkeypatch.setitem(graph_module._AUTOMATED_PROVIDER_NODES, "numista", slow_numista_run)
 
-    # Non-automatable providers (ngc/ocre/rpc) complete instantly, giving the
+    # Non-automatable providers (ngc/rpc) complete instantly, giving the
     # timeout branch *some* evidence to synthesize from even though numista hangs.
     request = _request(total_timeout_s=1)
     request.bounds.provider_timeout_s = 60  # provider-level timeout must not fire first
@@ -528,9 +527,8 @@ async def test_provider_started_surfaces_insufficient_query_evidence_skip_reason
 
 @pytest.mark.asyncio
 async def test_provider_started_static_detail_for_non_query_providers(monkeypatch):
-    """OCRE (structured-field decode, not free text), NGC and RPC (no
-    automated call at all) get a fixed, non-empty descriptive note instead
-    of an invented query string.
+    """NGC and RPC (no automated call at all) get a fixed, non-empty
+    descriptive note instead of an invented query string.
     """
     monkeypatch.setattr(graph_module, "get_chat_model", lambda llm: FakeModel())
 
@@ -542,7 +540,6 @@ async def test_provider_started_static_detail_for_non_query_providers(monkeypatc
     frames = await _collect_frames(_request())
 
     for provider, expected_snippet in (
-        ("ocre", "decoded coin-type signals"),
         ("ngc", "terms of use prohibit automated queries"),
         ("rpc", "no public API"),
     ):
@@ -559,8 +556,8 @@ async def test_provider_result_frames_are_emitted_live_not_batched(monkeypatch):
     `run_and_report` calls `on_provider_event({"type": "provider_result", ...})`
     inside each per-provider task as soon as that task's own await resolves
     (not after `asyncio.gather` finishes waiting on every task). Proven here
-    by making numista artificially slow while ngc/ocre/rpc (the fixture's
-    three non-automatable, effectively-instant providers) settle immediately
+    by making numista artificially slow while ngc/rpc (the fixture's two
+    non-automatable, effectively-instant providers) settle immediately
     — their `provider_result` frames must appear on the stream strictly
     before numista's, which would be impossible if results were only
     surfaced once the whole fan-out had completed.
@@ -581,7 +578,7 @@ async def test_provider_result_frames_are_emitted_live_not_batched(monkeypatch):
     providers_in_order = [f["provider"] for f in provider_results]
     numista_index = providers_in_order.index("numista")
     other_indices = [i for i, p in enumerate(providers_in_order) if p != "numista"]
-    assert other_indices, "expected at least one non-automatable provider (ngc/ocre/rpc) result"
+    assert other_indices, "expected at least one non-automatable provider (ngc/rpc) result"
     assert all(i < numista_index for i in other_indices), (
         f"expected every fast provider's result before the artificially slow numista's, "
         f"got order {providers_in_order} -- a batched-at-the-end implementation would put "

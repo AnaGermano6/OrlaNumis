@@ -25,10 +25,9 @@ export function emptyFilters(): SimpleSetFilters {
   return { country: '', denomination: '', yearFrom: null, yearTo: null, classification: '', presentation: '' }
 }
 
-// Only coins of the collection: not wanted, not sold.
+// Only coins of the collection, not the wishlist's.
 const COLLECTION_RULES: SmartCriteriaRule[] = [
   { field: 'isWishlist', op: 'eq', value: false },
-  { field: 'isSold', op: 'eq', value: false },
 ]
 
 /** The smart criteria of the filters: all of them, and the collection's coins only. */
@@ -53,7 +52,7 @@ export function criteriaToFilters(criteria: SmartCriteriaGroup | null | undefine
   for (const node of criteria.rules) {
     if (!('field' in node)) return null
     const { field, op, value } = node
-    if ((field === 'isWishlist' || field === 'isSold') && op === 'eq' && value === false) continue
+    if (field === 'isWishlist' && op === 'eq' && value === false) continue
     if (field === 'country' && op === 'eq' && typeof value === 'string' && !filters.country) filters.country = value
     else if (field === 'denomination' && op === 'eq' && typeof value === 'string' && !filters.denomination) filters.denomination = value
     else if (field === 'year' && op === 'eq' && typeof value === 'number') filters.yearFrom = filters.yearTo = value

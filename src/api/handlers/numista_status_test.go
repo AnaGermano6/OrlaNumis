@@ -47,7 +47,7 @@ func newAuthenticatedNumistaStatusRouter(client services.NumistaClient, key stri
 	handler := NewNumistaHandler(lookup)
 	router := gin.New()
 	protected := router.Group("/api")
-	protected.Use(middleware.AuthRequired(numistaStatusJWTSecret, nil))
+	protected.Use(middleware.AuthRequired(numistaStatusJWTSecret))
 	protected.POST("/numista/lookup", handler.Lookup)
 	protected.GET("/numista/search", handler.Search)
 	return router

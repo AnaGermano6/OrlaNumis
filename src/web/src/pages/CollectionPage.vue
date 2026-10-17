@@ -18,12 +18,12 @@
       v-model:search="search"
       v-model:menu-open="menuOpen"
       v-model:selected-denomination="selectedDenomination"
-      v-model:selected-tag="selectedTag"
+      v-model:selected-set="selectedSet"
       v-model:sort-key="sortKey"
       v-model:view-mode="viewMode"
       v-model:grid-side="gridSide"
       :select-mode="selectMode"
-      :user-tags="userTags"
+      :user-sets="userSets"
       :denomination-options="denominationOptions"
       @toggle-select-mode="toggleSelectMode"
     >
@@ -49,10 +49,10 @@
       v-if="!isPwa"
       v-model:search="search"
       v-model:selected-denomination="selectedDenomination"
-      v-model:selected-tag="selectedTag"
+      v-model:selected-set="selectedSet"
       v-model:sort-key="sortKey"
       v-model:grid-side="gridSide"
-      :user-tags="userTags"
+      :user-sets="userSets"
       :denomination-options="denominationOptions"
     >
       <template #controls>
@@ -118,7 +118,7 @@
       :is-pwa="isPwa"
       :view-mode="viewMode"
       :grid-side="gridSide"
-      :has-filters="!!(search || selectedDenomination || selectedTag || selectedCountry || selectedPresentation || selectedRarity || selectedCirculation || selectedCommemorative || selectedClassification)"
+      :has-filters="!!(search || selectedDenomination || selectedSet || selectedCountry || selectedPresentation || selectedRarity || selectedCirculation || selectedCommemorative || selectedClassification)"
       :total="store.total"
       :page="page"
       :per-page="COINS_PER_PAGE"
@@ -147,16 +147,15 @@
     <BulkActionBar
       :visible="selectMode && selectedCoinIds.size > 0"
       :selected-count="selectedCoinIds.size"
-      @tag="showTagPicker = true"
-      @sell="bulkSell"
+      @set="showSetPicker = true"
       @delete="bulkDelete"
     />
 
-    <BulkTagPickerModal
-      :open="showTagPicker"
-      :tags="userTags"
-      @select="bulkTag"
-      @close="showTagPicker = false"
+    <BulkSetPickerModal
+      :open="showSetPicker"
+      :sets="userSets"
+      @select="bulkAddToSet"
+      @close="showSetPicker = false"
     />
   </div>
 </template>
@@ -172,26 +171,24 @@ import { useBulkSelect } from '@/composables/useBulkSelect'
 import { usePwa } from '@/composables/usePwa'
 import { useCollectionFilters } from '@/composables/useCollectionFilters'
 import CollectionViewControls, { type CollectionLayout } from '@/components/collection/CollectionViewControls.vue'
-import { useQuickAccess } from '@/composables/useQuickAccess'
 import PwaCollectionHeader from '@/components/collection/PwaCollectionHeader.vue'
 import DesktopCollectionHeader from '@/components/collection/DesktopCollectionHeader.vue'
 import CollectionContent from '@/components/collection/CollectionContent.vue'
 import CollectionPagination from '@/components/CollectionPagination.vue'
 import BulkActionBar from '@/components/BulkActionBar.vue'
-import BulkTagPickerModal from '@/components/BulkTagPickerModal.vue'
+import BulkSetPickerModal from '@/components/BulkSetPickerModal.vue'
 import NeedsAttentionQueue from '@/components/collection/NeedsAttentionQueue.vue'
 import { t } from '@/i18n'
 import { X } from 'lucide-vue-next'
 
 const store = useCoinsStore()
 const router = useRouter()
-const { refresh: refreshQuickAccess } = useQuickAccess()
 
 const {
-  search, page, sortKey, selectedTag, userTags,
+  search, page, sortKey, selectedSet, userSets,
   selectedDenomination, denominationOptions,
   selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, groupBy, countryOptions, fillingCountries,
-  fetchUserTags, loadCoins, loadCountryOptions, fillCountriesOnce,
+  fetchUserSets, loadCoins, loadCountryOptions, fillCountriesOnce,
 } = useCollectionFilters()
 
 // The coins' summary feeds the filters (extinct countries, Numista kinds);
@@ -240,7 +237,7 @@ const COINS_PER_PAGE = 50
 
 onMounted(() => {
   void loadSummary()
-  fetchUserTags()
+  fetchUserSets()
   if (groupBy.value === 'country') void fillCountriesOnce()
   // Reset bulkSelectActive on mount to prevent stale state from previous navigation
   bulkSelectActive.value = false
@@ -309,7 +306,7 @@ loadCoins()
 
 const selectMode = ref(false)
 const selectedCoinIds = ref(new Set<number>())
-const showTagPicker = ref(false)
+const showSetPicker = ref(false)
 const { bulkSelectActive } = useBulkSelect()
 
 function toggleSelectMode() {
@@ -317,7 +314,7 @@ function toggleSelectMode() {
   bulkSelectActive.value = selectMode.value
   if (!selectMode.value) {
     selectedCoinIds.value = new Set()
-    showTagPicker.value = false
+    showSetPicker.value = false
   }
 }
 
@@ -327,7 +324,7 @@ watch(bulkSelectActive, (active) => {
     selectMode.value = active
     if (!active) {
       selectedCoinIds.value = new Set()
-      showTagPicker.value = false
+      showSetPicker.value = false
     }
   }
 })
@@ -355,7 +352,6 @@ async function bulkDelete() {
   if (!confirm(t('collection.bulk.confirmDelete', { count }))) return
   try {
     await bulkAction([...selectedCoinIds.value], 'delete')
-    await refreshQuickAccess()
     selectedCoinIds.value = new Set()
     selectMode.value = false
     bulkSelectActive.value = false
@@ -365,38 +361,16 @@ async function bulkDelete() {
   }
 }
 
-async function bulkSell() {
-  const count = selectedCoinIds.value.size
-  if (!confirm(t('collection.bulk.confirmSell', { count }))) return
+async function bulkAddToSet(setId: number) {
   try {
-    await bulkAction([...selectedCoinIds.value], 'sell')
-    await refreshQuickAccess()
+    await bulkAction([...selectedCoinIds.value], 'set', { setId })
+    showSetPicker.value = false
     selectedCoinIds.value = new Set()
     selectMode.value = false
     bulkSelectActive.value = false
     loadCoins()
   } catch {
-    alert(t('collection.bulk.sellFailed'))
-  }
-}
-
-async function bulkTag(target: string) {
-  const applyingSet = target.startsWith('set:')
-  try {
-    if (applyingSet) {
-      const setId = Number(target.slice(4))
-      await bulkAction([...selectedCoinIds.value], 'set', { setId })
-    } else {
-      const tagId = Number(target.startsWith('tag:') ? target.slice(4) : target)
-      await bulkAction([...selectedCoinIds.value], 'tag', { tagId })
-    }
-    showTagPicker.value = false
-    selectedCoinIds.value = new Set()
-    selectMode.value = false
-    bulkSelectActive.value = false
-    loadCoins()
-  } catch {
-    alert(applyingSet ? t('collection.bulk.applySetFailed') : t('collection.bulk.applyTagFailed'))
+    alert(t('collection.bulk.applySetFailed'))
   }
 }
 

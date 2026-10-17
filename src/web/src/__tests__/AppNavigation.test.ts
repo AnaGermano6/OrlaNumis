@@ -14,8 +14,6 @@ const appPath = path.resolve(__dirname, '../App.vue')
 
 const mockIsPwa = vi.hoisted(() => ({ value: false }))
 const mockGetSets = vi.hoisted(() => vi.fn())
-const mockGetQuickAccess = vi.hoisted(() => vi.fn())
-const mockGetUnreadCount = vi.hoisted(() => vi.fn(async () => ({ data: { count: 0 } })))
 
 vi.mock('@/composables/usePwa', () => ({
   usePwa: () => ({ isPwa: mockIsPwa.value }),
@@ -38,10 +36,8 @@ vi.mock('@/api/client', async (importOriginal) => {
   return {
     ...actual,
     getSets: (...args: unknown[]) => mockGetSets(...args),
-    getQuickAccess: (...args: unknown[]) => mockGetQuickAccess(...args),
     getMe: vi.fn(async () => ({ data: { id: 1, emailMissing: false, createdAt: '2020-01-01T00:00:00Z' } })),
     getCoinOptions: vi.fn(async () => ({ data: { categories: [], eras: [], labels: {} } })),
-    getUnreadNotificationCount: mockGetUnreadCount,
     updateProfile: vi.fn(async () => ({ data: {} })),
   }
 })
@@ -58,8 +54,7 @@ describe('App sidebar navigation', () => {
     expect(source).not.toContain("to: '/tray'")
     expect(source).not.toContain("to: '/storage-trays'")
     // Old links open the gallery.
-    expect(routerSource).toContain("{ path: '/tray', name: 'tray', redirect: '/' }")
-    expect(routerSource).toContain("{ path: '/storage-trays', name: 'storage-trays', redirect: '/' }")
+    expect(routerSource).toContain("{ path: '/:pathMatch(.*)*', name: 'not-found', redirect: '/' }")
   })
 
   it('renders Stats as a collapsible parent with dedicated route children', () => {
@@ -81,14 +76,16 @@ describe('App sidebar navigation', () => {
     expect(source).not.toContain('#value-over-time')
   })
 
-  it('renders Sets as a collapsible parent with Emperors gated under it', () => {
+  it('renders Sets as a collapsible parent, without the removed Emperors, pins, notifications or Quick Access', () => {
     const source = fs.readFileSync(appPath, 'utf8')
 
     expect(source).toContain("labelKey: 'nav.sets'")
     expect(source).toContain("labelKey: 'nav.mySets', to: '/sets'")
-    expect(source).toContain("labelKey: 'nav.emperors', to: '/sets/emperors'")
-    expect([en.nav.sets, en.nav.mySets, en.nav.emperors]).toEqual(['Sets', 'My Sets', 'Emperors'])
-    expect(source).toContain("child.id !== 'sets-emperors' || auth.user?.emperorTrackerEnabled")
+    expect([en.nav.sets, en.nav.mySets]).toEqual(['Sets', 'My Sets'])
+    expect(source).not.toContain('emperor')
+    expect(source).not.toContain('sets-pinned-')
+    expect(source).not.toContain('/notifications')
+    expect(source).not.toContain('/quick-access')
   })
 
   it('uses Identify Coin as the single merged quick capture entry point', () => {
@@ -133,9 +130,8 @@ describe('App sidebar navigation', () => {
     for (const id of ['shipments', 'auctions', 'calendar']) expect(source).not.toContain(`id: '${id}'`)
     expect(routerSource).not.toContain('CoinDetailShipmentPage')
     expect(routerSource).not.toContain('CalendarPage')
-    expect(routerSource).toContain("{ path: '/coin/:id/shipment', name: 'coin-detail-shipment', redirect: (to) => `/coin/${String(to.params.id)}` }")
-    expect(routerSource).toContain("{ path: '/auctions', name: 'auctions', redirect: '/' }")
-    expect(routerSource).toContain("{ path: '/calendar', name: 'calendar', redirect: '/' }")
+    for (const path of ['/coin/:id/shipment', '/auctions', '/calendar']) expect(routerSource).not.toContain(`path: '${path}'`)
+    expect(routerSource).toContain("{ path: '/:pathMatch(.*)*', name: 'not-found', redirect: '/' }")
   })
 
   it('keeps the same app-wide Agent drawer entry points for legacy chat and Coin Copilot', () => {
@@ -146,54 +142,17 @@ describe('App sidebar navigation', () => {
     expect(source).toContain('<CoinSearchChat v-if="showChat"')
     expect(source.match(/<CoinSearchChat v-if="showChat"/g) ?? []).toHaveLength(1)
   })
-
-  it('merges pinned sets into the existing Sets children branch without a second computed', () => {
-    const source = fs.readFileSync(appPath, 'utf8')
-
-    // The Emperors gate must survive verbatim (design D5 / risk R6) and the
-    // pinned entries must be appended inside that same map branch.
-    expect(source).toContain("child.id !== 'sets-emperors' || auth.user?.emperorTrackerEnabled")
-    expect(source).toContain('id: `sets-pinned-${s.id}`')
-    expect(source).toContain('to: `/sets/${s.id}`')
-    expect(source).toContain('const setsExpanded = ref(false)')
-    // Exactly one place rewrites the Sets children.
-    expect(source.match(/item\.id !== 'sets'/g) ?? []).toHaveLength(1)
-  })
 })
 
-// Behavioural coverage for pinned sets in the Sets submenu. These mount the
-// real App.vue with the real usePinnedSets singleton so the assertions prove
-// rendered DOM, not source strings.
-describe('App sidebar pinned sets', () => {
+// Behavioural coverage for the mounted sidebar and title bar.
+describe('App sidebar', () => {
   let router: Router
   let wrapper: VueWrapper | null = null
-
-  function pinnedSetPayload(sets: Array<Record<string, unknown>>) {
-    return { data: { items: sets.filter(set => set.pinned).map(set => ({
-      type: 'coin_set', id: set.id, pinnedAt: set.pinnedAt,
-      coinSet: { name: set.name, color: set.color, setType: set.setType, icon: '' },
-    })) } }
-  }
-
-  function buildSet(overrides: Record<string, unknown> = {}) {
-    return {
-      id: 1,
-      name: 'Pinned Set',
-      color: '#c9a84c',
-      setType: 'standard',
-      coinCount: 1,
-      totalValue: 10,
-      pinned: true,
-      pinnedAt: '2026-01-01T00:00:00Z',
-      ...overrides,
-    }
-  }
 
   async function mountApp(initialPath = '/') {
     document.getElementById('desktop-page-title')?.remove()
     document.getElementById('desktop-page-actions')?.remove()
 
-    const QuickAccessPage = (await import('../pages/QuickAccessPage.vue')).default
     const DesktopPageContext = (await import('../components/DesktopPageContext.vue')).default
     const ContextPage = {
       components: { DesktopPageContext },
@@ -209,9 +168,7 @@ describe('App sidebar pinned sets', () => {
       routes: [
         { path: '/', name: 'collection', component: { template: '<div />' } },
         { path: '/sets', name: 'sets', component: { template: '<div />' } },
-        { path: '/sets/emperors', name: 'emperors', component: { template: '<div />' } },
         { path: '/sets/:id', name: 'set-detail', component: { template: '<div />' } },
-        { path: '/quick-access', name: 'quick-access', component: QuickAccessPage },
         { path: '/context', name: 'context', component: ContextPage },
         { path: '/plain', name: 'plain', component: { template: '<div>Plain page</div>' } },
         { path: '/login', name: 'login', component: { template: '<div />' } },
@@ -239,37 +196,19 @@ describe('App sidebar pinned sets', () => {
     return wrapper
   }
 
-  async function openSetsSubmenu() {
-    // Open the drawer via the brand button, then expand the Sets parent.
+  async function openSidebar() {
     await wrapper!.find('nav button').trigger('click')
     await flushPromises()
-    const setsParent = wrapper!.findAll('.sidebar-link').find((el) => el.text() === 'Sets')
-    expect(setsParent, 'Sets parent nav item should render').toBeTruthy()
-    await setsParent!.trigger('click')
-    await flushPromises()
-    return setsParent!
   }
 
-  function setsSubmenuLinks() {
-    const submenu = wrapper!.find('[aria-label="Sets views"]')
-    expect(submenu.exists(), 'Sets submenu should be expanded').toBe(true)
-    return submenu.findAll('a')
-  }
-
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
     localStorage.setItem('token', 'test-token')
-    localStorage.setItem('user', JSON.stringify({ id: 1, username: 'tester', role: 'user', emperorTrackerEnabled: false }))
+    localStorage.setItem('user', JSON.stringify({ id: 1, username: 'tester', role: 'user' }))
     setActivePinia(createPinia())
-    const { usePinnedSets } = await import('@/composables/usePinnedSets')
-    usePinnedSets().clear()
-    const { useQuickAccess } = await import('@/composables/useQuickAccess')
-    useQuickAccess().clear()
     mockIsPwa.value = false
     mockGetSets.mockReset()
-    mockGetUnreadCount.mockReset().mockResolvedValue({ data: { count: 0 } })
-    mockGetQuickAccess.mockResolvedValue({ data: { items: [] } })
   })
 
   afterEach(() => {
@@ -278,77 +217,11 @@ describe('App sidebar pinned sets', () => {
     document.body.innerHTML = ''
   })
 
-  it('starts polling after in-app login and resets immediately on account changes and logout', async () => {
-    const auth = useAuthStore()
-    const user = auth.user!
-    auth.logout()
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
-    try {
-      await mountApp('/login')
-      expect(mockGetUnreadCount).not.toHaveBeenCalled()
-      await auth.applyAuthResponse({ token: 'fixture-a', refreshToken: 'fixture-refresh', user })
-      await flushPromises()
-      expect(mockGetUnreadCount).toHaveBeenCalledTimes(1)
-      expect(vi.getTimerCount()).toBe(1)
-      const { useNotifications } = await import('@/composables/useNotifications')
-      useNotifications().unreadCount.value = 99
-      auth.user = { ...user, id: 2 }
-      expect(useNotifications().unreadCount.value).toBe(0)
-      await flushPromises()
-      expect(mockGetUnreadCount).toHaveBeenCalledTimes(2)
-      expect(vi.getTimerCount()).toBe(1)
-      auth.logout()
-      expect(useNotifications().unreadCount.value).toBe(0)
-      expect(vi.getTimerCount()).toBe(0)
-      await auth.applyAuthResponse({ token: 'fixture-b', refreshToken: 'fixture-refresh', user: { ...user, id: 2 } })
-      await flushPromises()
-      expect(vi.getTimerCount()).toBe(1)
-      wrapper?.unmount()
-      wrapper = null
-      expect(vi.getTimerCount()).toBe(0)
-      await mountApp()
-      expect(vi.getTimerCount()).toBe(1)
-    } finally { vi.useRealTimers() }
-  })
-
-  it('rejects delayed account A pins and count after rendering account B', async () => {
-    let resolvePins!: (value: ReturnType<typeof pinnedSetPayload>) => void
-    let resolveCount!: (value: { data: { count: number } }) => void
-    mockGetQuickAccess.mockReturnValueOnce(new Promise(done => { resolvePins = done }))
-      .mockResolvedValueOnce(pinnedSetPayload([buildSet({ id: 52, name: 'Account B set' })]))
-    mockGetUnreadCount.mockReturnValueOnce(new Promise(done => { resolveCount = done }))
-      .mockResolvedValueOnce({ data: { count: 2 } })
-    await mountApp()
-    const auth = useAuthStore()
-    auth.user = { ...auth.user!, id: 2 }
-    await flushPromises()
-    resolvePins(pinnedSetPayload([buildSet({ id: 51, name: 'Private account A set' })]))
-    resolveCount({ data: { count: 99 } })
-    await flushPromises()
-    await openSetsSubmenu()
-    expect(setsSubmenuLinks().map(link => link.text())).toEqual(['My Sets', 'Commemorative catalogue', 'Account B set'])
-    expect(wrapper!.get('nav a[aria-label="Notifications"]').text()).toBe('2')
-    expect(wrapper!.text()).not.toContain('Private account A set')
-  })
-
-  it('shows a recoverable notification count failure in the mounted app', async () => {
-    mockGetUnreadCount.mockRejectedValueOnce(new Error('offline'))
-    await mountApp()
-    expect(wrapper!.get('[role="status"]').text()).toContain('Unable to refresh notification count')
-    await wrapper!.get('[role="status"] button').trigger('click')
-    await flushPromises()
-    expect(wrapper!.find('[role="status"]').exists()).toBe(false)
-  })
-
-  it('renders page-owned desktop context before global actions and clears it on navigation', async () => {
+  it('renders page-owned desktop context and clears it on navigation', async () => {
     await mountApp('/context')
 
     expect(wrapper!.get('#desktop-page-title').text()).toBe('Wishlist')
     expect(wrapper!.get('#desktop-page-actions [aria-label="Add to wishlist"]').text()).toBe('Add')
-
-    const pageActions = wrapper!.get('#desktop-page-actions').element
-    const quickAccess = wrapper!.get('nav a[aria-label="Quick Access"]').element
-    expect(pageActions.compareDocumentPosition(quickAccess) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     await router.push('/plain')
     await flushPromises()
@@ -357,222 +230,39 @@ describe('App sidebar pinned sets', () => {
     expect(wrapper!.get('#desktop-page-actions').text()).toBe('')
   })
 
-  it('appends pinned sets after the static children and links them to /sets/:id', async () => {
-    mockGetQuickAccess.mockResolvedValue(pinnedSetPayload([
-      buildSet({ id: 41, name: 'Later Pin', pinnedAt: '2026-02-01T00:00:00Z' }),
-      buildSet({ id: 40, name: 'Earlier Pin', pinnedAt: '2026-01-01T00:00:00Z' }),
-      buildSet({ id: 99, name: 'Not Pinned', pinned: false, pinnedAt: null }),
-    ]))
-
+  it('keeps the Sets parent collapsed on load and lists its views once opened', async () => {
     await mountApp()
-    await openSetsSubmenu()
-
-    const links = setsSubmenuLinks()
-    expect(links.map((l) => l.text())).toEqual(['My Sets', 'Commemorative catalogue', 'Earlier Pin', 'Later Pin'])
-    expect(links.map((l) => l.attributes('href'))).toEqual(['/sets', '/sets/commemoratives', '/sets/40', '/sets/41'])
-  })
-
-  it('keeps pinned sets after Emperors when the Emperor Tracker is enabled', async () => {
-    localStorage.setItem('user', JSON.stringify({ id: 1, username: 'tester', role: 'user', emperorTrackerEnabled: true }))
-    setActivePinia(createPinia())
-    mockGetQuickAccess.mockResolvedValue(pinnedSetPayload([buildSet({ id: 40, name: 'Earlier Pin' })]))
-
-    await mountApp()
-    await openSetsSubmenu()
-
-    const links = setsSubmenuLinks()
-    expect(links.map((l) => l.text())).toEqual(['My Sets', 'Emperors', 'Commemorative catalogue', 'Earlier Pin'])
-    expect(links.map((l) => l.attributes('href'))).toEqual(['/sets', '/sets/emperors', '/sets/commemoratives', '/sets/40'])
-  })
-
-  it('renders the submenu unchanged when no sets are pinned', async () => {
-    mockGetQuickAccess.mockResolvedValue(pinnedSetPayload([buildSet({ id: 7, pinned: false, pinnedAt: null })]))
-
-    await mountApp()
-    await openSetsSubmenu()
-
-    const links = setsSubmenuLinks()
-    expect(links).toHaveLength(2)
-    expect(links[0]?.text()).toBe('My Sets')
-    expect(wrapper!.html()).not.toContain('sets-pinned-')
-  })
-
-  it('degrades to the static children when GET /quick-access fails', async () => {
-    mockGetQuickAccess.mockRejectedValue(new Error('network down'))
-
-    await mountApp()
-    await openSetsSubmenu()
-
-    expect(setsSubmenuLinks().map((l) => l.text())).toEqual(['My Sets', 'Commemorative catalogue'])
-  })
-
-  it('truncates long pinned labels and exposes the full name via title', async () => {
-    const longName = 'Purchase Records For The Twelve Caesars And Later Julio-Claudian Denarii'
-    mockGetQuickAccess.mockResolvedValue(pinnedSetPayload([buildSet({ id: 55, name: longName })]))
-
-    await mountApp()
-    await openSetsSubmenu()
-
-    const pinnedLink = setsSubmenuLinks()[2]!
-    expect(pinnedLink.classes()).toContain('min-w-0')
-    const label = pinnedLink.find('span')
-    expect(label.classes()).toContain('truncate')
-    expect(label.attributes('title')).toBe(longName)
-    // Static children keep the same treatment, so nothing regressed for them.
-    const staticLabel = setsSubmenuLinks()[0]!.find('span')
-    expect(staticLabel.classes()).toContain('truncate')
-    expect(staticLabel.attributes('title')).toBe('My Sets')
-  })
-
-  it('closes the PWA drawer and navigates when a pinned entry is tapped', async () => {
-    mockIsPwa.value = true
-    mockGetQuickAccess.mockResolvedValue(pinnedSetPayload([buildSet({ id: 40, name: 'Earlier Pin' })]))
-
-    await mountApp()
-    await openSetsSubmenu()
-
-    expect(wrapper!.find('aside').exists()).toBe(true)
-    await setsSubmenuLinks()[2]!.trigger('click')
-    await flushPromises()
-
-    expect(router.currentRoute.value.path).toBe('/sets/40')
-    expect(router.currentRoute.value.name).toBe('set-detail')
-    expect(wrapper!.find('aside').exists()).toBe(false)
-  })
-
-  it('keeps the Sets parent collapsed on load even when sets are pinned', async () => {
-    mockGetQuickAccess.mockResolvedValue(pinnedSetPayload([buildSet({ id: 40, name: 'Earlier Pin' })]))
-
-    await mountApp()
-    await wrapper!.find('nav button').trigger('click')
-    await flushPromises()
+    await openSidebar()
 
     expect(wrapper!.find('aside').exists()).toBe(true)
     expect(wrapper!.find('[aria-label="Sets views"]').exists()).toBe(false)
-    expect(wrapper!.html()).not.toContain('Earlier Pin')
-  })
 
-  it('drops an unpinned entry from the sidebar without a reload', async () => {
-    mockGetQuickAccess.mockResolvedValue(pinnedSetPayload([
-      buildSet({ id: 40, name: 'Earlier Pin' }),
-      buildSet({ id: 41, name: 'Later Pin', pinnedAt: '2026-02-01T00:00:00Z' }),
-    ]))
-
-    await mountApp()
-    await openSetsSubmenu()
-    expect(setsSubmenuLinks()).toHaveLength(4)
-
-    const { usePinnedSets } = await import('@/composables/usePinnedSets')
-    mockGetQuickAccess.mockResolvedValue(pinnedSetPayload([buildSet({ id: 41, name: 'Later Pin', pinnedAt: '2026-02-01T00:00:00Z' })]))
-    await usePinnedSets().refresh()
+    const setsParent = wrapper!.findAll('.sidebar-link').find((el) => el.text() === 'Sets')
+    await setsParent!.trigger('click')
     await flushPromises()
 
-    expect(setsSubmenuLinks().map((l) => l.text())).toEqual(['My Sets', 'Commemorative catalogue', 'Later Pin'])
-  })
-
-  it('clears pinned sets on logout so the next user sees none', async () => {
-    mockGetQuickAccess.mockResolvedValue(pinnedSetPayload([buildSet({ id: 40, name: 'Earlier Pin' })]))
-
-    await mountApp()
-    await openSetsSubmenu()
-    expect(setsSubmenuLinks()).toHaveLength(3)
-
-    const logoutButton = wrapper!.findAll('.sidebar-link').find((el) => el.text() === 'Logout')
-    expect(logoutButton, 'Logout button should render').toBeTruthy()
-    await logoutButton!.trigger('click')
-    await flushPromises()
-
-    const { usePinnedSets } = await import('@/composables/usePinnedSets')
-    expect(usePinnedSets().pinnedSets.value).toEqual([])
-  })
-
-  it('renders Quick Access in the desktop collection title bar and sidebar', async () => {
-    await mountApp()
-    expect(wrapper!.find('nav a[aria-label="Quick Access"]').attributes('href')).toBe('/quick-access')
-
-    await wrapper!.find('nav button').trigger('click')
-    await flushPromises()
-    const sidebarLink = wrapper!.findAll('.sidebar-link').find((el) => el.text() === 'Quick Access')
-    expect(sidebarLink?.attributes('href')).toBe('/quick-access')
-    await sidebarLink!.trigger('click')
-    await flushPromises()
-    expect(router.currentRoute.value.path).toBe('/quick-access')
-    expect(wrapper!.find('aside').exists()).toBe(false)
-  })
-
-  it('performs one authoritative Quick Access bootstrap on a direct route load', async () => {
-    await mountApp('/quick-access')
-
-    expect(router.currentRoute.value.path).toBe('/quick-access')
-    expect(mockGetQuickAccess).toHaveBeenCalledTimes(1)
+    const links = wrapper!.get('[aria-label="Sets views"]').findAll('a')
+    expect(links.map((l) => l.text())).toEqual(['My Sets', 'Commemorative catalogue'])
+    expect(links.map((l) => l.attributes('href'))).toEqual(['/sets', '/sets/commemoratives'])
     expect(mockGetSets).not.toHaveBeenCalled()
   })
 
-  it('keeps Quick Access beside Add Coin in PWA and available on non-collection pages', async () => {
-    mockIsPwa.value = true
+  it('has no notification bell or Quick Access link', async () => {
     await mountApp()
-    const pwaActions = wrapper!.findAll('nav a').filter((link) => ['Quick Access', 'Add Coin'].includes(link.attributes('aria-label')))
-    expect(pwaActions.map((link) => link.attributes('aria-label'))).toEqual(['Quick Access', 'Add Coin'])
 
-    mockIsPwa.value = false
-    await router.push('/plain')
-    await flushPromises()
-    expect(wrapper!.find('nav a[aria-label="Quick Access"]').exists()).toBe(true)
+    expect(wrapper!.find('nav a[aria-label="Notifications"]').exists()).toBe(false)
+    expect(wrapper!.find('nav a[aria-label="Quick Access"]').exists()).toBe(false)
   })
 
-  it('clears Quick Access before logout navigation', async () => {
-    const { useQuickAccess } = await import('@/composables/useQuickAccess')
-    mockGetQuickAccess.mockResolvedValue({
-      data: {
-        items: [{
-          type: 'coin',
-          id: 42,
-          pinnedAt: '2026-09-10T00:00:00Z',
-          coin: { name: 'Private coin', classification: 'owned', primaryImageUrl: null },
-        }],
-      },
-    })
+  it('signs out to the login page from the sidebar', async () => {
     await mountApp()
-    await useQuickAccess().refresh()
-    expect(useQuickAccess().items.value).toHaveLength(1)
+    await openSidebar()
 
-    await wrapper!.find('nav button').trigger('click')
     const logoutButton = wrapper!.findAll('.sidebar-link').find((el) => el.text() === 'Logout')
     await logoutButton!.trigger('click')
     await flushPromises()
 
-    expect(useQuickAccess().items.value).toEqual([])
     expect(router.currentRoute.value.path).toBe('/login')
-  })
-
-  it('clears and reloads Quick Access when the authenticated account changes', async () => {
-    const firstItem = {
-      type: 'coin' as const,
-      id: 42,
-      pinnedAt: '2026-09-10T00:00:00Z',
-      coin: { name: 'User A coin', classification: 'owned' as const, primaryImageUrl: null },
-    }
-    const secondItem = {
-      type: 'coin_set' as const,
-      id: 7,
-      pinnedAt: '2026-09-10T01:00:00Z',
-      coinSet: { name: 'User B set', setType: 'goal' as const, color: '', icon: '' },
-    }
-    mockGetQuickAccess.mockResolvedValueOnce({ data: { items: [firstItem] } })
-    await mountApp()
-    const { useQuickAccess } = await import('@/composables/useQuickAccess')
-    await flushPromises()
-    expect(useQuickAccess().items.value).toEqual([firstItem])
-
-    mockGetQuickAccess.mockResolvedValueOnce({ data: { items: [secondItem] } })
-    const auth = useAuthStore()
-    await auth.applyAuthResponse({
-      token: 'user-b-token',
-      refreshToken: 'user-b-refresh',
-      user: { ...(auth.user!), id: 2, username: 'user-b' },
-    })
-    await flushPromises()
-
-    expect(useQuickAccess().items.value).toEqual([secondItem])
+    expect(useAuthStore().user).toBeNull()
   })
 })

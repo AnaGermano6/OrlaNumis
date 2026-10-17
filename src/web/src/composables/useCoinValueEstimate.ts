@@ -1,7 +1,6 @@
 import { type MaybeRefOrGetter, computed, onMounted, onUnmounted, ref, toValue } from 'vue'
 import { estimateCoinValue, getAIJob, getCoinAIJobs, updateCoin } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
-import { useNotifications } from '@/composables/useNotifications'
 import { useToast } from '@/composables/useToast'
 import type { AIJob, AIJobStartResponse, ValueEstimate } from '@/types'
 import { t } from '@/i18n'
@@ -23,7 +22,6 @@ export function useCoinValueEstimate(
   options: { onApplied?: () => void } = {},
 ) {
   const { showAlert } = useDialog()
-  const { refresh: refreshNotifications } = useNotifications()
   const { showToast } = useToast()
 
   const estimating = ref(false)
@@ -159,7 +157,6 @@ export function useCoinValueEstimate(
     valueEstimate.value = parsed
     activeEstimateJob.value = null
     showToast(t('estimate.ready'), 'success')
-    await refreshNotifications()
   }
 
   function clearEstimatePollTimer() {

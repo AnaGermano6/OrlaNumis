@@ -23,7 +23,6 @@ const mockUser: User = {
   role: 'user',
   email: 'test@example.com',
   avatarPath: '',
-  isPublic: false,
   bio: '',
   zipCode: '',
 }
@@ -41,20 +40,6 @@ const mockAuthResponse: AuthResponse = {
   user: mockUser,
 }
 
-function makeAssertionCredential(): PublicKeyCredential {
-  return {
-    id: 'credential-id',
-    rawId: new Uint8Array([1, 2, 3]).buffer,
-    type: 'public-key',
-    response: {
-      authenticatorData: new Uint8Array([4, 5, 6]).buffer,
-      clientDataJSON: new Uint8Array([7, 8, 9]).buffer,
-      signature: new Uint8Array([10, 11, 12]).buffer,
-      userHandle: null,
-    },
-  } as PublicKeyCredential
-}
-
 function getStorageMock(): Record<string, string> {
   const store: Record<string, string> = {}
   return store
@@ -62,12 +47,10 @@ function getStorageMock(): Record<string, string> {
 
 describe('Auth Store', () => {
   let storageMock: Record<string, string>
-  let credentialsGet: ReturnType<typeof vi.fn>
   let cacheDelete: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     storageMock = getStorageMock()
-    credentialsGet = vi.fn()
     cacheDelete = vi.fn().mockResolvedValue(true)
 
     // Mock localStorage
@@ -75,10 +58,6 @@ describe('Auth Store', () => {
       getItem: vi.fn((key: string) => storageMock[key] ?? null),
       setItem: vi.fn((key: string, value: string) => { storageMock[key] = value }),
       removeItem: vi.fn((key: string) => { delete storageMock[key] }),
-    })
-    Object.defineProperty(navigator, 'credentials', {
-      value: { get: credentialsGet },
-      configurable: true,
     })
     vi.stubGlobal('caches', {
       delete: cacheDelete,
@@ -245,118 +224,6 @@ describe('Auth Store', () => {
       await store.doRegister('newuser', 'password123')
 
       expect(api.register).toHaveBeenCalledWith('newuser', 'password123', undefined)
-    })
-  })
-
-  describe('doWebAuthnLogin', () => {
-    it('accepts legacy nested publicKey challenge data from the login begin response', async () => {
-      const credential = makeAssertionCredential()
-      credentialsGet.mockResolvedValue(credential)
-      vi.mocked(api.webauthnLoginBegin).mockResolvedValue({
-        data: {
-          options: {
-            publicKey: {
-              challenge: 'AQIDBA',
-              rpId: 'coins.example',
-              allowCredentials: [
-                { id: 'BQYH', type: 'public-key', transports: ['internal'] },
-              ],
-              userVerification: 'required',
-              timeout: 120000,
-            },
-          },
-          username: ' testuser ',
-        },
-      } as AxiosResponse)
-      vi.mocked(api.webauthnLoginFinish).mockResolvedValue({ data: mockAuthResponse } as AxiosResponse<AuthResponse>)
-
-      const store = useAuthStore()
-      await store.doWebAuthnLogin(' testuser ')
-
-      expect(api.webauthnLoginBegin).toHaveBeenCalledWith('testuser')
-      expect(credentialsGet).toHaveBeenCalledWith({
-        publicKey: {
-          challenge: new Uint8Array([1, 2, 3, 4]).buffer,
-          rpId: 'coins.example',
-          allowCredentials: [
-            {
-              id: new Uint8Array([5, 6, 7]).buffer,
-              type: 'public-key',
-              transports: ['internal'],
-            },
-          ],
-          userVerification: 'required',
-          timeout: 120000,
-        },
-      })
-      expect(api.webauthnLoginFinish).toHaveBeenCalledWith('testuser', credential)
-      expect(store.token).toBe(mockAuthResponse.token)
-      expect(store.user).toEqual(mockUser)
-    })
-
-    it('uses fixed flat login begin options with challenge data directly under options', async () => {
-      const credential = makeAssertionCredential()
-      credentialsGet.mockResolvedValue(credential)
-      vi.mocked(api.webauthnLoginBegin).mockResolvedValue({
-        data: {
-          options: {
-            challenge: 'AQIDBA',
-            rpId: 'coins.example',
-            allowCredentials: [],
-          },
-        },
-      } as AxiosResponse)
-      vi.mocked(api.webauthnLoginFinish).mockResolvedValue({ data: mockAuthResponse } as AxiosResponse<AuthResponse>)
-
-      const store = useAuthStore()
-      await store.doWebAuthnLogin('testuser')
-
-      expect(credentialsGet).toHaveBeenCalledWith(expect.objectContaining({
-        publicKey: expect.objectContaining({
-          challenge: new Uint8Array([1, 2, 3, 4]).buffer,
-          rpId: 'coins.example',
-          allowCredentials: [],
-        }),
-      }))
-      expect(api.webauthnLoginFinish).toHaveBeenCalledWith('testuser', credential)
-    })
-
-    it('fails before invoking browser biometrics when challenge data is missing', async () => {
-      vi.mocked(api.webauthnLoginBegin).mockResolvedValue({
-        data: {
-          options: { publicKey: { rpId: 'coins.example', allowCredentials: [] } },
-          username: 'testuser',
-        },
-      } as AxiosResponse)
-
-      const store = useAuthStore()
-      await expect(store.doWebAuthnLogin('testuser')).rejects.toThrow('Biometric login is temporarily unavailable. Missing challenge data.')
-
-      expect(credentialsGet).not.toHaveBeenCalled()
-      expect(api.webauthnLoginFinish).not.toHaveBeenCalled()
-    })
-
-    it('fails gracefully when all allowCredentials entries are missing ids', async () => {
-      vi.mocked(api.webauthnLoginBegin).mockResolvedValue({
-        data: {
-          options: {
-            challenge: 'Zm9v',
-            allowCredentials: [{ type: 'public-key' }],
-          },
-          username: 'testuser',
-        },
-      } as AxiosResponse<{
-        options: { challenge: string; allowCredentials: Array<{ id?: string; type: string }> }
-        username: string
-      }>)
-
-      const store = useAuthStore()
-
-      await expect(store.doWebAuthnLogin('testuser')).rejects.toThrow(
-        'Biometric login is temporarily unavailable. Please sign in with your password and try again.',
-      )
-      expect(credentialsGet).not.toHaveBeenCalled()
-      expect(api.webauthnLoginFinish).not.toHaveBeenCalled()
     })
   })
 

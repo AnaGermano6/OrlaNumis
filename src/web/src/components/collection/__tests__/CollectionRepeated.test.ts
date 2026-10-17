@@ -36,7 +36,7 @@ describe('CollectionRepeated', () => {
     const wrapper = render('coin', { repeatedCoins: 2, spareCoins: 3 })
     await flushPromises()
 
-    expect(mocks.getCoins).toHaveBeenCalledWith(expect.objectContaining({ kind: 'coin', repeated: 'true', wishlist: 'false', sold: 'false', sort: 'quantity', order: 'desc' }))
+    expect(mocks.getCoins).toHaveBeenCalledWith(expect.objectContaining({ kind: 'coin', repeated: 'true', wishlist: 'false', sort: 'quantity', order: 'desc' }))
     expect(wrapper.get('[data-testid="repeated-counts"]').text()).toBe('2 moedas repetidas · 3 exemplares para troca')
     const items = wrapper.findAll('[data-testid="repeated-item"]')
     expect(items.map((item) => item.get('a').text())).toEqual(['1 escudo 1962', '50 centavos 1965'])

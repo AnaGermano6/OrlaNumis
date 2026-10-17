@@ -27,13 +27,13 @@ func TestIntakeCommitReportsValidationAndAllowsCorrection(t *testing.T) {
 	}
 	coinRepo := repository.NewCoinRepository(db)
 	service := services.NewCoinIntakeService(repository.NewCoinIntakeDraftRepository(db), coinRepo, nil, nil).
-		WithCoinService(services.NewCoinService(coinRepo, nil))
+		WithCoinService(services.NewCoinService(coinRepo))
 	handler := NewCoinIntakeHandler(service, services.NewLogger(20))
 	router := gin.New()
 	router.Use(func(c *gin.Context) { c.Set("userId", uint(1)) })
 	router.POST("/commit", handler.CommitDraft)
 	draft := models.CoinIntakeDraft{
-		UserID: 1, DraftPayload: `{"name":"Denarius","category":"Roman","era":"Roman Imperial"}`,
+		UserID: 1, DraftPayload: `{"name":"Denarius","category":"Modern","era":"Roman Imperial"}`,
 		Status: models.CoinIntakeDraftStatusDrafted, ExpiresAt: time.Now().Add(time.Hour),
 	}
 	if err := db.Create(&draft).Error; err != nil {

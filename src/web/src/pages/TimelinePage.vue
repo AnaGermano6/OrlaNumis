@@ -92,9 +92,6 @@
                     <span v-if="coin.purchasePrice" class="text-chip font-semibold text-gold">
                       {{ formatCurrency(coin.purchasePrice) }}
                     </span>
-                    <span v-if="coin.isSold" class="rounded-full border border-border-subtle bg-surface-secondary px-2 py-0.5 text-sm font-medium text-warning">
-                      {{ t('coinDetail.badges.sold') }}
-                    </span>
                     <span v-if="coin.grade" class="rounded-full bg-surface-secondary px-2 py-0.5 text-sm font-medium text-gold">
                       {{ coin.grade }}
                     </span>
@@ -204,19 +201,15 @@ const totalValue = computed(() =>
 async function loadCoins() {
   loading.value = true
   try {
-    // Fetch all non-wishlist coins (collection + sold) in pages
+    // Fetch all the coins in pages
     const allFetched = new Map<number, Coin>()
-    for (const soldParam of [undefined, 'true'] as const) {
-      let page = 1
-      let hasMore = true
-      while (hasMore) {
-        const params: Record<string, unknown> = { limit: 100, page, sort: 'purchase_date', order: 'desc' }
-        if (soldParam) params.sold = soldParam
-        const res = await getCoins(params as Parameters<typeof getCoins>[0])
-        for (const c of res.data.coins) allFetched.set(c.id, c)
-        hasMore = res.data.coins.length === 100
-        page++
-      }
+    let page = 1
+    let hasMore = true
+    while (hasMore) {
+      const res = await getCoins({ limit: 100, page, sort: 'purchase_date', order: 'desc' })
+      for (const c of res.data.coins) allFetched.set(c.id, c)
+      hasMore = res.data.coins.length === 100
+      page++
     }
     allCoins.value = Array.from(allFetched.values())
   } catch {

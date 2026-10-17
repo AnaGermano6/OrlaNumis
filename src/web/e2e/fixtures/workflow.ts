@@ -4,10 +4,8 @@ import {
   buildRomanDenariusCore,
   buildTestCoinSets,
   buildTestMintLocations,
-  buildTestStorageLocations,
-  buildTestTags,
 } from '../../src/test/fixtures'
-import type { Coin, CoinImage, CoinListResponse, CoinMutationPayload, CoinSet, StorageLocation, Tag, UserInfo } from '../../src/types'
+import type { Coin, CoinImage, CoinListResponse, CoinMutationPayload, CoinSet, UserInfo } from '../../src/types'
 
 export interface F013Workflow {
   readonly id: string
@@ -35,13 +33,9 @@ export const F013_WORKFLOW_INVENTORY = Object.freeze({
     id: 'edit-one-field', goal: 'Edit one field on a golden fixture coin and verify the saved value.',
     routes: Object.freeze(['/', '/coin/1', '/edit/1']), checkpoints: Object.freeze(['edit-form', 'saved-value']), viewport: desktop,
   }),
-  'storage-location-change-clear': Object.freeze({
-    id: 'storage-location-change-clear', goal: 'Change and clear a coin storage location.',
-    routes: Object.freeze(['/coin/1', '/edit/1']), checkpoints: Object.freeze(['location-changed', 'location-cleared']), viewport: desktop,
-  }),
-  'tags-sets-edit': Object.freeze({
-    id: 'tags-sets-edit', goal: 'Add and remove canonical tags and sets on a coin.',
-    routes: Object.freeze(['/coin/1']), checkpoints: Object.freeze(['tags-updated', 'sets-updated']), viewport: desktop,
+  'sets-edit': Object.freeze({
+    id: 'sets-edit', goal: 'Add and remove canonical sets on a coin.',
+    routes: Object.freeze(['/coin/1']), checkpoints: Object.freeze(['sets-updated']), viewport: desktop,
   }),
   'image-upload-delete': Object.freeze({
     id: 'image-upload-delete', goal: 'Upload and delete a packaged synthetic image.',
@@ -63,23 +57,17 @@ export const workflowUser = {
   role: 'admin',
   email: 'workflow@example.test',
   avatarPath: '',
-  isPublic: false,
   bio: '',
   zipCode: '',
   numisBidsUsername: '',
   numisBidsConfigured: false,
-  pushoverEnabled: false,
-  coinOfDayEnabled: true,
 } as const
 
 export interface WorkflowApiState {
   coins: Coin[]
-  storageLocations: StorageLocation[]
-  tags: Tag[]
   sets: CoinSet[]
   createPayloads: CoinMutationPayload[]
   updatePayloads: Array<{ id: number; payload: CoinMutationPayload }>
-  tagPayloads: Array<{ action: 'add' | 'remove'; coinId: number; tagId: number }>
   setPayloads: Array<{ action: 'add' | 'remove'; coinId: number; setId: number }>
   imageUploads: Array<{ coinId: number; imageType: string; isPrimary: boolean; fileName: string; contentType: string }>
   imageDeletes: Array<{ coinId: number; imageId: number }>
@@ -103,12 +91,9 @@ export async function installAuthenticatedSession(page: Page) {
 export async function installWorkflowApiMocks(page: Page, initialCoins: Coin[] = [buildRomanDenariusCore()]): Promise<WorkflowApiState> {
   const state: WorkflowApiState = {
     coins: initialCoins.map((coin) => cloneCoin(coin)),
-    storageLocations: buildTestStorageLocations(),
-    tags: buildTestTags(),
     sets: buildTestCoinSets(),
     createPayloads: [],
     updatePayloads: [],
-    tagPayloads: [],
     setPayloads: [],
     imageUploads: [],
     imageDeletes: [],
@@ -166,11 +151,6 @@ export async function installWorkflowApiMocks(page: Page, initialCoins: Coin[] =
       return
     }
 
-    if (path === '/notifications/unread-count' && method === 'GET') {
-      await json(route, { count: 0 })
-      return
-    }
-
     if (path.startsWith('/uploads/') && method === 'GET') {
       await media(route, state)
       return
@@ -178,30 +158,14 @@ export async function installWorkflowApiMocks(page: Page, initialCoins: Coin[] =
 
     if (path === '/admin/settings' && method === 'GET') {
       await json(route, {
-        CoinCategories: 'Roman\nGreek\nByzantine\nModern\nOther',
+        CoinCategories: 'Modern\nOther',
         CoinEras: 'ancient\nmedieval\nmodern',
       })
       return
     }
 
-    if (path === '/storage-locations' && method === 'GET') {
-      await json(route, { storageLocations: state.storageLocations })
-      return
-    }
-
     if (path === '/mint-locations' && method === 'GET') {
       await json(route, { mintLocations: buildTestMintLocations() })
-      return
-    }
-
-    const occupancyMatch = path.match(/^\/storage-locations\/(\d+)\/occupancy$/)
-    if (occupancyMatch && method === 'GET') {
-      await json(route, { locationId: Number(occupancyMatch[1]), rows: 3, columns: 3, capacity: 9, occupiedSlots: [6], currentCoinSlot: null })
-      return
-    }
-
-    if (path === '/tags' && method === 'GET') {
-      await json(route, { tags: state.tags })
       return
     }
 
@@ -247,7 +211,6 @@ export async function installWorkflowApiMocks(page: Page, initialCoins: Coin[] =
         id: nextCoinId++,
         userId: workflowUser.id,
         images: [],
-        tags: [],
         sets: [],
         references: [],
       })
@@ -314,51 +277,9 @@ export async function installWorkflowApiMocks(page: Page, initialCoins: Coin[] =
       const payload = request.postDataJSON() as CoinMutationPayload
       state.updatePayloads.push({ id, payload })
       const current = state.coins.find((item) => item.id === id) ?? buildRomanDenariusCore({ id })
-      const storageLocationId = payload.storageLocationId === undefined ? current.storageLocationId : payload.storageLocationId
-      const storageLocation = storageLocationId == null
-        ? null
-        : state.storageLocations.find((location) => location.id === storageLocationId) ?? null
-      const updated = cloneCoin({
-        ...current,
-        ...payload,
-        id,
-        storageLocationId,
-        storageLocation: storageLocation ? { id: storageLocation.id, name: storageLocation.name } : null,
-      })
+      const updated = cloneCoin({ ...current, ...payload, id })
       state.coins = state.coins.map((item) => item.id === id ? updated : item)
       await json(route, updated)
-      return
-    }
-
-    const addTagMatch = path.match(/^\/coins\/(\d+)\/tags$/)
-    if (addTagMatch && method === 'POST') {
-      const coinId = Number(addTagMatch[1])
-      const { tagId } = request.postDataJSON() as { tagId: number }
-      const tag = state.tags.find((item) => item.id === tagId)
-      if (!tag) {
-        await json(route, { error: 'Tag not found' }, 404)
-        return
-      }
-      state.tagPayloads.push({ action: 'add', coinId, tagId })
-      state.coins = state.coins.map((coin) => coin.id === coinId
-        ? cloneCoin({
-            ...coin,
-            tags: coin.tags?.some((item) => item.id === tagId) ? coin.tags : [...(coin.tags ?? []), { ...tag }],
-          })
-        : coin)
-      await json(route, { message: 'Tag attached' })
-      return
-    }
-
-    const removeTagMatch = path.match(/^\/coins\/(\d+)\/tags\/(\d+)$/)
-    if (removeTagMatch && method === 'DELETE') {
-      const coinId = Number(removeTagMatch[1])
-      const tagId = Number(removeTagMatch[2])
-      state.tagPayloads.push({ action: 'remove', coinId, tagId })
-      state.coins = state.coins.map((coin) => coin.id === coinId
-        ? cloneCoin({ ...coin, tags: coin.tags?.filter((tag) => tag.id !== tagId) ?? [] })
-        : coin)
-      await json(route, { message: 'Tag detached' })
       return
     }
 
@@ -395,7 +316,7 @@ export async function installWorkflowApiMocks(page: Page, initialCoins: Coin[] =
     }
 
     if (path === '/deep-identification/capability' && method === 'GET') {
-      await json(route, { enabled: true, providers: ['nomisma', 'numista', 'ocre'] })
+      await json(route, { enabled: true, providers: ['numista'] })
       return
     }
 
@@ -556,10 +477,8 @@ export async function expectAuthenticatedApiCall(state: WorkflowApiState, reques
 function cloneCoin(coin: Coin): Coin {
   return {
     ...coin,
-    storageLocation: coin.storageLocation ? { ...coin.storageLocation } : null,
     images: coin.images.map((image) => ({ ...image })),
     references: coin.references?.map((reference) => ({ ...reference })),
-    tags: coin.tags?.map((tag) => ({ ...tag })),
     sets: coin.sets?.map((set) => ({ ...set })),
   }
 }
@@ -568,19 +487,14 @@ function filterCoins(coins: Coin[], searchParams: URLSearchParams): Coin[] {
   const search = searchParams.get('search')?.trim().toLowerCase()
   const category = searchParams.get('category')?.trim()
   const era = searchParams.get('era')?.trim()
-  const tag = searchParams.get('tag')?.trim()
   const set = searchParams.get('set')?.trim()
   const wishlist = searchParams.get('wishlist')
-  const sold = searchParams.get('sold')
 
   return coins.filter((coin) => {
     if (wishlist === 'false' && coin.isWishlist) return false
     if (wishlist === 'true' && !coin.isWishlist) return false
-    if (sold === 'false' && coin.isSold) return false
-    if (sold === 'true' && !coin.isSold) return false
     if (category && coin.category !== category) return false
     if (era && coin.era !== era) return false
-    if (tag && !coin.tags?.some((coinTag) => String(coinTag.id) === tag)) return false
     if (set && !coin.sets?.some((coinSet) => String(coinSet.id) === set)) return false
     if (search) {
       const haystack = [

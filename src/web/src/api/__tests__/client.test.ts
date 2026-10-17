@@ -417,7 +417,7 @@ describe('API Client', () => {
       const newAuth: AuthResponse = {
         token: 'new-jwt',
         refreshToken: 'new-refresh',
-        user: { id: 1, username: 'u', role: 'user', email: '', avatarPath: '', isPublic: false, bio: '', zipCode: '' },
+        user: { id: 1, username: 'u', role: 'user', email: '', avatarPath: '', bio: '', zipCode: '' },
       }
 
       const defaultAxios = (await import('axios')).default
@@ -652,28 +652,12 @@ describe('API Client', () => {
       expect(mockApi.get).toHaveBeenCalledWith('/stats')
     })
 
-    it('sellCoin sends POST with soldPrice and soldTo', async () => {
-      mockApi.post.mockResolvedValue({ data: {} })
-      await client.sellCoin(5, 100, 'buyer')
-      expect(mockApi.post).toHaveBeenCalledWith('/coins/5/sell', { soldPrice: 100, soldTo: 'buyer' })
-    })
-
-    it('triggerCollectionHealthSnapshots sends POST to the admin run endpoint', async () => {
-      mockApi.post.mockResolvedValue({ data: {} })
-      await client.triggerCollectionHealthSnapshots()
-      expect(mockApi.post).toHaveBeenCalledWith('/admin/collection-health-snapshots/run')
-    })
-
     it('admin security wrappers use the public exposure hardening contract', async () => {
       mockApi.get.mockResolvedValue({ data: {} })
       mockApi.post.mockResolvedValue({ data: {} })
-      mockApi.delete.mockResolvedValue({ data: {} })
 
       await client.getSecuritySummary()
       await client.getSecurityEvents({ type: 'failed_login', username: 'alice', ip: '203.0.113.10', limit: 50 })
-      await client.getSecurityIpRules()
-      await client.createSecurityIpRule({ cidr: '203.0.113.0/24', duration: '1h', reason: 'credential stuffing' })
-      await client.deleteSecurityIpRule(12)
       await client.unlockUser(3)
       await client.getSecurityExposureCheck()
 
@@ -681,13 +665,6 @@ describe('API Client', () => {
       expect(mockApi.get).toHaveBeenCalledWith('/admin/security/events', {
         params: { type: 'failed_login', username: 'alice', clientIp: '203.0.113.10', limit: 50 },
       })
-      expect(mockApi.get).toHaveBeenCalledWith('/admin/security/ip-rules')
-      expect(mockApi.post).toHaveBeenCalledWith('/admin/security/ip-rules', {
-        cidr: '203.0.113.0/24',
-        durationMinutes: 60,
-        reason: 'credential stuffing',
-      })
-      expect(mockApi.delete).toHaveBeenCalledWith('/admin/security/ip-rules/12')
       expect(mockApi.post).toHaveBeenCalledWith('/admin/users/3/unlock')
       expect(mockApi.get).toHaveBeenCalledWith('/admin/security/exposure-check')
     })

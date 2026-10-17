@@ -42,10 +42,8 @@ func (s *DeepIdentificationService) GetObservabilitySummary() (*models.DeepIdent
 		return nil, err
 	}
 	for _, provider := range []models.DeepProviderName{
-		models.DeepProviderNomisma,
 		models.DeepProviderNumista,
 		models.DeepProviderNGC,
-		models.DeepProviderOCRE,
 		models.DeepProviderRPC,
 	} {
 		item := durable.Providers[provider]

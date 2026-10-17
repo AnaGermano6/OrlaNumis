@@ -25,7 +25,7 @@ func setupAuthHandlerTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
-	err = db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.AppSetting{}, &models.SecurityEvent{}, &models.IPRule{}, &models.OIDCProvider{})
+	err = db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.AppSetting{}, &models.SecurityEvent{})
 	if err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
@@ -46,7 +46,6 @@ func setupAuthHandlerRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	api.POST("/auth/register", handler.Register)
 	api.POST("/auth/login", handler.Login)
 	api.POST("/auth/refresh", handler.Refresh)
-	api.GET("/auth/setup", handler.NeedsSetup)
 
 	return r, db
 }
@@ -59,8 +58,7 @@ func setupAuthHandlerRouterWithSettings(t *testing.T) (*gin.Engine, *gorm.DB, *s
 	authRepo := repository.NewAuthRepository(db)
 	settingsSvc := services.NewSettingsService(repository.NewSettingsRepository(db))
 	securitySvc := services.NewSecurityService(repository.NewSecurityRepository(db))
-	oidcRepo := repository.NewOIDCRepository(db)
-	authSvc := services.NewAuthService(authRepo, testJWTSecret).WithSettings(settingsSvc).WithSecurity(securitySvc).WithOIDC(oidcRepo)
+	authSvc := services.NewAuthService(authRepo, testJWTSecret).WithSettings(settingsSvc).WithSecurity(securitySvc)
 	handler := NewAuthHandler(testJWTSecret, authRepo, authSvc)
 
 	r := gin.New()
@@ -72,7 +70,6 @@ func setupAuthHandlerRouterWithSettings(t *testing.T) (*gin.Engine, *gorm.DB, *s
 	api.POST("/auth/register", handler.Register)
 	api.POST("/auth/login", handler.Login)
 	api.POST("/auth/refresh", handler.Refresh)
-	api.GET("/auth/setup", handler.NeedsSetup)
 
 	return r, db, settingsSvc
 }
@@ -206,7 +203,9 @@ func TestRegisterHandler_DuplicateUsername(t *testing.T) {
 	}
 }
 
-func TestRegisterHandler_RegistrationModeDefaultAllowsLocalUsersWhenNoOIDCProviderEnabled(t *testing.T) {
+// Registration is closed by default: after the first user, no one else can
+// make an account.
+func TestRegisterHandler_RegistrationModeDefaultRefusesSecondUser(t *testing.T) {
 	routerWithSettings, _, _ := setupAuthHandlerRouterWithSettings(t)
 	first := registerTestUser(t, routerWithSettings, "first", "first@example.com", "password123")
 	if first["token"] == nil {
@@ -223,76 +222,8 @@ func TestRegisterHandler_RegistrationModeDefaultAllowsLocalUsersWhenNoOIDCProvid
 	w := httptest.NewRecorder()
 	routerWithSettings.ServeHTTP(w, req)
 
-	if w.Code != http.StatusCreated {
-		t.Fatalf("expected 201 when no OIDC provider is enabled, got %d: %s", w.Code, w.Body.String())
-	}
-}
-
-func TestRegisterHandler_RegistrationModeDefaultAllowsLocalUsersWhenOIDCProviderDisabled(t *testing.T) {
-	routerWithSettings, db, _ := setupAuthHandlerRouterWithSettings(t)
-	registerTestUser(t, routerWithSettings, "first", "first@example.com", "password123")
-	provider := models.OIDCProvider{
-		Name:                 "entra",
-		DisplayName:          "Microsoft Entra ID",
-		ProviderType:         models.OIDCProviderTypeEntra,
-		Enabled:              false,
-		IssuerURL:            "https://login.microsoftonline.com/test-tenant/v2.0",
-		ClientID:             "client-id",
-		ClientSecret:         "client-secret",
-		Scopes:               models.StringList{"openid", "email", "profile"},
-		CallbackPath:         "/api/auth/oidc/1/callback",
-		RequireVerifiedEmail: true,
-	}
-	if err := db.Create(&provider).Error; err != nil {
-		t.Fatalf("failed to create disabled OIDC provider: %v", err)
-	}
-
-	body, _ := json.Marshal(map[string]string{
-		"username": "second",
-		"email":    "second@example.com",
-		"password": "password123",
-	})
-	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	routerWithSettings.ServeHTTP(w, req)
-
-	if w.Code != http.StatusCreated {
-		t.Fatalf("expected 201 when OIDC provider is disabled, got %d: %s", w.Code, w.Body.String())
-	}
-}
-
-func TestRegisterHandler_RegistrationModeDefaultClosedWhenOIDCProviderEnabled(t *testing.T) {
-	routerWithSettings, db, _ := setupAuthHandlerRouterWithSettings(t)
-	registerTestUser(t, routerWithSettings, "first", "first@example.com", "password123")
-	provider := models.OIDCProvider{
-		Name:                 "entra",
-		DisplayName:          "Microsoft Entra ID",
-		ProviderType:         models.OIDCProviderTypeEntra,
-		Enabled:              true,
-		IssuerURL:            "https://login.microsoftonline.com/test-tenant/v2.0",
-		ClientID:             "client-id",
-		ClientSecret:         "client-secret",
-		Scopes:               models.StringList{"openid", "email", "profile"},
-		CallbackPath:         "/api/auth/oidc/1/callback",
-		RequireVerifiedEmail: true,
-	}
-	if err := db.Create(&provider).Error; err != nil {
-		t.Fatalf("failed to create OIDC provider: %v", err)
-	}
-
-	body, _ := json.Marshal(map[string]string{
-		"username": "second",
-		"email":    "second@example.com",
-		"password": "password123",
-	})
-	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	routerWithSettings.ServeHTTP(w, req)
-
 	if w.Code != http.StatusForbidden {
-		t.Fatalf("expected 403 when OIDC provider is enabled and registration is closed, got %d: %s", w.Code, w.Body.String())
+		t.Fatalf("expected 403 while registration is closed, got %d: %s", w.Code, w.Body.String())
 	}
 }
 
@@ -346,71 +277,6 @@ func TestLoginHandler_Success(t *testing.T) {
 	}
 	if resp["refreshToken"] == nil {
 		t.Error("expected refreshToken in login response")
-	}
-}
-
-func TestLocalPasswordLoginAndRefreshRegressionWithOIDCSchema(t *testing.T) {
-	router, db := setupAuthHandlerRouter(t)
-	if err := db.AutoMigrate(&models.OIDCProvider{}, &models.ExternalIdentity{}, &models.OIDCAuthState{}); err != nil {
-		t.Fatalf("failed to migrate OIDC schema: %v", err)
-	}
-
-	registerTestUser(t, router, "local-oidc-regression", "local-oidc@example.com", "password123")
-
-	loginBody, _ := json.Marshal(map[string]string{
-		"username": "local-oidc-regression",
-		"password": "password123",
-	})
-	loginReq := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(loginBody))
-	loginReq.Header.Set("Content-Type", "application/json")
-	loginW := httptest.NewRecorder()
-	router.ServeHTTP(loginW, loginReq)
-
-	if loginW.Code != http.StatusOK {
-		t.Fatalf("expected local login to stay successful with OIDC schema present, got %d: %s", loginW.Code, loginW.Body.String())
-	}
-
-	var loginResp struct {
-		Token        string  `json:"token"`
-		RefreshToken string  `json:"refreshToken"`
-		User         UserDTO `json:"user"`
-	}
-	if err := json.Unmarshal(loginW.Body.Bytes(), &loginResp); err != nil {
-		t.Fatalf("failed to parse login response: %v", err)
-	}
-	if loginResp.Token == "" || loginResp.RefreshToken == "" {
-		t.Fatalf("expected local login auth response tokens, got token=%q refresh=%q", loginResp.Token, loginResp.RefreshToken)
-	}
-	if loginResp.User.Username != "local-oidc-regression" {
-		t.Fatalf("expected local login user payload to be preserved, got %+v", loginResp.User)
-	}
-
-	refreshBody, _ := json.Marshal(map[string]string{"refreshToken": loginResp.RefreshToken})
-	refreshReq := httptest.NewRequest(http.MethodPost, "/api/auth/refresh", bytes.NewReader(refreshBody))
-	refreshReq.Header.Set("Content-Type", "application/json")
-	refreshW := httptest.NewRecorder()
-	router.ServeHTTP(refreshW, refreshReq)
-
-	if refreshW.Code != http.StatusOK {
-		t.Fatalf("expected refresh to stay successful with OIDC schema present, got %d: %s", refreshW.Code, refreshW.Body.String())
-	}
-
-	var refreshResp struct {
-		Token        string  `json:"token"`
-		RefreshToken string  `json:"refreshToken"`
-		User         UserDTO `json:"user"`
-	}
-	if err := json.Unmarshal(refreshW.Body.Bytes(), &refreshResp); err != nil {
-		t.Fatalf("failed to parse refresh response: %v", err)
-	}
-	if refreshResp.Token == "" || refreshResp.RefreshToken == "" {
-		t.Fatalf("expected refreshed auth response tokens, got token=%q refresh=%q", refreshResp.Token, refreshResp.RefreshToken)
-	}
-	if refreshResp.RefreshToken == loginResp.RefreshToken {
-		t.Fatal("expected refresh token rotation to remain one-time-use")
-	}
-	if refreshResp.User.Username != "local-oidc-regression" {
-		t.Fatalf("expected refreshed user payload to be preserved, got %+v", refreshResp.User)
 	}
 }
 
@@ -603,71 +469,6 @@ func TestRefreshHandler_MissingToken(t *testing.T) {
 }
 
 // --- Setup Check ---
-
-func TestNeedsSetup_NoUsers(t *testing.T) {
-	router, _ := setupAuthHandlerRouter(t)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/auth/setup", nil)
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Code)
-	}
-
-	var resp map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &resp)
-	if resp["needsSetup"] != true {
-		t.Errorf("expected needsSetup=true when no users, got %v", resp["needsSetup"])
-	}
-}
-
-func TestNeedsSetup_WithUsers(t *testing.T) {
-	router, _ := setupAuthHandlerRouter(t)
-
-	registerTestUser(t, router, "firstuser", "first@example.com", "password123")
-
-	req := httptest.NewRequest(http.MethodGet, "/api/auth/setup", nil)
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Code)
-	}
-
-	var resp map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &resp)
-	if resp["needsSetup"] != false {
-		t.Errorf("expected needsSetup=false after registration, got %v", resp["needsSetup"])
-	}
-}
-
-func TestAuthResponseIncludesEmperorTrackerFields(t *testing.T) {
-	router, _ := setupAuthHandlerRouter(t)
-
-	registerResp := registerTestUser(t, router, "emperortracker", "emperortracker@example.com", "password123")
-	userMap, ok := registerResp["user"].(map[string]interface{})
-	if !ok {
-		t.Fatal("expected user object in register response")
-	}
-	for _, field := range []string{
-		"emperorTrackerEnabled",
-		"emperorTrackerShowUsurpers",
-		"emperorTrackerShowEmpresses",
-		"emperorTrackerShowOtherFigures",
-	} {
-		value, exists := userMap[field]
-		if !exists {
-			t.Errorf("register response missing %s field", field)
-			continue
-		}
-		if value != false {
-			t.Errorf("%s = %v, want false for a new user", field, value)
-		}
-	}
-}
 
 func TestAuthResponseIncludesPWASwipeNavEnabled(t *testing.T) {
 	router, _ := setupAuthHandlerRouter(t)

@@ -57,7 +57,7 @@ describe('BanknotesPage', () => {
     const wrapper = mountPage()
     await flushPromises()
 
-    expect(mocks.getCoins).toHaveBeenCalledWith(expect.objectContaining({ kind: 'banknote', wishlist: 'false', sold: 'false', page: 1, sort: 'updated_at', order: 'desc' }))
+    expect(mocks.getCoins).toHaveBeenCalledWith(expect.objectContaining({ kind: 'banknote', wishlist: 'false', page: 1, sort: 'updated_at', order: 'desc' }))
     expect(mocks.getCoinCountries).toHaveBeenCalledWith('banknote')
     expect(wrapper.findAll('[data-testid="card"]').map((card) => card.text())).toEqual(['1000 escudos', '500 escudos'])
     expect(wrapper.find('[data-testid="banknotes-kpi-banknotes"]').exists()).toBe(false)

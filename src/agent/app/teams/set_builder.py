@@ -18,7 +18,7 @@ Roles:
   structured proposal (or a clarification/rejection/failure result).
 
 This module never creates or modifies a set, slot, or coin. It returns data
-only — Go owns persistence, notifications, and the approval-gated creation
+only — Go owns persistence and the approval-gated creation
 transaction (Phase 3+).
 """
 

@@ -16,10 +16,10 @@ func OwnedByID(id uint, userID uint) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-// ActiveCollection scopes to coins that are not wishlist and not sold.
+// ActiveCollection scopes to the user's coins that are not on the wishlist.
 func ActiveCollection(userID uint) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("user_id = ? AND is_wishlist = ? AND is_sold = ?", userID, false, false)
+		return db.Where("user_id = ? AND is_wishlist = ?", userID, false)
 	}
 }
 
@@ -31,19 +31,5 @@ func OfKind(kind string) func(db *gorm.DB) *gorm.DB {
 			return db
 		}
 		return db.Where("kind = ?", kind)
-	}
-}
-
-// ActiveRomanCollection scopes to Roman coins that are currently in the user's collection.
-func ActiveRomanCollection(userID uint) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("user_id = ? AND category = ? AND is_wishlist = ? AND is_sold = ?", userID, "Roman", false, false)
-	}
-}
-
-// PublicCoins scopes to coins that are visible to other users.
-func PublicCoins(userID uint) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("user_id = ? AND is_wishlist = false AND is_sold = false AND is_private = false", userID)
 	}
 }

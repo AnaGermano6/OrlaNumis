@@ -20,9 +20,6 @@ var (
 	ErrCoinInvalidKind            = errors.New("kind must be coin or banknote")
 	ErrCoinInvalidNoteVariant     = errors.New("note variant must be replacement or specimen")
 	ErrCoinInvalidQuantity        = errors.New("quantity must be between 1 and 9999")
-	ErrStorageSlotRequired        = errors.New("a tray slot is required")
-	ErrStorageSlotInvalid         = errors.New("storage slot is invalid for this location")
-	ErrStorageSlotOccupied        = errors.New("storage slot is occupied")
 	ErrWishlistReferenceDuplicate = errors.New("a wishlist coin already uses this source URL")
 )
 
@@ -33,11 +30,8 @@ var builtInCoinEras = map[models.Era]struct{}{
 }
 
 var builtInCoinCategories = map[models.Category]struct{}{
-	models.CategoryRoman:     {},
-	models.CategoryGreek:     {},
-	models.CategoryByzantine: {},
-	models.CategoryModern:    {},
-	models.CategoryOther:     {},
+	models.CategoryModern: {},
+	models.CategoryOther:  {},
 }
 
 // BuiltInCoinCategoryValues returns the built-in category baseline as a
@@ -63,15 +57,11 @@ func BuiltInCoinEraValues() []string {
 // CoinService handles coin business logic and orchestrates repository calls.
 type CoinService struct {
 	repo                *repository.CoinRepository
-	notifSvc            *NotificationService
 	refRepo             *repository.CoinReferenceRepository
 	refSvc              *CoinReferenceService
-	storageLocationRepo *repository.StorageLocationRepository
 	mintLocationRepo    *repository.MintLocationRepository
 	catalogRegistryRepo *repository.CatalogRegistryRepository
 	settingsSvc         *SettingsService
-	reminderRepo        *repository.PurchaseReminderRepository
-	quickAccess         *QuickAccessService
 }
 
 type preparedCoinCreator struct {
@@ -88,8 +78,8 @@ func (c preparedCoinCreator) CreateCoinInTransaction(tx *gorm.DB) (uint, error) 
 }
 
 // NewCoinService creates a new CoinService.
-func NewCoinService(repo *repository.CoinRepository, notifSvc *NotificationService) *CoinService {
-	return &CoinService{repo: repo, notifSvc: notifSvc}
+func NewCoinService(repo *repository.CoinRepository) *CoinService {
+	return &CoinService{repo: repo}
 }
 
 // WithReferenceSupport enables structured reference orchestration during coin create/update workflows.
@@ -99,12 +89,6 @@ func (s *CoinService) WithReferenceSupport(
 ) *CoinService {
 	s.refRepo = refRepo
 	s.refSvc = refSvc
-	return s
-}
-
-// WithStorageLocationSupport enables storage-location ownership validation during coin create/update workflows.
-func (s *CoinService) WithStorageLocationSupport(storageLocationRepo *repository.StorageLocationRepository) *CoinService {
-	s.storageLocationRepo = storageLocationRepo
 	return s
 }
 
@@ -126,18 +110,6 @@ func (s *CoinService) WithSettingsSupport(settingsSvc *SettingsService) *CoinSer
 	return s
 }
 
-// WithReminderSupport attaches a PurchaseReminderRepository so that wishlist→false
-// transitions automatically cancel any active purchase reminder (FR-011, FR-012).
-func (s *CoinService) WithReminderSupport(reminderRepo *repository.PurchaseReminderRepository) *CoinService {
-	s.reminderRepo = reminderRepo
-	return s
-}
-
-func (s *CoinService) WithQuickAccessSupport(quickAccess *QuickAccessService) *CoinService {
-	s.quickAccess = quickAccess
-	return s
-}
-
 func (s *CoinService) PreparedCoinCreator(coin *models.Coin) repository.TransactionalCoinCreator {
 	return preparedCoinCreator{service: s, coin: coin}
 }
@@ -151,17 +123,7 @@ func (s *CoinService) CreateCoin(coin *models.Coin) error {
 	if err := s.prepareCoinForCreate(coin); err != nil {
 		return err
 	}
-	err := s.createPreparedCoinInTx(nil, coin, false)
-	if err != nil {
-		return err
-	}
-
-	// Notify followers after commit (async to avoid slowing the response)
-	if s.notifSvc != nil {
-		go s.notifSvc.NotifyNewCoin(coin.UserID, *coin)
-	}
-
-	return nil
+	return s.createPreparedCoinInTx(nil, coin, false)
 }
 
 // CreateCoinInTx creates a coin using the same validation path as CreateCoin.
@@ -174,9 +136,6 @@ func (s *CoinService) CreateCoinInTx(tx *gorm.DB, coin *models.Coin) error {
 }
 
 func (s *CoinService) prepareCoinForCreate(coin *models.Coin) error {
-	if err := s.validateStorageAssignment(coin.StorageLocationID, coin.StorageSlot, coin.UserID, nil); err != nil {
-		return err
-	}
 	if err := s.validateMintLocation(coin.MintLocationID, coin.UserID); err != nil {
 		return err
 	}
@@ -254,9 +213,6 @@ func (s *CoinService) createPreparedCoinInTx(tx *gorm.DB, coin *models.Coin, all
 		pendingReferences := coin.References
 		coin.References = nil
 		if err := txRepo.Create(coin); err != nil {
-			if errors.Is(err, repository.ErrStorageSlotOccupied) {
-				return ErrStorageSlotOccupied
-			}
 			return err
 		}
 
@@ -289,44 +245,19 @@ func (s *CoinService) createPreparedCoinInTx(tx *gorm.DB, coin *models.Coin, all
 // UpdateCoin applies updates to an existing coin. If the current value changed
 // and the source is not "estimate", it records a value history entry and a
 // journal entry. A value snapshot is always recorded afterward.
-func (s *CoinService) UpdateCoin(existing *models.Coin, updates *models.Coin, userID uint, source string, storageLocationProvided ...bool) error {
-	updateStorageLocation := len(storageLocationProvided) > 0 && storageLocationProvided[0]
-	return s.updateCoin(existing, updates, nil, userID, source, updateStorageLocation)
+func (s *CoinService) UpdateCoin(existing *models.Coin, updates *models.Coin, userID uint, source string) error {
+	return s.updateCoin(existing, updates, nil, userID, source)
 }
 
 // UpdateCoinWithFields applies a presence-aware update. Only fields named in
 // updateFields are persisted, allowing explicit zero values to be saved while
 // omitted request fields preserve existing values.
-func (s *CoinService) UpdateCoinWithFields(existing *models.Coin, updates *models.Coin, updateFields []string, userID uint, source string, storageLocationProvided bool) error {
-	return s.updateCoin(existing, updates, updateFields, userID, source, storageLocationProvided, false)
+func (s *CoinService) UpdateCoinWithFields(existing *models.Coin, updates *models.Coin, updateFields []string, userID uint, source string) error {
+	return s.updateCoin(existing, updates, updateFields, userID, source)
 }
 
-func (s *CoinService) UpdateCoinWithAssignmentFields(existing *models.Coin, updates *models.Coin, updateFields []string, userID uint, source string, storageLocationProvided, storageSlotProvided bool) error {
-	return s.updateCoin(existing, updates, updateFields, userID, source, storageLocationProvided, storageSlotProvided)
-}
-
-func (s *CoinService) updateCoin(existing *models.Coin, updates *models.Coin, updateFields []string, userID uint, source string, updateStorageLocation bool, updateStorageSlot ...bool) error {
-	slotProvided := len(updateStorageSlot) > 0 && updateStorageSlot[0]
+func (s *CoinService) updateCoin(existing *models.Coin, updates *models.Coin, updateFields []string, userID uint, source string) error {
 	oldValue := existing.CurrentValue
-	wasWishlist := existing.IsWishlist
-	wasSold := existing.IsSold
-	targetLocation, targetSlot := existing.StorageLocationID, existing.StorageSlot
-	if updateStorageLocation {
-		targetLocation = updates.StorageLocationID
-		if targetLocation == nil {
-			targetSlot = nil
-		} else if existing.StorageLocationID == nil || *existing.StorageLocationID != *targetLocation {
-			targetSlot = nil
-		}
-	}
-	if slotProvided {
-		targetSlot = updates.StorageSlot
-	}
-	if updateStorageLocation || slotProvided {
-		if err := s.validateStorageAssignment(targetLocation, targetSlot, userID, &existing.ID); err != nil {
-			return err
-		}
-	}
 	if updateFields == nil || containsString(updateFields, "MintLocationID") {
 		if err := s.validateMintLocation(updates.MintLocationID, userID); err != nil {
 			return err
@@ -384,32 +315,6 @@ func (s *CoinService) updateCoin(existing *models.Coin, updates *models.Coin, up
 				return err
 			}
 		}
-		if updateStorageLocation || slotProvided {
-			if err := txRepo.UpdateStorageAssignment(existing, targetLocation, targetSlot); err != nil {
-				if errors.Is(err, repository.ErrStorageSlotOccupied) {
-					return ErrStorageSlotOccupied
-				}
-				return err
-			}
-		}
-
-		// FR-011: auto-cancel any active purchase reminder when IsWishlist transitions
-		// true → false within this transaction.
-		wishlistExiting := wasWishlist && !updates.IsWishlist &&
-			(updateFields == nil || containsString(updateFields, "IsWishlist"))
-		if wishlistExiting && s.reminderRepo != nil {
-			if err := s.reminderRepo.WithTx(tx).CancelActiveForCoin(existing.ID, userID); err != nil {
-				return err
-			}
-		}
-		soldEntering := !wasSold && updates.IsSold &&
-			(updateFields == nil || containsString(updateFields, "IsSold"))
-		if soldEntering && s.quickAccess != nil {
-			if err := s.quickAccess.RemoveTargetInTx(repository.NewTransaction(tx), userID, models.QuickAccessTargetCoin, existing.ID); err != nil {
-				return err
-			}
-		}
-
 		if s.refRepo != nil && s.refSvc != nil && updates.References != nil {
 			normalized, err := s.refSvc.NormalizeAndValidate(updates.References)
 			if err != nil {
@@ -491,20 +396,8 @@ func containsString(values []string, needle string) bool {
 func (s *CoinService) DeleteCoin(id, userID uint) (int64, error) {
 	var rows int64
 	err := s.repo.DB().Transaction(func(tx *gorm.DB) error {
-		// FR-012: cancel active reminders before deleting the coin so no orphan
-		// reminder can fire a notification after the coin is gone.
-		if s.reminderRepo != nil {
-			if err := s.reminderRepo.WithTx(tx).CancelActiveForCoin(id, userID); err != nil {
-				return err
-			}
-		}
 		txRepo := s.repo.WithTx(tx)
 		var err error
-		if s.quickAccess != nil {
-			if err := s.quickAccess.RemoveTargetInTx(repository.NewTransaction(tx), userID, models.QuickAccessTargetCoin, id); err != nil {
-				return err
-			}
-		}
 		rows, err = txRepo.DeleteInTx(id, userID)
 		return err
 	})
@@ -538,32 +431,7 @@ func (s *CoinService) PurchaseCoin(coin *models.Coin, userID uint) error {
 			"purchase_date":     coin.PurchaseDate,
 			"purchase_location": coin.PurchaseLocation,
 		}
-		if err := txRepo.UpdateFields(coin, updates); err != nil {
-			return err
-		}
-		// FR-011: auto-cancel active purchase reminder when coin is purchased (wishlist → false).
-		if s.reminderRepo != nil {
-			if err := s.reminderRepo.WithTx(tx).CancelActiveForCoin(coin.ID, userID); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-// SellCoin applies sale updates to a coin.
-func (s *CoinService) SellCoin(coin *models.Coin, updates map[string]interface{}, userID uint) error {
-	return s.repo.DB().Transaction(func(tx *gorm.DB) error {
-		txRepo := s.repo.WithTx(tx)
-		if err := txRepo.UpdateFields(coin, updates); err != nil {
-			return err
-		}
-		if s.quickAccess != nil {
-			if err := s.quickAccess.RemoveTargetInTx(repository.NewTransaction(tx), userID, models.QuickAccessTargetCoin, coin.ID); err != nil {
-				return err
-			}
-		}
-		return nil
+		return txRepo.UpdateFields(coin, updates)
 	})
 }
 
@@ -573,112 +441,9 @@ func (s *CoinService) BulkDeleteCoins(coinIDs []uint, userID uint) (int64, error
 		txRepo := s.repo.WithTx(tx)
 		var err error
 		affected, err = txRepo.BulkDeleteInTx(coinIDs, userID)
-		if err != nil {
-			return err
-		}
-		if s.quickAccess != nil {
-			return s.quickAccess.RemoveTargetsInTx(repository.NewTransaction(tx), userID, models.QuickAccessTargetCoin, coinIDs)
-		}
-		return nil
+		return err
 	})
 	return affected, err
-}
-
-func (s *CoinService) BulkMarkSold(coinIDs []uint, userID uint) (int64, error) {
-	var affected int64
-	err := s.repo.DB().Transaction(func(tx *gorm.DB) error {
-		txRepo := s.repo.WithTx(tx)
-		activeIDs, err := txRepo.OwnedActiveIDs(coinIDs, userID)
-		if err != nil {
-			return err
-		}
-		affected, err = txRepo.BulkMarkSold(activeIDs, userID)
-		if err != nil {
-			return err
-		}
-		if s.quickAccess != nil {
-			return s.quickAccess.RemoveTargetsInTx(repository.NewTransaction(tx), userID, models.QuickAccessTargetCoin, activeIDs)
-		}
-		return nil
-	})
-	return affected, err
-}
-
-func (s *CoinService) validateStorageLocation(storageLocationID *uint, userID uint) error {
-	if storageLocationID == nil || s.storageLocationRepo == nil {
-		return nil
-	}
-	if *storageLocationID == 0 {
-		return ErrStorageLocationNotFound
-	}
-	exists, err := s.storageLocationRepo.ExistsByID(*storageLocationID, userID)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return ErrStorageLocationNotFound
-	}
-	return nil
-}
-
-func (s *CoinService) validateStorageAssignment(storageLocationID *uint, storageSlot *int, userID uint, currentCoinID *uint) error {
-	if storageLocationID == nil {
-		if storageSlot != nil {
-			return ErrStorageSlotInvalid
-		}
-		return nil
-	}
-	if *storageLocationID == 0 || s.storageLocationRepo == nil {
-		return ErrStorageLocationNotFound
-	}
-	location, err := s.storageLocationRepo.GetByID(*storageLocationID, userID)
-	if err != nil {
-		if repository.IsRecordNotFound(err) {
-			return ErrStorageLocationNotFound
-		}
-		return err
-	}
-	if location.Type == "" || location.Type == models.StorageLocationTypeStandard {
-		if storageSlot != nil {
-			return ErrStorageSlotInvalid
-		}
-		return nil
-	}
-	if location.Type != models.StorageLocationTypeTray || location.Rows == nil || location.Columns == nil {
-		return ErrStorageSlotInvalid
-	}
-	if storageSlot == nil {
-		return ErrStorageSlotRequired
-	}
-	if *storageSlot < 1 || *storageSlot > (*location.Rows)*(*location.Columns) {
-		return ErrStorageSlotInvalid
-	}
-	occupancy, err := s.storageLocationRepo.Occupancy(location.ID, userID, currentCoinID)
-	if err != nil {
-		return err
-	}
-	for _, slot := range occupancy.OccupiedSlots {
-		if slot == *storageSlot && (occupancy.CurrentCoinSlot == nil || *occupancy.CurrentCoinSlot != slot) {
-			return ErrStorageSlotOccupied
-		}
-	}
-	return nil
-}
-
-func (s *CoinService) BulkAssignLocation(coinIDs []uint, storageLocationID *uint, userID uint) (int64, error) {
-	if storageLocationID != nil {
-		location, err := s.storageLocationRepo.GetByID(*storageLocationID, userID)
-		if err != nil {
-			if repository.IsRecordNotFound(err) {
-				return 0, ErrStorageLocationNotFound
-			}
-			return 0, err
-		}
-		if location.Type == models.StorageLocationTypeTray {
-			return 0, ErrStorageSlotRequired
-		}
-	}
-	return s.repo.BulkAssignLocation(coinIDs, storageLocationID, userID)
 }
 
 func (s *CoinService) validateMintLocation(mintLocationID *uint, userID uint) error {
@@ -727,11 +492,11 @@ func (s *CoinService) validateCoinEra(era models.Era) error {
 }
 
 // validateCoinCategory mirrors validateCoinEra: built-in categories are
-// always accepted regardless of the CoinCategories admin setting (so the
-// "Roman" value Emperor Tracker depends on can never be invalidated by an
-// admin edit to that setting), custom categories are accepted if they
-// appear in the setting's admin-defined list. Unlike Era, there is no
-// Catalog Registry fallback tier for Category — no such concept exists there.
+// always accepted regardless of the CoinCategories admin setting (so an
+// admin edit to that setting never invalidates them), custom categories are
+// accepted if they appear in the setting's admin-defined list. Unlike Era,
+// there is no Catalog Registry fallback tier for Category — no such concept
+// exists there.
 func (s *CoinService) validateCoinCategory(category models.Category) error {
 	trimmed := strings.TrimSpace(string(category))
 	if trimmed == "" {

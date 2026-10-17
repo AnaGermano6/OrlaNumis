@@ -29,9 +29,6 @@
               >
                 <CheckSquare :size="20" />
               </button>
-              <router-link to="/quick-access" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" active-class="bg-gold-glow text-gold" :aria-label="t('nav.quickAccess')" :title="t('nav.quickAccess')">
-                <Pin :size="20" />
-              </router-link>
               <router-link to="/add" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" :aria-label="t('nav.addCoin')" :title="t('nav.addCoin')">
                 <CirclePlus :size="20" />
               </router-link>
@@ -39,17 +36,10 @@
             <div id="desktop-page-actions" class="flex items-center gap-1"></div>
             <span class="mx-1 h-6 w-px bg-border-subtle" aria-hidden="true"></span>
           </div>
-          <router-link v-if="isPwa || !isCollectionPage" to="/quick-access" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" active-class="bg-gold-glow text-gold" :aria-label="t('nav.quickAccess')" :title="t('nav.quickAccess')">
-            <Pin :size="20" />
-          </router-link>
           <router-link v-if="isPwa" to="/add" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" :aria-label="t('nav.addCoin')">
             <Plus :size="20" />
           </router-link>
           <LanguageSwitcher class="mx-1" />
-          <router-link to="/notifications" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" :aria-label="t('nav.notifications')">
-            <Bell :size="20" />
-            <span v-if="unreadCount > 0" class="absolute top-0 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-label font-bold leading-none text-surface">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
-          </router-link>
         </div>
       </div>
     </nav>
@@ -89,7 +79,6 @@
               <span v-if="editMode" class="drag-handle flex shrink-0 cursor-grab items-center text-text-secondary opacity-50 transition-opacity group-hover:opacity-100 active:cursor-grabbing"><GripVertical :size="16" /></span>
               <component :is="item.icon" :size="20" />
               <span>{{ item.label }}</span>
-              <span v-if="item.badge && item.badge() > 0" class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-label font-bold text-surface">{{ item.badge() }}</span>
               <ChevronDown
                 v-if="item.children?.length && !editMode"
                 :size="16"
@@ -136,10 +125,6 @@
     </Transition>
 
     <main class="flex-1" :class="{ 'pt-[76px]': auth.isAuthenticated && !immersive }">
-      <div v-if="auth.isAuthenticated && notificationError" class="container mb-4 flex items-center justify-between gap-3" role="status">
-        <span class="text-chip text-text-secondary">{{ notificationError }}</span>
-        <button class="btn btn-secondary btn-sm" @click="refreshNotifications">{{ t('common.retry') }}</button>
-      </div>
       <router-view />
     </main>
 
@@ -202,11 +187,8 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted, markRaw, type Component } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
-import { Landmark, Bookmark, BadgeDollarSign, BarChart3, CirclePlus, Settings, ShieldCheck, LogOut, Users as UsersIcon, Bot, X, Bell, Plus, Share2, GripVertical, Layers3, Search, ChevronRight, ChevronDown, CheckSquare, Pin } from 'lucide-vue-next'
+import { Landmark, Bookmark, BarChart3, CirclePlus, Settings, ShieldCheck, LogOut, Bot, X, Plus, GripVertical, Layers3, Search, ChevronRight, ChevronDown, CheckSquare } from 'lucide-vue-next'
 import { updateProfile, getMe } from '@/api/client'
-import { useNotifications } from '@/composables/useNotifications'
-import { usePinnedSets } from '@/composables/usePinnedSets'
-import { useQuickAccess } from '@/composables/useQuickAccess'
 import { useBulkSelect } from '@/composables/useBulkSelect'
 import { usePwa } from '@/composables/usePwa'
 import { useImmersiveShell } from '@/composables/useImmersiveShell'
@@ -228,7 +210,6 @@ interface NavItem {
   to?: string
   action?: () => void
   visible: boolean
-  badge?: () => number
   children?: NavSubItem[]
 }
 
@@ -265,9 +246,6 @@ const onboardingPromptKey = ref('')
 const editMode = ref(false)
 const navRef = ref<HTMLElement | null>(null)
 let sortableInstance: Sortable | null = null
-const { unreadCount, error: notificationError, refresh: refreshNotifications, startPolling, stopPolling } = useNotifications()
-const { pinnedSets } = usePinnedSets()
-const { refresh: refreshQuickAccess, clear: clearQuickAccess } = useQuickAccess()
 const { bulkSelectActive } = useBulkSelect()
 const statsExpanded = ref(false)
 const collectionExpanded = ref(false)
@@ -318,11 +296,6 @@ const defaultNavItems: NavItem[] = [
     ],
   },
   { id: 'wishlist', labelKey: 'nav.wishlist', icon: markRaw(Bookmark), to: '/wishlist', visible: true },
-  { id: 'quick-access', labelKey: 'nav.quickAccess', icon: markRaw(Pin), to: '/quick-access', visible: true },
-  // Sold, Followers and Showcases are not used in this collection: hidden
-  // here, and their routes lead back to the gallery.
-  { id: 'sold', labelKey: 'nav.sold', icon: markRaw(BadgeDollarSign), to: '/sold', visible: false },
-  { id: 'followers', labelKey: 'nav.followers', icon: markRaw(UsersIcon), to: '/followers', visible: false },
   { id: 'agent', labelKey: 'nav.agent', icon: markRaw(Bot), action: () => { showChat.value = true; sidebarOpen.value = false }, visible: true },
   {
     id: 'stats',
@@ -345,12 +318,9 @@ const defaultNavItems: NavItem[] = [
     visible: true,
     children: [
       { id: 'sets-list', labelKey: 'nav.mySets', to: '/sets' },
-      { id: 'sets-emperors', labelKey: 'nav.emperors', to: '/sets/emperors' },
       { id: 'sets-commemoratives', labelKey: 'nav.commemorativeCatalogue', to: '/sets/commemoratives' },
     ],
   },
-  { id: 'showcases', labelKey: 'nav.showcases', icon: markRaw(Share2), to: '/showcases', visible: false },
-  { id: 'notifications', labelKey: 'nav.notifications', icon: markRaw(Bell), to: '/notifications', visible: true, badge: () => unreadCount.value },
 ]
 
 function getStorageKey() {
@@ -389,15 +359,7 @@ const orderedNavItems = computed<ResolvedNavItem[]>(() => {
     .filter(item => item.visible)
     .map(item => {
       const children = item.children?.map(child => ({ id: child.id, label: t(child.labelKey), to: child.to }))
-      const resolved = { ...item, label: t(item.labelKey), children }
-      if (item.id !== 'sets' || !children) return resolved
-      return {
-        ...resolved,
-        children: [
-          ...children.filter(child => child.id !== 'sets-emperors' || auth.user?.emperorTrackerEnabled),
-          ...pinnedSets.value.map(s => ({ id: `sets-pinned-${s.id}`, label: s.name, to: `/sets/${s.id}` })),
-        ],
-      }
+      return { ...item, label: t(item.labelKey), children }
     })
 })
 
@@ -594,15 +556,11 @@ watch(sidebarOpen, (open) => {
 let accountGeneration = 0
 watch(() => auth.isAuthenticated ? auth.user?.id : undefined, (userId) => {
   accountGeneration += 1
-  stopPolling()
-  clearQuickAccess()
   showEmailPrompt.value = false
   showOnboardingPrompt.value = false
   navOrder.value = loadSavedOrder()
   resetCoinVocabulary()
   if (userId) {
-    startPolling()
-    void refreshQuickAccess()
     // Category/era display names are site-wide; every page that shows them reads this.
     void loadCoinVocabulary()
   }
@@ -622,7 +580,6 @@ onMounted(async () => {
       // Sync auth store with fresh server-side user data so preferences
       // changed elsewhere are always up-to-date.
       if (auth.user) {
-        auth.user.coinOfDayEnabled = data.coinOfDayEnabled
         auth.user.pwaSwipeNavEnabled = data.pwaSwipeNavEnabled
         localStorage.setItem('user', JSON.stringify(auth.user))
       }
@@ -685,11 +642,9 @@ function handleLogout() {
 
 onUnmounted(() => {
   accountGeneration += 1
-  clearQuickAccess()
   window.removeEventListener('resize', handleAgentFabViewportResize)
   window.removeEventListener('open-agent-chat', handleOpenAgentChat)
   destroySortable()
-  stopPolling()
 })
 </script>
 

@@ -71,7 +71,6 @@ func setupCoinCopilotHandlerTest(t *testing.T) (*gin.Engine, *gorm.DB, *services
 	router.POST("/runs/:runId/cancel", handler.Cancel)
 	router.GET("/runs/:runId/events", handler.StreamEvents)
 	router.GET("/threads/:threadId", handler.GetThread)
-	router.DELETE("/threads/:threadId", handler.DeleteThread)
 	router.POST("/runs/:runId/resume", handler.Resume)
 	return router, db, service
 }
@@ -256,40 +255,6 @@ func TestCoinCopilotSSESettlementBetweenInitialLoadAndReplayCloses(t *testing.T)
 		!bytes.Contains([]byte(body), []byte("event: run_completed")) ||
 		!bytes.Contains([]byte(body), []byte("event: end")) {
 		t.Fatalf("SSE status=%d body=%s", recorder.Code, body)
-	}
-}
-
-func TestCoinCopilotHandlerThreadDeleteConflictCascadeAndForeign404(t *testing.T) {
-	router, db, service := setupCoinCopilotHandlerTest(t)
-	run, _, err := service.Start(7, services.CoinCopilotStartInput{Goal: "Summary", IdempotencyKey: "delete-start"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	recorder := httptest.NewRecorder()
-	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodDelete, "/threads/"+run.ThreadID, nil))
-	if recorder.Code != http.StatusConflict {
-		t.Fatalf("active delete status=%d body=%s", recorder.Code, recorder.Body.String())
-	}
-	if err := db.Model(&models.CoinCopilotRun{}).Where("id = ?", run.ID).
-		Updates(map[string]any{"status": models.CopilotRunCompleted, "completed_at": time.Now().UTC()}).Error; err != nil {
-		t.Fatal(err)
-	}
-	recorder = httptest.NewRecorder()
-	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodDelete, "/threads/"+run.ThreadID, nil))
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("settled delete status=%d body=%s", recorder.Code, recorder.Body.String())
-	}
-	var runCount int64
-	if err := db.Model(&models.CoinCopilotRun{}).Where("id = ?", run.ID).Count(&runCount).Error; err != nil {
-		t.Fatal(err)
-	}
-	if runCount != 0 {
-		t.Fatalf("cascade retained %d runs", runCount)
-	}
-	recorder = httptest.NewRecorder()
-	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/threads/"+run.ThreadID, nil))
-	if recorder.Code != http.StatusNotFound {
-		t.Fatalf("deleted thread read status=%d body=%s", recorder.Code, recorder.Body.String())
 	}
 }
 

@@ -11,7 +11,6 @@ const mockHealth: CollectionHealth = {
     denomination: { score: 90, filled: 45, total: 50 },
     ruler: { score: 80, filled: 40, total: 50 },
   },
-  trend30d: { direction: 'up', change: 5 },
 }
 
 const store = vi.hoisted(() => ({

@@ -16,13 +16,12 @@ type CoinReferenceRequest struct {
 type CoinCreateRequest struct {
 	Name string `json:"name" binding:"max=200"`
 	// Kind is a coin (default) or a banknote.
-	Kind                  string          `json:"kind" binding:"max=16" enums:"coin,banknote"`
-	Category              models.Category `json:"category" binding:"omitempty,max=64"`
-	Denomination          string          `json:"denomination" binding:"max=200"`
-	Ruler                 string          `json:"ruler" binding:"max=200"`
-	RomanImperialFigureID *uint           `json:"romanImperialFigureId"`
-	Era                   models.Era      `json:"era" binding:"omitempty,max=64"`
-	DateRange             string          `json:"dateRange" binding:"max=200"`
+	Kind         string          `json:"kind" binding:"max=16" enums:"coin,banknote"`
+	Category     models.Category `json:"category" binding:"omitempty,max=64"`
+	Denomination string          `json:"denomination" binding:"max=200"`
+	Ruler        string          `json:"ruler" binding:"max=200"`
+	Era          models.Era      `json:"era" binding:"omitempty,max=64"`
+	DateRange    string          `json:"dateRange" binding:"max=200"`
 	// Year is the coin's year (negative for BC); when omitted it is read from dateRange.
 	Year    *int   `json:"year" binding:"omitempty,min=-5000,max=3000"`
 	Country string `json:"country" binding:"max=120"`
@@ -40,52 +39,43 @@ type CoinCreateRequest struct {
 	Grade          string          `json:"grade" binding:"max=100"`
 	// Banknote details: series, serial number, signatories, printer, size,
 	// watermark, replacement or specimen, and a grading company's grade.
-	Series              string     `json:"series" binding:"max=200"`
-	SerialNumber        string     `json:"serialNumber" binding:"max=100"`
-	Signatures          string     `json:"signatures" binding:"max=300"`
-	Printer             string     `json:"printer" binding:"max=200"`
-	WidthMm             *float64   `json:"widthMm"`
-	HeightMm            *float64   `json:"heightMm"`
-	Watermark           string     `json:"watermark" binding:"max=500"`
-	NoteVariant         string     `json:"noteVariant" binding:"max=20" enums:",replacement,specimen"`
-	CertifiedGrade      string     `json:"certifiedGrade" binding:"max=60"`
-	CertificationNumber string     `json:"certificationNumber" binding:"max=60"`
-	ObverseInscription  string     `json:"obverseInscription" binding:"max=1000"`
-	ReverseInscription  string     `json:"reverseInscription" binding:"max=1000"`
-	ObverseDescription  string     `json:"obverseDescription" binding:"max=2000"`
-	ReverseDescription  string     `json:"reverseDescription" binding:"max=2000"`
-	RarityRating        string     `json:"rarityRating" binding:"max=100"`
-	PurchasePrice       *float64   `json:"purchasePrice"`
-	CurrentValue        *float64   `json:"currentValue"`
-	PurchaseDate        *time.Time `json:"purchaseDate"`
-	PurchaseLocation    string     `json:"purchaseLocation" binding:"max=500"`
-	VendorSKU           string     `json:"vendorSku" binding:"max=200"`
-	VendorInvoice       string     `json:"vendorInvoice" binding:"max=200"`
-	Notes               string     `json:"notes" binding:"max=5000"`
-	ReferenceURL        string     `json:"referenceUrl" binding:"max=2000"`
-	ReferenceText       string     `json:"referenceText" binding:"max=2000"`
-	IsWishlist          bool       `json:"isWishlist"`
-	IsSold              bool       `json:"isSold"`
-	SoldPrice           *float64   `json:"soldPrice"`
-	SoldDate            *time.Time `json:"soldDate"`
-	SoldTo              string     `json:"soldTo"`
-	StorageLocationID   *uint      `json:"storageLocationId" minimum:"1" extensions:"x-nullable"`
-	// StorageSlot is a nullable, one-based row-major tray position.
-	StorageSlot *int                   `json:"storageSlot" minimum:"1" maximum:"400" extensions:"x-nullable"`
-	IsPrivate   bool                   `json:"isPrivate"`
-	References  []CoinReferenceRequest `json:"references"`
+	Series              string                 `json:"series" binding:"max=200"`
+	SerialNumber        string                 `json:"serialNumber" binding:"max=100"`
+	Signatures          string                 `json:"signatures" binding:"max=300"`
+	Printer             string                 `json:"printer" binding:"max=200"`
+	WidthMm             *float64               `json:"widthMm"`
+	HeightMm            *float64               `json:"heightMm"`
+	Watermark           string                 `json:"watermark" binding:"max=500"`
+	NoteVariant         string                 `json:"noteVariant" binding:"max=20" enums:",replacement,specimen"`
+	CertifiedGrade      string                 `json:"certifiedGrade" binding:"max=60"`
+	CertificationNumber string                 `json:"certificationNumber" binding:"max=60"`
+	ObverseInscription  string                 `json:"obverseInscription" binding:"max=1000"`
+	ReverseInscription  string                 `json:"reverseInscription" binding:"max=1000"`
+	ObverseDescription  string                 `json:"obverseDescription" binding:"max=2000"`
+	ReverseDescription  string                 `json:"reverseDescription" binding:"max=2000"`
+	RarityRating        string                 `json:"rarityRating" binding:"max=100"`
+	PurchasePrice       *float64               `json:"purchasePrice"`
+	CurrentValue        *float64               `json:"currentValue"`
+	PurchaseDate        *time.Time             `json:"purchaseDate"`
+	PurchaseLocation    string                 `json:"purchaseLocation" binding:"max=500"`
+	VendorSKU           string                 `json:"vendorSku" binding:"max=200"`
+	VendorInvoice       string                 `json:"vendorInvoice" binding:"max=200"`
+	Notes               string                 `json:"notes" binding:"max=5000"`
+	ReferenceURL        string                 `json:"referenceUrl" binding:"max=2000"`
+	ReferenceText       string                 `json:"referenceText" binding:"max=2000"`
+	IsWishlist          bool                   `json:"isWishlist"`
+	References          []CoinReferenceRequest `json:"references"`
 }
 
 type CoinUpdateRequest struct {
 	Name *string `json:"name" binding:"omitempty,max=200"`
 	// Kind is a coin or a banknote.
-	Kind                  *string          `json:"kind" binding:"omitempty,max=16" enums:"coin,banknote"`
-	Category              *models.Category `json:"category" binding:"omitempty,max=64"`
-	Denomination          *string          `json:"denomination" binding:"omitempty,max=200"`
-	Ruler                 *string          `json:"ruler" binding:"omitempty,max=200"`
-	RomanImperialFigureID *uint            `json:"romanImperialFigureId"`
-	Era                   *models.Era      `json:"era" binding:"omitempty,max=64"`
-	DateRange             *string          `json:"dateRange" binding:"omitempty,max=200"`
+	Kind         *string          `json:"kind" binding:"omitempty,max=16" enums:"coin,banknote"`
+	Category     *models.Category `json:"category" binding:"omitempty,max=64"`
+	Denomination *string          `json:"denomination" binding:"omitempty,max=200"`
+	Ruler        *string          `json:"ruler" binding:"omitempty,max=200"`
+	Era          *models.Era      `json:"era" binding:"omitempty,max=64"`
+	DateRange    *string          `json:"dateRange" binding:"omitempty,max=200"`
 	// Year (negative for BC); null means "read it from dateRange".
 	Year    *int    `json:"year" binding:"omitempty,min=-5000,max=3000"`
 	Country *string `json:"country" binding:"omitempty,max=120"`
@@ -102,102 +92,82 @@ type CoinUpdateRequest struct {
 	DiameterMm     *float64         `json:"diameterMm"`
 	Grade          *string          `json:"grade" binding:"omitempty,max=100"`
 	// Banknote details.
-	Series              *string    `json:"series" binding:"omitempty,max=200"`
-	SerialNumber        *string    `json:"serialNumber" binding:"omitempty,max=100"`
-	Signatures          *string    `json:"signatures" binding:"omitempty,max=300"`
-	Printer             *string    `json:"printer" binding:"omitempty,max=200"`
-	WidthMm             *float64   `json:"widthMm"`
-	HeightMm            *float64   `json:"heightMm"`
-	Watermark           *string    `json:"watermark" binding:"omitempty,max=500"`
-	NoteVariant         *string    `json:"noteVariant" binding:"omitempty,max=20" enums:",replacement,specimen"`
-	CertifiedGrade      *string    `json:"certifiedGrade" binding:"omitempty,max=60"`
-	CertificationNumber *string    `json:"certificationNumber" binding:"omitempty,max=60"`
-	ObverseInscription  *string    `json:"obverseInscription" binding:"omitempty,max=1000"`
-	ReverseInscription  *string    `json:"reverseInscription" binding:"omitempty,max=1000"`
-	ObverseDescription  *string    `json:"obverseDescription" binding:"omitempty,max=2000"`
-	ReverseDescription  *string    `json:"reverseDescription" binding:"omitempty,max=2000"`
-	RarityRating        *string    `json:"rarityRating" binding:"omitempty,max=100"`
-	PurchasePrice       *float64   `json:"purchasePrice"`
-	CurrentValue        *float64   `json:"currentValue"`
-	PurchaseDate        *time.Time `json:"purchaseDate"`
-	PurchaseLocation    *string    `json:"purchaseLocation" binding:"omitempty,max=500"`
-	VendorSKU           *string    `json:"vendorSku" binding:"omitempty,max=200"`
-	VendorInvoice       *string    `json:"vendorInvoice" binding:"omitempty,max=200"`
-	Notes               *string    `json:"notes" binding:"omitempty,max=5000"`
-	ReferenceURL        *string    `json:"referenceUrl" binding:"omitempty,max=2000"`
-	ReferenceText       *string    `json:"referenceText" binding:"omitempty,max=2000"`
-	IsWishlist          *bool      `json:"isWishlist"`
-	IsSold              *bool      `json:"isSold"`
-	SoldPrice           *float64   `json:"soldPrice"`
-	SoldDate            *time.Time `json:"soldDate"`
-	SoldTo              *string    `json:"soldTo"`
-	StorageLocationID   *uint      `json:"storageLocationId" minimum:"1" extensions:"x-nullable"`
-	// StorageSlot is a nullable, one-based row-major tray position.
-	StorageSlot *int                   `json:"storageSlot" minimum:"1" maximum:"400" extensions:"x-nullable"`
-	IsPrivate   *bool                  `json:"isPrivate"`
-	References  []CoinReferenceRequest `json:"references"`
+	Series              *string                `json:"series" binding:"omitempty,max=200"`
+	SerialNumber        *string                `json:"serialNumber" binding:"omitempty,max=100"`
+	Signatures          *string                `json:"signatures" binding:"omitempty,max=300"`
+	Printer             *string                `json:"printer" binding:"omitempty,max=200"`
+	WidthMm             *float64               `json:"widthMm"`
+	HeightMm            *float64               `json:"heightMm"`
+	Watermark           *string                `json:"watermark" binding:"omitempty,max=500"`
+	NoteVariant         *string                `json:"noteVariant" binding:"omitempty,max=20" enums:",replacement,specimen"`
+	CertifiedGrade      *string                `json:"certifiedGrade" binding:"omitempty,max=60"`
+	CertificationNumber *string                `json:"certificationNumber" binding:"omitempty,max=60"`
+	ObverseInscription  *string                `json:"obverseInscription" binding:"omitempty,max=1000"`
+	ReverseInscription  *string                `json:"reverseInscription" binding:"omitempty,max=1000"`
+	ObverseDescription  *string                `json:"obverseDescription" binding:"omitempty,max=2000"`
+	ReverseDescription  *string                `json:"reverseDescription" binding:"omitempty,max=2000"`
+	RarityRating        *string                `json:"rarityRating" binding:"omitempty,max=100"`
+	PurchasePrice       *float64               `json:"purchasePrice"`
+	CurrentValue        *float64               `json:"currentValue"`
+	PurchaseDate        *time.Time             `json:"purchaseDate"`
+	PurchaseLocation    *string                `json:"purchaseLocation" binding:"omitempty,max=500"`
+	VendorSKU           *string                `json:"vendorSku" binding:"omitempty,max=200"`
+	VendorInvoice       *string                `json:"vendorInvoice" binding:"omitempty,max=200"`
+	Notes               *string                `json:"notes" binding:"omitempty,max=5000"`
+	ReferenceURL        *string                `json:"referenceUrl" binding:"omitempty,max=2000"`
+	ReferenceText       *string                `json:"referenceText" binding:"omitempty,max=2000"`
+	IsWishlist          *bool                  `json:"isWishlist"`
+	References          []CoinReferenceRequest `json:"references"`
 }
 
 func (r CoinCreateRequest) toCoin(userID uint) models.Coin {
-	romanImperialFigureID := r.RomanImperialFigureID
-	if r.Category != models.CategoryRoman {
-		romanImperialFigureID = nil
-	}
 	return models.Coin{
-		Name:                  r.Name,
-		Kind:                  r.Kind,
-		Category:              r.Category,
-		Denomination:          r.Denomination,
-		Ruler:                 r.Ruler,
-		RomanImperialFigureID: romanImperialFigureID,
-		Era:                   r.Era,
-		DateRange:             r.DateRange,
-		Year:                  r.Year,
-		Country:               r.Country,
-		Quantity:              r.Quantity,
-		Presentation:          r.Presentation,
-		Rarity:                r.Rarity,
-		Circulation:           r.Circulation,
-		Mint:                  r.Mint,
-		MintLocationID:        r.MintLocationID,
-		Material:              r.Material,
-		WeightGrams:           r.WeightGrams,
-		DiameterMm:            r.DiameterMm,
-		Grade:                 r.Grade,
-		Series:                r.Series,
-		SerialNumber:          r.SerialNumber,
-		Signatures:            r.Signatures,
-		Printer:               r.Printer,
-		WidthMm:               r.WidthMm,
-		HeightMm:              r.HeightMm,
-		Watermark:             r.Watermark,
-		NoteVariant:           r.NoteVariant,
-		CertifiedGrade:        r.CertifiedGrade,
-		CertificationNumber:   r.CertificationNumber,
-		ObverseInscription:    r.ObverseInscription,
-		ReverseInscription:    r.ReverseInscription,
-		ObverseDescription:    r.ObverseDescription,
-		ReverseDescription:    r.ReverseDescription,
-		RarityRating:          r.RarityRating,
-		PurchasePrice:         r.PurchasePrice,
-		CurrentValue:          r.CurrentValue,
-		PurchaseDate:          r.PurchaseDate,
-		PurchaseLocation:      r.PurchaseLocation,
-		VendorSKU:             r.VendorSKU,
-		VendorInvoice:         r.VendorInvoice,
-		Notes:                 r.Notes,
-		ReferenceURL:          r.ReferenceURL,
-		ReferenceText:         r.ReferenceText,
-		IsWishlist:            r.IsWishlist,
-		IsSold:                r.IsSold,
-		SoldPrice:             r.SoldPrice,
-		SoldDate:              r.SoldDate,
-		SoldTo:                r.SoldTo,
-		StorageLocationID:     r.StorageLocationID,
-		StorageSlot:           r.StorageSlot,
-		IsPrivate:             r.IsPrivate,
-		UserID:                userID,
-		References:            mapCoinReferenceRequests(r.References),
+		Name:                r.Name,
+		Kind:                r.Kind,
+		Category:            r.Category,
+		Denomination:        r.Denomination,
+		Ruler:               r.Ruler,
+		Era:                 r.Era,
+		DateRange:           r.DateRange,
+		Year:                r.Year,
+		Country:             r.Country,
+		Quantity:            r.Quantity,
+		Presentation:        r.Presentation,
+		Rarity:              r.Rarity,
+		Circulation:         r.Circulation,
+		Mint:                r.Mint,
+		MintLocationID:      r.MintLocationID,
+		Material:            r.Material,
+		WeightGrams:         r.WeightGrams,
+		DiameterMm:          r.DiameterMm,
+		Grade:               r.Grade,
+		Series:              r.Series,
+		SerialNumber:        r.SerialNumber,
+		Signatures:          r.Signatures,
+		Printer:             r.Printer,
+		WidthMm:             r.WidthMm,
+		HeightMm:            r.HeightMm,
+		Watermark:           r.Watermark,
+		NoteVariant:         r.NoteVariant,
+		CertifiedGrade:      r.CertifiedGrade,
+		CertificationNumber: r.CertificationNumber,
+		ObverseInscription:  r.ObverseInscription,
+		ReverseInscription:  r.ReverseInscription,
+		ObverseDescription:  r.ObverseDescription,
+		ReverseDescription:  r.ReverseDescription,
+		RarityRating:        r.RarityRating,
+		PurchasePrice:       r.PurchasePrice,
+		CurrentValue:        r.CurrentValue,
+		PurchaseDate:        r.PurchaseDate,
+		PurchaseLocation:    r.PurchaseLocation,
+		VendorSKU:           r.VendorSKU,
+		VendorInvoice:       r.VendorInvoice,
+		Notes:               r.Notes,
+		ReferenceURL:        r.ReferenceURL,
+		ReferenceText:       r.ReferenceText,
+		IsWishlist:          r.IsWishlist,
+		UserID:              userID,
+		References:          mapCoinReferenceRequests(r.References),
 	}
 }
 
@@ -210,17 +180,15 @@ func appendUpdateField(fields []string, field string) []string {
 	return append(fields, field)
 }
 
-func (r CoinUpdateRequest) toCoin(existing *models.Coin, storageLocationProvided bool, nullableScalarProvided map[string]bool) (models.Coin, []string) {
+func (r CoinUpdateRequest) toCoin(existing *models.Coin, nullableScalarProvided map[string]bool) (models.Coin, []string) {
 	updates := models.Coin{ID: existing.ID, UserID: existing.UserID}
 	updateFields := make([]string, 0, 32)
-	targetCategory := existing.Category
 	if r.Name != nil {
 		updates.Name = *r.Name
 		updateFields = append(updateFields, "Name")
 	}
 	if r.Category != nil {
 		updates.Category = *r.Category
-		targetCategory = *r.Category
 		updateFields = append(updateFields, "Category")
 	}
 	if r.Denomination != nil {
@@ -230,10 +198,6 @@ func (r CoinUpdateRequest) toCoin(existing *models.Coin, storageLocationProvided
 	if r.Ruler != nil {
 		updates.Ruler = *r.Ruler
 		updateFields = append(updateFields, "Ruler")
-	}
-	if r.RomanImperialFigureID != nil || nullableScalarProvided["RomanImperialFigureID"] {
-		updates.RomanImperialFigureID = r.RomanImperialFigureID
-		updateFields = appendUpdateField(updateFields, "RomanImperialFigureID")
 	}
 	if r.Era != nil {
 		updates.Era = *r.Era
@@ -382,38 +346,8 @@ func (r CoinUpdateRequest) toCoin(existing *models.Coin, storageLocationProvided
 		updates.IsWishlist = *r.IsWishlist
 		updateFields = append(updateFields, "IsWishlist")
 	}
-	if r.IsSold != nil {
-		updates.IsSold = *r.IsSold
-		updateFields = append(updateFields, "IsSold")
-	}
-	if r.SoldPrice != nil || nullableScalarProvided["SoldPrice"] {
-		updates.SoldPrice = r.SoldPrice
-		updateFields = append(updateFields, "SoldPrice")
-	}
-	if r.SoldDate != nil || nullableScalarProvided["SoldDate"] {
-		updates.SoldDate = r.SoldDate
-		updateFields = append(updateFields, "SoldDate")
-	}
-	if r.SoldTo != nil {
-		updates.SoldTo = *r.SoldTo
-		updateFields = append(updateFields, "SoldTo")
-	}
-	if storageLocationProvided {
-		updates.StorageLocationID = r.StorageLocationID
-	}
-	if nullableScalarProvided["StorageSlot"] {
-		updates.StorageSlot = r.StorageSlot
-	}
-	if r.IsPrivate != nil {
-		updates.IsPrivate = *r.IsPrivate
-		updateFields = append(updateFields, "IsPrivate")
-	}
 	if r.References != nil {
 		updates.References = mapCoinReferenceRequests(r.References)
-	}
-	if targetCategory != models.CategoryRoman {
-		updates.RomanImperialFigureID = nil
-		updateFields = appendUpdateField(updateFields, "RomanImperialFigureID")
 	}
 	return updates, updateFields
 }

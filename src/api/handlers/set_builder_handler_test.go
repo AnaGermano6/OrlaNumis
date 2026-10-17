@@ -36,7 +36,6 @@ func setupSetBuilderHandlerTestDB(t *testing.T) *gorm.DB {
 		&models.User{},
 		&models.CoinSet{}, &models.CoinSetTarget{},
 		&models.SetBuilderRun{}, &models.SetProposal{}, &models.ProposalSlot{},
-		&models.Notification{},
 	)
 	if err != nil {
 		t.Fatalf("failed to migrate: %v", err)
@@ -50,15 +49,13 @@ func setupSetBuilderHandlerRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 
 	db := setupSetBuilderHandlerTestDB(t)
 	setBuilderRepo := repository.NewSetBuilderRepository(db)
-	notifRepo := repository.NewNotificationRepository(db)
-	setBuilderService := services.NewSetBuilderService(setBuilderRepo, notifRepo).WithSetRepository(repository.NewSetRepository(db))
+	setBuilderService := services.NewSetBuilderService(setBuilderRepo).WithSetRepository(repository.NewSetRepository(db))
 	handler := NewSetBuilderHandler(setBuilderService)
 
 	r := gin.New()
 	protected := r.Group("/api")
 	protected.Use(coinTestAuthMiddleware())
 	protected.POST("/set-builder/runs", handler.CreateRun)
-	protected.GET("/set-builder/proposals", handler.ListProposals)
 	protected.GET("/set-builder/proposals/:id", handler.GetProposal)
 	protected.POST("/set-builder/proposals/:id/approve", handler.ApproveProposal)
 	protected.POST("/set-builder/proposals/:id/reject", handler.RejectProposal)
@@ -196,7 +193,7 @@ func seedSetBuilderProposal(t *testing.T, db *gorm.DB, userID uint, prompt strin
 	if err := repo.CreateRun(run); err != nil {
 		t.Fatalf("create run: %v", err)
 	}
-	svc := services.NewSetBuilderService(repo, repository.NewNotificationRepository(db))
+	svc := services.NewSetBuilderService(repo)
 	proposal, err := svc.CreateProposalFromWorkflow(userID, run.ID, services.SetProposalDraft{
 		OriginalPrompt: prompt,
 		ProposedName:   "US Silver Quarters",

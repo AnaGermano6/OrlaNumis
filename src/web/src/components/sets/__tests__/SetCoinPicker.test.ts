@@ -44,21 +44,20 @@ it('pages beyond coin 100, searches the server and retains selection across both
   } finally { wrapper.unmount() }
 })
 
-it('excludes members or other assigned slots and sold coins, but allows goal wishlist coins', async () => {
+it('excludes members or other assigned slots, but allows goal wishlist coins', async () => {
   getCoins.mockResolvedValue({ data: { coins: [
-    buildRomanDenariusCore({ id: 1 }), buildRomanDenariusCore({ id: 2, isSold: true }),
+    buildRomanDenariusCore({ id: 1 }),
     buildRomanDenariusCore({ id: 3, isWishlist: true }), buildRomanDenariusCore({ id: 4 }),
-  ], total: 4 } })
+  ], total: 3 } })
   const wrapper = openPicker({ excludedIds: [1], selectedCoin: coins[3], modelValue: 4 })
   try {
     await flushPromises()
     expect(wrapper.find('option[value="1"]').exists()).toBe(false)
-    expect(wrapper.find('option[value="2"]').exists()).toBe(false)
     expect(wrapper.find('option[value="3"]').exists()).toBe(false)
     expect(wrapper.find('option[value="4"]').exists()).toBe(true)
     await wrapper.setProps({ allowWishlist: true })
     await flushPromises()
-    expect(getCoins).toHaveBeenLastCalledWith(expect.objectContaining({ wishlist: undefined, sold: 'false' }))
+    expect(getCoins).toHaveBeenLastCalledWith(expect.objectContaining({ wishlist: undefined }))
     expect(wrapper.find('option[value="3"]').exists()).toBe(true)
   } finally { wrapper.unmount() }
 })

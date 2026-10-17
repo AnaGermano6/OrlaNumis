@@ -203,8 +203,7 @@ Rules:
 - OMIT any field neither source supports. Never guess a value at low
   confidence — an absent field is correct; a fabricated one is not.
 - `era`, when included, MUST be exactly one of: ancient, medieval, modern.
-- `category`, when included, MUST be exactly one of: Roman, Greek, Byzantine,
-  Modern, Other.
+- `category`, when included, MUST be exactly one of: Modern, Other.
 - `material`, when included, MUST be exactly one of: gold, silver, bronze,
   copper, electrum, other.
 - `observations` is a short (<=500 character) plain-prose summary for a
@@ -340,7 +339,7 @@ Rules:
 - Preserve face roles: obverse evidence may support obverse fields and reverse
   evidence may support reverse fields. Do not swap them.
 - `era` MUST be one of ancient, medieval, modern.
-- `category` MUST be one of Roman, Greek, Byzantine, Modern, Other.
+- `category` MUST be one of Modern, Other.
 - `material` MUST be one of gold, silver, bronze, copper, electrum, other.
 - `observations` is a <=500 character summary of the visual evidence.
 - `legible` is true only when the face narratives support a meaningful field
@@ -369,7 +368,7 @@ Rules:
 - Keep inscriptions separate from descriptions and preserve obverse/reverse
   roles.
 - `era` MUST be one of ancient, medieval, modern.
-- `category` MUST be one of Roman, Greek, Byzantine, Modern, Other.
+- `category` MUST be one of Modern, Other.
 - `material` MUST be one of gold, silver, bronze, copper, electrum, other.
 - `observations` is a <=500 character summary of the listing evidence.
 - `legible` is true only when the listing supports a meaningful field or

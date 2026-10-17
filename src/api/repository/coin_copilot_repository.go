@@ -14,7 +14,6 @@ import (
 
 var (
 	ErrCopilotTransitionConflict  = errors.New("coin copilot transition conflict")
-	ErrCopilotThreadActive        = errors.New("coin copilot thread has an active run")
 	ErrCopilotOwnerCapacity       = errors.New("coin copilot owner capacity reached")
 	ErrCopilotQueueCapacity       = errors.New("coin copilot queue capacity reached")
 	ErrCopilotStartKeyConflict    = errors.New("coin copilot start key conflict")
@@ -525,19 +524,6 @@ func (r *CoinCopilotRepository) ListSettledRunsForHistory(threadID, currentRunID
 	return runs, err
 }
 
-func (r *CoinCopilotRepository) CountActiveRuns(userID uint) (int64, error) {
-	var count int64
-	err := r.db.Model(&models.CoinCopilotRun{}).
-		Where("user_id = ? AND status IN ?", userID, copilotActiveStatuses()).Count(&count).Error
-	return count, err
-}
-
-func (r *CoinCopilotRepository) CountQueuedRuns() (int64, error) {
-	var count int64
-	err := r.db.Model(&models.CoinCopilotRun{}).Where("status = ?", models.CopilotRunQueued).Count(&count).Error
-	return count, err
-}
-
 func (r *CoinCopilotRepository) ClaimNextQueuedRun(workerID, executionID string) (*models.CoinCopilotRun, bool, error) {
 	var run models.CoinCopilotRun
 	claimed := false
@@ -867,43 +853,6 @@ func (r *CoinCopilotRepository) ListEventsSince(runID string, userID uint, since
 	var events []models.CoinCopilotEvent
 	err := r.db.Where("run_id = ? AND user_id = ? AND seq > ?", runID, userID, since).Order("seq ASC").Find(&events).Error
 	return events, err
-}
-
-func (r *CoinCopilotRepository) DeleteThread(threadID string, userID uint) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		var thread models.CoinCopilotThread
-		if err := tx.Where("id = ? AND user_id = ?", threadID, userID).First(&thread).Error; err != nil {
-			return err
-		}
-		var active int64
-		if err := tx.Model(&models.CoinCopilotRun{}).Where("thread_id = ? AND user_id = ? AND status IN ?", threadID, userID, []models.CopilotRunStatus{
-			models.CopilotRunQueued, models.CopilotRunRunning, models.CopilotRunPaused, models.CopilotRunCancelRequested,
-		}).Count(&active).Error; err != nil {
-			return err
-		}
-		if active > 0 {
-			return ErrCopilotThreadActive
-		}
-		var runIDs []string
-		if err := tx.Model(&models.CoinCopilotRun{}).Where("thread_id = ? AND user_id = ?", threadID, userID).Pluck("id", &runIDs).Error; err != nil {
-			return err
-		}
-		if len(runIDs) > 0 {
-			if err := tx.Where("run_id IN ?", runIDs).Delete(&models.CoinCopilotResumeRequest{}).Error; err != nil {
-				return err
-			}
-			if err := tx.Where("run_id IN ?", runIDs).Delete(&models.CoinCopilotCheckpoint{}).Error; err != nil {
-				return err
-			}
-			if err := tx.Where("run_id IN ?", runIDs).Delete(&models.CoinCopilotEvent{}).Error; err != nil {
-				return err
-			}
-			if err := tx.Where("id IN ? AND user_id = ?", runIDs, userID).Delete(&models.CoinCopilotRun{}).Error; err != nil {
-				return err
-			}
-		}
-		return tx.Where("id = ? AND user_id = ?", threadID, userID).Delete(&models.CoinCopilotThread{}).Error
-	})
 }
 
 func (r *CoinCopilotRepository) RecoverStale(staleBefore time.Time, resumeWindow time.Duration) ([]string, error) {

@@ -647,14 +647,9 @@ func mergeNGCLabelFields(text string, fields map[string]any) {
 		for _, segment := range segments {
 			upper := strings.ToUpper(segment)
 			switch {
-			case strings.Contains(upper, "ROMAN EMPIRE"):
-				copyInferredStringField(fields, "category", "Roman")
-				copyInferredStringField(fields, "era", "ancient")
-			case strings.Contains(upper, "GREEK"):
-				copyInferredStringField(fields, "category", "Greek")
+			case strings.Contains(upper, "ROMAN EMPIRE"), strings.Contains(upper, "GREEK"):
 				copyInferredStringField(fields, "era", "ancient")
 			case strings.Contains(upper, "BYZANTINE"):
-				copyInferredStringField(fields, "category", "Byzantine")
 				copyInferredStringField(fields, "era", "medieval")
 			}
 			if strings.Contains(upper, " MINT") || strings.HasSuffix(upper, "MINT") {
@@ -923,10 +918,6 @@ func buildPhotoNumistaEvidence(data *LookupExtractedData) models.NumistaEvidence
 		ReverseType:        boundedEvidenceField(stringField(fields, "reverseDescription"), 500),
 		VisibleText:        boundedEvidenceField(data.LabelText, 500),
 	}
-}
-
-func buildPhotoNumistaQuery(evidence models.NumistaEvidence) string {
-	return NewNumistaQueryBuilder().Build(evidence).Primary
 }
 
 func stringField(fields map[string]any, key string) string {

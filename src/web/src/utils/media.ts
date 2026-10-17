@@ -36,10 +36,6 @@ export function privateMediaUrl(path: string): string {
   return `${API_BASE}/api/uploads/${normalizeUploadPath(path)}`
 }
 
-export function publicShowcaseMediaUrl(slug: string, path: string): string {
-  return `${API_BASE}/api/showcase/${encodeURIComponent(slug)}/uploads/${normalizeUploadPath(path)}`
-}
-
 function authHeaders(token: string | null): Headers {
   const headers = new Headers()
   headers.set('Cache-Control', 'no-store')

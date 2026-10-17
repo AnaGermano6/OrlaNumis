@@ -7,9 +7,8 @@ import {
 import {
   buildGoldenCoinFixtures,
   buildImageHeavyDrachm,
+  buildDiocletianFollis,
   buildRomanDenariusCore,
-  buildTaggedFollisStorage,
-  buildTestTags,
 } from '../../src/test/fixtures'
 
 test.beforeEach(async ({ page }) => {
@@ -61,41 +60,25 @@ test('edit one field preserves the loaded golden fixture workflow', async ({ pag
   expect(api.updatePayloads[0]?.payload).toMatchObject({
     id: coin.id,
     name: 'Trajan Denarius Retitled',
-    tags: coin.tags,
     sets: coin.sets,
   })
 })
 
-test('edit tags and sets updates detail-page associations deterministically', async ({ page }) => {
-  const photographed = buildTestTags().find((tag) => tag.name === 'Photographed')
-  if (!photographed) throw new Error('Photographed fixture tag is required for the tags workflow')
-  const coin = buildTaggedFollisStorage({ tags: [photographed], sets: [] })
+test('edit sets updates detail-page associations deterministically', async ({ page }) => {
+  const coin = buildDiocletianFollis({ sets: [] })
   const api = await installWorkflowApiMocks(page, [coin])
-  const needsResearch = api.tags.find((tag) => tag.name === 'Needs Research')
   const twelveCaesars = api.sets.find((set) => set.name === 'Twelve Caesars')
-  if (!needsResearch || !twelveCaesars) throw new Error('Tag and set fixtures are required for the association workflow')
+  if (!twelveCaesars) throw new Error('Set fixtures are required for the association workflow')
 
   await page.goto(`/coin/${coin.id}`)
-  const tagsSection = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Tags & Sets' }) })
-  await expect(tagsSection.getByText('Photographed')).toBeVisible()
+  const setsSection = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Sets' }) })
 
-  await tagsSection.getByRole('button', { name: 'Remove Photographed tag' }).click()
-  await expect(tagsSection.getByText('Photographed')).toBeHidden()
+  await setsSection.getByRole('button', { name: '+ Set' }).click()
+  await setsSection.locator('select').selectOption(String(twelveCaesars.id))
+  await expect(setsSection.getByText('Twelve Caesars')).toBeVisible()
 
-  await tagsSection.getByRole('button', { name: '+ Tag or Set' }).click()
-  await tagsSection.locator('select').selectOption(`tag:${needsResearch.id}`)
-  await expect(tagsSection.getByText('Needs Research')).toBeVisible()
-
-  await tagsSection.getByRole('button', { name: '+ Tag or Set' }).click()
-  await tagsSection.locator('select').selectOption(`set:${twelveCaesars.id}`)
-  await expect(tagsSection.getByText('Twelve Caesars')).toBeVisible()
-
-  await tagsSection.getByRole('button', { name: 'Remove Twelve Caesars set' }).click()
-  await expect(tagsSection.getByText('Twelve Caesars')).toBeHidden()
-  expect(api.tagPayloads).toEqual([
-    { action: 'remove', coinId: coin.id, tagId: photographed.id },
-    { action: 'add', coinId: coin.id, tagId: needsResearch.id },
-  ])
+  await setsSection.getByRole('button', { name: 'Remove from Twelve Caesars' }).click()
+  await expect(setsSection.getByText('Twelve Caesars')).toBeHidden()
   expect(api.setPayloads).toEqual([
     { action: 'add', coinId: coin.id, setId: twelveCaesars.id },
     { action: 'remove', coinId: coin.id, setId: twelveCaesars.id },
@@ -151,16 +134,10 @@ test('collection search and filters query deterministic fixture data', async ({ 
   await expect.poll(() => api.coinQueries.some((query) => query.search === 'Syracuse')).toBe(true)
 
   await page.getByPlaceholder('Search coins by name, ruler, inscription...').fill('')
-  await page.locator('select').filter({ hasText: 'All Categories' }).selectOption('Greek')
-  await expect(page.getByRole('heading', { name: 'Athens Owl Tetradrachm Valued' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Trajan Denarius Core' })).toBeHidden()
-  await expect.poll(() => api.coinQueries.some((query) => query.category === 'Greek')).toBe(true)
-
-  await page.locator('select').filter({ hasText: 'All Categories' }).selectOption('')
-  await page.locator('select').filter({ hasText: 'All Sets' }).selectOption({ label: 'Needs Research' })
-  await expect(page.getByRole('heading', { name: 'Diocletian Follis Tagged Storage' })).toBeVisible()
+  await page.locator('select').filter({ hasText: 'All Sets' }).selectOption({ label: 'Byzantine Gold' })
+  await expect(page.getByRole('heading', { name: 'Justinian I Solidus Set Member' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Athens Owl Tetradrachm Valued' })).toBeHidden()
-  await expect.poll(() => api.coinQueries.some((query) => query.tag === '302')).toBe(true)
+  await expect.poll(() => api.coinQueries.some((query) => query.set === '402')).toBe(true)
 })
 
 test('mobile viewport edit workflow saves without desktop-only controls', async ({ page }) => {

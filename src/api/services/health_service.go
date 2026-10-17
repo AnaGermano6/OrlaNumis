@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/briandenicola/ancient-coins-api/models"
 	"github.com/briandenicola/ancient-coins-api/repository"
 )
 
@@ -33,11 +32,6 @@ func (s *HealthService) GetCollectionHealthSummary(userID uint) (*CollectionHeal
 			EligibleCoinCount: 0,
 			Weights:           DefaultHealthWeights(),
 			Dimensions:        HealthDimensionScores{},
-			Trend30D: HealthTrend30D{
-				Status:    "unavailable",
-				Delta:     nil,
-				Direction: "unavailable",
-			},
 		}, nil
 	}
 
@@ -61,8 +55,6 @@ func (s *HealthService) GetCollectionHealthSummary(userID uint) (*CollectionHeal
 
 	collectionScore := s.computeWeightedScore(avgMetadata, avgImage, avgValuation, avgAI)
 
-	trend := s.computeTrend30D(userID, collectionScore)
-
 	return &CollectionHealthSummary{
 		Score:             collectionScore,
 		Grade:             HealthGradeFromScore(collectionScore),
@@ -74,7 +66,6 @@ func (s *HealthService) GetCollectionHealthSummary(userID uint) (*CollectionHeal
 			ValuationFreshness: avgValuation,
 			AICoverage:         avgAI,
 		},
-		Trend30D: trend,
 	}, nil
 }
 
@@ -269,45 +260,6 @@ func (s *HealthService) computeTopMissingFields(counts map[string]int, totalCoin
 	return topFields
 }
 
-// SnapshotUserHealth persists a per-user daily health snapshot.
-func (s *HealthService) SnapshotUserHealth(userID uint, snapshotDate time.Time) error {
-	summary, err := s.GetCollectionHealthSummary(userID)
-	if err != nil {
-		return err
-	}
-
-	snapshot := summaryToSnapshot(userID, snapshotDate, summary)
-	return s.repo.UpsertCollectionHealthSnapshot(snapshot)
-}
-
-func summaryToSnapshot(userID uint, snapshotDate time.Time, summary *CollectionHealthSummary) *models.CollectionHealthSnapshot {
-	gradeA, gradeB, gradeC, gradeD, gradeF := 0, 0, 0, 0, 0
-	switch summary.Grade {
-	case HealthGradeA:
-		gradeA = int(summary.EligibleCoinCount)
-	case HealthGradeB:
-		gradeB = int(summary.EligibleCoinCount)
-	case HealthGradeC:
-		gradeC = int(summary.EligibleCoinCount)
-	case HealthGradeD:
-		gradeD = int(summary.EligibleCoinCount)
-	default:
-		gradeF = int(summary.EligibleCoinCount)
-	}
-
-	return &models.CollectionHealthSnapshot{
-		UserID:            userID,
-		SnapshotDate:      snapshotDate,
-		Score:             summary.Score,
-		GradeA:            gradeA,
-		GradeB:            gradeB,
-		GradeC:            gradeC,
-		GradeD:            gradeD,
-		GradeF:            gradeF,
-		EligibleCoinCount: int(summary.EligibleCoinCount),
-	}
-}
-
 // scoreCoinMetadata computes metadata completeness (0-100).
 func (s *HealthService) scoreCoinMetadata(coin *repository.EligibleCoinRow) int {
 	fields := []string{
@@ -404,33 +356,6 @@ func (s *HealthService) computeWeightedScore(metadata, image, valuation, ai int)
 		(ai * HealthWeightAICoverage)
 	score := weighted / 100
 	return ClampHealthScore(score)
-}
-
-// computeTrend30D calculates trend against 30-day baseline.
-func (s *HealthService) computeTrend30D(userID uint, currentScore int) HealthTrend30D {
-	baselineDate := time.Now().AddDate(0, 0, -30)
-	baseline, err := s.repo.GetSnapshotBaseline(userID, baselineDate)
-	if err != nil || baseline == nil {
-		return HealthTrend30D{
-			Status:    "unavailable",
-			Delta:     nil,
-			Direction: "unavailable",
-		}
-	}
-
-	delta := currentScore - baseline.Score
-	direction := "flat"
-	if delta > 0 {
-		direction = "up"
-	} else if delta < 0 {
-		direction = "down"
-	}
-
-	return HealthTrend30D{
-		Status:    "available",
-		Delta:     &delta,
-		Direction: direction,
-	}
 }
 
 // generateCoinChecklist identifies missing items for a coin.

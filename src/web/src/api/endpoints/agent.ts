@@ -240,9 +240,6 @@ export const getCoinCopilotRun = (runId: string) =>
 export const getCoinCopilotThread = (threadId: string) =>
   api.get<CoinCopilotThreadEnvelope>(`/agent/copilot/threads/${threadId}`)
 
-export const deleteCoinCopilotThread = (threadId: string) =>
-  api.delete<void>(`/agent/copilot/threads/${threadId}`)
-
 export const cancelCoinCopilotRun = (runId: string) =>
   api.post<CoinCopilotRunEnvelope>(`/agent/copilot/runs/${runId}/cancel`)
 
@@ -339,7 +336,7 @@ const DEEP_HANDOFF_OUTCOMES = new Set([
     'copilot_disabled', 'attribution_disabled', 'model_unsupported', 'job_at_capacity',
     'queue_full', 'result_missing', 'result_expired', 'stale', 'cancelled',
   ])
-  const DEEP_HANDOFF_PROVIDERS = new Set(['numista', 'nomisma', 'ngc', 'ocre', 'rpc'])
+  const DEEP_HANDOFF_PROVIDERS = new Set(['numista', 'ngc', 'rpc'])
   const DEEP_HANDOFF_COVERAGE = new Set([
     'pending', 'running', 'contributed', 'no_match', 'failed', 'timed_out',
     'skipped', 'not_automated', 'unavailable',

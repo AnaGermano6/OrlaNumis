@@ -88,10 +88,10 @@ func (r *ValuationRepository) RecoverStaleRuns(timeout time.Duration) {
 		})
 }
 
-// GetOwnedCoins returns owned (not sold, not wishlist) coins for a user, prioritizing stale valuations.
+// GetOwnedCoins returns owned (not wishlist) coins for a user, prioritizing stale valuations.
 func (r *ValuationRepository) GetOwnedCoins(userID uint, maxCoins int) ([]models.Coin, error) {
 	var coins []models.Coin
-	err := r.db.Where("user_id = ? AND is_wishlist = ? AND is_sold = ?", userID, false, false).
+	err := r.db.Where("user_id = ? AND is_wishlist = ?", userID, false).
 		Order("current_value_updated_at IS NOT NULL ASC").
 		Order("current_value_updated_at ASC").
 		Order("id ASC").
@@ -134,11 +134,11 @@ func (r *ValuationRepository) GetRunWithResults(runID uint) (*models.ValuationRu
 	return &run, nil
 }
 
-// GetUsersWithOwnedCoins returns distinct user IDs that have non-sold, non-wishlist coins.
+// GetUsersWithOwnedCoins returns distinct user IDs that have non-wishlist coins.
 func (r *ValuationRepository) GetUsersWithOwnedCoins() ([]uint, error) {
 	var userIDs []uint
 	err := r.db.Model(&models.Coin{}).
-		Where("is_wishlist = ? AND is_sold = ?", false, false).
+		Where("is_wishlist = ?", false).
 		Distinct("user_id").
 		Pluck("user_id", &userIDs).Error
 	return userIDs, err

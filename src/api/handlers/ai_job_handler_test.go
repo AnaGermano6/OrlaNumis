@@ -51,9 +51,7 @@ func setupAIJobHandlerTest(t *testing.T, userID uint) (*gin.Engine, *gorm.DB) {
 		fakeAIJobHandlerAgent{},
 		repository.NewUserRepository(db),
 		settingsSvc,
-		nil,
-		services.NewLogger(10),
-	)
+		services.NewLogger(10))
 	handler := NewAIJobHandler(svc, services.NewLogger(10))
 
 	router := gin.New()

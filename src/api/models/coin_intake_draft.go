@@ -5,7 +5,6 @@ import "time"
 const (
 	CoinIntakeDraftStatusDrafted   = "drafted"
 	CoinIntakeDraftStatusConfirmed = "confirmed"
-	CoinIntakeDraftStatusDiscarded = "discarded"
 	CoinIntakeDraftStatusExpired   = "expired"
 )
 

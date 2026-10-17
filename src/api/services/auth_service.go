@@ -35,7 +35,6 @@ type AuthService struct {
 	jwtSecret string
 	settings  *SettingsService
 	security  *SecurityService
-	oidc      *repository.OIDCRepository
 }
 
 type AuthResult struct {
@@ -59,11 +58,6 @@ func (s *AuthService) WithSecurity(security *SecurityService) *AuthService {
 	return s
 }
 
-func (s *AuthService) WithOIDC(oidc *repository.OIDCRepository) *AuthService {
-	s.oidc = oidc
-	return s
-}
-
 func (s *AuthService) CheckAccountAllowed(username string) error {
 	if s.security == nil {
 		return nil
@@ -71,34 +65,11 @@ func (s *AuthService) CheckAccountAllowed(username string) error {
 	return s.security.CheckAccountAllowed(username)
 }
 
-func (s *AuthService) RecordWebAuthnSuccess(user models.User, clientIP, userAgent string) {
-	if s.security != nil {
-		s.security.RecordWebAuthnSuccess(user, clientIP, userAgent)
-	}
-}
-
-func (s *AuthService) RecordWebAuthnFailure(username, clientIP, userAgent, message string) {
-	if s.security != nil {
-		var userID *uint
-		if user, err := s.repo.FindUserByUsername(username); err == nil {
-			id := user.ID
-			userID = &id
-		}
-		s.security.RecordEvent(models.SecurityEventWebAuthnLoginFailure, userID, username, clientIP, userAgent, message)
-	}
-}
-
 // RegisterUser creates a new user. The first user becomes admin.
 func (s *AuthService) RegisterUser(username, email, password string) (*models.User, error) {
 	count := s.repo.CountUsers()
-	if count > 0 && s.settings != nil {
-		allowed, err := s.additionalLocalRegistrationAllowed()
-		if err != nil {
-			return nil, err
-		}
-		if !allowed {
-			return nil, ErrRegistrationClosed
-		}
+	if count > 0 && s.settings != nil && !s.registrationOpen() {
+		return nil, ErrRegistrationClosed
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -125,19 +96,10 @@ func (s *AuthService) RegisterUser(username, email, password string) (*models.Us
 	return &user, nil
 }
 
-func (s *AuthService) additionalLocalRegistrationAllowed() (bool, error) {
-	mode := strings.ToLower(strings.TrimSpace(s.settings.GetSetting(SettingRegistrationMode)))
-	if mode == "open" {
-		return true, nil
-	}
-	if s.oidc == nil {
-		return false, nil
-	}
-	providers, err := s.oidc.ListEnabledProviders()
-	if err != nil {
-		return false, err
-	}
-	return len(providers) == 0, nil
+// registrationOpen: after the first user, accounts are made only while
+// registration is open.
+func (s *AuthService) registrationOpen() bool {
+	return strings.EqualFold(strings.TrimSpace(s.settings.GetSetting(SettingRegistrationMode)), "open")
 }
 
 // AuthenticateUser verifies credentials and returns the user on success.

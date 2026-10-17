@@ -225,9 +225,6 @@ func TestNumistaQueryBuilderV2ExclusionsBoundsAndAliasCeiling(t *testing.T) {
 		len([]rune(plan.Relaxed)) > models.NumistaMaxQueryLength {
 		t.Fatalf("query plan exceeded provider bound: %#v", plan)
 	}
-	if got := builder.AliasCount(); got > 32 {
-		t.Fatalf("mint alias allowlist has %d entries, want at most 32", got)
-	}
 }
 
 func TestNumistaQueryV2ComparisonFixtureReplay(t *testing.T) {

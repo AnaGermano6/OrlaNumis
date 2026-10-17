@@ -32,18 +32,15 @@ var allowedListSortFields = map[string]bool{
 }
 
 var nullableCoinUpdateScalarFields = map[string]string{
-	"purchasePrice":         "PurchasePrice",
-	"currentValue":          "CurrentValue",
-	"purchaseDate":          "PurchaseDate",
-	"soldPrice":             "SoldPrice",
-	"soldDate":              "SoldDate",
-	"weightGrams":           "WeightGrams",
-	"diameterMm":            "DiameterMm",
-	"widthMm":               "WidthMm",
-	"heightMm":              "HeightMm",
-	"romanImperialFigureId": "RomanImperialFigureID",
-	"mintLocationId":        "MintLocationID",
-	"year":                  "Year",
+	"purchasePrice":  "PurchasePrice",
+	"currentValue":   "CurrentValue",
+	"purchaseDate":   "PurchaseDate",
+	"weightGrams":    "WeightGrams",
+	"diameterMm":     "DiameterMm",
+	"widthMm":        "WidthMm",
+	"heightMm":       "HeightMm",
+	"mintLocationId": "MintLocationID",
+	"year":           "Year",
 }
 
 func nullableScalarFieldPresence(raw map[string]json.RawMessage) map[string]bool {
@@ -206,10 +203,10 @@ type PurchaseRequest struct {
 //
 // The "total" field in the response reflects the total number of coins matching
 // the applied filters. For example:
-//   - /coins: total = all owned coins (including wishlist & sold)
-//   - /coins?wishlist=false&sold=false: total = active collection count
+//   - /coins: total = all owned coins (including the wishlist)
+//   - /coins?wishlist=false: total = active collection count
 //
-// The active collection (owned AND NOT wishlist AND NOT sold) is the canonical
+// The active collection (owned AND NOT wishlist) is the canonical
 // definition of "collection size" and must match /stats totalCoins and the
 // internal collection_summary tool.
 //
@@ -231,7 +228,6 @@ type PurchaseRequest struct {
 //	@Param			rarity		query		string	false	"Filter by rarity"	Enums(common, uncommon, scarce, rare, very_rare, extremely_rare)
 //	@Param			search		query		string	false	"Search across name, denomination, ruler, era, mint, inscriptions, notes, country and a banknote's serial number, series and signatures"
 //	@Param			wishlist	query		string	false	"Filter by wishlist status"	Enums(true, false)
-//	@Param			sold		query		string	false	"Filter by sold status"	Enums(true, false)
 //	@Param			page		query		int		false	"Page number"	default(1)
 //	@Param			limit		query		int		false	"Items per page (max 100)"	default(50)
 //	@Param			sort		query		string	false	"Sort field"	Enums(created_at, updated_at, current_value, purchase_date, name, quantity, random)	default(updated_at)
@@ -326,13 +322,6 @@ func (h *CoinHandler) List(c *gin.Context) {
 		v := false
 		filters.Wishlist = &v
 	}
-	if s := c.Query("sold"); s == "true" {
-		v := true
-		filters.Sold = &v
-	} else if s == "false" {
-		v := false
-		filters.Sold = &v
-	}
 	circulation, commemorative, classification := c.Query("circulation"), c.Query("commemorative"), strings.TrimSpace(c.Query("classification"))
 	if (circulation != "" && circulation != "current" && circulation != "demonetized") || (commemorative != "" && commemorative != "true" && commemorative != "false") {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "circulation must be 'current' or 'demonetized', commemorative 'true' or 'false'"})
@@ -371,12 +360,6 @@ func (h *CoinHandler) List(c *gin.Context) {
 			if services.IsExtinctCountry(country) {
 				filters.Countries = append(filters.Countries, country)
 			}
-		}
-	}
-	if t := c.Query("tag"); t != "" {
-		if tagID, err := strconv.ParseUint(t, 10, strconv.IntSize); err == nil {
-			v := uint(tagID)
-			filters.TagID = &v
 		}
 	}
 	if s := c.Query("set"); s != "" {
@@ -488,7 +471,7 @@ type CoinStatusGroups struct {
 // demonetized and which are commemorative or not.
 //
 //	@Summary		List coins by legal tender and commemorative status
-//	@Description	Returns the IDs of the user's collection coins (not wishlist or sold) that are circulation coins still legal tender (current), no longer legal tender (demonetized) or collector coins (nonCirculating), and that are commemorative or not, by the same rules as the summary and the coin list filters: a circulation set on the coin wins, else the cached Numista type says (never asking Numista); coins of extinct countries are not current. A coin nobody knows about is in neither list of a pair.
+//	@Description	Returns the IDs of the user's collection coins (not the wishlist's) that are circulation coins still legal tender (current), no longer legal tender (demonetized) or collector coins (nonCirculating), and that are commemorative or not, by the same rules as the summary and the coin list filters: a circulation set on the coin wins, else the cached Numista type says (never asking Numista); coins of extinct countries are not current. A coin nobody knows about is in neither list of a pair.
 //	@Tags			Coins
 //	@Produce		json
 //	@Success		200	{object}	CoinStatusGroups
@@ -515,7 +498,7 @@ func (h *CoinHandler) StatusGroups(c *gin.Context) {
 // Create adds a new coin for the authenticated user.
 //
 //	@Summary		Create a coin
-//	@Description	Creates a new coin record for the authenticated user. storageSlot is nullable and one-based; a tray assignment requires an available slot within the tray's persisted capacity.
+//	@Description	Creates a new coin record for the authenticated user.
 //	@Tags			Coins
 //	@Accept			json
 //	@Produce		json
@@ -524,7 +507,7 @@ func (h *CoinHandler) StatusGroups(c *gin.Context) {
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		401		{object}	ErrorResponse
 //	@Failure		404		{object}	ErrorResponse
-//	@Failure		409		{object}	SlotOccupiedErrorResponse
+//	@Failure		409		{object}	ErrorResponse
 //	@Failure		500		{object}	ErrorResponse
 //	@Security		BearerAuth
 //	@Router			/coins [post]
@@ -558,7 +541,7 @@ func (h *CoinHandler) Create(c *gin.Context) {
 // Update modifies an existing coin owned by the authenticated user.
 //
 //	@Summary		Update a coin
-//	@Description	Updates an existing coin record. Only the coin owner can update it. storageSlot is nullable and one-based; omitted storage fields preserve the current assignment. Explicit null is accepted only when the resulting location/slot combination is valid, such as clearing the location and slot together.
+//	@Description	Updates an existing coin record. Only the coin owner can update it.
 //	@Tags			Coins
 //	@Accept			json
 //	@Produce		json
@@ -568,7 +551,7 @@ func (h *CoinHandler) Create(c *gin.Context) {
 //	@Failure		400		{object}	ErrorResponse
 //	@Failure		401		{object}	ErrorResponse
 //	@Failure		404		{object}	ErrorResponse
-//	@Failure		409		{object}	SlotOccupiedErrorResponse
+//	@Failure		409		{object}	ErrorResponse
 //	@Failure		500		{object}	ErrorResponse
 //	@Security		BearerAuth
 //	@Router			/coins/{id} [put]
@@ -592,14 +575,9 @@ func (h *CoinHandler) Update(c *gin.Context) {
 		return
 	}
 	var raw map[string]json.RawMessage
-	storageLocationProvided := false
-	storageSlotProvided := false
 	nullableScalarProvided := map[string]bool{}
 	if err := json.Unmarshal(bodyBytes, &raw); err == nil {
-		_, storageLocationProvided = raw["storageLocationId"]
-		_, storageSlotProvided = raw["storageSlot"]
 		nullableScalarProvided = nullableScalarFieldPresence(raw)
-		nullableScalarProvided["StorageSlot"] = storageSlotProvided
 	}
 	c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
@@ -609,10 +587,10 @@ func (h *CoinHandler) Update(c *gin.Context) {
 		return
 	}
 
-	updates, updateFields := req.toCoin(existing, storageLocationProvided, nullableScalarProvided)
+	updates, updateFields := req.toCoin(existing, nullableScalarProvided)
 
 	source := c.Query("source")
-	if err := h.svc.UpdateCoinWithAssignmentFields(existing, &updates, updateFields, userID, source, storageLocationProvided, storageSlotProvided); err != nil {
+	if err := h.svc.UpdateCoinWithFields(existing, &updates, updateFields, userID, source); err != nil {
 		if handleCoinMutationError(c, err) {
 			return
 		}
@@ -722,60 +700,6 @@ func (h *CoinHandler) Purchase(c *gin.Context) {
 	c.JSON(http.StatusOK, coin)
 }
 
-// Sell marks a collection coin as sold with a sale price.
-//
-//	@Summary		Mark coin as sold
-//	@Description	Sets isSold to true with a sold price and date, moving the coin from collection to sold gallery.
-//	@Tags			Coins
-//	@Accept			json
-//	@Produce		json
-//	@Param			id		path		int						true	"Coin ID"
-//	@Param			body	body		object{soldPrice float64}	true	"Sale details"
-//	@Success		200		{object}	models.Coin
-//	@Failure		400		{object}	ErrorResponse
-//	@Failure		401		{object}	ErrorResponse
-//	@Failure		404		{object}	ErrorResponse
-//	@Failure		500		{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/coins/{id}/sell [post]
-func (h *CoinHandler) Sell(c *gin.Context) {
-	userID := c.GetUint("userId")
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid coin ID"})
-		return
-	}
-
-	var body struct {
-		SoldPrice *float64 `json:"soldPrice"`
-		SoldTo    string   `json:"soldTo"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return
-	}
-
-	coin, err := h.repo.FindByID(uint(id), userID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Coin not found"})
-		return
-	}
-
-	now := time.Now()
-	updates := map[string]interface{}{
-		"is_sold":    true,
-		"sold_price": body.SoldPrice,
-		"sold_date":  &now,
-		"sold_to":    body.SoldTo,
-	}
-	if err := h.svc.SellCoin(coin, updates, userID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark as sold"})
-		return
-	}
-
-	c.JSON(http.StatusOK, coin)
-}
-
 // Delete removes a coin and its associated images.
 //
 //	@Summary		Delete a coin
@@ -832,7 +756,6 @@ func (h *CoinHandler) Stats(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"totalCoins":    stats.TotalCoins,
 		"totalWishlist": stats.TotalWishlist,
-		"totalSold":     stats.TotalSold,
 		"byCategory":    stats.ByCategory,
 		"byMaterial":    stats.ByMaterial,
 		"byGrade":       stats.ByGrade,
@@ -840,7 +763,6 @@ func (h *CoinHandler) Stats(c *gin.Context) {
 		"byRuler":       stats.ByRuler,
 		"byPriceRange":  stats.ByPriceRange,
 		"values":        stats.Values,
-		"soldValues":    stats.SoldValues,
 	})
 }
 
@@ -965,16 +887,6 @@ func handleCoinMutationError(c *gin.Context, err error) bool {
 		errors.Is(err, services.ErrCoinInvalidNoteVariant),
 		errors.Is(err, services.ErrCoinInvalidQuantity):
 		respondError(c, http.StatusBadRequest, err.Error(), err)
-		return true
-	case errors.Is(err, services.ErrStorageSlotRequired),
-		errors.Is(err, services.ErrStorageSlotInvalid):
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": err.Error(), "code": "validation_error", "field": "storageSlot"})
-		return true
-	case errors.Is(err, services.ErrStorageLocationNotFound):
-		c.JSON(http.StatusNotFound, gin.H{"error": "Storage location not found"})
-		return true
-	case errors.Is(err, services.ErrStorageSlotOccupied):
-		c.JSON(http.StatusConflict, gin.H{"error": "Storage slot is occupied", "message": "Storage slot is occupied", "code": "slot_occupied"})
 		return true
 	case errors.Is(err, services.ErrWishlistReferenceDuplicate):
 		c.JSON(http.StatusConflict, gin.H{

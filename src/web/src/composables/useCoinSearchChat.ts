@@ -49,7 +49,7 @@ export function buildAgentChatAppContext(route: AgentContextRoute): AgentChatApp
   }
 }
 
-const VALID_CATEGORIES = ['Roman', 'Greek', 'Byzantine', 'Modern', 'Other']
+const VALID_CATEGORIES = ['Modern', 'Other']
 const VALID_MATERIALS = ['Gold', 'Silver', 'Bronze', 'Copper', 'Electrum', 'Other']
 const VALID_ERAS = ['ancient', 'medieval', 'modern'] as const
 const FIELD_LIMITS = {

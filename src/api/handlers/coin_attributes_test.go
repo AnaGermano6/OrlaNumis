@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -83,7 +84,7 @@ func TestCoinHandler_YearCanBeTypedOrLeftToTheDate(t *testing.T) {
 		Year *int `json:"year"`
 	}
 
-	w := coinRequest(router, http.MethodPost, "/api/coins", map[string]any{"name": "Denarius", "category": "Roman", "material": "Silver", "dateRange": "c. 46-44 BC", "year": -44})
+	w := coinRequest(router, http.MethodPost, "/api/coins", map[string]any{"name": "Denarius", "category": "Modern", "material": "Silver", "dateRange": "c. 46-44 BC", "year": -44})
 	var created yearResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &created); err != nil || w.Code != http.StatusCreated || created.Year == nil || *created.Year != -44 {
 		t.Fatalf("create with year: %d %s", w.Code, w.Body.String())
@@ -95,7 +96,11 @@ func TestCoinHandler_YearCanBeTypedOrLeftToTheDate(t *testing.T) {
 		t.Fatalf("clearing the year should read it from the date: %d %s", w.Code, w.Body.String())
 	}
 
-	if w := coinRequest(router, http.MethodPost, "/api/coins", map[string]any{"name": "Bad", "category": "Roman", "material": "Silver", "year": 99999}); w.Code != http.StatusBadRequest {
+	if w := coinRequest(router, http.MethodPost, "/api/coins", map[string]any{"name": "Bad", "category": "Modern", "material": "Silver", "year": 99999}); w.Code != http.StatusBadRequest {
 		t.Fatalf("out-of-range year: expected 400, got %d", w.Code)
 	}
+}
+
+func itoa(value uint) string {
+	return strconv.FormatUint(uint64(value), 10)
 }

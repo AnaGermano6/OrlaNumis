@@ -60,7 +60,6 @@ describe('coinShareCard', () => {
       aiAnalysis: 'AI private analysis',
       listingStatus: 'available',
       userId: 42,
-      isPrivate: true,
     })
     const text = flattenMetadata(coin)
 
@@ -71,7 +70,6 @@ describe('coinShareCard', () => {
     expect(text).not.toContain('AI private analysis')
     expect(text).not.toContain('available')
     expect(text).not.toContain('userId')
-    expect(text).not.toContain('isPrivate')
     expect(text).not.toContain('tags')
     expect(text).not.toContain('sets')
   })

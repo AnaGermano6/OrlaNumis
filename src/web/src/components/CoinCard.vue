@@ -48,7 +48,7 @@
         ></span>
         {{ coin.name }}
       </h3>
-      <template v-if="!wishlist && !sold">
+      <template v-if="!wishlist">
         <p v-if="cardInscription" class="overflow-hidden text-chip italic text-text-secondary [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:1]">{{ cardInscription }}</p>
         <div class="flex flex-wrap gap-2">
           <span
@@ -63,43 +63,10 @@
           <span v-if="coin.denomination" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary [@media(display-mode:standalone)]:px-3 [@media(display-mode:standalone)]:py-1 [@media(display-mode:standalone)]:text-body">{{ coin.denomination }}</span>
           <span v-if="coin.material" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary [@media(display-mode:standalone)]:px-3 [@media(display-mode:standalone)]:py-1 [@media(display-mode:standalone)]:text-body">{{ materialLabel(coin.material) }}</span>
         </div>
-        <div v-if="coin.tags?.length" class="mb-1 flex flex-wrap gap-1">
-          <span
-            v-for="tag in coin.tags"
-            :key="tag.id"
-            class="whitespace-nowrap rounded-full border px-2 py-[0.15rem] text-sm leading-[1.4]"
-            :style="{ backgroundColor: tag.color + '22', color: tag.color, borderColor: tag.color + '44' }"
-          >{{ tag.name }}</span>
-        </div>
-      </template>
-      <template v-if="sold">
-        <div v-if="coin.tags?.length" class="mb-1 flex flex-wrap gap-1">
-          <span
-            v-for="tag in coin.tags"
-            :key="tag.id"
-            class="whitespace-nowrap rounded-full border px-2 py-[0.15rem] text-sm leading-[1.4]"
-            :style="{ backgroundColor: tag.color + '22', color: tag.color, borderColor: tag.color + '44' }"
-          >{{ tag.name }}</span>
-        </div>
-        <div class="mt-1 flex flex-col gap-[0.15rem] text-chip">
-          <div v-if="coin.soldPrice" class="font-semibold text-gold">{{ t('coinCard.sold', { amount: formatCurrency(coin.soldPrice) }) }}</div>
-          <div v-if="coin.purchasePrice" class="text-chip text-text-muted">{{ t('coinCard.paid', { amount: formatCurrency(coin.purchasePrice) }) }}</div>
-          <div v-if="coin.soldPrice && coin.purchasePrice" class="text-chip font-semibold" :class="coin.soldPrice < coin.purchasePrice ? 'text-loss' : 'text-gain'">
-            {{ coin.soldPrice >= coin.purchasePrice ? '+' : '' }}{{ formatCurrency(coin.soldPrice - coin.purchasePrice) }}
-          </div>
-          <div v-if="coin.soldTo" class="mt-[0.15rem] text-chip text-text-secondary">{{ t('coinCard.soldTo', { name: coin.soldTo }) }}</div>
-        </div>
       </template>
       <div v-if="wishlist && (coin.currentValue || coin.purchasePrice)" class="mt-auto text-base font-semibold text-gold">
         {{ formatCurrency(coin.currentValue || coin.purchasePrice || 0) }}
       </div>
-      <span
-        v-if="wishlist && activeReminder && activeReminder.status !== 'cancelled'"
-        class="chip-sm mt-1 inline-flex w-fit !border-gold !text-gold"
-        style="background: var(--accent-gold-dim);"
-      >
-        {{ formatReminderBadge(activeReminder.remindDate) }}
-      </span>
       <SafeExternalLink
         v-if="wishlist && coin.referenceUrl"
         :href="coin.referenceUrl"
@@ -123,7 +90,6 @@
 
 <script setup lang="ts">
 import type { Coin, ImageType } from '@/types'
-import type { PurchaseReminder } from '@/types/coin'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Banknote, Check, Coins, ShoppingCart } from 'lucide-vue-next'
@@ -131,7 +97,6 @@ import { formatCurrency, materialLabel } from '@/utils/format'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
-import { formatReminderBadge } from '@/composables/usePurchaseReminder'
 import { t } from '@/i18n'
 import { categoryLabel } from '@/i18n/coinVocabulary'
 
@@ -141,17 +106,13 @@ const props = withDefaults(defineProps<{
   coin: Coin
   imageSide?: ImageType | null
   wishlist?: boolean
-  sold?: boolean
   selectable?: boolean
   selected?: boolean
-  activeReminder?: PurchaseReminder | null
 }>(), {
   imageSide: null,
   wishlist: false,
-  sold: false,
   selectable: false,
   selected: false,
-  activeReminder: null,
 })
 
 const emit = defineEmits<{

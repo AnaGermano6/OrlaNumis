@@ -12,7 +12,7 @@ import { computed } from 'vue'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 
 const props = defineProps<{
-  category?: 'roman' | 'greek' | 'byzantine' | 'modern' | 'other' | string
+  category?: 'modern' | 'other' | string
 }>()
 
 const badgeStyle = computed(() => {

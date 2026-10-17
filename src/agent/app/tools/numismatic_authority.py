@@ -19,12 +19,6 @@ def lookup_authority_uri(catalog: str, volume: str = "", number: str = "", uri: 
 
     lowered_number = num.lower()
 
-    if cat == "RIC":
-        if lowered_number.startswith("ric."):
-            return f"https://numismatics.org/ocre/id/{lowered_number}"
-        query = quote_plus(f"RIC {vol} {num}".strip())
-        return f"https://numismatics.org/ocre/results?q={query}"
-
     if cat == "RPC":
         if lowered_number.startswith("rpc."):
             return f"https://rpc.ashmus.ox.ac.uk/id/{lowered_number}"

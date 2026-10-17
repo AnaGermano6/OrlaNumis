@@ -2,14 +2,14 @@
   <CoinDetailSectionPageShell :section-title="t('coinDetail.sections.health.title')">
     <template #default="{ coin }">
       <CoinHealthChecklist
-        v-if="coinHealth && !coin.isWishlist && !coin.isSold"
+        v-if="coinHealth && !coin.isWishlist"
         :score="coinHealth.score"
         :grade="coinHealth.grade"
         :missing-items="coinHealth.missingItems"
         @quick-action="handleHealthQuickAction(coin.id, $event)"
       />
       <div v-else class="card p-6 text-center text-text-secondary text-base">
-        <p v-if="coin.isWishlist || coin.isSold">
+        <p v-if="coin.isWishlist">
           {{ t('coinDetail.health.activeOnly') }}
         </p>
         <p v-else>{{ t('coinDetail.health.noData') }}</p>

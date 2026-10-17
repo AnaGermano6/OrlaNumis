@@ -68,7 +68,7 @@ const PRICES: Record<number, { grade: string; price: number }[]> = {
 }
 
 // Fields the API client sends as null when an update leaves them out.
-const NULLABLE_FIELDS = ['weightGrams', 'diameterMm', 'purchasePrice', 'currentValue', 'purchaseDate', 'storageLocationId', 'storageSlot', 'romanImperialFigureId', 'mintLocationId', 'year']
+const NULLABLE_FIELDS = ['weightGrams', 'diameterMm', 'purchasePrice', 'currentValue', 'purchaseDate', 'romanImperialFigureId', 'mintLocationId', 'year']
 
 let collection: Coin[]
 let nextId: number

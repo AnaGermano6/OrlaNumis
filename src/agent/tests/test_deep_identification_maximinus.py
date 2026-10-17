@@ -95,11 +95,9 @@ class _StructuredVisionDegrade:
         return {"raw": type("Resp", (), {"content": ""})(), "parsed": None, "parsing_error": None}
 
 
-def _catalog(*, ocre_automatable: bool = True) -> list[DeepProviderCatalogEntry]:
+def _catalog() -> list[DeepProviderCatalogEntry]:
     return [
         DeepProviderCatalogEntry(provider="numista", automatable=True),
-        DeepProviderCatalogEntry(provider="nomisma", automatable=True),
-        DeepProviderCatalogEntry(provider="ocre", automatable=ocre_automatable),
         DeepProviderCatalogEntry(provider="ngc", automatable=False, link_out="https://www.ngccoin.com/verify/"),
     ]
 
@@ -150,31 +148,20 @@ def _no_match_response() -> dict:
 
 
 def _install_provider_spies(monkeypatch):
-    """Patch the ONE real HTTP boundary each automated provider node calls
-    (`ProviderToolsClient.{numista,nomisma,ocre}_search`), rather than the
+    """Patch the ONE real HTTP boundary the automated provider node calls
+    (`ProviderToolsClient.numista_search`), rather than the
     provider nodes themselves — so `_build_query`/`build_query_terms`
     genuinely run for real, and the exact query text a real production run
     would send upstream is captured and asserted on. Returns the captured
     per-provider call-argument lists.
     """
-    calls: dict[str, list] = {"numista": [], "nomisma": [], "ocre": []}
+    calls: dict[str, list] = {"numista": []}
 
     async def fake_numista_search(self, query, limit=5):
         calls["numista"].append(query)
         return _no_match_response()
 
-    async def fake_nomisma_search(self, query, limit=5):
-        calls["nomisma"].append(query)
-        return _no_match_response()
-
-    async def fake_ocre_search(self, *, ruler="", denomination="", mint="", material="", legend_tokens=None,
-                                ocre_id="", limit=5):
-        calls["ocre"].append((ruler, denomination, mint, material))
-        return _no_match_response()
-
     monkeypatch.setattr(ProviderToolsClient, "numista_search", fake_numista_search)
-    monkeypatch.setattr(ProviderToolsClient, "nomisma_search", fake_nomisma_search)
-    monkeypatch.setattr(ProviderToolsClient, "ocre_search", fake_ocre_search)
     return calls
 
 
@@ -310,23 +297,16 @@ async def test_maximinus_run_produces_real_narrative_and_proposal(monkeypatch):
         assert refs == [{"provider": "image", "claim_index": None}], (field_name, refs)
 
     # (4) No provider was called with a placeholder query string. Numista
-    # and nomisma DID make a real call (a signal decoded from the
-    # hypothesis), and that query is hypothesis-derived, not a placeholder.
+    # DID make a real call (a signal decoded from the hypothesis), and that
+    # query is hypothesis-derived, not a placeholder.
     assert calls["numista"], "expected numista to be called with a hypothesis-derived query"
-    assert calls["nomisma"], "expected nomisma to be called with a hypothesis-derived query"
-    for query in calls["numista"] + calls["nomisma"]:
+    for query in calls["numista"]:
         assert query, "query must not be empty when a call was actually made"
         _assert_not_placeholder(query)
         # Positive check: the query is genuinely derived from THIS fixture's
         # hypothesis (ruler + denomination, per query_terms.py's fixed
         # composition order), not merely absent of blocklisted words.
         assert "Maximinus" in query and "Denarius" in query, query
-
-    # OCRE's bound query signals are drawn only from `quick_evidence.
-    # coin_fields` (never the hypothesis) — with quick_evidence absent,
-    # OCRE must decode nothing and make ZERO upstream calls (no possible
-    # placeholder call at all).
-    assert calls["ocre"] == []
 
     # (5) The hypothesis is present in the emitted synthesis payload.
     assert report["image_hypothesis"] is not None
@@ -405,7 +385,6 @@ async def test_probus_tripolis_deep_analysis_retains_face_evidence_and_notes(mon
             {"provider": "image", "claim_index": None}
         ]
     assert any("Probus" in query and "Antoninianus" in query for query in calls["numista"])
-    assert any("Probus" in query and "Antoninianus" in query for query in calls["nomisma"])
 
 
 # --- T069: corpus-wide "never a placeholder query" assertion --------------
@@ -486,15 +465,14 @@ async def test_no_provider_call_ever_carries_a_placeholder_query(
     terminal = frames[-1]
     assert terminal["type"] in ("synthesis", "error"), (case_name, terminal)
 
-    all_queries = calls["numista"] + calls["nomisma"]
+    all_queries = calls["numista"]
 
     if case_name == "fully-empty":
         # No signal anywhere (no hypothesis, no quick evidence, no notes):
-        # `build_query_terms` must return "" and NEITHER provider may be
+        # `build_query_terms` must return "" and the provider may not be
         # called at all (FR-011) — the only way a placeholder could ever
         # reach a provider is if this zero-call contract were broken.
         assert all_queries == [], all_queries
-        assert calls["ocre"] == []
     else:
         # A real signal exists in this fixture; every provider call that
         # actually happened must carry real, evidence-derived text.

@@ -228,18 +228,6 @@ func (s *WishlistSearchAlertService) UpdateAlert(id, userID uint, input Wishlist
 	return updated, nil
 }
 
-func (s *WishlistSearchAlertService) SetAlertActive(id, userID uint, active bool) (*models.WishlistSearchAlert, error) {
-	alert, err := s.GetAlert(id, userID)
-	if err != nil {
-		return nil, err
-	}
-	alert.IsActive = active
-	if err := s.repo.UpdateAlert(alert); err != nil {
-		return nil, err
-	}
-	return alert, nil
-}
-
 func (s *WishlistSearchAlertService) DeleteAlert(id, userID uint) error {
 	if _, err := s.GetAlert(id, userID); err != nil {
 		return err
@@ -1165,7 +1153,7 @@ func validateConversionCoin(coin models.Coin) error {
 		coin.Category = models.CategoryOther
 	}
 	switch coin.Category {
-	case models.CategoryRoman, models.CategoryGreek, models.CategoryByzantine, models.CategoryModern, models.CategoryOther:
+	case models.CategoryModern, models.CategoryOther:
 	default:
 		return ErrWishlistSearchAlertConversion
 	}

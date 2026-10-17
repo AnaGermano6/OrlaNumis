@@ -119,7 +119,6 @@ async def test_callback_binds_execution_token_and_tool_call_id():
         return httpx.Response(200, json={"summary": {
             "totalCoins": 0,
             "totalWishlist": 0,
-            "totalSold": 0,
             "totalCurrentUsd": 0,
             "totalPurchaseUsd": 0,
         }})
@@ -144,7 +143,6 @@ async def test_virtual_portfolio_tool_fetches_its_required_summary():
         return httpx.Response(200, json={"summary": {
             "totalCoins": 4,
             "totalWishlist": 1,
-            "totalSold": 0,
             "totalCurrentUsd": 500,
             "totalPurchaseUsd": 300,
         }})

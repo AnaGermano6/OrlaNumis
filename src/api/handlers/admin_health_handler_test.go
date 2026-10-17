@@ -24,8 +24,6 @@ func setupAdminHealthHandlerTestDB(t *testing.T) *gorm.DB {
 		&models.User{},
 		&models.Coin{},
 		&models.CoinImage{},
-		&models.CollectionHealthSnapshot{},
-		&models.CollectionHealthSnapshotRun{},
 		&models.AppSetting{},
 	)
 	if err != nil {
@@ -48,13 +46,9 @@ func setupAdminHealthHandlerRouter(t *testing.T, isAdmin bool) (*gin.Engine, *go
 	db.Create(&user)
 
 	healthRepo := repository.NewHealthRepository(db)
-	settingsRepo := repository.NewSettingsRepository(db)
-	settingsSvc := services.NewSettingsService(settingsRepo)
 	logger := services.NewLogger(100)
 	healthSvc := services.NewHealthService(healthRepo, logger)
-	collectionHealthSnapshotRunRepo := repository.NewCollectionHealthSnapshotRunRepository(db)
-	healthScheduler := services.NewCollectionHealthScheduler(healthSvc, collectionHealthSnapshotRunRepo, settingsSvc, logger)
-	handler := NewAdminHealthHandler(healthSvc, healthScheduler, logger)
+	handler := NewAdminHealthHandler(healthSvc, logger)
 
 	r := gin.New()
 	// Mock JWT middleware
@@ -75,46 +69,8 @@ func setupAdminHealthHandlerRouter(t *testing.T, isAdmin bool) (*gin.Engine, *go
 		c.Next()
 	})
 	adminGroup.GET("/health/summary", handler.Summary)
-	adminGroup.POST("/collection-health-snapshots/run", handler.TriggerSnapshotRun)
-	adminGroup.GET("/collection-health-snapshot-runs", handler.ListSnapshotRuns)
-	adminGroup.GET("/collection-health/status", handler.GetSnapshotStatus)
 
 	return r, db, user.ID
-}
-
-func setupAdminHealthTriggerAuthRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
-	t.Helper()
-	gin.SetMode(gin.TestMode)
-
-	db := setupAdminHealthHandlerTestDB(t)
-	healthRepo := repository.NewHealthRepository(db)
-	settingsRepo := repository.NewSettingsRepository(db)
-	settingsSvc := services.NewSettingsService(settingsRepo)
-	logger := services.NewLogger(100)
-	healthSvc := services.NewHealthService(healthRepo, logger)
-	collectionHealthSnapshotRunRepo := repository.NewCollectionHealthSnapshotRunRepository(db)
-	healthScheduler := services.NewCollectionHealthScheduler(healthSvc, collectionHealthSnapshotRunRepo, settingsSvc, logger)
-	handler := NewAdminHealthHandler(healthSvc, healthScheduler, logger)
-
-	r := gin.New()
-	adminGroup := r.Group("/api/admin")
-	adminGroup.Use(func(c *gin.Context) {
-		switch c.GetHeader("Authorization") {
-		case "Bearer admin-token":
-			c.Set("userRole", string(models.RoleAdmin))
-		case "Bearer user-token":
-			c.Set("userRole", string(models.RoleUser))
-		default:
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-			c.Abort()
-			return
-		}
-		c.Next()
-	})
-	adminGroup.Use(AdminRequired())
-	adminGroup.POST("/collection-health-snapshots/run", handler.TriggerSnapshotRun)
-
-	return r, db
 }
 
 // --- T039: Admin endpoint auth and payload tests ---
@@ -126,7 +82,7 @@ func TestAdminHealthHandler_Summary_Success(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		db.Create(&models.Coin{
 			Name:     "Test Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   userID,
 		})
 	}
@@ -153,168 +109,6 @@ func TestAdminHealthHandler_Summary_Success(t *testing.T) {
 	}
 	if resp.EligibleCoinCount != 5 {
 		t.Errorf("expected eligibleCoinCount=5, got %d", resp.EligibleCoinCount)
-	}
-}
-
-func TestAdminHealthHandler_TriggerSnapshotRun_Success(t *testing.T) {
-	router, db := setupAdminHealthTriggerAuthRouter(t)
-
-	user := models.User{Username: "owner", Email: "owner@test.com", Role: models.RoleUser}
-	db.Create(&user)
-	db.Create(&models.Coin{
-		Name:     "Snapshot Coin",
-		Category: models.CategoryRoman,
-		UserID:   user.ID,
-	})
-
-	req := httptest.NewRequest(http.MethodPost, "/api/admin/collection-health-snapshots/run", nil)
-	req.Header.Set("Authorization", "Bearer admin-token")
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
-	}
-
-	var resp map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("failed to parse response: %v", err)
-	}
-	if resp["message"] != "Collection health snapshots run completed" {
-		t.Errorf("unexpected message: %v", resp["message"])
-	}
-
-	var count int64
-	db.Model(&models.CollectionHealthSnapshot{}).Where("user_id = ?", user.ID).Count(&count)
-	if count != 1 {
-		t.Fatalf("expected 1 collection health snapshot, got %d", count)
-	}
-}
-
-func TestAdminHealthHandler_ListSnapshotRuns_ReturnsRunHistory(t *testing.T) {
-	router, db, userID := setupAdminHealthHandlerRouter(t, true)
-	db.Create(&models.Coin{Name: "Snapshot Coin", Category: models.CategoryRoman, UserID: userID})
-
-	triggerReq := httptest.NewRequest(http.MethodPost, "/api/admin/collection-health-snapshots/run", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, triggerReq)
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected trigger 200, got %d: %s", w.Code, w.Body.String())
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/api/admin/collection-health-snapshot-runs", nil)
-	w = httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
-	}
-
-	var resp struct {
-		Runs []struct {
-			TriggerType      string `json:"triggerType"`
-			Status           string `json:"status"`
-			UsersEligible    int    `json:"usersEligible"`
-			UsersSnapshotted int    `json:"usersSnapshotted"`
-		} `json:"runs"`
-		Total int64 `json:"total"`
-	}
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("failed to parse response: %v", err)
-	}
-	if resp.Total != 1 || len(resp.Runs) != 1 {
-		t.Fatalf("expected 1 run, got total=%d len=%d", resp.Total, len(resp.Runs))
-	}
-	if resp.Runs[0].TriggerType != "manual" || resp.Runs[0].Status != "success" {
-		t.Fatalf("unexpected run: %+v", resp.Runs[0])
-	}
-	if resp.Runs[0].UsersEligible != 1 || resp.Runs[0].UsersSnapshotted != 1 {
-		t.Fatalf("unexpected counters: %+v", resp.Runs[0])
-	}
-}
-
-func TestAdminHealthHandler_ListSnapshotRuns_ForbiddenForNonAdmin(t *testing.T) {
-	router, _, _ := setupAdminHealthHandlerRouter(t, false)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/admin/collection-health-snapshot-runs", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("expected 403, got %d: %s", w.Code, w.Body.String())
-	}
-}
-
-func TestAdminHealthHandler_GetSnapshotStatus_ReflectsSettings(t *testing.T) {
-	router, db, _ := setupAdminHealthHandlerRouter(t, true)
-
-	settingsRepo := repository.NewSettingsRepository(db)
-	settingsSvc := services.NewSettingsService(settingsRepo)
-	if err := settingsSvc.SetSetting(services.SettingCollectionHealthSnapshotsEnabled, "true"); err != nil {
-		t.Fatalf("failed to set enabled: %v", err)
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/api/admin/collection-health/status", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
-	}
-
-	var resp struct {
-		Name      string `json:"name"`
-		Enabled   bool   `json:"enabled"`
-		IsRunning bool   `json:"isRunning"`
-		NextRunIn int64  `json:"nextRunIn"`
-	}
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("failed to parse response: %v", err)
-	}
-	if resp.Name != "collection-health" {
-		t.Errorf("name = %q, want collection-health", resp.Name)
-	}
-	if !resp.Enabled {
-		t.Error("expected enabled=true after setting flag")
-	}
-	if resp.NextRunIn <= 0 {
-		t.Errorf("expected positive nextRunIn, got %d", resp.NextRunIn)
-	}
-}
-
-func TestAdminHealthHandler_GetSnapshotStatus_ForbiddenForNonAdmin(t *testing.T) {
-	router, _, _ := setupAdminHealthHandlerRouter(t, false)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/admin/collection-health/status", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("expected 403, got %d: %s", w.Code, w.Body.String())
-	}
-}
-
-func TestAdminHealthHandler_TriggerSnapshotRun_ForbiddenForNonAdmin(t *testing.T) {
-	router, _ := setupAdminHealthTriggerAuthRouter(t)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/admin/collection-health-snapshots/run", nil)
-	req.Header.Set("Authorization", "Bearer user-token")
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("expected 403, got %d: %s", w.Code, w.Body.String())
-	}
-}
-
-func TestAdminHealthHandler_TriggerSnapshotRun_NoAuth(t *testing.T) {
-	router, _ := setupAdminHealthTriggerAuthRouter(t)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/admin/collection-health-snapshots/run", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d: %s", w.Code, w.Body.String())
 	}
 }
 
@@ -369,7 +163,7 @@ func TestAdminHealthHandler_Summary_ResponseStructure(t *testing.T) {
 	// Create coins with varying metadata to generate missing field stats
 	db.Create(&models.Coin{
 		Name:         "Complete Coin",
-		Category:     models.CategoryRoman,
+		Category:     models.CategoryModern,
 		Denomination: "Denarius",
 		Ruler:        "Augustus",
 		Era:          "Imperial",
@@ -380,7 +174,7 @@ func TestAdminHealthHandler_Summary_ResponseStructure(t *testing.T) {
 	})
 	db.Create(&models.Coin{
 		Name:     "Incomplete Coin",
-		Category: models.CategoryRoman,
+		Category: models.CategoryModern,
 		UserID:   userID,
 	})
 
@@ -418,9 +212,9 @@ func TestAdminHealthHandler_Summary_MultipleUsers(t *testing.T) {
 	db.Create(&user1)
 	db.Create(&user2)
 
-	db.Create(&models.Coin{Name: "Coin U1-1", Category: models.CategoryRoman, UserID: user1.ID})
-	db.Create(&models.Coin{Name: "Coin U1-2", Category: models.CategoryRoman, UserID: user1.ID})
-	db.Create(&models.Coin{Name: "Coin U2-1", Category: models.CategoryGreek, UserID: user2.ID})
+	db.Create(&models.Coin{Name: "Coin U1-1", Category: models.CategoryModern, UserID: user1.ID})
+	db.Create(&models.Coin{Name: "Coin U1-2", Category: models.CategoryModern, UserID: user1.ID})
+	db.Create(&models.Coin{Name: "Coin U2-1", Category: models.CategoryOther, UserID: user2.ID})
 
 	req := httptest.NewRequest(http.MethodGet, "/api/admin/health/summary", nil)
 	w := httptest.NewRecorder()
@@ -441,29 +235,20 @@ func TestAdminHealthHandler_Summary_MultipleUsers(t *testing.T) {
 	}
 }
 
-func TestAdminHealthHandler_Summary_ExcludesWishlistAndSold(t *testing.T) {
+func TestAdminHealthHandler_Summary_ExcludesWishlist(t *testing.T) {
 	router, db, userID := setupAdminHealthHandlerRouter(t, true)
 
 	db.Create(&models.Coin{
 		Name:       "Active Coin",
-		Category:   models.CategoryRoman,
+		Category:   models.CategoryModern,
 		UserID:     userID,
 		IsWishlist: false,
-		IsSold:     false,
 	})
 	db.Create(&models.Coin{
 		Name:       "Wishlist Coin",
-		Category:   models.CategoryRoman,
+		Category:   models.CategoryModern,
 		UserID:     userID,
 		IsWishlist: true,
-		IsSold:     false,
-	})
-	db.Create(&models.Coin{
-		Name:       "Sold Coin",
-		Category:   models.CategoryRoman,
-		UserID:     userID,
-		IsWishlist: false,
-		IsSold:     true,
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "/api/admin/health/summary", nil)

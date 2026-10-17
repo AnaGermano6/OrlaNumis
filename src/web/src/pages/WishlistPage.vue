@@ -118,7 +118,6 @@
         :key="coin.id"
         :coin="coin"
         wishlist
-        :active-reminder="remindersByCoinId.get(coin.id) ?? null"
         @purchase="openPurchaseModal"
         @dismiss-status="handleDismissStatus"
       />
@@ -220,16 +219,14 @@ import PurchaseModal from '@/components/PurchaseModal.vue'
 import WishlistURLIntake from '@/components/wishlist/WishlistURLIntake.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
-import { purchaseCoin, checkWishlistAvailability, updateListingStatus, listPurchaseReminders } from '@/api/client'
-import type { Coin, AvailabilityRunSummary, PurchaseReminder } from '@/types'
+import { purchaseCoin, checkWishlistAvailability, updateListingStatus } from '@/api/client'
+import type { Coin, AvailabilityRunSummary } from '@/types'
 import { CirclePlus, Bot, ShieldCheck, CalendarClock, History, ChevronLeft, Link, ScanLine, X } from 'lucide-vue-next'
 import { usePwa } from '@/composables/usePwa'
-import { useQuickAccess } from '@/composables/useQuickAccess'
 import { t } from '@/i18n'
 
 const store = useCoinsStore()
 const { isPwa } = usePwa()
-const { refresh: refreshQuickAccess } = useQuickAccess()
 const showChat = ref(false)
 const showAddDialog = ref(false)
 const addMethod = ref<'url' | null>(null)
@@ -241,24 +238,8 @@ let dismissTimer: ReturnType<typeof setTimeout> | null = null
 const page = ref(1)
 const pageSize = 50
 
-const remindersByCoinId = ref(new Map<number, PurchaseReminder>())
-
-async function fetchReminderMap() {
-  try {
-    const res = await listPurchaseReminders()
-    const map = new Map<number, PurchaseReminder>()
-    for (const r of res.data.reminders ?? []) {
-      map.set(r.coinId, r)
-    }
-    remindersByCoinId.value = map
-  } catch {
-    // non-critical: badge is best-effort
-  }
-}
-
 function loadCoins() {
   store.fetchCoins({ wishlist: 'true', sort: 'updated_at', order: 'desc', page: page.value })
-  fetchReminderMap()
 }
 
 function closeAddDialog() {
@@ -311,7 +292,6 @@ async function handlePurchaseConfirm(data: { purchasePrice?: number; purchaseDat
   if (!purchaseTarget.value) return
   try {
     await purchaseCoin(purchaseTarget.value.id, data)
-    await refreshQuickAccess()
     purchaseTarget.value = null
     loadCoins()
   } catch {

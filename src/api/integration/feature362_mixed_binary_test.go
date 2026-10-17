@@ -90,7 +90,7 @@ func seedFeature362CompatibilityDatabase(t *testing.T, dbPath, artifactPath stri
 	}
 	coin := models.Coin{
 		ID: feature362CompatCoinID, UserID: user.ID,
-		Name: "Compatibility coin", Category: models.CategoryRoman,
+		Name: "Compatibility coin", Category: models.CategoryModern,
 		Denomination: "Original denomination",
 	}
 	supported := models.DeepIdentificationJob{

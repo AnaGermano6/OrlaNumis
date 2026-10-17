@@ -7,10 +7,8 @@ import "time"
 type DeepProviderName string
 
 const (
-	DeepProviderNomisma DeepProviderName = "nomisma"
 	DeepProviderNumista DeepProviderName = "numista"
 	DeepProviderNGC     DeepProviderName = "ngc"
-	DeepProviderOCRE    DeepProviderName = "ocre"
 	DeepProviderRPC     DeepProviderName = "rpc"
 )
 

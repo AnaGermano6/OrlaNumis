@@ -38,7 +38,7 @@ test('installed PWA keeps its local header at desktop width', async ({ page }, t
   await page.screenshot({ path: testInfo.outputPath('add-coin-installed-pwa.png'), fullPage: true })
 })
 
-test('crowded Wishlist actions stay ahead of global actions without overflow', async ({ page }, testInfo) => {
+test('crowded Wishlist actions stay after the title without overflow', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1024, height: 900 })
   await installAuthenticatedSession(page)
   await installWorkflowApiMocks(page, [
@@ -48,19 +48,15 @@ test('crowded Wishlist actions stay ahead of global actions without overflow', a
 
   const title = page.locator('#desktop-page-title')
   const actions = page.locator('#desktop-page-actions')
-  const quickAccess = page.getByRole('link', { name: 'Quick Access' })
   await expect(title).toHaveText('Wishlist')
   await expect(actions.getByRole('button').or(actions.getByRole('link'))).toHaveCount(4)
 
   const titleBounds = await title.boundingBox()
   const actionBounds = await actions.boundingBox()
-  const quickAccessBounds = await quickAccess.boundingBox()
   expect(titleBounds).not.toBeNull()
   expect(actionBounds).not.toBeNull()
-  expect(quickAccessBounds).not.toBeNull()
-  if (!titleBounds || !actionBounds || !quickAccessBounds) throw new Error('Desktop header controls are not visible')
+  if (!titleBounds || !actionBounds) throw new Error('Desktop header controls are not visible')
   expect(titleBounds.x + titleBounds.width).toBeLessThanOrEqual(actionBounds.x)
-  expect(actionBounds.x + actionBounds.width).toBeLessThanOrEqual(quickAccessBounds.x)
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('wishlist-crowded-actions.png'), fullPage: true })
 })

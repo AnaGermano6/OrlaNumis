@@ -4,7 +4,7 @@ export default {
   all: 'All',
   intro: 'Capture sparse coin details quickly. Drafts remain active and incomplete until you finish them later.',
   draftSaved: 'Draft saved.',
-  draftSavedDetail: 'Draft #{id} is active and excluded from collection, wishlist, sold, stats, and health counts.',
+  draftSavedDetail: 'Draft #{id} is active and excluded from collection, wishlist, stats, and health counts.',
   draftsTitle: 'Quick Capture Drafts',
   newCapture: 'New capture',
   new: 'New',

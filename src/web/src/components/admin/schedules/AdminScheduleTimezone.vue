@@ -33,8 +33,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getBrowserTimezone } from '@/composables/usePurchaseReminder'
-import { timezoneOptionsWith } from '@/composables/useScheduleTimezone'
+import { getBrowserTimezone, timezoneOptionsWith } from '@/composables/useScheduleTimezone'
 import type { AppSettings } from '@/types'
 import { t } from '@/i18n'
 

@@ -15,7 +15,7 @@ describe('F013 workflow adapter', () => {
   })
 
   it('uses the canonical application edit route', () => {
-    for (const id of ['edit-one-field', 'storage-location-change-clear', 'image-upload-delete', 'mobile-edit'] as const) {
+    for (const id of ['edit-one-field', 'image-upload-delete', 'mobile-edit'] as const) {
       expect(F013_WORKFLOW_INVENTORY[id].routes).toContain('/edit/1')
       expect(F013_WORKFLOW_INVENTORY[id].routes).not.toContain('/coin/1/edit')
     }

@@ -101,9 +101,7 @@
           "provider": {
             "enum": [
               "numista",
-              "nomisma",
               "ngc",
-              "ocre",
               "rpc"
             ],
             "title": "Provider",
@@ -281,9 +279,7 @@
         "items": {
           "enum": [
             "numista",
-            "nomisma",
             "ngc",
-            "ocre",
             "rpc"
           ],
           "type": "string"
@@ -718,9 +714,7 @@
           "provider": {
             "enum": [
               "numista",
-              "nomisma",
               "ngc",
-              "ocre",
               "rpc"
             ],
             "title": "Provider",
@@ -746,9 +740,7 @@
           "provider": {
             "enum": [
               "numista",
-              "nomisma",
               "ngc",
-              "ocre",
               "rpc"
             ],
             "title": "Provider",

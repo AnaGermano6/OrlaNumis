@@ -44,7 +44,7 @@ func TestFeature362ProposalScalarMatricesAreClosed(t *testing.T) {
 
 func TestFeature362AcceptedCoinScalarsReplaceOnlyThemselves(t *testing.T) {
 	values := map[string]any{
-		"category": string(models.CategoryGreek), "denomination": "Denarius", "ruler": "Hadrian", "era": string(models.EraAncient),
+		"category": string(models.CategoryOther), "denomination": "Denarius", "ruler": "Hadrian", "era": string(models.EraAncient),
 		"dateRange": "117-138", "mint": "Rome", "material": string(models.MaterialGold),
 		"weightGrams": 3.25, "diameterMm": 19.5,
 		"obverseInscription": "HADRIANVS", "reverseInscription": "PAX",
@@ -64,7 +64,7 @@ func TestFeature362AcceptedCoinScalarsReplaceOnlyThemselves(t *testing.T) {
 				weight, diameter := 1.1, 10.1
 				coin := models.Coin{
 					UserID: userID, Name: "Manual", IsWishlist: wishlist,
-					Category: models.CategoryRoman, Grade: "Fine", RarityRating: "Common",
+					Category: models.CategoryModern, Grade: "Fine", RarityRating: "Common",
 					Denomination: "As", Ruler: "Augustus", Era: models.EraModern,
 					DateRange: "old date", Mint: "old mint", Material: models.MaterialSilver,
 					WeightGrams: &weight, DiameterMm: &diameter,
@@ -158,7 +158,7 @@ func TestFeature362ProposalApplyRejectsUnsupportedSelectionWithoutPartialWrites(
 	userID := seedDeepProposalUser(t, db)
 	coin := models.Coin{
 		UserID: userID, Name: "Manual coin", Denomination: "Manual denomination",
-		Notes: "manual notes", PurchaseLocation: "manual source", IsPrivate: true,
+		Notes: "manual notes", PurchaseLocation: "manual source",
 	}
 
 	if err := db.Create(&coin).Error; err != nil {
@@ -188,7 +188,7 @@ func TestFeature362ProposalApplyRejectsUnsupportedSelectionWithoutPartialWrites(
 		t.Fatal(err)
 	}
 	if after.Denomination != coin.Denomination || after.Notes != coin.Notes ||
-		after.PurchaseLocation != coin.PurchaseLocation || after.IsPrivate != coin.IsPrivate {
+		after.PurchaseLocation != coin.PurchaseLocation {
 		t.Fatalf("failed apply partially mutated manual data: before=%#v after=%#v", coin, after)
 	}
 }

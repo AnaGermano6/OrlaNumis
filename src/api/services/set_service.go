@@ -14,12 +14,10 @@ import (
 
 const maxSetsPerUser = 100
 const maxSetNameLength = 80
-const maxPinnedSets = 5
 
 var (
 	ErrInvalidSetOrder = errors.New("ordered coin IDs must exactly match current set members")
 	ErrSmartSetOrder   = errors.New("cannot manually reorder smart sets")
-	ErrPinLimitReached = errors.New("you can pin up to 5 sets")
 )
 
 type SetValidationError struct {
@@ -36,16 +34,8 @@ func newSetValidationError(message string) error {
 
 // SetService handles business logic for coin sets.
 type SetService struct {
-	repo        *repository.SetRepository
-	tagRepo     *repository.TagRepository
-	notifRepo   *repository.NotificationRepository
-	quickAccess *QuickAccessService
-	checklist   *SetChecklistService
-}
-
-func (s *SetService) WithQuickAccessSupport(quickAccess *QuickAccessService) *SetService {
-	s.quickAccess = quickAccess
-	return s
+	repo      *repository.SetRepository
+	checklist *SetChecklistService
 }
 
 // WithChecklist lets the service work out checklist sets' slots.
@@ -86,24 +76,12 @@ func (s *SetService) checklistSummary(set *models.CoinSet) *ChecklistSummary {
 }
 
 // NewSetService creates a new SetService.
-func NewSetService(repo *repository.SetRepository, tagRepo *repository.TagRepository, notifRepo ...*repository.NotificationRepository) *SetService {
-	var notifications *repository.NotificationRepository
-	if len(notifRepo) > 0 {
-		notifications = notifRepo[0]
-	}
-	return &SetService{
-		repo:      repo,
-		tagRepo:   tagRepo,
-		notifRepo: notifications,
-	}
+func NewSetService(repo *repository.SetRepository) *SetService {
+	return &SetService{repo: repo}
 }
 
 // ListSets returns all sets for a user with summary data.
 func (s *SetService) ListSets(userID uint) ([]map[string]interface{}, error) {
-	if err := s.repo.MigrateTagsToSets(userID); err != nil {
-		return nil, err
-	}
-
 	sets, err := s.repo.List(userID)
 	if err != nil {
 		return nil, err
@@ -185,8 +163,6 @@ func (s *SetService) ListSets(userID uint) ([]map[string]interface{}, error) {
 			"completionPercentage": completion,
 			"valueChangePercent":   nil, // Will be populated in US3
 			"agenticStatus":        set.AgenticStatus,
-			"pinned":               set.PinnedAt != nil,
-			"pinnedAt":             set.PinnedAt,
 		}
 		result = append(result, setData)
 	}
@@ -223,8 +199,6 @@ func (s *SetService) GetSetDetail(setID, userID uint) (map[string]interface{}, e
 		"completionPercentage": nil,
 		"agenticPrompt":        set.AgenticPrompt,
 		"agenticStatus":        set.AgenticStatus,
-		"pinned":               set.PinnedAt != nil,
-		"pinnedAt":             set.PinnedAt,
 	}
 	if set.SetType == models.CoinSetTypeGoal || set.SetType == models.CoinSetTypeAgentic {
 		if c, err := s.repo.GetSetCompletion(set.ID, userID); err == nil {
@@ -380,16 +354,6 @@ func (s *SetService) CreateSet(userID uint, input map[string]interface{}) (*mode
 	if err := s.repo.Create(set); err != nil {
 		return nil, err
 	}
-	// The catalogue's coins of now are known: only those added later are announced.
-	if checklist != nil && checklist.Source == ChecklistSourceCatalogue && s.checklist != nil {
-		keys := []string{}
-		for _, slot := range s.checklist.CatalogueSlots(context.Background(), *checklist) {
-			keys = append(keys, slot.Key)
-		}
-		if err := s.repo.AddChecklistKeys(set.ID, keys); err != nil {
-			return nil, err
-		}
-	}
 	if templateID := getStringValue(input, "templateId"); templateID != "" {
 		template := GetTemplateByID(templateID)
 		if template == nil {
@@ -470,49 +434,6 @@ func (s *SetService) UpdateSet(setID, userID uint, updates map[string]interface{
 		updates["creationMode"] = string(mode)
 	}
 
-	pinnedRaw, pinRequested := updates["pinned"]
-	if pinRequested {
-		delete(updates, "pinned")
-		if s.quickAccess == nil {
-			if pinned, ok := pinnedRaw.(bool); ok {
-				if pinned {
-					if set.PinnedAt == nil {
-						count, err := s.repo.CountPinned(userID)
-						if err != nil {
-							return nil, err
-						}
-						if count >= maxPinnedSets {
-							return nil, ErrPinLimitReached
-						}
-						now := time.Now().UTC()
-						updates["pinned_at"] = &now
-					}
-				} else {
-					updates["pinned_at"] = nil
-				}
-			}
-		}
-	}
-
-	if s.quickAccess != nil {
-		err := s.repo.RunInTransaction(func(tx *repository.Transaction) error {
-			txRepo := s.repo.WithTransaction(tx)
-			if len(updates) > 0 {
-				if err := txRepo.Update(set, updates); err != nil {
-					return err
-				}
-			}
-			if pinned, ok := pinnedRaw.(bool); pinRequested && ok {
-				return s.quickAccess.SetCoinSetPinnedInTx(tx, setID, userID, pinned)
-			}
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		return s.repo.GetByID(setID, userID)
-	}
-
 	if err := s.repo.Update(set, updates); err != nil {
 		return nil, err
 	}
@@ -522,15 +443,7 @@ func (s *SetService) UpdateSet(setID, userID uint, updates map[string]interface{
 
 // DeleteSet deletes a set and its memberships.
 func (s *SetService) DeleteSet(setID, userID uint) error {
-	if s.quickAccess == nil {
-		return s.repo.Delete(setID, userID)
-	}
-	return s.repo.RunInTransaction(func(tx *repository.Transaction) error {
-		if err := s.quickAccess.RemoveTargetInTx(tx, userID, models.QuickAccessTargetCoinSet, setID); err != nil {
-			return err
-		}
-		return s.repo.WithTransaction(tx).DeleteInTx(setID, userID)
-	})
+	return s.repo.Delete(setID, userID)
 }
 
 // AddCoinToSet adds a coin to a set with validation.
@@ -594,7 +507,6 @@ func (s *SetService) CreateSnapshot(setID, userID uint) (*models.CoinSetValuatio
 	if err != nil {
 		return nil, err
 	}
-	_ = s.evaluateMilestones(snapshot)
 	return snapshot, nil
 }
 
@@ -647,47 +559,6 @@ func (s *SetService) GetAnalytics(setID, userID uint) (map[string]interface{}, e
 	}, nil
 }
 
-func (s *SetService) CompareSets(userID uint, setIDs []uint, rangeKey string) ([]map[string]interface{}, error) {
-	results := make([]map[string]interface{}, 0, len(setIDs))
-	for _, setID := range setIDs {
-		set, err := s.repo.GetByID(setID, userID)
-		if err != nil {
-			return nil, err
-		}
-		snapshots, err := s.GetTrends(setID, userID, rangeKey)
-		if err != nil {
-			return nil, err
-		}
-		var startValue, endValue float64
-		if len(snapshots) > 0 {
-			startValue = snapshots[0].TotalValue
-			endValue = snapshots[len(snapshots)-1].TotalValue
-		} else {
-			summary, err := s.repo.GetSetSummary(setID, userID)
-			if err != nil {
-				return nil, err
-			}
-			endValue, _ = summary["totalValue"].(float64)
-			startValue = endValue
-		}
-		valueChange := endValue - startValue
-		var pct float64
-		if startValue > 0 {
-			pct = (valueChange / startValue) * 100
-		}
-		results = append(results, map[string]interface{}{
-			"setId":              set.ID,
-			"name":               set.Name,
-			"startValue":         startValue,
-			"endValue":           endValue,
-			"valueChange":        valueChange,
-			"valueChangePercent": pct,
-			"completionChange":   nil,
-		})
-	}
-	return results, nil
-}
-
 func (s *SetService) PreviewSmartSet(userID uint, criteria map[string]interface{}) (map[string]interface{}, error) {
 	if err := ValidateSmartCriteria(criteria); err != nil {
 		return nil, err
@@ -709,52 +580,6 @@ func (s *SetService) PreviewSmartSet(userID uint, criteria map[string]interface{
 		"coinCount":  len(coins),
 		"totalValue": totalValue,
 	}, nil
-}
-
-func (s *SetService) evaluateMilestones(snapshot *models.CoinSetValuationSnapshot) error {
-	if s.notifRepo == nil {
-		return nil
-	}
-	alerts, err := s.repo.GetEnabledMilestoneAlerts(snapshot.SetID, snapshot.UserID)
-	if err != nil {
-		return err
-	}
-	for _, alert := range alerts {
-		if alert.LastTriggeredAt != nil {
-			continue
-		}
-		var current float64
-		switch alert.Metric {
-		case "total_value":
-			current = snapshot.TotalValue
-		case "completion_percentage":
-			if snapshot.CompletionPercentage == nil {
-				continue
-			}
-			current = *snapshot.CompletionPercentage
-		case "coin_count":
-			current = float64(snapshot.CoinCount)
-		default:
-			continue
-		}
-		triggered := (alert.Direction == "crosses_above" && current >= alert.Threshold) || (alert.Direction == "crosses_below" && current <= alert.Threshold)
-		if !triggered {
-			continue
-		}
-		if err := s.notifRepo.Create(&models.Notification{
-			UserID:      snapshot.UserID,
-			Type:        "set_milestone",
-			Title:       "Set milestone reached",
-			Message:     fmt.Sprintf("A coin set reached the %s milestone.", alert.Metric),
-			ReferenceID: snapshot.SetID,
-		}); err != nil {
-			return err
-		}
-		if err := s.repo.MarkMilestoneAlertTriggered(alert.ID); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func snapshotSince(rangeKey string) *time.Time {
@@ -842,55 +667,6 @@ func (s *SetService) ReorderCoinsInSet(setID, userID uint, coinIDs []uint) error
 	return nil
 }
 
-// MapTagToSet returns set representation of a tag for compatibility.
-func (s *SetService) MapTagToSet(tag *models.Tag) map[string]interface{} {
-	return map[string]interface{}{
-		"id":                   tag.ID,
-		"name":                 tag.Name,
-		"color":                tag.Color,
-		"icon":                 "",
-		"setType":              models.CoinSetTypeStandard,
-		"coinCount":            0, // Will be populated separately
-		"totalValue":           0.0,
-		"completionPercentage": nil,
-		"valueChangePercent":   nil,
-	}
-}
-
-// SaveCriteriaTemplate validates and persists a new user-scoped smart criteria template.
-func (s *SetService) SaveCriteriaTemplate(userID uint, name, description string, criteria map[string]interface{}) (*models.SmartCriteriaTemplate, error) {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return nil, fmt.Errorf("template name is required")
-	}
-	if len(name) > maxSetNameLength {
-		return nil, fmt.Errorf("template name must be %d characters or less", maxSetNameLength)
-	}
-	if err := ValidateSmartCriteria(criteria); err != nil {
-		return nil, err
-	}
-	tmpl := &models.SmartCriteriaTemplate{
-		UserID:      userID,
-		Name:        name,
-		Description: strings.TrimSpace(description),
-		Criteria:    models.JSONObject(criteria),
-	}
-	if err := s.repo.CreateCriteriaTemplate(tmpl); err != nil {
-		return nil, err
-	}
-	return tmpl, nil
-}
-
-// ListCriteriaTemplates returns all saved criteria templates for the user.
-func (s *SetService) ListCriteriaTemplates(userID uint) ([]models.SmartCriteriaTemplate, error) {
-	return s.repo.ListCriteriaTemplates(userID)
-}
-
-// DeleteCriteriaTemplate removes a criteria template owned by the user.
-func (s *SetService) DeleteCriteriaTemplate(id, userID uint) error {
-	return s.repo.DeleteCriteriaTemplate(id, userID)
-}
-
 // Helper functions
 func getStringValue(input map[string]interface{}, key string) string {
 	if val, ok := input[key].(string); ok {
@@ -914,10 +690,6 @@ func DefaultSetColor(userID uint, name string, existingSetCount int64) string {
 	h := fnv.New32a()
 	_, _ = h.Write([]byte(fmt.Sprintf("%d:%s:%d", userID, strings.ToLower(strings.TrimSpace(name)), existingSetCount)))
 	return setColorPalette[int(h.Sum32())%len(setColorPalette)]
-}
-
-func defaultSetColor(userID uint, name string, existingSetCount int64) string {
-	return DefaultSetColor(userID, name, existingSetCount)
 }
 
 func agenticInitialStatus(setType models.CoinSetType) string {

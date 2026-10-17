@@ -91,7 +91,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { analyzeCoin, deleteAnalysis, formatAgentServiceError, getAIJob, getAIStatus, getCoinAIJobs, gradeCoin } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
-import { useNotifications } from '@/composables/useNotifications'
 import { renderSafeMarkdown } from '@/composables/useMarkdown'
 import { useToast } from '@/composables/useToast'
 import type { AIJob, AIJobStartResponse, CoinGradingResult } from '@/types'
@@ -111,7 +110,6 @@ const emit = defineEmits<{
 }>()
 
 const { showConfirm, showAlert } = useDialog()
-const { refresh: refreshNotifications } = useNotifications()
 const { showToast } = useToast()
 const POLL_INTERVAL_MS = 3_000
 
@@ -342,7 +340,6 @@ async function finishAnalysisJob(job: AIJob, side: 'obverse' | 'reverse') {
   activeJob.value = null
   emit('analysisUpdated')
   showToast(t('coinDetail.ai.analysisComplete', { side: sideName(side) }), 'success')
-  await refreshNotifications()
 }
 
 async function finishGradingJob(job: AIJob) {
@@ -366,7 +363,6 @@ async function finishGradingJob(job: AIJob) {
   gradingReport.value = parsed.gradingReport
   activeJob.value = null
   showToast(t('coinDetail.ai.gradingReady'), 'success')
-  await refreshNotifications()
 }
 
 async function recoverCompletedGradingJob() {

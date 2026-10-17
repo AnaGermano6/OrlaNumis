@@ -13,7 +13,6 @@ export const BANKNOTE_GRADES = ['UNC', 'AU', 'XF', 'VF', 'F', 'VG', 'G', 'P'] as
 
 /** A replacement (star) note or a specimen; '' is an ordinary note. */
 export const NOTE_VARIANTS = ['', 'replacement', 'specimen'] as const
-export type NoteVariant = (typeof NOTE_VARIANTS)[number]
 
 /** Companies that grade and encapsulate banknotes. */
 export const GRADING_COMPANIES = ['PMG', 'PCGS Banknote'] as const

@@ -1,7 +1,7 @@
 import { ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
 import { useCoinsStore } from '@/stores/coins'
-import { fillCountriesFromNumista, getCoinCountries, getCoinDenominations, getSets, getTags, type CoinCountryCount, type CoinDenominationCount } from '@/api/client'
+import { fillCountriesFromNumista, getCoinCountries, getCoinDenominations, getSets, type CoinCountryCount, type CoinDenominationCount } from '@/api/client'
 import { COIN_GROUPINGS, type CoinGroupBy } from '@/utils/coinAttributes'
 import { numistaLang } from '@/utils/numistaCatalog'
 import { loadCoinVocabulary } from '@/i18n/coinVocabulary'
@@ -49,8 +49,8 @@ export function useCollectionFilters() {
   const search = ref(store.searchQuery)
   const page = ref(1)
   const sortKey = ref(store.activeSortKey || localStorage.getItem('defaultSort') || 'updated_at_desc')
-  const selectedTag = ref('')
-  const userTags = ref<CollectionSetOption[]>([])
+  const selectedSet = ref('')
+  const userSets = ref<CollectionSetOption[]>([])
   const denominationOptions = ref<CoinDenominationCount[]>([])
   const selectedCountry = ref(store.selectedCountry)
   const selectedPresentation = ref(store.selectedPresentation)
@@ -65,27 +65,12 @@ export function useCollectionFilters() {
   let debounceTimer: ReturnType<typeof setTimeout>
   let hiddenAt = 0
 
-  async function fetchUserTags() {
+  async function fetchUserSets() {
     try {
-      const [tagRes, setRes] = await Promise.all([getTags(), getSets(), loadCoinVocabulary(), loadCountryOptions(), loadDenominationOptions()])
-      const tagOptions = (tagRes.data?.tags ?? []).map((tag) => ({
-        id: tag.id,
-        name: tag.name,
-        color: tag.color,
-        filterValue: `tag:${tag.id}`,
-        source: 'tag' as const,
-      }))
-      const tagNames = new Set(tagOptions.map((tag) => tag.name.trim().toLowerCase()))
-      const setOptions = (setRes.data?.sets ?? [])
-        .filter((set) => normalizeCoinSetType(set.setType) === 'standard' && !tagNames.has(set.name.trim().toLowerCase()))
-        .map((set) => ({
-          id: set.id,
-          name: set.name,
-          color: set.color,
-          filterValue: `set:${set.id}`,
-          source: 'set' as const,
-        }))
-      userTags.value = [...tagOptions, ...setOptions]
+      const [setRes] = await Promise.all([getSets(), loadCoinVocabulary(), loadCountryOptions(), loadDenominationOptions()])
+      userSets.value = (setRes.data?.sets ?? [])
+        .filter((set) => normalizeCoinSetType(set.setType) === 'standard')
+        .map((set) => ({ id: set.id, name: set.name, color: set.color }))
     } catch { /* ignore */ }
   }
 
@@ -161,11 +146,6 @@ export function useCollectionFilters() {
       }
     }
 
-    const selectedSetFilter = selectedTag.value.startsWith('set:') ? selectedTag.value.slice(4) : undefined
-    const selectedTagFilter = selectedTag.value.startsWith('tag:')
-      ? selectedTag.value.slice(4)
-      : selectedSetFilter ? undefined : selectedTag.value || undefined
-
     const params = {
       // Banknotes have their own gallery.
       kind: 'coin' as const,
@@ -178,10 +158,8 @@ export function useCollectionFilters() {
       commemorative: selectedCommemorative.value || undefined,
       classification: selectedClassification.value || undefined,
       search: search.value || undefined,
-      tag: selectedTagFilter,
-      set: selectedSetFilter,
+      set: selectedSet.value || undefined,
       wishlist: 'false',
-      sold: 'false',
       sort,
       order,
       seed,
@@ -207,7 +185,7 @@ export function useCollectionFilters() {
     if (value === 'country') void fillCountriesOnce()
   })
 
-  watch(selectedTag, () => {
+  watch(selectedSet, () => {
     page.value = 1
     loadCoins()
   })
@@ -274,8 +252,8 @@ export function useCollectionFilters() {
     search,
     page,
     sortKey,
-    selectedTag,
-    userTags,
+    selectedSet,
+    userSets,
     denominationOptions,
     selectedCountry,
     selectedPresentation,
@@ -286,7 +264,7 @@ export function useCollectionFilters() {
     groupBy,
     countryOptions,
     fillingCountries,
-    fetchUserTags,
+    fetchUserSets,
     loadCoins,
     loadCountryOptions,
     fillCountriesOnce,

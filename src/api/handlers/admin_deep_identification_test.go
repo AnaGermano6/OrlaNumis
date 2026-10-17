@@ -50,7 +50,7 @@ func TestAdminDeepIdentificationObservabilityIsAdminOnlyAndRedacted(t *testing.T
 	handler := NewAdminDeepIdentificationHandler(fakeDeepObservabilityProvider{summary: summary})
 	router := gin.New()
 	admin := router.Group("/api/admin")
-	admin.Use(middleware.AuthRequired(adminNumistaTestJWTSecret, nil))
+	admin.Use(middleware.AuthRequired(adminNumistaTestJWTSecret))
 	admin.Use(AdminRequired())
 	admin.GET("/deep-identification/observability", handler.Observability)
 

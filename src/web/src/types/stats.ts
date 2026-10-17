@@ -20,8 +20,6 @@ export interface StatsResponse {
 
 export type HealthGrade = 'A' | 'B' | 'C' | 'D' | 'F'
 
-export type HealthTrendDirection = 'up' | 'flat' | 'down' | 'unavailable'
-
 export type HealthChecklistDimension = 'metadata' | 'images' | 'valuation' | 'ai'
 
 export type HealthChecklistSeverity = 'high' | 'medium' | 'low'
@@ -42,19 +40,12 @@ export interface HealthDimensions {
   aiCoverage: number
 }
 
-export interface CollectionHealthTrend {
-  status: 'available' | 'unavailable'
-  delta: number | null
-  direction: HealthTrendDirection
-}
-
 export interface CollectionHealthSummary {
   score: number
   grade: HealthGrade
   eligibleCoinCount: number
   weights: HealthWeights
   dimensions: HealthDimensions
-  trend30d: CollectionHealthTrend
 }
 
 export interface MissingChecklistItem {
@@ -144,7 +135,6 @@ export interface TimeMachineSnapshot {
   byEra: TimeMachineBreakdownEntry[]
   topCoins: TimeMachineTopCoin[]
   acquiredInYear: number
-  healthScore: number | null
   valueBasis: TimeMachineValueBasis
   /** Owned coins with no purchase date, which appear at no point on the timeline. */
   undatedCoinCount: number

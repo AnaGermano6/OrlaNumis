@@ -214,24 +214,6 @@ func (h *CoinCopilotHandler) GetThread(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"thread": dto})
 }
 
-// DeleteThread godoc
-//
-//	@Summary		Delete a settled Coin Copilot thread
-//	@Tags			Coin Copilot
-//	@Param			threadId	path	string	true	"Thread ID"
-//	@Success		204
-//	@Failure		404	{object}	ErrorResponse
-//	@Failure		409	{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/agent/copilot/threads/{threadId} [delete]
-func (h *CoinCopilotHandler) DeleteThread(c *gin.Context) {
-	if err := h.service.DeleteThread(c.GetUint("userId"), c.Param("threadId")); err != nil {
-		h.respondServiceError(c, err)
-		return
-	}
-	c.Status(http.StatusNoContent)
-}
-
 // Cancel godoc
 //
 //	@Summary		Cancel a Coin Copilot run

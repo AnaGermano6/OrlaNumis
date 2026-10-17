@@ -88,7 +88,7 @@ const dataMsg = ref('')
 const dataError = ref(false)
 
 const CSV_IMPORT_DEFAULTS: Partial<Coin> = {
-  category: 'Roman',
+  category: 'Modern',
   material: 'Silver',
   denomination: '',
   ruler: '',
@@ -108,17 +108,10 @@ const CSV_IMPORT_DEFAULTS: Partial<Coin> = {
   purchaseLocation: '',
   vendorSku: '',
   vendorInvoice: '',
-  storageLocationId: null,
-  storageLocation: null,
   notes: '',
   referenceUrl: '',
   referenceText: 'Store Link',
   isWishlist: false,
-  isSold: false,
-  soldPrice: null,
-  soldDate: null,
-  soldTo: '',
-  isPrivate: false,
 }
 
 function normalizeHeader(value: string): string {
@@ -207,7 +200,7 @@ function parseDateString(value: string): string | null {
 }
 
 function parseCategory(value: string): Category {
-  if (!value) return 'Roman'
+  if (!value) return 'Modern'
   const match = CATEGORIES.find(category => category.toLowerCase() === value.trim().toLowerCase())
   return match ?? 'Other'
 }
@@ -270,11 +263,6 @@ function parseCsvCoins(text: string): { coins: Partial<Coin>[]; skippedRows: num
       referenceUrl: getValue(values, ['referenceUrl', 'url']),
       referenceText: getValue(values, ['referenceText', 'referenceLabel']) || 'Store Link',
       isWishlist: parseBoolean(getValue(values, ['isWishlist', 'wishlist'])),
-      isSold: parseBoolean(getValue(values, ['isSold', 'sold'])),
-      soldPrice: parseOptionalNumber(getValue(values, ['soldPrice'])),
-      soldDate: parseDateString(getValue(values, ['soldDate'])),
-      soldTo: getValue(values, ['soldTo']),
-      isPrivate: parseBoolean(getValue(values, ['isPrivate', 'private'])),
     })
   }
 
@@ -297,8 +285,8 @@ function downloadCsvTemplate() {
   // era must be one of the admin-configured eras (ancient/medieval/modern by default) or it
   // will not match era filters; the reign dates belong with the ruler, not in era.
   const sampleRows = [
-    ['Augustus Denarius', 'Roman', 'Silver', 'Denarius', 'Augustus (27 BC - 14 AD)', 'ancient', 'Rome', '3.82', '19.5', 'VF', '450', '600', '2024-03-15', 'Heritage Auctions', 'CNG-84291', 'INV-2026-0042', 'Strong portrait with clear legend', 'https://www.acsearch.info/', 'ACSearch', 'false'],
-    ['Constantius II Follis', 'Roman', 'Bronze', 'Follis', 'Constantius II (337-361 AD)', 'ancient', 'Antioch', '2.9', '18.1', 'F', '35', '45', '2025-01-20', 'Local show', '', '', 'Entry-level late Roman bronze', '', 'Store Link', 'false'],
+    ['2 Euro 2007 EU Presidency', 'Modern', 'Other', '2 Euro', 'Portugal', 'modern', 'Lisbon', '8.5', '25.75', 'UNC', '3', '4', '2024-03-15', 'Coin shop', 'SKU-84291', 'INV-2026-0042', 'Commemorative 2 euro coin', 'https://www.ecb.europa.eu/', 'ECB', 'false'],
+    ['1 Escudo 1986', 'Modern', 'Other', '1 Escudo', 'Portugal', 'modern', 'Lisbon', '1.7', '16', 'VF', '0.5', '1', '2025-01-20', 'Local show', '', '', 'Circulation coin', '', 'Store Link', 'false'],
   ]
 
   const lines = [
