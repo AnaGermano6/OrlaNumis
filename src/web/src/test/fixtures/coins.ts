@@ -1,13 +1,12 @@
-import type { Coin, CoinImage, CoinReference, CoinSet, MintLocation, StorageLocation, Tag } from '@/types'
+import type { Coin, CoinImage, CoinReference, CoinSet, MintLocation } from '@/types'
 
 export const GOLDEN_COIN_FIXTURE_NAMES = [
   'roman-denarius-core',
   'greek-tetradrachm-valued',
   'byzantine-solidus-set-member',
   'wishlist-aureus-target',
-  'sold-sestertius-archive',
-  'private-provincial-bronze',
-  'tagged-follis-storage',
+  'legacy-era-provincial-bronze',
+  'diocletian-follis',
   'image-heavy-drachm',
   'reference-rich-denarius',
 ] as const
@@ -19,11 +18,7 @@ export type GoldenCoinTrait =
   | 'greek'
   | 'byzantine'
   | 'wishlist'
-  | 'sold'
-  | 'private'
-  | 'tagged'
   | 'set-member'
-  | 'storage-location'
   | 'image-heavy'
   | 'legacy-custom-era'
   | 'valued'
@@ -37,12 +32,10 @@ export interface GoldenCoinFixtureInfo {
   traits: readonly GoldenCoinTrait[]
 }
 
-export type CoinFixtureOverrides = Partial<Omit<Coin, 'images' | 'references' | 'tags' | 'sets' | 'storageLocation'>> & {
+export type CoinFixtureOverrides = Partial<Omit<Coin, 'images' | 'references' | 'sets'>> & {
   images?: readonly CoinImage[]
   references?: readonly CoinReference[]
-  tags?: readonly Tag[]
   sets?: readonly CoinSet[]
-  storageLocation?: Coin['storageLocation']
 }
 
 interface CoinFixtureDefinition {
@@ -53,36 +46,6 @@ interface CoinFixtureDefinition {
 const fixtureUserId = 101
 const createdAt = '2026-01-15T12:00:00Z'
 const updatedAt = '2026-01-15T12:00:00Z'
-
-const storageLocations = {
-  trayA: {
-    id: 201,
-    userId: fixtureUserId,
-    name: 'Cabinet Tray A',
-    sortOrder: 1,
-  },
-  vaultBox: {
-    id: 202,
-    userId: fixtureUserId,
-    name: 'Vault Box 2',
-    sortOrder: 2,
-  },
-} satisfies Record<string, StorageLocation>
-
-const tags = {
-  photographed: {
-    id: 301,
-    userId: fixtureUserId,
-    name: 'Photographed',
-    color: '#c9a84c',
-  },
-  needsResearch: {
-    id: 302,
-    userId: fixtureUserId,
-    name: 'Needs Research',
-    color: '#4682b4',
-  },
-} satisfies Record<string, Tag>
 
 const sets = {
   twelveCaesars: {
@@ -184,7 +147,7 @@ function baseCoin(id: number, name: string): Coin {
   return {
     id,
     name,
-    category: 'Roman',
+    category: 'Modern',
     denomination: 'Denarius',
     ruler: 'Trajan',
     era: 'ancient',
@@ -205,8 +168,6 @@ function baseCoin(id: number, name: string): Coin {
     purchaseLocation: 'Fixture Dealer',
     vendorSku: '',
     vendorInvoice: '',
-    storageLocationId: null,
-    storageLocation: null,
     notes: 'Deterministic frontend fixture coin.',
     aiAnalysis: '',
     obverseAnalysis: '',
@@ -214,18 +175,12 @@ function baseCoin(id: number, name: string): Coin {
     referenceUrl: '',
     referenceText: '',
     isWishlist: false,
-    isSold: false,
-    soldPrice: null,
-    soldDate: null,
-    soldTo: '',
-    isPrivate: false,
     listingStatus: 'unlisted',
     listingCheckedAt: null,
     listingCheckReason: '',
     userId: fixtureUserId,
     images: [buildImage(id, id * 10 + 1, 'obverse', true), buildImage(id, id * 10 + 2, 'reverse')],
     references: [],
-    tags: [],
     sets: [],
     createdAt,
     updatedAt,
@@ -244,7 +199,7 @@ const fixtureDefinitions = {
   'greek-tetradrachm-valued': {
     coin: {
       ...baseCoin(1002, 'Athens Owl Tetradrachm Valued'),
-      category: 'Greek',
+      category: 'Other',
       denomination: 'Tetradrachm',
       ruler: 'Athens',
       mint: 'Athens',
@@ -264,7 +219,7 @@ const fixtureDefinitions = {
   'byzantine-solidus-set-member': {
     coin: {
       ...baseCoin(1003, 'Justinian I Solidus Set Member'),
-      category: 'Byzantine',
+      category: 'Other',
       denomination: 'Solidus',
       ruler: 'Justinian I',
       mint: 'Constantinople',
@@ -294,53 +249,32 @@ const fixtureDefinitions = {
     },
     traits: ['roman', 'wishlist', 'valued'],
   },
-  'sold-sestertius-archive': {
+  'legacy-era-provincial-bronze': {
     coin: {
-      ...baseCoin(1005, 'Hadrian Sestertius Archive'),
-      denomination: 'Sestertius',
-      ruler: 'Hadrian',
-      material: 'Bronze',
-      weightGrams: 25.1,
-      diameterMm: 32,
-      purchasePrice: 240,
-      currentValue: 300,
-      isSold: true,
-      soldPrice: 310,
-      soldDate: '2025-04-20T00:00:00Z',
-      soldTo: 'Archive Buyer',
-    },
-    traits: ['roman', 'sold'],
-  },
-  'private-provincial-bronze': {
-    coin: {
-      ...baseCoin(1006, 'Alexandria Provincial Bronze Private'),
+      ...baseCoin(1006, 'Alexandria Provincial Bronze'),
       denomination: 'Drachm',
       ruler: 'Antoninus Pius',
       era: 'Roman Provincial Year 12',
       mint: 'Alexandria',
       material: 'Bronze',
-      isPrivate: true,
       referenceText: 'Legacy handwritten tray note',
-      notes: 'Private coin with a custom legacy era value.',
+      notes: 'Coin with a custom legacy era value.',
     },
-    traits: ['roman', 'private', 'legacy-custom-era'],
+    traits: ['roman', 'legacy-custom-era'],
   },
-  'tagged-follis-storage': {
+  'diocletian-follis': {
     coin: {
-      ...baseCoin(1007, 'Diocletian Follis Tagged Storage'),
+      ...baseCoin(1007, 'Diocletian Follis'),
       denomination: 'Follis',
       ruler: 'Diocletian',
       material: 'Bronze',
-      storageLocationId: storageLocations.trayA.id,
-      storageLocation: { id: storageLocations.trayA.id, name: storageLocations.trayA.name },
-      tags: [{ ...tags.photographed }, { ...tags.needsResearch }],
     },
-    traits: ['roman', 'tagged', 'storage-location'],
+    traits: ['roman'],
   },
   'image-heavy-drachm': {
     coin: {
       ...baseCoin(1008, 'Syracuse Drachm Image Heavy'),
-      category: 'Greek',
+      category: 'Other',
       denomination: 'Drachm',
       ruler: 'Syracuse',
       mint: 'Syracuse',
@@ -373,10 +307,8 @@ const fixtureDefinitions = {
 function cloneCoin(coin: Coin): Coin {
   return {
     ...coin,
-    storageLocation: coin.storageLocation ? { ...coin.storageLocation } : null,
     images: coin.images.map((image) => ({ ...image })),
     references: coin.references?.map((reference) => ({ ...reference })),
-    tags: coin.tags?.map((tag) => ({ ...tag })),
     sets: coin.sets?.map((set) => ({ ...set })),
   }
 }
@@ -385,16 +317,10 @@ function applyCoinOverrides(coin: Coin, overrides: CoinFixtureOverrides): Coin {
   return {
     ...coin,
     ...overrides,
-    storageLocation: overrides.storageLocation === undefined
-      ? coin.storageLocation
-      : overrides.storageLocation
-        ? { ...overrides.storageLocation }
-        : null,
     images: overrides.images === undefined ? coin.images : overrides.images.map((image) => ({ ...image })),
     references: overrides.references === undefined
       ? coin.references
       : overrides.references.map((reference) => ({ ...reference })),
-    tags: overrides.tags === undefined ? coin.tags : overrides.tags.map((tag) => ({ ...tag })),
     sets: overrides.sets === undefined ? coin.sets : overrides.sets.map((set) => ({ ...set })),
   }
 }
@@ -428,16 +354,8 @@ export function buildWishlistAureusTarget(overrides?: CoinFixtureOverrides): Coi
   return buildGoldenCoinFixture('wishlist-aureus-target', overrides)
 }
 
-export function buildSoldSestertiusArchive(overrides?: CoinFixtureOverrides): Coin {
-  return buildGoldenCoinFixture('sold-sestertius-archive', overrides)
-}
-
-export function buildPrivateProvincialBronze(overrides?: CoinFixtureOverrides): Coin {
-  return buildGoldenCoinFixture('private-provincial-bronze', overrides)
-}
-
-export function buildTaggedFollisStorage(overrides?: CoinFixtureOverrides): Coin {
-  return buildGoldenCoinFixture('tagged-follis-storage', overrides)
+export function buildDiocletianFollis(overrides?: CoinFixtureOverrides): Coin {
+  return buildGoldenCoinFixture('diocletian-follis', overrides)
 }
 
 export function buildImageHeavyDrachm(overrides?: CoinFixtureOverrides): Coin {
@@ -446,25 +364,6 @@ export function buildImageHeavyDrachm(overrides?: CoinFixtureOverrides): Coin {
 
 export function buildReferenceRichDenarius(overrides?: CoinFixtureOverrides): Coin {
   return buildGoldenCoinFixture('reference-rich-denarius', overrides)
-}
-
-export function buildMintMapFixtureCoins(): Coin[] {
-  return [
-    buildRomanDenariusCore(),
-    buildReferenceRichDenarius({ id: 1010, name: 'Roma Alias Denarius', mint: 'Roma' }),
-    buildByzantineSolidusSetMember({ id: 1011, name: 'Byzantium Alias Solidus', mint: 'Byzantium' }),
-    buildImageHeavyDrachm(),
-    buildGreekTetradrachmValued({ id: 1012, name: 'Unmatched Camp Mint Bronze', mint: 'Traveling Camp' }),
-    buildGreekTetradrachmValued({ id: 1013, name: 'Unknown Mint Fraction', mint: '' }),
-  ]
-}
-
-export function buildTestStorageLocations(): StorageLocation[] {
-  return Object.values(storageLocations).map((location) => ({ ...location }))
-}
-
-export function buildTestTags(): Tag[] {
-  return Object.values(tags).map((tag) => ({ ...tag }))
 }
 
 export function buildTestCoinSets(): CoinSet[] {

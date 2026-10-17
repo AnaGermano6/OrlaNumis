@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -12,13 +13,15 @@ type Config struct {
 	JWTSecret                 string
 	Port                      string
 	UploadDir                 string
-	WebAuthnID                string
-	WebAuthnOrigin            string
 	CORSOrigins               string
 	AgentServiceURL           string
 	AgentInternalCallbackURL  string
 	AgentInternalServiceToken string
 	TrustedProxies            string
+	// BackupDir holds the full backups; BackupDirLabel is how the admin
+	// pages name it (the host folder it is mounted from, in Docker).
+	BackupDir      string
+	BackupDirLabel string
 }
 
 func Load() *Config {
@@ -37,18 +40,20 @@ func Load() *Config {
 		log.Fatal("FATAL: JWT_SECRET must be at least 32 characters long")
 	}
 
+	dbPath := getEnv("DB_PATH", "./ancientcoins.db")
+	backupDir := getEnv("BACKUP_DIR", filepath.Join(filepath.Dir(dbPath), "backups"))
 	return &Config{
-		DBPath:                    getEnv("DB_PATH", "./ancientcoins.db"),
+		DBPath:                    dbPath,
 		JWTSecret:                 jwtSecret,
 		Port:                      getEnv("PORT", "8080"),
 		UploadDir:                 getEnv("UPLOAD_DIR", "./uploads"),
-		WebAuthnID:                getEnv("WEBAUTHN_RP_ID", "localhost"),
-		WebAuthnOrigin:            getEnv("WEBAUTHN_ORIGIN", "http://localhost:8080"),
 		CORSOrigins:               getEnv("CORS_ORIGINS", ""),
 		AgentServiceURL:           getEnv("AGENT_SERVICE_URL", "http://localhost:8081"),
 		AgentInternalCallbackURL:  getEnv("AGENT_INTERNAL_CALLBACK_URL", "http://localhost:8080"),
 		AgentInternalServiceToken: getEnv("AGENT_INTERNAL_SERVICE_TOKEN", ""),
 		TrustedProxies:            firstEnv("GIN_TRUSTED_PROXIES", "TRUSTED_PROXIES"),
+		BackupDir:                 backupDir,
+		BackupDirLabel:            getEnv("BACKUP_DIR_LABEL", backupDir),
 	}
 }
 
@@ -85,8 +90,13 @@ func (c *Config) TrustedProxyList() []string {
 	return proxies
 }
 
-// AllowedOrigins returns the list of origins permitted for CORS.
-// Uses CORS_ORIGINS env var (comma-separated), falling back to WebAuthn origins.
+// AllowedOrigins returns the list of origins permitted for CORS: the
+// CORS_ORIGINS env var (comma-separated), else the Vite dev-server origins,
+// only outside release mode. corsMiddleware pairs a matched origin with
+// Access-Control-Allow-Credentials, so shipping a localhost allowance to
+// production would let any page the user happens to be serving locally make
+// credentialed calls against their collection. The web app is served from
+// the API's own origin and needs none.
 func (c *Config) AllowedOrigins() []string {
 	if c.CORSOrigins != "" {
 		origins := strings.Split(c.CORSOrigins, ",")
@@ -95,19 +105,10 @@ func (c *Config) AllowedOrigins() []string {
 		}
 		return origins
 	}
-	// Fall back to the WebAuthn origins. The Vite dev-server origins are
-	// appended only outside release mode: corsMiddleware pairs a matched
-	// origin with Access-Control-Allow-Credentials, so shipping a localhost
-	// allowance to production would let any page the user happens to be
-	// serving locally make credentialed calls against their collection.
-	origins := strings.Split(c.WebAuthnOrigin, ",")
-	for i := range origins {
-		origins[i] = strings.TrimSpace(origins[i])
-	}
 	if os.Getenv("GIN_MODE") != "release" {
-		origins = append(origins, "http://localhost:5173", "http://localhost:8080")
+		return []string{"http://localhost:5173", "http://localhost:8080"}
 	}
-	return origins
+	return []string{}
 }
 
 func getEnv(key, fallback string) string {

@@ -39,7 +39,7 @@ function makeProfileResponse(pwaSwipeNavEnabled: boolean) {
   return {
     data: {
       id: 1, username: 'brian', role: 'user', email: 'brian@example.com',
-      avatarPath: '', isPublic: false, bio: '', zipCode: '',
+      avatarPath: '', bio: '', zipCode: '',
       numisBidsUsername: '', numisBidsConfigured: false,
       cngUsername: '', cngConfigured: false,
       parcelAppConfigured: false, pushoverEnabled: false,

@@ -18,7 +18,7 @@ var (
 const (
 	minRecommendationSampleSize = 2
 	maxRecommendationsPerCoin   = 12
-	// medium confidence allows thematic tags (same category/era/material, different ruler)
+	// medium confidence allows thematic sets (same category/era/material, different ruler)
 	// to score high enough after the ruler weight was reduced from 0.45 to 0.30.
 	requiredRecommendationConfidence = "medium"
 )
@@ -36,18 +36,15 @@ type CoinRecommendationItem struct {
 
 type CoinRecommendationService struct {
 	repo    *repository.CoinRecommendationRepository
-	tagRepo *repository.TagRepository
 	setRepo *repository.SetRepository
 }
 
 func NewCoinRecommendationService(
 	repo *repository.CoinRecommendationRepository,
-	tagRepo *repository.TagRepository,
 	setRepo *repository.SetRepository,
 ) *CoinRecommendationService {
 	return &CoinRecommendationService{
 		repo:    repo,
-		tagRepo: tagRepo,
 		setRepo: setRepo,
 	}
 }
@@ -66,10 +63,6 @@ func (s *CoinRecommendationService) ListForCoin(coinID, userID uint) ([]CoinReco
 	if err != nil {
 		return nil, err
 	}
-	tags, err := s.repo.ListOwnedTags(userID)
-	if err != nil {
-		return nil, err
-	}
 
 	existing, err := s.repo.ListByCoin(coinID, userID)
 	if err != nil {
@@ -84,10 +77,6 @@ func (s *CoinRecommendationService) ListForCoin(coinID, userID uint) ([]CoinReco
 	alreadyInSet := make(map[uint]bool, len(coin.Sets))
 	for _, set := range coin.Sets {
 		alreadyInSet[set.ID] = true
-	}
-	alreadyTagged := make(map[uint]bool, len(coin.Tags))
-	for _, tag := range coin.Tags {
-		alreadyTagged[tag.ID] = true
 	}
 
 	generated := make([]CoinRecommendationItem, 0, 24)
@@ -115,37 +104,6 @@ func (s *CoinRecommendationService) ListForCoin(coinID, userID uint) ([]CoinReco
 			TargetType: models.RecommendationTargetTypeSet,
 			TargetID:   set.ID,
 			TargetName: set.Name,
-			Score:      score,
-			Confidence: confidence,
-			Reasons:    reasons,
-			Status:     models.RecommendationStatusPending,
-		})
-	}
-
-	for _, tag := range tags {
-		if alreadyTagged[tag.ID] {
-			continue
-		}
-		profile, ok := profiles.tags[tag.ID]
-		if !ok || profile.sampleSize < minRecommendationSampleSize {
-			continue
-		}
-		score, reasons := scoreCoinAgainstProfile(coin, profile, "tag")
-		if score <= 0 {
-			continue
-		}
-		confidence := confidenceTier(score)
-		if !confidenceMeetsMinimum(confidence, requiredRecommendationConfidence) {
-			continue
-		}
-		key := recommendationTargetKey(models.RecommendationTargetTypeTag, tag.ID)
-		if existingRec, ok := existingByTarget[key]; ok && existingRec.Status == models.RecommendationStatusRejected {
-			continue
-		}
-		generated = append(generated, CoinRecommendationItem{
-			TargetType: models.RecommendationTargetTypeTag,
-			TargetID:   tag.ID,
-			TargetName: tag.Name,
 			Score:      score,
 			Confidence: confidence,
 			Reasons:    reasons,
@@ -192,10 +150,6 @@ func (s *CoinRecommendationService) ListForCoin(coinID, userID uint) ([]CoinReco
 	for _, set := range sets {
 		setNameByID[set.ID] = set.Name
 	}
-	tagNameByID := make(map[uint]string, len(tags))
-	for _, tag := range tags {
-		tagNameByID[tag.ID] = tag.Name
-	}
 
 	result := make([]CoinRecommendationItem, 0, len(refreshed))
 	for _, rec := range refreshed {
@@ -209,8 +163,6 @@ func (s *CoinRecommendationService) ListForCoin(coinID, userID uint) ([]CoinReco
 		switch rec.TargetType {
 		case models.RecommendationTargetTypeSet:
 			targetName = setNameByID[rec.TargetID]
-		case models.RecommendationTargetTypeTag:
-			targetName = tagNameByID[rec.TargetID]
 		}
 		if targetName == "" {
 			continue
@@ -242,10 +194,6 @@ func (s *CoinRecommendationService) Accept(coinID, recID, userID uint) error {
 	switch rec.TargetType {
 	case models.RecommendationTargetTypeSet:
 		if err := s.setRepo.AddCoinToSet(coinID, rec.TargetID, userID, "accepted recommendation"); err != nil {
-			return err
-		}
-	case models.RecommendationTargetTypeTag:
-		if err := s.tagRepo.AttachToCoin(coinID, rec.TargetID, userID); err != nil {
 			return err
 		}
 	default:
@@ -294,7 +242,6 @@ type recommendationProfile struct {
 
 type recommendationProfiles struct {
 	sets map[uint]*recommendationProfile
-	tags map[uint]*recommendationProfile
 }
 
 func newRecommendationProfile() *recommendationProfile {
@@ -311,7 +258,6 @@ func newRecommendationProfile() *recommendationProfile {
 func buildTargetProfiles(coins []models.Coin, excludeCoinID uint) recommendationProfiles {
 	profiles := recommendationProfiles{
 		sets: make(map[uint]*recommendationProfile),
-		tags: make(map[uint]*recommendationProfile),
 	}
 	for _, coin := range coins {
 		if coin.ID == excludeCoinID {
@@ -322,14 +268,6 @@ func buildTargetProfiles(coins []models.Coin, excludeCoinID uint) recommendation
 			if !ok {
 				profile = newRecommendationProfile()
 				profiles.sets[set.ID] = profile
-			}
-			addCoinToProfile(profile, coin)
-		}
-		for _, tag := range coin.Tags {
-			profile, ok := profiles.tags[tag.ID]
-			if !ok {
-				profile = newRecommendationProfile()
-				profiles.tags[tag.ID] = profile
 			}
 			addCoinToProfile(profile, coin)
 		}

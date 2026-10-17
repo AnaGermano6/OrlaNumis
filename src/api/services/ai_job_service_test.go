@@ -63,9 +63,7 @@ func newAIJobServiceTestDB(t *testing.T) (*gorm.DB, *AIJobService) {
 		},
 		repository.NewUserRepository(db),
 		settingsSvc,
-		nil,
-		NewLogger(10),
-	)
+		NewLogger(10))
 	return db, svc
 }
 
@@ -74,7 +72,7 @@ func createAIJobTestCoin(t *testing.T, db *gorm.DB, userID uint) models.Coin {
 	coin := models.Coin{
 		Name:         "Test Denarius",
 		UserID:       userID,
-		Category:     models.CategoryRoman,
+		Category:     models.CategoryModern,
 		Era:          models.EraAncient,
 		Material:     models.MaterialSilver,
 		Denomination: "Denarius",

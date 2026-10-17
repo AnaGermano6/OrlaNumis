@@ -152,7 +152,7 @@ func TestNumistaSecurityAuthAdminAndOversizedBodies(t *testing.T) {
 	adminHandler := handlers.NewAdminNumistaHandler(telemetry, settings)
 	router := gin.New()
 	api := router.Group("/api")
-	api.Use(middleware.AuthRequired(jwtSecret, nil))
+	api.Use(middleware.AuthRequired(jwtSecret))
 	api.POST("/numista/lookup", numistaHandler.Lookup)
 	admin := api.Group("/admin")
 	admin.Use(handlers.AdminRequired())

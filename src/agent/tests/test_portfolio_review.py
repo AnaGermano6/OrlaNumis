@@ -86,7 +86,7 @@ def test_portfolio_amounts_use_the_collection_currency():
     assert "Current estimated value: $100.00" in _format_portfolio(PortfolioSummary(total_coins=1, total_value=100.0))
 
     summary = CollectionSummary(
-        totalCoins=3, totalWishlist=0, totalSold=0, totalCurrentUsd=1234.5, totalPurchaseUsd=1000.0, currency="EUR",
+        totalCoins=3, totalWishlist=0, totalCurrentUsd=1234.5, totalPurchaseUsd=1000.0, currency="EUR",
     )
     review = build_collection_only_portfolio_review(summary.model_dump())
     assert "recorded current-value total €1,234.50" in review

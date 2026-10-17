@@ -26,7 +26,6 @@
 
       <section v-else-if="collectionHealth" class="flex flex-col gap-6">
         <CollectionHealthScorecard :summary="collectionHealth" />
-        <CollectionHealthTrendIndicator :trend="collectionHealth.trend30d" />
       </section>
 
       <CollectionHealthEmptyState v-else />
@@ -40,7 +39,6 @@ import { ArrowLeft } from 'lucide-vue-next'
 import { useCoinsStore } from '@/stores/coins'
 import PullToRefresh from '@/components/PullToRefresh.vue'
 import CollectionHealthScorecard from '@/components/stats/CollectionHealthScorecard.vue'
-import CollectionHealthTrendIndicator from '@/components/stats/CollectionHealthTrendIndicator.vue'
 import CollectionHealthEmptyState from '@/components/stats/CollectionHealthEmptyState.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'

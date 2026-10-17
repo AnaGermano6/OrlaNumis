@@ -1,107 +1,7 @@
 <template>
   <section class="card">
     <h2 class="mb-5 border-b border-border-subtle pb-3 text-lg">{{ t('settings.data.title') }}</h2>
-    <div class="mt-8">
-      <section class="min-w-0" aria-labelledby="tags-heading">
-        <h3 id="tags-heading" class="mb-3 text-base font-medium text-text-secondary">{{ t('settings.data.tagsTitle') }}</h3>
-        <p class="text-sm text-text-muted">{{ t('settings.data.tagsIntro') }}</p>
-        <router-link
-          to="/sets"
-          class="btn btn-secondary btn-sm mt-3 inline-flex focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-        >
-          {{ t('settings.data.openSets') }}
-        </router-link>
-
-        <div class="my-4 flex flex-wrap items-center gap-2">
-          <input
-            v-model="newTagName"
-            type="text"
-            class="form-input min-w-[150px] flex-1 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-            :placeholder="t('settings.data.newTagPlaceholder')"
-            maxlength="50"
-            @keydown.enter="handleCreateTag"
-          />
-          <div class="flex items-center gap-[0.3rem]">
-            <button
-              v-for="c in TAG_COLORS"
-              :key="c"
-              class="h-[22px] w-[22px] cursor-pointer rounded-full border-2 border-transparent p-0 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-              :class="newTagColor === c ? 'border-text-primary ring-2 ring-[var(--bg-card)]' : ''"
-              :style="{ backgroundColor: c }"
-              @click="newTagColor = c"
-            ></button>
-          </div>
-          <button
-            class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-            @click="handleCreateTag"
-            :disabled="!newTagName.trim()"
-          >
-            {{ t('settings.data.createTag') }}
-          </button>
-        </div>
-        <p v-if="tagError" class="mt-1 text-body text-byzantine">{{ tagError }}</p>
-
-        <div v-if="tagList.length" class="mt-4 flex flex-col gap-2">
-          <div v-for="tag in tagList" :key="tag.id" class="flex flex-wrap items-center gap-2 rounded-sm border border-border-subtle p-2">
-            <template v-if="editingTag?.id === tag.id">
-              <input
-                v-model="editTagName"
-                class="form-input min-w-[120px] flex-1 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                maxlength="50"
-                @keydown.enter="handleSaveTag"
-              />
-              <div class="flex items-center gap-[0.3rem]">
-                <button
-                  v-for="c in TAG_COLORS"
-                  :key="c"
-                  class="h-[18px] w-[18px] cursor-pointer rounded-full border-2 border-transparent p-0 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                  :class="editTagColor === c ? 'border-text-primary ring-2 ring-[var(--bg-card)]' : ''"
-                  :style="{ backgroundColor: c }"
-                  @click="editTagColor = c"
-                ></button>
-              </div>
-              <button
-                class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                @click="handleSaveTag"
-              >
-                {{ t('common.save') }}
-              </button>
-              <button
-                class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                @click="editingTag = null"
-              >
-                {{ t('common.cancel') }}
-              </button>
-            </template>
-            <template v-else>
-              <span
-                class="shrink-0 rounded-full border px-[0.6rem] py-[0.2rem] text-chip"
-                :style="{ backgroundColor: tag.color + '22', color: tag.color, borderColor: tag.color + '44' }"
-              >
-                {{ tag.name }}
-              </span>
-              <div class="ml-auto flex gap-1">
-                <button
-                  class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                  @click="startEditTag(tag)"
-                >
-                  {{ t('common.edit') }}
-                </button>
-                <button
-                  class="btn btn-danger btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-                  @click="handleDeleteTag(tag)"
-                >
-                  {{ t('common.delete') }}
-                </button>
-              </div>
-            </template>
-          </div>
-        </div>
-        <p v-else class="mt-4 text-body text-text-secondary">{{ t('settings.data.noTags') }}</p>
-      </section>
-    </div>
-
-    <section class="mt-8 border-t border-border-subtle pt-8" aria-labelledby="custom-mint-locations-heading">
+    <section aria-labelledby="custom-mint-locations-heading">
       <div class="mb-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h3 id="custom-mint-locations-heading" class="m-0 text-base font-medium text-text-secondary">{{ t('settings.data.mintTitle') }}</h3>
@@ -281,86 +181,16 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import { Database, RefreshCw } from 'lucide-vue-next'
 import {
-  getTags, createTag, updateTag as updateTagApi, deleteTag,
   getMintLocations, createMintLocation, updateMintLocation, deleteMintLocation,
   migrateLegacyReferences,
   type MintLocationInput,
   type MintLocationsResponse,
 } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
-import type { Tag, MintLocation, LegacyMigrationResult } from '@/types'
+import type { MintLocation, LegacyMigrationResult } from '@/types'
 import { t } from '@/i18n'
 
 const { showConfirm } = useDialog()
-// Tag management
-const tagList = ref<Tag[]>([])
-const newTagName = ref('')
-const newTagColor = ref('#6b7280')
-const editingTag = ref<Tag | null>(null)
-const editTagName = ref('')
-const editTagColor = ref('')
-const tagError = ref('')
-
-const TAG_COLORS = ['#6b7280', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1']
-
-async function loadTags() {
-  try {
-    const res = await getTags()
-    tagList.value = res.data?.tags ?? []
-  } catch { tagList.value = [] }
-}
-
-async function handleCreateTag() {
-  tagError.value = ''
-  const name = newTagName.value.trim()
-  if (!name) return
-  try {
-    await createTag({ name, color: newTagColor.value })
-    newTagName.value = ''
-    newTagColor.value = '#6b7280'
-    await loadTags()
-  } catch (e: unknown) {
-    if (typeof e === 'object' && e !== null && 'response' in e) {
-      const axiosErr = e as { response?: { data?: { error?: string } } }
-      tagError.value = axiosErr.response?.data?.error ?? t('settings.data.createTagFailed')
-    } else {
-      tagError.value = t('settings.data.createTagFailed')
-    }
-  }
-}
-
-function startEditTag(tag: Tag) {
-  editingTag.value = tag
-  editTagName.value = tag.name
-  editTagColor.value = tag.color
-}
-
-async function handleSaveTag() {
-  tagError.value = ''
-  if (!editingTag.value) return
-  try {
-    await updateTagApi(editingTag.value.id, { name: editTagName.value.trim(), color: editTagColor.value })
-    editingTag.value = null
-    await loadTags()
-  } catch (e: unknown) {
-    if (typeof e === 'object' && e !== null && 'response' in e) {
-      const axiosErr = e as { response?: { data?: { error?: string } } }
-      tagError.value = axiosErr.response?.data?.error ?? t('settings.data.updateTagFailed')
-    } else {
-      tagError.value = t('settings.data.updateTagFailed')
-    }
-  }
-}
-
-async function handleDeleteTag(tag: Tag) {
-  const confirmed = await showConfirm(t('settings.data.confirmDeleteTag', { name: tag.name }), { title: t('settings.data.deleteTagTitle'), variant: 'danger' })
-  if (!confirmed) return
-  try {
-    await deleteTag(tag.id)
-    await loadTags()
-  } catch { /* ignore */ }
-}
-
 function apiErrorText(error: unknown, fallback: string): string {
   if (typeof error === 'object' && error !== null && 'response' in error) {
     const axiosErr = error as { response?: { status?: number; data?: { error?: string; message?: string; count?: number } } }
@@ -524,9 +354,8 @@ async function handleMigrate() {
 }
 
 onMounted(() => {
-  loadTags()
   loadMintLocations()
 })
 
-defineExpose({ loadTags, loadMintLocations })
+defineExpose({ loadMintLocations })
 </script>

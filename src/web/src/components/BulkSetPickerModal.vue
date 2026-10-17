@@ -1,0 +1,37 @@
+<template>
+  <Teleport to="body">
+    <div v-if="open" class="fixed inset-0 z-[300] flex items-center justify-center bg-overlay-60 px-4" @click="$emit('close')">
+      <div class="w-full max-w-[320px] rounded-md border border-border-subtle bg-card p-6 shadow-[0_12px_40px_var(--overlay-50)]" @click.stop>
+        <h3 class="mb-3 text-base text-heading">{{ t('collection.bulk.applySet') }}</h3>
+        <div v-if="sets.length" class="flex max-h-[300px] flex-col gap-1.5 overflow-y-auto">
+          <button
+            v-for="set in sets"
+            :key="set.id"
+            class="flex items-center gap-2 rounded-sm border border-border-subtle bg-surface px-3 py-2 text-left text-body text-text-primary transition-colors hover:border-gold hover:text-gold"
+            @click="$emit('select', set.id)"
+          >
+            <span class="h-3 w-3 shrink-0 rounded-full" :style="{ background: set.color }"></span>
+            {{ set.name }}
+          </button>
+        </div>
+        <p v-else class="text-body text-text-muted">{{ t('collection.bulk.noSets') }}</p>
+        <button class="btn btn-secondary btn-sm mt-3" @click="$emit('close')">{{ t('common.cancel') }}</button>
+      </div>
+    </div>
+  </Teleport>
+</template>
+
+<script setup lang="ts">
+import type { CollectionSetOption } from '@/types'
+import { t } from '@/i18n'
+
+defineProps<{
+  open: boolean
+  sets: CollectionSetOption[]
+}>()
+
+defineEmits<{
+  select: [setId: number]
+  close: []
+}>()
+</script>

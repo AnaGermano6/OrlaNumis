@@ -194,7 +194,7 @@ func BuildDeepAnalysisHandoffResultFromJob(
 				}
 				continue
 			}
-			if !oneOf(reference.Provider, "numista", "nomisma", "ngc", "ocre", "rpc") ||
+			if !oneOf(reference.Provider, "numista", "ngc", "rpc") ||
 				reference.ClaimIndex == nil || *reference.ClaimIndex < 0 {
 				return DeepAnalysisHandoffResult{}, ErrInvalidCopilotFrame
 			}
@@ -244,7 +244,7 @@ func BuildDeepAnalysisHandoffResultFromJob(
 				if reference.ClaimIndex != nil {
 					return DeepAnalysisHandoffResult{}, ErrInvalidCopilotFrame
 				}
-			} else if !oneOf(reference.Provider, "numista", "nomisma", "ngc", "ocre", "rpc") ||
+			} else if !oneOf(reference.Provider, "numista", "ngc", "rpc") ||
 				reference.ClaimIndex == nil || *reference.ClaimIndex < 0 {
 				return DeepAnalysisHandoffResult{}, ErrInvalidCopilotFrame
 			}
@@ -268,7 +268,7 @@ func BuildDeepAnalysisHandoffResultFromJob(
 	}
 	seenCoverage := map[string]bool{}
 	for _, coverage := range report.Coverage {
-		if !oneOf(coverage.Provider, "numista", "nomisma", "ngc", "ocre", "rpc") ||
+		if !oneOf(coverage.Provider, "numista", "ngc", "rpc") ||
 			!oneOf(coverage.Status, "pending", "running", "contributed", "no_match", "failed",
 				"timed_out", "skipped", "not_automated", "unavailable") ||
 			seenCoverage[coverage.Provider] {
@@ -282,7 +282,7 @@ func BuildDeepAnalysisHandoffResultFromJob(
 	}
 	seenAttribution := map[string]bool{}
 	for _, attribution := range report.Attributions {
-		if !oneOf(attribution.Provider, "numista", "nomisma", "ngc", "ocre", "rpc") ||
+		if !oneOf(attribution.Provider, "numista", "ngc", "rpc") ||
 			strings.TrimSpace(attribution.Text) == "" || seenAttribution[attribution.Provider] {
 			return DeepAnalysisHandoffResult{}, ErrInvalidCopilotFrame
 		}

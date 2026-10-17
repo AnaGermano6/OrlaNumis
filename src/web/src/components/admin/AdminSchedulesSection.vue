@@ -38,23 +38,7 @@
       @update:settings-error="emit('update:valSettingsError', $event)"
     />
 
-    <AdminCollectionHealthSchedule
-      :settings="settings"
-      :settings-saving="settingsSaving"
-      :settings-msg="healthSettingsMsg"
-      :settings-error="healthSettingsError"
-      @save="emit('save')"
-      @update:settings-msg="emit('update:healthSettingsMsg', $event)"
-      @update:settings-error="emit('update:healthSettingsError', $event)"
-    />
-
-    <AdminCoinOfDaySchedule
-      :settings="settings"
-      :settings-saving="settingsSaving"
-      @save="emit('save')"
-    />
-
-    <AdminPurchaseReminderSchedule
+    <AdminBackupSchedule
       :settings="settings"
       :settings-saving="settingsSaving"
       @save="emit('save')"
@@ -65,10 +49,8 @@
 <script setup lang="ts">
 import AdminAvailabilitySchedule from '@/components/admin/schedules/AdminAvailabilitySchedule.vue'
 import AdminWishlistSearchAlertSchedule from '@/components/admin/schedules/AdminWishlistSearchAlertSchedule.vue'
-import AdminCoinOfDaySchedule from '@/components/admin/schedules/AdminCoinOfDaySchedule.vue'
-import AdminPurchaseReminderSchedule from '@/components/admin/schedules/AdminPurchaseReminderSchedule.vue'
+import AdminBackupSchedule from '@/components/admin/schedules/AdminBackupSchedule.vue'
 import AdminScheduleTimezone from '@/components/admin/schedules/AdminScheduleTimezone.vue'
-import AdminCollectionHealthSchedule from '@/components/admin/schedules/AdminCollectionHealthSchedule.vue'
 import AdminValuationSchedule from '@/components/admin/schedules/AdminValuationSchedule.vue'
 import type { AppSettings } from '@/types'
 import { t } from '@/i18n'
@@ -78,8 +60,6 @@ defineProps<{
   settingsSaving: boolean
   availSettingsMsg: string
   availSettingsError: boolean
-  healthSettingsMsg: string
-  healthSettingsError: boolean
   valSettingsMsg: string
   valSettingsError: boolean
 }>()
@@ -90,7 +70,5 @@ const emit = defineEmits<{
   'update:valSettingsError': [val: boolean]
   'update:availSettingsMsg': [val: string]
   'update:availSettingsError': [val: boolean]
-  'update:healthSettingsMsg': [val: string]
-  'update:healthSettingsError': [val: boolean]
 }>()
 </script>

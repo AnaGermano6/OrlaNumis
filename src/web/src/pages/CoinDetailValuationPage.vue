@@ -1,7 +1,7 @@
 <template>
   <CoinDetailSectionPageShell :section-title="t('coinDetail.sections.valuation.title')">
     <template #default="{ coin: coinData }">
-      <div v-if="coinData.isWishlist || coinData.isSold" class="card p-6 text-center text-text-secondary text-base">
+      <div v-if="coinData.isWishlist" class="card p-6 text-center text-text-secondary text-base">
         <p>{{ t('coinDetail.valuation.activeOnly') }}</p>
       </div>
       <div v-else class="flex flex-col gap-5">

@@ -3,42 +3,15 @@ package middleware
 import (
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/briandenicola/ancient-coins-api/models"
-	"github.com/briandenicola/ancient-coins-api/services"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// ApiKeyAuthenticator abstracts the DB operations needed for API key auth.
-type ApiKeyAuthenticator interface {
-	FindActiveByHash(keyHash string) (*models.ApiKey, error)
-	FindUserByID(id uint) (*models.User, error)
-	UpdateLastUsed(apiKey *models.ApiKey, t time.Time)
-}
-
-func AuthRequired(jwtSecret string, apiKeyAuth ApiKeyAuthenticator) gin.HandlerFunc {
-	return AuthRequiredWithSecurity(jwtSecret, apiKeyAuth, nil)
-}
-
-func AuthRequiredWithSecurity(jwtSecret string, apiKeyAuth ApiKeyAuthenticator, securitySvc *services.SecurityService) gin.HandlerFunc {
+// AuthRequired accepts a request signed in with a JWT bearer token, and sets
+// its user's ID and role.
+func AuthRequired(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Try API key auth first
-		apiKey := c.GetHeader("X-API-Key")
-		if apiKey != "" {
-			if authenticateApiKey(c, apiKey, jwtSecret, apiKeyAuth) {
-				c.Next()
-				return
-			}
-			if securitySvc != nil {
-				securitySvc.RecordEvent(models.SecurityEventAPIKeyAuthFailure, nil, "", ClientIP(c), c.Request.UserAgent(), "")
-			}
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid API key"})
-			return
-		}
-
-		// Fall back to JWT bearer auth
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
@@ -81,28 +54,4 @@ func AuthRequiredWithSecurity(jwtSecret string, apiKeyAuth ApiKeyAuthenticator, 
 		c.Set("userRole", role)
 		c.Next()
 	}
-}
-
-func authenticateApiKey(c *gin.Context, plainKey string, hashSecret string, auth ApiKeyAuthenticator) bool {
-	keyHash := services.HashAPIKey(plainKey, hashSecret)
-	apiKey, err := auth.FindActiveByHash(keyHash)
-	if err != nil {
-		return false
-	}
-
-	// Look up the user to get their role
-	user, err := auth.FindUserByID(apiKey.UserID)
-	if err != nil {
-		return false
-	}
-
-	// Update last used timestamp
-	auth.UpdateLastUsed(apiKey, time.Now())
-
-	c.Set("userId", apiKey.UserID)
-	c.Set("userRole", string(user.Role))
-	c.Set("apiKeyCapabilities", apiKey.Capabilities)
-	c.Set("apiKeyId", apiKey.ID)
-	c.Set("apiKeyName", apiKey.Name)
-	return true
 }

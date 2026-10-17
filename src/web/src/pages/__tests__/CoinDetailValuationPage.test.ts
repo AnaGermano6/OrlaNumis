@@ -17,7 +17,6 @@ vi.mock('@/api/client', () => ({
 const coinRef = ref<Partial<Coin>>({
   id: 42,
   isWishlist: false,
-  isSold: false,
   purchasePrice: 100,
   purchaseDate: '2024-01-01T00:00:00Z',
 })
@@ -60,8 +59,7 @@ describe('CoinDetailValuationPage', () => {
     coinRef.value = {
       id: 42,
       isWishlist: false,
-      isSold: false,
-      purchasePrice: 100,
+          purchasePrice: 100,
       purchaseDate: '2024-01-01T00:00:00Z',
     }
     vi.mocked(getCoinValueHistory).mockResolvedValue({ data: [] } as never)
@@ -71,14 +69,6 @@ describe('CoinDetailValuationPage', () => {
 
   it('shows gate message for wishlist coins', async () => {
     coinRef.value = { ...coinRef.value, isWishlist: true }
-    const wrapper = mount(CoinDetailValuationPage, defaultMountOptions)
-    await flushPromises()
-    expect(wrapper.text()).toContain('Value tracking is only available for active coins')
-    expect(wrapper.find('table').exists()).toBe(false)
-  })
-
-  it('shows gate message for sold coins', async () => {
-    coinRef.value = { ...coinRef.value, isSold: true }
     const wrapper = mount(CoinDetailValuationPage, defaultMountOptions)
     await flushPromises()
     expect(wrapper.text()).toContain('Value tracking is only available for active coins')

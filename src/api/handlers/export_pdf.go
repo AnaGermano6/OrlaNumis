@@ -46,7 +46,7 @@ func writeCatalogPDF(coins []models.Coin, uploadDir string, username string, log
 
 	// Coin pages
 	for i, coin := range coins {
-		if coin.IsWishlist || coin.IsSold {
+		if coin.IsWishlist {
 			continue
 		}
 		writeCoinPage(pdf, coin, uploadDir, i+1, logger)
@@ -174,19 +174,6 @@ func writeCoinPage(pdf *fpdf.Fpdf, coin models.Coin, uploadDir string, index int
 		pdf.SetXY(margin, y)
 		pdf.MultiCell(contentW, 4.5, safeStr(coin.Notes), "", "L", false)
 	}
-
-	// Tags
-	if len(coin.Tags) > 0 {
-		tagNames := make([]string, len(coin.Tags))
-		for i, t := range coin.Tags {
-			tagNames[i] = t.Name
-		}
-		currentY := pdf.GetY() + 4
-		pdf.SetFont("Helvetica", "I", 8)
-		pdf.SetTextColor(mutedR, mutedG, mutedB)
-		pdf.SetXY(margin, currentY)
-		pdf.CellFormat(contentW, 5, "Tags: "+strings.Join(tagNames, ", "), "", 1, "L", false, 0, "")
-	}
 }
 
 func writeDetailsCard(pdf *fpdf.Fpdf, coin models.Coin, startY float64) float64 {
@@ -283,7 +270,7 @@ func writeSummaryPage(pdf *fpdf.Fpdf, coins []models.Coin) {
 	materials := map[string]int{}
 
 	for _, coin := range coins {
-		if coin.IsWishlist || coin.IsSold {
+		if coin.IsWishlist {
 			continue
 		}
 		totalCount++

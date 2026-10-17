@@ -172,19 +172,6 @@ func (r *SetBuilderRepository) FindPendingProposalByIdempotencyKey(userID uint, 
 	return &proposal, nil
 }
 
-// ListProposals returns the current user's proposals ordered newest first.
-func (r *SetBuilderRepository) ListProposals(userID uint, limit int) ([]models.SetProposal, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 100
-	}
-	var proposals []models.SetProposal
-	err := r.db.Scopes(OwnedBy(userID)).
-		Order("created_at DESC").
-		Limit(limit).
-		Find(&proposals).Error
-	return proposals, err
-}
-
 // GetProposalForUser loads one proposal, scoped to the owning user, with its run and slots.
 func (r *SetBuilderRepository) GetProposalForUser(proposalID, userID uint) (*models.SetProposal, error) {
 	var proposal models.SetProposal

@@ -47,7 +47,7 @@ func NewCoinCirculationService(coins *repository.CoinRepository, catalog *Numist
 	return &CoinCirculationService{coins: coins, catalog: catalog, known: map[int]NumistaTypeFacts{}}
 }
 
-// Classify sorts the user's collection coins (not wishlist or sold).
+// Classify sorts the user's collection coins (not the wishlist's).
 func (s *CoinCirculationService) Classify(userID uint) (CoinCirculation, error) {
 	refs, err := s.coins.CollectionNumistaTypes(userID)
 	if err != nil {

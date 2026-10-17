@@ -12,35 +12,9 @@ type ImageCleanupPendingResponse struct {
 type ErrorResponse struct {
 	Error   string `json:"error" example:"Something went wrong"`
 	Code    string `json:"code,omitempty" example:"validation_error"`
-	Message string `json:"message,omitempty" example:"Choose another slot and try again."`
-	Field   string `json:"field,omitempty" example:"storageSlot"`
+	Message string `json:"message,omitempty" example:"Choose another name and try again."`
+	Field   string `json:"field,omitempty" example:"name"`
 	Count   *int64 `json:"count,omitempty" minimum:"0" extensions:"x-nullable"`
-}
-
-type ValidationErrorResponse struct {
-	Error   string `json:"error" example:"tray rows and columns must each be between 1 and 20"`
-	Code    string `json:"code" enums:"validation_error" example:"validation_error"`
-	Message string `json:"message,omitempty"`
-	Field   string `json:"field,omitempty" example:"rows"`
-}
-
-type StorageLocationConflictErrorResponse struct {
-	Error   string `json:"error" example:"a storage location with this name already exists"`
-	Code    string `json:"code" enums:"duplicate_location,location_limit,tray_occupied" example:"duplicate_location"`
-	Message string `json:"message" example:"Choose a different storage location name."`
-}
-
-type SlotOccupiedErrorResponse struct {
-	Error   string `json:"error" example:"Storage slot is occupied"`
-	Code    string `json:"code" enums:"slot_occupied" example:"slot_occupied"`
-	Message string `json:"message" example:"Storage slot is occupied"`
-}
-
-type LocationReferencedErrorResponse struct {
-	Error   string `json:"error" example:"Storage location is used by 2 coin(s); reassign those coins before deleting it"`
-	Code    string `json:"code" enums:"location_referenced" example:"location_referenced"`
-	Message string `json:"message" example:"Storage location is used by 2 coin(s); reassign those coins before deleting it"`
-	Count   int64  `json:"count" minimum:"1" example:"2"`
 }
 
 type MessageResponse struct {
@@ -53,7 +27,7 @@ type CoinReferenceDTO struct {
 	Catalog   string `json:"catalog" example:"RIC"`
 	Volume    string `json:"volume,omitempty" example:"III"`
 	Number    string `json:"number" example:"234"`
-	URI       string `json:"uri,omitempty" example:"https://numismatics.org/ocre/id/ric.2.tr.234"`
+	URI       string `json:"uri,omitempty" example:"https://en.numista.com/catalogue/pieces1490.html"`
 	CreatedAt string `json:"createdAt" example:"2025-01-15T12:00:00Z"`
 	UpdatedAt string `json:"updatedAt" example:"2025-01-15T12:00:00Z"`
 }
@@ -62,7 +36,7 @@ type CoinReferenceUpsertRequest struct {
 	Catalog string `json:"catalog" example:"RIC"`
 	Volume  string `json:"volume,omitempty" example:"III"`
 	Number  string `json:"number" example:"234"`
-	URI     string `json:"uri,omitempty" example:"https://numismatics.org/ocre/id/ric.2.tr.234"`
+	URI     string `json:"uri,omitempty" example:"https://en.numista.com/catalogue/pieces1490.html"`
 }
 
 type MigrationResultDTO struct {
@@ -81,10 +55,6 @@ type AuthUserInfo struct {
 	ID       uint   `json:"id" example:"1"`
 	Username string `json:"username" example:"admin"`
 	Role     string `json:"role" example:"admin"`
-}
-
-type SetupResponse struct {
-	NeedsSetup bool `json:"needsSetup" example:"false"`
 }
 
 type CoinListResponse struct {
@@ -189,7 +159,7 @@ type StatsResponse struct {
 }
 
 type CategoryCount struct {
-	Category string `json:"category" example:"Roman"`
+	Category string `json:"category" example:"Modern"`
 	Count    int64  `json:"count" example:"10"`
 }
 
@@ -203,12 +173,6 @@ type ValueSummary struct {
 	TotalCurrentValue  float64 `json:"totalCurrentValue" example:"2500.00"`
 	AvgPurchasePrice   float64 `json:"avgPurchasePrice" example:"50.00"`
 	AvgCurrentValue    float64 `json:"avgCurrentValue" example:"100.00"`
-}
-
-type AnalysisResponse struct {
-	Analysis string      `json:"analysis" example:"This coin appears to be a Roman denarius..."`
-	Side     string      `json:"side" example:"obverse"`
-	Coin     models.Coin `json:"coin"`
 }
 
 type DeleteAnalysisResponse struct {

@@ -136,7 +136,7 @@ func TestBuildDeepProposalDocumentJSON_NGCReachesBothIntakeAndSavedCoinPaths(t *
 	report := json.RawMessage(`{
 		"narrative":"A silver denarius with an NGC certification.",
 		"proposed_fields": {
-			"mint": {"value":"Rome","confidence":0.6,"evidence_refs":[{"provider":"nomisma","claim_index":0}]}
+			"mint": {"value":"Rome","confidence":0.6,"evidence_refs":[{"provider":"rpc","claim_index":0}]}
 		}
 	}`)
 	quickEvidence := &DeepQuickEvidenceProxy{NGC: &DeepQuickEvidenceNGCProxy{CertNumber: "1234567-001"}}
@@ -207,15 +207,15 @@ func TestBuildDeepProposalDocumentJSON_SavedCoinEmptyProposedFieldsStillEmitsNGC
 // ---------------------------------------------------------------------
 
 func TestBuildDeepCatalogReferenceField_OnlyTopRankedCoinTypeClaimParsed(t *testing.T) {
-	// OCRE emits multiple coin_type claims to preserve ambiguity (351
-	// FR-013). Only the highest-confidence claim ("nomisma" here, 0.95)
-	// may be parsed into a structured element; the lower-ranked "ocre"
+	// A provider may emit several coin_type claims to preserve ambiguity (351
+	// FR-013). Only the highest-confidence claim ("rpc" here, 0.95)
+	// may be parsed into a structured element; the lower-ranked "numista"
 	// claim (0.60) must never independently produce a second element.
 	providerClaims := map[string][]deepProposalClaim{
-		"ocre": {
+		"numista": {
 			{Field: "coin_type", Value: "RIC II Hadrian 39b", Confidence: 0.60},
 		},
-		"nomisma": {
+		"rpc": {
 			{Field: "coin_type", Value: "SEAR 1625", Confidence: 0.95},
 		},
 	}
@@ -227,19 +227,19 @@ func TestBuildDeepCatalogReferenceField_OnlyTopRankedCoinTypeClaimParsed(t *test
 		t.Fatalf("expected exactly one element (top-ranked claim only), got %#v", elements)
 	}
 	if elements[0].Catalog != "SEAR" || elements[0].Number != "1625" {
-		t.Fatalf("expected the higher-confidence nomisma claim (SEAR 1625) to win, got %#v", elements[0])
+		t.Fatalf("expected the higher-confidence rpc claim (SEAR 1625) to win, got %#v", elements[0])
 	}
-	if elements[0].SourceProvider != "nomisma" {
-		t.Fatalf("expected sourceProvider=nomisma (contributing provider), got %q", elements[0].SourceProvider)
+	if elements[0].SourceProvider != "rpc" {
+		t.Fatalf("expected sourceProvider=rpc (contributing provider), got %q", elements[0].SourceProvider)
 	}
 }
 
-// AC-004: an OCRE coin_type claim of "RIC II Hadrian 39b" produces an
+// AC-004: a coin_type claim of "RIC II Hadrian 39b" produces an
 // element with catalog=RIC, volume=II, number="Hadrian 39b",
 // confidence=0.90, rawText="RIC II Hadrian 39b".
 func TestBuildDeepCatalogReferenceField_RICVolumeAndNumberAC004(t *testing.T) {
 	providerClaims := map[string][]deepProposalClaim{
-		"ocre": {{Field: "coin_type", Value: "RIC II Hadrian 39b", Confidence: 0.9}},
+		"numista": {{Field: "coin_type", Value: "RIC II Hadrian 39b", Confidence: 0.9}},
 	}
 	elements, superseded := buildDeepCatalogReferenceField(nil, "", providerClaims, phase4TestRegistry())
 	if !superseded {
@@ -264,8 +264,8 @@ func TestBuildDeepCatalogReferenceField_RICVolumeAndNumberAC004(t *testing.T) {
 	if el.RawText != "RIC II Hadrian 39b" {
 		t.Fatalf("expected rawText='RIC II Hadrian 39b', got %q", el.RawText)
 	}
-	if el.SourceProvider != "ocre" {
-		t.Fatalf("expected sourceProvider=ocre, got %q", el.SourceProvider)
+	if el.SourceProvider != "numista" {
+		t.Fatalf("expected sourceProvider=numista, got %q", el.SourceProvider)
 	}
 	if el.NeedsVolume {
 		t.Fatal("expected needsVolume=false for a clean Roman-numeral-volume parse")
@@ -285,11 +285,11 @@ func TestBuildDeepProposalDocumentJSON_ScalarCoinTypeSupersededOnlyOnStructuredS
 	t.Run("AC-011: successful parse supersedes the scalar default to false, both are proposed", func(t *testing.T) {
 		report := json.RawMessage(`{
 			"proposed_fields": {
-				"coin_type": {"value":"RIC II Hadrian 39b","confidence":0.8,"evidence_refs":[{"provider":"ocre","claim_index":0}]}
+				"coin_type": {"value":"RIC II Hadrian 39b","confidence":0.8,"evidence_refs":[{"provider":"numista","claim_index":0}]}
 			}
 		}`)
 		providerClaims := map[string][]deepProposalClaim{
-			"ocre": {{Field: "coin_type", Value: "RIC II Hadrian 39b", Confidence: 0.8, Citation: "http://numismatics.org/ocre/id/ric.2.hdn.39B"}},
+			"numista": {{Field: "coin_type", Value: "RIC II Hadrian 39b", Confidence: 0.8, Citation: "https://en.numista.com/catalogue/pieces1490.html"}},
 		}
 		var coinID uint = 1
 		out := buildDeepProposalDocumentJSON(report, &coinID, providerClaims, nil, registry)
@@ -318,11 +318,11 @@ func TestBuildDeepProposalDocumentJSON_ScalarCoinTypeSupersededOnlyOnStructuredS
 		// normal confidence-driven default (nil, not false).
 		report := json.RawMessage(`{
 			"proposed_fields": {
-				"coin_type": {"value":"MysteryCatalog 207","confidence":0.8,"evidence_refs":[{"provider":"ocre","claim_index":0}]}
+				"coin_type": {"value":"MysteryCatalog 207","confidence":0.8,"evidence_refs":[{"provider":"numista","claim_index":0}]}
 			}
 		}`)
 		providerClaims := map[string][]deepProposalClaim{
-			"ocre": {{Field: "coin_type", Value: "MysteryCatalog 207", Confidence: 0.8, Citation: "http://numismatics.org/ocre/id/x"}},
+			"numista": {{Field: "coin_type", Value: "MysteryCatalog 207", Confidence: 0.8, Citation: "https://en.numista.com/catalogue/pieces1.html"}},
 		}
 		var coinID uint = 2
 		out := buildDeepProposalDocumentJSON(report, &coinID, providerClaims, nil, registry)
@@ -371,7 +371,7 @@ func TestBuildDeepOpportunisticRPCReference_LeadingWordBoundaryMatchesOnly(t *te
 
 	t.Run("a ranked coin_type claim's leading RPC token emits when hypothesis/label_text are empty", func(t *testing.T) {
 		providerClaims := map[string][]deepProposalClaim{
-			"nomisma": {{Field: "coin_type", Value: "RPC I 1234", Confidence: 0.7}},
+			"rpc": {{Field: "coin_type", Value: "RPC I 1234", Confidence: 0.7}},
 		}
 		elements, _ := buildDeepCatalogReferenceField(nil, "", providerClaims, registry)
 		var rpc *deepProposalCatalogReference
@@ -383,8 +383,8 @@ func TestBuildDeepOpportunisticRPCReference_LeadingWordBoundaryMatchesOnly(t *te
 		if rpc == nil {
 			t.Fatalf("expected an RPC element sourced from the coin_type claim, got %#v", elements)
 		}
-		if rpc.SourceProvider != "nomisma" {
-			t.Fatalf("expected sourceProvider=nomisma (the contributing claim's provider), got %q", rpc.SourceProvider)
+		if rpc.SourceProvider != "rpc" {
+			t.Fatalf("expected sourceProvider=rpc (the contributing claim's provider), got %q", rpc.SourceProvider)
 		}
 	})
 
@@ -430,7 +430,7 @@ func TestBuildDeepCatalogReferenceField_MissingVolumeNeedsVolumeTrueNeverZeroSen
 
 	t.Run("AC-005: RIC bare number with no volume token", func(t *testing.T) {
 		providerClaims := map[string][]deepProposalClaim{
-			"ocre": {{Field: "coin_type", Value: "RIC 39b", Confidence: 0.7}},
+			"numista": {{Field: "coin_type", Value: "RIC 39b", Confidence: 0.7}},
 		}
 		elements, superseded := buildDeepCatalogReferenceField(nil, "", providerClaims, registry)
 		if !superseded {
@@ -464,10 +464,10 @@ func TestBuildDeepCatalogReferenceField_MissingVolumeNeedsVolumeTrueNeverZeroSen
 		// front-end / owner decides. accepted must be nil, never a
 		// computed false/true based on confidence.
 		report := json.RawMessage(`{"proposed_fields":{
-			"mint": {"value":"Rome","confidence":0.6,"evidence_refs":[{"provider":"nomisma","claim_index":0}]}
+			"mint": {"value":"Rome","confidence":0.6,"evidence_refs":[{"provider":"rpc","claim_index":0}]}
 		}}`)
 		providerClaims := map[string][]deepProposalClaim{
-			"ocre": {{Field: "coin_type", Value: "RIC 39b", Confidence: 0.7}},
+			"numista": {{Field: "coin_type", Value: "RIC 39b", Confidence: 0.7}},
 		}
 		var coinID uint = 3
 		out := buildDeepProposalDocumentJSON(report, &coinID, providerClaims, nil, registry)
@@ -533,7 +533,7 @@ func TestBuildDeepCatalogReferenceField_UnknownOrNonRegistryCatalogNotEmitted(t 
 
 	t.Run("unrecognised catalog alias", func(t *testing.T) {
 		providerClaims := map[string][]deepProposalClaim{
-			"ocre": {{Field: "coin_type", Value: "NOTACATALOG 207", Confidence: 0.9}},
+			"numista": {{Field: "coin_type", Value: "NOTACATALOG 207", Confidence: 0.9}},
 		}
 		elements, superseded := buildDeepCatalogReferenceField(nil, "", providerClaims, registry)
 		if superseded || len(elements) != 0 {
@@ -543,7 +543,7 @@ func TestBuildDeepCatalogReferenceField_UnknownOrNonRegistryCatalogNotEmitted(t 
 
 	t.Run("recognised alias but absent from the caller's registry", func(t *testing.T) {
 		providerClaims := map[string][]deepProposalClaim{
-			"ocre": {{Field: "coin_type", Value: "KM 207", Confidence: 0.9}},
+			"numista": {{Field: "coin_type", Value: "KM 207", Confidence: 0.9}},
 		}
 		elements, superseded := buildDeepCatalogReferenceField(nil, "", providerClaims, registry)
 		if superseded || len(elements) != 0 {
@@ -648,20 +648,20 @@ func TestDeepIdentificationRunner_CatalogRegistryLoadFailureLogsNoOwnerContent(t
 	}
 
 	frames := []map[string]any{
-		{"type": "router_selected", "selected": []string{"ocre"}, "rationale": "auto"},
-		{"type": "provider_started", "provider": "ocre"},
+		{"type": "router_selected", "selected": []string{"numista"}, "rationale": "auto"},
+		{"type": "provider_started", "provider": "numista"},
 		{
 			"type":        "provider_result",
-			"provider":    "ocre",
+			"provider":    "numista",
 			"status":      "contributed",
 			"automatable": true,
 			"confidence":  0.7,
 			"call_count":  1,
 			"error_kind":  nil,
 			"link_out":    "",
-			"attribution": "Source: OCRE",
+			"attribution": "Source: Numista",
 			"claims": []map[string]any{
-				{"field": "coin_type", "value": sensitiveCoinType, "confidence": 0.85, "citation": "http://numismatics.org/ocre/id/x", "excerpt": sensitiveQuery},
+				{"field": "coin_type", "value": sensitiveCoinType, "confidence": 0.85, "citation": "https://en.numista.com/catalogue/pieces1.html", "excerpt": sensitiveQuery},
 			},
 		},
 		{"type": "evaluation", "disagreement_count": 0, "resolved_count": 0},
@@ -673,7 +673,7 @@ func TestDeepIdentificationRunner_CatalogRegistryLoadFailureLogsNoOwnerContent(t
 				"proposed_fields": map[string]any{
 					"coin_type": map[string]any{
 						"value": sensitiveCoinType, "confidence": 0.85,
-						"evidence_refs": []map[string]any{{"provider": "ocre", "claim_index": 0}},
+						"evidence_refs": []map[string]any{{"provider": "numista", "claim_index": 0}},
 					},
 				},
 				"image_hypothesis": map[string]any{

@@ -41,7 +41,6 @@ const messages: Messages['chat'] = {
   aggregate: {
     active: 'Ativas: {count}',
     wishlist: 'Lista de desejos: {count}',
-    sold: 'Vendidas: {count}',
     value: 'Valor: {value}',
   },
   listingIneligible: 'Este anúncio já não pode ser adicionado à lista de desejos.',

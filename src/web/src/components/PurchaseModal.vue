@@ -1,7 +1,7 @@
 <template>
   <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-overlay p-4" @click.self="$emit('close')">
     <div class="card w-full max-w-[420px] !p-8">
-      <h3 class="mb-1 text-lg font-medium text-heading">{{ t('featured.moveToCollection') }}</h3>
+      <h3 class="mb-1 text-lg font-medium text-heading">{{ t('purchase.moveToCollection') }}</h3>
       <p class="mb-5 truncate text-base text-gold">{{ coin.name }}</p>
 
       <div class="form-group">

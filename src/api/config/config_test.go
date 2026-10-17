@@ -5,7 +5,7 @@ import (
 )
 
 func TestAllowedOriginsExcludesDevOriginsInRelease(t *testing.T) {
-	cfg := &Config{WebAuthnOrigin: "https://coins.example.com"}
+	cfg := &Config{}
 
 	t.Setenv("GIN_MODE", "release")
 	for _, origin := range cfg.AllowedOrigins() {
@@ -19,7 +19,7 @@ func TestAllowedOriginsExcludesDevOriginsInRelease(t *testing.T) {
 }
 
 func TestAllowedOriginsIncludesDevOriginsOutsideRelease(t *testing.T) {
-	cfg := &Config{WebAuthnOrigin: "http://localhost:8080"}
+	cfg := &Config{}
 
 	t.Setenv("GIN_MODE", "debug")
 	var found bool

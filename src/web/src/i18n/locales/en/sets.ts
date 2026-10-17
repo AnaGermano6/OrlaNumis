@@ -1,4 +1,5 @@
 export default {
+  backToSets: 'Back to Sets',
   detail: {
     loading: 'Loading set details...',
     setActions: 'Set actions',
@@ -23,15 +24,6 @@ export default {
     clearSlot: 'Clear Slot',
     replaceCoin: 'Replace Coin',
     assignCoin: 'Assign Coin',
-    pin: {
-      updating: 'Updating set Quick Access pin',
-      limit: 'Pin limit reached (5 sets)',
-      unpin: 'Unpin set from Quick Access',
-      pin: 'Pin set to Quick Access',
-      pinned: 'Pinned to Quick Access',
-      unpinned: 'Unpinned',
-      failed: 'Failed to update pin',
-    },
     empty: {
       generating: 'Aurearia is generating this agentic roster. You will receive a notification when the tray slots are ready.',
       noSlots: 'No agentic tray slots have been generated yet.',
@@ -144,17 +136,6 @@ export default {
     loadFailed: 'Unable to load coins. Please try again.',
   },
   loadFailed: 'Unable to load this set. Please try again.',
-  compare: {
-    title: 'Compare Sets',
-    comparing: 'Comparing...',
-    compare: 'Compare',
-    choose: 'Choose a set to compare',
-    selectPlaceholder: 'Select set to compare...',
-    selected: { one: '{count} set selected', other: '{count} sets selected' },
-    needAnother: 'Create another set to enable comparisons.',
-    start: 'Start',
-    end: 'End',
-  },
   trend: {
     range1m: '1 month',
     range3m: '3 months',

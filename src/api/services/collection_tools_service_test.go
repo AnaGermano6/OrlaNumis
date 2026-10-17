@@ -42,7 +42,7 @@ func TestSearchMyCollectionFindsCoinsMissingSize(t *testing.T) {
 		{
 			Name:        "Measured Denarius",
 			UserID:      userID,
-			Category:    models.CategoryRoman,
+			Category:    models.CategoryModern,
 			Material:    models.MaterialSilver,
 			WeightGrams: floatPtr(3.2),
 			DiameterMm:  floatPtr(18),
@@ -50,7 +50,7 @@ func TestSearchMyCollectionFindsCoinsMissingSize(t *testing.T) {
 		{
 			Name:        "Unmeasured Follis",
 			UserID:      userID,
-			Category:    models.CategoryRoman,
+			Category:    models.CategoryModern,
 			Material:    models.MaterialBronze,
 			WeightGrams: floatPtr(8.1),
 			DiameterMm:  nil,
@@ -58,7 +58,7 @@ func TestSearchMyCollectionFindsCoinsMissingSize(t *testing.T) {
 		{
 			Name:        "Zero Diameter Bronze",
 			UserID:      userID,
-			Category:    models.CategoryRoman,
+			Category:    models.CategoryModern,
 			Material:    models.MaterialBronze,
 			WeightGrams: floatPtr(6.4),
 			DiameterMm:  floatPtr(0),
@@ -93,9 +93,9 @@ func TestCollectionSummaryIncludesMissingFieldCounts(t *testing.T) {
 
 	coinRepo := service.coinRepo
 	coins := []models.Coin{
-		{Name: "Complete Coin", UserID: userID, Category: models.CategoryRoman, Material: models.MaterialSilver, WeightGrams: floatPtr(3.5), DiameterMm: floatPtr(18), CurrentValue: floatPtr(100)},
-		{Name: "Missing Diameter", UserID: userID, Category: models.CategoryRoman, Material: models.MaterialBronze, WeightGrams: floatPtr(7), CurrentValue: floatPtr(80)},
-		{Name: "Missing Weight", UserID: userID, Category: models.CategoryGreek, Material: models.MaterialSilver, DiameterMm: floatPtr(22), CurrentValue: floatPtr(120)},
+		{Name: "Complete Coin", UserID: userID, Category: models.CategoryModern, Material: models.MaterialSilver, WeightGrams: floatPtr(3.5), DiameterMm: floatPtr(18), CurrentValue: floatPtr(100)},
+		{Name: "Missing Diameter", UserID: userID, Category: models.CategoryModern, Material: models.MaterialBronze, WeightGrams: floatPtr(7), CurrentValue: floatPtr(80)},
+		{Name: "Missing Weight", UserID: userID, Category: models.CategoryOther, Material: models.MaterialSilver, DiameterMm: floatPtr(22), CurrentValue: floatPtr(120)},
 	}
 	for i := range coins {
 		if err := coinRepo.Create(&coins[i]); err != nil {
@@ -131,7 +131,7 @@ func TestSearchMyCollection_MatchesModernEra(t *testing.T) {
 	coinRepo := service.coinRepo
 	coins := []models.Coin{
 		{Name: "Modern Follis", UserID: userID, Category: models.CategoryModern, Era: models.EraModern},
-		{Name: "Ancient Denarius", UserID: userID, Category: models.CategoryRoman, Era: models.EraAncient},
+		{Name: "Ancient Denarius", UserID: userID, Category: models.CategoryModern, Era: models.EraAncient},
 	}
 	for i := range coins {
 		if err := coinRepo.Create(&coins[i]); err != nil {
@@ -164,7 +164,7 @@ func TestSearchMyCollection_MatchesAdminDefinedCategory(t *testing.T) {
 	coinRepo := service.coinRepo
 	coins := []models.Coin{
 		{Name: "Celtic Stater", UserID: userID, Category: models.Category("Celtic")},
-		{Name: "Roman Denarius", UserID: userID, Category: models.CategoryRoman},
+		{Name: "Roman Denarius", UserID: userID, Category: models.CategoryModern},
 	}
 	for i := range coins {
 		if err := coinRepo.Create(&coins[i]); err != nil {

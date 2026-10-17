@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { getCoinDenominations, getCoinOptions, getCoins, getSets, getTags } from '@/api/client'
+import { getCoinDenominations, getCoinOptions, getCoins, getSets } from '@/api/client'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
 import { resetCoinVocabulary } from '@/i18n/coinVocabulary'
 import { useCollectionFilters } from '../useCollectionFilters'
@@ -12,7 +12,6 @@ vi.mock('@/api/client', () => ({
   getCoinDenominations: vi.fn(),
   getCoinOptions: vi.fn(),
   getSets: vi.fn(),
-  getTags: vi.fn(),
 }))
 
 describe('useCollectionFilters', () => {
@@ -24,21 +23,16 @@ describe('useCollectionFilters', () => {
     resetCoinVocabulary()
   })
 
-  it('keeps tag and set filters when coin options are unavailable', async () => {
-    vi.mocked(getTags).mockResolvedValue({
-      data: {
-        tags: [
-          { id: 1, name: 'Favorites', color: '#c9a84c' },
-        ],
-      },
-    } as Awaited<ReturnType<typeof getTags>>)
+  it('offers the standard sets as filters, even when coin options are unavailable, and filters by one', async () => {
     vi.mocked(getSets).mockResolvedValue({
       data: {
         sets: [
-          { id: 2, name: 'Twelve Caesars', color: '#b08d57', setType: 'standard' },
+          { id: 2, name: 'Euro 2007', color: '#b08d57', setType: 'standard' },
+          { id: 3, name: 'Smart', color: '#6b7280', setType: 'smart' },
         ],
       },
     } as Awaited<ReturnType<typeof getSets>>)
+    vi.mocked(getCoins).mockResolvedValue({ data: { coins: [], total: 0 } } as unknown as Awaited<ReturnType<typeof getCoins>>)
     vi.mocked(getCoinOptions).mockRejectedValue({ response: { status: 500 } })
 
     let filters!: ReturnType<typeof useCollectionFilters>
@@ -48,24 +42,11 @@ describe('useCollectionFilters', () => {
         return () => h('div')
       },
     }))
-    await filters.fetchUserTags()
+    await filters.fetchUserSets()
 
-    expect(filters.userTags.value).toEqual([
-      {
-        id: 1,
-        name: 'Favorites',
-        color: '#c9a84c',
-        filterValue: 'tag:1',
-        source: 'tag',
-      },
-      {
-        id: 2,
-        name: 'Twelve Caesars',
-        color: '#b08d57',
-        filterValue: 'set:2',
-        source: 'set',
-      },
-    ])
+    expect(filters.userSets.value).toEqual([{ id: 2, name: 'Euro 2007', color: '#b08d57' }])
+    filters.selectedSet.value = '2'
+    await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ set: '2' }))
     wrapper.unmount()
   })
 
@@ -101,7 +82,6 @@ describe('useCollectionFilters', () => {
   })
 
   it("offers the collection's face values and filters by one", async () => {
-    vi.mocked(getTags).mockResolvedValue({ data: { tags: [] } } as unknown as Awaited<ReturnType<typeof getTags>>)
     vi.mocked(getSets).mockResolvedValue({ data: { sets: [] } } as unknown as Awaited<ReturnType<typeof getSets>>)
     vi.mocked(getCoins).mockResolvedValue({ data: { coins: [], total: 0 } } as unknown as Awaited<ReturnType<typeof getCoins>>)
     vi.mocked(getCoinDenominations).mockResolvedValue({
@@ -115,7 +95,7 @@ describe('useCollectionFilters', () => {
         return () => h('div')
       },
     }))
-    await filters.fetchUserTags()
+    await filters.fetchUserSets()
 
     expect(getCoinDenominations).toHaveBeenCalledWith('coin')
     expect(filters.denominationOptions.value.map((option) => option.denomination)).toEqual(['2 euro', '5 euro'])

@@ -149,7 +149,7 @@ type MissingPhotosResponse struct {
 // Missing counts the user's coins without any photo.
 //
 //	@Summary		Count coins without photos
-//	@Description	Counts the user's coins (not banknotes, not sold) that have no image at all: the ones the official photos batch looks at.
+//	@Description	Counts the user's coins (not banknotes) that have no image at all: the ones the official photos batch looks at.
 //	@Tags			Coins
 //	@Produce		json
 //	@Success		200	{object}	MissingPhotosResponse

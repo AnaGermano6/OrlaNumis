@@ -53,31 +53,11 @@ func (r *UserRepository) Reload(user *models.User) error {
 // GetCoinsWithImages returns all coins for a user with export-related relations preloaded.
 func (r *UserRepository) GetCoinsWithImages(userID uint) ([]models.Coin, error) {
 	var coins []models.Coin
-	err := r.db.Where("user_id = ?", userID).Preload("Images").Preload("References").Preload("StorageLocation").Find(&coins).Error
+	err := r.db.Where("user_id = ?", userID).Preload("Images").Preload("References").Find(&coins).Error
 	return coins, err
 }
 
 // CreateCoin inserts a new coin record.
 func (r *UserRepository) CreateCoin(coin *models.Coin) error {
 	return r.db.Create(coin).Error
-}
-
-// UpdateProfileWithPrivacyupdates user profile fields and, if the user is
-// going private, removes all followers in a single transaction.
-func (r *UserRepository) UpdateProfileWithPrivacy(user *models.User, updates map[string]interface{}, goingPrivate bool) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		if goingPrivate {
-			if err := tx.Where("following_id = ?", user.ID).Delete(&models.Follow{}).Error; err != nil {
-				return err
-			}
-		}
-		return tx.Model(user).Updates(updates).Error
-	})
-}
-
-// ListCoinOfDayEnabled returns all users who have opted in to the Coin of the Day feature.
-func (r *UserRepository) ListCoinOfDayEnabled() ([]models.User, error) {
-	var users []models.User
-	err := r.db.Where("coin_of_day_enabled = ?", true).Find(&users).Error
-	return users, err
 }

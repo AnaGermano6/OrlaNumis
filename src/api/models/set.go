@@ -44,14 +44,12 @@ type CoinSet struct {
 	CreationMode         CoinSetCreationMode `gorm:"type:varchar(20);not null;default:'manual'" json:"creationMode"`
 	ParentSetID          *uint               `gorm:"index" json:"parentSetId"`
 	TargetCompletionDate *time.Time          `json:"targetCompletionDate"`
-	IsPublic             bool                `gorm:"default:false" json:"isPublic"`
 	ShareToken           *string             `gorm:"type:varchar(64);uniqueIndex" json:"shareToken"`
 	SmartCriteria        *JSONObject         `gorm:"type:text" json:"smartCriteria"`
 	// Checklist defines a checklist set's slots (see services.ChecklistDefinition).
 	Checklist     *JSONObject `gorm:"type:text" json:"checklist,omitempty"`
 	AgenticPrompt string      `gorm:"type:text" json:"agenticPrompt,omitempty"`
 	AgenticStatus string      `gorm:"type:varchar(20);default:'ready'" json:"agenticStatus,omitempty"`
-	PinnedAt      *time.Time  `gorm:"index" json:"pinnedAt"`
 	CreatedAt     time.Time   `json:"createdAt"`
 	UpdatedAt     time.Time   `json:"updatedAt"`
 }
@@ -63,14 +61,6 @@ type CoinSetMembership struct {
 	AddedAt   time.Time `gorm:"not null" json:"addedAt"`
 	SortOrder int       `gorm:"not null;default:0" json:"sortOrder"`
 	Notes     string    `gorm:"type:text" json:"notes"`
-}
-
-// CoinSetChecklistKey is a coin of the catalogue a checklist set has already
-// listed, so a coin added to the catalogue later can be announced once.
-type CoinSetChecklistKey struct {
-	SetID     uint      `gorm:"primaryKey" json:"setId"`
-	Key       string    `gorm:"primaryKey;type:varchar(200)" json:"key"`
-	CreatedAt time.Time `json:"createdAt"`
 }
 
 // CoinSetTarget defines expected coins for completion tracking.
@@ -101,29 +91,6 @@ type CoinSetValuationSnapshot struct {
 	AvgValuePerCoin      *float64  `json:"avgValuePerCoin"`
 	HighestValueCoinID   *uint     `json:"highestValueCoinId"`
 	CreatedAt            time.Time `json:"createdAt"`
-}
-
-// CoinSetMilestoneAlert tracks alerts for set milestones.
-type CoinSetMilestoneAlert struct {
-	ID              uint       `gorm:"primaryKey" json:"id"`
-	SetID           uint       `gorm:"not null;index" json:"setId"`
-	UserID          uint       `gorm:"not null;index" json:"userId"`
-	Metric          string     `gorm:"type:varchar(50);not null" json:"metric"`
-	Threshold       float64    `gorm:"not null" json:"threshold"`
-	Direction       string     `gorm:"type:varchar(20);not null" json:"direction"`
-	LastTriggeredAt *time.Time `json:"lastTriggeredAt"`
-	Enabled         bool       `gorm:"default:true" json:"enabled"`
-}
-
-// SmartCriteriaTemplate is a user-saved smart criteria group for reuse across smart sets.
-type SmartCriteriaTemplate struct {
-	ID          uint       `gorm:"primaryKey" json:"id"`
-	UserID      uint       `gorm:"not null;index" json:"userId"`
-	Name        string     `gorm:"not null;type:varchar(80)" json:"name"`
-	Description string     `gorm:"type:text" json:"description"`
-	Criteria    JSONObject `gorm:"not null;type:text" json:"criteria"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
 // JSONObject is a custom type for storing JSON in GORM

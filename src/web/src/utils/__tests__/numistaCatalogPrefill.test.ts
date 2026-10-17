@@ -4,7 +4,7 @@ import type { NumistaCatalogType } from '@/api/client'
 import type { CatalogRegistry } from '@/types'
 import { buildCatalogPrefill, categoryForType, eraForYear, materialFromComposition } from '@/utils/numistaCatalogPrefill'
 
-const CATEGORIES = ['Roman', 'Greek', 'Byzantine', 'Modern', 'Other']
+const CATEGORIES = ['Modern', 'Other']
 const ERAS = ['ancient', 'medieval', 'modern']
 const MATERIALS = ['Gold', 'Silver', 'Bronze', 'Copper', 'Electrum', 'Other']
 const REGISTRY: CatalogRegistry[] = [
@@ -103,7 +103,7 @@ describe('buildCatalogPrefill', () => {
 
     expect(fields).toMatchObject({
       name: 'Semis - Augustus – Corinth',
-      category: 'Roman',
+      category: 'Other',
       era: 'ancient',
       dateRange: '2 a.C.–1 a.C.',
       year: null,
@@ -146,8 +146,10 @@ describe('catalog field suggestions', () => {
   })
 
   it('falls back to configured categories and eras', () => {
-    expect(categoryForType(modernType({ issuer: { code: 'byzantine_empire', name: 'Byzantine Empire' }, minYear: 900, maxYear: 950 }), CATEGORIES)).toBe('Byzantine')
-    expect(categoryForType(modernType({ issuer: { code: 'athens', name: 'Ancient Greece – Athens' }, minYear: -450, maxYear: -400 }), CATEGORIES)).toBe('Greek')
+    // Ancient and medieval coins are Other: the Roman, Greek and Byzantine categories were removed.
+    expect(categoryForType(modernType({ issuer: { code: 'byzantine_empire', name: 'Byzantine Empire' }, minYear: 900, maxYear: 950 }), CATEGORIES)).toBe('Other')
+    expect(categoryForType(modernType({ issuer: { code: 'athens', name: 'Ancient Greece – Athens' }, minYear: -450, maxYear: -400 }), CATEGORIES)).toBe('Other')
+    expect(categoryForType(modernType({ minYear: 1999, maxYear: 2002 }), CATEGORIES)).toBe('Modern')
     expect(categoryForType(modernType({ minYear: 1200, maxYear: 1250 }), CATEGORIES)).toBe('Other')
     expect(categoryForType(modernType(), ['Imperial', 'Other'])).toBe('Other')
     expect(categoryForType(modernType(), ['Imperial'])).toBe('Imperial')

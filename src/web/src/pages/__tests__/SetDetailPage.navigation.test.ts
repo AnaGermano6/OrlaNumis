@@ -9,17 +9,8 @@ const api = vi.hoisted(() => ({
   getSet: vi.fn(), getCoinsInSet: vi.fn(), getSetCompletion: vi.fn(), getCoins: vi.fn(),
   updateSet: vi.fn(), deleteSet: vi.fn(), addCoinToSet: vi.fn(), removeCoinFromSet: vi.fn(), reorderSetCoins: vi.fn(),
 }))
-const pin = vi.hoisted(() => vi.fn())
 vi.mock('@/api/client', () => api)
-vi.mock('@/composables/useQuickAccess', () => ({
-  useQuickAccess: () => ({
-    error: ref(''), refresh: vi.fn(), pin, unpin: vi.fn(), forget: vi.fn(),
-    isPinned: () => ref(false), isBusy: () => ref(false),
-  }),
-}))
-vi.mock('@/composables/usePinnedSets', () => ({ usePinnedSets: () => ({ pinLimitReached: ref(false), refresh: vi.fn() }) }))
 vi.mock('@/composables/usePwa', () => ({ usePwa: () => ({ isPwa: ref(false) }) }))
-vi.mock('@/composables/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }))
 
 beforeEach(() => {
   vi.resetAllMocks()
@@ -57,9 +48,6 @@ it('reuses the set page safely and targets the new set for edits, membership, or
     await router.push('/sets/2')
     await flushPromises()
     expect(wrapper.get('h1').text()).toBe('Set 2')
-    await wrapper.get('[aria-label="Pin set to Quick Access"]').trigger('click')
-    await flushPromises()
-    expect(pin).toHaveBeenCalledWith('coin_set', 2)
     api.getCoins.mockResolvedValue({ data: { coins: [buildRomanDenariusCore({ id: 150 })], total: 1 } })
     await wrapper.get('[aria-haspopup="menu"]').trigger('click')
     await wrapper.findAll('button').find(button => button.text().includes('Add Coin'))!.trigger('click')
@@ -125,16 +113,15 @@ it('shows loading failure and can retry without showing the previous set', async
   } finally { wrapper.unmount() }
 })
 
-it.each(['edit', 'add', 'remove', 'reorder', 'delete', 'pin'])('ignores late %s completion after navigation', async action => {
+it.each(['edit', 'add', 'remove', 'reorder', 'delete'])('ignores late %s completion after navigation', async action => {
   const pending = deferred<void>()
   const operation = { edit: api.updateSet, add: api.addCoinToSet, remove: api.removeCoinFromSet,
-    reorder: api.reorderSetCoins, delete: api.deleteSet, pin }[action]!
+    reorder: api.reorderSetCoins, delete: api.deleteSet }[action]!
   operation.mockImplementationOnce(() => pending.promise)
   const { router, wrapper } = await openPage()
   try {
     if (action === 'reorder') await wrapper.get('[aria-label="Move Coin 1b earlier"]').trigger('click')
     else if (action === 'remove') await wrapper.get('[aria-label="Remove Coin 1a from set"]').trigger('click')
-    else if (action === 'pin') await wrapper.get('[aria-label="Pin set to Quick Access"]').trigger('click')
     else {
       await wrapper.get('[aria-haspopup="menu"]').trigger('click')
       const label = { edit: 'Edit Set', add: 'Add Coin', delete: 'Delete Set' }[action]!
@@ -145,7 +132,7 @@ it.each(['edit', 'add', 'remove', 'reorder', 'delete', 'pin'])('ignores late %s 
       if (action === 'add') await wrapper.get('#coinToAdd').setValue('150')
       if (action !== 'delete') await wrapper.get('form').trigger('submit')
     }
-    expect(operation.mock.calls[0]?.[action === 'pin' ? 1 : 0]).toBe(1)
+    expect(operation.mock.calls[0]?.[0]).toBe(1)
     await router.push('/sets/2')
     await flushPromises()
     const loads = api.getSet.mock.calls.length

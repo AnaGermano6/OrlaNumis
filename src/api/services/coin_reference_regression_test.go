@@ -77,7 +77,7 @@ func TestUpdateCoin_CrossCoinReferenceIDNotReusedOnUpdate(t *testing.T) {
 	}
 
 	// Coin A owns a reference row.
-	coinA := &models.Coin{Name: "Coin A", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: 1}
+	coinA := &models.Coin{Name: "Coin A", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: 1}
 	if err := svc.CreateCoin(coinA); err != nil {
 		t.Fatalf("create coin A: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestUpdateCoin_CrossCoinReferenceIDNotReusedOnUpdate(t *testing.T) {
 	}
 
 	// Coin B is the update target.
-	coinB := &models.Coin{Name: "Coin B", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: 1}
+	coinB := &models.Coin{Name: "Coin B", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: 1}
 	if err := svc.CreateCoin(coinB); err != nil {
 		t.Fatalf("create coin B: %v", err)
 	}
@@ -99,7 +99,7 @@ func TestUpdateCoin_CrossCoinReferenceIDNotReusedOnUpdate(t *testing.T) {
 			{ID: refA.ID, Catalog: "RSC", Number: "400"},
 		},
 	}
-	if err := svc.UpdateCoinWithFields(coinB, updates, []string{}, 1, "manual", false); err != nil {
+	if err := svc.UpdateCoinWithFields(coinB, updates, []string{}, 1, "manual"); err != nil {
 		t.Fatalf("UpdateCoinWithFields with stale reference ID failed: %v", err)
 	}
 
@@ -152,7 +152,7 @@ func TestCreateCoin_CollectionCoinSecondReferenceWithSameIDDoesNotConflict(t *te
 	make := func(name, num string) *models.Coin {
 		return &models.Coin{
 			Name:     name,
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			Material: models.MaterialSilver,
 			UserID:   1,
 			References: []models.CoinReference{

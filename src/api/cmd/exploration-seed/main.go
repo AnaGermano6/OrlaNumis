@@ -66,8 +66,8 @@ func seedExplorationDatabase(path, allowedRoot, username, email, password string
 		}
 	}()
 	if err := db.AutoMigrate(
-		&models.User{}, &models.StorageLocation{}, &models.Coin{}, &models.CoinImage{},
-		&models.CoinReference{}, &models.Tag{}, &models.CoinTag{}, &models.CoinSet{},
+		&models.User{}, &models.Coin{}, &models.CoinImage{},
+		&models.CoinReference{}, &models.CoinSet{},
 		&models.CoinSetMembership{},
 	); err != nil {
 		return nil, fmt.Errorf("migrate ephemeral database: %w", err)

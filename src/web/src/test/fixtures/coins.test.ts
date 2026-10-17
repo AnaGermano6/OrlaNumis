@@ -16,11 +16,7 @@ describe('golden coin fixtures', () => {
       'greek',
       'byzantine',
       'wishlist',
-      'sold',
-      'private',
-      'tagged',
       'set-member',
-      'storage-location',
       'image-heavy',
       'legacy-custom-era',
     ]
@@ -32,18 +28,17 @@ describe('golden coin fixtures', () => {
   })
 
   it('builders return independent fixture clones with expected associations', () => {
-    const first = buildGoldenCoinFixture('tagged-follis-storage')
-    const second = buildGoldenCoinFixture('tagged-follis-storage')
+    const first = buildGoldenCoinFixture('byzantine-solidus-set-member')
+    const second = buildGoldenCoinFixture('byzantine-solidus-set-member')
 
-    if (!first.tags?.[0] || !second.tags?.[0]) {
-      throw new Error('tagged fixture must include tags')
+    if (!first.sets?.[0] || !second.sets?.[0]) {
+      throw new Error('set-member fixture must include sets')
     }
 
-    first.tags[0].name = 'Mutated'
-    first.storageLocation = { id: 999, name: 'Mutated' }
+    const originalName = second.sets[0].name
+    first.sets[0].name = 'Mutated'
 
-    expect(second.tags[0].name).toBe('Photographed')
-    expect(second.storageLocation?.name).toBe('Cabinet Tray A')
+    expect(second.sets[0].name).toBe(originalName)
 
     const fixtures = buildGoldenCoinFixtures()
     expect(fixtures).toHaveLength(GOLDEN_COIN_FIXTURE_NAMES.length)

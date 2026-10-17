@@ -87,26 +87,6 @@ func (h *SetBuilderHandler) CreateRun(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"run": run})
 }
 
-// ListProposals returns Agentic set proposals for the current user.
-//
-//	@Summary		List Agentic set proposals
-//	@Description	Returns human-reviewable Agentic set proposals for the current user.
-//	@Tags			sets
-//	@Produce		json
-//	@Security		BearerAuth
-//	@Success		200	{object}	object{proposals=[]models.SetProposal}
-//	@Failure		401	{object}	object{error=string}
-//	@Failure		500	{object}	object{error=string}
-//	@Router			/set-builder/proposals [get]
-func (h *SetBuilderHandler) ListProposals(c *gin.Context) {
-	proposals, err := h.service.ListProposals(c.GetUint("userId"), 100)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load set proposals"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"proposals": proposals})
-}
-
 // GetProposal returns one Agentic set proposal for review.
 //
 //	@Summary		Get Agentic set proposal

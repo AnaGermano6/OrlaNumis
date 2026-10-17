@@ -8,7 +8,6 @@ import { useCollectionFilters } from '../useCollectionFilters'
 const mocks = vi.hoisted(() => ({
   getCoins: vi.fn(),
   getSets: vi.fn(),
-  getTags: vi.fn(),
   getCoinOptions: vi.fn(),
   getCoinCountries: vi.fn(),
   fillCountriesFromNumista: vi.fn(),
@@ -34,7 +33,6 @@ describe('useCollectionFilters grouping', () => {
     Object.values(mocks).forEach((mock) => mock.mockReset())
     mocks.getCoins.mockResolvedValue({ data: { coins: [], total: 0 } })
     mocks.getSets.mockResolvedValue({ data: { sets: [] } })
-    mocks.getTags.mockResolvedValue({ data: { tags: [] } })
     mocks.getCoinOptions.mockResolvedValue({ data: { categories: [], eras: [], labels: {} } })
     mocks.getCoinCountries.mockResolvedValue({ data: [{ country: 'Portugal', count: 3 }] })
   })
@@ -44,7 +42,7 @@ describe('useCollectionFilters grouping', () => {
     const fetchAll = vi.spyOn(store, 'fetchAllCoins')
     const fetchPage = vi.spyOn(store, 'fetchCoins')
     const { filters, wrapper } = mountFilters()
-    await filters.fetchUserTags()
+    await filters.fetchUserSets()
     expect(filters.countryOptions.value).toEqual([{ country: 'Portugal', count: 3 }])
     // The gallery is the coins'; banknotes have their own.
     expect(mocks.getCoinCountries).toHaveBeenCalledWith('coin')
@@ -56,7 +54,7 @@ describe('useCollectionFilters grouping', () => {
     mocks.fillCountriesFromNumista.mockResolvedValue({ data: { status: 'ok', updated: 0, remaining: 0, failed: 0 } })
     filters.groupBy.value = 'year'
     await nextTick()
-    expect(fetchAll).toHaveBeenLastCalledWith(expect.objectContaining({ presentation: 'coincard', wishlist: 'false', sold: 'false' }))
+    expect(fetchAll).toHaveBeenLastCalledWith(expect.objectContaining({ presentation: 'coincard', wishlist: 'false' }))
     expect(fetchAll.mock.lastCall![0]).not.toHaveProperty('page')
     expect(localStorage.getItem('collection:groupBy')).toBe('year')
     expect(mocks.fillCountriesFromNumista).not.toHaveBeenCalled()

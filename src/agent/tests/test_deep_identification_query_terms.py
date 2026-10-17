@@ -1,8 +1,8 @@
 """Provider query-term builder tests (T034/T035/T041/T042/T043).
 
 Covers the shared, deterministic `query_terms.build_query_terms` used by
-every automatable provider node (`numista.py`, `nomisma.py`) and, in this
-test module, its integration into those two nodes: the precedence table
+every automatable provider node (`numista.py`) and, in this test module,
+its integration into that node: the precedence table
 (contracts/vision-hypothesis.md §2), the zero-placeholder guarantee
 (FR-011), and the fixed hypothesis-derived composition order that
 deliberately excludes reverse legend/type (RD-4/FR-010).
@@ -12,7 +12,7 @@ import asyncio
 
 from app.models.hypothesis import CoinHypothesis, HypothesisField
 from app.models.requests import DeepProviderCatalogEntry, QuickEvidence
-from app.teams.deep_identification.providers import nomisma, numista
+from app.teams.deep_identification.providers import numista
 from app.teams.deep_identification.query_terms import build_query_terms
 
 
@@ -31,14 +31,9 @@ class FakeTools:
 
     def __init__(self):
         self.numista_calls: list[str] = []
-        self.nomisma_calls: list[str] = []
 
     async def numista_search(self, query: str, limit: int = 5):
         self.numista_calls.append(query)
-        return {"status": "empty", "candidates": []}
-
-    async def nomisma_search(self, query: str, limit: int = 5):
-        self.nomisma_calls.append(query)
         return {"status": "empty", "candidates": []}
 
 
@@ -163,29 +158,17 @@ def test_numista_node_never_issues_a_placeholder_query():
     assert result.call_count == 0
 
 
-def test_nomisma_node_never_issues_a_placeholder_query():
-    tools = FakeTools()
-    result = asyncio.run(nomisma.run(_entry("nomisma"), tools, None, notes=""))
-
-    assert tools.nomisma_calls == []
-    assert result.status == "no_match"
-    assert result.error_kind == "insufficient_query_evidence"
-    assert result.call_count == 0
-
-
 def test_numista_query_never_equals_the_deleted_placeholder_string():
     """Even with SOME evidence, the emitted query is never the historical
     placeholder constant, and the placeholder is gone from the module.
     """
     assert not hasattr(numista, "_DEFAULT_QUERY")
-    assert not hasattr(nomisma, "_DEFAULT_QUERY")
 
     tools = FakeTools()
     quick_evidence = QuickEvidence(label_text="MAXIMINVS PIVS AVG")
     asyncio.run(numista.run(_entry("numista"), tools, quick_evidence, notes=""))
-    asyncio.run(nomisma.run(_entry("nomisma"), tools, quick_evidence, notes=""))
 
-    for query in tools.numista_calls + tools.nomisma_calls:
+    for query in tools.numista_calls:
         assert query != "unidentified ancient coin"
 
 
@@ -196,9 +179,6 @@ def test_no_terms_path_calls_zero_upstream_and_consumes_zero_budget():
     tools = FakeTools()
 
     numista_result = asyncio.run(numista.run(_entry("numista"), tools, QuickEvidence(), notes=""))
-    nomisma_result = asyncio.run(nomisma.run(_entry("nomisma"), tools, QuickEvidence(), notes=""))
 
     assert tools.numista_calls == []
-    assert tools.nomisma_calls == []
     assert numista_result.call_count == 0
-    assert nomisma_result.call_count == 0

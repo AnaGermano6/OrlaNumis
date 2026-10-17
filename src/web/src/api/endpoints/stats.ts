@@ -5,16 +5,8 @@ import type {
   TimeMachineBounds,
   TimeMachineSnapshot,
   CollectionHealthSummary,
-  EmperorTrackerResult,
-  FeaturedCoin,
   StatsResponse,
 } from '@/types'
-
-export const getEmperorTrackerProgress = () =>
-  api.get<EmperorTrackerResult>('/stats/emperors')
-
-export const updateEmperorTrackerHighlight = (figureId: number, coinId: number | null) =>
-  api.put<void>(`/stats/emperors/highlights/${figureId}`, { coinId })
 
 // Stats
 export const getStats = () => api.get<StatsResponse>('/stats')
@@ -24,11 +16,6 @@ export const getDistribution = () => api.get<{ cells: { era: string; category: s
 export const getCollectionHealthSummary = () => api.get<CollectionHealthSummary>('/stats/health')
 
 // Coin of the Day
-export const getLatestFeaturedCoin = () =>
-  api.get<FeaturedCoin>('/featured-coins/latest')
-
-export const getFeaturedCoin = (id: number) =>
-  api.get<FeaturedCoin>(`/featured-coins/${id}`)
 
 // Collection Time Machine
 export const getTimeMachineSnapshot = (date: string) =>

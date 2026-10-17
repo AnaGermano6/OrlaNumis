@@ -70,7 +70,6 @@ func TestDailyCoin(t *testing.T) {
 		{Name: "Without photo"},
 		{Name: "Photographed A"},
 		{Name: "Photographed B"},
-		{Name: "Sold with photo", IsSold: true},
 		{Name: "1000 escudos", Kind: models.CoinKindBanknote},
 	}
 	for i := range coins {
@@ -79,7 +78,7 @@ func TestDailyCoin(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	for _, i := range []int{1, 2, 3} {
+	for _, i := range []int{1, 2} {
 		if err := db.Create(&models.CoinImage{CoinID: coins[i].ID, FilePath: "uploads/x.jpg", ImageType: models.ImageTypeObverse, IsPrimary: true}).Error; err != nil {
 			t.Fatal(err)
 		}
@@ -102,8 +101,8 @@ func TestDailyCoin(t *testing.T) {
 		if code != http.StatusOK || first.Coin == nil || first.Date != date || again.Coin == nil || again.Coin.ID != first.Coin.ID {
 			t.Fatalf("%s: %d %+v, then %+v", date, code, first, again)
 		}
-		if len(first.Coin.Images) == 0 || first.Coin.IsSold {
-			t.Fatalf("%s: %q has no photo or is sold", date, first.Coin.Name)
+		if len(first.Coin.Images) == 0 {
+			t.Fatalf("%s: %q has no photo", date, first.Coin.Name)
 		}
 		seen[first.Coin.Name] = true
 	}

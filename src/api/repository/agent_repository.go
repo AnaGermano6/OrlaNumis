@@ -64,29 +64,29 @@ func NewAgentRepository(db *gorm.DB) *AgentRepository {
 
 // GetPortfolioSummary returns aggregated collection data for AI portfolio analysis.
 func (r *AgentRepository) GetPortfolioSummary(userID uint) (*PortfolioSummary, error) {
-	activeFilter := "user_id = ? AND is_wishlist = ? AND is_sold = ?"
+	activeFilter := "user_id = ? AND is_wishlist = ?"
 
 	var totalCoins int64
-	r.db.Model(&models.Coin{}).Where(activeFilter, userID, false, false).Count(&totalCoins)
+	r.db.Model(&models.Coin{}).Where(activeFilter, userID, false).Count(&totalCoins)
 
 	var totalValue float64
-	r.db.Model(&models.Coin{}).Where(activeFilter, userID, false, false).
+	r.db.Model(&models.Coin{}).Where(activeFilter, userID, false).
 		Select("COALESCE(SUM(current_value), 0)").Scan(&totalValue)
 
 	var totalInvested float64
-	r.db.Model(&models.Coin{}).Where(activeFilter, userID, false, false).
+	r.db.Model(&models.Coin{}).Where(activeFilter, userID, false).
 		Select("COALESCE(SUM(purchase_price), 0)").Scan(&totalInvested)
 
 	var categories []CatCount
 	r.db.Model(&models.Coin{}).
 		Select("category, COUNT(*) as count").
-		Where(activeFilter, userID, false, false).
+		Where(activeFilter, userID, false).
 		Group("category").Order("count DESC").Find(&categories)
 
 	var materials []MatCount
 	r.db.Model(&models.Coin{}).
 		Select("material, COUNT(*) as count").
-		Where(activeFilter, userID, false, false).
+		Where(activeFilter, userID, false).
 		Group("material").Order("count DESC").Find(&materials)
 
 	var eras []PortfolioEraCount

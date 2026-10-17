@@ -90,7 +90,7 @@ function yearText(coin: Coin): string {
 
 onMounted(async () => {
   try {
-    const { data } = await getCoins({ kind: props.kind, repeated: 'true', wishlist: 'false', sold: 'false', sort: 'quantity', order: 'desc', limit: 100 })
+    const { data } = await getCoins({ kind: props.kind, repeated: 'true', wishlist: 'false', sort: 'quantity', order: 'desc', limit: 100 })
     coins.value = data.coins
   } catch {
     failed.value = true

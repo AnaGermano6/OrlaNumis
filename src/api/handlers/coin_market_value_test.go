@@ -87,7 +87,7 @@ func TestCoinMarketValueHandler_RejectsOtherUsersCoinsAndBadInput(t *testing.T) 
 	router, db, client := setupMarketValueRouter(t)
 	createTestUser(t, db, 1, "owner")
 	createTestUser(t, db, 2, "other")
-	coin := models.Coin{Name: "Denarius", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: 1}
+	coin := models.Coin{Name: "Denarius", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: 1}
 	if err := db.Create(&coin).Error; err != nil {
 		t.Fatalf("seed coin: %v", err)
 	}

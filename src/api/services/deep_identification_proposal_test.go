@@ -33,8 +33,7 @@ func newDeepProposalTestDeps(t *testing.T) (*DeepIdentificationProposalService, 
 	}
 	repo := repository.NewDeepIdentificationRepository(db)
 	coinRepo := repository.NewCoinRepository(db)
-	notifSvc := NewNotificationService(repository.NewNotificationRepository(db), repository.NewSocialRepository(db), repository.NewUserRepository(db), NewLogger(10))
-	coinSvc := NewCoinService(coinRepo, notifSvc)
+	coinSvc := NewCoinService(coinRepo)
 	coinRefSvc := NewCoinReferenceService(repository.NewCoinReferenceRepository(db), repository.NewCatalogRegistryRepository(db))
 	quickCaptureSvc := NewQuickCaptureService(repository.NewQuickCaptureRepository(db), t.TempDir()).
 		WithCoinValidation(coinSvc).
@@ -90,7 +89,7 @@ func TestDeepIdentificationProposal_DraftPromotionPreservesAcceptedCoinFields(t 
 	userID := seedDeepProposalUser(t, db)
 	fields := map[string]any{
 		"workingTitle":       "Hadrian Denarius",
-		"category":           "Roman",
+		"category":           "Modern",
 		"denomination":       "Denarius",
 		"ruler":              "Hadrian",
 		"era":                "ancient",
@@ -131,7 +130,7 @@ func TestDeepIdentificationProposal_DraftPromotionPreservesAcceptedCoinFields(t 
 	if err := db.First(&coin, promoted.CoinID).Error; err != nil {
 		t.Fatal(err)
 	}
-	if coin.Name != "Hadrian Denarius" || coin.Category != models.Category("Roman") ||
+	if coin.Name != "Hadrian Denarius" || coin.Category != models.CategoryModern ||
 		coin.Denomination != "Denarius" || coin.Ruler != "Hadrian" ||
 		coin.Era != models.EraAncient || coin.DateRange != "117-138 CE" ||
 		coin.Mint != "Rome" || coin.Material != models.Material("Silver") ||

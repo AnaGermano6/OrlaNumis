@@ -69,8 +69,8 @@ describe('DeepAnalysisStartPanel', () => {
     await setFile(wrapper, 1, makeFile('reverse.jpg'))
     await wrapper.find('textarea').setValue('Mint mark visible under magnification.')
 
-    const nomismaCheckbox = wrapper.findAll('input[type="checkbox"]').find((c) => c.element.value === 'nomisma')
-    await nomismaCheckbox!.setValue(true)
+    const numistaCheckbox = wrapper.findAll('input[type="checkbox"]').find((c) => c.element.value === 'numista')
+    await numistaCheckbox!.setValue(true)
 
     const startButton = wrapper.findAll('button').find((b) => b.text().includes('Start Deep Analysis'))
     await startButton!.trigger('click')
@@ -85,7 +85,7 @@ describe('DeepAnalysisStartPanel', () => {
     expect(payload.obverseImage?.name).toBe('obverse.jpg')
     expect(payload.reverseImage?.name).toBe('reverse.jpg')
     expect(payload.notes).toBe('Mint mark visible under magnification.')
-    expect(payload.providers).toEqual(['nomisma'])
+    expect(payload.providers).toEqual(['numista'])
   })
 
   it('appends dictated notes and waits for explicit submission', async () => {
@@ -117,10 +117,10 @@ describe('DeepAnalysisStartPanel', () => {
 
   it('offers only backend-eligible providers for override', () => {
     const wrapper = mount(DeepAnalysisStartPanel, {
-      props: { eligibleProviders: ['numista', 'ocre'] },
+      props: { eligibleProviders: ['numista'] },
     })
     const values = wrapper.findAll('input[type="checkbox"]').map((input) => input.element.value)
-    expect(values).toEqual(['numista', 'ocre'])
+    expect(values).toEqual(['numista'])
     expect(wrapper.text()).not.toContain('RPC')
     expect(wrapper.text()).not.toContain('NGC')
   })

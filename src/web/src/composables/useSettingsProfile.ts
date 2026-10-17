@@ -42,37 +42,10 @@ export function useSettingsProfile() {
   const profileEmail = ref(auth.user?.email || '')
   const profileBio = ref(auth.user?.bio || '')
   const profileZipCode = ref(auth.user?.zipCode || '')
-  const profilePublic = ref(auth.user?.isPublic || false)
-  const coinOfDayEnabled = ref(auth.user?.coinOfDayEnabled ?? true)
-  const coinOfDayIncludeWishlist = ref(auth.user?.coinOfDayIncludeWishlist ?? true)
-  const emperorTrackerEnabled = ref(auth.user?.emperorTrackerEnabled ?? false)
-  const emperorTrackerShowUsurpers = ref(auth.user?.emperorTrackerShowUsurpers ?? false)
-  const emperorTrackerShowEmpresses = ref(auth.user?.emperorTrackerShowEmpresses ?? false)
-  const emperorTrackerShowOtherFigures = ref(auth.user?.emperorTrackerShowOtherFigures ?? false)
   const pwaSwipeNavEnabled = ref(auth.user?.pwaSwipeNavEnabled ?? false)
   const profileMsg = ref('')
   const profileError = ref(false)
   const profileSaving = ref(false)
-  const showPrivacyWarning = ref(false)
-
-  function onPublicToggle(e: Event) {
-    const checked = (e.target as HTMLInputElement).checked
-    if (!checked && profilePublic.value) {
-      ;(e.target as HTMLInputElement).checked = true
-      showPrivacyWarning.value = true
-    } else {
-      profilePublic.value = checked
-    }
-  }
-
-  function confirmGoPrivate() {
-    profilePublic.value = false
-    showPrivacyWarning.value = false
-  }
-
-  function cancelGoPrivate() {
-    showPrivacyWarning.value = false
-  }
 
   async function handleSaveProfile() {
     profileMsg.value = ''
@@ -83,26 +56,12 @@ export function useSettingsProfile() {
         email: profileEmail.value,
         bio: profileBio.value,
         zipCode: profileZipCode.value,
-        isPublic: profilePublic.value,
-        coinOfDayEnabled: coinOfDayEnabled.value,
-        coinOfDayIncludeWishlist: coinOfDayIncludeWishlist.value,
-        emperorTrackerEnabled: emperorTrackerEnabled.value,
-        emperorTrackerShowUsurpers: emperorTrackerShowUsurpers.value,
-        emperorTrackerShowEmpresses: emperorTrackerShowEmpresses.value,
-        emperorTrackerShowOtherFigures: emperorTrackerShowOtherFigures.value,
       }
       const res = await updateProfile(data as Parameters<typeof updateProfile>[0])
       if (auth.user) {
         auth.user.email = res.data.email
         auth.user.bio = res.data.bio
         auth.user.zipCode = res.data.zipCode
-        auth.user.isPublic = res.data.isPublic
-        auth.user.coinOfDayEnabled = res.data.coinOfDayEnabled
-        auth.user.coinOfDayIncludeWishlist = res.data.coinOfDayIncludeWishlist
-        auth.user.emperorTrackerEnabled = res.data.emperorTrackerEnabled
-        auth.user.emperorTrackerShowUsurpers = res.data.emperorTrackerShowUsurpers
-        auth.user.emperorTrackerShowEmpresses = res.data.emperorTrackerShowEmpresses
-        auth.user.emperorTrackerShowOtherFigures = res.data.emperorTrackerShowOtherFigures
         localStorage.setItem('user', JSON.stringify(auth.user))
       }
       profileMsg.value = t('settings.account.profileSaved')
@@ -174,21 +133,10 @@ export function useSettingsProfile() {
     profileEmail,
     profileBio,
     profileZipCode,
-    profilePublic,
     profileMsg,
     profileError,
     profileSaving,
-    showPrivacyWarning,
-    onPublicToggle,
-    confirmGoPrivate,
-    cancelGoPrivate,
     handleSaveProfile,
-    coinOfDayEnabled,
-    coinOfDayIncludeWishlist,
-    emperorTrackerEnabled,
-    emperorTrackerShowUsurpers,
-    emperorTrackerShowEmpresses,
-    emperorTrackerShowOtherFigures,
     // Password
     pwaSwipeNavEnabled,
     savePwaSwipeNav,

@@ -30,8 +30,6 @@ function makeCoin(overrides: Partial<Coin>): Coin {
     currentValue: null,
     purchaseDate: '2021-06-15',
     purchaseLocation: '',
-    storageLocationId: null,
-    storageLocation: null,
     notes: '',
     aiAnalysis: '',
     obverseAnalysis: '',
@@ -39,11 +37,6 @@ function makeCoin(overrides: Partial<Coin>): Coin {
     referenceUrl: '',
     referenceText: '',
     isWishlist: false,
-    isSold: false,
-    soldPrice: null,
-    soldDate: null,
-    soldTo: '',
-    isPrivate: false,
     listingStatus: '',
     listingCheckedAt: null,
     listingCheckReason: '',
@@ -82,12 +75,11 @@ describe('StatsCoinFlowChart', () => {
 
   // ── Fetch parameters ───────────────────────────────────────────────────────
 
-  it('fetches active (non-wishlist, non-sold) coins sorted by purchase_date asc on mount', async () => {
+  it('fetches active (non-wishlist) coins sorted by purchase_date asc on mount', async () => {
     shallowMount(StatsCoinFlowChart)
     await flushPromises()
     expect(mockGetCoins).toHaveBeenCalledWith({
       wishlist: 'false',
-      sold: 'false',
       page: 1,
       limit: 100,
       sort: 'purchase_date',

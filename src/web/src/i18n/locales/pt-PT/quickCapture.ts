@@ -6,7 +6,7 @@ const messages: Messages['quickCapture'] = {
   all: 'Todas',
   intro: 'Registe rapidamente alguns dados da moeda. Os rascunhos ficam ativos e incompletos até os terminar mais tarde.',
   draftSaved: 'Rascunho guardado.',
-  draftSavedDetail: 'O rascunho n.º {id} está ativo e excluído das contagens da coleção, lista de desejos, vendidas, estatísticas e saúde.',
+  draftSavedDetail: 'O rascunho n.º {id} está ativo e excluído das contagens da coleção, lista de desejos, estatísticas e saúde.',
   draftsTitle: 'Rascunhos de captura rápida',
   newCapture: 'Nova captura',
   new: 'Nova',

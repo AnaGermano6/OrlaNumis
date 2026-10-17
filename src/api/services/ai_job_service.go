@@ -40,7 +40,6 @@ type AIJobService struct {
 	agentProxy  AIJobAgent
 	userRepo    *repository.UserRepository
 	settingsSvc *SettingsService
-	notifSvc    *NotificationService
 	logger      *Logger
 	wake        chan struct{}
 	ctx         context.Context
@@ -65,7 +64,6 @@ func NewAIJobService(
 	agentProxy AIJobAgent,
 	userRepo *repository.UserRepository,
 	settingsSvc *SettingsService,
-	notifSvc *NotificationService,
 	logger *Logger,
 ) *AIJobService {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -74,7 +72,6 @@ func NewAIJobService(
 		agentProxy:  agentProxy,
 		userRepo:    userRepo,
 		settingsSvc: settingsSvc,
-		notifSvc:    notifSvc,
 		logger:      logger,
 		wake:        make(chan struct{}, 1),
 		ctx:         ctx,
@@ -238,7 +235,6 @@ func (s *AIJobService) processJob(jobID uint) {
 			s.logger.Error("ai-jobs", "Failed to persist job %d failure: %v", job.ID, err)
 			return
 		}
-		s.notifyFailure(job, processErr.Error())
 	}
 }
 
@@ -334,7 +330,6 @@ func (s *AIJobService) processAnalysisJob(job *models.AIJob) error {
 	if err := s.repo.CompleteAnalysis(job, column, analysis, string(resultJSON)); err != nil {
 		return err
 	}
-	s.notifyComplete(job, coin.Name)
 	return nil
 }
 
@@ -379,7 +374,6 @@ func (s *AIJobService) processCoinGradingJob(job *models.AIJob) error {
 	if err := s.repo.Complete(job.ID, string(resultJSON)); err != nil {
 		return err
 	}
-	s.notifyComplete(job, coin.Name)
 	return nil
 }
 
@@ -436,7 +430,6 @@ func (s *AIJobService) processValueEstimateJob(job *models.AIJob) error {
 	if err := s.repo.Complete(job.ID, string(resultJSON)); err != nil {
 		return err
 	}
-	s.notifyComplete(job, coin.Name)
 	return nil
 }
 
@@ -467,18 +460,6 @@ func (s *AIJobService) getValuationPrompt() string {
 		return prompt
 	}
 	return DefaultValuationPrompt
-}
-
-func (s *AIJobService) notifyComplete(job *models.AIJob, coinName string) {
-	if s.notifSvc != nil {
-		s.notifSvc.NotifyAIJobCompleted(job.UserID, job.ID, job.CoinID, coinName, string(job.JobType))
-	}
-}
-
-func (s *AIJobService) notifyFailure(job *models.AIJob, reason string) {
-	if s.notifSvc != nil {
-		s.notifSvc.NotifyAIJobFailed(job.UserID, job.ID, job.CoinID, string(job.JobType), reason)
-	}
 }
 
 func hasImageForSide(coin *models.Coin, side string) bool {

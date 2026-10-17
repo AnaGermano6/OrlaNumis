@@ -190,13 +190,13 @@ describe('MuseumTrayWell', () => {
       props: {
         coin: mockCoin,
         renderSizePx: 70,
-        imageSrcResolver: (filePath: string) => `/api/showcase/featured/uploads/${filePath}`,
+        imageSrcResolver: (filePath: string) => `/media/${filePath}`,
       },
     })
 
     const img = wrapper.find('img')
     expect(img.exists()).toBe(true)
-    expect(img.attributes('src')).toBe('/api/showcase/featured/uploads/relative-image.jpg')
+    expect(img.attributes('src')).toBe('/media/relative-image.jpg')
   })
 
   it('prefers obverse or reverse face images before primary or first fallback', () => {
@@ -211,12 +211,12 @@ describe('MuseumTrayWell', () => {
           ],
         },
         renderSizePx: 70,
-        imageSrcResolver: (filePath: string) => `/api/showcase/featured/uploads/${filePath}`,
+        imageSrcResolver: (filePath: string) => `/media/${filePath}`,
       },
     })
 
     const img = wrapper.find('img')
-    expect(img.attributes('src')).toBe('/api/showcase/featured/uploads/coins/obverse.webp')
+    expect(img.attributes('src')).toBe('/media/coins/obverse.webp')
   })
 
   it('can prefer reverse face when requested', () => {
@@ -231,12 +231,12 @@ describe('MuseumTrayWell', () => {
         },
         renderSizePx: 70,
         preferredFace: 'reverse',
-        imageSrcResolver: (filePath: string) => `/api/showcase/featured/uploads/${filePath}`,
+        imageSrcResolver: (filePath: string) => `/media/${filePath}`,
       },
     })
 
     const img = wrapper.find('img')
-    expect(img.attributes('src')).toBe('/api/showcase/featured/uploads/coins/reverse.webp')
+    expect(img.attributes('src')).toBe('/media/coins/reverse.webp')
   })
 
   it('can render as a non-interactive public well', async () => {

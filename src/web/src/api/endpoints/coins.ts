@@ -62,8 +62,6 @@ export const getCoins = (params?: {
   rarity?: string
   search?: string
   wishlist?: string
-  sold?: string
-  tag?: string
   set?: string
   page?: number
   limit?: number
@@ -72,7 +70,7 @@ export const getCoins = (params?: {
   seed?: number
 }) => api.get<CoinListResponse>('/coins', { params })
 
-const NULLABLE_FIELDS: (keyof Coin)[] = ['weightGrams', 'diameterMm', 'widthMm', 'heightMm', 'purchasePrice', 'currentValue', 'purchaseDate', 'storageLocationId', 'storageSlot', 'romanImperialFigureId', 'mintLocationId', 'year']
+const NULLABLE_FIELDS: (keyof Coin)[] = ['weightGrams', 'diameterMm', 'widthMm', 'heightMm', 'purchasePrice', 'currentValue', 'purchaseDate', 'mintLocationId', 'year']
 
 function sanitizeCoin(coin: CoinMutationPayload): CoinMutationPayload {
   const clean: Record<string, unknown> = { ...coin }
@@ -81,7 +79,6 @@ function sanitizeCoin(coin: CoinMutationPayload): CoinMutationPayload {
       clean[field] = null
     }
   }
-  delete clean.storageLocation
   delete clean.mintLocation
   // Default currentValue to purchasePrice if not set (preserve 0 as valid)
   if (clean.currentValue == null && clean.purchasePrice != null) {
@@ -298,14 +295,9 @@ export const updateCoin = (id: number, coin: CoinMutationPayload, params?: Recor
 export const purchaseCoin = (id: number, data?: { purchasePrice?: number; purchaseDate?: string; purchaseLocation?: string }) =>
   api.post<Coin>(`/coins/${id}/purchase`, data || {})
 
-export const sellCoin = (id: number, soldPrice: number | null, soldTo: string) =>
-  api.post<Coin>(`/coins/${id}/sell`, { soldPrice, soldTo })
-
 export const duplicateCoin = (id: number) => api.post<Coin>(`/coins/${id}/duplicate`)
 
 export const deleteCoin = (id: number) => api.delete(`/coins/${id}`)
-
-export const getCoinReferences = (coinId: number) => api.get<CoinReference[]>(`/coins/${coinId}/references`)
 
 export const createCoinReference = (coinId: number, reference: CoinReferenceInput) =>
   api.post<CoinReference>(`/coins/${coinId}/references`, reference)
@@ -318,10 +310,6 @@ export const deleteCoinReference = (coinId: number, referenceId: number) =>
 
 export const migrateLegacyReferences = () =>
   api.post<LegacyMigrationResult>('/references/migrate-legacy')
-
-export const addTagToCoin = (coinId: number, tagId: number) => api.post(`/coins/${coinId}/tags`, { tagId })
-
-export const removeTagFromCoin = (coinId: number, tagId: number) => api.delete(`/coins/${coinId}/tags/${tagId}`)
 
 export const getCoinRecommendations = (coinId: number) =>
   api.get<{ recommendations: CoinRecommendation[] }>(`/coins/${coinId}/recommendations`)
@@ -342,15 +330,13 @@ export const listCatalogs = async () => {
 export const bulkAction = (
   coinIds: number[],
   action: string,
-  opts?: { tagId?: number; setId?: number; storageLocationId?: number | null }
+  opts?: { setId?: number }
 ) => {
-  const payload: { coinIds: number[]; action: string; tagId?: number; setId?: number; storageLocationId?: number | null } = {
+  const payload: { coinIds: number[]; action: string; setId?: number } = {
     coinIds,
     action,
   }
-  if (opts?.tagId !== undefined) payload.tagId = opts.tagId
   if (opts?.setId !== undefined) payload.setId = opts.setId
-  if (opts?.storageLocationId !== undefined) payload.storageLocationId = opts.storageLocationId
   return api.post<{ message: string; affected: number; coins?: Coin[] }>('/coins/bulk', payload)
 }
 
@@ -476,10 +462,10 @@ export interface CoinDenominationCount {
   count: number
 }
 
-/** Face values of the collection (not wishlist or sold) with coin counts, the most common first. */
+/** Face values of the collection (not the wishlist) with coin counts, the most common first. */
 export const getCoinDenominations = (kind?: CoinKind) => api.get<CoinDenominationCount[]>('/coins/denominations', kind ? { params: { kind } } : undefined)
 
-/** Countries of the collection (not wishlist or sold) with coin counts. */
+/** Countries of the collection (not the wishlist) with coin counts. */
 /** The collection's countries, of its coins or its banknotes (every item when kind is omitted). */
 export const getCoinCountries = (kind?: CoinKind) => api.get<CoinCountryCount[]>('/coins/countries', kind ? { params: { kind } } : undefined)
 
@@ -506,7 +492,7 @@ export interface CollectionClassification {
 
 export interface CollectionSummary {
   /**
-   * Coins in the collection (not wishlist or sold), counting quantities: a
+   * Coins in the collection (not the wishlist), counting quantities: a
    * coin held three times counts three. The other counts and totalValue count
    * quantities too.
    */

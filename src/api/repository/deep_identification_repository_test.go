@@ -360,7 +360,7 @@ func TestDeepIdentificationRepository_SettleRunningProviderRuns(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := repo.RecordProviderResult(
-		41, user.ID, models.DeepProviderNomisma, models.DeepProviderRunContributed,
+		41, user.ID, models.DeepProviderRPC, models.DeepProviderRunContributed,
 		true, 0.8, 1, 50, "", started, started.Add(50*time.Millisecond),
 	); err != nil {
 		t.Fatal(err)
@@ -382,7 +382,7 @@ func TestDeepIdentificationRepository_SettleRunningProviderRuns(t *testing.T) {
 		t.Fatalf("unfinished provider was not settled: %+v", timedOut)
 	}
 	var contributed models.DeepIdentificationProviderRun
-	if err := db.Where("job_id = ? AND provider = ?", 41, models.DeepProviderNomisma).First(&contributed).Error; err != nil {
+	if err := db.Where("job_id = ? AND provider = ?", 41, models.DeepProviderRPC).First(&contributed).Error; err != nil {
 		t.Fatal(err)
 	}
 	if contributed.Status != models.DeepProviderRunContributed {
@@ -877,7 +877,6 @@ func TestDeepIdentificationRepository_ListJobsIncludesAppliedCoinExistsProjectio
 		Category:     "Roman",
 		Material:     "Silver",
 		IsWishlist:   true,
-		IsPrivate:    true,
 		Denomination: "Denarius",
 	}
 	if err := db.Create(&coin).Error; err != nil {

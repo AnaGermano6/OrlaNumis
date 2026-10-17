@@ -77,15 +77,12 @@ const (
 	SettingValuationCheckInterval             = "ValuationCheckIntervalDays"
 	SettingValuationCheckStartTime            = "ValuationCheckStartTime"
 	SettingValuationMaxCoins                  = "ValuationMaxCoins"
-	SettingCoinOfDayEnabled                   = "CoinOfDayEnabled"
-	SettingCoinOfDayStartTime                 = "CoinOfDayStartTime"
-	SettingCoinOfDayTimezone                  = "CoinOfDayTimezone"
 	SettingScheduleTimezone                   = "ScheduleTimezone"
-	SettingCollectionHealthSnapshotsEnabled   = "CollectionHealthSnapshotsEnabled"
-	SettingCollectionHealthSnapshotsStartTime = "CollectionHealthSnapshotsStartTime"
-	SettingExternalToolServerEnabled          = "ExternalToolServerEnabled"
 	SettingRegistrationMode                   = "RegistrationMode"
 	SettingBackupStatus                       = "BackupStatus"
+	SettingBackupEnabled                      = "BackupEnabled"   // the automatic full backup is on
+	SettingBackupStartTime                    = "BackupStartTime" // its daily start time, HH:MM
+	SettingBackupKeep                         = "BackupKeep"      // how many automatic backups are kept
 	SettingSetSnapshotEnabled                 = "SetSnapshotEnabled"
 	SettingSetSnapshotStartTime               = "SetSnapshotStartTime"
 	SettingCoinCategories                     = "CoinCategories"
@@ -110,8 +107,6 @@ const (
 	SettingDeepIdentificationResultRetentionDays       = "DeepIdentificationResultRetentionDays"
 	SettingDeepIdentificationMaxProviders              = "DeepIdentificationMaxProviders"
 	SettingDeepIdentificationNumistaCallBudget         = "DeepIdentificationNumistaCallBudget"
-	SettingDeepIdentificationOCREEnabled               = "DeepIdentificationOCREEnabled"
-	SettingDeepIdentificationOCRECallBudget            = "DeepIdentificationOCRECallBudget"
 	SettingDeepIdentificationRPCEnabled                = "DeepIdentificationRPCEnabled"
 
 	SettingCoinCopilotEnabled                     = "CoinCopilotEnabled"
@@ -126,10 +121,6 @@ const (
 	SettingCoinCopilotEventRetentionHours         = "CoinCopilotEventRetentionHours"
 	SettingCoinCopilotCheckpointRetentionDays     = "CoinCopilotCheckpointRetentionDays"
 	SettingCoinCopilotResumeWindowHours           = "CoinCopilotResumeWindowHours"
-
-	// 355-wishlist-purchase-reminders: daily scheduler settings (FR-015).
-	SettingReminderCheckEnabled   = "ReminderCheckEnabled"
-	SettingReminderCheckStartTime = "ReminderCheckStartTime"
 )
 
 const DefaultObversePrompt = `You are an expert numismatist specializing in ancient and modern coins. Analyze the obverse (front) of this coin and provide:
@@ -190,18 +181,15 @@ var settingDefaults = map[string]string{
 	SettingValuationCheckInterval:             "7",
 	SettingValuationCheckStartTime:            "03:00",
 	SettingValuationMaxCoins:                  "50",
-	SettingCoinOfDayEnabled:                   "false",
-	SettingCoinOfDayStartTime:                 "07:00",
-	SettingCoinOfDayTimezone:                  "", // empty = ScheduleTimezone, then server local time
 	SettingScheduleTimezone:                   "", // empty = server local time
-	SettingCollectionHealthSnapshotsEnabled:   "false",
-	SettingCollectionHealthSnapshotsStartTime: "04:30",
-	SettingExternalToolServerEnabled:          "false",
 	SettingRegistrationMode:                   "closed",
 	SettingBackupStatus:                       "not_configured",
+	SettingBackupEnabled:                      "true",
+	SettingBackupStartTime:                    "03:00",
+	SettingBackupKeep:                         "7",
 	SettingSetSnapshotEnabled:                 "false",
 	SettingSetSnapshotStartTime:               "04:00",
-	SettingCoinCategories:                     "Roman\nGreek\nByzantine\nModern\nOther",
+	SettingCoinCategories:                     "Modern\nOther",
 	SettingCoinEras:                           "ancient\nmedieval\nmodern",
 	SettingCoinCategoryLabelsPtPT:             "",
 	SettingCoinEraLabelsPtPT:                  "",
@@ -226,8 +214,6 @@ var settingDefaults = map[string]string{
 	SettingDeepIdentificationResultRetentionDays:       "90",
 	SettingDeepIdentificationMaxProviders:              "4",
 	SettingDeepIdentificationNumistaCallBudget:         "4",
-	SettingDeepIdentificationOCREEnabled:               "false",
-	SettingDeepIdentificationOCRECallBudget:            "3",
 	SettingDeepIdentificationRPCEnabled:                "false",
 	SettingCoinCopilotEnabled:                          "false",
 	SettingCoinCopilotAttributionEnabled:               "false",
@@ -241,10 +227,6 @@ var settingDefaults = map[string]string{
 	SettingCoinCopilotEventRetentionHours:              "168",
 	SettingCoinCopilotCheckpointRetentionDays:          "30",
 	SettingCoinCopilotResumeWindowHours:                "168",
-
-	// 355-wishlist-purchase-reminders defaults (FR-015).
-	SettingReminderCheckEnabled:   "true",
-	SettingReminderCheckStartTime: "08:00",
 }
 
 type CoinCopilotSettings struct {
@@ -362,8 +344,6 @@ type DeepIdentificationSettings struct {
 	ResultRetention    time.Duration
 	MaxProviders       int
 	NumistaCallBudget  int
-	OCREEnabled        bool
-	OCRECallBudget     int
 	RPCEnabled         bool
 	Valid              bool
 }
@@ -373,10 +353,7 @@ type DeepIdentificationSettings struct {
 // Both values are server-owned snapshot inputs; callers cannot override them.
 func (s *SettingsService) DeepProviderConfiguration() ([]string, string) {
 	settings := s.GetDeepIdentificationSettings()
-	providers := []string{"ngc", "nomisma", "numista"}
-	if settings.OCREEnabled {
-		providers = append(providers, "ocre")
-	}
+	providers := []string{"ngc", "numista"}
 
 	if settings.RPCEnabled {
 		providers = append(providers, "rpc")
@@ -386,12 +363,10 @@ func (s *SettingsService) DeepProviderConfiguration() ([]string, string) {
 		Providers         []string `json:"providers"`
 		MaxProviders      int      `json:"max_providers"`
 		NumistaCallBudget int      `json:"numista_call_budget"`
-		OCRECallBudget    int      `json:"ocre_call_budget"`
 		Valid             bool     `json:"valid"`
 	}{
 		Providers: providers, MaxProviders: settings.MaxProviders,
-		NumistaCallBudget: settings.NumistaCallBudget,
-		OCRECallBudget:    settings.OCRECallBudget, Valid: settings.Valid,
+		NumistaCallBudget: settings.NumistaCallBudget, Valid: settings.Valid,
 	}
 	canonical, _ := json.Marshal(generation)
 	sum := sha256.Sum256(canonical)
@@ -405,8 +380,6 @@ func (s *SettingsService) DeepProviderSettingSnapshot() map[string]string {
 		SettingDeepIdentificationEnabled,
 		SettingDeepIdentificationMaxProviders,
 		SettingDeepIdentificationNumistaCallBudget,
-		SettingDeepIdentificationOCREEnabled,
-		SettingDeepIdentificationOCRECallBudget,
 		SettingDeepIdentificationRPCEnabled,
 		SettingNumistaAPIKey,
 	}
@@ -456,8 +429,6 @@ func (s *SettingsService) GetDeepIdentificationSettings() DeepIdentificationSett
 		ResultRetention:    time.Duration(resultRetentionDays) * 24 * time.Hour,
 		MaxProviders:       readInt(SettingDeepIdentificationMaxProviders, 4, 1, 10),
 		NumistaCallBudget:  readInt(SettingDeepIdentificationNumistaCallBudget, 4, 1, 20),
-		OCREEnabled:        readBool(SettingDeepIdentificationOCREEnabled, false),
-		OCRECallBudget:     readInt(SettingDeepIdentificationOCRECallBudget, 3, 1, 20),
 		RPCEnabled:         readBool(SettingDeepIdentificationRPCEnabled, false),
 		Valid:              valid,
 	}
@@ -512,7 +483,7 @@ func (s *SettingsService) SetSetting(key, value string) error {
 
 // IsTimezoneSetting reports whether key holds an IANA time zone name.
 func IsTimezoneSetting(key string) bool {
-	return key == SettingCoinOfDayTimezone || key == SettingScheduleTimezone
+	return key == SettingScheduleTimezone
 }
 
 // ValidateTimezoneSetting accepts an empty value (server local time) or an

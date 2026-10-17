@@ -73,7 +73,7 @@ test('mobile Coin Copilot opens the exact existing Deep Analysis review page wit
         fields: [],
         disagreements: [{ field: 'date', summary: 'Two references disagree.' }],
         unresolved_questions: [],
-        coverage: [{ provider: 'nomisma', status: 'contributed' }],
+        coverage: [{ provider: 'numista', status: 'contributed' }],
         attributions: [],
         limitations: ['Reverse legend is partly unreadable.'],
       },
@@ -138,7 +138,7 @@ test('mobile Coin Copilot opens the exact existing Deep Analysis review page wit
 
   const card = page.getByTestId('copilot-deep-analysis-result')
   await expect(card).toContainText('Two references disagree.')
-  await expect(card).toContainText('Nomisma: Contributed')
+  await expect(card).toContainText('Numista: Contributed')
   await expect(card).toContainText('10 items omitted')
   await expect(card).not.toContainText('Apply')
 

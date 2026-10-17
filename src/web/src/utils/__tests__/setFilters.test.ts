@@ -4,7 +4,6 @@ import { criteriaToFilters, emptyFilters, filtersName, filtersToCriteria } from 
 
 const COLLECTION_RULES = [
   { field: 'isWishlist', op: 'eq', value: false },
-  { field: 'isSold', op: 'eq', value: false },
 ]
 
 describe('set filters', () => {

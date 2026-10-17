@@ -27,14 +27,14 @@
           </thead>
           <tbody>
             <tr><td><code>name</code></td><td>texto</td><td>Obrigatória</td></tr>
-            <tr><td><code>category</code></td><td>texto</td><td>Uma das categorias configuradas pelo administrador (predefinidas: Roman, Greek, Byzantine, Modern, Other)</td></tr>
+            <tr><td><code>category</code></td><td>texto</td><td>Uma das categorias configuradas pelo administrador (predefinidas: Modern, Other)</td></tr>
             <tr><td><code>material</code></td><td>texto</td><td>Gold, Silver, Bronze, Copper, Electrum, Other</td></tr>
             <tr><td><code>denomination</code>, <code>ruler</code>, <code>mint</code>, <code>grade</code></td><td>texto</td><td>Campos de texto livre</td></tr>
             <tr><td><code>era</code></td><td>texto</td><td>Uma das épocas configuradas pelo administrador (predefinidas: <code>ancient</code>, <code>medieval</code>, <code>modern</code>). Indique as datas reais da moeda em <code>ruler</code> ou <code>notes</code> — uma época fora da lista configurada não corresponde aos filtros de época.</td></tr>
-            <tr><td><code>weightGrams</code>, <code>diameterMm</code>, <code>purchasePrice</code>, <code>currentValue</code>, <code>soldPrice</code></td><td>número</td><td>Use valores decimais. Se ficar em branco, <code>currentValue</code> assume o valor de <code>purchasePrice</code>.</td></tr>
-            <tr><td><code>purchaseDate</code>, <code>soldDate</code></td><td>data</td><td>Use <code>AAAA-MM-DD</code></td></tr>
-            <tr><td><code>isWishlist</code>, <code>isSold</code>, <code>isPrivate</code></td><td>booleano</td><td>Use true/false</td></tr>
-            <tr><td><code>purchaseLocation</code>, <code>soldTo</code>, <code>vendorSku</code>, <code>vendorInvoice</code></td><td>texto</td><td>Registo da aquisição e da venda</td></tr>
+            <tr><td><code>weightGrams</code>, <code>diameterMm</code>, <code>purchasePrice</code>, <code>currentValue</code></td><td>número</td><td>Use valores decimais. Se ficar em branco, <code>currentValue</code> assume o valor de <code>purchasePrice</code>.</td></tr>
+            <tr><td><code>purchaseDate</code></td><td>data</td><td>Use <code>AAAA-MM-DD</code></td></tr>
+            <tr><td><code>isWishlist</code></td><td>booleano</td><td>Use true/false</td></tr>
+            <tr><td><code>purchaseLocation</code>, <code>vendorSku</code>, <code>vendorInvoice</code></td><td>texto</td><td>Registo da aquisição</td></tr>
             <tr><td><code>obverseInscription</code>, <code>reverseInscription</code>, <code>obverseDescription</code>, <code>reverseDescription</code>, <code>rarityRating</code></td><td>texto</td><td>Dados de atribuição, se já os tiver</td></tr>
             <tr><td><code>notes</code>, <code>referenceUrl</code>, <code>referenceText</code></td><td>texto</td><td>Metadados opcionais (campos antigos de referência)</td></tr>
           </tbody>
@@ -58,15 +58,15 @@
             <tr><td><code>vendorSku</code>, <code>vendorInvoice</code></td><td><code>sku</code>/<code>vendorCode</code>, <code>invoice</code>/<code>invoiceNumber</code></td></tr>
             <tr><td><code>rarityRating</code></td><td><code>reference</code>, <code>catalogReference</code></td></tr>
             <tr><td><code>referenceUrl</code></td><td><code>url</code></td></tr>
-            <tr><td><code>isWishlist</code>, <code>isSold</code>, <code>isPrivate</code></td><td><code>wishlist</code>, <code>sold</code>, <code>private</code></td></tr>
+            <tr><td><code>isWishlist</code></td><td><code>wishlist</code></td></tr>
           </tbody>
         </table>
         <p>As linhas sem <code>name</code> são ignoradas e a importação indica quantas foram ignoradas.</p>
 
         <h4>Exemplo de CSV</h4>
         <pre>name,category,material,denomination,ruler,era,mint,weightGrams,diameterMm,grade,purchasePrice,currentValue,purchaseDate,purchaseLocation,isWishlist
-Augustus Denarius,Roman,Silver,Denarius,Augustus (27 BC - 14 AD),ancient,Rome,3.82,19.5,VF,450,600,2024-03-15,Heritage Auctions,false
-Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,Antioch,2.90,18.1,F,35,45,2025-01-20,Local Show,false</pre>
+2 Euro 2007 EU Presidency,Modern,Other,2 Euro,Portugal,modern,Lisbon,8.5,25.75,UNC,3,4,2024-03-15,Coin shop,false
+1 Escudo 1986,Modern,Other,1 Escudo,Portugal,modern,Lisbon,1.7,16,VF,0.5,1,2025-01-20,Local show,false</pre>
 
         <h4>Onde estão as coisas nas Definições</h4>
         <table>
@@ -74,11 +74,10 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
             <tr><th>Separador</th><th>O que contém</th></tr>
           </thead>
           <tbody>
-            <tr><td><strong>Conta</strong></td><td>Perfil, palavra-passe, Moeda do dia, fornecedores de início de sessão associados, início de sessão biométrico</td></tr>
+            <tr><td><strong>Conta</strong></td><td>Perfil e palavra-passe</td></tr>
             <tr><td><strong>Aparência</strong></td><td>Tema, idioma e preferências de apresentação</td></tr>
-            <tr><td><strong>Dados</strong></td><td>Etiquetas e conjuntos abertos, locais de armazenamento, localizações personalizadas de casas da moeda, migração de referências de catálogo</td></tr>
-            <tr><td><strong>Chaves</strong></td><td>Chaves de API para clientes de IA externos</td></tr>
-            <tr><td><strong>Ferramentas</strong></td><td>Definições do processador de imagens e utilizadores bloqueados</td></tr>
+            <tr><td><strong>Dados</strong></td><td>Localizações personalizadas de casas da moeda, migração de referências de catálogo</td></tr>
+            <tr><td><strong>Ferramentas</strong></td><td>Definições do processador de imagens</td></tr>
             <tr><td><strong>Conversas</strong></td><td>Conversas guardadas com o agente</td></tr>
             <tr><td><strong>Cópias de segurança</strong></td><td>Importação da coleção, exportação ZIP, exportação do catálogo em PDF, modelo CSV</td></tr>
             <tr><td><strong>Ajuda</strong></td><td>Este guia</td></tr>
@@ -102,15 +101,10 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
 
         <h4>Partilha e descoberta</h4>
         <ul>
-          <li><strong>Vitrinas públicas</strong> — Crie seleções públicas com ligações partilháveis em <strong>Vitrinas</strong> na barra lateral. Só são expostos campos seguros para o público; as notas privadas, os preços e a análise por IA ficam ocultos.</li>
-          <li><strong>Seguidores</strong> — Siga outros colecionadores em <strong>Seguidores</strong>, veja as galerias que partilham e comente ou classifique moedas. A sua própria visibilidade é controlada por moeda e pela definição de privacidade do perfil em Definições → Conta.</li>
           <li><strong>Alertas de pesquisa da lista de desejos</strong> — Guarde critérios de pesquisa, execute alertas de forma agendada ou manual, reveja os candidatos, rejeite as más correspondências e converta os candidatos aceites em itens da lista de desejos.</li>
-          <li><strong>Saúde da coleção</strong> — Use as vistas de saúde nas Estatísticas para acompanhar a evolução da pontuação, imagens em falta, lacunas de metadados, lacunas de análise por IA e melhorias sugeridas.</li>
+          <li><strong>Saúde da coleção</strong> — Use as vistas de saúde nas Estatísticas para acompanhar a pontuação, imagens em falta, lacunas de metadados, lacunas de análise por IA e melhorias sugeridas.</li>
           <li><strong>Tabuleiro de museu</strong> — Use a vista Tabuleiro para dispor as moedas visualmente, com espaçamento proporcional ao tamanho, como num gabinete. As moedas que possui mostram a data de compra em <code>AAAA-MM-DD</code>; os itens da lista de desejos aparecem mais transparentes e mostram <code>TBD</code>.</li>
           <li><strong>Mapa das casas da moeda</strong> — Use Estatísticas → Mapa para ver as localizações das casas da moeda e a distribuição geográfica das moedas com casa da moeda associada.</li>
-          <li><strong>Moeda do dia</strong> — Ative as notificações diárias da moeda em destaque em Definições → Conta para redescobrir moedas da sua coleção.</li>
-          <li><strong>Fornecedores de início de sessão associados</strong> — Depois de iniciar sessão localmente, abra Definições → Conta → Fornecedores de início de sessão associados para associar o Microsoft Entra ID, o Pocket ID ou outro fornecedor OIDC configurado.</li>
-          <li><strong>Início de sessão biométrico</strong> — Registe uma chave de acesso em Definições → Conta → Início de sessão biométrico para entrar com Face ID, Touch ID, Windows Hello ou uma chave de segurança.</li>
         </ul>
 
         <h4 data-testid="help-coin-copilot">Coin Copilot (beta)</h4>
@@ -131,9 +125,9 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
         <h4>Conjuntos e propostas do agente</h4>
         <ul>
           <li><strong>Tipos de conjunto</strong> — Crie conjuntos normais para organização manual, conjuntos de objetivo em que os itens da lista de desejos representam o que falta, conjuntos inteligentes a partir de regras e conjuntos do agente a partir de uma proposta revista.</li>
-          <li><strong>Fluxo de propostas do agente</strong> — Criar um conjunto do agente envia um pedido em vez de criar logo o conjunto. Quando a proposta estiver pronta, uma notificação abre a página de revisão.</li>
+          <li><strong>Fluxo de propostas do agente</strong> — Criar um conjunto do agente envia um pedido em vez de criar logo o conjunto.</li>
           <li><strong>Revisão humana</strong> — Reveja o âmbito, as posições e as notas do agente; edite, gere novamente com comentários, rejeite ou aprove. Só a aprovação cria o conjunto.</li>
-          <li><strong>Correspondência automática</strong> — Os conjuntos do agente aprovados fazem corresponder automaticamente as moedas da coleção à lista proposta, tal como o registo de imperadores romanos.</li>
+          <li><strong>Correspondência automática</strong> — Os conjuntos do agente aprovados fazem corresponder automaticamente as moedas da coleção à lista proposta.</li>
         </ul>
 
         <h4>Vistas de estatísticas</h4>
@@ -142,7 +136,6 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Cronologia e Mapa</strong> — Histórico cronológico da coleção e geografia das casas da moeda das moedas mapeadas.</li>
           <li><strong>Saúde</strong> — Indicadores de imagens em falta, lacunas de metadados, lacunas de análise por IA, avaliações desatualizadas e sugestões de arrumação.</li>
           <li><strong>Máquina do tempo</strong> — Recue no tempo para ver a coleção tal como estava em qualquer data.</li>
-          <li><strong>Registo de imperadores</strong> — Progresso opcional por imperador/figura romana, com ações de pesquisa do agente para alvos em falta ou sugeridos. Está em <strong>Conjuntos → Imperadores</strong>, não nas Estatísticas, e aparece depois de ativado para a sua conta.</li>
         </ul>
 
         <h4>Assistentes de IA</h4>
@@ -156,18 +149,10 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>Lotes semelhantes</strong> — Encontre lotes de leilão que correspondam a uma moeda ou a um item da lista de desejos.</li>
         </ul>
 
-        <h4>Organizar e vender</h4>
+        <h4>Organizar</h4>
         <ul>
-          <li><strong>Etiquetas personalizadas</strong> — Crie etiquetas com cores em <strong>Definições → Dados</strong>, em Etiquetas e conjuntos abertos, e filtre a coleção por elas.</li>
-          <li><strong>Operações em lote</strong> — Entre no modo de seleção na barra da coleção para etiquetar, adicionar a conjuntos ou alterar várias moedas de uma vez, sem abrir cada uma.</li>
-          <li><strong>Locais de armazenamento</strong> — Registe onde cada moeda está fisicamente; geridos em <strong>Definições → Dados</strong>.</li>
-          <li><strong>Diário e cronologia</strong> — Cada moeda tem um diário datado e uma cronologia do que lhe aconteceu, incluindo alterações feitas por ferramentas externas.</li>
-          <li><strong>Moedas vendidas</strong> — Venda uma moeda na página de detalhe para registar o preço e o comprador; <strong>Vendidas</strong> acompanha depois o lucro ou prejuízo face ao que pagou.</li>
-        </ul>
-
-        <h4>Lembretes</h4>
-        <ul>
-          <li><strong>Lembretes de compra</strong> — Agende um lembrete para uma moeda que pretende comprar e receba uma notificação quando chegar a data.</li>
+          <li><strong>Operações em lote</strong> — Entre no modo de seleção na barra da coleção para juntar várias moedas a um conjunto, ou eliminá-las, de uma vez, sem abrir cada uma.</li>
+          <li><strong>Diário e cronologia</strong> — Cada moeda tem um diário datado e uma cronologia do que lhe aconteceu.</li>
         </ul>
 
         <h4>Cópias de segurança e exportação</h4>
@@ -185,9 +170,8 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
           <li><strong>PWA/offline</strong> — Instale o Aurearia como PWA para ter navegação ao estilo de aplicação móvel, leitura offline, navegação na coleção em cache e um botão do agente arrastável.</li>
         </ul>
 
-        <h4>Notificações e alertas</h4>
+        <h4>Alertas</h4>
         <ul>
-          <li><strong>Notificações na aplicação</strong> — O contador de notificações acompanha a atividade não lida de seguidores, lista de desejos, conjuntos e Moeda do dia.</li>
           <li><strong>Revisão de alertas</strong> — Os alertas de pesquisa da lista de desejos criam execuções com candidatos para rever.</li>
         </ul>
       </div>
@@ -451,112 +435,6 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
     </details>
 
     <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim">
-      <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Ligar ferramentas de IA (servidor de ferramentas externo)</summary>
-      <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>O servidor de ferramentas externo dá acesso à sua coleção a clientes de IA externos (OpenWebUI, LibreChat, n8n e clientes compatíveis com MCP) através de uma API segura. Os clientes externos podem pesquisar a coleção, obter estatísticas e, opcionalmente, propor alterações através de uma confirmação em duas fases.</p>
-        <p>Para o guia técnico completo, consulte <code>docs/external-tool-server.md</code> no repositório.</p>
-
-        <h4>Para administradores</h4>
-        <p><strong>Ativar o servidor:</strong> o servidor de ferramentas externo está desativado por predefinição. Para o ativar:</p>
-        <ol>
-          <li>Aceda a <strong>Administração → IA</strong></li>
-          <li>Ative <strong>Ativar servidor de ferramentas externo</strong></li>
-          <li>Guarde as definições de IA</li>
-        </ol>
-        <p>Quando está desativado, todos os pedidos de ferramentas externas falham com <code>503 Service Unavailable</code>. Esta predefinição protege a sua instância até decidir expor a API.</p>
-        <p><strong>O que dizer aos utilizadores:</strong> depois de ativado, os utilizadores podem criar chaves de API com âmbito em <strong>Definições → Chaves</strong>. Cada chave pode ser só de leitura (segura para explorar) ou de leitura e escrita (para automação de confiança). As escritas externas ficam registadas no diário de atividade de cada moeda.</p>
-
-        <h4>Para utilizadores</h4>
-        <p><strong>Criar uma chave de API:</strong> para ligar um cliente de IA externo à sua coleção:</p>
-        <ol>
-          <li>Aceda a <strong>Definições → Chaves</strong></li>
-          <li>Introduza um nome descritivo (ex.: "OpenWebUI só leitura")</li>
-          <li>
-            Escolha uma permissão:
-            <ul>
-              <li><strong>Leitura</strong> (predefinição) — Permite consultas: pesquisa, obter moeda, resumos, moedas mais valiosas</li>
-              <li><strong>Leitura/Escrita</strong> — Permite consultas e também propostas e confirmações de alterações</li>
-            </ul>
-          </li>
-          <li>Clique em <strong>Gerar chave</strong></li>
-          <li>Copie a chave apresentada (começa por <code>ak_</code>; só é mostrada uma vez)</li>
-        </ol>
-        <p><strong>Ligar a um cliente:</strong> no seu cliente de IA externo (OpenWebUI, LibreChat, n8n):</p>
-        <ol>
-          <li>
-            Importe o URL OpenAPI:
-            <pre>http://your-ancient-coins-host:8080/api/v1/tools/openapi.json</pre>
-          </li>
-          <li>
-            Adicione um cabeçalho personalizado:
-            <ul>
-              <li><strong>Nome do cabeçalho:</strong> <code>X-API-Key</code></li>
-              <li><strong>Valor do cabeçalho:</strong> <code>ak_your_key_here</code></li>
-            </ul>
-          </li>
-          <li>As seis ferramentas da coleção aparecem na sua lista de ferramentas</li>
-        </ol>
-        <p><strong>Segurança nas escritas:</strong> se criou uma chave de leitura e escrita, as escritas externas exigem dois passos: primeiro propor a alteração (devolve uma pré-visualização) e depois confirmar com <code>confirm=true</code>. Isto evita escritas automáticas acidentais numa conversa casual. Todas as confirmações ficam registadas.</p>
-
-        <h4>Para programadores</h4>
-        <p><strong>Caminho base:</strong> <code>/api/v1/tools/*</code></p>
-        <p><strong>Autenticação:</strong> envie a chave de API no cabeçalho <code>X-API-Key</code>.</p>
-        <p><strong>Ferramentas disponíveis:</strong></p>
-        <table>
-          <thead>
-            <tr><th>Ferramenta</th><th>Permissão</th><th>Finalidade</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>search_my_collection</code></td><td>leitura</td><td>Pesquisar moedas por texto</td></tr>
-            <tr><td><code>get_coin</code></td><td>leitura</td><td>Obter uma moeda pelo ID</td></tr>
-            <tr><td><code>collection_summary</code></td><td>leitura</td><td>Estatísticas agregadas (total de moedas, valor)</td></tr>
-            <tr><td><code>top_coins_by_value</code></td><td>leitura</td><td>Moedas mais valiosas, ordenadas pelo valor atual</td></tr>
-            <tr><td><code>propose_update</code></td><td>escrita</td><td>Fase 1: propor alterações a campos permitidos</td></tr>
-            <tr><td><code>commit_update</code></td><td>escrita</td><td>Fase 2: confirmar com <code>confirm=true</code></td></tr>
-          </tbody>
-        </table>
-        <p><strong>Especificação OpenAPI:</strong> <code>GET /api/v1/tools/openapi.json</code> devolve o esquema completo (sem autenticação; só respeita o interruptor do administrador).</p>
-        <p><strong>MCP nativo:</strong> os clientes MCP que suportam Streamable HTTP e um cabeçalho personalizado <code>X-API-Key</code> podem ligar-se diretamente a:</p>
-        <pre>http://localhost:8080/api/mcp</pre>
-        <p><strong>Segurança:</strong> todas as operações estão limitadas ao utilizador (isolamento por conta). Limite de 50 pedidos/minuto por chave. As escritas externas estão restritas aos mesmos campos permitidos na aplicação (grau, valor atual, notas, etiquetas, referências). Os campos de identidade são rejeitados.</p>
-      </div>
-    </details>
-
-    <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim" :open="route.query.section === 'oidc'">
-      <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Configurar o início de sessão OIDC</summary>
-      <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>O início de sessão OIDC permite aos administradores adicionar o Microsoft Entra ID, o Pocket ID ou outro fornecedor OpenID Connect, mantendo a recuperação por palavra-passe local.</p>
-        <p>Para o guia técnico completo, consulte <code>docs/oidc-setup.md</code> no repositório.</p>
-
-        <h4>Antes de começar</h4>
-        <ul>
-          <li>Mantenha pelo menos uma conta de administrador com credenciais locais utilizáveis, para recuperação.</li>
-          <li>Registe no fornecedor os dois URIs de retorno do frontend: início de sessão e associação de contas.</li>
-          <li>Use os âmbitos <code>openid profile email</code>, a menos que o fornecedor exija outros.</li>
-          <li>Guarde o segredo de cliente apenas nas definições de Administração. Depois de guardado, só pode ser escrito.</li>
-        </ul>
-
-        <h4>Microsoft Entra ID</h4>
-        <ol>
-          <li>Crie um registo de aplicação no centro de administração do Entra.</li>
-          <li>Adicione URIs de redirecionamento Web para <code>/auth/oidc/callback/{providerId}</code> e <code>/settings/oidc/link/callback/{providerId}</code>.</li>
-          <li>Introduza o ID do inquilino nas definições de Administração; o Aurearia deriva o URL do emissor da Microsoft.</li>
-          <li>Copie o ID de cliente da aplicação e o <strong>Valor</strong> do segredo de cliente, não o ID do segredo.</li>
-        </ol>
-
-        <h4>Pocket ID</h4>
-        <ol>
-          <li>Crie um cliente OIDC no Pocket ID.</li>
-          <li>Defina o URL do emissor como o URL base do seu Pocket ID.</li>
-          <li>Registe os dois caminhos de retorno do frontend como URIs de redirecionamento permitidos.</li>
-          <li>Guarde o ID e o segredo de cliente nas definições de Administração e execute o teste do fornecedor.</li>
-        </ol>
-
-        <p><strong>Associação de contas:</strong> os utilizadores existentes devem iniciar sessão localmente, abrir Definições → Conta e associar o fornecedor. Endereços de email iguais não são fundidos automaticamente.</p>
-      </div>
-    </details>
-
-    <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim">
       <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Recursos úteis</summary>
       <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
         <h4>Bases de dados e referências online</h4>
@@ -587,9 +465,3 @@ Constantius II Follis,Roman,Bronze,Follis,Constantius II (337-361 AD),ancient,An
     </details>
   </section>
 </template>
-
-<script setup lang="ts">
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-</script>

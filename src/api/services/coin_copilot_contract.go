@@ -13,8 +13,6 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-	"time"
-	"unicode/utf8"
 
 	"github.com/briandenicola/ancient-coins-api/models"
 )
@@ -105,11 +103,6 @@ type CopilotUsage struct {
 	OutputTokens int64 `json:"output_tokens"`
 }
 
-type CopilotSpecialistQuery struct {
-	Query string `json:"query"`
-	Limit int    `json:"limit,omitempty"`
-}
-
 type CopilotCheckpointState struct {
 	SchemaVersion        int                    `json:"schema_version"`
 	Messages             []CopilotMessage       `json:"messages"`
@@ -146,7 +139,6 @@ type CopilotExecuteProxyRequest struct {
 	Messages         []CopilotMessage       `json:"messages"`
 	Checkpoint       CopilotCheckpointProxy `json:"checkpoint"`
 	AppContext       map[string]any         `json:"app_context"`
-	CollectorContext *CollectorContext      `json:"collector_context,omitempty"`
 	LLM              LLMConfig              `json:"llm"`
 	Limits           CopilotLimitsProxy     `json:"limits"`
 	ToolsBaseURL     string                 `json:"tools_base_url"`
@@ -266,19 +258,6 @@ func SanitizeCopilotText(value string, max int) string {
 func CopilotCheckpointDigest(stateJSON string) string {
 	sum := sha256.Sum256([]byte(stateJSON))
 	return hex.EncodeToString(sum[:])
-}
-
-func ValidateCopilotSpecialistQuery(query CopilotSpecialistQuery) error {
-	if utf8.RuneCountInString(query.Query) < 1 || utf8.RuneCountInString(query.Query) > 500 ||
-		query.Limit < 0 || query.Limit > 10 {
-		return ErrInvalidCopilotFrame
-	}
-	return nil
-}
-
-func validSpecialistTimestamp(value string) bool {
-	parsed, err := time.Parse(time.RFC3339, value)
-	return err == nil && strings.HasSuffix(value, "Z") && parsed.Location() == time.UTC
 }
 
 func validSpecialistURL(value string) bool {
@@ -595,25 +574,6 @@ func printableASCII(value string) bool {
 	return true
 }
 
-func DecodeDeepAnalysisHandoffResult(raw []byte, maximum int) (DeepAnalysisHandoffResult, error) {
-	var result DeepAnalysisHandoffResult
-	if err := validateDeepAnalysisHandoffEnvelope(raw, maximum); err != nil {
-		return result, err
-	}
-	decoder := json.NewDecoder(bytes.NewReader(raw))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&result); err != nil {
-		return result, ErrInvalidCopilotFrame
-	}
-	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		return result, ErrInvalidCopilotFrame
-	}
-	if err := ValidateDeepAnalysisHandoffResult(result); err != nil {
-		return result, err
-	}
-	return result, nil
-}
-
 func ValidateDeepAnalysisHandoffResult(result DeepAnalysisHandoffResult) error {
 	if !oneOf(result.Outcome,
 		"accepted", "reused_active", "reused_result", "status", "retry_available",
@@ -683,7 +643,7 @@ func ValidateDeepAnalysisHandoffResult(result DeepAnalysisHandoffResult) error {
 		}
 		coverageProviders := map[string]bool{}
 		for _, coverage := range result.Result.Coverage {
-			if !oneOf(coverage.Provider, "numista", "nomisma", "ngc", "ocre", "rpc") ||
+			if !oneOf(coverage.Provider, "numista", "ngc", "rpc") ||
 				!oneOf(coverage.Status, "pending", "running", "contributed", "no_match", "failed",
 					"timed_out", "skipped", "not_automated", "unavailable") ||
 				coverageProviders[coverage.Provider] {
@@ -693,7 +653,7 @@ func ValidateDeepAnalysisHandoffResult(result DeepAnalysisHandoffResult) error {
 		}
 		attributionProviders := map[string]bool{}
 		for _, attribution := range result.Result.Attributions {
-			if !oneOf(attribution.Provider, "numista", "nomisma", "ngc", "ocre", "rpc") ||
+			if !oneOf(attribution.Provider, "numista", "ngc", "rpc") ||
 				attribution.Label == "" || attributionProviders[attribution.Provider] {
 				return ErrInvalidCopilotFrame
 			}

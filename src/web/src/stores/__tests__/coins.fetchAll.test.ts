@@ -22,9 +22,9 @@ describe('coins store fetchAllCoins', () => {
       .mockResolvedValueOnce(page(Array.from({ length: 50 }, (_, i) => i + 101), 150))
     const store = useCoinsStore()
 
-    await store.fetchAllCoins({ country: 'Portugal', wishlist: 'false', sold: 'false' })
+    await store.fetchAllCoins({ country: 'Portugal', wishlist: 'false' })
 
-    expect(mocks.getCoins).toHaveBeenNthCalledWith(1, { country: 'Portugal', wishlist: 'false', sold: 'false', page: 1, limit: 100 })
+    expect(mocks.getCoins).toHaveBeenNthCalledWith(1, { country: 'Portugal', wishlist: 'false', page: 1, limit: 100 })
     expect(mocks.getCoins).toHaveBeenNthCalledWith(2, expect.objectContaining({ page: 2, limit: 100 }))
     expect(store.coins).toHaveLength(150)
     expect(store.total).toBe(150)

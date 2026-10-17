@@ -314,11 +314,10 @@ Category: Roman`,
 				"ruler":        "Constantine I",
 				"denomination": "Reduced Nummus",
 				"material":     "Billon",
-				"category":     "Roman",
 				"era":          "ancient",
 				"mint":         "London",
 			},
-			wantFieldsLen: 7,
+			wantFieldsLen: 6,
 		},
 	}
 
@@ -764,9 +763,6 @@ func TestCoinLookupPhotoEvidenceBoundsNoiseNoImageAndCancellation(t *testing.T) 
 	}
 	if evidence.Issuer != "" || evidence.VisibleText != "" {
 		t.Fatalf("noisy non-specific evidence should be omitted: %#v", evidence)
-	}
-	if len([]rune(buildPhotoNumistaQuery(evidence))) > models.NumistaMaxQueryLength {
-		t.Fatal("proposed query exceeded contract bound")
 	}
 
 	svc := newCoinLookupServiceForResponse(t, `{}`, nil)

@@ -3,20 +3,8 @@
 import { api } from '@/api/http'
 import type {
   GeocodeCandidate,
-  ImperialFigureRole,
   MintLocation,
-  RomanImperialFigure,
-  Tag,
 } from '@/types'
-
-// Tags
-export const getTags = () => api.get<{ tags: Tag[] }>('/tags')
-
-export const createTag = (data: { name: string; color?: string }) => api.post<Tag>('/tags', data)
-
-export const updateTag = (id: number, data: { name?: string; color?: string }) => api.put<Tag>(`/tags/${id}`, data)
-
-export const deleteTag = (id: number) => api.delete(`/tags/${id}`)
 
 export type MintLocationInput = {
   displayName: string
@@ -41,10 +29,3 @@ export const deleteMintLocation = (id: number) => api.delete(`/mint-locations/${
 
 export const geocodeMintName = (query: string) =>
   api.get<{ candidates: GeocodeCandidate[] }>('/mint-locations/geocode', { params: { query } })
-
-// Roman Imperial Figures (F028)
-export const searchRomanImperialFigures = (params: { q?: string; role?: ImperialFigureRole; limit?: number }) =>
-  api.get<{ figures: RomanImperialFigure[] }>('/roman-imperial-figures', { params })
-
-export const getRomanImperialFigure = (id: number) =>
-  api.get<RomanImperialFigure>(`/roman-imperial-figures/${id}`)

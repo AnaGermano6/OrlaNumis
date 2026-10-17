@@ -93,7 +93,7 @@ const gagoCoutinhoImage = "https://www.ecb.europa.eu/euro/coins/comm/html/comm_2
 func newChecklistTest(t *testing.T) *checklistTest {
 	t.Helper()
 	db := setupTestDB(t)
-	if err := db.AutoMigrate(&models.CoinSetTarget{}, &models.CoinSetChecklistKey{}, &models.SmartCriteriaTemplate{}, &models.Notification{}); err != nil {
+	if err := db.AutoMigrate(&models.CoinSetTarget{}); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Create(&models.User{ID: 1, Username: "collector", Email: "collector@example.test", PasswordHash: "x"}).Error; err != nil {
@@ -207,7 +207,6 @@ func TestChecklistSlots_OneCoinOfEachEuroCountry(t *testing.T) {
 	germany := test.coin(t, models.Coin{Country: "Alemanha", Denomination: "10 cêntimos", Year: checklistYear(2005)})
 	// Not euros, not had, a banknote.
 	test.coin(t, models.Coin{Country: "France", Denomination: "1 franc", Year: checklistYear(1995)})
-	test.coin(t, models.Coin{Country: "Italy", Denomination: "2 euro", Year: checklistYear(2010), IsSold: true})
 	test.coin(t, models.Coin{Country: "Spain", Denomination: "5 euro", Year: checklistYear(2015), Kind: models.CoinKindBanknote})
 
 	slots, err := test.checklist.Slots(context.Background(), 1, ChecklistDefinition{Source: ChecklistSourceChallenge, Challenge: ChallengeEuroCountries})
@@ -305,109 +304,11 @@ func TestChecklistSlots_AnnualSeries(t *testing.T) {
 	}
 }
 
-func TestSetChecklistWatcher_TellsOfNewCoinsOnly(t *testing.T) {
-	test := newChecklistTest(t)
-	sets := repository.NewSetRepository(test.db)
-	catalogue := ChecklistDefinition{Source: ChecklistSourceCatalogue, Country: "PT"}.JSON()
-	challenge := ChecklistDefinition{Source: ChecklistSourceChallenge, Challenge: ChallengeEuroCountries}.JSON()
-	set := &models.CoinSet{UserID: 1, Name: "Portugal", SetType: models.CoinSetTypeChecklist, Checklist: &catalogue}
-	other := &models.CoinSet{UserID: 1, Name: "Euro", SetType: models.CoinSetTypeChecklist, Checklist: &challenge}
-	// A deleted user's set.
-	orphan := &models.CoinSet{UserID: 99, Name: "Portugal", SetType: models.CoinSetTypeChecklist, Checklist: &catalogue}
-	for _, s := range []*models.CoinSet{set, other, orphan} {
-		if err := test.db.Create(s).Error; err != nil {
-			t.Fatal(err)
-		}
-	}
-	notifications := repository.NewNotificationRepository(test.db)
-	watcher := NewSetChecklistWatcher(sets, test.checklist, notifications, NewLogger(50))
-	watcher.now = func() time.Time { return test.clock }
-	ctx := context.Background()
-	told := func() []models.Notification {
-		list := []models.Notification{}
-		if err := test.db.Order("id").Find(&list).Error; err != nil {
-			t.Fatal(err)
-		}
-		return list
-	}
-
-	// The first look learns the set's coins without a word.
-	if err := watcher.Check(ctx); err != nil {
-		t.Fatal(err)
-	}
-	if known, _ := sets.ChecklistKeys(set.ID); len(known) != 3 || len(told()) != 0 {
-		t.Fatalf("known %v, told %+v", known, told())
-	}
-	if known, _ := sets.ChecklistKeys(other.ID); len(known) != 0 {
-		t.Fatalf("a challenge has catalogue coins: %v", known)
-	}
-	if known, _ := sets.ChecklistKeys(orphan.ID); len(known) != 0 {
-		t.Fatalf("a deleted user's set was looked at: %v", known)
-	}
-
-	// The mint puts this year's coin and an old one on sale.
-	test.mint.coins = append(test.mint.coins,
-		mintCoin{Title: "Rotary", Value: 2, Year: 2026, Released: "2026-07", PageURL: "https://loja.incm.pt/products/rotary", Obverse: "https://cdn/rotary.png"},
-		mintCoin{Title: "Fado", Value: 7.5, Year: 2019, PageURL: "https://loja.incm.pt/products/fado", Obverse: "https://cdn/fado.png"},
-	)
-	test.clock = test.clock.Add(7 * time.Hour)
-	if err := watcher.Check(ctx); err != nil {
-		t.Fatal(err)
-	}
-	list := told()
-	if len(list) != 1 {
-		t.Fatalf("notifications = %+v", list)
-	}
-	n := list[0]
-	if n.UserID != 1 || n.Type != NotificationTypeSetNewCoins || n.Title != "Portugal" || n.Message != "Rotary (2026)" || n.ReferenceID != set.ID || n.ReferenceURL != fmt.Sprintf("/sets/%d", set.ID) {
-		t.Fatalf("notification = %+v", n)
-	}
-	if known, _ := sets.ChecklistKeys(set.ID); len(known) != 5 {
-		t.Fatalf("known = %v", known)
-	}
-
-	// Nothing new: nothing said.
-	test.clock = test.clock.Add(7 * time.Hour)
-	if err := watcher.Check(ctx); err != nil || len(told()) != 1 {
-		t.Fatalf("again: %v, %+v", err, told())
-	}
-}
-
-func TestSetChecklistWatcher_NamesFiveCoins(t *testing.T) {
-	test := newChecklistTest(t)
-	sets := repository.NewSetRepository(test.db)
-	catalogue := ChecklistDefinition{Source: ChecklistSourceCatalogue, Country: "PT", FaceValue: 5}.JSON()
-	set := &models.CoinSet{UserID: 1, Name: "5 €", SetType: models.CoinSetTypeChecklist, Checklist: &catalogue}
-	if err := test.db.Create(set).Error; err != nil {
-		t.Fatal(err)
-	}
-	watcher := NewSetChecklistWatcher(sets, test.checklist, repository.NewNotificationRepository(test.db), NewLogger(50))
-	watcher.now = func() time.Time { return test.clock }
-	if err := watcher.Check(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	for i, title := range []string{"Faróis", "Fado", "Azulejo", "Cortiça", "Galo de Barcelos", "Caravela", "Sardinha"} {
-		test.mint.coins = append(test.mint.coins, mintCoin{Title: title, Value: 5, Year: 2026, PageURL: fmt.Sprintf("https://loja.incm.pt/products/coin-%d", i), Obverse: "https://cdn/coin.png"})
-	}
-	test.clock = test.clock.Add(7 * time.Hour)
-	if err := watcher.Check(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	var n models.Notification
-	if err := test.db.First(&n).Error; err != nil {
-		t.Fatal(err)
-	}
-	lines := strings.Split(n.Message, "\n")
-	if len(lines) != 6 || lines[5] != "+2" || !strings.HasSuffix(lines[0], "(2026)") {
-		t.Fatalf("message = %q", n.Message)
-	}
-}
-
 func TestSetService_ChecklistSets(t *testing.T) {
 	test := newChecklistTest(t)
 	test.gagoCoutinho(t)
 	setRepo := repository.NewSetRepository(test.db)
-	svc := NewSetService(setRepo, repository.NewTagRepository(test.db)).WithChecklist(test.checklist)
+	svc := NewSetService(setRepo).WithChecklist(test.checklist)
 	ctx := context.Background()
 
 	set, err := svc.CreateSet(1, map[string]interface{}{"name": "Portugal", "setType": "checklist", "checklist": map[string]interface{}{"source": "catalogue", "country": "pt"}})
@@ -416,10 +317,6 @@ func TestSetService_ChecklistSets(t *testing.T) {
 	}
 	if set.SetType != models.CoinSetTypeChecklist || (*set.Checklist)["country"] != "PT" {
 		t.Fatalf("set = %+v", set)
-	}
-	// The catalogue's coins of today are known from the start.
-	if known, _ := setRepo.ChecklistKeys(set.ID); len(known) != 3 {
-		t.Fatalf("known = %v", known)
 	}
 	for _, input := range []map[string]interface{}{
 		{"name": "No list", "setType": "checklist"},
@@ -499,14 +396,11 @@ func TestSetService_ChecklistSets(t *testing.T) {
 	if err := svc.DeleteSet(set.ID, 1); err != nil {
 		t.Fatal(err)
 	}
-	if known, _ := setRepo.ChecklistKeys(set.ID); len(known) != 0 {
-		t.Fatalf("known after delete = %v", known)
-	}
 }
 
 func TestSetService_SmartCriteriaCanBeEdited(t *testing.T) {
 	test := newChecklistTest(t)
-	svc := NewSetService(repository.NewSetRepository(test.db), repository.NewTagRepository(test.db))
+	svc := NewSetService(repository.NewSetRepository(test.db))
 	criteria := map[string]interface{}{"operator": "and", "rules": []interface{}{map[string]interface{}{"field": "country", "op": "eq", "value": "Portugal"}}}
 	set, err := svc.CreateSet(1, map[string]interface{}{"name": "Portugal", "setType": "smart", "smartCriteria": criteria})
 	if err != nil {

@@ -70,9 +70,9 @@ describe('t()', () => {
   })
 
   it('fills placeholders', () => {
-    expect(t('auth.login.signInWith', { provider: 'Pocket ID' })).toBe('Sign in with Pocket ID')
+    expect(t('coinDetail.sets.remove', { name: 'Euro' })).toBe('Remove from Euro')
     setLocale('pt-PT')
-    expect(t('auth.login.signInWith', { provider: 'Pocket ID' })).toBe('Iniciar sessão com Pocket ID')
+    expect(t('coinDetail.sets.remove', { name: 'Euro' })).toBe('Retirar de Euro')
   })
 
   it('picks plural forms per locale', () => {

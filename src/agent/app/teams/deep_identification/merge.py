@@ -24,14 +24,12 @@ from app.models.responses import ProviderClaim, ProviderEvidence
 # Canonical per-provider citation host allowlist (§4).
 CITATION_HOST_ALLOWLIST: dict[str, set[str]] = {
     "numista": {"en.numista.com", "api.numista.com"},
-    "nomisma": {"nomisma.org"},
     "ngc": {"www.ngccoin.com"},
-    "ocre": {"numismatics.org"},
     "rpc": {"rpc.ashmus.ox.ac.uk"},
 }
 
 # Deterministic provider rank used for claim ordering and router truncation.
-PROVIDER_RANK = ["numista", "nomisma", "ngc", "ocre", "rpc"]
+PROVIDER_RANK = ["numista", "ngc", "rpc"]
 
 # T054/FR-016: `image` (the vision hypothesis, contracts/vision-hypothesis.md)
 # is not a provider and never appears in `PROVIDER_RANK` or `ProviderEvidence`

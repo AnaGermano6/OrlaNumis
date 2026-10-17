@@ -445,8 +445,7 @@ func boundedDeepEvidenceURL(value string) string {
 func deepProviderName(value string) (models.DeepProviderName, bool) {
 	provider := models.DeepProviderName(value)
 	switch provider {
-	case models.DeepProviderNomisma, models.DeepProviderNumista, models.DeepProviderNGC,
-		models.DeepProviderOCRE, models.DeepProviderRPC:
+	case models.DeepProviderNumista, models.DeepProviderNGC, models.DeepProviderRPC:
 		return provider, true
 	default:
 		return "", false
@@ -645,30 +644,19 @@ func deepPipelineApplyRemainingBudget(ctx context.Context, bounds DeepIdentifyBo
 	return bounds, nil
 }
 
-// deepPipelineProviderCatalog builds the fixed MVP provider catalog
-// (contract §2 example): Nomisma/Numista automated via existing Go
-// services/internal tools; NGC is OCR/link-out only; RPC is always typed
-// not_automated/unavailable this phase (deferred T156 gate, flag not read
-// here). OCRE is conditionally automated (Feature 345): when the
-// DeepIdentificationOCREEnabled setting is on it becomes a normal automatable
-// catalog entry with its own call budget; when off it stays a typed
-// not_automated entry — byte-for-byte the previous beta behavior — so the
-// flag is the sole enable/rollback control (FR-004/FR-016).
+// deepPipelineProviderCatalog builds the fixed provider catalog (contract
+// §2 example): Numista automated via the existing Go internal tools; NGC is
+// OCR/link-out only; RPC is always typed not_automated/unavailable (deferred
+// T156 gate, flag not read here).
 func deepPipelineProviderCatalog(settings DeepIdentificationSettings) []DeepProviderCatalogEntryProxy {
-	ocreEntry := DeepProviderCatalogEntryProxy{Provider: "ocre", Automatable: false, Reason: "provider_disabled"}
-	if settings.OCREEnabled {
-		ocreEntry = DeepProviderCatalogEntryProxy{Provider: "ocre", Automatable: true, CallBudget: settings.OCRECallBudget}
-	}
 	return []DeepProviderCatalogEntryProxy{
 		{Provider: "numista", Automatable: true, CallBudget: settings.NumistaCallBudget},
-		{Provider: "nomisma", Automatable: true, CallBudget: settings.MaxProviders},
 		{
 			Provider:    "ngc",
 			Automatable: false,
 			Reason:      "terms_prohibit_automated_access",
 			LinkOut:     "https://www.ngccoin.com/verify/",
 		},
-		ocreEntry,
 		{Provider: "rpc", Automatable: false, Reason: "no_public_api"},
 	}
 }
@@ -750,9 +738,7 @@ func deepProviderResultPublicPayloadJSON(provider, status string, confidence flo
 // arbitrary citation URL into stored owner-facing data (SC-006, Principle V).
 var deepCitationHostAllowlist = map[string]map[string]bool{
 	"numista": {"en.numista.com": true, "api.numista.com": true},
-	"nomisma": {"nomisma.org": true},
 	"ngc":     {"www.ngccoin.com": true},
-	"ocre":    {"numismatics.org": true},
 	"rpc":     {"rpc.ashmus.ox.ac.uk": true},
 }
 
@@ -1034,7 +1020,7 @@ type deepCatalogReferenceCoinTypeClaim struct {
 }
 
 // rankedDeepCoinTypeClaims collects every "coin_type" claim across every
-// provider (351 FR-013: OCRE emits multiple coin_type claims to preserve
+// provider (a provider may emit several coin_type claims to preserve
 // ambiguity) and returns them ranked highest-confidence first. Iteration
 // order is made deterministic despite Go's randomized map order by walking
 // provider keys alphabetically before appending their claims in emitted
@@ -1071,10 +1057,9 @@ func rankedDeepCoinTypeClaims(providerClaims map[string][]deepProposalClaim) []d
 //     shared parser and normalizeCatalogAlias is never taught to recognise
 //     "NGC" (F-6).
 //  2. RIC/coin_type — only the single top-ranked "coin_type" claim across
-//     every provider is parsed (plan.md Phase 4 Risk 2: OCRE emits multiple
-//     coin_type claims to preserve ambiguity per 351 FR-013; parsing every
-//     one of them would flood the array, so only the top-ranked one is
-//     attempted). It reports whether that parse succeeded so the caller can
+//     every provider is parsed (a provider may emit several coin_type
+//     claims to preserve ambiguity; parsing every one of them would flood
+//     the array, so only the top-ranked one is attempted). It reports whether that parse succeeded so the caller can
 //     supersede the scalar coin_type entry's default acceptance (FR-011.2).
 //  3. RPC — an opportunistic, leading/word-boundaried match reusing the
 //     exact same shared parser (never a bespoke regex, plan.md Phase 4

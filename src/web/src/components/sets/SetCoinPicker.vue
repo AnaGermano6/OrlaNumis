@@ -58,7 +58,7 @@ const options = computed(() => {
 let request = 0
 
 function eligible(coin: Coin) {
-  return !coin.isSold && (props.allowWishlist || !coin.isWishlist) && !props.excludedIds.includes(coin.id)
+  return (props.allowWishlist || !coin.isWishlist) && !props.excludedIds.includes(coin.id)
 }
 
 function selectCoin(event: Event) {
@@ -76,7 +76,7 @@ async function load() {
   try {
     const response = await getCoins({
       wishlist: props.allowWishlist ? undefined : 'false',
-      sold: 'false', page: page.value, limit: perPage, sort: 'name', order: 'asc', search: search.value.trim(),
+      page: page.value, limit: perPage, sort: 'name', order: 'asc', search: search.value.trim(),
     })
     if (current !== request) return
     results.value = response.data.coins

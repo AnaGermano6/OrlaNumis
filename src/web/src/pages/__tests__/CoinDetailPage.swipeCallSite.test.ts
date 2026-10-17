@@ -79,9 +79,8 @@ describe('CoinDetailPage -- useCoinDetailSwipeNav containerRef binding', () => {
         stubs: {
           RouterLink: { props: ['to'], template: '<a><slot /></a>' },
           PurchaseModal: true,
-          PurchaseReminderModal: true,
           ImageLightbox: true,
-          CoinTagsSection: true,
+          CoinSetsSection: true,
           CoinDetailMetadataTable: true,
           CoinListingStatus: true,
           CoinReferencesSection: true,

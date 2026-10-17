@@ -275,7 +275,6 @@ describe('useCoinSearchChat wishlist payload', () => {
     const payload = mockCreateCoin.mock.calls[0]?.[0] as Record<string, unknown>
     for (const forbidden of [
       'purchasePrice', 'purchaseDate', 'purchaseLocation', 'vendorSku', 'vendorInvoice',
-      'storageLocationId', 'storageSlot', 'isSold', 'soldPrice', 'soldDate', 'soldTo',
       'aiAnalysis', 'obverseAnalysis', 'reverseAnalysis',
     ]) {
       expect(payload).not.toHaveProperty(forbidden)

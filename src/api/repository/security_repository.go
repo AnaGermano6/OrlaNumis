@@ -54,10 +54,7 @@ func (r *SecurityRepository) CountEvents(eventType models.SecurityEventType, sin
 
 func (r *SecurityRepository) CountFailuresForUser(userID uint, since time.Time) (int64, error) {
 	var success models.SecurityEvent
-	if err := r.db.Where("type IN ? AND user_id = ?", []models.SecurityEventType{
-		models.SecurityEventPasswordLoginSuccess,
-		models.SecurityEventWebAuthnLoginSuccess,
-	}, userID).
+	if err := r.db.Where("type = ? AND user_id = ?", models.SecurityEventPasswordLoginSuccess, userID).
 		Order("created_at DESC").
 		First(&success).Error; err == nil && success.CreatedAt.After(since) {
 		since = success.CreatedAt
@@ -66,10 +63,7 @@ func (r *SecurityRepository) CountFailuresForUser(userID uint, since time.Time) 
 	}
 	var count int64
 	err := r.db.Model(&models.SecurityEvent{}).
-		Where("type IN ? AND user_id = ? AND created_at > ?", []models.SecurityEventType{
-			models.SecurityEventPasswordLoginFailure,
-			models.SecurityEventWebAuthnLoginFailure,
-		}, userID, since).
+		Where("type = ? AND user_id = ? AND created_at > ?", models.SecurityEventPasswordLoginFailure, userID, since).
 		Count(&count).Error
 	return count, err
 }
@@ -77,10 +71,7 @@ func (r *SecurityRepository) CountFailuresForUser(userID uint, since time.Time) 
 func (r *SecurityRepository) CountFailuresForIP(clientIP string, since time.Time) (int64, error) {
 	var count int64
 	err := r.db.Model(&models.SecurityEvent{}).
-		Where("type IN ? AND client_ip = ? AND created_at >= ?", []models.SecurityEventType{
-			models.SecurityEventPasswordLoginFailure,
-			models.SecurityEventWebAuthnLoginFailure,
-		}, clientIP, since).
+		Where("type = ? AND client_ip = ? AND created_at >= ?", models.SecurityEventPasswordLoginFailure, clientIP, since).
 		Count(&count).Error
 	return count, err
 }
@@ -103,24 +94,4 @@ func (r *SecurityRepository) CountAdmins() (int64, error) {
 	var count int64
 	err := r.db.Model(&models.User{}).Where("role = ?", models.RoleAdmin).Count(&count).Error
 	return count, err
-}
-
-func (r *SecurityRepository) CreateIPRule(rule *models.IPRule) error {
-	return r.db.Create(rule).Error
-}
-
-func (r *SecurityRepository) ListIPRules(includeExpired bool) ([]models.IPRule, error) {
-	q := r.db.Model(&models.IPRule{})
-	if !includeExpired {
-		now := time.Now()
-		q = q.Where("expires_at IS NULL OR expires_at > ?", now)
-	}
-	var rules []models.IPRule
-	err := q.Order("created_at DESC").Find(&rules).Error
-	return rules, err
-}
-
-func (r *SecurityRepository) DeleteIPRule(id uint) (int64, error) {
-	result := r.db.Delete(&models.IPRule{}, id)
-	return result.RowsAffected, result.Error
 }

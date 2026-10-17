@@ -1,9 +1,9 @@
 """Deterministic, application-owned candidate ranking (T121/T123).
 
-Numista/Nomisma providers previously requested `limit=5` and then took
+The Numista provider previously requested `limit=5` and then took
 `candidates[0]` unconditionally, discarding four already-returned
-candidates with no ranking whatsoever (`providers/numista.py`,
-`providers/nomisma.py`). This module scores the candidate set a provider
+candidates with no ranking whatsoever (`providers/numista.py`). This module
+scores the candidate set a provider
 has **already returned** against hypothesis signals that are deliberately
 excluded from query terms — chiefly reverse legend/type (RD-4, spec
 FR-039) — and selects the best-scoring candidate instead of the first.
@@ -16,10 +16,6 @@ Guarantees:
   * Ties break stably on the provider's original candidate order — an LLM
     MUST NOT choose or reorder candidates (FR-009's property extends to
     ranking, FR-039).
-
-OCRE's ranking mechanism is separate, pre-existing, and ADR 0010 governed
-(`providers/ocre.py::_legend_tokens` + `src/api/services/ocre_scoring.go`);
-this module does not touch it (see T122).
 """
 
 from typing import Any

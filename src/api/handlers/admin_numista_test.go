@@ -38,7 +38,7 @@ func setupAdminNumistaRouter(t *testing.T) (*gin.Engine, *repository.SettingsRep
 
 	router := gin.New()
 	admin := router.Group("/api/admin")
-	admin.Use(middleware.AuthRequired(adminNumistaTestJWTSecret, nil))
+	admin.Use(middleware.AuthRequired(adminNumistaTestJWTSecret))
 	admin.Use(AdminRequired())
 	admin.GET("/numista/health", handler.Health)
 	return router, settingsRepo, telemetry

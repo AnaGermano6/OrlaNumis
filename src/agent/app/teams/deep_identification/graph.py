@@ -41,9 +41,7 @@ from app.teams.deep_identification.hypothesis import (
     build_hypothesis_from_quick_evidence,
 )
 from app.teams.deep_identification.providers import ngc as ngc_provider
-from app.teams.deep_identification.providers import nomisma as nomisma_provider
 from app.teams.deep_identification.providers import numista as numista_provider
-from app.teams.deep_identification.providers import ocre as ocre_provider
 from app.teams.deep_identification.providers import rpc as rpc_provider
 from app.teams.deep_identification.query_terms import build_query_terms
 from app.teams.deep_identification.router import route
@@ -55,8 +53,6 @@ logger = logging.getLogger(__name__)
 
 _AUTOMATED_PROVIDER_NODES = {
     "numista": numista_provider.run,
-    "nomisma": nomisma_provider.run,
-    "ocre": ocre_provider.run,
 }
 _TRIVIAL_PROVIDER_NODES = {"rpc": rpc_provider.run}
 
@@ -139,19 +135,16 @@ async def router_node(state: DeepIdentificationState) -> dict:
         state.get("catalog", []),
         state.get("provider_override", []),
         state.get("bounds"),
-        state.get("quick_evidence"),
-        state.get("hypothesis"),
     )
     return {"selected": decision.selected, "skipped": decision.skipped, "router_rationale": decision.rationale}
 
 
-# Providers with no free-text query — either a structured signal decode
-# (ocre) or no automated call at all (ngc/rpc, terms-of-use/no-public-api).
+# Providers with no free-text query — no automated call at all (ngc/rpc,
+# terms-of-use/no-public-api).
 # Kept as fixed, non-user-derived strings so `provider_started` still says
 # *something* useful (FR-040) without duplicating each provider node's own
 # field-decoding logic here.
 _PROVIDER_STATIC_STARTED_NOTES = {
-    "ocre": "Querying with decoded coin-type signals (ruler/denomination/mint/type id).",
     "ngc": "Link-out only; NGC terms of use prohibit automated queries.",
     "rpc": "Not automated; no public API is available.",
 }
@@ -162,12 +155,6 @@ _PROVIDER_STATIC_STARTED_NOTES = {
 # frame's payload unbounded (spec FR-040 binding limit).
 _PROVIDER_QUERY_STARTED_MAX_LENGTH = 300
 
-# Nomisma's Go client rejects anything over 200 runes
-# (nomisma_client.go::nomismaMaxQueryLength) — mirrors providers/nomisma.py's
-# own `_MAX_QUERY_LENGTH` so the previewed query always matches what the
-# provider node will actually send.
-_NOMISMA_QUERY_MAX_LENGTH = 200
-
 
 def _provider_started_detail(
     name: str,
@@ -177,22 +164,20 @@ def _provider_started_detail(
 ) -> dict:
     """Bounded, application-authored detail added to a `provider_started`
     frame (FR-040): the exact deterministic query text the provider node is
-    about to use for numista/nomisma (the only two providers that build a
-    free-text query via the shared `build_query_terms`), or a fixed
+    about to use for numista (the only provider that builds a free-text
+    query via the shared `build_query_terms`), or a fixed
     descriptive note for providers with no free-text query. Never invents
     anything — every value here is the same input the corresponding
     provider node itself is about to consume.
     """
     if name == "numista":
         query = build_query_terms(quick_evidence, hypothesis, notes)
-    elif name == "nomisma":
-        query = build_query_terms(quick_evidence, hypothesis, notes, max_length=_NOMISMA_QUERY_MAX_LENGTH)
     else:
         query = ""
 
     if query:
         return {"query_terms": query[:_PROVIDER_QUERY_STARTED_MAX_LENGTH]}
-    if name in ("numista", "nomisma"):
+    if name == "numista":
         # No precedence tier yielded usable terms — the provider node itself
         # will make zero upstream calls and report this same reason as its
         # error_kind (FR-011). Surface it here too so the owner sees *why*
@@ -227,8 +212,8 @@ async def _run_one_provider(
             provider=name, status="failed", automatable=True, error_kind="unconfigured", call_count=0
         )
     # An automatable provider needs the tools client to reach upstream; a
-    # disabled one (e.g. OCRE with its flag off, automatable=False) still runs
-    # its node purely so it can emit a zero-call not_automated row (FR-016).
+    # disabled one (automatable=False) still runs its node purely so it can
+    # emit a zero-call not_automated row (FR-016).
     if tools is None and entry.automatable:
         return ProviderEvidence(
             provider=name, status="failed", automatable=True, error_kind="unconfigured", call_count=0

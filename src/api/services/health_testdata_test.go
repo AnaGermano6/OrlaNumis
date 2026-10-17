@@ -4,7 +4,7 @@ func fixtureHealthWeights() HealthWeights {
 	return DefaultHealthWeights()
 }
 
-func fixtureCollectionHealthSummary(score int, delta *int) CollectionHealthSummary {
+func fixtureCollectionHealthSummary(score int) CollectionHealthSummary {
 	return CollectionHealthSummary{
 		Score:             ClampHealthScore(score),
 		Grade:             HealthGradeFromScore(score),
@@ -15,11 +15,6 @@ func fixtureCollectionHealthSummary(score int, delta *int) CollectionHealthSumma
 			ImageCoverage:      ClampHealthScore(score),
 			ValuationFreshness: ClampHealthScore(score),
 			AICoverage:         ClampHealthScore(score),
-		},
-		Trend30D: HealthTrend30D{
-			Status:    "available",
-			Delta:     delta,
-			Direction: "flat",
 		},
 	}
 }

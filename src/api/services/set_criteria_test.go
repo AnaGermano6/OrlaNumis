@@ -18,7 +18,6 @@ func setupSetCriteriaTestDB(t *testing.T) *gorm.DB {
 	}
 	if err := db.AutoMigrate(
 		&models.CoinSet{}, &models.CoinSetMembership{}, &models.CoinSetTarget{},
-		&models.SmartCriteriaTemplate{}, &models.Tag{}, &models.CoinTag{},
 	); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
@@ -29,8 +28,7 @@ func newTestSetService(t *testing.T) (*SetService, *gorm.DB) {
 	t.Helper()
 	db := setupSetCriteriaTestDB(t)
 	setRepo := repository.NewSetRepository(db)
-	tagRepo := repository.NewTagRepository(db)
-	svc := NewSetService(setRepo, tagRepo)
+	svc := NewSetService(setRepo)
 	return svc, db
 }
 
@@ -116,25 +114,6 @@ func TestValidateSmartCriteria_NestedGroups(t *testing.T) {
 	}
 }
 
-func TestValidateSmartCriteria_StorageLocation(t *testing.T) {
-	valid := map[string]interface{}{
-		"field": "storageLocationId", "op": "eq", "value": float64(42),
-	}
-	if err := ValidateSmartCriteria(valid); err != nil {
-		t.Fatalf("expected valid storage location criteria, got %v", err)
-	}
-
-	for _, invalid := range []map[string]interface{}{
-		{"field": "storageLocationId", "op": "contains", "value": "42"},
-		{"field": "storageLocationId", "op": "eq", "value": float64(0)},
-		{"field": "storageLocationId", "op": "eq", "value": "42"},
-	} {
-		if err := ValidateSmartCriteria(invalid); err == nil {
-			t.Fatalf("expected invalid storage location criteria to fail: %#v", invalid)
-		}
-	}
-}
-
 func TestValidateSmartCriteria_SimpleFiltersAndKindOfCoin(t *testing.T) {
 	rules := func(rules ...interface{}) map[string]interface{} {
 		return map[string]interface{}{"operator": "and", "rules": rules}
@@ -157,161 +136,5 @@ func TestValidateSmartCriteria_SimpleFiltersAndKindOfCoin(t *testing.T) {
 		if err := ValidateSmartCriteria(bad); err == nil {
 			t.Errorf("expected an error for %v", bad)
 		}
-	}
-}
-
-// ---- GetSuggestedCriteria ----
-
-func TestGetSuggestedCriteria_ReturnsTenSuggestions(t *testing.T) {
-	suggestions := GetSuggestedCriteria(nil)
-	if len(suggestions) < 5 {
-		t.Errorf("expected at least 5 suggestions, got %d", len(suggestions))
-	}
-}
-
-func TestGetSuggestedCriteria_AllHaveValidCriteria(t *testing.T) {
-	for _, s := range GetSuggestedCriteria(nil) {
-		if s.ID == "" {
-			t.Errorf("suggestion missing ID")
-		}
-		if s.Name == "" {
-			t.Errorf("suggestion %s missing Name", s.ID)
-		}
-		if err := ValidateSmartCriteria(s.Criteria); err != nil {
-			t.Errorf("suggestion %s has invalid criteria: %v", s.ID, err)
-		}
-	}
-}
-
-func TestGetSuggestedCriteria_UniqueIDs(t *testing.T) {
-	seen := map[string]bool{}
-	for _, s := range GetSuggestedCriteria(nil) {
-		if seen[s.ID] {
-			t.Errorf("duplicate suggestion ID: %s", s.ID)
-		}
-		seen[s.ID] = true
-	}
-}
-
-func TestGetSuggestedCriteria_UsesAdminDefinedCategories(t *testing.T) {
-	suggestions := GetSuggestedCriteria([]string{"Celtic", "Sassanian"})
-	found := map[string]bool{}
-	for _, s := range suggestions {
-		if s.Criteria["rules"] == nil {
-			continue
-		}
-		rules, _ := s.Criteria["rules"].([]interface{})
-		for _, raw := range rules {
-			rule, _ := raw.(map[string]interface{})
-			if rule["field"] == "category" {
-				found[rule["value"].(string)] = true
-			}
-		}
-	}
-	if !found["Celtic"] || !found["Sassanian"] {
-		t.Errorf("expected suggestions for admin-defined categories Celtic and Sassanian, got %+v", suggestions)
-	}
-	if found["Roman"] {
-		t.Errorf("expected legacy Roman suggestion to be absent when a custom category list is supplied")
-	}
-}
-
-// ---- CriteriaTemplate service methods ----
-
-func TestSetService_SaveCriteriaTemplate_Valid(t *testing.T) {
-	svc, _ := newTestSetService(t)
-	criteria := map[string]interface{}{
-		"operator": "and",
-		"rules": []interface{}{
-			map[string]interface{}{"field": "material", "op": "eq", "value": "Gold"},
-		},
-	}
-	tmpl, err := svc.SaveCriteriaTemplate(1, "My Gold Template", "Gold coins", criteria)
-	if err != nil {
-		t.Fatalf("SaveCriteriaTemplate failed: %v", err)
-	}
-	if tmpl.ID == 0 {
-		t.Fatal("expected template ID to be set")
-	}
-	if tmpl.Name != "My Gold Template" {
-		t.Errorf("name mismatch: got %q", tmpl.Name)
-	}
-}
-
-func TestSetService_SaveCriteriaTemplate_EmptyName(t *testing.T) {
-	svc, _ := newTestSetService(t)
-	criteria := map[string]interface{}{
-		"operator": "and",
-		"rules": []interface{}{
-			map[string]interface{}{"field": "material", "op": "eq", "value": "Gold"},
-		},
-	}
-	_, err := svc.SaveCriteriaTemplate(1, "", "", criteria)
-	if err == nil {
-		t.Fatal("expected error for empty name")
-	}
-}
-
-func TestSetService_SaveCriteriaTemplate_InvalidCriteria(t *testing.T) {
-	svc, _ := newTestSetService(t)
-	criteria := map[string]interface{}{
-		"operator": "and",
-		"rules": []interface{}{
-			map[string]interface{}{"field": "hackedfield", "op": "eq", "value": "x"},
-		},
-	}
-	_, err := svc.SaveCriteriaTemplate(1, "Bad Template", "", criteria)
-	if err == nil {
-		t.Fatal("expected error for invalid criteria field")
-	}
-}
-
-func TestSetService_ListCriteriaTemplates_Empty(t *testing.T) {
-	svc, _ := newTestSetService(t)
-	list, err := svc.ListCriteriaTemplates(1)
-	if err != nil {
-		t.Fatalf("ListCriteriaTemplates failed: %v", err)
-	}
-	if len(list) != 0 {
-		t.Errorf("expected 0 templates, got %d", len(list))
-	}
-}
-
-func TestSetService_DeleteCriteriaTemplate_OwnedByUser(t *testing.T) {
-	svc, _ := newTestSetService(t)
-	criteria := map[string]interface{}{
-		"operator": "and",
-		"rules": []interface{}{
-			map[string]interface{}{"field": "isSold", "op": "eq", "value": true},
-		},
-	}
-	tmpl, err := svc.SaveCriteriaTemplate(1, "Sold Items", "", criteria)
-	if err != nil {
-		t.Fatalf("save: %v", err)
-	}
-
-	if err := svc.DeleteCriteriaTemplate(tmpl.ID, 1); err != nil {
-		t.Fatalf("delete failed: %v", err)
-	}
-
-	list, _ := svc.ListCriteriaTemplates(1)
-	if len(list) != 0 {
-		t.Errorf("expected 0 templates after delete, got %d", len(list))
-	}
-}
-
-func TestSetService_DeleteCriteriaTemplate_AnotherUser(t *testing.T) {
-	svc, _ := newTestSetService(t)
-	criteria := map[string]interface{}{
-		"operator": "and",
-		"rules": []interface{}{
-			map[string]interface{}{"field": "category", "op": "eq", "value": "Roman"},
-		},
-	}
-	tmpl, _ := svc.SaveCriteriaTemplate(1, "Roman", "", criteria)
-
-	// User 2 cannot delete user 1's template
-	if err := svc.DeleteCriteriaTemplate(tmpl.ID, 2); err == nil {
-		t.Fatal("expected error when deleting another user's template")
 	}
 }

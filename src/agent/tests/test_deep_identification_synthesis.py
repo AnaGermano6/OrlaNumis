@@ -37,7 +37,7 @@ def _no_match_row(provider: str, automatable: bool = True, status: str = "no_mat
 
 def test_provider_empty_with_hypothesis_present_does_not_fall_back():
     hypothesis = CoinHypothesis(ruler=HypothesisField(value="Trajan", confidence=0.6), legible=True)
-    evidence = [_no_match_row("numista"), _no_match_row("nomisma")]
+    evidence = [_no_match_row("numista"), _no_match_row("rpc")]
 
     synthesis = asyncio.run(
         synthesize(
@@ -129,7 +129,7 @@ def test_face_narratives_are_retained_and_reach_final_synthesis():
 
 
 def test_provider_empty_and_hypothesis_empty_falls_back():
-    evidence = [_no_match_row("numista"), _no_match_row("nomisma")]
+    evidence = [_no_match_row("numista"), _no_match_row("rpc")]
 
     synthesis = asyncio.run(
         synthesize(
@@ -216,16 +216,16 @@ def test_corroborated_field_gets_the_flat_bonus_once_no_stacking():
             claims=[ProviderClaim(field="denomination", value="Denarius", confidence=0.5, citation="https://en.numista.com/c/1")],
         ),
         ProviderEvidence(
-            provider="nomisma",
+            provider="ngc",
             status="contributed",
-            automatable=True,
-            claims=[ProviderClaim(field="denomination", value="Denarius", confidence=0.55, citation="https://nomisma.org/id/2")],
+            automatable=False,
+            claims=[ProviderClaim(field="denomination", value="Denarius", confidence=0.55, citation="https://www.ngccoin.com/c/2")],
         ),
         ProviderEvidence(
-            provider="ocre",
+            provider="rpc",
             status="contributed",
             automatable=True,
-            claims=[ProviderClaim(field="denomination", value="Denarius", confidence=0.58, citation="https://numismatics.org/ocre/id/3")],
+            claims=[ProviderClaim(field="denomination", value="Denarius", confidence=0.58, citation="https://rpc.ashmus.ox.ac.uk/id/3")],
         ),
     ]
 
@@ -283,7 +283,7 @@ def test_image_never_enters_coverage_or_attributions():
             attribution="Source: Numista",
             claims=[ProviderClaim(field="mint", value="Rome", confidence=0.7, citation="https://en.numista.com/c/1")],
         ),
-        _no_match_row("nomisma"),
+        _no_match_row("rpc"),
         ProviderEvidence(provider="ngc", status="not_automated", automatable=False),
     ]
 
@@ -311,8 +311,6 @@ def test_maximinus_regression_synthesis_proposes_identification_despite_zero_pro
     evidence = [
         ProviderEvidence(provider="ngc", status="not_automated", automatable=False),
         _no_match_row("numista"),
-        _no_match_row("nomisma", status="failed"),
-        ProviderEvidence(provider="ocre", status="not_automated", automatable=False),
         ProviderEvidence(provider="rpc", status="not_automated", automatable=False),
     ]
 

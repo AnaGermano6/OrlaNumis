@@ -31,7 +31,7 @@ func TestResolveAuthorizedMediaPathAllowsOnlyDraftOwner(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.Follow{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	uploadDir := t.TempDir()

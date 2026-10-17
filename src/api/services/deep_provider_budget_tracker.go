@@ -8,8 +8,8 @@ import (
 // DeepProviderBudgetTracker enforces a per-job, per-provider call budget for
 // the Go-hosted provider tool endpoints called by the Python deep
 // identification pipeline (contracts/agent-internal-contract.md §7:
-// numista_search/numista_detail count against the Numista budget,
-// nomisma_search against the fixed Nomisma budget). Budgets are tracked
+// numista_search/numista_detail count against the Numista budget).
+// Budgets are tracked
 // in-process for the lifetime of a job run - Python holds no state
 // (Principle II) and Go is the sole authority for enforcement.
 //

@@ -378,9 +378,6 @@ export function keepCoinNullables(coin: Coin): Partial<CoinMutationPayload> {
     purchasePrice: coin.purchasePrice,
     currentValue: coin.currentValue,
     purchaseDate: coin.purchaseDate,
-    storageLocationId: coin.storageLocationId,
-    storageSlot: coin.storageSlot ?? null,
-    romanImperialFigureId: coin.romanImperialFigureId,
     mintLocationId: coin.mintLocationId,
     year: coin.year ?? null,
   } as Partial<CoinMutationPayload>

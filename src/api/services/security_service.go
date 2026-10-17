@@ -16,23 +16,15 @@ const (
 	IPFailureLimit      = 20
 	FailureWindow       = 15 * time.Minute
 	LockoutDuration     = 15 * time.Minute
-	TempBanDuration     = 15 * time.Minute
 )
 
-var (
-	ErrAccountLocked  = errors.New("account locked")
-	ErrIPDenied       = errors.New("ip denied")
-	ErrInvalidIPRule  = errors.New("invalid ip rule")
-	ErrIPRuleNotFound = errors.New("ip rule not found")
-)
+var ErrAccountLocked = errors.New("account locked")
 
 type SecuritySummary struct {
-	Since             time.Time `json:"since"`
-	LoginFailures     int64     `json:"loginFailures"`
-	LoginSuccesses    int64     `json:"loginSuccesses"`
-	RefreshFailures   int64     `json:"refreshFailures"`
-	APIKeyFailures    int64     `json:"apiKeyFailures"`
-	ActiveIPRuleCount int       `json:"activeIpRuleCount"`
+	Since           time.Time `json:"since"`
+	LoginFailures   int64     `json:"loginFailures"`
+	LoginSuccesses  int64     `json:"loginSuccesses"`
+	RefreshFailures int64     `json:"refreshFailures"`
 }
 
 type SecurityService struct {
@@ -79,56 +71,9 @@ func (s *SecurityService) RecordPasswordSuccess(user models.User, clientIP, user
 	}
 }
 
-func (s *SecurityService) RecordWebAuthnSuccess(user models.User, clientIP, userAgent string) {
-	userID := user.ID
-	s.RecordEvent(models.SecurityEventWebAuthnLoginSuccess, &userID, user.Username, clientIP, userAgent, "")
-	if user.LockedUntil != nil {
-		_ = s.repo.UnlockUser(user.ID)
-	}
-}
-
-func (s *SecurityService) RecordOIDCLoginSuccess(user models.User, providerID uint, providerDisplayName, clientIP, userAgent string) {
-	userID := user.ID
-	s.RecordEvent(models.SecurityEventOIDCLoginSuccess, &userID, user.Username, clientIP, userAgent, oidcEventMessage(providerID, providerDisplayName, "login succeeded"))
-}
-
-func (s *SecurityService) RecordOIDCLoginFailure(userID *uint, username string, providerID uint, providerDisplayName, clientIP, userAgent, reason string) {
-	s.RecordEvent(models.SecurityEventOIDCLoginFailure, userID, username, clientIP, userAgent, oidcEventMessage(providerID, providerDisplayName, reason))
-}
-
-func (s *SecurityService) RecordOIDCLinkSuccess(user models.User, providerID uint, providerDisplayName, clientIP, userAgent string) {
-	userID := user.ID
-	s.RecordEvent(models.SecurityEventOIDCLinkSuccess, &userID, user.Username, clientIP, userAgent, oidcEventMessage(providerID, providerDisplayName, "link succeeded"))
-}
-
-func (s *SecurityService) RecordOIDCLinkFailure(userID *uint, username string, providerID uint, providerDisplayName, clientIP, userAgent, reason string) {
-	s.RecordEvent(models.SecurityEventOIDCLinkFailure, userID, username, clientIP, userAgent, oidcEventMessage(providerID, providerDisplayName, reason))
-}
-
-func (s *SecurityService) RecordOIDCUnlinkSuccess(user models.User, providerID uint, providerDisplayName, clientIP, userAgent string) {
-	userID := user.ID
-	s.RecordEvent(models.SecurityEventOIDCUnlinkSuccess, &userID, user.Username, clientIP, userAgent, oidcEventMessage(providerID, providerDisplayName, "unlink succeeded"))
-}
-
-func (s *SecurityService) RecordOIDCUnlinkFailure(userID *uint, username string, providerID uint, providerDisplayName, clientIP, userAgent, reason string) {
-	s.RecordEvent(models.SecurityEventOIDCUnlinkFailure, userID, username, clientIP, userAgent, oidcEventMessage(providerID, providerDisplayName, reason))
-}
-
-func (s *SecurityService) RecordOIDCProviderConfigChanged(adminID uint, providerID uint, providerDisplayName, clientIP, userAgent, action string) {
-	s.RecordEvent(models.SecurityEventOIDCProviderChanged, &adminID, "", clientIP, userAgent, oidcEventMessage(providerID, providerDisplayName, action))
-}
-
-func (s *SecurityService) RecordOIDCProviderTestFailure(adminID uint, providerID uint, providerDisplayName, clientIP, userAgent, reason string) {
-	s.RecordEvent(models.SecurityEventOIDCProviderTestFail, &adminID, "", clientIP, userAgent, oidcEventMessage(providerID, providerDisplayName, reason))
-}
-
 func (s *SecurityService) RecordFinalLocalAdminBlocked(userID *uint, username string, adminID uint, operation string) {
 	message := fmt.Sprintf("%s blocked for user %s by admin_id=%d", sanitizeSecurityEventDetail(operation), username, adminID)
 	s.RecordEvent(models.SecurityEventFinalAdminBlocked, userID, username, "", "", message)
-}
-
-func oidcEventMessage(providerID uint, providerDisplayName, detail string) string {
-	return fmt.Sprintf("provider_id=%d provider=%q detail=%q", providerID, sanitizeSecurityEventDetail(providerDisplayName), sanitizeSecurityEventDetail(detail))
 }
 
 func sanitizeSecurityEventDetail(value string) string {
@@ -168,13 +113,16 @@ func (s *SecurityService) RecordPasswordFailure(username, clientIP, userAgent st
 			}
 		}
 	}
+}
 
-	if clientIP != "" {
-		count, _ := s.repo.CountFailuresForIP(clientIP, s.now().Add(-FailureWindow))
-		if count >= IPFailureLimit {
-			_ = s.CreateIPRule(clientIP, "temporary ban after failed password attempts", s.now().Add(TempBanDuration), nil)
-		}
+// IsIPDenied tells whether an address made IPFailureLimit failed password
+// attempts in the last FailureWindow: it is refused until they age out.
+func (s *SecurityService) IsIPDenied(clientIP string) bool {
+	if net.ParseIP(clientIP) == nil {
+		return false
 	}
+	count, err := s.repo.CountFailuresForIP(clientIP, s.now().Add(-FailureWindow))
+	return err == nil && count >= IPFailureLimit
 }
 
 func (s *SecurityService) canLockUser(user *models.User) bool {
@@ -207,85 +155,7 @@ func (s *SecurityService) Summary() (SecuritySummary, error) {
 	if err != nil {
 		return SecuritySummary{}, err
 	}
-	apiKeyFailures, err := s.repo.CountEvents(models.SecurityEventAPIKeyAuthFailure, since)
-	if err != nil {
-		return SecuritySummary{}, err
-	}
-	rules, err := s.repo.ListIPRules(false)
-	if err != nil {
-		return SecuritySummary{}, err
-	}
-	return SecuritySummary{Since: since, LoginFailures: failures, LoginSuccesses: successes, RefreshFailures: refreshFailures, APIKeyFailures: apiKeyFailures, ActiveIPRuleCount: len(rules)}, nil
-}
-
-func (s *SecurityService) CreateIPRule(cidrOrIP, reason string, expiresAt time.Time, createdBy *uint) error {
-	cidr := strings.TrimSpace(cidrOrIP)
-	if cidr == "" {
-		return ErrInvalidIPRule
-	}
-	if !strings.Contains(cidr, "/") {
-		ip := net.ParseIP(cidr)
-		if ip == nil {
-			return ErrInvalidIPRule
-		}
-		if ip.To4() != nil {
-			cidr += "/32"
-		} else {
-			cidr += "/128"
-		}
-	}
-	if _, _, err := net.ParseCIDR(cidr); err != nil {
-		return ErrInvalidIPRule
-	}
-	var expires *time.Time
-	if !expiresAt.IsZero() {
-		expires = &expiresAt
-	}
-	if reason == "" {
-		reason = "admin-created deny rule"
-	}
-	if err := s.repo.CreateIPRule(&models.IPRule{CIDR: cidr, Reason: reason, ExpiresAt: expires, CreatedBy: createdBy}); err != nil {
-		return err
-	}
-	s.RecordEvent(models.SecurityEventIPRuleCreated, createdBy, "", "", "", cidr)
-	return nil
-}
-
-func (s *SecurityService) ListIPRules(includeExpired bool) ([]models.IPRule, error) {
-	return s.repo.ListIPRules(includeExpired)
-}
-
-func (s *SecurityService) DeleteIPRule(id uint, adminID uint) error {
-	rows, err := s.repo.DeleteIPRule(id)
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrIPRuleNotFound
-	}
-	s.RecordEvent(models.SecurityEventIPRuleDeleted, &adminID, "", "", "", "")
-	return nil
-}
-
-func (s *SecurityService) IsIPDenied(clientIP string) bool {
-	ip := net.ParseIP(clientIP)
-	if ip == nil {
-		return false
-	}
-	rules, err := s.repo.ListIPRules(true)
-	if err != nil {
-		return false
-	}
-	for _, rule := range rules {
-		if rule.ExpiresAt != nil && !rule.ExpiresAt.After(s.now()) {
-			continue
-		}
-		_, network, err := net.ParseCIDR(rule.CIDR)
-		if err == nil && network.Contains(ip) {
-			return true
-		}
-	}
-	return false
+	return SecuritySummary{Since: since, LoginFailures: failures, LoginSuccesses: successes, RefreshFailures: refreshFailures}, nil
 }
 
 func (s *SecurityService) UnlockUser(userID uint, adminID uint) error {

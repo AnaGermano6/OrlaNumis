@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/briandenicola/ancient-coins-api/models"
 	"github.com/briandenicola/ancient-coins-api/repository"
 	"github.com/briandenicola/ancient-coins-api/services"
 	"github.com/gin-gonic/gin"
@@ -51,7 +52,7 @@ func (h *AvailabilityHandler) CheckAvailability(c *gin.Context) {
 	userID := c.GetUint("userId")
 	triggerUserID := userID
 
-	run, err := h.svc.CheckWishlistForUser(userID, "owner", &triggerUserID, nil)
+	run, err := h.svc.CheckWishlistForUser(userID, models.AvailabilityRunTriggerOwner, &triggerUserID, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check availability"})
 		return

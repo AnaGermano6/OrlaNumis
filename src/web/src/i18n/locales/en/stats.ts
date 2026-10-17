@@ -48,7 +48,7 @@ export default {
   },
   health: {
     noActiveTitle: 'No Active Coins to Score',
-    noActiveBody: 'Collection health scoring requires active coins (not wishlist or sold items).',
+    noActiveBody: 'Collection health scoring requires active coins (not wishlist items).',
     noActiveHint: 'Add coins to your collection or mark wishlist items as acquired to start tracking collection health metrics.',
     title: 'Collection Health',
     grade: 'Grade {grade}',
@@ -58,13 +58,6 @@ export default {
       valuationFreshness: 'Valuation Freshness',
       aiCoverage: 'AI Coverage',
     },
-    trend30: '30-Day Trend',
-    insufficient: 'Insufficient Data',
-    trendLater: 'Trend data will be available after 30 days of collection tracking.',
-    improving: 'Improving',
-    declining: 'Declining',
-    stable: 'Stable',
-    noData: 'No Data',
   },
   heatMap: {
     title: 'Collection Distribution',

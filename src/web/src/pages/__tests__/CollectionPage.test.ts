@@ -21,7 +21,6 @@ describe('CollectionPage', () => {
     expect(source).toContain('useCollectionFilters')
     expect(source).not.toContain('listQuickCaptureDrafts')
     expect(filterSource).toContain("wishlist: 'false'")
-    expect(filterSource).toContain("sold: 'false'")
   })
 
   it('leaves the numbers and highlights to the Collection page, showing the filters its cards turn on', () => {

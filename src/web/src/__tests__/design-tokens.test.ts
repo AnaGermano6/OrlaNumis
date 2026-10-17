@@ -315,7 +315,6 @@ describe('Design Token Enforcement (Constitution Principle VI)', () => {
       const COLOR_BUDGET = new Map([
         ['components/stats/CollectionHealthScorecard.vue', 12],
         ['components/collection/NeedsAttentionQueue.vue', 10],
-        ['pages/PublicShowcasePage.vue', 1],
         ['pages/SetDetailPage.vue', 1],
       ])
       const violations: string[] = []
@@ -347,7 +346,6 @@ describe('Design Token Enforcement (Constitution Principle VI)', () => {
         ['components/settings/SettingsDataSection.vue', 12],
         ['components/ui/BaseButton.vue', 4],
         ['components/ui/BaseBadge.vue', 3],
-        ['pages/FollowerCoinDetailPage.vue', 2],
         ['pages/SetProposalReviewPage.vue', 2],
         ['pages/SetDetailPage.vue', 1],
         ['pages/TimelinePage.vue', 1],

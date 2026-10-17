@@ -160,21 +160,14 @@ func writeAuthResponse(c *gin.Context, statusCode int, result services.AuthResul
 		"token":        result.Token,
 		"refreshToken": result.RefreshToken,
 		"user": gin.H{
-			"id":                             user.ID,
-			"username":                       user.Username,
-			"role":                           user.Role,
-			"email":                          user.Email,
-			"avatarPath":                     user.AvatarPath,
-			"isPublic":                       user.IsPublic,
-			"bio":                            user.Bio,
-			"zipCode":                        user.ZipCode,
-			"coinOfDayEnabled":               user.CoinOfDayEnabled,
-			"coinOfDayIncludeWishlist":       user.CoinOfDayIncludeWishlist,
-			"emperorTrackerEnabled":          user.EmperorTrackerEnabled,
-			"emperorTrackerShowUsurpers":     user.EmperorTrackerShowUsurpers,
-			"emperorTrackerShowEmpresses":    user.EmperorTrackerShowEmpresses,
-			"emperorTrackerShowOtherFigures": user.EmperorTrackerShowOtherFigures,
-			"pwaSwipeNavEnabled":             user.PWASwipeNavEnabled,
+			"id":                 user.ID,
+			"username":           user.Username,
+			"role":               user.Role,
+			"email":              user.Email,
+			"avatarPath":         user.AvatarPath,
+			"bio":                user.Bio,
+			"zipCode":            user.ZipCode,
+			"pwaSwipeNavEnabled": user.PWASwipeNavEnabled,
 		},
 	})
 }
@@ -191,17 +184,4 @@ func requestClientIP(c *gin.Context) string {
 		}
 	}
 	return c.ClientIP()
-}
-
-// NeedsSetup returns whether the first user has been created yet.
-//
-//	@Summary		Check setup status
-//	@Description	Returns whether the application needs initial setup (no users exist yet).
-//	@Tags			Auth
-//	@Produce		json
-//	@Success		200	{object}	SetupResponse
-//	@Router			/auth/setup [get]
-func (h *AuthHandler) NeedsSetup(c *gin.Context) {
-	count := h.repo.CountUsers()
-	c.JSON(http.StatusOK, gin.H{"needsSetup": count == 0})
 }

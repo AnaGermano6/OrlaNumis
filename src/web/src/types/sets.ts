@@ -6,8 +6,6 @@ export interface CollectionSetOption {
   id: number
   name: string
   color: string
-  filterValue: string
-  source: 'tag' | 'set'
 }
 
 export type CoinSetType = 'standard' | 'goal' | 'smart' | 'agentic' | 'checklist'
@@ -48,8 +46,6 @@ export interface CoinSetSummary {
   completionPercentage?: number | null
   valueChangePercent?: number | null
   agenticStatus?: string | null
-  pinned?: boolean
-  pinnedAt?: string | null
 }
 
 export interface CoinSetDetail extends CoinSetSummary {
@@ -67,7 +63,7 @@ export interface CoinSetDetail extends CoinSetSummary {
   agenticStatus?: string | null
 }
 
-export type CoinRecommendationTargetType = 'set' | 'tag'
+export type CoinRecommendationTargetType = 'set'
 
 export type CoinRecommendationStatus = 'pending' | 'accepted' | 'rejected' | 'dismissed'
 
@@ -246,7 +242,7 @@ export interface SetProposal {
   updatedAt: string
 }
 
-export type UpdateCoinSetRequest = Partial<CreateCoinSetRequest> & { pinned?: boolean }
+export type UpdateCoinSetRequest = Partial<CreateCoinSetRequest>
 
 export interface AddCoinToSetRequest {
   coinId: number
@@ -287,15 +283,6 @@ export interface CoinSetCompletion {
   wishlistItems?: number
 }
 
-export interface CoinSetTemplate {
-  id: string
-  name: string
-  category: string
-  description: string
-  version: number
-  targets?: CoinSetTemplateTarget[]
-}
-
 export interface CoinSetTemplateTarget {
   label: string
   year?: number | null
@@ -328,16 +315,6 @@ export interface CoinSetAnalytics {
   projectedCompletionDate?: string | null
 }
 
-export interface CoinSetComparison {
-  setId: number
-  name: string
-  startValue: number
-  endValue: number
-  valueChange: number
-  valueChangePercent: number
-  completionChange?: number | null
-}
-
 export type SmartCriteriaOperator = 'and' | 'or'
 
 export type SmartCriteriaRuleOp = 'eq' | 'neq' | 'contains' | 'startsWith' | 'in' | 'between' | 'gte' | 'lte' | 'isNull' | 'isNotNull'
@@ -359,19 +336,3 @@ export interface SmartSetPreview {
   totalValue: number
 }
 
-export interface SmartCriteriaTemplate {
-  id: number
-  userId: number
-  name: string
-  description: string
-  criteria: SmartCriteriaGroup
-  createdAt: string
-  updatedAt: string
-}
-
-export interface SuggestedSmartCriteria {
-  id: string
-  name: string
-  description: string
-  criteria: SmartCriteriaGroup
-}

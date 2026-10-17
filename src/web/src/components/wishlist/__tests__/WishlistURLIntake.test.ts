@@ -65,7 +65,7 @@ describe('WishlistURLIntake', () => {
         sourceUrl: 'https://dealer.example/lot/9',
         hypothesis: {
           name: { value: 'Hadrian Denarius', confidence: 0.9, evidence: ['Hadrian Denarius'] },
-          category: { value: 'Roman', confidence: 0.9, evidence: ['Roman'] },
+          category: { value: 'Other', confidence: 0.9, evidence: ['Other'] },
           material: { value: 'Silver', confidence: 0.8, evidence: ['Silver'] },
           coin_type: { value: 'RIC II Hadrian 39b', confidence: 0.8, evidence: ['RIC II Hadrian 39b'] },
           listedPrice: { value: '125', confidence: 0.9, evidence: ['USD 125'] },
@@ -87,7 +87,7 @@ describe('WishlistURLIntake', () => {
 
     expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({
       name: 'Hadrian Denarius',
-      category: 'Roman',
+      category: 'Other',
       material: 'Silver',
       currentValue: 125,
       referenceUrl: 'https://dealer.example/lot/9',

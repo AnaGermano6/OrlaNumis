@@ -25,7 +25,6 @@ func setupHealthHandlerTestDB(t *testing.T) *gorm.DB {
 		&models.User{},
 		&models.Coin{},
 		&models.CoinImage{},
-		&models.CollectionHealthSnapshot{},
 		&models.QuickCaptureDraft{},
 		&models.QuickCaptureDraftImage{},
 		&models.DraftLifecycleEvent{},
@@ -73,7 +72,7 @@ func TestHealthHandler_CollectionSummary_Success(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		db.Create(&models.Coin{
 			Name:     "Test Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   userID,
 		})
 	}
@@ -100,15 +99,12 @@ func TestHealthHandler_CollectionSummary_Success(t *testing.T) {
 	if resp.Weights.Metadata != 40 {
 		t.Errorf("expected metadata weight=40, got %d", resp.Weights.Metadata)
 	}
-	if resp.Trend30D.Status == "" {
-		t.Error("expected trend30d status to be set")
-	}
 }
 
 func TestHealthHandler_CollectionSummary_QuickCaptureDraftExcludedUntilPromotion(t *testing.T) {
 	router, db, userID := setupHealthHandlerRouter(t)
 
-	active := models.Coin{Name: "Active", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: userID}
+	active := models.Coin{Name: "Active", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: userID}
 	if err := db.Create(&active).Error; err != nil {
 		t.Fatalf("seed active coin: %v", err)
 	}
@@ -131,7 +127,7 @@ func TestHealthHandler_CollectionSummary_QuickCaptureDraftExcludedUntilPromotion
 		t.Fatalf("draft should not affect health eligible count, got %d", before.EligibleCoinCount)
 	}
 
-	promoted := models.Coin{Name: "Promoted Quick Capture coin", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: userID}
+	promoted := models.Coin{Name: "Promoted Quick Capture coin", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: userID}
 	if err := db.Create(&promoted).Error; err != nil {
 		t.Fatalf("seed promoted coin: %v", err)
 	}
@@ -193,7 +189,7 @@ func TestHealthHandler_ListCoinHealth_Success(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		db.Create(&models.Coin{
 			Name:     fmt.Sprintf("Coin %d", i),
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   userID,
 		})
 	}
@@ -249,7 +245,7 @@ func TestHealthHandler_ListCoinHealth_Pagination(t *testing.T) {
 	for i := 0; i < 30; i++ {
 		db.Create(&models.Coin{
 			Name:     "Test Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   userID,
 		})
 	}
@@ -344,7 +340,7 @@ func TestHealthHandler_ListCoinHealth_ScopeAll(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		db.Create(&models.Coin{
 			Name:     "Test Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   userID,
 		})
 	}
@@ -370,7 +366,7 @@ func TestHealthHandler_ListCoinHealth_ScopeNeedsAttention(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		db.Create(&models.Coin{
 			Name:     "Test Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   userID,
 		})
 	}
@@ -420,7 +416,7 @@ func TestHealthHandler_ListCoinHealth_DefaultPaginationParams(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		db.Create(&models.Coin{
 			Name:     "Test Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   userID,
 		})
 	}

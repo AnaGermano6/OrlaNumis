@@ -162,7 +162,7 @@ class DeepAnalysisHandoffDisagreement(StrictResponseModel):
 
 
 class DeepAnalysisHandoffCoverage(StrictResponseModel):
-    provider: Literal["numista", "nomisma", "ngc", "ocre", "rpc"]
+    provider: Literal["numista", "ngc", "rpc"]
     status: Literal[
         "pending",
         "running",
@@ -177,7 +177,7 @@ class DeepAnalysisHandoffCoverage(StrictResponseModel):
 
 
 class DeepAnalysisHandoffAttribution(StrictResponseModel):
-    provider: Literal["numista", "nomisma", "ngc", "ocre", "rpc"]
+    provider: Literal["numista", "ngc", "rpc"]
     label: Annotated[str, StringConstraints(min_length=1, max_length=200)]
 
 
@@ -726,7 +726,7 @@ class SetBuilderResponse(StrictResponseModel):
 
 # Deep Agentic Coin Identification DTOs (344-deep-agentic-coin-identification).
 # Contract anchor: specs/344-deep-agentic-coin-identification/contracts/agent-internal-contract.md §4-5
-ProviderName = Literal["numista", "nomisma", "ngc", "ocre", "rpc"]
+ProviderName = Literal["numista", "ngc", "rpc"]
 ProviderStatus = Literal["contributed", "no_match", "failed", "timed_out", "not_automated", "unavailable", "skipped"]
 ProviderErrorKind = Literal[
     "timeout", "quota", "unconfigured", "upstream", "invalid_response", "insufficient_query_evidence"

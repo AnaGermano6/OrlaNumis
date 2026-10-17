@@ -18,10 +18,10 @@ func setupSetBuilderServiceTest(t *testing.T) (*SetBuilderService, *gorm.DB) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.AppSetting{}, &models.Coin{}, &models.SetBuilderRun{}, &models.SetProposal{}, &models.ProposalSlot{}, &models.Notification{}, &models.CoinSet{}, &models.CoinSetTarget{}); err != nil {
+	if err := db.AutoMigrate(&models.AppSetting{}, &models.Coin{}, &models.SetBuilderRun{}, &models.SetProposal{}, &models.ProposalSlot{}, &models.CoinSet{}, &models.CoinSetTarget{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
-	svc := NewSetBuilderService(repository.NewSetBuilderRepository(db), repository.NewNotificationRepository(db))
+	svc := NewSetBuilderService(repository.NewSetBuilderRepository(db))
 	fixedNow := time.Date(2026, 7, 26, 12, 0, 0, 0, time.UTC)
 	svc.now = func() time.Time { return fixedNow }
 	return svc, db
@@ -59,7 +59,7 @@ func TestSetBuilderServiceCreateRunValidatesPrompt(t *testing.T) {
 	}
 }
 
-func TestSetBuilderServiceCreateProposalFromWorkflowPersistsReviewAndNotifies(t *testing.T) {
+func TestSetBuilderServiceCreateProposalFromWorkflowPersistsReview(t *testing.T) {
 	svc, db := setupSetBuilderServiceTest(t)
 	run := &models.SetBuilderRun{
 		UserID: 1,
@@ -89,14 +89,6 @@ func TestSetBuilderServiceCreateProposalFromWorkflowPersistsReviewAndNotifies(t 
 	}
 	if proposal.Slots[1].VerificationStatus != models.ProposalSlotVerificationUnverified || proposal.Slots[1].ValidationNote == "" {
 		t.Fatalf("expected default unverified review note, got %#v", proposal.Slots[1])
-	}
-
-	var notification models.Notification
-	if err := db.Where("user_id = ? AND type = ?", 1, NotificationTypeAgenticSetProposalReady).First(&notification).Error; err != nil {
-		t.Fatalf("proposal-ready notification missing: %v", err)
-	}
-	if notification.ReferenceID != proposal.ID || notification.ReferenceURL != "/sets/proposals/1" {
-		t.Fatalf("unexpected notification link: %#v", notification)
 	}
 
 	var setCount, targetCount int64
@@ -353,10 +345,6 @@ func TestSetBuilderServiceProcessRunCallsPythonAndPersistsProposal(t *testing.T)
 	if setCount != 0 {
 		t.Fatalf("worker must not create a set before human approval, got %d", setCount)
 	}
-	var notification models.Notification
-	if err := db.Where("type = ?", NotificationTypeAgenticSetProposalReady).First(&notification).Error; err != nil {
-		t.Fatalf("proposal-ready notification missing: %v", err)
-	}
 }
 
 func TestSetBuilderServiceProcessRunFailsVisibleWhenPythonNeedsClarification(t *testing.T) {
@@ -391,9 +379,5 @@ func TestSetBuilderServiceProcessRunFailsVisibleWhenPythonNeedsClarification(t *
 	}
 	if proposalCount != 0 {
 		t.Fatalf("clarification response must not create proposal, got %d", proposalCount)
-	}
-	var notification models.Notification
-	if err := db.Where("type = ?", "agentic_set_proposal_failed").First(&notification).Error; err != nil {
-		t.Fatalf("failure notification missing: %v", err)
 	}
 }

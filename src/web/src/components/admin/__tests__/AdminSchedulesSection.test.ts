@@ -1,4 +1,4 @@
-﻿import { flushPromises, mount } from '@vue/test-utils'
+﻿import { flushPromises, mount, RouterLinkStub } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AdminSchedulesSection from '../AdminSchedulesSection.vue'
 
@@ -13,12 +13,6 @@ const mocks = vi.hoisted(() => ({
   getValuationRunDetail: vi.fn(),
   triggerValuation: vi.fn(),
   cancelValuationRun: vi.fn(),
-  triggerCollectionHealthSnapshots: vi.fn(),
-  getCollectionHealthSnapshotRuns: vi.fn(),
-  getCollectionHealthSnapshotStatus: vi.fn(),
-  triggerCoinOfDayRun: vi.fn(),
-  getCoinOfDayRuns: vi.fn(),
-  getCoinOfDayRunDetail: vi.fn(),
 }))
 
 vi.mock('@/api/client', () => mocks)
@@ -35,12 +29,6 @@ describe('AdminSchedulesSection', () => {
     mocks.getAvailabilityCycleDetail.mockResolvedValue({ data: { children: [] } })
     mocks.getAdminWishlistSearchAlertRuns.mockResolvedValue({ data: { runs: [], total: 0, page: 1, limit: 5 } })
     mocks.getValuationRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
-    mocks.getCoinOfDayRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
-    mocks.getCollectionHealthSnapshotRuns.mockResolvedValue({ data: { runs: [], total: 0 } })
-    mocks.getCollectionHealthSnapshotStatus.mockResolvedValue({
-      data: { name: 'collection-health', enabled: true, isRunning: false, nextRunIn: 49320000000000 },
-    })
-    mocks.getCoinOfDayRunDetail.mockResolvedValue({ data: { id: 1, status: 'queued', picked: 0, skipped: 0, errors: 0 } })
   })
 
   it('renders every schedule workflow and loads each run history', async () => {
@@ -49,6 +37,7 @@ describe('AdminSchedulesSection', () => {
       global: {
         stubs: {
           SafeExternalLink: { template: '<a><slot /></a>' },
+          RouterLink: RouterLinkStub,
         },
       },
     })
@@ -58,22 +47,18 @@ describe('AdminSchedulesSection', () => {
       'Wishlist Availability Check',
       'Wishlist Search Alerts',
       'Collection Valuation',
-      'Collection Health Snapshots',
-      'Coin of the Day',
-      'Purchase Reminder Delivery',
+      'Automatic Full Backup',
     ]) {
       expect(wrapper.text()).toContain(heading)
     }
 
     expect(mocks.getAvailabilityRuns).toHaveBeenCalled()
     expect(mocks.getAdminWishlistSearchAlertRuns).toHaveBeenCalledWith(1, 5)
-    // ParcelApp tracking, the watch-bid digest and the auction alerts were removed.
-    for (const removed of ['ParcelApp', 'Auction Watch Bid Digest', 'Auction Ending Alerts', 'Auction Price Alerts']) {
+    // These schedules were removed.
+    for (const removed of ['ParcelApp', 'Auction Watch Bid Digest', 'Auction Ending Alerts', 'Auction Price Alerts', 'Collection Health Snapshots', 'Coin of the Day', 'Purchase Reminder Delivery']) {
       expect(wrapper.text()).not.toContain(removed)
     }
     expect(mocks.getValuationRuns).toHaveBeenCalled()
-    expect(mocks.getCollectionHealthSnapshotRuns).toHaveBeenCalled()
-    expect(mocks.getCoinOfDayRuns).toHaveBeenCalled()
   })
 
   it('keeps each wishlist run history next to its own schedule settings', async () => {
@@ -82,6 +67,7 @@ describe('AdminSchedulesSection', () => {
       global: {
         stubs: {
           SafeExternalLink: { template: '<a><slot /></a>' },
+          RouterLink: RouterLinkStub,
         },
       },
     })
@@ -99,55 +85,6 @@ describe('AdminSchedulesSection', () => {
     expect(searchSettings).toBeLessThan(searchHistory)
     expect(searchHistory).toBeLessThan(valuationSettings)
   })
-
-  it('shows collection health snapshot run history and triggers a manual run', async () => {
-    mocks.getCollectionHealthSnapshotRuns.mockResolvedValue({
-      data: {
-        runs: [{
-          id: 5,
-          triggerType: 'scheduled',
-          status: 'success',
-          usersEligible: 3,
-          usersSnapshotted: 3,
-          usersFailed: 0,
-          durationMs: 800,
-          startedAt: '2026-07-16T04:30:00Z',
-          completedAt: '2026-07-16T04:30:01Z',
-          createdAt: '2026-07-16T04:30:00Z',
-        }],
-        total: 1,
-      },
-    })
-    mocks.triggerCollectionHealthSnapshots.mockResolvedValue({
-      data: { message: 'Snapshot run complete', users: 3, snapshotsCreated: 3, skipped: 0, errors: 0, durationMs: 900 },
-    })
-
-    const wrapper = mount(AdminSchedulesSection, {
-      props: buildProps(),
-      global: {
-        stubs: {
-          SafeExternalLink: { template: '<a><slot /></a>' },
-        },
-      },
-    })
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('Collection Health Snapshot Run History')
-    expect(mocks.getCollectionHealthSnapshotRuns).toHaveBeenCalled()
-    expect(mocks.getCollectionHealthSnapshotStatus).toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Server status:')
-    expect(wrapper.text()).toContain('Enabled')
-    expect(wrapper.text()).toContain('13h 42m')
-
-    // Run Now buttons in template order: Availability(0), Valuation(1),
-    // Health(2), CoinOfDay(3).
-    const runButtons = wrapper.findAll('button').filter(button => button.text() === 'Run Now')
-    await runButtons[2]?.trigger('click')
-    await flushPromises()
-
-    expect(mocks.triggerCollectionHealthSnapshots).toHaveBeenCalledTimes(1)
-  })
-
 })
 
 function buildProps() {
@@ -162,8 +99,6 @@ function buildProps() {
     settingsSaving: false,
     availSettingsMsg: '',
     availSettingsError: false,
-    healthSettingsMsg: '',
-    healthSettingsError: false,
     valSettingsMsg: '',
     valSettingsError: false,
   }

@@ -21,15 +21,12 @@ import common from './common'
 import copilot from './copilot'
 import deepAnalysis from './deepAnalysis'
 import editCoin from './editCoin'
-import emperors from './emperors'
 import errors from './errors'
 import estimate from './estimate'
-import featured from './featured'
 import health from './health'
 import imageErrors from './imageErrors'
 import imageTools from './imageTools'
 import imageTypes from './imageTypes'
-import imperial from './imperial'
 import jobs from './jobs'
 import journal from './journal'
 import language from './language'
@@ -39,22 +36,15 @@ import map from './map'
 import materials from './materials'
 import mint from './mint'
 import nav from './nav'
-import notifications from './notifications'
 import numista from './numista'
 import numistaGrades from './numistaGrades'
-import oidc from './oidc'
 import photos from './photos'
 import purchase from './purchase'
 import pwa from './pwa'
-import quickAccess from './quickAccess'
-import quickAccessPage from './quickAccessPage'
 import quickCapture from './quickCapture'
 import sets from './sets'
 import settings from './settings'
 import shareCard from './shareCard'
-import showcases from './showcases'
-import social from './social'
-import sold from './sold'
 import stats from './stats'
 import swipe from './swipe'
 import timeline from './timeline'
@@ -91,15 +81,12 @@ const messages: Messages = {
   copilot,
   deepAnalysis,
   editCoin,
-  emperors,
   errors,
   estimate,
-  featured,
   health,
   imageErrors,
   imageTools,
   imageTypes,
-  imperial,
   jobs,
   journal,
   language,
@@ -109,22 +96,15 @@ const messages: Messages = {
   materials,
   mint,
   nav,
-  notifications,
   numista,
   numistaGrades,
-  oidc,
   photos,
   purchase,
   pwa,
-  quickAccess,
-  quickAccessPage,
   quickCapture,
   sets,
   settings,
   shareCard,
-  showcases,
-  social,
-  sold,
   stats,
   swipe,
   timeline,

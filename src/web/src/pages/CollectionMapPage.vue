@@ -382,7 +382,7 @@ async function load() {
   try {
     const all: Coin[] = []
     for (let page = 1; ; page += 1) {
-      const res = await getCoins({ wishlist: 'false', sold: 'false', page, limit: PAGE_SIZE })
+      const res = await getCoins({ wishlist: 'false', page, limit: PAGE_SIZE })
       all.push(...res.data.coins)
       if (!res.data.coins.length || page * PAGE_SIZE >= res.data.total) break
     }

@@ -2,13 +2,13 @@
   <div class="container">
     <DesktopPageContext :title="t('sets.proposal.title')">
       <template #actions>
-        <AppIconButton to="/sets" :title="t('emperors.backToSets')">
+        <AppIconButton to="/sets" :title="t('sets.backToSets')">
           <ArrowLeft :size="20" />
         </AppIconButton>
       </template>
       <header class="page-header">
         <h1>{{ t('sets.proposal.title') }}</h1>
-        <RouterLink class="btn btn-secondary btn-sm" to="/sets">{{ t('emperors.backToSets') }}</RouterLink>
+        <RouterLink class="btn btn-secondary btn-sm" to="/sets">{{ t('sets.backToSets') }}</RouterLink>
       </header>
     </DesktopPageContext>
 

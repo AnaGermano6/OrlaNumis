@@ -29,7 +29,6 @@ func setupAvailabilityHandlerTestDB(t *testing.T) *gorm.DB {
 		&models.AvailabilityRun{},
 		&models.AvailabilityResult{},
 		&models.AppSetting{},
-		&models.Notification{},
 	); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
@@ -73,7 +72,7 @@ func setupAvailabilityRouter(t *testing.T, listingURL string) *availHandlerFixtu
 	availRepo.WithCycleRepo(availCycleRepo)
 	settingsSvc := services.NewSettingsService(repository.NewSettingsRepository(db))
 	logger := services.NewLogger(100)
-	availSvc := services.NewAvailabilityService(coinRepo, availRepo, nil, nil, nil, settingsSvc, logger).WithCycleRepo(availCycleRepo)
+	availSvc := services.NewAvailabilityService(coinRepo, availRepo, nil, settingsSvc, logger).WithCycleRepo(availCycleRepo)
 	scheduler := services.NewAvailabilityScheduler(availSvc, coinRepo, availRepo, settingsSvc, logger).WithCycleRepo(availCycleRepo)
 	handler := NewAvailabilityHandler(availSvc, scheduler, availRepo, coinRepo).WithCycleRepo(availCycleRepo)
 

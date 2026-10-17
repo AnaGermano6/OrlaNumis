@@ -6,18 +6,12 @@ import type { UserInfo } from '@/types'
 
 const mockGetSecuritySummary = vi.fn()
 const mockGetSecurityEvents = vi.fn()
-const mockGetSecurityIpRules = vi.fn()
-const mockCreateSecurityIpRule = vi.fn()
-const mockDeleteSecurityIpRule = vi.fn()
 const mockGetSecurityExposureCheck = vi.fn()
 const mockUnlockUser = vi.fn()
 
 vi.mock('@/api/client', () => ({
   getSecuritySummary: () => mockGetSecuritySummary(),
   getSecurityEvents: (filters?: Record<string, unknown>) => mockGetSecurityEvents(filters),
-  getSecurityIpRules: () => mockGetSecurityIpRules(),
-  createSecurityIpRule: (payload: Record<string, unknown>) => mockCreateSecurityIpRule(payload),
-  deleteSecurityIpRule: (id: number) => mockDeleteSecurityIpRule(id),
   getSecurityExposureCheck: () => mockGetSecurityExposureCheck(),
   unlockUser: (id: number) => mockUnlockUser(id),
 }))
@@ -28,7 +22,6 @@ const baseUser: UserInfo = {
   role: 'admin',
   email: 'admin@example.com',
   avatarPath: '',
-  isPublic: false,
   bio: '',
   zipCode: '',
   emailMissing: false,
@@ -50,7 +43,7 @@ describe('AdminSecuritySection', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetSecuritySummary.mockResolvedValue({
-      data: { failedLogins: 3, lockedAccounts: 1, activeBans: 2, recentEvents: 7 },
+      data: { failedLogins: 3, lockedAccounts: 1, recentEvents: 7 },
     })
     mockGetSecurityEvents.mockResolvedValue({
       data: {
@@ -68,23 +61,17 @@ describe('AdminSecuritySection', () => {
         ],
       },
     })
-    mockGetSecurityIpRules.mockResolvedValue({
-      data: { rules: [{ id: 4, cidr: '203.0.113.0/24', reason: 'bot traffic', expiresAt: null, createdBy: 'admin' }] },
-    })
     mockGetSecurityExposureCheck.mockResolvedValue({
       data: {
         publicIp: '198.51.100.4',
         proxy: true,
         cors: false,
         corsWarning: 'CORS allows a broad origin',
-        webAuthn: true,
         publicAppUrl: true,
         registration: true,
         agentToken: true,
       },
     })
-    mockCreateSecurityIpRule.mockResolvedValue({ data: {} })
-    mockDeleteSecurityIpRule.mockResolvedValue({ data: {} })
     mockUnlockUser.mockResolvedValue({ data: {} })
   })
 
@@ -97,14 +84,13 @@ describe('AdminSecuritySection', () => {
     expect(wrapper.text()).toContain('Loading...')
   })
 
-  it('loads summary, exposure, events, and IP rules', async () => {
+  it('loads summary, exposure and events', async () => {
     const wrapper = mountSection([{ ...baseUser, id: 2, username: 'locked', lockedUntil: '2999-01-01T00:00:00Z' }])
     await flushPromises()
 
     expect(wrapper.text()).toContain('Failed Logins')
     expect(wrapper.text()).toContain('3')
     expect(wrapper.text()).toContain('API sees your IP as')
-    expect(wrapper.text()).toContain('203.0.113.0/24')
     expect(wrapper.text()).toContain('Failed login')
     expect(wrapper.text()).toContain('locked')
   })
@@ -114,7 +100,6 @@ describe('AdminSecuritySection', () => {
       data: {
         summary: {
           loginFailures: 5,
-          activeIpRuleCount: 2,
         },
         backupStatus: 'restore drill complete',
       },
@@ -133,29 +118,20 @@ describe('AdminSecuritySection', () => {
         ],
       },
     })
-    mockGetSecurityIpRules.mockResolvedValue({
-      data: {
-        ipRules: [{ id: 5, cidr: '198.51.100.0/24', reason: 'credential stuffing', expiresAt: null, createdBy: 1 }],
-      },
-    })
-
     const wrapper = mountSection()
     await flushPromises()
 
     expect(wrapper.text()).toContain('5')
     expect(wrapper.text()).toContain('198.51.100.10')
-    expect(wrapper.text()).toContain('198.51.100.0/24')
   })
 
-  it('renders empty events and IP rule states', async () => {
+  it('renders the empty events state', async () => {
     mockGetSecurityEvents.mockResolvedValue({ data: { events: [] } })
-    mockGetSecurityIpRules.mockResolvedValue({ data: { rules: [] } })
 
     const wrapper = mountSection()
     await flushPromises()
 
     expect(wrapper.text()).toContain('No security events match the current filters.')
-    expect(wrapper.text()).toContain('No active manual IP bans.')
   })
 
   it('shows an error when loading fails', async () => {
@@ -200,25 +176,4 @@ describe('AdminSecuritySection', () => {
     expect(eventsTable.find('tbody td').text()).toBeTruthy()
   })
 
-  it('adds and deletes IP bans through the API client', async () => {
-    const wrapper = mountSection()
-    await flushPromises()
-
-    await wrapper.find('input[placeholder^="CIDR"]').setValue('198.51.100.9')
-    await wrapper.find('input[placeholder^="Duration"]').setValue('24h')
-    await wrapper.find('input[placeholder="Reason"]').setValue('credential stuffing')
-    await wrapper.findAll('form')[1].trigger('submit.prevent')
-    await flushPromises()
-
-    expect(mockCreateSecurityIpRule).toHaveBeenCalledWith({
-      cidr: '198.51.100.9',
-      durationMinutes: 1440,
-      reason: 'credential stuffing',
-    })
-
-    await wrapper.find('button.btn-danger').trigger('click')
-    await flushPromises()
-
-    expect(mockDeleteSecurityIpRule).toHaveBeenCalledWith(4)
-  })
 })

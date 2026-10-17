@@ -11,7 +11,6 @@ export default {
     unavailable: 'Unavailable',
   },
   title: 'Deep Analysis',
-  ocreAttribution: 'Coin type data:',
   coverage: {
     title: 'Provider coverage',
     viewReference: 'View reference',

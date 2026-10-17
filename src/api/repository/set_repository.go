@@ -120,43 +120,7 @@ func (r *SetRepository) DeleteInTx(id, userID uint) error {
 	if err := r.db.Where("set_id = ?", id).Delete(&models.CoinSetMembership{}).Error; err != nil {
 		return err
 	}
-	if err := r.db.Where("set_id = ?", id).Delete(&models.CoinSetChecklistKey{}).Error; err != nil {
-		return err
-	}
 	return r.db.Scopes(OwnedByID(id, userID)).Delete(&models.CoinSet{}).Error
-}
-
-// ListChecklistSets lists every user's checklist sets.
-func (r *SetRepository) ListChecklistSets() ([]models.CoinSet, error) {
-	sets := []models.CoinSet{}
-	// Sets left behind by a deleted user are not looked at.
-	err := r.db.Where("set_type = ? AND EXISTS (SELECT 1 FROM users WHERE users.id = coin_sets.user_id)", models.CoinSetTypeChecklist).Order("id").Find(&sets).Error
-	return sets, err
-}
-
-// ChecklistKeys returns the catalogue coins a checklist set has already listed.
-func (r *SetRepository) ChecklistKeys(setID uint) (map[string]bool, error) {
-	var keys []string
-	if err := r.db.Model(&models.CoinSetChecklistKey{}).Where("set_id = ?", setID).Pluck("key", &keys).Error; err != nil {
-		return nil, err
-	}
-	known := make(map[string]bool, len(keys))
-	for _, key := range keys {
-		known[key] = true
-	}
-	return known, nil
-}
-
-// AddChecklistKeys records catalogue coins a checklist set has listed.
-func (r *SetRepository) AddChecklistKeys(setID uint, keys []string) error {
-	if len(keys) == 0 {
-		return nil
-	}
-	rows := make([]models.CoinSetChecklistKey, 0, len(keys))
-	for _, key := range keys {
-		rows = append(rows, models.CoinSetChecklistKey{SetID: setID, Key: key})
-	}
-	return r.db.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(rows, 200).Error
 }
 
 // AddCoinToSet adds a coin to a set. Agentic sets require a target ID assignment.
@@ -170,7 +134,7 @@ func (r *SetRepository) AddCoinToSet(coinID, setID, userID uint, notes string, t
 
 		coinQuery := tx.Model(&models.Coin{}).Where("id = ? AND user_id = ?", coinID, userID)
 		if set.SetType == models.CoinSetTypeAgentic {
-			coinQuery = coinQuery.Where("is_wishlist = ? AND is_sold = ?", false, false)
+			coinQuery = coinQuery.Where("is_wishlist = ?", false)
 		}
 		var coinCount int64
 		if err := coinQuery.Count(&coinCount).Error; err != nil {
@@ -320,7 +284,6 @@ func (r *SetRepository) GetCoinsInSet(setID, userID uint) ([]models.Coin, error)
 		Joins("JOIN coin_sets ON coin_sets.id = coin_set_memberships.set_id").
 		Where("coin_sets.id = ? AND coin_sets.user_id = ?", setID, userID).
 		Preload("Images").
-		Preload("Tags").
 		Order("coin_set_memberships.sort_order ASC").
 		Order("coins.name ASC").
 		Order("coins.id ASC").
@@ -473,13 +436,6 @@ func (r *SetRepository) CountByUser(userID uint) (int64, error) {
 	return count, err
 }
 
-// CountPinned returns the number of sets currently pinned by a user.
-func (r *SetRepository) CountPinned(userID uint) (int64, error) {
-	var count int64
-	err := r.db.Model(&models.CoinSet{}).Scopes(OwnedBy(userID)).Where("pinned_at IS NOT NULL").Count(&count).Error
-	return count, err
-}
-
 // ExistsByName checks if a set with the given name already exists for the user (case-insensitive).
 func (r *SetRepository) ExistsByName(userID uint, name string) (bool, error) {
 	var count int64
@@ -487,61 +443,6 @@ func (r *SetRepository) ExistsByName(userID uint, name string) (bool, error) {
 		Where("user_id = ? AND LOWER(name) = LOWER(?)", userID, strings.TrimSpace(name)).
 		Count(&count).Error
 	return count > 0, err
-}
-
-// MigrateTagsToSets creates standard sets from existing tags for the given user
-// and keeps memberships in sync for newly tagged coins.
-func (r *SetRepository) MigrateTagsToSets(userID uint) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		// Get all tags for the user
-		var tags []models.Tag
-		if err := tx.Where("user_id = ?", userID).Find(&tags).Error; err != nil {
-			return err
-		}
-
-		// For each tag, create a corresponding standard set
-		for _, tag := range tags {
-			// Check if set already exists
-			var existingSet models.CoinSet
-			err := tx.Where("user_id = ? AND name = ?", userID, tag.Name).First(&existingSet).Error
-			if err != nil && err != gorm.ErrRecordNotFound {
-				return err
-			}
-			if err == gorm.ErrRecordNotFound {
-				// Create the set
-				set := models.CoinSet{
-					UserID:  userID,
-					Name:    tag.Name,
-					Color:   tag.Color,
-					SetType: models.CoinSetTypeStandard,
-				}
-				if err := tx.Create(&set).Error; err != nil {
-					return err
-				}
-				existingSet = set
-			}
-
-			// Migrate coin_tags to coin_set_memberships
-			var coinTags []models.CoinTag
-			if err := tx.Where("tag_id = ?", tag.ID).Find(&coinTags).Error; err != nil {
-				return err
-			}
-
-			for i, ct := range coinTags {
-				membership := models.CoinSetMembership{
-					SetID:     existingSet.ID,
-					CoinID:    ct.CoinID,
-					AddedAt:   time.Now(),
-					SortOrder: i,
-				}
-				if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&membership).Error; err != nil {
-					return err
-				}
-			}
-		}
-
-		return nil
-	})
 }
 
 // CreateTargetsForSet creates multiple targets for a set in a transaction.
@@ -671,7 +572,7 @@ func (r *SetRepository) matchAgenticTargets(setID, userID uint) ([]AgenticTarget
 		Joins("JOIN coin_sets ON coin_sets.id = coin_set_memberships.set_id").
 		Joins("JOIN coins ON coins.id = coin_set_memberships.coin_id").
 		Where("coin_set_memberships.set_id = ? AND coin_sets.user_id = ? AND coins.user_id = ?", setID, userID, userID).
-		Where("coins.is_wishlist = ? AND coins.is_sold = ?", false, false).
+		Where("coins.is_wishlist = ?", false).
 		Find(&memberships).Error; err != nil {
 		return nil, nil, err
 	}
@@ -698,7 +599,6 @@ func (r *SetRepository) matchAgenticTargets(setID, userID uint) ([]AgenticTarget
 			Scopes(OwnedBy(userID)).
 			Where("coins.id IN ?", coinIDs).
 			Preload("Images").
-			Preload("Tags").
 			Find(&assignedCoins).Error; err != nil {
 			return nil, nil, err
 		}
@@ -843,26 +743,13 @@ func (r *SetRepository) GetAllSetIDsForUser(userID uint) ([]uint, error) {
 	return ids, err
 }
 
-// GetEnabledMilestoneAlerts returns active alerts for a set.
-func (r *SetRepository) GetEnabledMilestoneAlerts(setID, userID uint) ([]models.CoinSetMilestoneAlert, error) {
-	var alerts []models.CoinSetMilestoneAlert
-	err := r.db.Where("set_id = ? AND user_id = ? AND enabled = ?", setID, userID, true).Find(&alerts).Error
-	return alerts, err
-}
-
-// MarkMilestoneAlertTriggered stores the last alert trigger time.
-func (r *SetRepository) MarkMilestoneAlertTriggered(id uint) error {
-	now := time.Now()
-	return r.db.Model(&models.CoinSetMilestoneAlert{}).Where("id = ?", id).Update("last_triggered_at", &now).Error
-}
-
 // GetCoinsMatchingCriteria returns coins that match validated smart set criteria.
 func (r *SetRepository) GetCoinsMatchingCriteria(userID uint, criteria map[string]interface{}) ([]models.Coin, error) {
 	criteria, err := r.resolveClassifications(userID, criteria)
 	if err != nil {
 		return nil, err
 	}
-	query := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID)).Preload("Images").Preload("Tags")
+	query := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID)).Preload("Images")
 	query, err = r.applyCriteria(query, criteria)
 	if err != nil {
 		return nil, err
@@ -980,25 +867,22 @@ func (r *SetRepository) applyCriteria(query *gorm.DB, node map[string]interface{
 }
 
 var criteriaFieldColumns = map[string]string{
-	"material":          "material",
-	"category":          "category",
-	"denomination":      "denomination",
-	"ruler":             "ruler",
-	"era":               "era",
-	"mint":              "mint",
-	"grade":             "grade",
-	"currentValue":      "current_value",
-	"purchasePrice":     "purchase_price",
-	"purchaseDate":      "purchase_date",
-	"createdAt":         "created_at",
-	"isWishlist":        "is_wishlist",
-	"isSold":            "is_sold",
-	"isPrivate":         "is_private",
-	"storageLocationId": "storage_location_id",
-	"country":           "country",
-	"year":              "year",
-	"presentation":      "presentation",
-	"kind":              "kind",
+	"material":      "material",
+	"category":      "category",
+	"denomination":  "denomination",
+	"ruler":         "ruler",
+	"era":           "era",
+	"mint":          "mint",
+	"grade":         "grade",
+	"currentValue":  "current_value",
+	"purchasePrice": "purchase_price",
+	"purchaseDate":  "purchase_date",
+	"createdAt":     "created_at",
+	"isWishlist":    "is_wishlist",
+	"country":       "country",
+	"year":          "year",
+	"presentation":  "presentation",
+	"kind":          "kind",
 	// id is for kind-of-coin rules once resolved (see resolveClassifications).
 	"id": "coins.id",
 }
@@ -1068,40 +952,6 @@ func matchCoinToTarget(coin models.Coin, target models.CoinSetTarget) bool {
 	}
 
 	return true
-}
-
-// CreateCriteriaTemplate persists a new user-scoped smart criteria template.
-func (r *SetRepository) CreateCriteriaTemplate(tmpl *models.SmartCriteriaTemplate) error {
-	return r.db.Create(tmpl).Error
-}
-
-// ListCriteriaTemplates returns all criteria templates owned by the user.
-func (r *SetRepository) ListCriteriaTemplates(userID uint) ([]models.SmartCriteriaTemplate, error) {
-	var templates []models.SmartCriteriaTemplate
-	err := r.db.Where("user_id = ?", userID).Order("created_at DESC").Find(&templates).Error
-	return templates, err
-}
-
-// GetCriteriaTemplate returns a single criteria template owned by the user.
-func (r *SetRepository) GetCriteriaTemplate(id, userID uint) (*models.SmartCriteriaTemplate, error) {
-	var tmpl models.SmartCriteriaTemplate
-	err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&tmpl).Error
-	if err != nil {
-		return nil, err
-	}
-	return &tmpl, nil
-}
-
-// DeleteCriteriaTemplate removes a criteria template owned by the user.
-func (r *SetRepository) DeleteCriteriaTemplate(id, userID uint) error {
-	result := r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.SmartCriteriaTemplate{})
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
 }
 
 // setSummaryRow is one grouped-aggregate row from GetSetSummaries.

@@ -49,7 +49,7 @@ models/        # GORM model definitions
 repository/    # Data access layer (one file per domain)
 services/      # Business logic, schedulers, agent proxy
 handlers/      # Gin HTTP handlers (thin, DI-wired)
-middleware/    # JWT auth, API key auth, rate limiting
+middleware/    # JWT auth, rate limiting
 docs/          # Swagger/OpenAPI generated docs
 ```
 
@@ -68,27 +68,17 @@ All dependencies are wired via constructor injection in `main.go`. No global sta
 - `POST /api/auth/register` — Register new user (rate limited)
 - `POST /api/auth/login` — Login (rate limited)
 - `POST /api/auth/refresh` — Refresh JWT token (rate limited)
-- `GET  /api/auth/setup` — Check if any users exist
-- `POST /api/auth/webauthn/login/begin|finish` — WebAuthn login ceremony
-- `GET  /api/auth/webauthn/check` — Check WebAuthn credential availability
-- `GET  /api/showcase/:slug` — Public showcase view
 
-### `protected` — JWT or API Key Required
+### `protected` — JWT Required
 
-- `/api/coins` — Full CRUD, purchase, sell, bulk actions
-- `/api/tags` — Tag CRUD, attach/detach from coins
+- `/api/coins` — Full CRUD, purchase, bulk actions
 - `/api/coins/:id/journal` — Journal entries per coin
 - `/api/coins/:id/images` — Image upload (multipart + base64), delete
 - `/api/coins/:id/analyze` — AI analysis via agent proxy
 - `/api/stats`, `/api/suggestions` — Collection statistics
 - `/api/agent/chat` — SSE streaming AI chat (proxied to Python agent)
 - `/api/agent/conversations` — Conversation history CRUD
-- `/api/auth/api-keys` — API key management
-- `/api/auth/webauthn/register/*` — WebAuthn credential registration
 - `/api/user/profile`, `/api/user/avatar`, `/api/user/export` — User self-service
-- `/api/social/*` — Follow/unfollow, comments, ratings
-- `/api/notifications` — Notification list, read, delete
-- `/api/showcases` — Showcase CRUD, coin assignment
 - `/api/wishlist/check-availability` — Wishlist availability checking
 
 ## Background Schedulers
@@ -101,18 +91,15 @@ The API runs background schedulers that start automatically on server startup:
 
 3. **Wishlist Search Alert Scheduler** — Daily sweep that queues an automatic discovery run for each active `WishlistSearchAlert` whose configured cadence (`daily`/`weekly`/`monthly`) has elapsed since its last run. Configured via `WishlistSearchAlertsCheckEnabled` (default `"false"`) and `WishlistSearchAlertsCheckStartTime` (HH:MM, default `03:00`). Alerts with `cadence: manual` are never auto-run — only "Run Now" processes them. Queued runs are logged in `alert_runs` the same as manual runs, with `triggerType: scheduled`.
 
-4. **Collection Health Scheduler** — Captures a daily per-user collection health snapshot (score, grade distribution, eligible coin count) used by the 30-day health trend indicator. Configured via `CollectionHealthSnapshotsEnabled` (default `"false"`) and `CollectionHealthSnapshotsStartTime` (HH:MM, default `04:30`). Each run is logged in the `collection_health_snapshot_runs` table with eligible/snapshotted/failed user counts. Runs can be manually triggered via `/admin/collection-health-snapshots/run`.
-
 All schedulers honor the enabled flag — set to `"false"` to disable. Run history is available via admin endpoints:
 - `GET /admin/availability-runs` — Paginated list of availability check runs
 - `GET /admin/valuation-runs` — Paginated list of valuation runs
-- `GET /admin/collection-health-snapshot-runs` — Paginated list of collection health snapshot runs
 
 ## Pagination
 
-1. **Wishlist Availability Scheduler** — Periodically checks if wishlist coins are still available at their reference URLs. Configured via `WishlistCheckEnabled`, `WishlistCheckStartTime`, and `WishlistCheckInterval` settings. Sends in-app notifications when items become unavailable.
+1. **Wishlist Availability Scheduler** — Periodically checks if wishlist coins are still available at their reference URLs. Configured via `WishlistCheckEnabled`, `WishlistCheckStartTime`, and `WishlistCheckInterval` settings.
 
-2. **Collection Valuation Scheduler** — Periodically runs AI-powered valuation estimates for the user's collection. Configured via `ValuationCheckEnabled`, `ValuationCheckStartTime`, and `ValuationCheckIntervalDays` settings. Sends in-app notifications with valuation summaries.
+2. **Collection Valuation Scheduler** — Periodically runs AI-powered valuation estimates for the user's collection. Configured via `ValuationCheckEnabled`, `ValuationCheckStartTime`, and `ValuationCheckIntervalDays` settings.
 
 All schedulers gracefully handle disabled or missing configuration.
 
@@ -133,20 +120,16 @@ All schedulers gracefully handle disabled or missing configuration.
 | `DB_PATH` | `./ancientcoins.db` | SQLite database file path |
 | `PORT` | `8080` | Server listen port |
 | `UPLOAD_DIR` | `./uploads` | Directory for uploaded coin images |
-| `WEBAUTHN_RP_ID` | `localhost` | WebAuthn Relying Party ID (domain) |
-| `WEBAUTHN_ORIGIN` | `http://localhost:8080` | WebAuthn allowed origin |
-| `CORS_ORIGINS` | *(empty, falls back to WebAuthn origins)* | Comma-separated allowed CORS origins |
+| `CORS_ORIGINS` | *(empty: the Vite dev origins outside release mode)* | Comma-separated allowed CORS origins |
 | `AGENT_SERVICE_URL` | `http://localhost:8081` | Python agent service base URL |
 | `AGENT_INTERNAL_SERVICE_TOKEN` | *(empty in local dev; required for hardened agent)* | Shared API → agent credential. Must match the Python agent's value when agent auth is enabled. |
 | `GIN_MODE` | `debug` | Set to `release` for production |
 
 ## Authentication Model
 
-- **JWT** — Primary auth. Access + refresh token pair. Access tokens are short-lived; refresh tokens enable silent renewal.
-- **WebAuthn / FIDO2** — Passwordless login via hardware keys or platform authenticators. Registration requires an existing JWT session; login is public.
-- **API Keys** — `X-API-Key` header. Prefixed with `ak_`, scoped to a user. Managed via `/api/auth/api-keys`.
+- **JWT** — Username and password sign-in gives an access + refresh token pair. Access tokens are short-lived; refresh tokens enable silent renewal.
 
-The `middleware.AuthRequired` middleware accepts either a valid JWT `Authorization: Bearer ...` header or a valid `X-API-Key` header.
+The `middleware.AuthRequired` middleware accepts a valid JWT `Authorization: Bearer ...` header.
 
 ## Swagger Docs
 

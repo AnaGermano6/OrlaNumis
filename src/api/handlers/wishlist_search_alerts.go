@@ -80,31 +80,6 @@ func (h *WishlistSearchAlertHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, alert)
 }
 
-// Get returns one owned search alert.
-//
-//	@Summary		Get wishlist search alert
-//	@Description	Gets one acquisition discovery alert owned by the authenticated collector.
-//	@Tags			Wishlist Search Alerts
-//	@Produce		json
-//	@Param			alertId	path	int	true	"Alert ID"
-//	@Success		200	{object}	models.WishlistSearchAlert
-//	@Failure		401	{object}	ErrorResponse
-//	@Failure		404	{object}	ErrorResponse
-//	@Security		BearerAuth
-//	@Router			/wishlist/search-alerts/{alertId} [get]
-func (h *WishlistSearchAlertHandler) Get(c *gin.Context) {
-	id, ok := parseID(c, "alertId")
-	if !ok {
-		return
-	}
-	alert, err := h.service.GetAlert(id, c.GetUint("userId"))
-	if err != nil {
-		respondWishlistSearchAlertError(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, alert)
-}
-
 // Update updates one owned search alert.
 //
 //	@Summary		Update wishlist search alert

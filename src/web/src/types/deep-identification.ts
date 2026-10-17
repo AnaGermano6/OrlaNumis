@@ -19,7 +19,7 @@ export interface DeepIdentificationObservabilitySummary {
 
 // Deep Agentic Coin Identification (344-deep-agentic-coin-identification).
 // Contract anchor: specs/344-deep-agentic-coin-identification/contracts/deep-identification.openapi.yaml
-export type DeepProviderId = 'nomisma' | 'numista' | 'ngc' | 'ocre' | 'rpc'
+export type DeepProviderId = 'numista' | 'ngc' | 'rpc'
 
 export type DeepJobStatus = 'queued' | 'running' | 'partial' | 'completed' | 'failed' | 'cancelled'
 
@@ -276,12 +276,6 @@ export interface DeepStreamEvent {
   type: DeepStreamEventType | string
   ts: string
   payload: Record<string, unknown>
-}
-
-export interface DeepStreamTruncatedPayload {
-  status: DeepJobStatus
-  earliestSeq: number
-  lastSeq: number
 }
 
 export interface DeepStreamTerminalPayload {

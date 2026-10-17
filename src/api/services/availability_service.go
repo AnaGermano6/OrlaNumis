@@ -48,8 +48,6 @@ type AvailabilityService struct {
 	availRepo      *repository.AvailabilityRepository
 	availCycleRepo *repository.AvailabilityCycleRepository
 	agentProxy     *AgentProxy
-	notifSvc       *NotificationService
-	userRepo       *repository.UserRepository
 	settingsSvc    *SettingsService
 	logger         *Logger
 }
@@ -59,8 +57,6 @@ func NewAvailabilityService(
 	coinRepo *repository.CoinRepository,
 	availRepo *repository.AvailabilityRepository,
 	agentProxy *AgentProxy,
-	notifSvc *NotificationService,
-	userRepo *repository.UserRepository,
 	settingsSvc *SettingsService,
 	logger *Logger,
 ) *AvailabilityService {
@@ -68,8 +64,6 @@ func NewAvailabilityService(
 		coinRepo:    coinRepo,
 		availRepo:   availRepo,
 		agentProxy:  agentProxy,
-		notifSvc:    notifSvc,
-		userRepo:    userRepo,
 		settingsSvc: settingsSvc,
 		logger:      logger,
 	}
@@ -221,14 +215,12 @@ func (s *AvailabilityService) CheckWishlistForUser(
 		if _, failErr := s.availRepo.FailChildRun(run, models.GenericAvailabilityFailureMessage); failErr != nil {
 			s.logger.Error("availability", "Failed to mark run %d as failed: %v", run.ID, failErr)
 		}
-		s.notifyRunTerminal(run, nil)
 		return run, nil
 	}
 
 	s.logger.Info("availability", "Starting check for user %d: %d coins with URLs", userID, len(coins))
 
 	var available, unavailable, unknown, errCount int
-	var newlyUnavailableCoinNames []string
 
 	// Track results and ambiguous items for agent escalation
 	var allResults []coinResult
@@ -295,14 +287,6 @@ func (s *AvailabilityService) CheckWishlistForUser(
 		if err := s.coinRepo.UpdateListingStatus(cr.coin.ID, cr.dbResult.Status, cr.dbResult.Reason, time.Now()); err != nil {
 			s.logger.Error("availability", "Failed to update listing status for coin %d: %s", cr.coin.ID, err)
 		}
-
-		// Notify user when a coin newly becomes unavailable. This existing per-coin call is left
-		// completely unmodified — it fires independently of the new terminal outcome notification
-		// below and neither call gates or suppresses the other (D6, FR-014).
-		if cr.dbResult.Status == "unavailable" && cr.coin.ListingStatus != "unavailable" && s.notifSvc != nil {
-			s.notifSvc.NotifyWishlistUnavailable(userID, cr.coin, cr.dbResult.Reason)
-			newlyUnavailableCoinNames = append(newlyUnavailableCoinNames, coinDisplayName(cr.coin))
-		}
 	}
 
 	// Complete the run
@@ -319,46 +303,7 @@ func (s *AvailabilityService) CheckWishlistForUser(
 	s.logger.Info("availability", "Run %d complete: %d checked, %d available, %d unavailable, %d unknown (%dms)",
 		run.ID, len(coins), available, unavailable, unknown, run.DurationMs)
 
-	s.notifyRunTerminal(run, newlyUnavailableCoinNames)
-
 	return run, nil
-}
-
-// notifyRunTerminal fires the owner-facing terminal-outcome in-app notification for every
-// terminal child run, and — for admin-triggered children that end up failed — an additional
-// notification to the triggering admin. Called only after the terminal transition has
-// already committed (FR-011: notification failures can never regress run status).
-func (s *AvailabilityService) notifyRunTerminal(run *models.AvailabilityRun, newlyUnavailableCoinNames []string) {
-	if s.notifSvc == nil {
-		return
-	}
-	s.notifSvc.NotifyAvailabilityRunTerminal(run.UserID, run, newlyUnavailableCoinNames)
-
-	if run.TriggerType != models.AvailabilityRunTriggerAdmin || run.Status != models.AvailabilityRunStatusFailed {
-		return
-	}
-	if run.TriggerUserID == nil {
-		return
-	}
-	ownerUsername := ""
-	if s.userRepo != nil {
-		if owner, err := s.userRepo.FindByID(run.UserID); err == nil && owner != nil {
-			ownerUsername = owner.Username
-		}
-	}
-	cycleID := uint(0)
-	if run.CycleID != nil {
-		cycleID = *run.CycleID
-	}
-	s.notifSvc.NotifyAdminCycleChildFailure(*run.TriggerUserID, ownerUsername, cycleID)
-}
-
-// coinDisplayName returns a human-readable coin name, falling back for unnamed coins.
-func coinDisplayName(coin models.Coin) string {
-	if coin.Name != "" {
-		return coin.Name
-	}
-	return "Unnamed coin"
 }
 
 // escalateToAgent sends ambiguous URLs to the Python agent for LLM analysis

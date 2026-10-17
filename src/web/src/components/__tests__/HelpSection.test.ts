@@ -33,19 +33,19 @@ describe('HelpSection', () => {
     }
   })
 
-  it('documents current app help for stats, capture, notifications, and external tools', () => {
+  it('documents current app help for stats and capture, without the removed features', () => {
     const wrapper = mount(HelpSection)
     const text = wrapper.text()
 
     expect(text).toContain('Stats Views')
     // The value details, investment breakdown and Notes pages, auction
     // tracking, the calendar and shipments were removed.
-    for (const removed of ['Value Details', 'Investment Breakdown', 'Save to Notes', 'Calendar', 'Shipment', 'auction alerts']) {
+    // So were notifications, reminders, tags, Quick Access, the Emperor tracker,
+    // Coin of the Day, API keys and the external tool server, OIDC and passkeys.
+    for (const removed of ['Value Details', 'Investment Breakdown', 'Save to Notes', 'Calendar', 'Shipment', 'auction alerts', 'notification', 'Purchase reminders', 'Custom tags', 'Quick Access', 'Emperor Tracker', 'Coin of the Day', 'X-API-Key', 'External Tool Server', 'OIDC', 'passkey']) {
       expect(text).not.toContain(removed)
     }
     expect(text).toContain('Quick Capture, Coin Lookup, and image upload flows start the camera only after you tap')
-    expect(text).toContain('The notification badge tracks unread social, wishlist, set, and Coin of the Day activity')
-    expect(text).toContain('Header Name: X-API-Key')
     expect(text).toContain('Owned coins show purchase dates in YYYY-MM-DD')
     expect(text).toContain('Only approval creates the Agentic set')
   })
@@ -113,10 +113,12 @@ describe('HelpSection', () => {
     expect(app).not.toContain("to: '/quick-capture'")
     expect(text).toContain('Both intake flows live under Identify Coin')
 
-    for (const view of ['Time Machine', 'Analysis History', 'Showcases']) {
+    for (const view of ['Time Machine', 'Analysis History']) {
       expect(Object.values(en.nav)).toContain(view)
       expect(text).toContain(view)
     }
+    // Showcases, followers and storage locations were removed.
+    for (const removed of ['Showcases', 'Followers', 'Storage locations']) expect(text).not.toContain(removed)
   })
 
   it('lists every settings tab in its orientation table', () => {
@@ -137,9 +139,14 @@ describe('HelpSection', () => {
     const text = mount(HelpSection).text()
     const backups = readSource('components/settings/SettingsBackupsSection.vue')
 
-    for (const column of ['purchaseLocation', 'vendorSku', 'vendorInvoice', 'soldPrice', 'soldTo', 'rarityRating']) {
+    for (const column of ['purchaseLocation', 'vendorSku', 'vendorInvoice', 'rarityRating']) {
       expect(backups).toContain(column)
       expect(text).toContain(column)
+    }
+    // Coins are not marked as sold or private: the importer reads no such columns, and the help lists none.
+    for (const column of ['isSold', 'soldPrice', 'soldDate', 'soldTo', 'isPrivate']) {
+      expect(backups).not.toContain(`['${column}'`)
+      expect(text).not.toContain(column)
     }
 
     // era is an admin-configured enum; free-text reign dates there do not match era filters,

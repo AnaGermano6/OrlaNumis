@@ -3,8 +3,7 @@
 (T034/T035/T037 — contracts/vision-hypothesis.md §2, spec FR-009/FR-010/FR-011/FR-012.)
 
 This is the ONE shared builder used by every automatable provider node
-(`providers/numista.py`, `providers/nomisma.py`, `providers/ocre.py`'s
-type-bearing bound slots are separate — see below). Query text stays
+(`providers/numista.py`). Query text stays
 application-authored: no LLM may choose, rewrite, extend, or reorder it
 (FR-009). This property extends to candidate ranking too
 (`candidate_ranking.py`).
@@ -73,9 +72,7 @@ def build_query_terms(
     `""` when no precedence tier yields usable terms (FR-011).
 
     `max_length` bounds the FINAL result regardless of which tier produced
-    it — e.g. Nomisma's Go client rejects anything over 200 runes
-    (`nomisma_client.go::nomismaMaxQueryLength`), so `nomisma.py` passes
-    `max_length=200` here rather than only bounding the notes tier.
+    it, rather than only bounding the notes tier.
     """
     query = ""
     if quick_evidence and quick_evidence.numista_query:

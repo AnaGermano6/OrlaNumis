@@ -1,5 +1,5 @@
 <template>
-  <select :value="modelValue" data-testid="denomination-filter" @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)" class="form-select h-[38px] min-w-0 flex-1 bg-card px-[0.6rem] py-[0.45rem] text-body transition-colors hover:border-border-accent">
+  <select :value="modelValue" data-testid="denomination-filter" @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)" class="form-select h-10 w-full bg-card py-0 text-body transition-colors hover:border-border-accent">
     <option value="">{{ t('collection.allDenominations') }}</option>
     <option v-for="option in denominations" :key="option.denomination" :value="option.denomination">{{ option.denomination }} ({{ option.count }})</option>
   </select>

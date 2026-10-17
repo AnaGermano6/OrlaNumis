@@ -1,40 +1,49 @@
 <template>
   <div class="sticky top-[60px] z-50 mx-[-2rem] bg-surface px-8 pb-2">
     <div class="mb-4 flex flex-col gap-3 rounded-md border border-border-subtle bg-card p-4 shadow-card">
-      <div class="flex items-center gap-3">
-        <SearchBar
-          class="!max-w-none flex-1"
-          :model-value="search"
-          @update:model-value="$emit('update:search', $event)"
-        />
-        <div class="min-w-48 shrink-0">
-          <SortSelect :model-value="sortKey" @update:model-value="$emit('update:sortKey', $event)" />
-        </div>
-      </div>
+      <SearchBar
+        class="!max-w-none"
+        :model-value="search"
+        @update:model-value="$emit('update:search', $event)"
+      />
 
-      <div class="flex flex-wrap items-center gap-3 max-md:flex-col max-md:items-stretch">
-        <div class="flex min-w-[220px] flex-1 items-center gap-2 max-md:w-full max-sm:flex-col max-sm:items-stretch">
+      <!-- Every filter the same size: a grid of equal columns, a field per cell. -->
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" data-testid="collection-filters">
+        <label class="flex min-w-0 flex-col gap-1">
+          <span class="section-label mb-0">{{ t('collection.menu.denomination') }}</span>
           <DenominationFilter :model-value="selectedDenomination" :denominations="denominationOptions" @update:model-value="$emit('update:selectedDenomination', $event)" />
-          <select v-if="userTags.length" :value="selectedTag" @change="$emit('update:selectedTag', ($event.target as HTMLSelectElement).value)" class="form-select h-[38px] min-w-0 flex-1 bg-card px-[0.6rem] py-[0.45rem] text-body transition-colors hover:border-border-accent">
+        </label>
+        <label v-if="userSets.length" class="flex min-w-0 flex-col gap-1">
+          <span class="section-label mb-0">{{ t('collection.menu.set') }}</span>
+          <select :value="selectedSet" @change="$emit('update:selectedSet', ($event.target as HTMLSelectElement).value)" class="form-select h-10 w-full bg-card py-0 text-body transition-colors hover:border-border-accent">
             <option value="">{{ t('collection.allSets') }}</option>
-            <option v-for="tag in userTags" :key="tag.filterValue" :value="tag.filterValue">{{ tag.name }}</option>
+            <option v-for="set in userSets" :key="set.id" :value="String(set.id)">{{ set.name }}</option>
           </select>
-        </div>
+        </label>
+        <label class="flex min-w-0 flex-col gap-1">
+          <span class="section-label mb-0">{{ t('collection.menu.sort') }}</span>
+          <SortSelect :model-value="sortKey" @update:model-value="$emit('update:sortKey', $event)" />
+        </label>
 
-        <div class="h-6 w-px shrink-0 bg-border-subtle max-lg:hidden"></div>
+        <slot name="controls" />
 
-        <div class="flex shrink-0 items-center gap-2 max-md:w-full max-md:justify-between">
-          <div class="inline-flex whitespace-nowrap rounded-sm border border-border-subtle bg-input p-[2px]">
+        <div class="flex min-w-0 flex-col gap-1">
+          <span class="section-label mb-0">{{ t('collection.menu.face') }}</span>
+          <div class="flex h-10 w-full rounded-sm border border-border-subtle bg-input p-[2px]" role="group" :aria-label="t('collection.menu.face')">
             <button
-              class="rounded-[6px] bg-transparent px-3 py-1.5 text-chip font-medium text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary"
+              type="button"
+              class="min-w-0 flex-1 rounded-[6px] bg-transparent px-2 text-chip font-medium text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary"
               :class="gridSide === 'obverse' ? 'bg-gold text-surface hover:bg-gold hover:text-surface font-semibold' : ''"
+              :aria-pressed="gridSide === 'obverse'"
               @click="$emit('update:gridSide', gridSide === 'obverse' ? null : 'obverse')"
             >
               {{ t('common.obverse') }}
             </button>
             <button
-              class="rounded-[6px] bg-transparent px-3 py-1.5 text-chip font-medium text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary"
+              type="button"
+              class="min-w-0 flex-1 rounded-[6px] bg-transparent px-2 text-chip font-medium text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary"
               :class="gridSide === 'reverse' ? 'bg-gold text-surface hover:bg-gold hover:text-surface font-semibold' : ''"
+              :aria-pressed="gridSide === 'reverse'"
               @click="$emit('update:gridSide', gridSide === 'reverse' ? null : 'reverse')"
             >
               {{ t('common.reverse') }}
@@ -42,8 +51,6 @@
           </div>
         </div>
       </div>
-
-      <slot name="controls" />
     </div>
   </div>
 </template>
@@ -59,8 +66,8 @@ import { t } from '@/i18n'
 defineProps<{
   search: string
   selectedDenomination: string
-  selectedTag: string
-  userTags: CollectionSetOption[]
+  selectedSet: string
+  userSets: CollectionSetOption[]
   denominationOptions: CoinDenominationCount[]
   sortKey: string
   gridSide: ImageType | null
@@ -69,7 +76,7 @@ defineProps<{
 defineEmits<{
   'update:search': [value: string]
   'update:selectedDenomination': [value: string]
-  'update:selectedTag': [value: string]
+  'update:selectedSet': [value: string]
   'update:sortKey': [value: string]
   'update:gridSide': [value: ImageType | null]
 }>()

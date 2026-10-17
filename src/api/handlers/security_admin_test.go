@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,12 +20,12 @@ func setupSecurityAdminHandlerTest(t *testing.T) (*gin.Engine, *gorm.DB) {
 	if err != nil {
 		t.Fatalf("failed to open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.AppSetting{}, &models.SecurityEvent{}, &models.IPRule{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.AppSetting{}, &models.SecurityEvent{}); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
 	securitySvc := services.NewSecurityService(repository.NewSecurityRepository(db))
 	settingsSvc := services.NewSettingsService(repository.NewSettingsRepository(db))
-	handler := NewSecurityAdminHandler(securitySvc, settingsSvc, SecurityExposureConfig{WebAuthnOrigin: "http://localhost:8080"})
+	handler := NewSecurityAdminHandler(securitySvc, settingsSvc, SecurityExposureConfig{})
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
@@ -35,13 +34,11 @@ func setupSecurityAdminHandlerTest(t *testing.T) (*gin.Engine, *gorm.DB) {
 	})
 	router.GET("/api/admin/security/summary", handler.SecuritySummary)
 	router.GET("/api/admin/security/events", handler.SecurityEvents)
-	router.POST("/api/admin/security/ip-rules", handler.CreateIPRule)
-	router.GET("/api/admin/security/ip-rules", handler.ListIPRules)
 	router.GET("/api/admin/security/exposure-check", handler.ExposureCheck)
 	return router, db
 }
 
-func TestSecurityAdminHandlerEventsAndIPRules(t *testing.T) {
+func TestSecurityAdminHandlerEvents(t *testing.T) {
 	router, db := setupSecurityAdminHandlerTest(t)
 	db.Create(&models.SecurityEvent{Type: models.SecurityEventPasswordLoginFailure, Username: "alice", ClientIP: "198.51.100.7"})
 
@@ -50,15 +47,6 @@ func TestSecurityAdminHandlerEventsAndIPRules(t *testing.T) {
 	router.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected events 200, got %d: %s", w.Code, w.Body.String())
-	}
-
-	body, _ := json.Marshal(map[string]string{"cidr": "198.51.100.0/24", "reason": "test"})
-	req = httptest.NewRequest(http.MethodPost, "/api/admin/security/ip-rules", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	w = httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-	if w.Code != http.StatusCreated {
-		t.Fatalf("expected create rule 201, got %d: %s", w.Code, w.Body.String())
 	}
 }
 

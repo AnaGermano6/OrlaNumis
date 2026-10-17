@@ -5,7 +5,10 @@ import AdminScheduleTimezone from '../AdminScheduleTimezone.vue'
 import AdminScheduleSummary from '../AdminScheduleSummary.vue'
 import type { AppSettings } from '@/types'
 
-vi.mock('@/composables/usePurchaseReminder', () => ({ getBrowserTimezone: () => 'America/Chicago' }))
+vi.mock('@/composables/useScheduleTimezone', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/composables/useScheduleTimezone')>(),
+  getBrowserTimezone: () => 'America/Chicago',
+}))
 
 function mountTimezone(overrides: Record<string, string> = {}, settingsSaving = false) {
   const settings = reactive({ ...overrides }) as unknown as AppSettings

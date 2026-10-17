@@ -16,7 +16,6 @@ const mocks = vi.hoisted(() => ({
   uploadImage: vi.fn(),
   deleteImage: vi.fn(),
   extractText: vi.fn(),
-  refresh: vi.fn(),
   back: vi.fn(),
   showAlert: vi.fn(),
 }))
@@ -38,16 +37,11 @@ vi.mock('@/composables/useDialog', () => ({
   useDialog: () => ({ showAlert: mocks.showAlert }),
 }))
 
-vi.mock('@/composables/useQuickAccess', () => ({
-  useQuickAccess: () => ({ refresh: mocks.refresh }),
-}))
-
 describe('EditCoinPage', () => {
   beforeEach(() => {
     Object.values(mocks).forEach(mock => mock.mockReset())
     mocks.getCoin.mockResolvedValue({ data: buildRomanDenariusCore({ id: 42 }) })
     mocks.updateCoin.mockResolvedValue({ data: {} })
-    mocks.refresh.mockResolvedValue(undefined)
   })
 
   it('does not clear legacy or custom era values when loading an existing coin', () => {
@@ -96,16 +90,15 @@ describe('EditCoinPage', () => {
     await flushPromises()
     expect(mocks.updateCoin).toHaveBeenCalledTimes(1)
     expect(mocks.uploadImage).toHaveBeenCalledWith(42, obverseFile, 'obverse', true)
-    expect(mocks.refresh).not.toHaveBeenCalled()
+    expect(mocks.back).not.toHaveBeenCalled()
 
     resolveUpload({ data: {} })
     await flushPromises()
     expect(mocks.deleteImage).toHaveBeenCalledWith(42, 91)
-    expect(mocks.refresh).not.toHaveBeenCalled()
+    expect(mocks.back).not.toHaveBeenCalled()
 
     resolveDelete({ data: { cleanupPending } })
     await flushPromises()
-    expect(mocks.refresh).toHaveBeenCalledTimes(1)
     expect(mocks.back).toHaveBeenCalledTimes(1)
     expect(mocks.uploadImage).toHaveBeenCalledTimes(1)
     if (cleanupPending) expect(mocks.showAlert).toHaveBeenCalledWith(expect.stringContaining('Old image files are awaiting cleanup'), { title: 'Image cleanup pending' })

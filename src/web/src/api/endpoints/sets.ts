@@ -6,12 +6,10 @@ import type {
   ChecklistResponse,
   Coin,
   CoinSetAnalytics,
-  CoinSetComparison,
   CoinSetCompletion,
   CoinSetDetail,
   CoinSetSnapshot,
   CoinSetSummary,
-  CoinSetTemplate,
   CreateCoinSetFromCsvRequest,
   CreateCoinSetRequest,
   CreateSetBuilderRunRequest,
@@ -20,9 +18,7 @@ import type {
   SetBuilderRun,
   SetProposal,
   SmartCriteriaGroup,
-  SmartCriteriaTemplate,
   SmartSetPreview,
-  SuggestedSmartCriteria,
   UpdateCoinSetRequest,
   UpdateSetProposalRequest,
 } from '@/types'
@@ -35,8 +31,6 @@ export const getSet = (id: number) => api.get<CoinSetDetail>(`/sets/${id}`)
 export const createSet = (data: CreateCoinSetRequest) => api.post<CoinSetDetail>('/sets', data)
 
 export const createSetBuilderRun = (data: CreateSetBuilderRunRequest) => api.post<{ run: SetBuilderRun }>('/set-builder/runs', data)
-
-export const listSetProposals = () => api.get<{ proposals: SetProposal[] }>('/set-builder/proposals')
 
 export const getSetProposal = (id: number) => api.get<SetProposal>(`/set-builder/proposals/${id}`)
 
@@ -64,8 +58,6 @@ export const reorderSetCoins = (setId: number, data: ReorderSetCoinsRequest) => 
 export const removeCoinFromSet = (setId: number, coinId: number) => api.delete(`/sets/${setId}/coins/${coinId}`)
 
 // US2: Templates and Completion
-export const getSetTemplates = () => api.get<{ templates: CoinSetTemplate[] }>('/sets/templates')
-
 export const getSetCompletion = (setId: number) => api.get<CoinSetCompletion>(`/sets/${setId}/completion`)
 
 export const createSetFromCsv = (data: CreateCoinSetFromCsvRequest) => api.post<CoinSetDetail>('/sets/import-csv', data)
@@ -76,15 +68,5 @@ export const getSetTrends = (setId: number, range = '1y') => api.get<{ snapshots
 
 export const getSetAnalytics = (setId: number) => api.get<CoinSetAnalytics>(`/sets/${setId}/analytics`)
 
-export const compareSets = (setIds: number[], range = '1y') => api.post<{ sets: CoinSetComparison[] }>('/sets/compare', { setIds, range })
-
 export const previewSmartSet = (criteria: SmartCriteriaGroup) => api.post<SmartSetPreview>('/sets/preview-smart', criteria)
 
-export const getSuggestedCriteria = () => api.get<{ suggestions: SuggestedSmartCriteria[] }>('/sets/suggested-criteria')
-
-export const listCriteriaTemplates = () => api.get<{ templates: SmartCriteriaTemplate[] }>('/sets/criteria-templates')
-
-export const saveCriteriaTemplate = (data: { name: string; description?: string; criteria: SmartCriteriaGroup }) =>
-  api.post<SmartCriteriaTemplate>('/sets/criteria-templates', data)
-
-export const deleteCriteriaTemplate = (id: number) => api.delete(`/sets/criteria-templates/${id}`)

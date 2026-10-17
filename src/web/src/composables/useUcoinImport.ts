@@ -148,9 +148,6 @@ export function ucoinEnrichment(
     // would clear it: keep the coin's own values for those.
     purchasePrice: coin.purchasePrice,
     purchaseDate: coin.purchaseDate,
-    storageLocationId: coin.storageLocationId,
-    storageSlot: coin.storageSlot ?? null,
-    romanImperialFigureId: coin.romanImperialFigureId,
     mintLocationId: coin.mintLocationId,
     year: coin.year ?? null,
     category: fields.category ?? coin.category,

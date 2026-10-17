@@ -24,12 +24,10 @@ import CoinForm from '@/components/CoinForm.vue'
 import { getCoin, updateCoin, uploadImage, deleteImage, extractText } from '@/api/client'
 import type { Coin } from '@/types'
 import { useDialog } from '@/composables/useDialog'
-import { useQuickAccess } from '@/composables/useQuickAccess'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { t } from '@/i18n'
 
 const { showAlert } = useDialog()
-const { refresh: refreshQuickAccess } = useQuickAccess()
 const route = useRoute()
 const router = useRouter()
 const loading = ref(true)
@@ -125,7 +123,6 @@ async function handleSubmit() {
       }
     }
 
-    await refreshQuickAccess()
     if (cleanupPending) {
       await showAlert(t('editCoin.cleanupPending'), { title: t('editCoin.cleanupPendingTitle') })
     }

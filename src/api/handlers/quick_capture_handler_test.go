@@ -503,7 +503,7 @@ func TestQuickCaptureDraftResumeDiscardPromoteContracts(t *testing.T) {
 	}
 }
 
-func TestQuickCapturePromotionIncrementsActiveCountExactlyOnceAndPreservesWishlistSold(t *testing.T) {
+func TestQuickCapturePromotionIncrementsActiveCountExactlyOnceAndPreservesWishlist(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:quick_capture_handler_counts_%d?mode=memory&cache=shared", time.Now().UnixNano())), &gorm.Config{})
 	if err != nil {
@@ -523,11 +523,9 @@ func TestQuickCapturePromotionIncrementsActiveCountExactlyOnceAndPreservesWishli
 	router.POST("/api/quick-capture/drafts/:id/promote", handler.PromoteDraft)
 
 	wishlistPrice := 50.0
-	soldPrice := 75.0
 	existing := []models.Coin{
-		{UserID: viewerID, Name: "Existing active", Category: models.CategoryRoman, Material: models.MaterialSilver, Era: models.EraAncient},
-		{UserID: viewerID, Name: "Wishlist", Category: models.CategoryGreek, Material: models.MaterialGold, Era: models.EraAncient, IsWishlist: true, PurchasePrice: &wishlistPrice, CurrentValue: &wishlistPrice},
-		{UserID: viewerID, Name: "Sold", Category: models.CategoryRoman, Material: models.MaterialBronze, Era: models.EraAncient, IsSold: true, PurchasePrice: &soldPrice, CurrentValue: &soldPrice},
+		{UserID: viewerID, Name: "Existing active", Category: models.CategoryModern, Material: models.MaterialSilver, Era: models.EraAncient},
+		{UserID: viewerID, Name: "Wishlist", Category: models.CategoryOther, Material: models.MaterialGold, Era: models.EraAncient, IsWishlist: true, PurchasePrice: &wishlistPrice, CurrentValue: &wishlistPrice},
 	}
 	for i := range existing {
 		if err := db.Create(&existing[i]).Error; err != nil {
@@ -547,7 +545,7 @@ func TestQuickCapturePromotionIncrementsActiveCountExactlyOnceAndPreservesWishli
 		t.Fatalf("seed draft: %v", err)
 	}
 
-	activeBefore, wishlistBefore, soldBefore := quickCaptureCoinContractCounts(t, db, viewerID)
+	activeBefore, wishlistBefore := quickCaptureCoinContractCounts(t, db, viewerID)
 	body, _ := json.Marshal(map[string]interface{}{"confirm": true})
 	for i := 0; i < 2; i++ {
 		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/quick-capture/drafts/%d/promote", draft.ID), bytes.NewReader(body))
@@ -559,15 +557,12 @@ func TestQuickCapturePromotionIncrementsActiveCountExactlyOnceAndPreservesWishli
 		}
 	}
 
-	activeAfter, wishlistAfter, soldAfter := quickCaptureCoinContractCounts(t, db, viewerID)
+	activeAfter, wishlistAfter := quickCaptureCoinContractCounts(t, db, viewerID)
 	if activeAfter != activeBefore+1 {
 		t.Fatalf("active collection count should increment exactly once: before=%d after=%d", activeBefore, activeAfter)
 	}
 	if wishlistAfter != wishlistBefore {
 		t.Fatalf("wishlist total changed after Quick Capture v1 promotion: before=%d after=%d", wishlistBefore, wishlistAfter)
-	}
-	if soldAfter != soldBefore {
-		t.Fatalf("sold total changed after Quick Capture v1 promotion: before=%d after=%d", soldBefore, soldAfter)
 	}
 	var promotedRows int64
 	if err := db.Model(&models.Coin{}).Where("user_id = ? AND name = ?", viewerID, "Promoted active coin").Count(&promotedRows).Error; err != nil {
@@ -607,7 +602,7 @@ func TestQuickCapturePromotionCanTargetWishlist(t *testing.T) {
 		t.Fatalf("seed draft: %v", err)
 	}
 
-	activeBefore, wishlistBefore, soldBefore := quickCaptureCoinContractCounts(t, db, viewerID)
+	activeBefore, wishlistBefore := quickCaptureCoinContractCounts(t, db, viewerID)
 	body, _ := json.Marshal(map[string]interface{}{"confirm": true, "target": "wishlist"})
 	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/quick-capture/drafts/%d/promote", draft.ID), bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -617,36 +612,30 @@ func TestQuickCapturePromotionCanTargetWishlist(t *testing.T) {
 		t.Fatalf("expected wishlist promotion success, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	activeAfter, wishlistAfter, soldAfter := quickCaptureCoinContractCounts(t, db, viewerID)
+	activeAfter, wishlistAfter := quickCaptureCoinContractCounts(t, db, viewerID)
 	if activeAfter != activeBefore {
 		t.Fatalf("wishlist promotion should not increment active collection count: before=%d after=%d", activeBefore, activeAfter)
 	}
 	if wishlistAfter != wishlistBefore+1 {
 		t.Fatalf("wishlist promotion should increment wishlist count once: before=%d after=%d", wishlistBefore, wishlistAfter)
 	}
-	if soldAfter != soldBefore {
-		t.Fatalf("wishlist promotion should not change sold count: before=%d after=%d", soldBefore, soldAfter)
-	}
 
 	var coin models.Coin
 	if err := db.Where("user_id = ? AND name = ?", viewerID, "Wishlist target coin").First(&coin).Error; err != nil {
 		t.Fatalf("load promoted wishlist coin: %v", err)
 	}
-	if !coin.IsWishlist || coin.IsSold {
-		t.Fatalf("expected wishlist promoted coin to be wishlist and unsold, wishlist=%v sold=%v", coin.IsWishlist, coin.IsSold)
+	if !coin.IsWishlist {
+		t.Fatalf("expected wishlist promoted coin to be wishlist, wishlist=%v", coin.IsWishlist)
 	}
 }
 
-func quickCaptureCoinContractCounts(t *testing.T, db *gorm.DB, userID uint) (active, wishlist, sold int64) {
+func quickCaptureCoinContractCounts(t *testing.T, db *gorm.DB, userID uint) (active, wishlist int64) {
 	t.Helper()
-	if err := db.Model(&models.Coin{}).Where("user_id = ? AND is_wishlist = ? AND is_sold = ?", userID, false, false).Count(&active).Error; err != nil {
+	if err := db.Model(&models.Coin{}).Where("user_id = ? AND is_wishlist = ?", userID, false).Count(&active).Error; err != nil {
 		t.Fatalf("count active coins: %v", err)
 	}
 	if err := db.Model(&models.Coin{}).Where("user_id = ? AND is_wishlist = ?", userID, true).Count(&wishlist).Error; err != nil {
 		t.Fatalf("count wishlist coins: %v", err)
 	}
-	if err := db.Model(&models.Coin{}).Where("user_id = ? AND is_sold = ?", userID, true).Count(&sold).Error; err != nil {
-		t.Fatalf("count sold coins: %v", err)
-	}
-	return active, wishlist, sold
+	return active, wishlist
 }

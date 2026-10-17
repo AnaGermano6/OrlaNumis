@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -28,9 +27,7 @@ func setupSetHandlerRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 
 	db := setupSetHandlerTestDB(t)
 	setRepo := repository.NewSetRepository(db)
-	tagRepo := repository.NewTagRepository(db)
-	quickAccess := services.NewQuickAccessService(repository.NewQuickAccessRepository(db))
-	setService := services.NewSetService(setRepo, tagRepo).WithQuickAccessSupport(quickAccess)
+	setService := services.NewSetService(setRepo)
 	handler := NewSetHandler(setRepo, setService)
 
 	r := gin.New()
@@ -51,9 +48,7 @@ func setupSetHandlerTestDB(t *testing.T) *gorm.DB {
 	}
 	err = db.AutoMigrate(
 		&models.User{}, &models.Coin{}, &models.CoinImage{},
-		&models.Tag{}, &models.CoinTag{},
 		&models.CoinSet{}, &models.CoinSetMembership{},
-		&models.QuickAccessPin{},
 	)
 	if err != nil {
 		t.Fatalf("failed to migrate: %v", err)
@@ -196,118 +191,6 @@ func equalStrings(a, b []string) bool {
 	return true
 }
 
-func performSetUpdateRequest(t *testing.T, router *gin.Engine, setID, userID uint, body map[string]interface{}) *httptest.ResponseRecorder {
-	t.Helper()
-	payload, err := json.Marshal(body)
-	if err != nil {
-		t.Fatalf("marshal body: %v", err)
-	}
-	req := httptest.NewRequest(http.MethodPut, "/api/sets/"+strconvUint(setID), bytes.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", authHeader(userID))
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-	return w
-}
-
-func TestSetHandler_Update_PinReturnsPinnedFields(t *testing.T) {
-	router, db := setupSetHandlerRouter(t)
-	createTestUser(t, db, 1, "owner")
-	set := models.CoinSet{UserID: 1, Name: "Twelve Caesars", SetType: models.CoinSetTypeStandard}
-	if err := db.Create(&set).Error; err != nil {
-		t.Fatalf("create set: %v", err)
-	}
-
-	w := performSetUpdateRequest(t, router, set.ID, 1, map[string]interface{}{"pinned": true})
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
-	}
-
-	var body map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
-		t.Fatalf("unmarshal response: %v", err)
-	}
-	if pinned, ok := body["pinned"].(bool); !ok || !pinned {
-		t.Fatalf("expected pinned=true in response, got %v", body["pinned"])
-	}
-	if body["pinnedAt"] == nil {
-		t.Fatalf("expected non-nil pinnedAt in response")
-	}
-}
-
-func TestSetHandler_Update_PinCap_Returns400(t *testing.T) {
-	router, db := setupSetHandlerRouter(t)
-	createTestUser(t, db, 1, "owner")
-
-	var setIDs []uint
-	for i := 0; i < 6; i++ {
-		set := models.CoinSet{UserID: 1, Name: "Set " + strconvUint(uint(i)), SetType: models.CoinSetTypeStandard}
-		if err := db.Create(&set).Error; err != nil {
-			t.Fatalf("create set %d: %v", i, err)
-		}
-		setIDs = append(setIDs, set.ID)
-	}
-
-	for i := 0; i < 5; i++ {
-		w := performSetUpdateRequest(t, router, setIDs[i], 1, map[string]interface{}{"pinned": true})
-		if w.Code != http.StatusOK {
-			t.Fatalf("expected 200 pinning set %d, got %d: %s", i, w.Code, w.Body.String())
-		}
-	}
-
-	w := performSetUpdateRequest(t, router, setIDs[5], 1, map[string]interface{}{"pinned": true})
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400 at pin cap, got %d: %s", w.Code, w.Body.String())
-	}
-	var body map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
-		t.Fatalf("unmarshal response: %v", err)
-	}
-	if body["error"] != "you can pin up to 5 sets" {
-		t.Fatalf("expected cap error message, got %v", body["error"])
-	}
-}
-
-func TestSetHandler_Update_PinForeignSet_Returns404(t *testing.T) {
-	router, db := setupSetHandlerRouter(t)
-	createTestUser(t, db, 1, "owner")
-	createTestUser(t, db, 2, "other")
-	set := models.CoinSet{UserID: 1, Name: "Owner's Set", SetType: models.CoinSetTypeStandard}
-	if err := db.Create(&set).Error; err != nil {
-		t.Fatalf("create set: %v", err)
-	}
-
-	w := performSetUpdateRequest(t, router, set.ID, 2, map[string]interface{}{"pinned": true})
-	if w.Code != http.StatusNotFound {
-		t.Fatalf("expected 404 for foreign set pin, got %d: %s", w.Code, w.Body.String())
-	}
-}
-
-func TestSetHandler_Update_InternalErrorReturnsGeneric500(t *testing.T) {
-	router, db := setupSetHandlerRouter(t)
-	createTestUser(t, db, 1, "owner")
-	set := models.CoinSet{UserID: 1, Name: "Twelve Caesars", SetType: models.CoinSetTypeStandard}
-	if err := db.Create(&set).Error; err != nil {
-		t.Fatalf("create set: %v", err)
-	}
-	if err := db.Migrator().DropTable(&models.QuickAccessPin{}); err != nil {
-		t.Fatalf("drop quick_access_pins: %v", err)
-	}
-
-	w := performSetUpdateRequest(t, router, set.ID, 1, map[string]interface{}{"pinned": true})
-
-	if w.Code != http.StatusInternalServerError {
-		t.Fatalf("expected 500, got %d: %s", w.Code, w.Body.String())
-	}
-	body := w.Body.String()
-	if body != "{\"error\":\"Failed to update set\"}" {
-		t.Fatalf("unexpected error body: %s", body)
-	}
-	if strings.Contains(strings.ToLower(body), "sql") || strings.Contains(strings.ToLower(body), "table") {
-		t.Fatalf("response leaked internal database details: %s", body)
-	}
-}
-
 func TestSetHandler_GetChecklist(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db := setupSetHandlerTestDB(t)
@@ -317,7 +200,7 @@ func TestSetHandler_GetChecklist(t *testing.T) {
 	createTestUser(t, db, 1, "owner")
 	setRepo := repository.NewSetRepository(db)
 	checklist := services.NewSetChecklistService(services.NewCoinReleasesService(nil), repository.NewCoinRepository(db), nil)
-	handler := NewSetHandler(setRepo, services.NewSetService(setRepo, repository.NewTagRepository(db)).WithChecklist(checklist))
+	handler := NewSetHandler(setRepo, services.NewSetService(setRepo).WithChecklist(checklist))
 	r := gin.New()
 	protected := r.Group("/api")
 	protected.Use(coinTestAuthMiddleware())

@@ -1,8 +1,6 @@
 package services
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -27,17 +25,14 @@ func setupSetServiceTestWithDB(t *testing.T) (*SetService, *gorm.DB) {
 	}
 	if err := db.AutoMigrate(
 		&models.User{},
-		&models.Tag{},
-		&models.CoinTag{},
 		&models.Coin{},
 		&models.CoinSet{},
 		&models.CoinSetMembership{},
 		&models.CoinSetTarget{},
-		&models.SmartCriteriaTemplate{},
 	); err != nil {
 		t.Fatalf("migrate db: %v", err)
 	}
-	return NewSetService(repository.NewSetRepository(db), repository.NewTagRepository(db)), db
+	return NewSetService(repository.NewSetRepository(db)), db
 }
 
 func TestSetService_CreateSet_NormalizesLegacySetTypes(t *testing.T) {
@@ -88,7 +83,7 @@ func TestSetService_CreateSet_GeneratesDefaultPaletteColor(t *testing.T) {
 		t.Fatalf("create set failed: %v", err)
 	}
 
-	expected := defaultSetColor(1, "Palette Default", 0)
+	expected := DefaultSetColor(1, "Palette Default", 0)
 	if set.Color != expected {
 		t.Fatalf("expected generated color %q, got %q", expected, set.Color)
 	}
@@ -162,132 +157,6 @@ func pinnedAtFromMap(t *testing.T, data map[string]interface{}) *time.Time {
 	return ptr
 }
 
-func TestSetService_UpdateSet_PinSetsUTCTimestamp(t *testing.T) {
-	service := setupSetServiceTest(t)
-	set, err := service.CreateSet(1, map[string]interface{}{"name": "Twelve Caesars", "setType": "standard"})
-	if err != nil {
-		t.Fatalf("create set: %v", err)
-	}
-
-	updated, err := service.UpdateSet(set.ID, 1, map[string]interface{}{"pinned": true})
-	if err != nil {
-		t.Fatalf("pin set: %v", err)
-	}
-	if updated.PinnedAt == nil {
-		t.Fatalf("expected pinnedAt to be set")
-	}
-	if updated.PinnedAt.Location() != time.UTC {
-		t.Fatalf("expected pinnedAt to be UTC, got %v", updated.PinnedAt.Location())
-	}
-}
-
-func TestSetService_UpdateSet_UnpinNullsTimestamp(t *testing.T) {
-	service := setupSetServiceTest(t)
-	set, err := service.CreateSet(1, map[string]interface{}{"name": "Twelve Caesars", "setType": "standard"})
-	if err != nil {
-		t.Fatalf("create set: %v", err)
-	}
-	if _, err := service.UpdateSet(set.ID, 1, map[string]interface{}{"pinned": true}); err != nil {
-		t.Fatalf("pin set: %v", err)
-	}
-
-	updated, err := service.UpdateSet(set.ID, 1, map[string]interface{}{"pinned": false})
-	if err != nil {
-		t.Fatalf("unpin set: %v", err)
-	}
-	if updated.PinnedAt != nil {
-		t.Fatalf("expected pinnedAt to be nil after unpin, got %v", updated.PinnedAt)
-	}
-}
-
-func TestSetService_UpdateSet_RepinPreservesOriginalTimestamp(t *testing.T) {
-	service := setupSetServiceTest(t)
-	set, err := service.CreateSet(1, map[string]interface{}{"name": "Twelve Caesars", "setType": "standard"})
-	if err != nil {
-		t.Fatalf("create set: %v", err)
-	}
-	first, err := service.UpdateSet(set.ID, 1, map[string]interface{}{"pinned": true})
-	if err != nil {
-		t.Fatalf("pin set: %v", err)
-	}
-	firstPinnedAt := *first.PinnedAt
-
-	time.Sleep(2 * time.Millisecond)
-	second, err := service.UpdateSet(set.ID, 1, map[string]interface{}{"pinned": true})
-	if err != nil {
-		t.Fatalf("re-pin set: %v", err)
-	}
-	if second.PinnedAt == nil || !second.PinnedAt.Equal(firstPinnedAt) {
-		t.Fatalf("expected pinnedAt to be preserved on double-pin, first=%v second=%v", firstPinnedAt, second.PinnedAt)
-	}
-}
-
-func TestSetService_UpdateSet_PinCap_RejectsSixthPin(t *testing.T) {
-	service := setupSetServiceTest(t)
-	var setIDs []uint
-	for i := 0; i < 6; i++ {
-		set, err := service.CreateSet(1, map[string]interface{}{"name": fmt.Sprintf("Set %d", i), "setType": "standard"})
-		if err != nil {
-			t.Fatalf("create set %d: %v", i, err)
-		}
-		setIDs = append(setIDs, set.ID)
-	}
-
-	for i := 0; i < 5; i++ {
-		if _, err := service.UpdateSet(setIDs[i], 1, map[string]interface{}{"pinned": true}); err != nil {
-			t.Fatalf("pin set %d: %v", i, err)
-		}
-	}
-
-	_, err := service.UpdateSet(setIDs[5], 1, map[string]interface{}{"pinned": true})
-	if !errors.Is(err, ErrPinLimitReached) {
-		t.Fatalf("expected ErrPinLimitReached, got %v", err)
-	}
-	if err.Error() != "you can pin up to 5 sets" {
-		t.Fatalf("expected exact cap message, got %q", err.Error())
-	}
-
-	sixth, err := service.repo.GetByID(setIDs[5], 1)
-	if err != nil {
-		t.Fatalf("get sixth set: %v", err)
-	}
-	if sixth.PinnedAt != nil {
-		t.Fatalf("expected sixth set to remain unpinned after cap rejection")
-	}
-}
-
-func TestSetService_UpdateSet_PinCapRecoversAfterUnpin(t *testing.T) {
-	service := setupSetServiceTest(t)
-	var setIDs []uint
-	for i := 0; i < 6; i++ {
-		set, err := service.CreateSet(1, map[string]interface{}{"name": fmt.Sprintf("Set %d", i), "setType": "standard"})
-		if err != nil {
-			t.Fatalf("create set %d: %v", i, err)
-		}
-		setIDs = append(setIDs, set.ID)
-	}
-	for i := 0; i < 5; i++ {
-		if _, err := service.UpdateSet(setIDs[i], 1, map[string]interface{}{"pinned": true}); err != nil {
-			t.Fatalf("pin set %d: %v", i, err)
-		}
-	}
-	if _, err := service.UpdateSet(setIDs[5], 1, map[string]interface{}{"pinned": true}); !errors.Is(err, ErrPinLimitReached) {
-		t.Fatalf("expected cap rejection before unpin, got %v", err)
-	}
-
-	if _, err := service.UpdateSet(setIDs[0], 1, map[string]interface{}{"pinned": false}); err != nil {
-		t.Fatalf("unpin set 0: %v", err)
-	}
-
-	sixth, err := service.UpdateSet(setIDs[5], 1, map[string]interface{}{"pinned": true})
-	if err != nil {
-		t.Fatalf("expected pin to succeed after cap recovery, got %v", err)
-	}
-	if sixth.PinnedAt == nil {
-		t.Fatalf("expected sixth set to be pinned after recovery")
-	}
-}
-
 func TestSetService_UpdateSet_PinForeignSet_NotFound(t *testing.T) {
 	service := setupSetServiceTest(t)
 	set, err := service.CreateSet(1, map[string]interface{}{"name": "Owner's Set", "setType": "standard"})
@@ -298,63 +167,5 @@ func TestSetService_UpdateSet_PinForeignSet_NotFound(t *testing.T) {
 	_, err = service.UpdateSet(set.ID, 2, map[string]interface{}{"pinned": true})
 	if err == nil || !repository.IsRecordNotFound(err) {
 		t.Fatalf("expected not found error for foreign set pin, got %v", err)
-	}
-}
-
-func TestSetService_ListSets_IncludesPinnedFields(t *testing.T) {
-	service := setupSetServiceTest(t)
-	set, err := service.CreateSet(1, map[string]interface{}{"name": "Twelve Caesars", "setType": "standard"})
-	if err != nil {
-		t.Fatalf("create set: %v", err)
-	}
-	if _, err := service.UpdateSet(set.ID, 1, map[string]interface{}{"pinned": true}); err != nil {
-		t.Fatalf("pin set: %v", err)
-	}
-
-	sets, err := service.ListSets(1)
-	if err != nil {
-		t.Fatalf("list sets: %v", err)
-	}
-	if len(sets) != 1 {
-		t.Fatalf("expected 1 set, got %d", len(sets))
-	}
-	if pinned, ok := sets[0]["pinned"].(bool); !ok || !pinned {
-		t.Fatalf("expected pinned=true in list summary, got %v", sets[0]["pinned"])
-	}
-	if ptr := pinnedAtFromMap(t, sets[0]); ptr == nil {
-		t.Fatalf("expected non-nil pinnedAt in list summary")
-	}
-}
-
-func TestSetService_GetSetDetail_IncludesPinnedFields(t *testing.T) {
-	service := setupSetServiceTest(t)
-	set, err := service.CreateSet(1, map[string]interface{}{"name": "Twelve Caesars", "setType": "standard"})
-	if err != nil {
-		t.Fatalf("create set: %v", err)
-	}
-
-	detail, err := service.GetSetDetail(set.ID, 1)
-	if err != nil {
-		t.Fatalf("get set detail: %v", err)
-	}
-	if pinned, ok := detail["pinned"].(bool); !ok || pinned {
-		t.Fatalf("expected pinned=false before pinning, got %v", detail["pinned"])
-	}
-	if ptr := pinnedAtFromMap(t, detail); ptr != nil {
-		t.Fatalf("expected nil pinnedAt before pinning, got %v", ptr)
-	}
-
-	if _, err := service.UpdateSet(set.ID, 1, map[string]interface{}{"pinned": true}); err != nil {
-		t.Fatalf("pin set: %v", err)
-	}
-	detail, err = service.GetSetDetail(set.ID, 1)
-	if err != nil {
-		t.Fatalf("get set detail after pin: %v", err)
-	}
-	if pinned, ok := detail["pinned"].(bool); !ok || !pinned {
-		t.Fatalf("expected pinned=true after pinning, got %v", detail["pinned"])
-	}
-	if ptr := pinnedAtFromMap(t, detail); ptr == nil {
-		t.Fatalf("expected non-nil pinnedAt after pinning")
 	}
 }

@@ -56,7 +56,9 @@ func SecurityHeaders() gin.HandlerFunc {
 	}
 }
 
-func IPDenyRules(securitySvc *services.SecurityService) gin.HandlerFunc {
+// BlockFailingIPs refuses an address that made too many failed password
+// attempts lately (see SecurityService.IsIPDenied).
+func BlockFailingIPs(securitySvc *services.SecurityService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if securitySvc != nil && securitySvc.IsIPDenied(ClientIP(c)) {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Access denied"})

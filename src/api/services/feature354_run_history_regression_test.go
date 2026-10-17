@@ -28,12 +28,10 @@ package services
 import (
 	"errors"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/briandenicola/ancient-coins-api/models"
-	"github.com/briandenicola/ancient-coins-api/repository"
 )
 
 // --- US6 / FR-001 / FR-002 / FR-013: retention regression -----------------
@@ -290,7 +288,7 @@ func TestFeature354_ApplyToSavedCoin_TargetMismatchStillRejected(t *testing.T) {
 	// idempotency loosening - a saved_coin job can never apply to "wishlist".
 	proposalSvc, _, db := newDeepProposalTestDeps(t)
 	userID := seedDeepProposalUser(t, db)
-	coin := models.Coin{UserID: userID, Name: "Existing coin", Category: models.CategoryRoman}
+	coin := models.Coin{UserID: userID, Name: "Existing coin", Category: models.CategoryModern}
 	if err := db.Create(&coin).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -309,7 +307,7 @@ func TestFeature354_ApplyToCoin_ReapplyRefreshesAppliedAtWithoutDuplicating(t *t
 	// refreshed on every successful re-apply.
 	proposalSvc, repo, db := newDeepProposalTestDeps(t)
 	userID := seedDeepProposalUser(t, db)
-	coin := models.Coin{UserID: userID, Name: "Saved coin", Category: models.CategoryRoman}
+	coin := models.Coin{UserID: userID, Name: "Saved coin", Category: models.CategoryModern}
 	if err := db.Create(&coin).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -353,173 +351,4 @@ func TestFeature354_ApplyToCoin_ReapplyRefreshesAppliedAtWithoutDuplicating(t *t
 
 // --- US5 / FR-021..024: wishlist-eligible Coin of the Day pool widening ---
 
-func TestFeature354_PickNextCoinID_IncludesWishlistWhenOptedIn(t *testing.T) {
-	db := setupCoinOfDaySchedulerDB(t, true)
-	repo := repository.NewFeaturedCoinRepository(db)
-	user := models.User{Username: "f354-cotd-in", Email: "f354-cotd-in@example.com", PasswordHash: "x"}
-	if err := db.Create(&user).Error; err != nil {
-		t.Fatal(err)
-	}
-	wishlistCoin := models.Coin{UserID: user.ID, Name: "Wishlist coin", Category: models.CategoryRoman, IsWishlist: true}
-	if err := db.Create(&wishlistCoin).Error; err != nil {
-		t.Fatal(err)
-	}
-
-	id, err := repo.PickNextCoinID(user.ID, true)
-	if err != nil {
-		t.Fatalf("PickNextCoinID(includeWishlist=true): %v", err)
-	}
-	if id != wishlistCoin.ID {
-		t.Fatalf("FR-022 violation: expected the wishlist coin %d to be eligible when opted in, got %d", wishlistCoin.ID, id)
-	}
-}
-
-func TestFeature354_PickNextCoinID_ExcludesWishlistWhenOptedOut(t *testing.T) {
-	db := setupCoinOfDaySchedulerDB(t, true)
-	repo := repository.NewFeaturedCoinRepository(db)
-	user := models.User{Username: "f354-cotd-out", Email: "f354-cotd-out@example.com", PasswordHash: "x"}
-	if err := db.Create(&user).Error; err != nil {
-		t.Fatal(err)
-	}
-	wishlistCoin := models.Coin{UserID: user.ID, Name: "Wishlist coin", Category: models.CategoryRoman, IsWishlist: true}
-	if err := db.Create(&wishlistCoin).Error; err != nil {
-		t.Fatal(err)
-	}
-
-	id, err := repo.PickNextCoinID(user.ID, false)
-	if err != nil {
-		t.Fatalf("PickNextCoinID(includeWishlist=false): %v", err)
-	}
-	if id != 0 {
-		t.Fatalf("FR-023 violation: expected byte-identical owned-only behavior (no eligible coins) when opted out, got coin id %d", id)
-	}
-}
-
-func TestFeature354_PickNextCoinID_SoldWishlistCoinExcludedEvenWhenOptedIn(t *testing.T) {
-	db := setupCoinOfDaySchedulerDB(t, true)
-	repo := repository.NewFeaturedCoinRepository(db)
-	user := models.User{Username: "f354-cotd-sold", Email: "f354-cotd-sold@example.com", PasswordHash: "x"}
-	if err := db.Create(&user).Error; err != nil {
-		t.Fatal(err)
-	}
-	soldWishlistCoin := models.Coin{UserID: user.ID, Name: "Sold wishlist coin", Category: models.CategoryRoman, IsWishlist: true, IsSold: true}
-	if err := db.Create(&soldWishlistCoin).Error; err != nil {
-		t.Fatal(err)
-	}
-
-	id, err := repo.PickNextCoinID(user.ID, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if id != 0 {
-		t.Fatalf("FR-022 violation: sold coins must remain excluded from the combined pool, got coin id %d", id)
-	}
-}
-
-func TestFeature354_PickNextCoinID_FairCycleAcrossCombinedPool(t *testing.T) {
-	// SC-004/FR-024: never-shown-first fairness must apply over the
-	// combined owned+wishlist pool - not treat wishlist as a separate
-	// lower-priority tier.
-	db := setupCoinOfDaySchedulerDB(t, true)
-	repo := repository.NewFeaturedCoinRepository(db)
-	user := models.User{Username: "f354-cotd-fair", Email: "f354-cotd-fair@example.com", PasswordHash: "x"}
-	if err := db.Create(&user).Error; err != nil {
-		t.Fatal(err)
-	}
-	owned := models.Coin{UserID: user.ID, Name: "Owned coin", Category: models.CategoryRoman}
-	if err := db.Create(&owned).Error; err != nil {
-		t.Fatal(err)
-	}
-	wishlist := models.Coin{UserID: user.ID, Name: "Wishlist coin", Category: models.CategoryRoman, IsWishlist: true}
-	if err := db.Create(&wishlist).Error; err != nil {
-		t.Fatal(err)
-	}
-	// Feature the owned coin already today; the wishlist coin has never
-	// been shown, so it must win the next pick.
-	if err := db.Create(&models.FeaturedCoin{UserID: user.ID, CoinID: owned.ID, FeaturedAt: time.Now()}).Error; err != nil {
-		t.Fatal(err)
-	}
-
-	id, err := repo.PickNextCoinID(user.ID, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if id != wishlist.ID {
-		t.Fatalf("FR-024 violation: expected the never-shown wishlist coin %d to win the fair cycle, got %d", wishlist.ID, id)
-	}
-}
-
-func TestFeature354_NaturalEligibilityAfterPromotionToOwned(t *testing.T) {
-	// Q2/spec: once a wishlist-source pick is moved to the collection
-	// (IsWishlist cleared via the existing coin-update path), it must
-	// naturally re-enter the owned pool without any special-case code - the
-	// existing never-shown-first fairness sort already prefers it.
-	db := setupCoinOfDaySchedulerDB(t, true)
-	repo := repository.NewFeaturedCoinRepository(db)
-	user := models.User{Username: "f354-promote", Email: "f354-promote@example.com", PasswordHash: "x"}
-	if err := db.Create(&user).Error; err != nil {
-		t.Fatal(err)
-	}
-	coin := models.Coin{UserID: user.ID, Name: "Promoted coin", Category: models.CategoryRoman, IsWishlist: true}
-	if err := db.Create(&coin).Error; err != nil {
-		t.Fatal(err)
-	}
-
-	// While still a wishlist coin, it's eligible under includeWishlist=true.
-	id, err := repo.PickNextCoinID(user.ID, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if id != coin.ID {
-		t.Fatalf("expected wishlist coin eligible before promotion, got %d", id)
-	}
-
-	// Simulate "Move to Collection": clear IsWishlist via the existing
-	// coin-update path semantics (mirrors
-	// CoinService.UpdateCoinWithFields({isWishlist: false})).
-	if err := db.Model(&models.Coin{}).Where("id = ?", coin.ID).Update("is_wishlist", false).Error; err != nil {
-		t.Fatal(err)
-	}
-
-	// Now it must be discoverable even with includeWishlist=false (owned pool).
-	idAfter, err := repo.PickNextCoinID(user.ID, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if idAfter != coin.ID {
-		t.Fatalf("expected promoted coin to be naturally eligible in the owned-only pool, got %d", idAfter)
-	}
-}
-
 // --- US5 / FR-027: deterministic wishlist fallback summary -----------------
-
-func TestFeature354_BuildWishlistFallbackSummary_PrefixesBuildCoinSummary(t *testing.T) {
-	coin := &models.Coin{
-		Name:         "Diocletian follis",
-		Denomination: "Follis",
-		Ruler:        "Diocletian",
-		Era:          models.EraAncient,
-		Mint:         "Antioch",
-	}
-	base := buildCoinSummary(coin)
-	got := buildWishlistFallbackSummary(coin)
-
-	const wantPreamble = "From your wishlist"
-	if !strings.HasPrefix(got, wantPreamble) {
-		t.Fatalf("FR-027 violation: expected fallback summary prefixed with %q, got %q", wantPreamble, got)
-	}
-	if base == "" || !strings.Contains(got, base) {
-		t.Fatalf("FR-027 violation: expected the fallback to be derived from buildCoinSummary (%q), got %q", base, got)
-	}
-}
-
-func TestFeature354_BuildWishlistFallbackSummary_NeverEmpty(t *testing.T) {
-	// SC-005: every wishlist coin_of_day pick must carry a non-empty
-	// summary regardless of Python agent health - the deterministic
-	// fallback must hold even for a bare-metadata coin.
-	coin := &models.Coin{Name: "Unnamed coin"}
-	got := buildWishlistFallbackSummary(coin)
-	if got == "" {
-		t.Fatalf("SC-005 violation: fallback summary must never be empty")
-	}
-}

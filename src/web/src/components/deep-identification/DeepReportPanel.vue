@@ -130,8 +130,7 @@
           :key="entry.provider"
           class="min-w-0 overflow-hidden rounded-sm border border-border-subtle bg-card p-2"
         >
-          <OCREAttribution v-if="entry.provider === 'ocre'" :uri="entry.identifier" />
-          <p v-else class="m-0 break-words text-sm text-text-secondary [overflow-wrap:anywhere]">
+          <p class="m-0 break-words text-sm text-text-secondary [overflow-wrap:anywhere]">
             {{ entry.text }}
             <SafeExternalLink
               v-if="entry.identifier"
@@ -151,7 +150,6 @@
 import { computed } from 'vue'
 import type { CoinHypothesis, DeepReport } from '@/types'
 import DeepProviderCoverageList from './DeepProviderCoverageList.vue'
-import OCREAttribution from './OCREAttribution.vue'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import { formatFieldName } from '@/utils/format'
 import { t } from '@/i18n'

@@ -51,7 +51,7 @@ func seedCoin(t *testing.T, db *gorm.DB, userID uint) uint {
 	t.Helper()
 	coin := &models.Coin{
 		Name:     "Test Coin",
-		Category: models.CategoryRoman,
+		Category: models.CategoryModern,
 		Material: models.MaterialSilver,
 		UserID:   userID,
 	}

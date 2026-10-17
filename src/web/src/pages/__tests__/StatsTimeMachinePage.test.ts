@@ -33,7 +33,6 @@ function snapshot(overrides: Partial<TimeMachineSnapshot> = {}): TimeMachineSnap
     byEra: [{ label: 'ancient', count: 3, value: 1000 }],
     topCoins: [{ id: 7, name: 'Trajan denarius', value: 600, valueFromHistory: true }],
     acquiredInYear: 1,
-    healthScore: 72,
     valueBasis: { fromValuationHistory: 3, fromPurchasePrice: 0 },
     undatedCoinCount: 0,
     ...overrides,

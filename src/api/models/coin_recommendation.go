@@ -6,7 +6,6 @@ type RecommendationTargetType string
 
 const (
 	RecommendationTargetTypeSet RecommendationTargetType = "set"
-	RecommendationTargetTypeTag RecommendationTargetType = "tag"
 )
 
 type RecommendationStatus string

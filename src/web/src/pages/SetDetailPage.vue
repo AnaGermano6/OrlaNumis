@@ -11,11 +11,7 @@
     <div v-else-if="set" class="space-y-6">
       <DesktopPageContext :title="set.name">
         <template #actions>
-          <AppIconButton :active="setPinned" :disabled="pinDisabled" :aria-busy="setPinBusy" :aria-pressed="setPinned" :title="pinButtonLabel" @click="togglePin">
-            <PinOff v-if="setPinned" :size="20" />
-            <Pin v-else :size="20" />
-          </AppIconButton>
-          <AppIconButton :title="t('emperors.backToSets')" @click="router.push({ name: 'sets' })"><ArrowLeft :size="20" /></AppIconButton>
+          <AppIconButton :title="t('sets.backToSets')" @click="router.push({ name: 'sets' })"><ArrowLeft :size="20" /></AppIconButton>
           <div class="relative">
             <AppIconButton :active="menuOpen" :title="t('sets.detail.setActions')" @click="menuOpen = !menuOpen"><Menu :size="20" /></AppIconButton>
             <div v-if="menuOpen" class="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-[260px] rounded-md border border-border-subtle bg-card p-2 shadow-[0_10px_26px_var(--overlay-45)]" role="menu">
@@ -44,18 +40,10 @@
             </div>
           </div>
           <div v-if="isPwa" class="pwa-actions">
-            <button class="pwa-icon-btn" :class="{ 'text-gold': setPinned }" :disabled="pinDisabled" :aria-busy="setPinBusy" :aria-pressed="setPinned" :aria-label="pinButtonLabel" :title="pinButtonLabel" @click="togglePin">
-              <PinOff v-if="setPinned" :size="22" />
-              <Pin v-else :size="22" />
-            </button>
-            <button class="pwa-icon-btn" :title="t('emperors.backToSets')" @click="router.push({ name: 'sets' })"><ArrowLeft :size="22" /></button>
+            <button class="pwa-icon-btn" :title="t('sets.backToSets')" @click="router.push({ name: 'sets' })"><ArrowLeft :size="22" /></button>
             <button class="pwa-icon-btn" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" :title="t('sets.detail.setActions')" :aria-label="t('sets.detail.setActions')" @click="menuOpen = !menuOpen"><Menu :size="22" /></button>
           </div>
           <div v-else class="header-actions">
-            <button class="btn btn-ghost" :class="{ 'text-gold': setPinned }" :disabled="pinDisabled" :aria-busy="setPinBusy" :aria-pressed="setPinned" :aria-label="pinButtonLabel" :title="pinButtonLabel" @click="togglePin">
-              <PinOff v-if="setPinned" :size="16" />
-              <Pin v-else :size="16" />
-            </button>
             <button class="btn btn-ghost" @click="router.push({ name: 'sets' })"><ArrowLeft :size="16" /> {{ t('common.back') }}</button>
             <button class="btn btn-secondary" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" aria-haspopup="menu" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen"><Menu :size="16" /> {{ t('common.actions') }}</button>
           </div>
@@ -241,9 +229,9 @@
 
 <script setup lang="ts">
 import { formatCurrency } from '@/utils/format'
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeft, ChevronDown, ChevronUp, CirclePlus, Info, Menu, Pencil, Pin, PinOff, Trash2, X } from 'lucide-vue-next'
+import { ArrowLeft, ChevronDown, ChevronUp, CirclePlus, Info, Menu, Pencil, Trash2, X } from 'lucide-vue-next'
 import {
   addCoinToSet,
   deleteSet as deleteSetApi,
@@ -258,10 +246,7 @@ import SetCoinPicker from '@/components/sets/SetCoinPicker.vue'
 import SetSimpleFilters from '@/components/sets/SetSimpleFilters.vue'
 import { useSetDetails } from '@/composables/useSetDetails'
 import SetCompletionChecklist from '@/components/sets/SetCompletionChecklist.vue'
-import { usePinnedSets } from '@/composables/usePinnedSets'
-import { useQuickAccess } from '@/composables/useQuickAccess'
 import { usePwa } from '@/composables/usePwa'
-import { useToast } from '@/composables/useToast'
 import { agenticAlbumSlots, checklistAlbumSlot, checklistDescription, coinAlbumSlot, type AlbumSlot } from '@/utils/setAlbum'
 import { criteriaToFilters, filtersName, filtersToCriteria, type SimpleSetFilters } from '@/utils/setFilters'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
@@ -271,17 +256,6 @@ import { t } from '@/i18n'
 const router = useRouter()
 const route = useRoute()
 const { isPwa } = usePwa()
-const { pinLimitReached, refresh: refreshPinnedSets } = usePinnedSets()
-const {
-  error: quickAccessError,
-  refresh: refreshQuickAccess,
-  pin: pinQuickAccessItem,
-  unpin: unpinQuickAccessItem,
-  forget: forgetQuickAccess,
-  isPinned,
-  isBusy,
-} = useQuickAccess()
-const { showToast } = useToast()
 const setId = computed(() => Number(route.params.id))
 const { loading, set, coins, completion, checklist, error: loadError, load: loadSetDetails, capture } = useSetDetails(setId)
 const savingOrder = ref(false)
@@ -311,15 +285,6 @@ const canManageMembership = computed(() => {
   if (!set.value) return false
   const normalizedType = normalizeCoinSetType(set.value.setType)
   return normalizedType !== 'smart' && normalizedType !== 'agentic' && normalizedType !== 'checklist'
-})
-const setPinned = computed(() => isPinned('coin_set', setId.value).value)
-const setPinBusy = computed(() => isBusy('coin_set', setId.value).value)
-const pinDisabled = computed(() => setPinBusy.value || (!setPinned.value && pinLimitReached.value))
-const pinButtonLabel = computed(() => {
-  if (!set.value) return ''
-  if (setPinBusy.value) return t('sets.detail.pin.updating')
-  if (!setPinned.value && pinLimitReached.value) return t('sets.detail.pin.limit')
-  return setPinned.value ? t('sets.detail.pin.unpin') : t('sets.detail.pin.pin')
 })
 const canReorderCoins = computed(() => canManageMembership.value && coins.value.length > 1)
 const normalizedSetType = computed(() => set.value ? normalizeCoinSetType(set.value.setType) : null)
@@ -369,10 +334,6 @@ watch(set, value => {
   editForm.value = { name: value?.name ?? '', description: value?.description ?? '', color: value?.color ?? '' }
 })
 
-onMounted(async () => {
-  await refreshQuickAccess()
-})
-
 function openSetInfoPage() {
   menuOpen.value = false
   router.push({ name: 'set-insights', params: { id: setId.value } })
@@ -384,23 +345,6 @@ function openEditModal() {
   showEditModal.value = true
 }
 
-async function togglePin() {
-  if (!set.value || pinDisabled.value) return
-  const resource = capture()
-  const nextPinned = !setPinned.value
-  try {
-    if (nextPinned) await pinQuickAccessItem('coin_set', resource.id)
-    else await unpinQuickAccessItem('coin_set', resource.id)
-    if (!resource.isCurrent()) return
-    await Promise.all([loadSetDetails(), refreshPinnedSets()])
-    if (!resource.isCurrent()) return
-    showToast(nextPinned ? t('sets.detail.pin.pinned') : t('sets.detail.pin.unpinned'), 'success')
-  } catch (error) {
-    if (!resource.isCurrent()) return
-    showToast(quickAccessError.value || getErrorMessage(error, t('sets.detail.pin.failed')), 'error')
-  }
-}
-
 async function updateSet() {
   const resource = capture()
   try {
@@ -410,7 +354,7 @@ async function updateSet() {
       : { ...editForm.value })
     if (!resource.isCurrent()) return
     showEditModal.value = false
-    await Promise.all([loadSetDetails(), refreshQuickAccess(), refreshPinnedSets()])
+    await loadSetDetails()
   } catch (error) {
     if (!resource.isCurrent()) return
     console.error('Failed to update set:', error)
@@ -493,8 +437,6 @@ async function deleteSet() {
   const resource = capture()
   try {
     await deleteSetApi(resource.id)
-    forgetQuickAccess('coin_set', resource.id)
-    await refreshPinnedSets()
     if (!resource.isCurrent()) return
     router.push({ name: 'sets' })
   } catch (error) {

@@ -114,10 +114,8 @@ const MAX_DEEP_HINT_IMAGES = 3
 
 function providerLabel(id: DeepProviderId): string {
   switch (id) {
-    case 'nomisma': return 'Nomisma'
     case 'numista': return 'Numista'
     case 'ngc': return t('deepAnalysis.start.ngcLinkOut')
-    case 'ocre': return 'OCRE'
     case 'rpc': return t('deepAnalysis.start.rpcUnavailable')
     default: return id
   }
@@ -149,7 +147,7 @@ const props = withDefaults(defineProps<{
   initialReverseImage: null,
   initialHintImages: () => [],
   initialNotes: '',
-  eligibleProviders: () => ['nomisma', 'numista'],
+  eligibleProviders: () => ['numista'],
   submitting: false,
   submitError: '',
   conflictJobId: null,

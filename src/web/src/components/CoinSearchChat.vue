@@ -89,7 +89,6 @@
               <div v-if="msg.collection.readResult?.aggregate" class="flex flex-wrap gap-[0.35rem]">
                 <span class="chip-sm">{{ t('chat.aggregate.active', { count: msg.collection.readResult.aggregate.totalCoins }) }}</span>
                 <span class="chip-sm">{{ t('chat.aggregate.wishlist', { count: msg.collection.readResult.aggregate.totalWishlist }) }}</span>
-                <span class="chip-sm">{{ t('chat.aggregate.sold', { count: msg.collection.readResult.aggregate.totalSold }) }}</span>
                 <span class="chip-sm">{{ t('chat.aggregate.value', { value: formatCurrency(msg.collection.readResult.aggregate.totalCurrentUsd) }) }}</span>
               </div>
               <div v-if="msg.collection.readResult?.coins?.length" class="flex flex-wrap gap-[0.35rem]">

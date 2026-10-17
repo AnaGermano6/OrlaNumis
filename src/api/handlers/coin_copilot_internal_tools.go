@@ -176,15 +176,3 @@ func (h *CoinCopilotInternalToolsHandler) DeepAnalysisHandoff(c *gin.Context) {
 	h.copilotSvc.FinishToolCall(claims.ExecutionID, request.ToolCallID, true)
 	c.Data(http.StatusOK, "application/json; charset=utf-8", payload)
 }
-
-func writeDeepAnalysisHandoffResult(c *gin.Context, result services.DeepAnalysisHandoffResult) {
-	projection, err := services.ProjectDeepAnalysisHandoffResult(
-		result,
-		services.DeepAnalysisHandoffMaxPersistedResultBytes,
-	)
-	if err != nil || services.ValidateDeepAnalysisHandoffPublicEventEnvelope(projection.Bytes) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_tool_call"})
-		return
-	}
-	c.Data(http.StatusOK, "application/json; charset=utf-8", projection.Bytes)
-}

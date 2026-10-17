@@ -17,7 +17,6 @@ func NewCoinRecommendationRepository(db *gorm.DB) *CoinRecommendationRepository 
 func (r *CoinRecommendationRepository) GetCoinByID(coinID, userID uint) (*models.Coin, error) {
 	var coin models.Coin
 	if err := r.db.Scopes(OwnedByID(coinID, userID)).
-		Preload("Tags").
 		Preload("Sets").
 		First(&coin).Error; err != nil {
 		return nil, err
@@ -28,7 +27,6 @@ func (r *CoinRecommendationRepository) GetCoinByID(coinID, userID uint) (*models
 func (r *CoinRecommendationRepository) ListOwnedCoinsWithMemberships(userID uint) ([]models.Coin, error) {
 	var coins []models.Coin
 	err := r.db.Scopes(OwnedBy(userID)).
-		Preload("Tags").
 		Preload("Sets").
 		Find(&coins).Error
 	return coins, err
@@ -41,12 +39,6 @@ func (r *CoinRecommendationRepository) ListOwnedManualSets(userID uint) ([]model
 		Order("name ASC").
 		Find(&sets).Error
 	return sets, err
-}
-
-func (r *CoinRecommendationRepository) ListOwnedTags(userID uint) ([]models.Tag, error) {
-	var tags []models.Tag
-	err := r.db.Model(&models.Tag{}).Scopes(OwnedBy(userID)).Order("name ASC").Find(&tags).Error
-	return tags, err
 }
 
 func (r *CoinRecommendationRepository) ListByCoin(coinID, userID uint) ([]models.CoinRecommendation, error) {

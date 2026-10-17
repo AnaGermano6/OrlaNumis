@@ -1,5 +1,9 @@
-import { getBrowserTimezone } from '@/composables/usePurchaseReminder'
 import { t } from '@/i18n'
+
+/** Returns the browser's IANA timezone (e.g. "America/Chicago"). */
+export function getBrowserTimezone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone
+}
 
 // Intl.supportedValuesOf is missing on older Safari; fall back to the browser
 // zone alone so a saved value is still selectable.

@@ -139,54 +139,6 @@
     <section class="admin-section card min-w-0">
       <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p class="section-label">{{ t('admin.security.ipEyebrow') }}</p>
-          <h2 class="m-0 text-xl font-medium">{{ t('admin.security.bansTitle') }}</h2>
-        </div>
-      </div>
-
-      <form class="mb-4 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4" @submit.prevent="submitBan">
-        <input v-model="newRule.cidr" class="form-input min-w-0 w-full" required :placeholder="t('admin.security.cidrPlaceholder')" />
-        <input v-model="newRule.duration" class="form-input min-w-0 w-full" :placeholder="t('admin.security.durationPlaceholder')" />
-        <input v-model="newRule.reason" class="form-input min-w-0 w-full" required :placeholder="t('admin.security.reason')" />
-        <button class="btn btn-primary btn-sm w-full justify-center" type="submit" :disabled="banSaving">
-          {{ banSaving ? t('admin.security.adding') : t('admin.security.addBan') }}
-        </button>
-      </form>
-
-      <div class="w-full max-w-full min-w-0 overflow-x-auto">
-        <table class="data-table min-w-[44rem] table-fixed [&_th]:px-2 [&_th]:py-3 [&_td]:px-2 [&_td]:py-3 [&_td]:align-top">
-          <thead>
-            <tr>
-              <th>CIDR</th>
-              <th>{{ t('admin.security.reason') }}</th>
-              <th>{{ t('admin.security.expires') }}</th>
-              <th>{{ t('admin.security.createdBy') }}</th>
-              <th>{{ t('admin.security.action') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="ipRules.length === 0">
-              <td colspan="5" class="p-6 text-center text-body text-text-muted">{{ t('admin.security.noBans') }}</td>
-            </tr>
-            <tr v-for="rule in ipRules" :key="rule.id">
-              <td>{{ rule.cidr }}</td>
-              <td>{{ rule.reason }}</td>
-              <td>{{ rule.expiresAt ? formatDateTime(rule.expiresAt) : t('admin.security.never') }}</td>
-              <td>{{ rule.createdBy ?? '—' }}</td>
-              <td>
-                <button class="btn btn-danger btn-xs" :disabled="deletingRuleId === rule.id" @click="removeRule(rule.id)">
-                  {{ deletingRuleId === rule.id ? t('common.deleting') : t('common.delete') }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="admin-section card min-w-0">
-      <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
           <p class="section-label">{{ t('admin.security.lockoutsEyebrow') }}</p>
           <h2 class="m-0 text-xl font-medium">{{ t('admin.security.lockedTitle') }}</h2>
         </div>
@@ -219,15 +171,12 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { AlertTriangle } from 'lucide-vue-next'
 import {
-  createSecurityIpRule,
-  deleteSecurityIpRule,
   getSecurityEvents,
   getSecurityExposureCheck,
-  getSecurityIpRules,
   getSecuritySummary,
   unlockUser,
 } from '@/api/client'
-import type { SecurityEvent, SecurityEventFilters, SecurityExposureCheck, SecurityIpRule, SecuritySummary, UserInfo } from '@/types'
+import type { SecurityEvent, SecurityEventFilters, SecurityExposureCheck, SecuritySummary, UserInfo } from '@/types'
 import I18nT from '@/components/I18nT.vue'
 import { t, intlLocale } from '@/i18n'
 
@@ -247,15 +196,11 @@ const error = ref('')
 const summary = ref<SecuritySummary>({
   failedLogins: 0,
   lockedAccounts: 0,
-  activeBans: 0,
   recentEvents: 0,
 })
 const events = ref<SecurityEvent[]>([])
-const ipRules = ref<SecurityIpRule[]>([])
 const exposure = ref<SecurityExposureCheck | null>(null)
-const deletingRuleId = ref<number | null>(null)
 const unlockingUserId = ref<number | null>(null)
-const banSaving = ref(false)
 
 const filters = reactive<SecurityEventFilters>({
   type: '',
@@ -267,16 +212,9 @@ const filters = reactive<SecurityEventFilters>({
   limit: 50,
 })
 
-const newRule = reactive({
-  cidr: '',
-  duration: '',
-  reason: '',
-})
-
 const summaryCards = computed(() => [
   { label: t('admin.security.cards.failedLogins'), value: summary.value.failedLogins },
   { label: t('admin.security.cards.lockedAccounts'), value: summary.value.lockedAccounts },
-  { label: t('admin.security.cards.activeBans'), value: summary.value.activeBans },
   { label: t('admin.security.cards.recentEvents'), value: summary.value.recentEvents },
 ])
 
@@ -295,7 +233,6 @@ const exposureChecks = computed(() => {
   return [
     buildExposureRow(t('admin.security.checks.proxy'), current.proxy ?? config?.trustedProxiesConfigured ?? !hasWarning(current, 'Trusted proxies'), current.proxyWarning, t('admin.security.checks.proxyOk')),
     buildExposureRow('CORS', current.cors ?? !hasWarning(current, 'CORS'), current.corsWarning, t('admin.security.checks.corsOk')),
-    buildExposureRow('WebAuthn', current.webAuthn ?? !hasWarning(current, 'WebAuthn'), current.webAuthnWarning, t('admin.security.checks.webAuthnOk')),
     buildExposureRow(t('admin.security.checks.publicUrl'), current.publicAppUrl ?? current.publicAppURL ?? Boolean(config?.publicAppURL && !hasWarning(current, 'PublicAppURL')), current.publicAppUrlWarning, t('admin.security.checks.publicUrlOk')),
     buildExposureRow(t('admin.security.checks.registration'), current.registration ?? (registrationMode ? registrationMode === 'closed' : !hasWarning(current, 'Registration')), current.registrationWarning, t('admin.security.checks.registrationMode', { mode: registrationMode || t('admin.security.checks.backendDefault') })),
     buildExposureRow(t('admin.security.checks.agentToken'), current.agentToken ?? config?.agentInternalTokenSet, current.agentTokenWarning, t('admin.security.checks.agentTokenOk')),
@@ -322,7 +259,7 @@ async function loadAll() {
   loading.value = true
   error.value = ''
   try {
-    await Promise.all([loadSummary(), loadEvents(), loadIpRules(), loadExposure()])
+    await Promise.all([loadSummary(), loadEvents(), loadExposure()])
   } catch {
     error.value = t('admin.security.loadFailed')
   } finally {
@@ -347,11 +284,6 @@ async function loadEvents() {
   }
 }
 
-async function loadIpRules() {
-  const res = await getSecurityIpRules()
-  ipRules.value = Array.isArray(res.data) ? res.data : (res.data.rules ?? res.data.ipRules ?? [])
-}
-
 async function loadExposure() {
   exposureLoading.value = true
   try {
@@ -359,39 +291,6 @@ async function loadExposure() {
     exposure.value = res.data
   } finally {
     exposureLoading.value = false
-  }
-}
-
-async function submitBan() {
-  banSaving.value = true
-  error.value = ''
-  try {
-    await createSecurityIpRule({
-      cidr: newRule.cidr.trim(),
-      durationMinutes: parseDurationMinutes(newRule.duration),
-      reason: newRule.reason.trim(),
-    })
-    newRule.cidr = ''
-    newRule.duration = ''
-    newRule.reason = ''
-    await Promise.all([loadIpRules(), loadSummary()])
-  } catch {
-    error.value = t('admin.security.addBanFailed')
-  } finally {
-    banSaving.value = false
-  }
-}
-
-async function removeRule(id: number) {
-  deletingRuleId.value = id
-  error.value = ''
-  try {
-    await deleteSecurityIpRule(id)
-    await Promise.all([loadIpRules(), loadSummary()])
-  } catch {
-    error.value = t('admin.security.deleteBanFailed')
-  } finally {
-    deletingRuleId.value = null
   }
 }
 
@@ -427,7 +326,6 @@ function normalizeSummary(data: SecuritySummary | Record<string, unknown>): Secu
   return {
     failedLogins: asNumber(raw.failedLogins ?? raw.loginFailures ?? raw.failed_login_count ?? raw.failedLoginCount),
     lockedAccounts: asNumber(raw.lockedAccounts ?? raw.locked_account_count ?? raw.lockedAccountCount),
-    activeBans: asNumber(raw.activeBans ?? raw.activeIpRuleCount ?? raw.active_bans ?? raw.activeBanCount),
     recentEvents: asNumber(raw.recentEvents ?? raw.recent_security_events ?? raw.recentEventCount),
   }
 }
@@ -439,17 +337,6 @@ function normalizeEvent(event: SecurityEvent): SecurityEvent {
     ip: event.ip ?? event.clientIp ?? null,
     severity: event.severity ?? '—',
   }
-}
-
-function parseDurationMinutes(duration: string) {
-  const value = duration.trim()
-  if (!value) return undefined
-  const match = value.match(/^(\d+)\s*([mhdw])?$/i)
-  if (!match) return undefined
-  const amount = Number(match[1] ?? 0)
-  const unit = (match[2] ?? 'm').toLowerCase()
-  const multipliers: Record<string, number> = { m: 1, h: 60, d: 1440, w: 10080 }
-  return amount * (multipliers[unit] ?? 1)
 }
 
 function asNumber(value: unknown) {

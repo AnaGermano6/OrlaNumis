@@ -41,7 +41,6 @@ func newCopilotServiceTest(t *testing.T) (*gorm.DB, *CoinCopilotService) {
 	if err := db.AutoMigrate(
 		&models.AppSetting{}, &models.CoinCopilotThread{}, &models.CoinCopilotRun{},
 		&models.CoinCopilotCheckpoint{}, &models.CoinCopilotEvent{}, &models.CoinCopilotResumeRequest{},
-		&models.CollectorProfile{},
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +60,7 @@ func newCopilotServiceTest(t *testing.T) (*gorm.DB, *CoinCopilotService) {
 		repository.NewCoinCopilotRepository(db), settings,
 		NewAgentProxy(agent.URL, "internal", NewLogger(10)),
 		NewInternalTokenService("01234567890123456789012345678901"), NewLogger(10), "http://api:8080",
-	).WithCollectorProfileService(NewCollectorProfileService(repository.NewCollectorProfileRepository(db)))
+	)
 	return db, service
 }
 
@@ -581,9 +580,6 @@ func TestCoinCopilotRecoverExpireAndPrune(t *testing.T) {
 	}
 	if cancelledEvents != 1 {
 		t.Fatalf("cancelled event count = %d, want 1", cancelledEvents)
-	}
-	if err := service.DeleteThread(7, staleCancelRequested.ThreadID); err != nil {
-		t.Fatalf("delete recovered cancelled thread: %v", err)
 	}
 	var eventCount, checkpointCount int64
 	if err := db.Model(&models.CoinCopilotEvent{}).Where("run_id = ?", oldTerminal.ID).Count(&eventCount).Error; err != nil {

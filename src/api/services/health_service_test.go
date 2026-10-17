@@ -21,7 +21,6 @@ func setupHealthServiceTestDB(t *testing.T) *gorm.DB {
 		&models.User{},
 		&models.Coin{},
 		&models.CoinImage{},
-		&models.CollectionHealthSnapshot{},
 		&models.QuickCaptureDraft{},
 		&models.QuickCaptureDraftImage{},
 		&models.DraftLifecycleEvent{},
@@ -140,9 +139,6 @@ func TestGetCollectionHealthSummary_EmptyCollection(t *testing.T) {
 	if summary.EligibleCoinCount != 0 {
 		t.Errorf("expected eligibleCoinCount=0, got %d", summary.EligibleCoinCount)
 	}
-	if summary.Trend30D.Status != "unavailable" {
-		t.Errorf("expected trend status=unavailable, got %s", summary.Trend30D.Status)
-	}
 }
 
 func TestGetCollectionHealthSummary_WithActiveCoins(t *testing.T) {
@@ -156,11 +152,10 @@ func TestGetCollectionHealthSummary_WithActiveCoins(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		db.Create(&models.Coin{
 			Name:       "Test Coin",
-			Category:   models.CategoryRoman,
+			Category:   models.CategoryModern,
 			Material:   models.MaterialSilver,
 			UserID:     user.ID,
 			IsWishlist: false,
-			IsSold:     false,
 		})
 	}
 
@@ -184,10 +179,9 @@ func TestGetCollectionHealthSummary_QuickCaptureDraftExcludedUntilPromotion(t *t
 	user := models.User{Username: "quickcapture-health", Email: "quickcapture-health@test.com"}
 	db.Create(&user)
 
-	active := models.Coin{Name: "Active", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: user.ID}
-	wishlist := models.Coin{Name: "Wishlist", Category: models.CategoryGreek, Material: models.MaterialGold, UserID: user.ID, IsWishlist: true}
-	sold := models.Coin{Name: "Sold", Category: models.CategoryRoman, Material: models.MaterialBronze, UserID: user.ID, IsSold: true}
-	for _, coin := range []*models.Coin{&active, &wishlist, &sold} {
+	active := models.Coin{Name: "Active", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: user.ID}
+	wishlist := models.Coin{Name: "Wishlist", Category: models.CategoryOther, Material: models.MaterialGold, UserID: user.ID, IsWishlist: true}
+	for _, coin := range []*models.Coin{&active, &wishlist} {
 		if err := db.Create(coin).Error; err != nil {
 			t.Fatalf("seed coin: %v", err)
 		}
@@ -202,10 +196,10 @@ func TestGetCollectionHealthSummary_QuickCaptureDraftExcludedUntilPromotion(t *t
 		t.Fatalf("health before promotion: %v", err)
 	}
 	if before.EligibleCoinCount != 1 {
-		t.Fatalf("active Quick Capture draft, wishlist, and sold rows must not affect health eligible rows, got %d", before.EligibleCoinCount)
+		t.Fatalf("active Quick Capture draft and wishlist rows must not affect health eligible rows, got %d", before.EligibleCoinCount)
 	}
 
-	promoted := models.Coin{Name: "Promoted", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: user.ID}
+	promoted := models.Coin{Name: "Promoted", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: user.ID}
 	if err := db.Create(&promoted).Error; err != nil {
 		t.Fatalf("seed promoted coin: %v", err)
 	}
@@ -227,64 +221,6 @@ func TestGetCollectionHealthSummary_QuickCaptureDraftExcludedUntilPromotion(t *t
 }
 
 // --- T015: Trend-direction and delta unit tests ---
-
-func TestGetCollectionHealthSummary_TrendUnavailableNoSnapshot(t *testing.T) {
-	db := setupHealthServiceTestDB(t)
-	svc := setupHealthService(t, db)
-
-	user := models.User{Username: "newuser", Email: "new@test.com"}
-	db.Create(&user)
-
-	db.Create(&models.Coin{
-		Name:     "Coin",
-		Category: models.CategoryRoman,
-		UserID:   user.ID,
-	})
-
-	summary, err := svc.GetCollectionHealthSummary(user.ID)
-	if err != nil {
-		t.Fatalf("GetCollectionHealthSummary failed: %v", err)
-	}
-
-	if summary.Trend30D.Status != "unavailable" {
-		t.Errorf("expected trend status=unavailable when no baseline, got %s", summary.Trend30D.Status)
-	}
-	if summary.Trend30D.Delta != nil {
-		t.Errorf("expected nil delta, got %v", summary.Trend30D.Delta)
-	}
-	if summary.Trend30D.Direction != "unavailable" {
-		t.Errorf("expected direction=unavailable, got %s", summary.Trend30D.Direction)
-	}
-}
-
-func TestSnapshotUserHealth_PersistsSnapshot(t *testing.T) {
-	db := setupHealthServiceTestDB(t)
-	svc := setupHealthService(t, db)
-
-	user := models.User{Username: "snapper", Email: "snap@test.com"}
-	db.Create(&user)
-
-	db.Create(&models.Coin{
-		Name:     "Coin",
-		Category: models.CategoryRoman,
-		UserID:   user.ID,
-	})
-
-	snapshotDate := time.Now().Truncate(24 * time.Hour)
-	err := svc.SnapshotUserHealth(user.ID, snapshotDate)
-	if err != nil {
-		t.Fatalf("SnapshotUserHealth failed: %v", err)
-	}
-
-	var snapshot models.CollectionHealthSnapshot
-	db.Where("user_id = ? AND snapshot_date = ?", user.ID, snapshotDate).First(&snapshot)
-	if snapshot.ID == 0 {
-		t.Fatal("expected snapshot to be persisted")
-	}
-	if snapshot.EligibleCoinCount != 1 {
-		t.Errorf("expected eligibleCoinCount=1, got %d", snapshot.EligibleCoinCount)
-	}
-}
 
 // --- T028: Service tests for missing checklist key mapping and quick-action hints ---
 
@@ -318,7 +254,7 @@ func TestListCoinHealth_WithCoins(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		db.Create(&models.Coin{
 			Name:     "Test Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   user.ID,
 		})
 	}
@@ -352,7 +288,7 @@ func TestListCoinHealth_PaginationRespected(t *testing.T) {
 	for i := 0; i < 30; i++ {
 		db.Create(&models.Coin{
 			Name:     "Test Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   user.ID,
 		})
 	}
@@ -414,7 +350,7 @@ func TestGetAdminHealthSummary_WithCoins(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		db.Create(&models.Coin{
 			Name:     "Test Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   user.ID,
 		})
 	}
@@ -454,8 +390,7 @@ func TestFixtureHealthWeights_MatchesDefaults(t *testing.T) {
 }
 
 func TestFixtureCollectionHealthSummary_ValidStructure(t *testing.T) {
-	delta := 5
-	summary := fixtureCollectionHealthSummary(75, &delta)
+	summary := fixtureCollectionHealthSummary(75)
 
 	if summary.Score != 75 {
 		t.Errorf("expected score=75, got %d", summary.Score)
@@ -465,12 +400,6 @@ func TestFixtureCollectionHealthSummary_ValidStructure(t *testing.T) {
 	}
 	if summary.EligibleCoinCount != 3 {
 		t.Errorf("expected eligibleCoinCount=3, got %d", summary.EligibleCoinCount)
-	}
-	if summary.Trend30D.Status != "available" {
-		t.Errorf("expected trend status=available, got %s", summary.Trend30D.Status)
-	}
-	if summary.Trend30D.Delta == nil || *summary.Trend30D.Delta != 5 {
-		t.Errorf("expected delta=5, got %v", summary.Trend30D.Delta)
 	}
 }
 

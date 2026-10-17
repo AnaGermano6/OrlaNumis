@@ -117,7 +117,7 @@ func TestQuickCaptureRepositoryPromotionCopiesSelectedReferenceForCollectionAndW
 				t.Fatal(err)
 			}
 			coin := &models.Coin{
-				UserID: 7, Name: "Promoted", Category: models.CategoryRoman,
+				UserID: 7, Name: "Promoted", Category: models.CategoryModern,
 				Material: models.MaterialSilver, Era: models.EraAncient, IsWishlist: wishlist,
 			}
 			_, created, err := repo.PromoteDraftTransaction(draft.ID, 7, coin)
@@ -162,7 +162,7 @@ func TestQuickCaptureRepositoryPromotionReferenceFailureRollsBackEverything(t *t
 		t.Fatal(err)
 	}
 	_, _, err := repo.PromoteDraftTransaction(draft.ID, 7, &models.Coin{
-		UserID: 7, Name: "Rollback", Category: models.CategoryRoman, Material: models.MaterialSilver, Era: models.EraAncient,
+		UserID: 7, Name: "Rollback", Category: models.CategoryModern, Material: models.MaterialSilver, Era: models.EraAncient,
 	})
 	if err == nil {
 		t.Fatal("expected promotion failure")
@@ -199,7 +199,7 @@ func TestQuickCaptureRepositoryConcurrentPromotionCreatesAtMostOneCoinAndReferen
 		go func() {
 			<-start
 			_, _, err := repo.PromoteDraftTransaction(draft.ID, 7, &models.Coin{
-				UserID: 7, Name: "Concurrent", Category: models.CategoryRoman,
+				UserID: 7, Name: "Concurrent", Category: models.CategoryModern,
 				Material: models.MaterialSilver, Era: models.EraAncient,
 			})
 			results <- err
@@ -238,7 +238,7 @@ func TestQuickCaptureRepositoryCreateIsOwnerScopedAndPreloadsImages(t *testing.T
 	if err := repo.CreateDraft(draft); err != nil {
 		t.Fatalf("create draft: %v", err)
 	}
-	if err := repo.AddDraftImage(&models.QuickCaptureDraftImage{DraftID: draft.ID, UserID: owner.ID, FilePath: "quick-capture-draft-1/a.png", ImageType: models.ImageTypeObverse, IsPrimary: true}); err != nil {
+	if err := db.Create(&models.QuickCaptureDraftImage{DraftID: draft.ID, UserID: owner.ID, FilePath: "quick-capture-draft-1/a.png", ImageType: models.ImageTypeObverse, IsPrimary: true}).Error; err != nil {
 		t.Fatalf("add image: %v", err)
 	}
 
@@ -315,7 +315,7 @@ func TestQuickCaptureRepositoryPromoteDraftTransactionCreatesCoinImagesSnapshotA
 	if err := db.Create(&models.QuickCaptureDraftImage{DraftID: draft.ID, UserID: userID, FilePath: "quick-capture-draft-1/obverse.png", ImageType: models.ImageTypeObverse, IsPrimary: true}).Error; err != nil {
 		t.Fatalf("create draft image: %v", err)
 	}
-	coin := &models.Coin{UserID: userID, Name: "Augustus denarius", Category: models.CategoryRoman, Material: models.MaterialSilver, Era: models.EraAncient, PurchasePrice: &price, CurrentValue: &price}
+	coin := &models.Coin{UserID: userID, Name: "Augustus denarius", Category: models.CategoryModern, Material: models.MaterialSilver, Era: models.EraAncient, PurchasePrice: &price, CurrentValue: &price}
 
 	promoted, createdCoin, err := repo.PromoteDraftTransaction(draft.ID, userID, coin)
 	if err != nil {

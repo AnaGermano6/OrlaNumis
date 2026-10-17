@@ -76,7 +76,6 @@ export interface CollectionCoinSummary {
 export interface CollectionAggregateSummary {
   totalCoins: number
   totalWishlist: number
-  totalSold: number
   totalCurrentUsd: number
   totalPurchaseUsd: number
 }
@@ -125,12 +124,6 @@ export interface CoinSuggestion {
   sourceUrl: string
   sourceName: string
   candidateReferences?: CoinReferenceInput[]
-}
-
-export interface AgentChatResponse {
-  message: string
-  suggestions: CoinSuggestion[]
-  collection?: CollectionChatResponse
 }
 
 export type CoinCopilotCapabilityReason =
@@ -307,11 +300,11 @@ export type DeepAnalysisHandoffOutcome =
     disagreements: Array<{ field: string, summary: string }>
     unresolved_questions: string[]
     coverage: Array<{
-      provider: 'numista' | 'nomisma' | 'ngc' | 'ocre' | 'rpc'
+      provider: 'numista' | 'ngc' | 'rpc'
       status: 'pending' | 'running' | 'contributed' | 'no_match' | 'failed' | 'timed_out' | 'skipped' | 'not_automated' | 'unavailable'
     }>
     attributions: Array<{
-      provider: 'numista' | 'nomisma' | 'ngc' | 'ocre' | 'rpc'
+      provider: 'numista' | 'ngc' | 'rpc'
       label: string
     }>
     limitations: string[]
@@ -371,12 +364,6 @@ export interface CoinCopilotClarification {
   inputType: CoinCopilotClarificationInputType
   choices: string[]
   checkpointVersion: number
-}
-
-export interface CoinCopilotCheckpointSummary {
-  version: number
-  plan: CoinCopilotPlanItem[]
-  pendingClarification: CoinCopilotClarification | null
 }
 
 export interface CoinCopilotRun {

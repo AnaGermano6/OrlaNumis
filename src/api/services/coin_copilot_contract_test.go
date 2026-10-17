@@ -230,22 +230,6 @@ func TestCopilotUsageAndLimitsDoNotExposeEstimatedCost(t *testing.T) {
 	}
 }
 
-func TestValidateCopilotSpecialistQueryBounds(t *testing.T) {
-	if err := ValidateCopilotSpecialistQuery(CopilotSpecialistQuery{Query: "Domitian denarius"}); err != nil {
-		t.Fatalf("default-limit query rejected: %v", err)
-	}
-	for _, query := range []CopilotSpecialistQuery{
-		{},
-		{Query: strings.Repeat("x", 501)},
-		{Query: "coin", Limit: -1},
-		{Query: "coin", Limit: 11},
-	} {
-		if !errors.Is(ValidateCopilotSpecialistQuery(query), ErrInvalidCopilotFrame) {
-			t.Fatalf("invalid query accepted: %#v", query)
-		}
-	}
-}
-
 func canonicalPaddingEnvelope(t *testing.T, size int) []byte {
 	t.Helper()
 	const empty = `{"padding":""}`
@@ -277,21 +261,6 @@ func TestDeepAnalysisHandoffCanonicalFixturesAndStrictRequestDrift(t *testing.T)
 			t.Fatalf("operation=%q want=%q", decoded.Operation, operation)
 		}
 	}
-	var results map[string]json.RawMessage
-	if err := json.Unmarshal(valid["results"], &results); err != nil {
-		t.Fatal(err)
-	}
-	result, err := DecodeDeepAnalysisHandoffResult(
-		results["status_complete"],
-		DeepAnalysisHandoffMaxPublicEventBytes,
-	)
-	if err != nil {
-		t.Fatalf("valid outcome-discriminated result rejected: %v", err)
-	}
-	if result.Outcome != "status" || result.Job == nil || result.Job.Status != "completed" {
-		t.Fatalf("unexpected status result: %#v", result)
-	}
-
 	invalid := loadDeepAnalysisHandoffFixture(t, "deep-analysis-handoff-invalid.json")
 	var requestCases []struct {
 		Name    string          `json:"name"`
@@ -309,24 +278,6 @@ func TestDeepAnalysisHandoffCanonicalFixturesAndStrictRequestDrift(t *testing.T)
 				t.Fatal("invalid handoff request was accepted")
 			}
 		})
-	}
-	var resultCases []struct {
-		Name    string          `json:"name"`
-		Payload json.RawMessage `json:"payload"`
-	}
-	if err := json.Unmarshal(invalid["result_cases"], &resultCases); err != nil {
-		t.Fatal(err)
-	}
-	for _, testCase := range resultCases {
-		if testCase.Name != "result_level_status_discriminant" {
-			continue
-		}
-		if _, err := DecodeDeepAnalysisHandoffResult(
-			testCase.Payload,
-			DeepAnalysisHandoffMaxPublicEventBytes,
-		); err == nil {
-			t.Fatal("result-level status discriminant was accepted")
-		}
 	}
 }
 

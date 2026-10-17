@@ -13,7 +13,6 @@ const messages: Messages['deepAnalysis'] = {
     unavailable: 'Indisponível',
   },
   title: 'Análise aprofundada',
-  ocreAttribution: 'Dados do tipo de moeda:',
   coverage: {
     title: 'Cobertura dos fornecedores',
     viewReference: 'Ver referência',

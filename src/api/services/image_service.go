@@ -291,7 +291,7 @@ func (s *ImageService) ResolveAuthorizedMediaPath(rawPath string, viewerID uint)
 	}
 
 	if owner, err := s.repo.FindAvatarOwnerByPath(relPath); err == nil {
-		if owner.ID != viewerID && !owner.IsPublic {
+		if owner.ID != viewerID {
 			return "", ErrMediaNotFound
 		}
 		return s.safeExistingUploadPath(relPath)
@@ -300,29 +300,9 @@ func (s *ImageService) ResolveAuthorizedMediaPath(rawPath string, viewerID uint)
 	return "", ErrMediaNotFound
 }
 
-// ResolvePublicShowcaseMediaPath returns the on-disk path for an uploaded coin image
-// that belongs to an active public showcase.
-func (s *ImageService) ResolvePublicShowcaseMediaPath(slug, rawPath string) (string, error) {
-	relPath, err := normalizeUploadPath(rawPath)
-	if err != nil || strings.TrimSpace(slug) == "" {
-		return "", ErrMediaNotFound
-	}
-
-	allowed, err := s.repo.CoinImagePathInActiveShowcase(slug, relPath)
-	if err != nil || !allowed {
-		return "", ErrMediaNotFound
-	}
-	return s.safeExistingUploadPath(relPath)
-}
-
+// canViewCoinImage: a coin's photos are its owner's alone.
 func (s *ImageService) canViewCoinImage(media *repository.CoinImageMediaAccess, viewerID uint) bool {
-	if media.CoinUserID == viewerID {
-		return true
-	}
-	if media.CoinIsPrivate || media.CoinIsWishlist || media.CoinIsSold || !media.OwnerIsPublic {
-		return false
-	}
-	return s.repo.IsAcceptedFollower(viewerID, media.CoinUserID)
+	return media.CoinUserID == viewerID
 }
 
 func normalizeUploadPath(rawPath string) (string, error) {

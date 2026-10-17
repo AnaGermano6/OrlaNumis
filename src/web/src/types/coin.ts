@@ -1,6 +1,6 @@
 ﻿// coin types. Split out of the former single-file src/types/index.ts;
 // re-exported from '@/types' so existing imports keep working.
-import type { MintLocation, StorageLocation, Tag } from '@/types/collection'
+import type { MintLocation } from '@/types/collection'
 import type { NumistaEvidence, NumistaLookupOutcome, SelectedNumistaReference } from '@/types/numista'
 import type { CoinSet } from '@/types/sets'
 
@@ -15,7 +15,6 @@ export interface Coin {
   category: Category
   denomination: string
   ruler: string
-  romanImperialFigureId: number | null
   era: string
   dateRange?: string | null
   mint: string
@@ -61,9 +60,6 @@ export interface Coin {
   purchaseLocation: string
   vendorSku: string
   vendorInvoice: string
-  storageLocationId: number | null
-  storageSlot?: number | null
-  storageLocation: Pick<StorageLocation, 'id' | 'name' | 'type' | 'rows' | 'columns'> | null
   notes: string
   aiAnalysis: string
   obverseAnalysis: string
@@ -71,11 +67,6 @@ export interface Coin {
   referenceUrl: string
   referenceText: string
   isWishlist: boolean
-  isSold: boolean
-  soldPrice: number | null
-  soldDate: string | null
-  soldTo: string
-  isPrivate: boolean
   listingStatus: string
   listingCheckedAt: string | null
   listingCheckReason: string
@@ -83,7 +74,6 @@ export interface Coin {
   userId: number
   images: CoinImage[]
   references?: CoinReference[]
-  tags?: Tag[]
   sets?: CoinSet[]
   createdAt: string
   updatedAt: string
@@ -124,7 +114,7 @@ export interface LegacyMigrationResult {
   message?: string
 }
 
-export type CoinMutationPayload = Partial<Omit<Coin, 'references' | 'storageLocation' | 'mintLocation'>> & {
+export type CoinMutationPayload = Partial<Omit<Coin, 'references' | 'mintLocation'>> & {
   references?: CoinReferenceInput[]
 }
 
@@ -363,18 +353,13 @@ export type ImageType = 'obverse' | 'reverse' | 'detail' | 'other'
 
 export type CoinEra = string
 
-export const CATEGORIES: Category[] = ['Roman', 'Greek', 'Byzantine', 'Modern', 'Other']
+export const CATEGORIES: Category[] = ['Modern', 'Other']
 
 export const MATERIALS: Material[] = ['Gold', 'Silver', 'Bronze', 'Copper', 'Electrum', 'Other']
-
-export const IMAGE_TYPES: ImageType[] = ['obverse', 'reverse', 'detail', 'other']
 
 export const COIN_ERAS: CoinEra[] = ['ancient', 'medieval', 'modern']
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  Roman: '#7b2d8e',
-  Greek: '#6b8e23',
-  Byzantine: '#8b1a1a',
   Modern: '#4682b4',
   Other: '#888888',
 }
@@ -418,15 +403,6 @@ export interface CoinValueHistory {
   source?: 'ai_scheduled' | 'ai_estimate' | 'manual' | string
 }
 
-// T002: Coin detail page types for #219
-export interface CoinDetailSectionLink {
-  id: string
-  title: string
-  description: string
-  route: string
-  icon?: string
-}
-
 export interface CoinDetailMetadataRow {
   key: string
   label: string
@@ -434,24 +410,5 @@ export interface CoinDetailMetadataRow {
   valueClass?: string
   fullWidth?: boolean
   url?: string | null
-  /** When set, renders a compact action button in the label column and the table emits 'edit' with the row key. */
-  editLabel?: string
 }
 
-// Feature 355 — Wishlist Purchase Reminders
-export interface PurchaseReminder {
-  id: number
-  coinId: number
-  coinName?: string
-  remindDate: string
-  timezone: string
-  status: 'pending' | 'notified' | 'cancelled'
-  notifiedAt?: string | null
-  cancelledAt?: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-export interface PurchaseReminderListResponse {
-  reminders: PurchaseReminder[]
-}

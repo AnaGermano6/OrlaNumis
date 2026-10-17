@@ -1,44 +1,8 @@
-import type { Coin } from '@/types'
-import type { MintLocation } from '@/types'
-
 // OpenStreetMap tiles and the starting view for picking a mint's position.
 export const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 export const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 export const DEFAULT_MAP_CENTER: [number, number] = [38, 16]
 export const DEFAULT_MAP_ZOOM = 5
-
-/** Sentinel ID for the virtual Unknown Mint group (coins with no mappable location). */
-export const UNKNOWN_MINT_ID = 0
-
-export interface MintReference {
-  id: number
-  displayName: string
-  lat: number
-  lng: number
-  aliases: readonly string[]
-  region: string
-  nomismaUri?: string | null
-  nomismaLabel?: string
-  nomismaLinkedAt?: string | null
-}
-
-export interface MintGroup {
-  mint: MintReference
-  coins: Coin[]
-  count: number
-}
-
-export interface UnmatchedMintGroup {
-  normalizedName: string
-  originalNames: string[]
-  coins: Coin[]
-}
-
-export interface MintMapAggregation {
-  matched: MintGroup[]
-  unmatched: UnmatchedMintGroup[]
-  unknown: Coin[]
-}
 
 export function normalizeMintName(value: string): string {
   return value
@@ -49,90 +13,4 @@ export function normalizeMintName(value: string): string {
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
     .replace(/\s+/g, ' ')
-}
-
-function buildMintLookup(mintLocations: readonly MintLocation[]): Map<string, MintReference> {
-  const lookup = new Map<string, MintReference>()
-  for (const mint of mintLocations) {
-    lookup.set(normalizeMintName(mint.displayName), mint)
-    for (const alias of mint.aliases ?? []) {
-      const normalizedAlias = normalizeMintName(alias)
-      if (normalizedAlias) {
-        lookup.set(normalizedAlias, mint)
-      }
-    }
-  }
-  return lookup
-}
-
-export function findMintReference(value: string, mintLocations: readonly MintLocation[]): MintReference | null {
-  const normalized = normalizeMintName(value)
-  if (!normalized) return null
-  const mintLookup = buildMintLookup(mintLocations)
-  return mintLookup.get(normalized) ?? null
-}
-
-export function groupCoinsByMint(coins: Coin[], mintLocations: readonly MintLocation[]): MintMapAggregation {
-  const mintById = new Map<number, MintReference>(mintLocations.map((mint) => [mint.id, mint]))
-  // Fuzzy name/alias matching is a fallback for legacy coins saved before the
-  // mintLocationId foreign key existed - once a coin is linked, its FK is
-  // authoritative and this lookup is never consulted for it.
-  const mintLookup = buildMintLookup(mintLocations)
-  const matchedByMint = new Map<string, MintGroup>()
-  const unmatchedByName = new Map<string, { originalNames: Set<string>; coins: Coin[] }>()
-  const unknown: Coin[] = []
-
-  function addMatch(reference: MintReference, coin: Coin) {
-    const existing = matchedByMint.get(String(reference.id))
-    if (existing) {
-      existing.coins.push(coin)
-      existing.count = existing.coins.length
-    } else {
-      matchedByMint.set(String(reference.id), { mint: reference, coins: [coin], count: 1 })
-    }
-  }
-
-  for (const coin of coins) {
-    if (coin.mintLocationId != null) {
-      const reference = mintById.get(coin.mintLocationId)
-      if (reference) {
-        addMatch(reference, coin)
-        continue
-      }
-    }
-
-    const rawMint = coin.mint?.trim() ?? ''
-    const normalizedName = normalizeMintName(rawMint)
-    if (!normalizedName) {
-      unknown.push(coin)
-      continue
-    }
-
-    const reference = mintLookup.get(normalizedName) ?? null
-    if (reference) {
-      addMatch(reference, coin)
-      continue
-    }
-
-    const existing = unmatchedByName.get(normalizedName)
-    if (existing) {
-      existing.originalNames.add(rawMint)
-      existing.coins.push(coin)
-    } else {
-      unmatchedByName.set(normalizedName, { originalNames: new Set([rawMint]), coins: [coin] })
-    }
-  }
-
-  const matched = [...matchedByMint.values()].sort((a, b) =>
-    b.count - a.count || a.mint.displayName.localeCompare(b.mint.displayName),
-  )
-  const unmatched = [...unmatchedByName.entries()]
-    .map(([normalizedName, group]) => ({
-      normalizedName,
-      originalNames: [...group.originalNames].sort((a, b) => a.localeCompare(b)),
-      coins: group.coins,
-    }))
-    .sort((a, b) => b.coins.length - a.coins.length || a.normalizedName.localeCompare(b.normalizedName))
-
-  return { matched, unmatched, unknown }
 }

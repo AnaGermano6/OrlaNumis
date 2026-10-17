@@ -24,7 +24,7 @@ var collectionMoneyColumns = []struct {
 	model   any
 	columns []string
 }{
-	{&models.Coin{}, []string{"purchase_price", "current_value", "sold_price"}},
+	{&models.Coin{}, []string{"purchase_price", "current_value"}},
 	{&models.CoinValueHistory{}, []string{"value"}},
 	{&models.QuickCaptureDraft{}, []string{"purchase_price"}},
 	{&models.CoinSetValuationSnapshot{}, []string{"total_value", "total_invested", "avg_value_per_coin"}},
@@ -38,7 +38,7 @@ func (r *CollectionCurrencyRepository) ConvertAmounts(factor float64, settingKey
 	var coins int64
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&models.Coin{}).
-			Where("purchase_price IS NOT NULL OR current_value IS NOT NULL OR sold_price IS NOT NULL").
+			Where("purchase_price IS NOT NULL OR current_value IS NOT NULL").
 			Count(&coins).Error; err != nil {
 			return err
 		}

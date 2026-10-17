@@ -18,8 +18,8 @@ describe('MintMap navigation entry points', () => {
     expect(routerSource).toContain("name: 'stats-timeline'")
     expect(routerSource).toContain("path: '/stats/health'")
     expect(routerSource).toContain("name: 'stats-health'")
-    // The value details page was removed: its old address opens Stats.
-    expect(routerSource).toContain("{ path: '/stats/value-trends', name: 'stats-value-trends', redirect: '/stats' }")
+    // The value details page was removed.
+    expect(routerSource).not.toContain("path: '/stats/value-trends'")
     expect(routerSource).toContain("path: '/stats/distribution'")
     expect(routerSource).toContain("name: 'stats-distribution'")
     expect(routerSource).toContain("path: '/mint-map'")

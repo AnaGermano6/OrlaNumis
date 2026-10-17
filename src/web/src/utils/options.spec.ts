@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { parseOptionList, formatOptionList } from './options'
 
 describe('parseOptionList', () => {
-  const DEFAULT_CATEGORIES = ['Roman', 'Greek', 'Byzantine', 'Modern', 'Other']
+  const DEFAULT_CATEGORIES = ['Modern', 'Other']
   const DEFAULT_ERAS = ['ancient', 'medieval', 'modern']
 
   describe('default behavior', () => {
@@ -108,7 +108,7 @@ describe('parseOptionList', () => {
 
   describe('real-world scenarios', () => {
     it('parses default category list', () => {
-      const input = 'Roman\nGreek\nByzantine\nModern\nOther'
+      const input = 'Modern\nOther'
       expect(parseOptionList(input, DEFAULT_CATEGORIES)).toEqual(DEFAULT_CATEGORIES)
     })
 
@@ -161,7 +161,7 @@ describe('formatOptionList', () => {
 
 describe('parseOptionList and formatOptionList roundtrip', () => {
   it('roundtrips default categories', () => {
-    const defaults = ['Roman', 'Greek', 'Byzantine', 'Modern', 'Other']
+    const defaults = ['Modern', 'Other']
     const formatted = formatOptionList(defaults)
     const parsed = parseOptionList(formatted, defaults)
     expect(parsed).toEqual(defaults)

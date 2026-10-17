@@ -4,7 +4,6 @@ import type { Locator, Page } from '@playwright/test'
  * Prepares a page for a deterministic, privacy-safe screenshot:
  * - disables CSS animations/transitions and the text-input caret so frames
  *   are stable regardless of timing
- * - hides the notification unread-count badge, which is account-specific
  * - waits for web fonts and network activity to settle
  */
 export async function preparePageForScreenshot(page: Page): Promise<void> {
@@ -17,10 +16,6 @@ export async function preparePageForScreenshot(page: Page): Promise<void> {
         transition-delay: 0s !important;
         scroll-behavior: auto !important;
         caret-color: transparent !important;
-      }
-      /* Account-specific unread notification count badge (App.vue) */
-      nav a[aria-label="Notifications"] span {
-        visibility: hidden !important;
       }
     `,
   })

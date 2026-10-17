@@ -65,12 +65,12 @@ func TestCreateCoin_KeepsACirculationSetByHandAndRejectsUnknownOnes(t *testing.T
 func TestUpdateCoin_RecomputesYearWhenTheDateChanges(t *testing.T) {
 	db := setupTestDB(t)
 	svc := newTestCoinService(db)
-	coin := &models.Coin{Name: "Denarius", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: 1, DateRange: "1968"}
+	coin := &models.Coin{Name: "Denarius", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: 1, DateRange: "1968"}
 	if err := svc.CreateCoin(coin); err != nil {
 		t.Fatalf("CreateCoin: %v", err)
 	}
 
-	if err := svc.UpdateCoinWithFields(coin, &models.Coin{DateRange: "27 BC - AD 14"}, []string{"DateRange"}, 1, "manual", false); err != nil {
+	if err := svc.UpdateCoinWithFields(coin, &models.Coin{DateRange: "27 BC - AD 14"}, []string{"DateRange"}, 1, "manual"); err != nil {
 		t.Fatalf("UpdateCoinWithFields: %v", err)
 	}
 	var found models.Coin
@@ -79,7 +79,7 @@ func TestUpdateCoin_RecomputesYearWhenTheDateChanges(t *testing.T) {
 		t.Fatalf("year = %v", found.Year)
 	}
 
-	if err := svc.UpdateCoinWithFields(coin, &models.Coin{Presentation: "box"}, []string{"Presentation"}, 1, "manual", false); !errors.Is(err, ErrCoinInvalidPresentation) {
+	if err := svc.UpdateCoinWithFields(coin, &models.Coin{Presentation: "box"}, []string{"Presentation"}, 1, "manual"); !errors.Is(err, ErrCoinInvalidPresentation) {
 		t.Fatalf("invalid presentation update: %v", err)
 	}
 }
@@ -177,12 +177,11 @@ func TestCollectionSummary_CountsCoinsTypesAndCountries(t *testing.T) {
 	coins := []*models.Coin{
 		{Name: "50 Escudos 1968 – Portugal", Category: models.CategoryModern, UserID: 1, Country: "Portugal", Presentation: "coincard", CurrentValue: ptrFloat(23.81)},
 		{Name: "50 Escudos 1969 – Portugal", Category: models.CategoryModern, UserID: 1, Country: "Portugal", Presentation: "coincard", CurrentValue: ptrFloat(26.19)},
-		{Name: "Denarius", Category: models.CategoryRoman, UserID: 1},
-		{Name: " denarius ", Category: models.CategoryRoman, UserID: 1},
+		{Name: "Denarius", Category: models.CategoryModern, UserID: 1},
+		{Name: " denarius ", Category: models.CategoryModern, UserID: 1},
 		// Three of the same coin: three coins, one of them unique, none valued.
 		{Name: "2.50 Escudos", Category: models.CategoryModern, UserID: 1, Country: "Angola", Quantity: 3},
 		{Name: "Wanted", Category: models.CategoryModern, UserID: 1, Country: "Spain", IsWishlist: true, Presentation: "coincard", CurrentValue: ptrFloat(1000)},
-		{Name: "Sold", Category: models.CategoryModern, UserID: 1, Country: "France", IsSold: true},
 		{Name: "Someone else's", Category: models.CategoryModern, UserID: 2, Country: "Italy"},
 	}
 	for _, coin := range coins {
@@ -218,7 +217,7 @@ func TestCoinYear_TypedYearWinsAndEmptyYearFollowsTheDate(t *testing.T) {
 		return coin.Year
 	}
 	typed := -44
-	coin := &models.Coin{Name: "Denarius", Category: models.CategoryRoman, UserID: 1, DateRange: "c. 46-44 BC", Year: &typed}
+	coin := &models.Coin{Name: "Denarius", Category: models.CategoryModern, UserID: 1, DateRange: "c. 46-44 BC", Year: &typed}
 	if err := svc.CreateCoin(coin); err != nil {
 		t.Fatalf("CreateCoin: %v", err)
 	}
@@ -236,7 +235,7 @@ func TestCoinYear_TypedYearWinsAndEmptyYearFollowsTheDate(t *testing.T) {
 	}
 
 	// Clearing the year (sent as null) reads it from the existing date again.
-	if err := svc.UpdateCoinWithFields(coin, &models.Coin{}, []string{"Year"}, 1, "manual", false); err != nil {
+	if err := svc.UpdateCoinWithFields(coin, &models.Coin{}, []string{"Year"}, 1, "manual"); err != nil {
 		t.Fatalf("clear year: %v", err)
 	}
 	if got := yearOf(coin.ID); got == nil || *got != -46 {
@@ -244,7 +243,7 @@ func TestCoinYear_TypedYearWinsAndEmptyYearFollowsTheDate(t *testing.T) {
 	}
 
 	newYear := 1969
-	if err := svc.UpdateCoinWithFields(derived, &models.Coin{DateRange: "1968", Year: &newYear}, []string{"DateRange", "Year"}, 1, "manual", false); err != nil {
+	if err := svc.UpdateCoinWithFields(derived, &models.Coin{DateRange: "1968", Year: &newYear}, []string{"DateRange", "Year"}, 1, "manual"); err != nil {
 		t.Fatalf("set year: %v", err)
 	}
 	if got := yearOf(derived.ID); got == nil || *got != 1969 {
@@ -260,10 +259,9 @@ func TestCollectionHighlights_PicksRarestOldestAndMostValuable(t *testing.T) {
 		"rare cheap":   {Name: "Rare cheap", Category: models.CategoryModern, UserID: 1, Rarity: "very_rare", CurrentValue: ptrFloat(10), Year: year(1900)},
 		"rare dear":    {Name: "Rare dear", Category: models.CategoryModern, UserID: 1, Rarity: "very_rare", CurrentValue: ptrFloat(90), Year: year(1950)},
 		"common":       {Name: "Common", Category: models.CategoryModern, UserID: 1, Rarity: "common", CurrentValue: ptrFloat(5), Year: year(1968)},
-		"denarius":     {Name: "Denarius", Category: models.CategoryRoman, UserID: 1, Year: year(-44), CurrentValue: ptrFloat(300)},
+		"denarius":     {Name: "Denarius", Category: models.CategoryModern, UserID: 1, Year: year(-44), CurrentValue: ptrFloat(300)},
 		"dateless":     {Name: "Dateless gold", Category: models.CategoryModern, UserID: 1, CurrentValue: ptrFloat(1200)},
 		"wishlist":     {Name: "Wanted", Category: models.CategoryModern, UserID: 1, Rarity: "extremely_rare", Year: year(-500), CurrentValue: ptrFloat(9000), IsWishlist: true},
-		"sold":         {Name: "Sold", Category: models.CategoryModern, UserID: 1, Rarity: "extremely_rare", CurrentValue: ptrFloat(5000), IsSold: true},
 		"another user": {Name: "Not mine", Category: models.CategoryModern, UserID: 2, Rarity: "extremely_rare", Year: year(-600), CurrentValue: ptrFloat(8000)},
 	}
 	for _, coin := range coins {

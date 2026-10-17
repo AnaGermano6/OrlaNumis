@@ -10,11 +10,6 @@ const fetchCoin = vi.fn()
 const routerPush = vi.fn()
 const shareCoinCard = vi.fn()
 const sharing = ref(false)
-const quickPinned = ref(false)
-const quickBusy = ref(false)
-const quickError = ref('')
-const quickRefresh = vi.fn()
-const quickForget = vi.fn()
 const showConfirm = vi.fn()
 
 vi.mock('@/stores/coins', () => ({
@@ -42,29 +37,16 @@ vi.mock('@/api/client', () => ({
   getCoinStatus: vi.fn(),
   listCatalogs: vi.fn().mockResolvedValue([]),
   purchaseCoin: vi.fn(),
-  sellCoin: vi.fn(),
   swapCoinImageSides: vi.fn().mockResolvedValue({ data: [] }),
   updateCoinReference: vi.fn(),
 }))
 
-import { deleteCoin, duplicateCoin, getCoinStatus, purchaseCoin, sellCoin, swapCoinImageSides } from '@/api/client'
+import { deleteCoin, duplicateCoin, getCoinStatus, purchaseCoin, swapCoinImageSides } from '@/api/client'
 
 vi.mock('@/composables/useDialog', () => ({
   useDialog: () => ({
     showConfirm,
     showAlert: vi.fn(),
-  }),
-}))
-
-vi.mock('@/composables/useQuickAccess', () => ({
-  useQuickAccess: () => ({
-    error: quickError,
-    refresh: quickRefresh,
-    forget: quickForget,
-    pin: vi.fn(),
-    unpin: vi.fn(),
-    isPinned: () => quickPinned,
-    isBusy: () => quickBusy,
   }),
 }))
 
@@ -91,18 +73,12 @@ describe('CoinDetailPage', () => {
     vi.mocked(duplicateCoin).mockReset()
     vi.mocked(deleteCoin).mockReset()
     vi.mocked(purchaseCoin).mockReset()
-    vi.mocked(sellCoin).mockReset()
     vi.mocked(duplicateCoin).mockResolvedValue({ data: { ...coin, id: 314 } })
     vi.mocked(deleteCoin).mockResolvedValue({ data: {} })
     vi.mocked(purchaseCoin).mockResolvedValue({ data: coin })
-    vi.mocked(sellCoin).mockResolvedValue({ data: coin })
-    quickRefresh.mockReset()
-    quickRefresh.mockResolvedValue(undefined)
-    quickForget.mockReset()
     showConfirm.mockReset()
     showConfirm.mockResolvedValue(true)
     coin.isWishlist = false
-    coin.isSold = false
     sharing.value = false
   })
 
@@ -178,7 +154,7 @@ describe('CoinDetailPage', () => {
     expect(numistaRoutes).toHaveLength(0)
   })
 
-  it('refreshes Quick Access after purchasing a pinned wishlist coin', async () => {
+  it('marks a wishlist coin as purchased and reloads it', async () => {
     coin.isWishlist = true
     const stubs = pageStubs()
     stubs.PurchaseModal = {
@@ -190,7 +166,8 @@ describe('CoinDetailPage', () => {
     await flushPromises()
 
     expect(purchaseCoin).toHaveBeenCalledWith(coin.id, {})
-    expect(quickRefresh).toHaveBeenCalled()
+    expect(fetchCoin).toHaveBeenLastCalledWith(coin.id)
+    expect(fetchCoin).toHaveBeenCalledTimes(2)
   })
 
   it('labels commemorative coins beside their category', async () => {
@@ -207,12 +184,13 @@ describe('CoinDetailPage', () => {
     expect(regular.find('.badge').exists()).toBe(true)
   })
 
-  it('removes Quick Access state after a delete, and offers neither selling nor shipment tracking', async () => {
+  it('deletes the coin, and offers neither selling nor shipment tracking', async () => {
     const wrapper = mount(CoinDetailPage, { global: { stubs: pageStubs() } })
 
     await wrapper.get('button[aria-label="Delete"]').trigger('click')
     await flushPromises()
-    expect(quickForget).toHaveBeenCalledWith('coin', coin.id)
+    expect(deleteCoin).toHaveBeenCalledWith(coin.id)
+    expect(routerPush).toHaveBeenCalledWith('/')
 
     await wrapper.find('button[aria-label="Open overflow actions"]').trigger('click')
     expect(wrapper.find('button[aria-label="Sell Coin"]').exists()).toBe(false)
@@ -226,7 +204,7 @@ function pageStubs() {
     RouterLink: routerLinkStub,
     PurchaseModal: true,
     ImageLightbox: true,
-    CoinTagsSection: true,
+    CoinSetsSection: true,
     CoinDetailMetadataTable: true,
     CoinListingStatus: true,
     CoinReferencesSection: true,

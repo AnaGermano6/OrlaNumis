@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({ getCoins: vi.fn() }))
 vi.mock('@/api/client', () => mocks)
 
 function item(fields: Partial<Coin>): Coin {
-  return { id: 1, name: 'Denarius', category: 'Roman', purchaseDate: '2026-08-10', purchasePrice: 10, isWishlist: false, isSold: false, images: [], ...fields } as Coin
+  return { id: 1, name: 'Denarius', category: 'Roman', purchaseDate: '2026-08-10', purchasePrice: 10, isWishlist: false, images: [], ...fields } as Coin
 }
 
 const ITEMS = [
@@ -33,8 +33,7 @@ function mountPage() {
 describe('TimelinePage', () => {
   beforeEach(() => {
     mocks.getCoins.mockReset()
-    mocks.getCoins.mockImplementation(({ sold }: { sold?: string }) =>
-      Promise.resolve({ data: { coins: sold ? [] : ITEMS } }))
+    mocks.getCoins.mockResolvedValue({ data: { coins: ITEMS } })
   })
 
   it('shows all the coins, or all the banknotes, never both', async () => {

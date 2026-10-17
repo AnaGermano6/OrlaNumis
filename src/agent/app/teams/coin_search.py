@@ -118,7 +118,7 @@ Structure each listing into this exact JSON schema:
   {
     "name": "Coin title from the listing",
     "description": "Brief description from the listing",
-    "category": "Roman|Greek|Byzantine|Modern|Other",
+    "category": "Modern|Other",
     "era": "Time period",
     "ruler": "Ruler name",
     "material": "Gold|Silver|Bronze|Copper|Other",

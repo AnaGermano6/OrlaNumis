@@ -304,7 +304,6 @@ function createEmptyForm(category: Category, material: Material): Partial<Coin> 
     material,
     denomination: '',
     ruler: '',
-    romanImperialFigureId: null,
     mint: '',
     era: '',
     dateRange: '',
@@ -328,8 +327,6 @@ function createEmptyForm(category: Category, material: Material): Partial<Coin> 
     purchaseLocation: '',
     vendorSku: '',
     vendorInvoice: '',
-    storageLocationId: null,
-    storageSlot: null,
     notes: '',
     referenceUrl: '',
     referenceText: 'Store Link',
@@ -338,7 +335,7 @@ function createEmptyForm(category: Category, material: Material): Partial<Coin> 
 }
 
 // Use first option from settings, or fallback to hardcoded defaults
-const defaultCategory = computed(() => (categoryOptions.value?.[0] ?? 'Roman') as Category)
+const defaultCategory = computed(() => (categoryOptions.value?.[0] ?? 'Modern') as Category)
 const defaultMaterial = computed(() => (materialOptions.value?.[0] ?? 'Silver') as Material)
 
 const form = reactive<Partial<Coin>>(createEmptyForm(defaultCategory.value, defaultMaterial.value))
@@ -432,8 +429,6 @@ function normalizeDraftCoin(coin: CoinMutationPayload): Partial<Coin> {
     purchaseLocation: readString(source, 'purchaseLocation', 'purchase_location'),
     vendorSku: readString(source, 'vendorSku', 'vendor_sku'),
     vendorInvoice: readString(source, 'vendorInvoice', 'vendor_invoice'),
-    storageLocationId: readNumber(source, 'storageLocationId', 'storage_location_id') ?? null,
-    storageSlot: readNumber(source, 'storageSlot', 'storage_slot') ?? null,
     notes: unsupportedEra ? [notes, `AI-suggested era: ${suggestedEra}`].filter(Boolean).join('\n\n') : notes,
     referenceUrl: readString(source, 'referenceUrl', 'reference_url'),
     referenceText: readString(source, 'referenceText', 'reference_text') || 'Store Link',
@@ -473,9 +468,6 @@ function buildCoinPayload(source: Partial<Coin>): CoinMutationPayload {
     purchaseLocation: source.purchaseLocation?.trim() || undefined,
     vendorSku: source.vendorSku?.trim() || undefined,
     vendorInvoice: source.vendorInvoice?.trim() || undefined,
-    storageLocationId: source.storageLocationId ?? null,
-    storageSlot: source.storageSlot ?? null,
-    romanImperialFigureId: source.category === 'Roman' ? (source.romanImperialFigureId ?? null) : null,
     notes: source.notes?.trim() || undefined,
     referenceUrl: source.referenceUrl?.trim() || undefined,
     referenceText: source.referenceText?.trim() || undefined,

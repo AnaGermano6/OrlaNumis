@@ -3,7 +3,7 @@ import { useCoinDetailMetadataRows } from '../useCoinDetailMetadataRows'
 import { setLocale } from '@/i18n'
 import type { Coin } from '@/types'
 
-const coin = { id: 1, name: '2 euro 2024', country: 'Portugal', storageLocation: { id: 3, name: 'Gaveta 1' } } as unknown as Coin
+const coin = { id: 1, name: '2 euro 2024', country: 'Portugal' } as unknown as Coin
 
 function circulation(status: Parameters<typeof useCoinDetailMetadataRows>[1]) {
   return useCoinDetailMetadataRows(coin, status).rows.value.find((row) => row.key === 'circulation')?.value
@@ -11,12 +11,6 @@ function circulation(status: Parameters<typeof useCoinDetailMetadataRows>[1]) {
 
 describe('useCoinDetailMetadataRows', () => {
   afterEach(() => setLocale('en'))
-
-  it('leaves out where the coin is stored', () => {
-    const rows = useCoinDetailMetadataRows(coin).rows.value
-    expect(rows.map((row) => row.key)).not.toContain('storageLocation')
-    expect(rows.map((row) => row.value)).not.toContain('Gaveta 1')
-  })
 
   it('says how many are held, one for a coin saved before the field', () => {
     const quantity = (value: number | undefined) =>

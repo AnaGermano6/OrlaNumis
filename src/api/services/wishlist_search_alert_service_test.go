@@ -26,12 +26,11 @@ func setupWishlistSearchAlertService(t *testing.T) (*WishlistSearchAlertService,
 		t.Fatalf("get sql db: %v", err)
 	}
 	sqlDB.SetMaxOpenConns(1)
-	if err := db.AutoMigrate(&models.User{}, &models.StorageLocation{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.AppSetting{}, &models.AvailabilityRun{}, &models.AvailabilityResult{}, &models.WishlistSearchAlert{}, &models.AlertRun{}, &models.AlertCandidate{}, &models.CandidateProvenance{}, &models.CandidateReviewAction{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.AppSetting{}, &models.AvailabilityRun{}, &models.AvailabilityResult{}, &models.WishlistSearchAlert{}, &models.AlertRun{}, &models.AlertCandidate{}, &models.CandidateProvenance{}, &models.CandidateReviewAction{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 
-	coinSvc := NewCoinService(repository.NewCoinRepository(db), nil).
-		WithStorageLocationSupport(repository.NewStorageLocationRepository(db))
+	coinSvc := NewCoinService(repository.NewCoinRepository(db))
 	return NewWishlistSearchAlertService(repository.NewWishlistSearchAlertRepository(db)).
 		WithCoinCreation(coinSvc), db
 }
@@ -118,9 +117,6 @@ func TestWishlistSearchAlertService_CRUDScopesToOwner(t *testing.T) {
 	}
 	if updated.Name != "Updated discovery alert" || updated.Cadence != models.WishlistAlertCadenceWeekly {
 		t.Fatalf("unexpected update: %+v", updated)
-	}
-	if _, err := svc.SetAlertActive(created.ID, 1, false); err != nil {
-		t.Fatalf("disable: %v", err)
 	}
 	if err := svc.DeleteAlert(created.ID, 1); err != nil {
 		t.Fatalf("delete: %v", err)
@@ -466,7 +462,7 @@ func TestWishlistSearchAlertService_DismissRestoreConvertAndDuplicateWarning(t *
 	if err := db.Create(&models.Coin{UserID: 1, Name: "Existing", IsWishlist: true, ReferenceURL: candidate.SourceURL}).Error; err != nil {
 		t.Fatalf("seed duplicate wishlist: %v", err)
 	}
-	input := ConvertCandidateInput{Coin: models.Coin{Name: "Domitian Denarius", Category: models.CategoryRoman, Era: models.EraAncient, ReferenceURL: candidate.SourceURL}}
+	input := ConvertCandidateInput{Coin: models.Coin{Name: "Domitian Denarius", Category: models.CategoryModern, Era: models.EraAncient, ReferenceURL: candidate.SourceURL}}
 	result, err := svc.ConvertCandidate(alert.ID, candidate.ID, 1, input)
 	if !errors.Is(err, ErrWishlistSearchAlertDuplicate) || result == nil || len(result.Warnings) == 0 {
 		t.Fatalf("expected duplicate warning, result=%+v err=%v", result, err)
@@ -485,23 +481,6 @@ func TestWishlistSearchAlertService_DismissRestoreConvertAndDuplicateWarning(t *
 	if preAckCandidate.LifecycleState != models.AlertCandidateStateActive || preAckCandidate.ConvertedCoinID != nil {
 		t.Fatalf("duplicate warning mutated candidate before acknowledgement: %+v", preAckCandidate)
 	}
-	otherUserLocation := models.StorageLocation{UserID: 2, Name: "Other user's tray"}
-	if err := db.Create(&otherUserLocation).Error; err != nil {
-		t.Fatalf("seed other user storage location: %v", err)
-	}
-	input.Coin.StorageLocationID = &otherUserLocation.ID
-	input.AcknowledgeDuplicateWarning = true
-	if _, err := svc.ConvertCandidate(alert.ID, candidate.ID, 1, input); !errors.Is(err, ErrStorageLocationNotFound) {
-		t.Fatalf("cross-owner storage location conversion error = %v, want %v", err, ErrStorageLocationNotFound)
-	}
-	var invalidStorageCandidate models.AlertCandidate
-	if err := db.First(&invalidStorageCandidate, candidate.ID).Error; err != nil {
-		t.Fatalf("reload candidate after invalid storage location: %v", err)
-	}
-	if invalidStorageCandidate.LifecycleState != models.AlertCandidateStateActive || invalidStorageCandidate.ConvertedCoinID != nil {
-		t.Fatalf("invalid storage location mutated candidate: %+v", invalidStorageCandidate)
-	}
-	input.Coin.StorageLocationID = nil
 	input.AcknowledgeDuplicateWarning = true
 	result, err = svc.ConvertCandidate(alert.ID, candidate.ID, 1, input)
 	if err != nil {
@@ -629,7 +608,7 @@ func TestConvertCandidate_CoinWithNonZeroReferenceIDsDoesNotConflict(t *testing.
 	input := ConvertCandidateInput{
 		Coin: models.Coin{
 			Name:     "Domitian Denarius RIC 1",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			Era:      models.EraAncient,
 			References: []models.CoinReference{
 				{ID: existingRef.ID, Catalog: "RIC", Number: "1"},
@@ -689,7 +668,7 @@ func TestConvertCandidate_ReferenceSupportEnabled_StillPersistsZeroReferences(t 
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.StorageLocation{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CatalogRegistry{}, &models.AppSetting{}, &models.AvailabilityRun{}, &models.AvailabilityResult{}, &models.WishlistSearchAlert{}, &models.AlertRun{}, &models.AlertCandidate{}, &models.CandidateProvenance{}, &models.CandidateReviewAction{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{}, &models.CatalogRegistry{}, &models.AppSetting{}, &models.AvailabilityRun{}, &models.AvailabilityResult{}, &models.WishlistSearchAlert{}, &models.AlertRun{}, &models.AlertCandidate{}, &models.CandidateProvenance{}, &models.CandidateReviewAction{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	if err := db.Create(&models.CatalogRegistry{
@@ -704,8 +683,7 @@ func TestConvertCandidate_ReferenceSupportEnabled_StillPersistsZeroReferences(t 
 	catalogRepo := repository.NewCatalogRegistryRepository(db)
 	refRepo := repository.NewCoinReferenceRepository(db)
 	refSvc := NewCoinReferenceService(refRepo, catalogRepo)
-	coinSvc := NewCoinService(coinRepo, nil).
-		WithStorageLocationSupport(repository.NewStorageLocationRepository(db)).
+	coinSvc := NewCoinService(coinRepo).
 		WithReferenceSupport(refRepo, refSvc)
 	svc := NewWishlistSearchAlertService(repository.NewWishlistSearchAlertRepository(db)).
 		WithCoinCreation(coinSvc)
@@ -740,7 +718,7 @@ func TestConvertCandidate_ReferenceSupportEnabled_StillPersistsZeroReferences(t 
 	input := ConvertCandidateInput{
 		Coin: models.Coin{
 			Name:     "Domitian Denarius RIC 1",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			Era:      models.EraAncient,
 			References: []models.CoinReference{
 				{Catalog: "RIC", Number: "1"},

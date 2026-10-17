@@ -224,7 +224,7 @@ func TestCollectionSummaryAndList_CurrentCoins(t *testing.T) {
 	group := router.Group("/api/summary-test")
 	group.Use(coinTestAuthMiddleware())
 	group.GET("", summary.Summary)
-	list := NewCoinHandler(coinRepo, services.NewCoinService(coinRepo, nil), services.NewLogger(10)).WithCirculation(circulation)
+	list := NewCoinHandler(coinRepo, services.NewCoinService(coinRepo), services.NewLogger(10)).WithCirculation(circulation)
 	listGroup := router.Group("/api/circulation-test")
 	listGroup.Use(coinTestAuthMiddleware())
 	listGroup.GET("", list.List)
@@ -409,7 +409,7 @@ func TestCoinCirculation_CollectorCoinsAreNotCurrent(t *testing.T) {
 	}
 	coinRepo := repository.NewCoinRepository(db)
 	circulation := services.NewCoinCirculationService(coinRepo, services.NewNumistaCatalogService(nil, cache))
-	handler := NewCoinHandler(coinRepo, services.NewCoinService(coinRepo, nil), services.NewLogger(10)).WithCirculation(circulation)
+	handler := NewCoinHandler(coinRepo, services.NewCoinService(coinRepo), services.NewLogger(10)).WithCirculation(circulation)
 	group := router.Group("/api/collector-test")
 	group.Use(coinTestAuthMiddleware())
 	group.GET("/statuses", handler.StatusGroups)

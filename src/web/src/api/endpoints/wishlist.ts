@@ -32,9 +32,6 @@ export const listWishlistSearchAlerts = (params?: { active?: boolean; page?: num
 export const createWishlistSearchAlert = (alert: WishlistSearchAlertInput) =>
   api.post<WishlistSearchAlert>('/wishlist/search-alerts', alert)
 
-export const getWishlistSearchAlert = (id: number) =>
-  api.get<WishlistSearchAlert>(`/wishlist/search-alerts/${id}`)
-
 export const updateWishlistSearchAlert = (id: number, alert: WishlistSearchAlertInput) =>
   api.put<WishlistSearchAlert>(`/wishlist/search-alerts/${id}`, alert)
 

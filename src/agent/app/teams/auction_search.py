@@ -52,7 +52,7 @@ Structure each lot into this exact JSON schema:
   {
     "title": "Lot title",
     "description": "Brief description",
-    "category": "Roman|Greek|Byzantine|Modern|Other",
+    "category": "Modern|Other",
     "auctionHouse": "Name of auction house",
     "saleName": "Sale name if available",
     "estimate": "Estimated price e.g. $150.00",
@@ -67,7 +67,7 @@ Structure each lot into this exact JSON schema:
 Rules:
 - Use ONLY data from the lot extracts. Do NOT invent fields.
 - url MUST be copied exactly from the data. NEVER fabricate URLs.
-- Infer category from the lot description (Greek, Roman, Byzantine, Modern, or Other)
+- Infer category from the lot description (Modern or Other)
 - If a field is unknown, use an empty string
 - Do not use emojis
 

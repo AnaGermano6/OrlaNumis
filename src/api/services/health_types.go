@@ -74,13 +74,6 @@ type HealthDimensionScores struct {
 	AICoverage         int `json:"aiCoverage"`
 }
 
-// HealthTrend30D stores trend signal and delta against the baseline snapshot.
-type HealthTrend30D struct {
-	Status    string `json:"status"`
-	Delta     *int   `json:"delta"`
-	Direction string `json:"direction"`
-}
-
 // MissingChecklistItem is an actionable gap in a coin's record.
 type MissingChecklistItem struct {
 	Key        string             `json:"key"`
@@ -97,7 +90,6 @@ type CollectionHealthSummary struct {
 	EligibleCoinCount int64                 `json:"eligibleCoinCount"`
 	Weights           HealthWeights         `json:"weights"`
 	Dimensions        HealthDimensionScores `json:"dimensions"`
-	Trend30D          HealthTrend30D        `json:"trend30d"`
 }
 
 // CoinHealthItem is the per-coin health response model.

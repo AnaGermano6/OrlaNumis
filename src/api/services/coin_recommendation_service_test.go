@@ -18,8 +18,6 @@ func setupCoinRecommendationServiceDB(t *testing.T) *gorm.DB {
 	if err := db.AutoMigrate(
 		&models.User{},
 		&models.Coin{},
-		&models.Tag{},
-		&models.CoinTag{},
 		&models.CoinSet{},
 		&models.CoinSetMembership{},
 		&models.CoinRecommendation{},
@@ -30,13 +28,13 @@ func setupCoinRecommendationServiceDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func TestCoinRecommendationService_ListForCoin_SuggestsSetAndTag(t *testing.T) {
+func TestCoinRecommendationService_ListForCoin_SuggestsSet(t *testing.T) {
 	db := setupCoinRecommendationServiceDB(t)
 	createTestUserRecord(t, db, 1)
 
-	targetCoin := models.Coin{Name: "Julia Domna denarius", Ruler: "Julia Domna", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
-	peerCoin1 := models.Coin{Name: "Domna 1", Ruler: "Julia Domna", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
-	peerCoin2 := models.Coin{Name: "Domna 2", Ruler: "Julia Domna", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
+	targetCoin := models.Coin{Name: "Julia Domna denarius", Ruler: "Julia Domna", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
+	peerCoin1 := models.Coin{Name: "Domna 1", Ruler: "Julia Domna", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
+	peerCoin2 := models.Coin{Name: "Domna 2", Ruler: "Julia Domna", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
 	if err := db.Create(&[]models.Coin{targetCoin, peerCoin1, peerCoin2}).Error; err != nil {
 		t.Fatalf("failed to create coins: %v", err)
 	}
@@ -50,12 +48,8 @@ func TestCoinRecommendationService_ListForCoin_SuggestsSetAndTag(t *testing.T) {
 	peerCoin2 = coins[2]
 
 	set := models.CoinSet{UserID: 1, Name: "Women of the Severan Dynasty", SetType: models.CoinSetTypeGoal}
-	tag := models.Tag{UserID: 1, Name: "Severan Women", Color: "#c9a84c"}
 	if err := db.Create(&set).Error; err != nil {
 		t.Fatalf("failed to create set: %v", err)
-	}
-	if err := db.Create(&tag).Error; err != nil {
-		t.Fatalf("failed to create tag: %v", err)
 	}
 	if err := db.Create(&[]models.CoinSetMembership{
 		{SetID: set.ID, CoinID: peerCoin1.ID},
@@ -63,16 +57,9 @@ func TestCoinRecommendationService_ListForCoin_SuggestsSetAndTag(t *testing.T) {
 	}).Error; err != nil {
 		t.Fatalf("failed to create set memberships: %v", err)
 	}
-	if err := db.Create(&[]models.CoinTag{
-		{CoinID: peerCoin1.ID, TagID: tag.ID},
-		{CoinID: peerCoin2.ID, TagID: tag.ID},
-	}).Error; err != nil {
-		t.Fatalf("failed to create tag memberships: %v", err)
-	}
 
 	svc := NewCoinRecommendationService(
 		repository.NewCoinRecommendationRepository(db),
-		repository.NewTagRepository(db),
 		repository.NewSetRepository(db),
 	)
 
@@ -80,25 +67,15 @@ func TestCoinRecommendationService_ListForCoin_SuggestsSetAndTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListForCoin returned error: %v", err)
 	}
-	if len(recommendations) < 2 {
-		t.Fatalf("expected at least 2 recommendations, got %d", len(recommendations))
-	}
 
 	foundSet := false
-	foundTag := false
 	for _, rec := range recommendations {
 		if rec.TargetType == models.RecommendationTargetTypeSet && rec.TargetID == set.ID {
 			foundSet = true
 		}
-		if rec.TargetType == models.RecommendationTargetTypeTag && rec.TargetID == tag.ID {
-			foundTag = true
-		}
 	}
 	if !foundSet {
 		t.Fatalf("expected set recommendation for set %d", set.ID)
-	}
-	if !foundTag {
-		t.Fatalf("expected tag recommendation for tag %d", tag.ID)
 	}
 }
 
@@ -106,9 +83,9 @@ func TestCoinRecommendationService_AcceptAndRejectFlow(t *testing.T) {
 	db := setupCoinRecommendationServiceDB(t)
 	createTestUserRecord(t, db, 1)
 
-	targetCoin := models.Coin{Name: "Julia Domna", Ruler: "Julia Domna", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
-	peerCoin1 := models.Coin{Name: "Domna 1", Ruler: "Julia Domna", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
-	peerCoin2 := models.Coin{Name: "Domna 2", Ruler: "Julia Domna", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
+	targetCoin := models.Coin{Name: "Julia Domna", Ruler: "Julia Domna", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
+	peerCoin1 := models.Coin{Name: "Domna 1", Ruler: "Julia Domna", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
+	peerCoin2 := models.Coin{Name: "Domna 2", Ruler: "Julia Domna", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
 	if err := db.Create(&[]models.Coin{targetCoin, peerCoin1, peerCoin2}).Error; err != nil {
 		t.Fatalf("failed to create coins: %v", err)
 	}
@@ -121,31 +98,22 @@ func TestCoinRecommendationService_AcceptAndRejectFlow(t *testing.T) {
 	peerCoin2 = coins[2]
 
 	set := models.CoinSet{UserID: 1, Name: "Severans", SetType: models.CoinSetTypeGoal}
-	tag := models.Tag{UserID: 1, Name: "Julia", Color: "#c9a84c"}
-	if err := db.Create(&set).Error; err != nil {
-		t.Fatalf("failed to create set: %v", err)
-	}
-	if err := db.Create(&tag).Error; err != nil {
-		t.Fatalf("failed to create tag: %v", err)
+	other := models.CoinSet{UserID: 1, Name: "Julia", SetType: models.CoinSetTypeGoal}
+	if err := db.Create(&[]*models.CoinSet{&set, &other}).Error; err != nil {
+		t.Fatalf("failed to create sets: %v", err)
 	}
 	if err := db.Create(&[]models.CoinSetMembership{
 		{SetID: set.ID, CoinID: peerCoin1.ID},
 		{SetID: set.ID, CoinID: peerCoin2.ID},
+		{SetID: other.ID, CoinID: peerCoin1.ID},
+		{SetID: other.ID, CoinID: peerCoin2.ID},
 	}).Error; err != nil {
 		t.Fatalf("failed to create set memberships: %v", err)
-	}
-	if err := db.Create(&[]models.CoinTag{
-		{CoinID: peerCoin1.ID, TagID: tag.ID},
-		{CoinID: peerCoin2.ID, TagID: tag.ID},
-	}).Error; err != nil {
-		t.Fatalf("failed to create tag memberships: %v", err)
 	}
 
 	svc := NewCoinRecommendationService(
 		repository.NewCoinRecommendationRepository(db),
-		repository.NewTagRepository(db),
-		repository.NewSetRepository(db),
-	)
+		repository.NewSetRepository(db))
 	recommendations, err := svc.ListForCoin(targetCoin.ID, 1)
 	if err != nil {
 		t.Fatalf("ListForCoin returned error: %v", err)
@@ -155,17 +123,17 @@ func TestCoinRecommendationService_AcceptAndRejectFlow(t *testing.T) {
 	}
 
 	var setRecID uint
-	var tagRecID uint
+	var otherRecID uint
 	for _, rec := range recommendations {
-		if rec.TargetType == models.RecommendationTargetTypeSet {
+		switch rec.TargetID {
+		case set.ID:
 			setRecID = rec.ID
-		}
-		if rec.TargetType == models.RecommendationTargetTypeTag {
-			tagRecID = rec.ID
+		case other.ID:
+			otherRecID = rec.ID
 		}
 	}
-	if setRecID == 0 || tagRecID == 0 {
-		t.Fatalf("expected both set and tag recommendations; set=%d tag=%d", setRecID, tagRecID)
+	if setRecID == 0 || otherRecID == 0 {
+		t.Fatalf("expected both set recommendations; set=%d other=%d", setRecID, otherRecID)
 	}
 
 	if err := svc.Accept(targetCoin.ID, setRecID, 1); err != nil {
@@ -179,11 +147,11 @@ func TestCoinRecommendationService_AcceptAndRejectFlow(t *testing.T) {
 		t.Fatalf("expected accepted recommendation to add set membership, got %d rows", setMembershipCount)
 	}
 
-	if err := svc.Reject(targetCoin.ID, tagRecID, 1); err != nil {
+	if err := svc.Reject(targetCoin.ID, otherRecID, 1); err != nil {
 		t.Fatalf("Reject returned error: %v", err)
 	}
 	var rejected models.CoinRecommendation
-	if err := db.First(&rejected, tagRecID).Error; err != nil {
+	if err := db.First(&rejected, otherRecID).Error; err != nil {
 		t.Fatalf("failed loading recommendation: %v", err)
 	}
 	if rejected.Status != models.RecommendationStatusRejected {
@@ -192,15 +160,15 @@ func TestCoinRecommendationService_AcceptAndRejectFlow(t *testing.T) {
 }
 
 // TestCoinRecommendationService_ListForCoin_FiltersOutWeakMatches verifies that a
-// target whose only overlap with a tag/set is category+era (score=0.40, below
+// target whose only overlap with a set is category+era (score=0.40, below
 // the medium threshold of 0.45) produces no suggestions.
 func TestCoinRecommendationService_ListForCoin_FiltersOutWeakMatches(t *testing.T) {
 	db := setupCoinRecommendationServiceDB(t)
 	createTestUserRecord(t, db, 1)
 
-	targetCoin := models.Coin{Name: "Target", Ruler: "Julia Domna", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
-	peerCoin1 := models.Coin{Name: "Peer 1", Ruler: "Other Ruler", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
-	peerCoin2 := models.Coin{Name: "Peer 2", Ruler: "Other Ruler", Category: models.CategoryRoman, Era: models.EraAncient, UserID: 1}
+	targetCoin := models.Coin{Name: "Target", Ruler: "Julia Domna", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
+	peerCoin1 := models.Coin{Name: "Peer 1", Ruler: "Other Ruler", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
+	peerCoin2 := models.Coin{Name: "Peer 2", Ruler: "Other Ruler", Category: models.CategoryModern, Era: models.EraAncient, UserID: 1}
 	if err := db.Create(&[]models.Coin{targetCoin, peerCoin1, peerCoin2}).Error; err != nil {
 		t.Fatalf("failed to create coins: %v", err)
 	}
@@ -212,19 +180,9 @@ func TestCoinRecommendationService_ListForCoin_FiltersOutWeakMatches(t *testing.
 	peerCoin1 = coins[1]
 	peerCoin2 = coins[2]
 
-	tag := models.Tag{UserID: 1, Name: "Broad Roman", Color: "#c9a84c"}
 	set := models.CoinSet{UserID: 1, Name: "Broad Roman Set", SetType: models.CoinSetTypeGoal}
-	if err := db.Create(&tag).Error; err != nil {
-		t.Fatalf("failed to create tag: %v", err)
-	}
 	if err := db.Create(&set).Error; err != nil {
 		t.Fatalf("failed to create set: %v", err)
-	}
-	if err := db.Create(&[]models.CoinTag{
-		{CoinID: peerCoin1.ID, TagID: tag.ID},
-		{CoinID: peerCoin2.ID, TagID: tag.ID},
-	}).Error; err != nil {
-		t.Fatalf("failed to create tag memberships: %v", err)
 	}
 	if err := db.Create(&[]models.CoinSetMembership{
 		{SetID: set.ID, CoinID: peerCoin1.ID},
@@ -235,72 +193,13 @@ func TestCoinRecommendationService_ListForCoin_FiltersOutWeakMatches(t *testing.
 
 	svc := NewCoinRecommendationService(
 		repository.NewCoinRecommendationRepository(db),
-		repository.NewTagRepository(db),
-		repository.NewSetRepository(db),
-	)
+		repository.NewSetRepository(db))
 	recommendations, err := svc.ListForCoin(targetCoin.ID, 1)
 	if err != nil {
 		t.Fatalf("ListForCoin returned error: %v", err)
 	}
 	if len(recommendations) != 0 {
 		t.Fatalf("expected no recommendations (score below medium threshold), got %d", len(recommendations))
-	}
-}
-
-// TestCoinRecommendationService_ThematicTagSuggestedAcrossRulers verifies that a
-// thematic tag whose coins share category+era+material but have different rulers can
-// still generate a medium-confidence recommendation after the ruler weight reduction.
-// Category(0.20)+Era(0.20)+Material(0.075) = 0.475 >= medium threshold(0.45).
-func TestCoinRecommendationService_ThematicTagSuggestedAcrossRulers(t *testing.T) {
-	db := setupCoinRecommendationServiceDB(t)
-	createTestUserRecord(t, db, 1)
-
-	// targetCoin is a Roman bronze from a different ruler than the tag coins
-	targetCoin := models.Coin{Name: "Target Bronze", Ruler: "Gordian III", Category: models.CategoryRoman, Era: models.EraAncient, Material: models.MaterialBronze, UserID: 1}
-	peer1 := models.Coin{Name: "Bronze Peer 1", Ruler: "Philip I", Category: models.CategoryRoman, Era: models.EraAncient, Material: models.MaterialBronze, UserID: 1}
-	peer2 := models.Coin{Name: "Bronze Peer 2", Ruler: "Trajan Decius", Category: models.CategoryRoman, Era: models.EraAncient, Material: models.MaterialBronze, UserID: 1}
-	if err := db.Create(&[]models.Coin{targetCoin, peer1, peer2}).Error; err != nil {
-		t.Fatalf("failed to create coins: %v", err)
-	}
-	var coins []models.Coin
-	if err := db.Order("id ASC").Find(&coins).Error; err != nil {
-		t.Fatalf("failed to reload coins: %v", err)
-	}
-	targetCoin, peer1, peer2 = coins[0], coins[1], coins[2]
-
-	tag := models.Tag{UserID: 1, Name: "Roman Bronze Coins", Color: "#b08d57"}
-	if err := db.Create(&tag).Error; err != nil {
-		t.Fatalf("failed to create tag: %v", err)
-	}
-	if err := db.Create(&[]models.CoinTag{
-		{CoinID: peer1.ID, TagID: tag.ID},
-		{CoinID: peer2.ID, TagID: tag.ID},
-	}).Error; err != nil {
-		t.Fatalf("failed to create tag memberships: %v", err)
-	}
-
-	svc := NewCoinRecommendationService(
-		repository.NewCoinRecommendationRepository(db),
-		repository.NewTagRepository(db),
-		repository.NewSetRepository(db),
-	)
-	recommendations, err := svc.ListForCoin(targetCoin.ID, 1)
-	if err != nil {
-		t.Fatalf("ListForCoin returned error: %v", err)
-	}
-
-	var found *CoinRecommendationItem
-	for i := range recommendations {
-		if recommendations[i].TargetType == models.RecommendationTargetTypeTag && recommendations[i].TargetID == tag.ID {
-			found = &recommendations[i]
-			break
-		}
-	}
-	if found == nil {
-		t.Fatalf("expected tag %q suggested for thematic bronze coin, got %v", tag.Name, recommendations)
-	}
-	if found.Confidence != "medium" && found.Confidence != "high" {
-		t.Errorf("expected at least medium confidence for thematic tag, got %q (score=%.3f)", found.Confidence, found.Score)
 	}
 }
 

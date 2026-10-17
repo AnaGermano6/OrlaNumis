@@ -10,26 +10,13 @@ import type {
   AvailabilityCycleTriggerResponse,
   AvailabilityRun,
   CatalogRegistry,
-  CoinOfDayRun,
-  CollectionHealthSnapshotRun,
-  CollectionHealthSnapshotRunResult,
-  CreateSecurityIpRuleRequest,
   DeepIdentificationObservabilitySummary,
   LogEntry,
   MintLocation,
-  NomismaSearchResponse,
   NumistaHealthSummary,
-  OCREHealthSummary,
-  OIDCAdminProvider,
-  OIDCAdminProviderInput,
-  OIDCAdminProviderUpdate,
-  OIDCAdminProvidersResponse,
-  OIDCProviderTestResponse,
-  SchedulerStatus,
   SecurityEventFilters,
   SecurityEventsResponse,
   SecurityExposureCheck,
-  SecurityIpRule,
   SecuritySummary,
   UserInfo,
   ValuationRun,
@@ -38,17 +25,6 @@ import type { MintLocationInput } from '@/api/endpoints/collection'
 
 type ConnectivityResult = { available: boolean; message: string }
 
-function parseDurationMinutes(duration: string | undefined) {
-  const value = duration?.trim()
-  if (!value) return undefined
-  const match = value.match(/^(\d+)\s*([mhdw])?$/i)
-  if (!match) return undefined
-  const amount = Number(match[1] ?? 0)
-  const unit = (match[2] ?? 'm').toLowerCase()
-  const multipliers: Record<string, number> = { m: 1, h: 60, d: 1440, w: 10080 }
-  return amount * (multipliers[unit] ?? 1)
-}
-
 export const adminCreateMintLocation = (data: MintLocationInput) =>
   api.post<MintLocation>('/admin/mint-locations', data)
 
@@ -56,16 +32,6 @@ export const adminUpdateMintLocation = (id: number, data: MintLocationInput) =>
   api.put<MintLocation>(`/admin/mint-locations/${id}`, data)
 
 export const adminDeleteMintLocation = (id: number) => api.delete(`/admin/mint-locations/${id}`)
-
-// Nomisma.org authority linking (global mint locations only; admin-only)
-export const searchNomismaMintCandidates = (id: number, query: string) =>
-  api.get<NomismaSearchResponse>(`/admin/mint-locations/${id}/nomisma/search`, { params: { query } })
-
-export const linkNomismaMintLocation = (id: number, uri: string, label: string) =>
-  api.post<MintLocation>(`/admin/mint-locations/${id}/nomisma`, { uri, label })
-
-export const unlinkNomismaMintLocation = (id: number) =>
-  api.delete<{ message: string }>(`/admin/mint-locations/${id}/nomisma`)
 
 export const adminCreateCatalog = (payload: { catalog: string; displayName: string; era: string; volumeRequired: boolean }) =>
   api.post<CatalogRegistry>('/admin/catalogs', payload)
@@ -95,11 +61,59 @@ export const getAppSettingDefaults = () => api.get<AppSettings>('/admin/settings
 export const updateAppSettings = (settings: { key: string; value: string }[]) =>
   api.put('/admin/settings', settings)
 
+/** A full backup: the whole database and every upload, in one zip. */
+export interface BackupInfo {
+  name: string
+  /** Made by the schedule, by hand, of the data a restore replaced, or imported. */
+  kind: 'auto' | 'manual' | 'pre-restore' | 'uploaded'
+  /** When its data was copied (an imported backup's own date). */
+  createdAt: string
+  size: number
+  appVersion?: string
+  users: number
+  /** Coins and banknotes. */
+  coins: number
+  /** Photos and other uploads. */
+  files: number
+}
+
+export interface BackupsResponse {
+  backups: BackupInfo[]
+  running: boolean
+  enabled: boolean
+  startTime: string
+  keep: number
+  /** Seconds to the next automatic backup. */
+  nextRunIn: number
+  folder: string
+  lastRestore?: { name: string; at: string; ok: boolean; error?: string }
+}
+
+export const getBackups = () => api.get<BackupsResponse>('/admin/backups')
+
+/** Starts a backup, made in the background (`running` until it is listed). */
+export const createBackup = () => api.post('/admin/backups')
+
+export const downloadBackup = (name: string, onProgress?: (fraction: number) => void) =>
+  api.get<Blob>(`/admin/backups/${encodeURIComponent(name)}`, {
+    responseType: 'blob',
+    onDownloadProgress: (event) => { if (event.total) onProgress?.(event.loaded / event.total) },
+  })
+
+export const deleteBackup = (name: string) => api.delete(`/admin/backups/${encodeURIComponent(name)}`)
+
+/** Prepares the backup to replace all the data; the app then restarts to apply it. */
+export const restoreBackup = (name: string) => api.post<{ restarting: boolean }>(`/admin/backups/${encodeURIComponent(name)}/restore`)
+
+/** Keeps a downloaded backup in the backup folder, after checking it; restoring it is a second step. */
+export const uploadBackup = (file: File, onProgress?: (fraction: number) => void) =>
+  api.put<BackupInfo>('/admin/backups/upload', file, {
+    headers: { 'Content-Type': 'application/zip' },
+    onUploadProgress: (event) => { if (event.total) onProgress?.(event.loaded / event.total) },
+  })
+
 export const getAdminNumistaHealth = () =>
   api.get<NumistaHealthSummary>('/admin/numista/health')
-
-export const getAdminOCREHealth = () =>
-  api.get<OCREHealthSummary>('/admin/deep-identification/ocre/health')
 
 export const getAdminDeepIdentificationObservability = () =>
   api.get<DeepIdentificationObservabilitySummary>('/admin/deep-identification/observability')
@@ -116,23 +130,6 @@ export const getSecurityEvents = (filters?: SecurityEventFilters) => {
   return api.get<SecurityEventsResponse>('/admin/security/events', { params })
 }
 
-export const getSecurityIpRules = () =>
-  api.get<{ rules?: SecurityIpRule[]; ipRules?: SecurityIpRule[] } | SecurityIpRule[]>('/admin/security/ip-rules')
-
-export const createSecurityIpRule = (payload: CreateSecurityIpRuleRequest) => {
-  const body: { cidr: string; reason: string; durationMinutes?: number; expiresAt?: string } = {
-    cidr: payload.cidr,
-    reason: payload.reason,
-  }
-  const durationMinutes = payload.durationMinutes ?? parseDurationMinutes(payload.duration)
-  if (durationMinutes) body.durationMinutes = durationMinutes
-  if (payload.expiresAt) body.expiresAt = payload.expiresAt
-  return api.post<SecurityIpRule>('/admin/security/ip-rules', body)
-}
-
-export const deleteSecurityIpRule = (id: number) =>
-  api.delete(`/admin/security/ip-rules/${id}`)
-
 export const getSecurityExposureCheck = () =>
   api.get<SecurityExposureCheck>('/admin/security/exposure-check')
 
@@ -141,22 +138,6 @@ export const getAdminLogs = (limit = 500, level?: string) => {
   if (level) params.level = level
   return api.get<{ logs: LogEntry[]; count: number; logLevel: string }>('/admin/logs', { params })
 }
-
-// Admin OIDC providers
-export const getAdminOIDCProviders = () =>
-  api.get<OIDCAdminProvidersResponse>('/admin/oidc/providers')
-
-export const createAdminOIDCProvider = (provider: OIDCAdminProviderInput) =>
-  api.post<OIDCAdminProvider>('/admin/oidc/providers', provider)
-
-export const updateAdminOIDCProvider = (providerId: number, provider: OIDCAdminProviderUpdate) =>
-  api.put<OIDCAdminProvider>(`/admin/oidc/providers/${providerId}`, provider)
-
-export const deleteAdminOIDCProvider = (providerId: number) =>
-  api.delete(`/admin/oidc/providers/${providerId}`)
-
-export const testAdminOIDCProvider = (providerId: number) =>
-  api.post<OIDCProviderTestResponse>(`/admin/oidc/providers/${providerId}/test`)
 
 export const testAnthropicConnection = () =>
   api.get<ConnectivityResult>('/admin/test-anthropic')
@@ -200,25 +181,6 @@ export const triggerValuation = () =>
 
 export const cancelValuationRun = (runId: number) =>
   api.post<{ message: string }>(`/admin/valuation-runs/${runId}/cancel`)
-
-// Collection Health Snapshots
-export const triggerCollectionHealthSnapshots = () =>
-  api.post<CollectionHealthSnapshotRunResult>('/admin/collection-health-snapshots/run')
-
-export const getCollectionHealthSnapshotRuns = (page = 1, limit = 20) =>
-  api.get<{ runs: CollectionHealthSnapshotRun[]; total: number; page: number; limit: number }>('/admin/collection-health-snapshot-runs', { params: { page, limit } })
-
-export const getCollectionHealthSnapshotStatus = () =>
-  api.get<SchedulerStatus>('/admin/collection-health/status')
-
-export const triggerCoinOfDayRun = () =>
-  api.post<{ runId: number; status: string }>('/admin/coin-of-day/run')
-
-export const getCoinOfDayRuns = (page = 1, limit = 20) =>
-  api.get<{ runs: CoinOfDayRun[]; total: number; page: number; limit: number }>('/admin/coin-of-day-runs', { params: { page, limit } })
-
-export const getCoinOfDayRunDetail = (runId: number) =>
-  api.get<CoinOfDayRun>(`/admin/coin-of-day-runs/${runId}`)
 
 /** Result of switching the collection currency. */
 export interface CollectionCurrencyChange {

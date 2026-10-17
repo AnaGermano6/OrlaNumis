@@ -2,6 +2,7 @@ package database
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/briandenicola/ancient-coins-api/models"
@@ -128,6 +129,7 @@ func TestDropRetiredUserColumnsKeepsTheRest(t *testing.T) {
 	for _, column := range []string{
 		"numis_bids_username varchar(100)", "numis_bids_password text", "cng_username varchar(100)", "cng_password text",
 		"parcel_app_api_key text", "pushover_user_key varchar(100)", "pushover_enabled numeric DEFAULT false",
+		"is_public numeric DEFAULT false",
 	} {
 		if err := db.Exec("ALTER TABLE users ADD COLUMN " + column).Error; err != nil {
 			t.Fatal(err)
@@ -166,5 +168,173 @@ func TestDropRetiredUserColumnsKeepsTheRest(t *testing.T) {
 	db.Model(&models.Coin{}).Where("user_id = ?", user.ID).Count(&coins)
 	if coins != 1 {
 		t.Fatalf("coins=%d, want the user's coin kept", coins)
+	}
+}
+
+// An older database's coins still have the storage location (with its slot
+// index), the sale and the private mark, and its sets the public mark; they
+// are dropped, with foreign keys on, and every other column keeps its value.
+// Smart sets lose the rules on those columns.
+func TestDropRetiredCoinColumnsAndCriteriaRules(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "legacy.db")), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, _ := db.DB()
+	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB.SetMaxOpenConns(1)
+	if err := db.Exec("PRAGMA foreign_keys=ON").Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.CoinSet{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, column := range []string{
+		"is_sold numeric DEFAULT false", "sold_price real", "sold_date datetime", "sold_to text",
+		"storage_location_id integer", "storage_slot integer", "is_private numeric DEFAULT false",
+	} {
+		if err := db.Exec("ALTER TABLE coins ADD COLUMN " + column).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.Exec("ALTER TABLE coin_sets ADD COLUMN is_public numeric DEFAULT false").Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(`CREATE UNIQUE INDEX idx_coins_storage_location_slot_unique
+		ON coins(storage_location_id, storage_slot) WHERE storage_slot IS NOT NULL`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&models.User{Username: "collector", Email: "collector@example.test"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&models.Coin{Name: "2 euro 2022", UserID: 1, Notes: "kept"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec("UPDATE coins SET storage_location_id = 3, storage_slot = 2, sold_to = 'old'").Error; err != nil {
+		t.Fatal(err)
+	}
+	criteria := models.JSONObject{"operator": "and", "rules": []interface{}{
+		map[string]interface{}{"field": "year", "op": "eq", "value": 1991},
+		map[string]interface{}{"field": "isWishlist", "op": "eq", "value": false},
+		map[string]interface{}{"field": "isSold", "op": "eq", "value": false},
+		map[string]interface{}{"field": "isPrivate", "op": "eq", "value": true},
+		map[string]interface{}{"operator": "or", "rules": []interface{}{
+			map[string]interface{}{"field": "storageLocationId", "op": "eq", "value": 3},
+		}},
+	}}
+	if err := db.Create(&models.CoinSet{UserID: 1, Name: "1991", SetType: models.CoinSetTypeSmart, SmartCriteria: &criteria}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	// A second run (every later start) finds nothing to drop.
+	for run := 1; run <= 2; run++ {
+		if err := dropRetiredCoinColumns(db); err != nil {
+			t.Fatalf("run %d: %v", run, err)
+		}
+		if err := dropRetiredSetColumns(db); err != nil {
+			t.Fatalf("run %d: %v", run, err)
+		}
+		if err := dropRetiredCriteriaRules(db); err != nil {
+			t.Fatalf("run %d: %v", run, err)
+		}
+	}
+
+	for _, column := range retiredCoinColumns {
+		if db.Migrator().HasColumn("coins", column) {
+			t.Fatalf("coins.%s was not dropped", column)
+		}
+	}
+	for _, column := range retiredSetColumns {
+		if db.Migrator().HasColumn("coin_sets", column) {
+			t.Fatalf("coin_sets.%s was not dropped", column)
+		}
+	}
+	var coin models.Coin
+	if err := db.First(&coin).Error; err != nil || coin.Name != "2 euro 2022" || coin.Notes != "kept" {
+		t.Fatalf("coin = %+v, %v; want its other columns kept", coin, err)
+	}
+	var set models.CoinSet
+	if err := db.First(&set).Error; err != nil {
+		t.Fatal(err)
+	}
+	rules, _ := (*set.SmartCriteria)["rules"].([]interface{})
+	fields := []string{}
+	for _, raw := range rules {
+		rule, _ := raw.(map[string]interface{})
+		field, _ := rule["field"].(string)
+		fields = append(fields, field)
+	}
+	if strings.Join(fields, ",") != "year,isWishlist" {
+		t.Fatalf("rules left = %v (%v)", fields, rules)
+	}
+}
+
+// The ancient categories leave the category list, its labels and the coins;
+// the retired features' stored settings are deleted; other values stay.
+func TestDropRetiredSettingsAndCategories(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "legacy.db")), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, _ := db.DB()
+	t.Cleanup(func() { sqlDB.Close() })
+	if err := db.AutoMigrate(&models.User{}, &models.Coin{}, &models.AppSetting{}); err != nil {
+		t.Fatal(err)
+	}
+	for key, value := range map[string]string{
+		"CoinCategories":         "Roman\nGreek\nByzantine\nModern\nOther\nCeltic",
+		"CoinCategoryLabelsPtPT": "Roman=Romana\nCeltic=Celta",
+		"CoinOfDayEnabled":       "true",
+		"FedExClientSecret":      "old-secret",
+		"BackupEnabled":          "true",
+	} {
+		if err := db.Create(&models.AppSetting{Key: key, Value: value}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.Create(&models.User{Username: "collector", Email: "collector@example.test"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, category := range []models.Category{"Roman", models.CategoryModern} {
+		if err := db.Create(&models.Coin{Name: string(category), Category: category, UserID: 1}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// A second run (every later start) changes nothing more.
+	for run := 1; run <= 2; run++ {
+		if err := dropRetiredSettings(db); err != nil {
+			t.Fatalf("run %d: %v", run, err)
+		}
+		if err := dropRetiredCategories(db); err != nil {
+			t.Fatalf("run %d: %v", run, err)
+		}
+	}
+
+	settings := map[string]string{}
+	var rows []models.AppSetting
+	if err := db.Find(&rows).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range rows {
+		settings[row.Key] = row.Value
+	}
+	if settings["CoinCategories"] != "Modern\nOther\nCeltic" || settings["CoinCategoryLabelsPtPT"] != "Celtic=Celta" {
+		t.Fatalf("categories = %q, labels = %q", settings["CoinCategories"], settings["CoinCategoryLabelsPtPT"])
+	}
+	for _, key := range []string{"CoinOfDayEnabled", "FedExClientSecret"} {
+		if _, ok := settings[key]; ok {
+			t.Fatalf("%s was not deleted", key)
+		}
+	}
+	if settings["BackupEnabled"] != "true" {
+		t.Fatalf("BackupEnabled = %q, want it kept", settings["BackupEnabled"])
+	}
+	var categories []string
+	if err := db.Model(&models.Coin{}).Order("id").Pluck("category", &categories).Error; err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(categories, ",") != "Other,Modern" {
+		t.Fatalf("coin categories = %v", categories)
 	}
 }

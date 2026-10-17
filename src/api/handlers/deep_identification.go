@@ -45,10 +45,8 @@ func (h *DeepIdentificationHandler) WithProposalSupport(proposalSvc *services.De
 // override (contract ProviderId enum). Unknown values are rejected with
 // 400 rather than silently ignored.
 var deepProviderIDs = map[string]bool{
-	"nomisma": true,
 	"numista": true,
 	"ngc":     true,
-	"ocre":    true,
 	"rpc":     true,
 }
 
@@ -181,10 +179,7 @@ type deepCapabilityResponse struct {
 //	@Router			/deep-identification/capability [get]
 func (h *DeepIdentificationHandler) Capability(c *gin.Context) {
 	settings := h.settingsSvc.GetDeepIdentificationSettings()
-	providers := []string{"nomisma", "numista"}
-	if settings.OCREEnabled {
-		providers = append(providers, "ocre")
-	}
+	providers := []string{"numista"}
 	c.JSON(http.StatusOK, deepCapabilityResponse{Enabled: settings.Enabled, Providers: providers})
 }
 

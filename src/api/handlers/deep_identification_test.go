@@ -81,11 +81,7 @@ func setupDeepIdentificationHandlerTest(t *testing.T, userID uint, enabled bool)
 	svc := services.NewDeepIdentificationService(repo, imageRepo, imageSvc, settingsSvc, services.NewLogger(10), uploadDir)
 
 	coinRepo := repository.NewCoinRepository(db)
-	notifRepo := repository.NewNotificationRepository(db)
-	socialRepo := repository.NewSocialRepository(db)
-	userRepo := repository.NewUserRepository(db)
-	notifSvc := services.NewNotificationService(notifRepo, socialRepo, userRepo, services.NewLogger(10))
-	coinSvc := services.NewCoinService(coinRepo, notifSvc)
+	coinSvc := services.NewCoinService(coinRepo)
 	quickCaptureRepo := repository.NewQuickCaptureRepository(db)
 	quickCaptureSvc := services.NewQuickCaptureService(quickCaptureRepo, uploadDir).WithCoinValidation(coinSvc)
 	coinRefSvc := services.NewCoinReferenceService(repository.NewCoinReferenceRepository(db), repository.NewCatalogRegistryRepository(db))
@@ -404,7 +400,7 @@ func TestDeepIdentificationHandler_Capability_ReflectsFeatureFlag(t *testing.T) 
 			if resp.Enabled != tc.enabled {
 				t.Fatalf("expected enabled=%v, got %v", tc.enabled, resp.Enabled)
 			}
-			if len(resp.Providers) != 2 || resp.Providers[0] != "nomisma" || resp.Providers[1] != "numista" {
+			if len(resp.Providers) != 1 || resp.Providers[0] != "numista" {
 				t.Fatalf("expected default eligible providers, got %#v", resp.Providers)
 			}
 		})

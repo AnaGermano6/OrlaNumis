@@ -125,10 +125,6 @@
             </span>
             <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.timeMachine.unrealized') }}</span>
           </div>
-          <div v-if="snapshot.healthScore !== null" class="flex flex-col gap-1 rounded-md border border-border-subtle bg-card p-6 text-center">
-            <span class="font-display text-xl font-semibold text-text-primary">{{ snapshot.healthScore }}</span>
-            <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('health.score') }}</span>
-          </div>
           <div class="flex flex-col gap-1 rounded-md border border-border-subtle bg-card p-6 text-center">
             <span class="font-display text-xl font-semibold text-text-primary">{{ snapshot.acquiredInYear }}</span>
             <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ t('stats.timeMachine.addedThatYear') }}</span>

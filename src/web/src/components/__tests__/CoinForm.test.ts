@@ -21,7 +21,7 @@ vi.mock('@/composables/usePwa', () => ({
 
 vi.mock('@/composables/useCoinOptions', () => ({
   useCoinOptions: () => ({
-    categoryOptions: ref(['Roman', 'Greek']),
+    categoryOptions: ref(['Modern', 'Other']),
     eraOptions: ref(['ancient']),
     materialOptions: ref(['Silver']),
     loadOptions: vi.fn(),
@@ -69,15 +69,12 @@ describe('CoinForm', () => {
     expect(source).toContain('return [currentEra, ...eraOptions.value]')
   })
 
-  it('shows the Imperial figure picker only for Roman coins, alongside the free-text Ruler field', () => {
+  it('keeps the free-text Ruler field, without the removed Imperial figure picker', () => {
     const source = fs.readFileSync(coinFormPath, 'utf8')
 
-    expect(source).toContain('v-if="form.category === \'Roman\'"')
-    expect(source).toContain('<ImperialFigurePicker v-model="form.romanImperialFigureId!" />')
     expect(source).toContain(`<AutocompleteInput v-model="form.ruler!" field="ruler" :placeholder="t('coinForm.rulerPlaceholder')" />`)
-    expect(source).toContain("import ImperialFigurePicker from '@/components/ImperialFigurePicker.vue'")
-    expect(source).toContain("if (category !== 'Roman')")
-    expect(source).toContain('props.form.romanImperialFigureId = null')
+    expect(source).not.toContain('ImperialFigurePicker')
+    expect(source).not.toContain('romanImperialFigureId')
   })
 
   it('replaces the free-text mint input with a managed dropdown offering Unknown, My Mints, Mints, and Create new', () => {
@@ -111,14 +108,13 @@ describe('CoinForm', () => {
   // Catalogue measurements have more decimals than a fixed step allows
   // (25.75 mm for a 2 euro coin, 7.128 g), and the browser would refuse to save.
   it('accepts weights and diameters with any number of decimals', async () => {
-    const form = { name: 'Coin', category: 'Roman', material: 'Silver', weightGrams: 7.128, diameterMm: 25.75 }
+    const form = { name: 'Coin', category: 'Modern', material: 'Silver', weightGrams: 7.128, diameterMm: 25.75 }
     const wrapper = mount(CoinForm, {
       props: { form, submitLabel: 'Save' },
       global: {
         stubs: {
           RouterLink: { template: '<a><slot /></a>' },
           AutocompleteInput: true,
-          ImperialFigurePicker: true,
           CreateMintModal: true,
           AuthenticatedImage: true,
           X: true,
@@ -136,34 +132,6 @@ describe('CoinForm', () => {
     }
   })
 
-  it('has no storage location or private fields and keeps their values as they are on submit', async () => {
-    const form = { name: 'Coin', category: 'Roman', material: 'Silver', storageLocationId: 2, storageSlot: 4, isPrivate: true }
-    const wrapper = mount(CoinForm, {
-      props: { form, submitLabel: 'Save', coinId: 99 },
-      global: {
-        stubs: {
-          RouterLink: { template: '<a><slot /></a>' },
-          AutocompleteInput: true,
-          ImperialFigurePicker: true,
-          CreateMintModal: true,
-          AuthenticatedImage: true,
-          X: true,
-          Camera: true,
-        },
-      },
-    })
-    await flushPromises()
-
-    expect(wrapper.text().toLowerCase()).not.toContain('storage location')
-    expect(wrapper.text().toLowerCase()).not.toContain('private coin')
-    expect(wrapper.find('.slot-picker').exists()).toBe(false)
-    await wrapper.get('form').trigger('submit')
-    expect(wrapper.emitted('submit')).toHaveLength(1)
-    expect(form.storageLocationId).toBe(2)
-    expect(form.storageSlot).toBe(4)
-    expect(form.isPrivate).toBe(true)
-  })
-
   it('sets the circulation by hand, or leaves it to Numista', async () => {
     const form = reactive<Partial<Coin>>({ name: 'Coin', category: 'Modern', material: 'Silver', circulation: '' })
     const wrapper = mount(CoinForm, {
@@ -172,7 +140,6 @@ describe('CoinForm', () => {
         stubs: {
           RouterLink: { template: '<a><slot /></a>' },
           AutocompleteInput: true,
-          ImperialFigurePicker: true,
           CreateMintModal: true,
           AuthenticatedImage: true,
           X: true,
@@ -206,7 +173,6 @@ describe('CoinForm', () => {
         stubs: {
           RouterLink: { template: '<a><slot /></a>' },
           AutocompleteInput: true,
-          ImperialFigurePicker: true,
           CreateMintModal: true,
           AuthenticatedImage: true,
           X: true,
@@ -228,7 +194,7 @@ describe('CoinForm', () => {
     const form = reactive<Partial<Coin>>({ name: 'Denarius', category: 'Roman', material: 'Silver', dateRange: 'c. 46-44 BC', year: null })
     const wrapper = mount(CoinForm, {
       props: { form, submitLabel: 'Save' },
-      global: { stubs: { RouterLink: { template: '<a><slot /></a>' }, AutocompleteInput: true, ImperialFigurePicker: true, CreateMintModal: true, AuthenticatedImage: true } },
+      global: { stubs: { RouterLink: { template: '<a><slot /></a>' }, AutocompleteInput: true, CreateMintModal: true, AuthenticatedImage: true } },
     })
     await flushPromises()
 

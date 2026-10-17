@@ -48,43 +48,6 @@ func TestValidateOutboundURL(t *testing.T) {
 	}
 }
 
-func TestRestrictedDialContext_BlocksPrivateResolution(t *testing.T) {
-	t.Parallel()
-
-	dial := restrictedDialContext(fakeResolver{
-		lookup: func(ctx context.Context, network, host string) ([]netip.Addr, error) {
-			return []netip.Addr{netip.MustParseAddr("127.0.0.1")}, nil
-		},
-	})
-
-	_, err := dial(context.Background(), "tcp", "example.com:80")
-	if err == nil {
-		t.Fatal("expected blocked outbound address error")
-	}
-	if !isOutboundTargetBlockedError(err) {
-		t.Fatalf("expected blocked outbound address error, got %v", err)
-	}
-}
-
-func TestRestrictedDialContext_ResolvesPerConnectAttempt(t *testing.T) {
-	t.Parallel()
-
-	lookups := 0
-	dial := restrictedDialContext(fakeResolver{
-		lookup: func(ctx context.Context, network, host string) ([]netip.Addr, error) {
-			lookups++
-			return []netip.Addr{netip.MustParseAddr("127.0.0.1")}, nil
-		},
-	})
-
-	_, _ = dial(context.Background(), "tcp", "example.com:80")
-	_, _ = dial(context.Background(), "tcp", "example.com:80")
-
-	if lookups != 2 {
-		t.Fatalf("expected resolver to be called on each connect attempt, got %d calls", lookups)
-	}
-}
-
 func TestProxyImage_BlocksConnectTimePrivateResolution(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	oldFactory := outboundHTTPClientFactory

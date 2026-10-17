@@ -288,7 +288,7 @@ func TestGetSetting_CoinCategories_ReturnsDefault(t *testing.T) {
 	svc, _ := newTestSettingsService(t)
 
 	got := svc.GetSetting(SettingCoinCategories)
-	expected := "Roman\nGreek\nByzantine\nModern\nOther"
+	expected := "Modern\nOther"
 	if got != expected {
 		t.Errorf("GetSetting(CoinCategories) = %q, want default %q", got, expected)
 	}
@@ -449,7 +449,7 @@ func TestGetAllSettings_IncludesCoinCategoriesAndEras(t *testing.T) {
 		t.Error("GetAllSettings does not include CoinEras")
 	}
 
-	expectedCategories := "Roman\nGreek\nByzantine\nModern\nOther"
+	expectedCategories := "Modern\nOther"
 	if all[SettingCoinCategories] != expectedCategories {
 		t.Errorf("GetAllSettings[CoinCategories] = %q, want default %q", all[SettingCoinCategories], expectedCategories)
 	}
@@ -485,7 +485,6 @@ func TestGetSetting_DeepIdentificationDefaults(t *testing.T) {
 		SettingDeepIdentificationResultRetentionDays:       "90",
 		SettingDeepIdentificationMaxProviders:              "4",
 		SettingDeepIdentificationNumistaCallBudget:         "4",
-		SettingDeepIdentificationOCREEnabled:               "false",
 		SettingDeepIdentificationRPCEnabled:                "false",
 	}
 
@@ -504,7 +503,6 @@ func TestSetSetting_DeepIdentificationRoundTrip(t *testing.T) {
 		SettingDeepIdentificationWorkerCount:       "5",
 		SettingDeepIdentificationMaxActivePerUser:  "2",
 		SettingDeepIdentificationQueueDepth:        "64",
-		SettingDeepIdentificationOCREEnabled:       "false",
 		SettingDeepIdentificationRPCEnabled:        "false",
 		SettingDeepIdentificationNumistaCallBudget: "10",
 	}

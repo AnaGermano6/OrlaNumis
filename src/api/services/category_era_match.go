@@ -22,7 +22,7 @@ func NormalizeMatchValue(value string) string {
 // MatchKnownValue finds the known value that best matches candidate: an
 // exact normalized match wins outright; otherwise a known value is accepted
 // if one normalized form fully contains the other (handles near-misses like
-// an AI suggesting "Roman Republic" against a known "Roman"). Returns the
+// an AI suggesting "Modern coin" against a known "Modern"). Returns the
 // matched known value in its original casing and true, or ("", false) if
 // nothing matches confidently - callers should treat "no match" as a signal
 // to ask for confirmation rather than guessing further.

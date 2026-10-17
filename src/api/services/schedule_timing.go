@@ -103,24 +103,21 @@ func parseStartTime(raw string, defaultHour, defaultMinute int) (int, int) {
 	return h, m
 }
 
-// scheduleLocation resolves the first non-empty zone setting among keys and
-// then the app-wide ScheduleTimezone, falling back to server time.
-func scheduleLocation(settingsSvc *SettingsService, logger *Logger, keys ...string) *time.Location {
-	for _, key := range append(keys, SettingScheduleTimezone) {
-		name := strings.TrimSpace(settingsSvc.GetSetting(key))
-		if name == "" {
-			continue
-		}
-		loc, err := time.LoadLocation(name)
-		if err != nil {
-			if logger != nil {
-				logger.Warn("scheduler", "Unknown time zone %q in %s, using server time", name, key)
-			}
-			return time.Local
-		}
-		return loc
+// scheduleLocation resolves the app-wide ScheduleTimezone, falling back to
+// server time.
+func scheduleLocation(settingsSvc *SettingsService, logger *Logger) *time.Location {
+	name := strings.TrimSpace(settingsSvc.GetSetting(SettingScheduleTimezone))
+	if name == "" {
+		return time.Local
 	}
-	return time.Local
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		if logger != nil {
+			logger.Warn("scheduler", "Unknown time zone %q in %s, using server time", name, SettingScheduleTimezone)
+		}
+		return time.Local
+	}
+	return loc
 }
 
 // scheduleLoop runs a job at the times returned by next, re-checking at least

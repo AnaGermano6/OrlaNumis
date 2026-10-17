@@ -31,7 +31,6 @@ type ValuationService struct {
 	valRepo     *repository.ValuationRepository
 	agentProxy  *AgentProxy
 	userRepo    *repository.UserRepository
-	notifSvc    *NotificationService
 	settingsSvc *SettingsService
 	logger      *Logger
 	cancelMap   sync.Map
@@ -43,7 +42,6 @@ func NewValuationService(
 	valRepo *repository.ValuationRepository,
 	agentProxy *AgentProxy,
 	userRepo *repository.UserRepository,
-	notifSvc *NotificationService,
 	settingsSvc *SettingsService,
 	logger *Logger,
 ) *ValuationService {
@@ -52,7 +50,6 @@ func NewValuationService(
 		valRepo:     valRepo,
 		agentProxy:  agentProxy,
 		userRepo:    userRepo,
-		notifSvc:    notifSvc,
 		settingsSvc: settingsSvc,
 		logger:      logger,
 	}
@@ -201,7 +198,7 @@ func (s *ValuationService) ValuateCollectionForUser(
 		}
 	}
 
-	// Get owned, non-sold, non-wishlist coins
+	// Get owned, non-wishlist coins
 	coins, err := s.valRepo.GetOwnedCoins(userID, maxCoins)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch coins: %w", err)
@@ -416,16 +413,7 @@ func (s *ValuationService) ValuateCollectionForUser(
 	s.logger.Info("valuation", "Run %d complete: %d checked, %d updated, %d skipped, %d errors (%dms)",
 		run.ID, checked, updated, skipped, errCount, run.DurationMs)
 
-	s.notifyRunComplete(userID, run)
-
 	return run, nil
-}
-
-// notifyRunComplete sends an in-app notification with valuation run details.
-func (s *ValuationService) notifyRunComplete(userID uint, run *models.ValuationRun) {
-	if s.notifSvc != nil {
-		s.notifSvc.NotifyValuationRunComplete(userID, run.ID, run.CoinsChecked, run.CoinsUpdated, run.CoinsSkipped, run.Errors)
-	}
 }
 
 // CancelRun signals a running valuation to stop after the current coin.

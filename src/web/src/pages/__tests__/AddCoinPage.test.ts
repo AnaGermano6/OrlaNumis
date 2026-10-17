@@ -8,10 +8,10 @@ const __dirname = path.dirname(__filename)
 const addCoinPagePath = path.resolve(__dirname, '../AddCoinPage.vue')
 
 describe('AddCoinPage', () => {
-  it('includes a Roman imperial figure selection in create and intake payloads only for Roman coins', () => {
+  it('builds the create and intake payloads from the same form helper, without an imperial figure', () => {
     const source = fs.readFileSync(addCoinPagePath, 'utf8')
 
-    expect(source).toContain("romanImperialFigureId: source.category === 'Roman' ? (source.romanImperialFigureId ?? null) : null")
+    expect(source).not.toContain('romanImperialFigureId')
     expect(source).toContain('overrides: buildCoinPayload(reviewForm)')
     expect(source).toContain('const payload = buildCoinPayload(form)')
   })

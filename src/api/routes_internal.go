@@ -41,11 +41,9 @@ func registerInternalToolRoutes(r *gin.Engine, d *appDeps) {
 	internalDeepProviderTools.Use(middleware.InternalJobTokenRequired(d.internalTokenSvc))
 	{
 		deepProviderToolsHandler := handlers.NewDeepProviderToolsHandler(
-			d.numistaClient, d.deepNomismaClient, d.deepOCREClient, d.deepOCRECache, d.settingsSvc, d.deepProviderBudgets, d.logger,
+			d.numistaClient, d.settingsSvc, d.deepProviderBudgets, d.logger,
 		)
 		internalDeepProviderTools.POST("/numista_search", deepProviderToolsHandler.NumistaSearch)
 		internalDeepProviderTools.POST("/numista_detail", deepProviderToolsHandler.NumistaDetail)
-		internalDeepProviderTools.POST("/nomisma_search", deepProviderToolsHandler.NomismaSearch)
-		internalDeepProviderTools.POST("/ocre_search", deepProviderToolsHandler.OCRESearch)
 	}
 }

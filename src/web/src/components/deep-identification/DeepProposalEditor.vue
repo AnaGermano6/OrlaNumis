@@ -31,11 +31,6 @@
           {{ t('deepAnalysis.proposal.aiValue') }} <span class="font-medium text-text-primary">{{ displayValue(entryOf(name).proposed) }}</span>
         </p>
 
-        <OCREAttribution
-          v-if="ocreCitationFor(name)"
-          :uri="ocreCitationFor(name)"
-        />
-
         <label class="grid gap-1 text-sm text-text-secondary" :for="`deep-proposal-field-${name}`">
           {{ t('deepAnalysis.proposal.yourValue') }}
           <textarea
@@ -92,7 +87,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { DeepProposal, DeepProposalFieldEntry } from '@/types'
-import OCREAttribution from './OCREAttribution.vue'
 import { formatFieldName } from '@/utils/format'
 import { effectiveDeepProposalAcceptance } from '@/utils/deepProposalAcceptance'
 import { t } from '@/i18n'
@@ -172,25 +166,4 @@ function setAccepted(name: string, accepted: boolean) {
   emit('update-field', name, { accepted })
 }
 
-// Feature 345: an OCRE-sourced field (canonically `coin_type`) carries its
-// attribution/license on the claim evidence, not on the coin row. Surface the
-// dedicated OCRE attribution whenever a field's evidence cites a canonical
-// numismatics.org OCRE type URI, so the ODbL/ANS credit appears exactly when
-// (and only when) OCRE actually contributed to that proposed value.
-function ocreCitationFor(name: string): string | null {
-  const evidence = entryOf(name).evidence ?? []
-  for (const claim of evidence) {
-    const citation = claim?.citation
-    if (!citation) continue
-    try {
-      const host = new URL(citation).host.toLowerCase()
-      if (host === 'numismatics.org' && citation.toLowerCase().includes('/ocre/')) {
-        return citation
-      }
-    } catch {
-      // Non-parseable citation is never surfaced as an attribution link.
-    }
-  }
-  return null
-}
 </script>

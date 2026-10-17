@@ -24,7 +24,7 @@ func setupValuationSourceTestDB(t *testing.T) *gorm.DB {
 	if err := db.AutoMigrate(
 		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{},
 		&models.CatalogRegistry{}, &models.AppSetting{}, &models.MintLocation{},
-		&models.StorageLocation{}, &models.CoinJournal{},
+		&models.CoinJournal{},
 		&models.CoinValueHistory{},
 	); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
@@ -43,7 +43,7 @@ func TestValuationService_UpdateCoinValuation_WritesAIScheduledSource(t *testing
 	coin := &models.Coin{
 		Name:     "Caracalla denarius",
 		Ruler:    "Caracalla",
-		Category: models.CategoryRoman,
+		Category: models.CategoryModern,
 		UserID:   1,
 	}
 	if err := db.Create(coin).Error; err != nil {

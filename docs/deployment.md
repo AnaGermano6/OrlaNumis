@@ -764,8 +764,7 @@ Use this gate before inviting beta users or pointing public DNS at the host.
 
 ### Private media
 
-- [ ] **Private media**: confirm authenticated `/uploads/*` requests require a valid token, private coins/profile/follower views do not expose private images, and public showcase images only load through `/api/showcase/:slug/uploads/*`.
-- [ ] Open public showcase URLs in a logged-out/private browser and verify only intended data is visible.
+- [ ] **Private media**: confirm authenticated `/uploads/*` requests require a valid token and that another user's coin images and avatar are not served.
 - [ ] Confirm PWA/service worker logout clears private media caches on shared devices.
 
 ### Operations

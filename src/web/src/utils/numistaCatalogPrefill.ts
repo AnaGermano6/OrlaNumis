@@ -60,15 +60,10 @@ export function materialFromComposition(composition: string | undefined, materia
   return pickConfigured(materials, material, 'Other')
 }
 
-/** Suggests one of the configured categories from the issuer, title and dates. */
+/** Suggests one of the configured categories from the dates: Modern from 1500. */
 export function categoryForType(type: NumistaCatalogType, categories: string[]): string {
-  const text = fold(`${type.issuer.name} ${type.issuer.code} ${type.title}`)
   const year = type.maxYear ?? type.minYear
-  let category = 'Other'
-  if (/byzant|bizant/.test(text)) category = 'Byzantine'
-  else if (/roman|romano|_rom_|\brome\b|\broma\b/.test(text) && (year === undefined || year < 500)) category = 'Roman'
-  else if (/greek|greece|grecia|grega|greco|hellen|helen/.test(text) && (year === undefined || year < 100)) category = 'Greek'
-  else if (year !== undefined && year >= 1500) category = 'Modern'
+  const category = year !== undefined && year >= 1500 ? 'Modern' : 'Other'
   return pickConfigured(categories, category, 'Other')
 }
 

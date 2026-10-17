@@ -1,6 +1,7 @@
 import type { Messages } from '../../types'
 
 const messages: Messages['sets'] = {
+  backToSets: 'Voltar aos conjuntos',
   detail: {
     loading: 'A carregar os detalhes do conjunto...',
     setActions: 'Ações do conjunto',
@@ -25,15 +26,6 @@ const messages: Messages['sets'] = {
     clearSlot: 'Limpar posição',
     replaceCoin: 'Substituir moeda',
     assignCoin: 'Atribuir moeda',
-    pin: {
-      updating: 'A atualizar a afixação do conjunto no Acesso rápido',
-      limit: 'Limite de afixações atingido (5 conjuntos)',
-      unpin: 'Desafixar conjunto do Acesso rápido',
-      pin: 'Afixar conjunto no Acesso rápido',
-      pinned: 'Afixado no Acesso rápido',
-      unpinned: 'Desafixado',
-      failed: 'Não foi possível atualizar a afixação',
-    },
     empty: {
       generating: 'O Aurearia está a gerar esta lista agêntica. Receberá uma notificação quando as posições do tabuleiro estiverem prontas.',
       noSlots: 'Ainda não foram geradas posições de tabuleiro agênticas.',
@@ -146,17 +138,6 @@ const messages: Messages['sets'] = {
     loadFailed: 'Não foi possível carregar as moedas. Tente novamente.',
   },
   loadFailed: 'Não foi possível carregar este conjunto. Tente novamente.',
-  compare: {
-    title: 'Comparar conjuntos',
-    comparing: 'A comparar...',
-    compare: 'Comparar',
-    choose: 'Escolha um conjunto para comparar',
-    selectPlaceholder: 'Selecione um conjunto para comparar...',
-    selected: { one: '{count} conjunto selecionado', other: '{count} conjuntos selecionados' },
-    needAnother: 'Crie outro conjunto para poder comparar.',
-    start: 'Início',
-    end: 'Fim',
-  },
   trend: {
     range1m: '1 mês',
     range3m: '3 meses',

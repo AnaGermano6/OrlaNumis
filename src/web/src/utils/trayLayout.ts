@@ -52,13 +52,6 @@ export function normalizeDiameterMm(
   return diameterMm
 }
 
-export function selectTrayCoinImagePath(
-  images: readonly TrayCoinImage[],
-  preferredFace: TrayCoinFace = 'obverse'
-): string | null {
-  return selectTrayCoinImage(images, preferredFace)?.filePath ?? null
-}
-
 /**
  * Calculates render size in pixels for a coin based on its diameter relative to all coins
  * Scales proportionally within min/max bounds

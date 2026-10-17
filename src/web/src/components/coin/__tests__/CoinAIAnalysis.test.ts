@@ -9,7 +9,6 @@ const mocks = vi.hoisted(() => ({
   getAIStatus: vi.fn(),
   getCoinAIJobs: vi.fn(),
   gradeCoin: vi.fn(),
-  refreshNotifications: vi.fn(),
   showAlert: vi.fn(),
   showConfirm: vi.fn(),
   showToast: vi.fn(),
@@ -32,12 +31,6 @@ vi.mock('@/composables/useDialog', () => ({
   useDialog: () => ({
     showAlert: mocks.showAlert,
     showConfirm: mocks.showConfirm,
-  }),
-}))
-
-vi.mock('@/composables/useNotifications', () => ({
-  useNotifications: () => ({
-    refresh: mocks.refreshNotifications,
   }),
 }))
 
@@ -167,7 +160,6 @@ describe('CoinAIAnalysis', () => {
     await flushPromises()
 
     expect(wrapper.emitted('analysisUpdated')).toHaveLength(1)
-    expect(mocks.refreshNotifications).toHaveBeenCalled()
     expect(sessionStorage.getItem('aiJob:analysis:42:obverse')).toBeNull()
   })
 
@@ -266,7 +258,6 @@ describe('CoinAIAnalysis', () => {
     expect(wrapper.text()).toContain('Grading Report')
     expect(wrapper.text()).toContain('Estimated grade: VF')
     expect(wrapper.text()).toContain('saved coin grade is not changed automatically')
-    expect(mocks.refreshNotifications).toHaveBeenCalled()
     expect(sessionStorage.getItem('aiJob:grading:42')).toBeNull()
   })
 

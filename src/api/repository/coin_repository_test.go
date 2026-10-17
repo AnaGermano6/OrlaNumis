@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -25,13 +24,12 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 
 	err = db.AutoMigrate(
-		&models.User{}, &models.StorageLocation{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{},
+		&models.User{}, &models.Coin{}, &models.CoinImage{}, &models.CoinReference{},
 		&models.CoinJournal{},
-		&models.CoinValueHistory{}, &models.CoinComment{},
+		&models.CoinValueHistory{},
 		&models.AvailabilityResult{},
 		&models.ValuationRun{}, &models.ValuationResult{},
-		&models.Tag{}, &models.CoinTag{},
-		&models.CoinSet{}, &models.CoinSetMembership{}, &models.CoinSetTarget{}, &models.SmartCriteriaTemplate{},
+		&models.CoinSet{}, &models.CoinSetMembership{}, &models.CoinSetTarget{},
 		&models.QuickCaptureDraft{}, &models.QuickCaptureDraftImage{}, &models.QuickCaptureDraftReference{}, &models.DraftLifecycleEvent{},
 	)
 	if err != nil {
@@ -40,22 +38,13 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func addStorageSlotUniqueIndex(t *testing.T, db *gorm.DB) {
-	t.Helper()
-	if err := db.Exec(`CREATE UNIQUE INDEX idx_coins_storage_location_slot_unique
-		ON coins(storage_location_id, storage_slot)
-		WHERE storage_slot IS NOT NULL`).Error; err != nil {
-		t.Fatalf("create storage slot unique index: %v", err)
-	}
-}
-
 func TestCoinRepository_CreateAndGet(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewCoinRepository(db)
 
 	coin := &models.Coin{
 		Name:     "Test Denarius",
-		Category: models.CategoryRoman,
+		Category: models.CategoryModern,
 		Material: models.MaterialSilver,
 		UserID:   1,
 	}
@@ -74,7 +63,7 @@ func TestCoinRepository_CreateAndGet(t *testing.T) {
 	if found.Name != "Test Denarius" {
 		t.Errorf("expected name 'Test Denarius', got %q", found.Name)
 	}
-	if found.Category != models.CategoryRoman {
+	if found.Category != models.CategoryModern {
 		t.Errorf("expected category Roman, got %q", found.Category)
 	}
 }
@@ -83,7 +72,7 @@ func TestCoinRepository_FindByID_WrongUser(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewCoinRepository(db)
 
-	coin := &models.Coin{Name: "Private Coin", Category: models.CategoryGreek, UserID: 1}
+	coin := &models.Coin{Name: "Private Coin", Category: models.CategoryOther, UserID: 1}
 	repo.Create(coin)
 
 	_, err := repo.FindByID(coin.ID, 999)
@@ -97,9 +86,9 @@ func TestCoinRepository_FindWishlistByReferenceURLIsOwnerScoped(t *testing.T) {
 	repo := NewCoinRepository(db)
 	sourceURL := "https://dealer.example/coin/123"
 	for _, coin := range []*models.Coin{
-		{Name: "Owner one", Category: models.CategoryRoman, ReferenceURL: sourceURL, IsWishlist: true, UserID: 1},
-		{Name: "Owner two", Category: models.CategoryRoman, ReferenceURL: sourceURL, IsWishlist: true, UserID: 2},
-		{Name: "Collection coin", Category: models.CategoryRoman, ReferenceURL: sourceURL, UserID: 3},
+		{Name: "Owner one", Category: models.CategoryModern, ReferenceURL: sourceURL, IsWishlist: true, UserID: 1},
+		{Name: "Owner two", Category: models.CategoryModern, ReferenceURL: sourceURL, IsWishlist: true, UserID: 2},
+		{Name: "Collection coin", Category: models.CategoryModern, ReferenceURL: sourceURL, UserID: 3},
 	} {
 		if err := repo.Create(coin); err != nil {
 			t.Fatal(err)
@@ -126,7 +115,7 @@ func TestCoinRepository_WithTx(t *testing.T) {
 		txRepo := repo.WithTx(tx)
 		coin := &models.Coin{
 			Name:     "TX Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   1,
 		}
 		if err := txRepo.Create(coin); err != nil {
@@ -159,7 +148,7 @@ func TestCoinRepository_Delete(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewCoinRepository(db)
 
-	coin := &models.Coin{Name: "To Delete", Category: models.CategoryRoman, UserID: 1}
+	coin := &models.Coin{Name: "To Delete", Category: models.CategoryModern, UserID: 1}
 	repo.Create(coin)
 
 	// Add related data
@@ -242,7 +231,7 @@ func TestCoinRepository_CoinExists(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewCoinRepository(db)
 
-	coin := &models.Coin{Name: "Exists Test", Category: models.CategoryRoman, UserID: 1}
+	coin := &models.Coin{Name: "Exists Test", Category: models.CategoryModern, UserID: 1}
 	repo.Create(coin)
 
 	exists, err := repo.CoinExists(coin.ID, 1)
@@ -266,9 +255,9 @@ func TestCoinRepository_Scopes_OwnedBy(t *testing.T) {
 	db := setupTestDB(t)
 
 	// Create coins for two users
-	db.Create(&models.Coin{Name: "User1 Coin A", Category: models.CategoryRoman, UserID: 1})
-	db.Create(&models.Coin{Name: "User1 Coin B", Category: models.CategoryGreek, UserID: 1})
-	db.Create(&models.Coin{Name: "User2 Coin", Category: models.CategoryRoman, UserID: 2})
+	db.Create(&models.Coin{Name: "User1 Coin A", Category: models.CategoryModern, UserID: 1})
+	db.Create(&models.Coin{Name: "User1 Coin B", Category: models.CategoryOther, UserID: 1})
+	db.Create(&models.Coin{Name: "User2 Coin", Category: models.CategoryModern, UserID: 2})
 
 	var coins []models.Coin
 	db.Scopes(OwnedBy(1)).Find(&coins)
@@ -285,9 +274,8 @@ func TestCoinRepository_Scopes_OwnedBy(t *testing.T) {
 func TestCoinRepository_Scopes_ActiveCollection(t *testing.T) {
 	db := setupTestDB(t)
 
-	db.Create(&models.Coin{Name: "Active", Category: models.CategoryRoman, UserID: 1, IsWishlist: false, IsSold: false})
-	db.Create(&models.Coin{Name: "Wishlist", Category: models.CategoryRoman, UserID: 1, IsWishlist: true, IsSold: false})
-	db.Create(&models.Coin{Name: "Sold", Category: models.CategoryRoman, UserID: 1, IsWishlist: false, IsSold: true})
+	db.Create(&models.Coin{Name: "Active", Category: models.CategoryModern, UserID: 1, IsWishlist: false})
+	db.Create(&models.Coin{Name: "Wishlist", Category: models.CategoryModern, UserID: 1, IsWishlist: true})
 
 	var coins []models.Coin
 	db.Scopes(ActiveCollection(1)).Find(&coins)
@@ -299,48 +287,15 @@ func TestCoinRepository_Scopes_ActiveCollection(t *testing.T) {
 	}
 }
 
-func TestCoinRepository_ListMatchedImperialFigures(t *testing.T) {
-	db := setupTestDB(t)
-	repo := NewCoinRepository(db)
-
-	figureID := uint(42)
-	otherFigureID := uint(7)
-	matched := models.Coin{Name: "Matched", Category: models.CategoryRoman, UserID: 1, RomanImperialFigureID: &figureID}
-	if err := db.Create(&matched).Error; err != nil {
-		t.Fatalf("seed matched coin: %v", err)
-	}
-	db.Create(&models.CoinImage{CoinID: matched.ID, FilePath: "/uploads/matched.jpg"})
-	db.Create(&models.Coin{Name: "Unmatched", Category: models.CategoryRoman, UserID: 1})
-	db.Create(&models.Coin{Name: "Greek Matched", Category: models.CategoryGreek, UserID: 1, RomanImperialFigureID: &figureID})
-	db.Create(&models.Coin{Name: "Matched Wishlist", Category: models.CategoryRoman, UserID: 1, RomanImperialFigureID: &otherFigureID, IsWishlist: true})
-	db.Create(&models.Coin{Name: "Matched Sold", Category: models.CategoryRoman, UserID: 1, RomanImperialFigureID: &otherFigureID, IsSold: true})
-	db.Create(&models.Coin{Name: "Other User Matched", Category: models.CategoryRoman, UserID: 2, RomanImperialFigureID: &figureID})
-
-	coins, err := repo.ListMatchedImperialFigures(1)
-	if err != nil {
-		t.Fatalf("ListMatchedImperialFigures failed: %v", err)
-	}
-	if len(coins) != 1 {
-		t.Fatalf("expected 1 matched active coin, got %d: %+v", len(coins), coins)
-	}
-	if coins[0].Name != "Matched" {
-		t.Errorf("expected 'Matched', got %q", coins[0].Name)
-	}
-	if len(coins[0].Images) != 1 || coins[0].Images[0].FilePath != "/uploads/matched.jpg" {
-		t.Errorf("expected preloaded image, got %+v", coins[0].Images)
-	}
-}
-
 func TestCoinRepository_QuickCaptureDraftsExcludedAndPromotedCoinAppearsOnce(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewCoinRepository(db)
 	userID := uint(1)
 
-	active := models.Coin{Name: "Active normal coin", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: userID, IsWishlist: false, IsSold: false}
-	wishlist := models.Coin{Name: "Wishlist coin", Category: models.CategoryGreek, Material: models.MaterialGold, UserID: userID, IsWishlist: true, IsSold: false}
-	sold := models.Coin{Name: "Sold coin", Category: models.CategoryRoman, Material: models.MaterialBronze, UserID: userID, IsWishlist: false, IsSold: true}
-	promoted := models.Coin{Name: "Promoted Quick Capture coin", Category: models.CategoryRoman, Material: models.MaterialSilver, UserID: userID, IsWishlist: false, IsSold: false}
-	for _, coin := range []*models.Coin{&active, &wishlist, &sold, &promoted} {
+	active := models.Coin{Name: "Active normal coin", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: userID, IsWishlist: false}
+	wishlist := models.Coin{Name: "Wishlist coin", Category: models.CategoryOther, Material: models.MaterialGold, UserID: userID, IsWishlist: true}
+	promoted := models.Coin{Name: "Promoted Quick Capture coin", Category: models.CategoryModern, Material: models.MaterialSilver, UserID: userID, IsWishlist: false}
+	for _, coin := range []*models.Coin{&active, &wishlist, &promoted} {
 		if err := db.Create(coin).Error; err != nil {
 			t.Fatalf("seed coin: %v", err)
 		}
@@ -357,7 +312,7 @@ func TestCoinRepository_QuickCaptureDraftsExcludedAndPromotedCoinAppearsOnce(t *
 	}
 
 	activeFilter := false
-	coins, total, err := repo.List(userID, CoinListFilters{Wishlist: &activeFilter, Sold: &activeFilter, Page: 1, Limit: 50, SortField: "name", SortOrder: "asc"})
+	coins, total, err := repo.List(userID, CoinListFilters{Wishlist: &activeFilter, Page: 1, Limit: 50, SortField: "name", SortOrder: "asc"})
 	if err != nil {
 		t.Fatalf("list active coins: %v", err)
 	}
@@ -373,23 +328,6 @@ func TestCoinRepository_QuickCaptureDraftsExcludedAndPromotedCoinAppearsOnce(t *
 	}
 	if names["Promoted Quick Capture coin"] != 1 {
 		t.Fatalf("promoted normal coin should appear exactly once, got names=%v", names)
-	}
-}
-
-func TestCoinRepository_Scopes_PublicCoins(t *testing.T) {
-	db := setupTestDB(t)
-
-	db.Create(&models.Coin{Name: "Public", Category: models.CategoryRoman, UserID: 1, IsPrivate: false})
-	db.Create(&models.Coin{Name: "Private", Category: models.CategoryRoman, UserID: 1, IsPrivate: true})
-	db.Create(&models.Coin{Name: "Wishlist", Category: models.CategoryRoman, UserID: 1, IsWishlist: true})
-
-	var coins []models.Coin
-	db.Scopes(PublicCoins(1)).Find(&coins)
-	if len(coins) != 1 {
-		t.Fatalf("expected 1 public coin, got %d", len(coins))
-	}
-	if coins[0].Name != "Public" {
-		t.Errorf("expected 'Public', got %q", coins[0].Name)
 	}
 }
 
@@ -412,7 +350,7 @@ func TestCoinRepository_List_RandomSort(t *testing.T) {
 	for i := 1; i <= 10; i++ {
 		if err := repo.Create(&models.Coin{
 			Name:     "Coin",
-			Category: models.CategoryRoman,
+			Category: models.CategoryModern,
 			UserID:   1,
 		}); err != nil {
 			t.Fatalf("Create failed: %v", err)
@@ -485,7 +423,7 @@ func TestCoinRepository_Update_PreservesSets(t *testing.T) {
 	// Create a coin
 	coin := &models.Coin{
 		Name:     "Test Aureus",
-		Category: models.CategoryRoman,
+		Category: models.CategoryModern,
 		Material: models.MaterialGold,
 		UserID:   1,
 	}
@@ -554,7 +492,7 @@ func TestCoinRepository_Update_WithSetsField(t *testing.T) {
 	// Create coin and two sets
 	coin := &models.Coin{
 		Name:     "Test Solidus",
-		Category: models.CategoryByzantine,
+		Category: models.CategoryOther,
 		UserID:   1,
 	}
 	if err := coinRepo.Create(coin); err != nil {
@@ -621,18 +559,12 @@ func TestCoinRepository_Update_PreservesLoadedAssociations(t *testing.T) {
 	db := setupTestDB(t)
 	coinRepo := NewCoinRepository(db)
 	setRepo := NewSetRepository(db)
-	tagRepo := NewTagRepository(db)
 
-	location := models.StorageLocation{UserID: 1, Name: "Cabinet A"}
-	if err := db.Create(&location).Error; err != nil {
-		t.Fatalf("Create storage location failed: %v", err)
-	}
 	coin := &models.Coin{
-		Name:              "Associated Coin",
-		Category:          models.CategoryRoman,
-		Material:          models.MaterialSilver,
-		UserID:            1,
-		StorageLocationID: &location.ID,
+		Name:     "Associated Coin",
+		Category: models.CategoryModern,
+		Material: models.MaterialSilver,
+		UserID:   1,
 	}
 	if err := coinRepo.Create(coin); err != nil {
 		t.Fatalf("Create coin failed: %v", err)
@@ -642,13 +574,6 @@ func TestCoinRepository_Update_PreservesLoadedAssociations(t *testing.T) {
 	}
 	if err := db.Create(&models.CoinReference{CoinID: coin.ID, Catalog: "RIC", Volume: "I", Number: "1"}).Error; err != nil {
 		t.Fatalf("Create reference failed: %v", err)
-	}
-	tag := &models.Tag{UserID: 1, Name: "Favorites", Color: "#c9a84c"}
-	if err := tagRepo.Create(tag); err != nil {
-		t.Fatalf("Create tag failed: %v", err)
-	}
-	if err := tagRepo.AttachToCoin(coin.ID, tag.ID, 1); err != nil {
-		t.Fatalf("Attach tag failed: %v", err)
 	}
 	set := &models.CoinSet{UserID: 1, Name: "Roman Core", SetType: models.CoinSetTypeOpen}
 	if err := setRepo.Create(set); err != nil {
@@ -662,11 +587,10 @@ func TestCoinRepository_Update_PreservesLoadedAssociations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FindByID failed: %v", err)
 	}
-	if len(loaded.Images) != 1 || len(loaded.References) != 1 || len(loaded.Tags) != 1 || len(loaded.Sets) != 1 || loaded.StorageLocation == nil {
-		t.Fatalf("expected loaded associations before update, got images=%d refs=%d tags=%d sets=%d storage=%v", len(loaded.Images), len(loaded.References), len(loaded.Tags), len(loaded.Sets), loaded.StorageLocation)
+	if len(loaded.Images) != 1 || len(loaded.References) != 1 || len(loaded.Sets) != 1 {
+		t.Fatalf("expected loaded associations before update, got images=%d refs=%d sets=%d", len(loaded.Images), len(loaded.References), len(loaded.Sets))
 	}
 
-	incomingTag := models.Tag{ID: tag.ID + 100, UserID: 1, Name: "Incoming"}
 	incomingSet := models.CoinSet{ID: set.ID + 100, UserID: 1, Name: "Incoming Set", SetType: models.CoinSetTypeOpen}
 	updates := &models.Coin{
 		Name: "Updated Associated Coin",
@@ -676,16 +600,14 @@ func TestCoinRepository_Update_PreservesLoadedAssociations(t *testing.T) {
 		References: []models.CoinReference{
 			{ID: loaded.References[0].ID + 100, CoinID: loaded.ID, Catalog: "RIC", Volume: "II", Number: "2"},
 		},
-		Tags:            []models.Tag{incomingTag},
-		Sets:            []models.CoinSet{incomingSet},
-		StorageLocation: &models.StorageLocation{ID: location.ID + 100, UserID: 1, Name: "Incoming Location"},
+		Sets: []models.CoinSet{incomingSet},
 	}
 	if err := coinRepo.Update(loaded, updates); err != nil {
 		t.Fatalf("Update coin failed: %v", err)
 	}
 
 	var found models.Coin
-	if err := db.Preload("Images").Preload("References").Preload("Tags").Preload("Sets").Preload("StorageLocation").First(&found, coin.ID).Error; err != nil {
+	if err := db.Preload("Images").Preload("References").Preload("Sets").First(&found, coin.ID).Error; err != nil {
 		t.Fatalf("coin not found after update: %v", err)
 	}
 	if found.Name != "Updated Associated Coin" {
@@ -697,14 +619,8 @@ func TestCoinRepository_Update_PreservesLoadedAssociations(t *testing.T) {
 	if len(found.References) != 1 || found.References[0].Number != "1" {
 		t.Fatalf("expected original reference to remain, got %#v", found.References)
 	}
-	if len(found.Tags) != 1 || found.Tags[0].ID != tag.ID {
-		t.Fatalf("expected original tag to remain, got %#v", found.Tags)
-	}
 	if len(found.Sets) != 1 || found.Sets[0].ID != set.ID {
 		t.Fatalf("expected original set to remain, got %#v", found.Sets)
-	}
-	if found.StorageLocationID == nil || *found.StorageLocationID != location.ID {
-		t.Fatalf("expected original storage location %d to remain, got %v", location.ID, found.StorageLocationID)
 	}
 	var incomingImageCount int64
 	if err := db.Model(&models.CoinImage{}).Where("file_path = ?", "coins/incoming.jpg").Count(&incomingImageCount).Error; err != nil {
@@ -725,16 +641,14 @@ func TestCoinRepository_Update_WithSelectedFieldsPersistsExplicitZeroValues(t *t
 	diameter := 18.0
 	coin := &models.Coin{
 		Name:             "Zero Value Coin",
-		Category:         models.CategoryRoman,
+		Category:         models.CategoryModern,
 		Material:         models.MaterialSilver,
 		UserID:           1,
 		Notes:            "clear me",
 		ReferenceURL:     "https://example.test/ref",
 		ReferenceText:    "clear reference text",
 		PurchaseLocation: "Old dealer",
-		IsPrivate:        true,
 		IsWishlist:       true,
-		IsSold:           true,
 		PurchasePrice:    &purchasePrice,
 		CurrentValue:     &currentValue,
 		WeightGrams:      &weight,
@@ -750,9 +664,7 @@ func TestCoinRepository_Update_WithSelectedFieldsPersistsExplicitZeroValues(t *t
 		ReferenceURL:     "",
 		ReferenceText:    "",
 		PurchaseLocation: "",
-		IsPrivate:        false,
 		IsWishlist:       false,
-		IsSold:           false,
 		PurchasePrice:    &zero,
 		CurrentValue:     &zero,
 		WeightGrams:      &zero,
@@ -765,9 +677,7 @@ func TestCoinRepository_Update_WithSelectedFieldsPersistsExplicitZeroValues(t *t
 		"ReferenceURL",
 		"ReferenceText",
 		"PurchaseLocation",
-		"IsPrivate",
 		"IsWishlist",
-		"IsSold",
 		"PurchasePrice",
 		"CurrentValue",
 		"WeightGrams",
@@ -784,8 +694,8 @@ func TestCoinRepository_Update_WithSelectedFieldsPersistsExplicitZeroValues(t *t
 		t.Fatalf("expected empty string clears to persist, got notes=%q refURL=%q refText=%q purchaseLocation=%q",
 			found.Notes, found.ReferenceURL, found.ReferenceText, found.PurchaseLocation)
 	}
-	if found.IsPrivate || found.IsWishlist || found.IsSold {
-		t.Fatalf("expected false booleans to persist, got private=%v wishlist=%v sold=%v", found.IsPrivate, found.IsWishlist, found.IsSold)
+	if found.IsWishlist {
+		t.Fatal("expected the false boolean to persist, got wishlist=true")
 	}
 	if found.PurchasePrice == nil || *found.PurchasePrice != 0 ||
 		found.CurrentValue == nil || *found.CurrentValue != 0 ||
@@ -794,7 +704,7 @@ func TestCoinRepository_Update_WithSelectedFieldsPersistsExplicitZeroValues(t *t
 		t.Fatalf("expected explicit numeric zeros to persist, got purchase=%v current=%v weight=%v diameter=%v",
 			found.PurchasePrice, found.CurrentValue, found.WeightGrams, found.DiameterMm)
 	}
-	if found.Name != "Zero Value Coin" || found.Category != models.CategoryRoman || found.Material != models.MaterialSilver {
+	if found.Name != "Zero Value Coin" || found.Category != models.CategoryModern || found.Material != models.MaterialSilver {
 		t.Fatalf("omitted fields changed unexpectedly: name=%q category=%q material=%q", found.Name, found.Category, found.Material)
 	}
 }
@@ -808,11 +718,9 @@ func TestCoinRepository_Update_WithSelectedFieldsPersistsNilNullableScalars(t *t
 	weight := 3.5
 	diameter := 18.0
 	purchaseDate := time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)
-	soldPrice := 150.0
-	soldDate := time.Date(2025, time.February, 20, 0, 0, 0, 0, time.UTC)
 	coin := &models.Coin{
 		Name:          "Nil Nullable Coin",
-		Category:      models.CategoryRoman,
+		Category:      models.CategoryModern,
 		Material:      models.MaterialSilver,
 		UserID:        1,
 		PurchasePrice: &purchasePrice,
@@ -820,8 +728,6 @@ func TestCoinRepository_Update_WithSelectedFieldsPersistsNilNullableScalars(t *t
 		WeightGrams:   &weight,
 		DiameterMm:    &diameter,
 		PurchaseDate:  &purchaseDate,
-		SoldPrice:     &soldPrice,
-		SoldDate:      &soldDate,
 	}
 	if err := coinRepo.Create(coin); err != nil {
 		t.Fatalf("Create coin failed: %v", err)
@@ -834,8 +740,6 @@ func TestCoinRepository_Update_WithSelectedFieldsPersistsNilNullableScalars(t *t
 		"PurchasePrice",
 		"CurrentValue",
 		"PurchaseDate",
-		"SoldPrice",
-		"SoldDate",
 		"WeightGrams",
 		"DiameterMm",
 	); err != nil {
@@ -847,146 +751,12 @@ func TestCoinRepository_Update_WithSelectedFieldsPersistsNilNullableScalars(t *t
 		t.Fatalf("coin not found after update: %v", err)
 	}
 	if found.PurchasePrice != nil || found.CurrentValue != nil || found.PurchaseDate != nil ||
-		found.SoldPrice != nil || found.SoldDate != nil || found.WeightGrams != nil || found.DiameterMm != nil {
-		t.Fatalf("expected selected nil nullable scalars to persist, got purchase=%v current=%v purchaseDate=%v sold=%v soldDate=%v weight=%v diameter=%v",
-			found.PurchasePrice, found.CurrentValue, found.PurchaseDate, found.SoldPrice, found.SoldDate, found.WeightGrams, found.DiameterMm)
+		found.WeightGrams != nil || found.DiameterMm != nil {
+		t.Fatalf("expected selected nil nullable scalars to persist, got purchase=%v current=%v purchaseDate=%v weight=%v diameter=%v",
+			found.PurchasePrice, found.CurrentValue, found.PurchaseDate, found.WeightGrams, found.DiameterMm)
 	}
-	if found.Name != "Nil Nullable Coin" || found.Category != models.CategoryRoman || found.Material != models.MaterialSilver {
+	if found.Name != "Nil Nullable Coin" || found.Category != models.CategoryModern || found.Material != models.MaterialSilver {
 		t.Fatalf("omitted fields changed unexpectedly: name=%q category=%q material=%q", found.Name, found.Category, found.Material)
-	}
-}
-
-func TestCoinRepository_StorageAssignmentContractsAndLegacyNullClear(t *testing.T) {
-	db := setupTestDB(t)
-	coinRepo := NewCoinRepository(db)
-
-	location := models.StorageLocation{UserID: 1, Name: "Cabinet A"}
-	if err := db.Create(&location).Error; err != nil {
-		t.Fatalf("Create storage location failed: %v", err)
-	}
-
-	t.Run("UpdateStorageAssignment is atomic and clears standard slots", func(t *testing.T) {
-		db := setupTestDB(t)
-		addStorageSlotUniqueIndex(t, db)
-		repo := NewCoinRepository(db)
-		rows, columns := 2, 2
-		tray := models.StorageLocation{UserID: 1, Name: "Tray", Type: models.StorageLocationTypeTray, Rows: &rows, Columns: &columns}
-		standard := models.StorageLocation{UserID: 1, Name: "Safe", Type: models.StorageLocationTypeStandard}
-		if err := db.Create(&[]models.StorageLocation{tray, standard}).Error; err != nil {
-			t.Fatal(err)
-		}
-		if err := db.Where("name = ?", "Tray").First(&tray).Error; err != nil {
-			t.Fatal(err)
-		}
-		if err := db.Where("name = ?", "Safe").First(&standard).Error; err != nil {
-			t.Fatal(err)
-		}
-		slotOne, slotTwo := 1, 2
-		moving := models.Coin{UserID: 1, Name: "Moving", StorageLocationID: &tray.ID, StorageSlot: &slotOne}
-		blocking := models.Coin{UserID: 1, Name: "Blocking", StorageLocationID: &tray.ID, StorageSlot: &slotTwo}
-		if err := db.Create(&[]*models.Coin{&moving, &blocking}).Error; err != nil {
-			t.Fatal(err)
-		}
-
-		if err := repo.UpdateStorageAssignment(&moving, &tray.ID, &slotTwo); !errors.Is(err, ErrStorageSlotOccupied) {
-			t.Fatalf("expected named-index conflict translation, got %v", err)
-		}
-		var persisted models.Coin
-		if err := db.First(&persisted, moving.ID).Error; err != nil {
-			t.Fatal(err)
-		}
-		if persisted.StorageLocationID == nil || *persisted.StorageLocationID != tray.ID || persisted.StorageSlot == nil || *persisted.StorageSlot != slotOne {
-			t.Fatalf("failed move changed prior assignment: %#v", persisted)
-		}
-
-		if err := repo.UpdateStorageAssignment(&moving, &standard.ID, nil); err != nil {
-			t.Fatalf("move to standard: %v", err)
-		}
-		if moving.StorageLocationID == nil || *moving.StorageLocationID != standard.ID || moving.StorageSlot != nil {
-			t.Fatalf("standard move did not atomically clear slot: %#v", moving)
-		}
-	})
-
-	t.Run("UpdateStorageAssignment concurrent claims have one winner", func(t *testing.T) {
-		db := setupTestDB(t)
-		addStorageSlotUniqueIndex(t, db)
-		sqlDB, err := db.DB()
-		if err != nil {
-			t.Fatal(err)
-		}
-		sqlDB.SetMaxOpenConns(4)
-
-		rows, columns, slot := 1, 1, 1
-		tray := models.StorageLocation{UserID: 1, Name: "One Well", Type: models.StorageLocationTypeTray, Rows: &rows, Columns: &columns}
-		if err := db.Create(&tray).Error; err != nil {
-			t.Fatal(err)
-		}
-		coins := []models.Coin{{UserID: 1, Name: "First"}, {UserID: 1, Name: "Second"}}
-		if err := db.Create(&coins).Error; err != nil {
-			t.Fatal(err)
-		}
-
-		start := make(chan struct{})
-		results := make(chan error, len(coins))
-		var wg sync.WaitGroup
-		for i := range coins {
-			wg.Add(1)
-			go func(coin *models.Coin) {
-				defer wg.Done()
-				<-start
-				results <- NewCoinRepository(db).UpdateStorageAssignment(coin, &tray.ID, &slot)
-			}(&coins[i])
-		}
-		close(start)
-		wg.Wait()
-		close(results)
-
-		successes, conflicts := 0, 0
-		for result := range results {
-			switch {
-			case result == nil:
-				successes++
-			case errors.Is(result, ErrStorageSlotOccupied):
-				conflicts++
-			default:
-				t.Fatalf("unexpected concurrent claim error: %v", result)
-			}
-		}
-		if successes != 1 || conflicts != 1 {
-			t.Fatalf("expected one winner and one slot conflict, got successes=%d conflicts=%d", successes, conflicts)
-		}
-		var occupied int64
-		if err := db.Model(&models.Coin{}).Where("storage_location_id = ? AND storage_slot = ?", tray.ID, slot).Count(&occupied).Error; err != nil {
-			t.Fatal(err)
-		}
-		if occupied != 1 {
-			t.Fatalf("expected exactly one persisted claimant, got %d", occupied)
-		}
-	})
-	coin := &models.Coin{
-		Name:              "Storage Clear Coin",
-		Category:          models.CategoryRoman,
-		Material:          models.MaterialSilver,
-		UserID:            1,
-		StorageLocationID: &location.ID,
-	}
-	if err := coinRepo.Create(coin); err != nil {
-		t.Fatalf("Create coin failed: %v", err)
-	}
-
-	if err := coinRepo.UpdateStorageLocationID(coin, nil); err != nil {
-		t.Fatalf("UpdateStorageLocationID clear failed: %v", err)
-	}
-
-	var found models.Coin
-	if err := db.First(&found, coin.ID).Error; err != nil {
-		t.Fatalf("coin not found after clear: %v", err)
-	}
-	if found.StorageLocationID != nil {
-		t.Fatalf("expected storage location NULL, got %v", found.StorageLocationID)
-	}
-	if coin.StorageLocationID != nil || coin.StorageLocation != nil {
-		t.Fatalf("expected reloaded coin to have nil storage fields, got id=%v location=%v", coin.StorageLocationID, coin.StorageLocation)
 	}
 }
 
@@ -1028,23 +798,6 @@ func TestCoinRepository_UpdateHelpers_WithLoadedSetsDoNotSyncMemberships(t *test
 				}
 			},
 		},
-		{
-			name: "UpdateStorageLocationID",
-			update: func(repo *CoinRepository, coin *models.Coin) error {
-				storageLocationID := uint(5)
-				return repo.UpdateStorageLocationID(coin, &storageLocationID)
-			},
-			assert: func(t *testing.T, db *gorm.DB, coinID uint) {
-				t.Helper()
-				var found models.Coin
-				if err := db.First(&found, coinID).Error; err != nil {
-					t.Fatalf("coin not found: %v", err)
-				}
-				if found.StorageLocationID == nil || *found.StorageLocationID != 5 {
-					t.Fatalf("expected storage location 5, got %v", found.StorageLocationID)
-				}
-			},
-		},
 	}
 
 	for _, tt := range tests {
@@ -1055,7 +808,7 @@ func TestCoinRepository_UpdateHelpers_WithLoadedSetsDoNotSyncMemberships(t *test
 
 			coin := &models.Coin{
 				Name:     "Loaded Set Coin",
-				Category: models.CategoryRoman,
+				Category: models.CategoryModern,
 				UserID:   1,
 			}
 			if err := coinRepo.Create(coin); err != nil {
@@ -1114,7 +867,6 @@ func TestCoinRepository_WishlistCoinsWithReferences(t *testing.T) {
 	coins := []models.Coin{
 		{Name: "Wanted", UserID: 1, IsWishlist: true, References: []models.CoinReference{{Catalog: "Numista", Number: "9002"}}},
 		{Name: "Had", UserID: 1},
-		{Name: "Sold wish", UserID: 1, IsWishlist: true, IsSold: true},
 		{Name: "Wanted note", UserID: 1, IsWishlist: true, Kind: models.CoinKindBanknote},
 		{Name: "Someone else's", UserID: 2, IsWishlist: true},
 	}
@@ -1141,7 +893,6 @@ func TestCoinRepository_DenominationCountsAndFilter(t *testing.T) {
 		{Name: "Espanha", Denomination: " 2 euro ", UserID: 1},
 		{Name: "Escudo", Denomination: "1 escudo", UserID: 1},
 		{Name: "Wanted", Denomination: "5 euro", UserID: 1, IsWishlist: true},
-		{Name: "Sold", Denomination: "5 euro", UserID: 1, IsSold: true},
 		{Name: "No value", UserID: 1},
 		{Name: "Another user's", Denomination: "10 euro", UserID: 2},
 	} {

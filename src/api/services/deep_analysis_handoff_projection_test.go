@@ -51,11 +51,11 @@ func oversizedDeepAnalysisHandoffResult() DeepAnalysisHandoffResult {
 			UnresolvedQuestions: []string{"Question one?", "Question two?"},
 			Coverage: []DeepAnalysisHandoffCoverage{
 				{Provider: "numista", Status: "contributed"},
-				{Provider: "nomisma", Status: "no_match"},
+				{Provider: "rpc", Status: "no_match"},
 			},
 			Attributions: []DeepAnalysisHandoffAttribution{
 				{Provider: "numista", Label: "Numista"},
-				{Provider: "nomisma", Label: "Nomisma"},
+				{Provider: "rpc", Label: "RPC"},
 			},
 			Limitations: []string{"Required result limitation."},
 		},

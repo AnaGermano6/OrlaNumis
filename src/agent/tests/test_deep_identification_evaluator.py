@@ -60,7 +60,7 @@ def test_image_only_field_produces_no_disagreement():
 
 
 def test_no_hypothesis_behaves_exactly_as_before():
-    evidence = [_row("numista", "mint", "Rome"), _row("nomisma", "mint", "Antioch")]
+    evidence = [_row("numista", "mint", "Rome"), _row("rpc", "mint", "Antioch")]
 
     with_none = detect_disagreements(evidence, None)
     without_arg = detect_disagreements(evidence)
@@ -70,7 +70,7 @@ def test_no_hypothesis_behaves_exactly_as_before():
     assert resolved_count == 0
     assert len(disagreements) == 1
     refs = {(ref.provider, ref.claim_index) for ref in disagreements[0].claim_refs}
-    assert refs == {("numista", 0), ("nomisma", 0)}
+    assert refs == {("numista", 0), ("rpc", 0)}
 
 
 def test_image_never_becomes_a_provider_name():

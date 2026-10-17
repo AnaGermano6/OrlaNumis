@@ -1,6 +1,5 @@
 // scheduler-runs types. Split out of the former single-file src/types/index.ts;
 // re-exported from '@/types' so existing imports keep working.
-import type { Coin } from '@/types/coin'
 
 export interface AvailabilityRunSummary {
   runId: number
@@ -123,61 +122,9 @@ export interface ValuationRun {
   createdAt: string
 }
 
-export interface CollectionHealthSnapshotRunResult {
-  message?: string
-  users?: number
-  snapshotsCreated?: number
-  skipped?: number
-  errors?: number
-  durationMs?: number
-}
-
-export interface CollectionHealthSnapshotRun {
-  id: number
-  triggerType: 'manual' | 'scheduled'
-  status: 'running' | 'success' | 'error'
-  usersEligible: number
-  usersSnapshotted: number
-  usersFailed: number
-  durationMs: number
-  startedAt: string
-  completedAt: string | null
-  errorMessage?: string
-  createdAt: string
-}
-
 export interface SchedulerStatus {
   name: string
   enabled: boolean
   isRunning: boolean
   nextRunIn: number
-}
-
-export interface CoinOfDayRun {
-  id: number
-  triggerType: 'manual' | 'scheduled'
-  triggerUserId: number | null
-  status: 'queued' | 'running' | 'completed' | 'failed'
-  startedAt: string
-  completedAt: string | null
-  picked: number
-  skipped: number
-  errors: number
-  errorMessage: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type FeaturedCoinSourceType = 'owned' | 'wishlist'
-
-export interface FeaturedCoin {
-  id: number
-  userId: number
-  coinId: number
-  coin?: Coin
-  summary: string
-  /** Spec 354 D5: 'owned' preserves today's behavior; 'wishlist' surfaces the "Move to Collection" CTA. */
-  sourceType: FeaturedCoinSourceType
-  featuredAt: string
-  createdAt: string
 }

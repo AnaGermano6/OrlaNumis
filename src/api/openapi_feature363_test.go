@@ -20,7 +20,6 @@ func TestFeature363OpenAPISurface(t *testing.T) {
 	}
 
 	expected := map[string][]string{
-		"/collector-profile":           {"get", "put"},
 		"/wishlist/url-intake/analyze": {"post"},
 	}
 	for path, methods := range expected {

@@ -47,10 +47,7 @@
           </button>
         </div>
 
-        <template v-if="activeTab === 'account'">
-          <SettingsAccountSection ref="accountSection" />
-          <CollectorProfileSection />
-        </template>
+        <SettingsAccountSection v-if="activeTab === 'account'" />
 
         <SettingsAppearanceSection
           v-if="activeTab === 'appearance'"
@@ -69,16 +66,12 @@
 
         <SettingsDataSection v-if="activeTab === 'data'" ref="dataSection" />
 
+        <SettingsFullBackup v-if="activeTab === 'backups' && auth.isAdmin" />
         <SettingsBackupsSection v-if="activeTab === 'backups'" ref="backupsSection" />
-
-        <SettingsApiKeysSection v-if="activeTab === 'apikeys'" ref="apiKeysSection" />
 
         <SettingsToolsSection
           v-if="activeTab === 'tools'"
-          :blocked-users="blockedUsers"
-          :blocked-loading="blockedLoading"
           @saved="handleProcessSaved"
-          @unblock="handleUnblock"
         />
 
         <SavedConversationsSection
@@ -107,10 +100,7 @@ import { ref, computed, onMounted, watch, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import PullToRefresh from '@/components/PullToRefresh.vue'
-import {
-  listConversations, getConversation, deleteConversation,
-  getBlockedUsers, unblockFollower,
-} from '@/api/client'
+import { listConversations, getConversation, deleteConversation } from '@/api/client'
 import type { ConversationSummary } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
 import { usePwa } from '@/composables/usePwa'
@@ -122,11 +112,10 @@ import SettingsAccountSection from '@/components/settings/SettingsAccountSection
 import SettingsAppearanceSection from '@/components/settings/SettingsAppearanceSection.vue'
 import SettingsDataSection from '@/components/settings/SettingsDataSection.vue'
 import SettingsBackupsSection from '@/components/settings/SettingsBackupsSection.vue'
-import SettingsApiKeysSection from '@/components/settings/SettingsApiKeysSection.vue'
+import SettingsFullBackup from '@/components/settings/SettingsFullBackup.vue'
 import SavedConversationsSection from '@/components/settings/SavedConversationsSection.vue'
 import SettingsToolsSection from '@/components/settings/SettingsToolsSection.vue'
-import CollectorProfileSection from '@/components/settings/CollectorProfileSection.vue'
-import { User, Palette, Database, MessageSquare, HelpCircle, Wrench, Menu, ShieldCheck, Archive, KeyRound } from 'lucide-vue-next'
+import { User, Palette, Database, MessageSquare, HelpCircle, Wrench, Menu, ShieldCheck, Archive } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { t, type MessageKey } from '@/i18n'
 
@@ -135,7 +124,6 @@ const tabIcons: Record<string, Component> = {
   appearance: Palette,
   data: Database,
   backups: Archive,
-  apikeys: KeyRound,
   tools: Wrench,
   conversations: MessageSquare,
   help: HelpCircle,
@@ -152,23 +140,20 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const accountSection = ref<InstanceType<typeof SettingsAccountSection> | null>(null)
 const dataSection = ref<InstanceType<typeof SettingsDataSection> | null>(null)
 const backupsSection = ref<InstanceType<typeof SettingsBackupsSection> | null>(null)
-const apiKeysSection = ref<InstanceType<typeof SettingsApiKeysSection> | null>(null)
 
 const tabLabelKeys: Record<string, MessageKey> = {
   account: 'settings.tabs.account',
   appearance: 'settings.tabs.appearance',
   data: 'settings.tabs.data',
-  apikeys: 'settings.tabs.apikeys',
   tools: 'settings.tabs.tools',
   conversations: 'settings.tabs.conversations',
   backups: 'settings.tabs.backups',
   help: 'settings.tabs.help',
   admin: 'nav.admin',
 }
-const baseTabIds = ['account', 'appearance', 'data', 'apikeys', 'tools', 'conversations', 'backups', 'help']
+const baseTabIds = ['account', 'appearance', 'data', 'tools', 'conversations', 'backups', 'help']
 const validTabIds = baseTabIds.concat('admin')
 // In the installed app, admins reach Admin through the settings menu, right after Account.
 const tabs = computed(() => {
@@ -206,31 +191,6 @@ watch(() => route.query.tab, (tab) => {
 
 function handleProcessSaved(savedCoinId: number) {
   router.push(`/edit/${savedCoinId}`)
-}
-
-// Blocked users
-const blockedUsers = ref<{ id: number; username: string; avatarPath: string }[]>([])
-const blockedLoading = ref(false)
-
-async function loadBlockedUsers() {
-  try {
-    const res = await getBlockedUsers()
-    blockedUsers.value = res.data.blocked
-  } catch {
-    blockedUsers.value = []
-  }
-}
-
-async function handleUnblock(user: { id: number; username: string; avatarPath: string }) {
-  blockedLoading.value = true
-  try {
-    await unblockFollower(user.id)
-    blockedUsers.value = blockedUsers.value.filter(u => u.id !== user.id)
-  } catch {
-    // ignore
-  } finally {
-    blockedLoading.value = false
-  }
 }
 
 // Theme
@@ -310,16 +270,10 @@ async function handleDeleteConversation(id: number) {
 }
 
 async function handleRefresh() {
-  await Promise.all([
-    apiKeysSection.value?.loadApiKeys() ?? Promise.resolve(),
-    loadConversations(),
-    loadBlockedUsers(),
-    accountSection.value?.loadCredentials() ?? Promise.resolve(),
-  ])
+  await loadConversations()
 }
 
 onMounted(() => {
   loadConversations()
-  loadBlockedUsers()
 })
 </script>

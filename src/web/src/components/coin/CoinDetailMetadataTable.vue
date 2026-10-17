@@ -6,10 +6,7 @@
       class="metadata-row"
       :class="{ 'w-full': row.fullWidth }"
     >
-      <span v-if="!row.fullWidth" class="row-label" :class="row.editLabel ? 'flex items-center gap-2' : ''">
-        {{ row.label }}
-        <button v-if="row.editLabel" class="btn btn-ghost btn-xs" @click="emit('edit', row.key)">{{ row.editLabel }}</button>
-      </span>
+      <span v-if="!row.fullWidth" class="row-label">{{ row.label }}</span>
 
       <!-- Purchase location row with Store: prefix -->
       <template v-if="row.key === 'purchaseLocation'">
@@ -62,9 +59,5 @@ import { t } from '@/i18n'
 
 defineProps<{
   rows: CoinDetailMetadataRow[]
-}>()
-
-const emit = defineEmits<{
-  edit: [key: string]
 }>()
 </script>

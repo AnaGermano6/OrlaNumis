@@ -50,7 +50,7 @@ const messages: Messages['stats'] = {
   },
   health: {
     noActiveTitle: 'Não há moedas ativas para pontuar',
-    noActiveBody: 'A pontuação de saúde da coleção requer moedas ativas (não itens da lista de desejos nem vendidos).',
+    noActiveBody: 'A pontuação de saúde da coleção requer moedas ativas (não itens da lista de desejos).',
     noActiveHint: 'Adicione moedas à sua coleção ou marque itens da lista de desejos como adquiridos para começar a acompanhar as métricas de saúde da coleção.',
     title: 'Saúde da coleção',
     grade: 'Nota {grade}',
@@ -60,13 +60,6 @@ const messages: Messages['stats'] = {
       valuationFreshness: 'Atualidade das avaliações',
       aiCoverage: 'Cobertura de IA',
     },
-    trend30: 'Tendência a 30 dias',
-    insufficient: 'Dados insuficientes',
-    trendLater: 'Os dados de tendência estarão disponíveis após 30 dias de acompanhamento da coleção.',
-    improving: 'A melhorar',
-    declining: 'A piorar',
-    stable: 'Estável',
-    noData: 'Sem dados',
   },
   heatMap: {
     title: 'Distribuição da coleção',

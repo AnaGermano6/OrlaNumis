@@ -40,12 +40,6 @@ type EligibleCoinRow struct {
 	ImageCount            int64
 }
 
-// SnapshotBaselineRow captures historical score context for trend comparisons.
-type SnapshotBaselineRow struct {
-	Score        int
-	SnapshotDate time.Time
-}
-
 // ListEligibleCoins returns active collection coins for a user.
 func (r *HealthRepository) ListEligibleCoins(userID uint) ([]EligibleCoinRow, error) {
 	rows := []EligibleCoinRow{}
@@ -104,58 +98,11 @@ func (r *HealthRepository) ListEligibleCoinsPaged(userID uint, page, limit int, 
 	return rows, total, nil
 }
 
-// GetSnapshotBaseline returns a snapshot around the provided baseline date for a user.
-func (r *HealthRepository) GetSnapshotBaseline(userID uint, baselineDate time.Time) (*SnapshotBaselineRow, error) {
-	var row SnapshotBaselineRow
-	err := r.db.Model(&models.CollectionHealthSnapshot{}).
-		Select("score, snapshot_date").
-		Where("user_id = ? AND snapshot_date <= ?", userID, baselineDate).
-		Order("snapshot_date DESC").
-		First(&row).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &row, nil
-}
-
-// UpsertCollectionHealthSnapshot inserts or updates a per-user daily snapshot.
-func (r *HealthRepository) UpsertCollectionHealthSnapshot(snapshot *models.CollectionHealthSnapshot) error {
-	var existing models.CollectionHealthSnapshot
-	err := r.db.Where("user_id = ? AND snapshot_date = ?", snapshot.UserID, snapshot.SnapshotDate).First(&existing).Error
-
-	if err == gorm.ErrRecordNotFound {
-		return r.db.Create(snapshot).Error
-	}
-	if err != nil {
-		return err
-	}
-
-	snapshot.ID = existing.ID
-	snapshot.CreatedAt = existing.CreatedAt
-	return r.db.Save(snapshot).Error
-}
-
-// ListUsersWithEligibleCoins returns users with at least one active collection coin.
-func (r *HealthRepository) ListUsersWithEligibleCoins() ([]uint, error) {
-	userIDs := []uint{}
-	err := r.db.Model(&models.Coin{}).
-		Where("is_wishlist = ? AND is_sold = ?", false, false).
-		Distinct("user_id").
-		Pluck("user_id", &userIDs).Error
-	if err != nil {
-		return nil, err
-	}
-	return userIDs, nil
-}
-
 // ListAllEligibleCoins returns all active collection coins across all users.
 func (r *HealthRepository) ListAllEligibleCoins() ([]EligibleCoinRow, error) {
 	rows := []EligibleCoinRow{}
 	err := r.db.Model(&models.Coin{}).
-		Where("is_wishlist = ? AND is_sold = ?", false, false).
+		Where("is_wishlist = ?", false).
 		Select(
 			"id AS coin_id, name AS title, category, denomination, ruler, era, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
 				"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id AND is_primary = true) AS primary_image_count, " +

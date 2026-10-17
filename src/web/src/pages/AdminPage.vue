@@ -93,8 +93,6 @@
           :deep-identification-result-retention-days="settings.DeepIdentificationResultRetentionDays ?? '90'"
           :deep-identification-max-providers="settings.DeepIdentificationMaxProviders ?? '4'"
           :deep-identification-numista-call-budget="settings.DeepIdentificationNumistaCallBudget ?? '4'"
-          :deep-identification-o-c-r-e-enabled="settings.DeepIdentificationOCREEnabled ?? 'false'"
-          :deep-identification-o-c-r-e-call-budget="settings.DeepIdentificationOCRECallBudget ?? '3'"
           :coin-copilot-enabled="settings.CoinCopilotEnabled ?? 'false'"
           :coin-copilot-attribution-enabled="settings.CoinCopilotAttributionEnabled ?? 'false'"
           :coin-copilot-worker-count="settings.CoinCopilotWorkerCount ?? '1'"
@@ -140,9 +138,6 @@
         <!-- Catalogs Tab -->
         <AdminCatalogsSection v-if="activeTab === 'catalogs'" />
 
-        <!-- OIDC Tab -->
-        <AdminOIDCSection v-if="activeTab === 'oidc'" />
-
         <!-- Security Tab -->
         <AdminSecuritySection
           v-if="activeTab === 'security'"
@@ -158,8 +153,6 @@
           :settings-saving="settingsSaving"
           :avail-settings-msg="availSettingsMsg"
           :avail-settings-error="availSettingsError"
-          :health-settings-msg="healthSettingsMsg"
-          :health-settings-error="healthSettingsError"
           :val-settings-msg="valSettingsMsg"
           :val-settings-error="valSettingsError"
           @save="saveSettings"
@@ -167,8 +160,6 @@
           @update:avail-settings-error="availSettingsError = $event"
           @update:val-settings-msg="valSettingsMsg = $event"
           @update:val-settings-error="valSettingsError = $event"
-          @update:health-settings-msg="healthSettingsMsg = $event"
-          @update:health-settings-error="healthSettingsError = $event"
         />
 
         <!-- Health Tab -->
@@ -217,12 +208,11 @@ import AdminHealthSection from '@/components/admin/AdminHealthSection.vue'
 import AdminCatalogsSection from '@/components/admin/AdminCatalogsSection.vue'
 import AdminCoinPropertiesSection from '@/components/admin/AdminCoinPropertiesSection.vue'
 import AdminSecuritySection from '@/components/admin/AdminSecuritySection.vue'
-import AdminOIDCSection from '@/components/admin/AdminOIDCSection.vue'
-import { Users, Cpu, Wrench, ScrollText, CalendarClock, Activity, ChevronRight, BookMarked, Settings2, ShieldAlert, KeyRound } from 'lucide-vue-next'
+import { Users, Cpu, Wrench, ScrollText, CalendarClock, Activity, ChevronRight, BookMarked, Settings2, ShieldAlert } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { t, type MessageKey, intlLocale } from '@/i18n'
 
-type AdminTabId = 'users' | 'ai' | 'system' | 'properties' | 'catalogs' | 'oidc' | 'security' | 'schedules' | 'health' | 'logs'
+type AdminTabId = 'users' | 'ai' | 'system' | 'properties' | 'catalogs' | 'security' | 'schedules' | 'health' | 'logs'
 type AdminGroupId = 'configuration' | 'operations'
 type AdminTab = {
   id: AdminTabId
@@ -237,7 +227,6 @@ const tabIcons: Record<AdminTabId, Component> = {
   system: Wrench,
   properties: Settings2,
   catalogs: BookMarked,
-  oidc: KeyRound,
   security: ShieldAlert,
   schedules: CalendarClock,
   health: Activity,
@@ -250,7 +239,6 @@ const tabs: AdminTab[] = [
   { id: 'system', labelKey: 'admin.tabs.system', group: 'configuration' },
   { id: 'properties', labelKey: 'admin.tabs.properties', group: 'configuration' },
   { id: 'catalogs', labelKey: 'admin.tabs.catalogs', group: 'configuration' },
-  { id: 'oidc', labelKey: 'admin.tabs.oidc', group: 'configuration' },
   { id: 'security', labelKey: 'admin.tabs.security', group: 'operations' },
   { id: 'schedules', labelKey: 'admin.tabs.schedules', group: 'operations', aliases: ['schedule'] },
   { id: 'health', labelKey: 'admin.tabs.health', group: 'operations' },
@@ -356,7 +344,7 @@ const {
   anthropicTesting, anthropicTestResult, anthropicTestOk, anthropicModels,
   searxngTesting, searxngTestResult, searxngTestOk,
   coinSearchPromptDefault, coinShowsPromptDefault, valuationPromptDefault,
-  availSettingsMsg, availSettingsError, healthSettingsMsg, healthSettingsError, valSettingsMsg, valSettingsError,
+  availSettingsMsg, availSettingsError, valSettingsMsg, valSettingsError,
   loadSettings, saveSettings,
   testOllamaConnection, testAnthropicConn, testSearxngConn,
   cleanup: cleanupAdminConfig,
@@ -421,8 +409,6 @@ function onSystemSave(payload: {
   deepIdentificationResultRetentionDays: string
   deepIdentificationMaxProviders: string
   deepIdentificationNumistaCallBudget: string
-  deepIdentificationOCREEnabled: string
-  deepIdentificationOCRECallBudget: string
   coinCopilotEnabled: string
   coinCopilotAttributionEnabled: string
   coinCopilotWorkerCount: string
@@ -456,8 +442,6 @@ function onSystemSave(payload: {
   settings.value.DeepIdentificationResultRetentionDays = payload.deepIdentificationResultRetentionDays
   settings.value.DeepIdentificationMaxProviders = payload.deepIdentificationMaxProviders
   settings.value.DeepIdentificationNumistaCallBudget = payload.deepIdentificationNumistaCallBudget
-  settings.value.DeepIdentificationOCREEnabled = payload.deepIdentificationOCREEnabled
-  settings.value.DeepIdentificationOCRECallBudget = payload.deepIdentificationOCRECallBudget
   settings.value.CoinCopilotEnabled = payload.coinCopilotEnabled
   settings.value.CoinCopilotAttributionEnabled = payload.coinCopilotAttributionEnabled
   settings.value.CoinCopilotWorkerCount = payload.coinCopilotWorkerCount

@@ -54,7 +54,6 @@ var (
 	ErrDeepJobNotCancellable = errors.New("job is already in a terminal state")
 	ErrDeepJobMissingObverse = errors.New("missing_obverse")
 	ErrDeepJobMissingReverse = errors.New("missing_reverse")
-	ErrDeepJobInvalidRequest = errors.New("invalid request")
 	ErrDeepJobRetryDepth     = errors.New("retry depth limit reached")
 	ErrDeepJobNotTerminal    = errors.New("job is not terminal")
 )
@@ -635,10 +634,6 @@ func (s *DeepIdentificationService) RetryJob(sourceJobID, userID uint, notesOver
 		created.RetryDepth = retryDepth
 	}
 	return created, reused, nil
-}
-
-func isDeepJobActive(status models.DeepJobStatus) bool {
-	return status == models.DeepJobStatusQueued || status == models.DeepJobStatusRunning
 }
 
 // GetJob returns an owner-scoped job by id (repository.IsRecordNotFound

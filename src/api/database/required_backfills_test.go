@@ -23,12 +23,6 @@ func requiredBackfillFixture(t *testing.T) *gorm.DB {
 	sqlDB, _ := db.DB()
 	t.Cleanup(func() { sqlDB.Close() })
 	for _, sql := range []string{
-		"CREATE TABLE api_keys (capabilities TEXT)",
-		"INSERT INTO api_keys VALUES (NULL), (''), ('write')",
-		"CREATE TABLE featured_coins (source_type TEXT)",
-		"INSERT INTO featured_coins VALUES (NULL)",
-		"CREATE TABLE users (coin_of_day_include_wishlist INTEGER)",
-		"INSERT INTO users VALUES (NULL), (0)",
 		"CREATE TABLE deep_identification_jobs (status TEXT, expires_at datetime)",
 		"INSERT INTO deep_identification_jobs VALUES ('completed', NULL), ('partial', NULL), ('running', NULL)",
 	} {
@@ -49,11 +43,6 @@ func TestRequiredBackfillsLegacyAndIdempotent(t *testing.T) {
 			sql  string
 			want int64
 		}{
-			{"SELECT COUNT(*) FROM api_keys WHERE capabilities='read'", 2},
-			{"SELECT COUNT(*) FROM api_keys WHERE capabilities='write'", 1},
-			{"SELECT COUNT(*) FROM featured_coins WHERE source_type='owned'", 1},
-			{"SELECT COUNT(*) FROM users WHERE coin_of_day_include_wishlist=1", 1},
-			{"SELECT COUNT(*) FROM users WHERE coin_of_day_include_wishlist=0", 1},
 			{"SELECT COUNT(*) FROM deep_identification_jobs WHERE status IN ('completed','partial') AND expires_at IS NOT NULL", 2},
 			{"SELECT COUNT(*) FROM deep_identification_jobs WHERE status='running' AND expires_at IS NULL", 1},
 		} {
@@ -66,7 +55,7 @@ func TestRequiredBackfillsLegacyAndIdempotent(t *testing.T) {
 }
 
 func TestRequiredBackfillFailuresStopSequence(t *testing.T) {
-	for index, name := range []string{"API key capabilities", "featured coin source", "coin of day wishlist preference", "completed identification retention"} {
+	for index, name := range []string{"completed identification retention"} {
 		t.Run(name, func(t *testing.T) {
 			db := requiredBackfillFixture(t)
 			executed := 0
@@ -101,8 +90,8 @@ func TestRequiredBackfillFailureBlocksStartup(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, sql := range []string{
-		"INSERT INTO api_keys (user_id, key_hash, key_prefix, name, capabilities) VALUES (1, 'fixture-hash', 'fixture', 'fixture', '')",
-		"CREATE TRIGGER reject_backfill BEFORE UPDATE OF capabilities ON api_keys BEGIN SELECT RAISE(FAIL, 'injected startup failure'); END",
+		"INSERT INTO deep_identification_jobs (user_id, status, source, input_fingerprint) VALUES (1, 'completed', 'intake', 'fixture')",
+		"CREATE TRIGGER reject_backfill BEFORE UPDATE OF expires_at ON deep_identification_jobs BEGIN SELECT RAISE(FAIL, 'injected startup failure'); END",
 	} {
 		if err := DB.Exec(sql).Error; err != nil {
 			t.Fatal(err)
@@ -114,7 +103,7 @@ func TestRequiredBackfillFailureBlocksStartup(t *testing.T) {
 	cmd := exec.Command(os.Args[0], "-test.run=^TestRequiredBackfillFailureBlocksStartup$")
 	cmd.Env = append(os.Environ(), "AUREARIA_BACKFILL_TEST_DB="+dbPath)
 	output, err := cmd.CombinedOutput()
-	if err == nil || strings.Contains(string(output), "TEST_READY") || !strings.Contains(string(output), "Failed required database backfill: API key capabilities") {
+	if err == nil || strings.Contains(string(output), "TEST_READY") || !strings.Contains(string(output), "Failed required database backfill: completed identification retention") {
 		t.Fatalf("startup did not fail at required backfill: %v\n%s", err, output)
 	}
 }

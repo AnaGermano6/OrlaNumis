@@ -26,7 +26,6 @@ func setupWishlistSearchAlertHandlerRouter(t *testing.T) (*gin.Engine, *gorm.DB)
 	protected.Use(coinTestAuthMiddleware())
 	protected.GET("/wishlist/search-alerts", handler.List)
 	protected.POST("/wishlist/search-alerts", handler.Create)
-	protected.GET("/wishlist/search-alerts/:alertId", handler.Get)
 	protected.PUT("/wishlist/search-alerts/:alertId", handler.Update)
 	protected.DELETE("/wishlist/search-alerts/:alertId", handler.Delete)
 	protected.GET("/admin/wishlist-search-alert-runs", handler.ListAdminRuns)
@@ -73,10 +72,6 @@ func TestWishlistSearchAlertHandler_CRUDAndOwnerScoping(t *testing.T) {
 	w = sendAlertRequest(router, http.MethodGet, "/api/wishlist/search-alerts", 1, nil)
 	if w.Code != http.StatusOK {
 		t.Fatalf("list expected 200, got %d", w.Code)
-	}
-	w = sendAlertRequest(router, http.MethodGet, "/api/wishlist/search-alerts/"+strconvUint(created.ID), 2, nil)
-	if w.Code != http.StatusNotFound {
-		t.Fatalf("non-owner read expected 404, got %d: %s", w.Code, w.Body.String())
 	}
 	w = sendAlertRequest(router, http.MethodPut, "/api/wishlist/search-alerts/"+strconvUint(created.ID), 1, alertPayload("Updated discovery"))
 	if w.Code != http.StatusOK {

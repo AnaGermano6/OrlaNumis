@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/briandenicola/ancient-coins-api/models"
 	"github.com/briandenicola/ancient-coins-api/repository"
@@ -38,22 +37,22 @@ func TestSecurityHeadersEnableCrossOriginIsolationForWASM(t *testing.T) {
 	}
 }
 
-func TestIPDenyRulesBlocksPublicAndProtectedRoutes(t *testing.T) {
+func TestBlockFailingIPsBlocksPublicAndProtectedRoutes(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("failed to open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.IPRule{}, &models.SecurityEvent{}); err != nil {
-		t.Fatalf("failed to migrate ip rules: %v", err)
+	if err := db.AutoMigrate(&models.User{}, &models.SecurityEvent{}); err != nil {
+		t.Fatalf("failed to migrate security events: %v", err)
 	}
 	securitySvc := services.NewSecurityService(repository.NewSecurityRepository(db))
-	if err := securitySvc.CreateIPRule("198.51.100.0/24", "blocked network", time.Now().Add(time.Hour), nil); err != nil {
-		t.Fatalf("failed to create ban: %v", err)
+	for range services.IPFailureLimit {
+		securitySvc.RecordPasswordFailure("nobody", "198.51.100.25", "test")
 	}
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(ResolvedClientIP(), IPDenyRules(securitySvc))
+	router.Use(ResolvedClientIP(), BlockFailingIPs(securitySvc))
 	router.POST("/api/auth/login", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})
@@ -61,18 +60,23 @@ func TestIPDenyRulesBlocksPublicAndProtectedRoutes(t *testing.T) {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})
 
-	for _, path := range []string{"/api/auth/login", "/api/coins"} {
-		req := httptest.NewRequest(http.MethodGet, path, nil)
-		if path == "/api/auth/login" {
-			req.Method = http.MethodPost
-		}
-		req.RemoteAddr = "198.51.100.25:12345"
-		w := httptest.NewRecorder()
+	for _, remote := range []struct {
+		addr string
+		want int
+	}{{"198.51.100.25:12345", http.StatusForbidden}, {"198.51.100.26:12345", http.StatusOK}} {
+		for _, path := range []string{"/api/auth/login", "/api/coins"} {
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			if path == "/api/auth/login" {
+				req.Method = http.MethodPost
+			}
+			req.RemoteAddr = remote.addr
+			w := httptest.NewRecorder()
 
-		router.ServeHTTP(w, req)
+			router.ServeHTTP(w, req)
 
-		if w.Code != http.StatusForbidden {
-			t.Fatalf("%s: expected banned IP to receive 403, got %d: %s", path, w.Code, w.Body.String())
+			if w.Code != remote.want {
+				t.Fatalf("%s from %s: expected %d, got %d: %s", path, remote.addr, remote.want, w.Code, w.Body.String())
+			}
 		}
 	}
 }

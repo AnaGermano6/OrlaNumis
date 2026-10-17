@@ -8,18 +8,14 @@
       <div class="md:sticky md:top-[61px] md:z-10 md:border-b md:border-border-subtle md:bg-surface md:px-0 md:py-3 md:shadow-[0_4px_12px_var(--overlay-30)]">
         <CoinDetailHeaderActions
           :is-wishlist="coin.isWishlist"
-          :is-sold="coin.isSold"
           :is-banknote="isBanknote"
           :coin-id="coin.id"
           :sharing="sharing"
           :duplicating="duplicating"
-          :show-reminder-action="coin.isWishlist"
-          :reminder-active="!!reminder"
           @share="handleShare"
           @duplicate="handleDuplicate"
           @edit="handleEdit"
           @delete="handleDelete"
-          @reminder="showReminderModal = true"
         />
       </div>
 
@@ -107,7 +103,6 @@
                 :style="COMMEMORATIVE_BADGE_STYLE"
               >{{ t('coinDetail.badges.commemorative') }}</span>
               <span v-if="coin.isWishlist" class="chip-sm">{{ t('nav.wishlist') }}</span>
-              <span v-if="coin.isSold" class="chip-sm">{{ t('coinDetail.badges.sold') }}</span>
             </div>
           </div>
 
@@ -138,7 +133,7 @@
           <!-- T014-T016: Metadata table -->
           <div v-if="metadataRows.length" class="mb-6">
             <h3 class="mb-3 font-display text-base font-medium text-heading">{{ t('common.details') }}</h3>
-            <CoinDetailMetadataTable :rows="displayRows" @edit="handleMetadataEdit" />
+            <CoinDetailMetadataTable :rows="metadataRows" />
           </div>
 
           <CoinReferencesSection
@@ -161,11 +156,10 @@
             :coin-grade="coin.grade"
           />
 
-          <CoinTagsSection
-            :tags="coin.tags ?? []"
+          <CoinSetsSection
             :sets="coin.sets ?? []"
             :coin-id="coin.id"
-            @tags-changed="refreshCoin"
+            @changed="refreshCoin"
           />
 
           <CoinListingStatus
@@ -190,17 +184,6 @@
       @saved="refreshCoin"
     />
     <PurchaseModal v-if="showPurchaseModal && coin" :coin="coin" @close="showPurchaseModal = false" @confirm="confirmPurchase" />
-    <PurchaseReminderModal
-      v-if="showReminderModal && coin"
-      :coin-id="coin.id"
-      :coin-name="coin.name"
-      :existing-reminder="reminder"
-      :saving="reminderSaving"
-      :save-error="reminderError || undefined"
-      @save="handleReminderSave"
-      @cancel="handleReminderCancel"
-      @close="showReminderModal = false"
-    />
     <ImageLightbox
       v-if="lightboxImage && coin"
       :coin-id="coin.id"
@@ -218,11 +201,10 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCoinsStore } from '@/stores/coins'
 import PurchaseModal from '@/components/PurchaseModal.vue'
-import PurchaseReminderModal from '@/components/coin/PurchaseReminderModal.vue'
 import ImageLightbox from '@/components/ImageLightbox.vue'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import CoinDetailHeaderActions from '@/components/coin/CoinDetailHeaderActions.vue'
-import CoinTagsSection from '@/components/coin/CoinTagsSection.vue'
+import CoinSetsSection from '@/components/coin/CoinSetsSection.vue'
 import CoinDetailMetadataTable from '@/components/coin/CoinDetailMetadataTable.vue'
 import CoinListingStatus from '@/components/coin/CoinListingStatus.vue'
 import CoinReferencesSection from '@/components/coin/CoinReferencesSection.vue'
@@ -234,10 +216,8 @@ import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import { useDialog } from '@/composables/useDialog'
 import { useCoinDetailMetadataRows } from '@/composables/useCoinDetailMetadataRows'
 import { useCoinShareCard } from '@/composables/useCoinShareCard'
-import { usePurchaseReminder, formatReminderDateValue } from '@/composables/usePurchaseReminder'
-import { useQuickAccess } from '@/composables/useQuickAccess'
 import { useCoinDetailSwipeNav } from '@/composables/useCoinDetailSwipeNav'
-import type { CoinDetailMetadataRow, CoinImage } from '@/types'
+import type { CoinImage } from '@/types'
 import { t } from '@/i18n'
 import { categoryLabel } from '@/i18n/coinVocabulary'
 
@@ -247,7 +227,6 @@ const router = useRouter()
 const store = useCoinsStore()
 
 const showPurchaseModal = ref(false)
-const showReminderModal = ref(false)
 const lightboxImage = ref<CoinImage | null>(null)
 const { sharing, shareCoinCard } = useCoinShareCard()
 const duplicating = ref(false)
@@ -255,7 +234,7 @@ const duplicating = ref(false)
 const containerRef = ref<HTMLElement | null>(null)
 
 // Swipe navigation is suppressed while any non-teleported modal is open.
-const swipeEnabled = computed(() => !showPurchaseModal.value && !showReminderModal.value)
+const swipeEnabled = computed(() => !showPurchaseModal.value)
 useCoinDetailSwipeNav(containerRef, { enabled: swipeEnabled })
 
 const coin = computed(() => store.currentCoin)
@@ -271,17 +250,6 @@ const numistaTypeId = computed(() => {
   const id = Number(reference?.number)
   return Number.isInteger(id) && id > 0 ? id : null
 })
-
-// Feature 355: per-coin reminder state, coinId derived reactively from the loaded coin
-const coinIdRef = computed(() => coin.value?.id ?? 0)
-const {
-  reminder,
-  saving: reminderSaving,
-  error: reminderError,
-  fetchReminder,
-  saveReminder,
-  cancelReminder,
-} = usePurchaseReminder(coinIdRef)
 
 // T010: Deterministic media slot logic
 const obverseImage = computed(() => coin.value?.images?.find(i => i.imageType === 'obverse') ?? null)
@@ -310,35 +278,8 @@ const metadataRows = computed(() => {
   if (!coin.value) return []
   return useCoinDetailMetadataRows(coin.value, coinStatus.value).rows.value
 })
-const { refresh: refreshQuickAccess, forget: forgetQuickAccess } = useQuickAccess()
-
-// Feature 355: inject reminder row into detail table after purchasePrice
-const displayRows = computed<CoinDetailMetadataRow[]>(() => {
-  const base = metadataRows.value
-  if (!coin.value?.isWishlist || !reminder.value) return base
-  const reminderRow: CoinDetailMetadataRow = {
-    key: 'purchaseReminder',
-    label: t('coinDetail.reminderRow'),
-    value: formatReminderDateValue(reminder.value.remindDate),
-    editLabel: t('common.edit'),
-  }
-  const purchasePriceIdx = base.findIndex(r => r.key === 'purchasePrice')
-  const insertAfter = purchasePriceIdx >= 0 ? purchasePriceIdx + 1 : 0
-  const result = [...base]
-  result.splice(insertAfter, 0, reminderRow)
-  return result
-})
-
-function handleMetadataEdit(key: string) {
-  if (key === 'purchaseReminder') showReminderModal.value = true
-}
-
 onMounted(async () => {
-  const id = Number(route.params.id)
-  await store.fetchCoin(id)
-  if (coin.value?.isWishlist) {
-    fetchReminder()
-  }
+  await store.fetchCoin(Number(route.params.id))
 })
 
 function refreshCoin() {
@@ -363,18 +304,6 @@ async function swapSides() {
   }
 }
 
-async function handleReminderSave(date: string) {
-  const saved = await saveReminder(date)
-  if (saved) {
-    showReminderModal.value = false
-  }
-}
-
-async function handleReminderCancel() {
-  await cancelReminder()
-  showReminderModal.value = false
-}
-
 function openLightbox(image: CoinImage) {
   lightboxImage.value = image
 }
@@ -393,7 +322,7 @@ async function confirmPurchase(data: { purchasePrice?: number; purchaseDate?: st
   try {
     await purchaseCoin(coin.value.id, data)
     showPurchaseModal.value = false
-    await Promise.all([store.fetchCoin(coin.value.id), refreshQuickAccess()])
+    await store.fetchCoin(coin.value.id)
   } catch {
     showPurchaseModal.value = false
   }
@@ -403,7 +332,6 @@ async function handleDelete() {
   if (!coin.value || !await showConfirm(t('coinDetail.confirmDelete'), { title: t('coinDetail.deleteTitle'), variant: 'danger' })) return
   const coinId = coin.value.id
   await deleteCoin(coinId)
-  forgetQuickAccess('coin', coinId)
   // Back to where it was listed: the banknotes, or the coin gallery.
   router.push(isBanknote.value ? '/banknotes' : '/')
 }

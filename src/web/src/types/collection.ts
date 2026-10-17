@@ -1,25 +1,6 @@
 // collection types. Split out of the former single-file src/types/index.ts;
 // re-exported from '@/types' so existing imports keep working.
 
-export interface Tag {
-  id: number
-  userId: number
-  name: string
-  color: string
-}
-
-export interface StorageLocation {
-  id: number
-  userId?: number
-  name: string
-  type: 'standard' | 'tray'
-  rows: number | null
-  columns: number | null
-  occupied: number
-  capacity: number
-  sortOrder?: number
-}
-
 export interface MintLocation {
   id: number
   userId?: number | null
@@ -30,28 +11,10 @@ export interface MintLocation {
   aliases: string[]
   createdAt: string
   updatedAt: string
-  nomismaUri?: string | null
-  nomismaLabel?: string
-  nomismaLinkedAt?: string | null
 }
 
 export interface GeocodeCandidate {
   displayName: string
   lat: number
   lng: number
-}
-
-// Nomisma.org authority linking (global mint locations only; admin-only)
-export type NomismaSearchStatus = 'ok' | 'no_match' | 'unavailable'
-
-export interface NomismaCandidate {
-  uri: string
-  label: string
-  score: number
-  match: boolean
-}
-
-export interface NomismaSearchResponse {
-  status: NomismaSearchStatus
-  candidates: NomismaCandidate[]
 }
