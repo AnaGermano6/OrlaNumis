@@ -196,5 +196,9 @@ describe('NumistaCatalogBrowser', () => {
     const text = wrapper.text()
     for (const part of ['Banco de Portugal', '160 × 75 mm', 'Valora', 'Pedro Álvares Cabral', 'Frente']) expect(text).toContain(part)
     expect(text).not.toContain('Casa da moeda')
+    // Its real photos are the banknote's.
+    expect(wrapper.get('[data-testid="real-photos-title"]').text()).toBe('Fotos reais da nota')
+    expect(text).toContain('Ficam guardadas na nota')
+    expect(text).not.toContain('Fotos reais da moeda')
   })
 })

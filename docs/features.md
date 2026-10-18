@@ -8,7 +8,7 @@ The interface is in English and European Portuguese (pt-PT). Every value is kept
 
 - **Coin gallery** — search, and filters of the same size in equal columns: face value, sort, view by (country, year, rarity, presentation), country (including extinct countries), coin type, presentation, rarity, set, grid or list, obverse or reverse. → [Collection Management](features/collection-management.md)
 - **Banknotes** — their own form and gallery.
-- **Collection overview** — totals, the releases, the duplicates to trade, and the coins still without a photo, with official photos fetched in batches (ECB, INCM, Monnaie de Paris, Münze Österreich).
+- **Collection overview** — totals, highlights, the releases and the duplicates to trade.
 - **Coin details** — numismatic fields, quantity, images, catalog references, Numista market value, sets, activity journal and timeline. → [Coin Details](features/coin-details.md)
 - **Select mode** — add several coins to a set, or delete them. → [Bulk Operations](features/bulk-operations.md)
 

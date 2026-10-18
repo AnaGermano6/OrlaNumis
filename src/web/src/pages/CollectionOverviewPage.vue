@@ -40,7 +40,6 @@
       />
       <CollectionHighlights :summary="coins" :title="t('collectionOverview.coins.highlights')" />
       <CollectionRepeated kind="coin" :summary="coins" @open="openGallery({ repeated: true })" />
-      <CollectionMissingPhotos />
     </section>
 
     <!-- Banknotes: their numbers and highlights -->
@@ -74,7 +73,6 @@ import { getCollectionSummary, type CollectionSummary } from '@/api/client'
 import BanknoteKpis from '@/components/collection/BanknoteKpis.vue'
 import CollectionHighlights from '@/components/collection/CollectionHighlights.vue'
 import CollectionKpis from '@/components/collection/CollectionKpis.vue'
-import CollectionMissingPhotos from '@/components/collection/CollectionMissingPhotos.vue'
 import CollectionRepeated from '@/components/collection/CollectionRepeated.vue'
 import CoinReleases from '@/components/collection/CoinReleases.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'

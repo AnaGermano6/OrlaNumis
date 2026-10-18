@@ -1,11 +1,19 @@
 export default {
-  title: 'Banknotes',
+  title: 'Banknote gallery',
   add: 'Add banknote',
   addTitle: 'Add banknote',
   badge: 'Banknote',
   searchPlaceholder: 'Search banknotes by name, country, inscription…',
   failed: 'The banknotes could not be loaded. Try again in a moment.',
   repeatedOnly: 'Only duplicates to trade',
+  groupCount: { one: '{count} banknote', other: '{count} banknotes' },
+  select: 'Select banknotes',
+  classification: 'Banknote type',
+  bulk: {
+    selected: { one: '{count} banknote selected', other: '{count} banknotes selected' },
+    confirmDelete: { one: 'Delete {count} banknote? This cannot be undone.', other: 'Delete {count} banknotes? This cannot be undone.' },
+    deleteFailed: 'The banknotes could not be deleted',
+  },
   kpis: {
     label: 'Banknote figures',
     banknotes: 'Banknotes',

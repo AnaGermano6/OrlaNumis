@@ -27,7 +27,17 @@ describe('CoinListTable', () => {
     expect(wrapper.findAll('[data-testid="list-quantity"]').map((cell) => cell.text())).toEqual(['3', '1', '1'])
     // On a phone, the line under the name says it when there are several.
     const sublines = wrapper.findAll('td span.block').map((span) => span.text())
-    expect(sublines[0]).toBe('🇿🇦 África do Sul · 1984 · × 3')
-    expect(sublines[1]).toBe('🇿🇦 África do Sul · 1984')
+    expect(sublines[0]).toBe('🇿🇦África do Sul · 1984 · × 3')
+    expect(sublines[1]).toBe('🇿🇦África do Sul · 1984')
+  })
+
+  it('leaves out the presentation where it means nothing, as for banknotes', () => {
+    const wrapper = mount(CoinListTable, {
+      props: { coins: [coin(1, 1)], showPresentation: false },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.findAll('th').map((th) => th.text())).not.toContain('Apresentação')
+    expect(wrapper.findAll('tbody tr td')).toHaveLength(8)
   })
 })

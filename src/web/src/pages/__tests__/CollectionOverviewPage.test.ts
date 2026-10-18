@@ -55,7 +55,8 @@ describe('CollectionOverviewPage', () => {
     expect(wrapper.get('[data-testid="kpi-unique"]').text()).toContain('440')
     expect(wrapper.get('[data-testid="kpi-current"]').text()).toContain('192')
     expect(wrapper.text()).toContain('Destaques das moedas')
-    // …and the banknotes'.
+    // …and the banknotes', under their own title.
+    expect(wrapper.get('#overview-banknotes-title').text()).toBe('Notas')
     expect(wrapper.get('[data-testid="banknotes-kpi-banknotes"]').text()).toBe('3Notas')
     expect(wrapper.get('[data-testid="banknotes-kpi-unique"]').text()).toBe('1Notas únicas')
     expect(wrapper.text()).toContain('Destaques das notas')

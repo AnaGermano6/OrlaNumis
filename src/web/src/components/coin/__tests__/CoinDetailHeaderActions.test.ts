@@ -45,6 +45,7 @@ describe('CoinDetailHeaderActions', () => {
       },
     })
 
+    expect(wrapper.find('button').text()).toBe('Back to the wishlist')
     await wrapper.find('button').trigger('click')
     expect(pushMock).toHaveBeenCalledWith('/wishlist')
   })
@@ -69,6 +70,7 @@ describe('CoinDetailHeaderActions', () => {
       },
     })
 
+    expect(wrapper.find('button').text()).toBe('Back to the coin gallery')
     await wrapper.find('button').trigger('click')
     expect(pushMock).toHaveBeenCalledWith('/')
   })
@@ -81,7 +83,7 @@ describe('CoinDetailHeaderActions', () => {
     })
 
     const back = wrapper.find('button')
-    expect(back.text()).toBe('Back to banknotes')
+    expect(back.text()).toBe('Back to the banknote gallery')
     await back.trigger('click')
     expect(pushMock).toHaveBeenCalledWith('/banknotes')
 
@@ -256,5 +258,17 @@ describe('CoinDetailHeaderActions', () => {
 
     await wrapper.find('button[aria-label="Open overflow actions"]').trigger('click')
     expect(wrapper.findAll('button[aria-label="Share"]')).toHaveLength(1)
+  })
+
+  it('names in Portuguese the gallery it goes back to', async () => {
+    const { setLocale } = await import('@/i18n')
+    setLocale('pt-PT')
+    const stubs = { RouterLink: routerLinkStub, ArrowLeft: true, CircleDollarSign: true, Copy: true, Pencil: true, Share2: true, Trash2: true }
+    const label = (props: { isWishlist: boolean; isBanknote?: boolean }) => mount(CoinDetailHeaderActions, { props: { ...props, coinId: 42 }, global: { stubs } }).find('button').text()
+
+    expect(label({ isWishlist: false })).toBe('Voltar à galeria de moedas')
+    expect(label({ isWishlist: false, isBanknote: true })).toBe('Voltar à galeria de notas')
+    expect(label({ isWishlist: true, isBanknote: true })).toBe('Voltar à lista de desejos')
+    setLocale('en')
   })
 })

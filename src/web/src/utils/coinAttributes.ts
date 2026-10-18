@@ -64,6 +64,31 @@ export function presentationLabel(value: string | null | undefined): string {
   return value in PRESENTATION_KEYS ? t(PRESENTATION_KEYS[value as CoinPresentation]) : value
 }
 
+/** A coin's conservation grades, the best first, as Numista and dealers write them. */
+export const COIN_GRADES = ['UNC', 'AU', 'XF', 'VF', 'F', 'VG', 'G'] as const
+/** Collector finishes, often written where the grade goes. */
+export const COIN_FINISHES = ['BNC', 'PRF'] as const
+
+/** "VF — Muito bem conservada (MBC)", or a grade the app does not know as written. */
+export function coinGradeLabel(grade: string): string {
+  const known = [...COIN_GRADES, ...COIN_FINISHES].find((option) => option === grade)
+  return known ? `${known} — ${t(`coinForm.grades.${known}`)}` : grade
+}
+
+// The usual kinds of coin or banknote are named in the app's language;
+// others as Numista names them.
+const CLASSIFICATION_KEYS: Record<string, MessageKey> = {
+  standard: 'collection.view.classificationStandard',
+  'circulating-commemorative': 'collection.view.classificationCirculatingCommemorative',
+  'non-circulating': 'collection.view.classificationNonCirculating',
+}
+
+/** "Circulantes comuns", or Numista's name of a kind the app does not know. */
+export function collectionClassificationLabel(option: { key: string; label: string }): string {
+  const key = CLASSIFICATION_KEYS[option.key]
+  return key ? t(key) : option.label
+}
+
 export function rarityLabel(value: string | null | undefined): string {
   if (!value) return ''
   return value in RARITY_KEYS ? t(RARITY_KEYS[value as CoinRarity]) : value

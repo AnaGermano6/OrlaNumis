@@ -100,4 +100,14 @@ describe('RealPhotoPicker', () => {
     expect(mocks.searchCoinPhotos).toHaveBeenLastCalledWith({ q: 'denarius augustus', numistaTypeId: undefined, lang: 'en' })
     expect(wrapper.text()).toContain('Photos could not be searched right now.')
   })
+
+  it("names a banknote's sides front and back, and its photos a banknote's", async () => {
+    setLocale('pt-PT')
+    mocks.searchCoinPhotos.mockResolvedValue({ data: { status: 'ok', query: '50 Escudos 1980', photos: [{ ...COMMONS, title: '' }] } })
+    const wrapper = mount(RealPhotoPicker, { props: { initialQuery: '50 Escudos 1980', modelValue: {}, kind: 'banknote' } })
+    await flushPromises()
+
+    expect(wrapper.get('li').findAll('button').map((button) => button.text())).toEqual(['Frente', 'Verso'])
+    expect(wrapper.get('li img').attributes('alt')).toBe('Foto da nota')
+  })
 })

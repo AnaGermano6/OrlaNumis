@@ -9,7 +9,8 @@ const messages: Messages['coinDetail'] = {
   deleteTitle: 'Eliminar moeda',
   duplicateFailed: 'Não foi possível duplicar a moeda',
   backToOverview: 'Voltar à vista geral',
-  backToGallery: 'Voltar à galeria',
+  backToGallery: 'Voltar à galeria de moedas',
+  backToWishlist: 'Voltar à lista de desejos',
   metadata: {
     store: 'Loja:',
   },
@@ -197,7 +198,7 @@ const messages: Messages['coinDetail'] = {
   demonetizedOn: 'Desmonetizada em {date}',
   commemorativeCoin: 'Comemorativa',
   nonCirculatingCoin: 'Não circulante',
-  backToBanknotes: 'Voltar às notas de banco',
+  backToBanknotes: 'Voltar à galeria de notas',
 }
 
 export default messages

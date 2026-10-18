@@ -22,4 +22,9 @@ export default {
   },
   swapSides: 'Swap obverse and reverse',
   swapSidesFailed: 'Could not swap the images. Try again.',
+  banknote: {
+    title: 'Real banknote photos',
+    chooseHint: 'Pick one photo for the front and one for the back. They are saved on the banknote, with the author\'s credit in its notes.',
+    photo: 'Banknote photo',
+  },
 }

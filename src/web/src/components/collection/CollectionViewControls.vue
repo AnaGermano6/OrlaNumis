@@ -8,14 +8,11 @@
       </select>
     </label>
 
-    <label class="flex min-w-0 flex-col gap-1">
+    <div class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('coinFields.country') }}</span>
-      <select class="form-select h-10 w-full bg-card py-0 text-body" data-testid="country-filter" :value="country" @change="$emit('update:country', ($event.target as HTMLSelectElement).value)">
-        <option value="">{{ t('collection.view.allCountries') }}</option>
-        <option v-if="extinctCountries" :value="EXTINCT_COUNTRIES">{{ t('collection.view.extinctCountries', { count: extinctCountries }) }}</option>
-        <option v-for="option in countryOptions" :key="option.country" :value="option.country">{{ withCountryFlag(option.country) }} ({{ option.count }})</option>
-      </select>
-    </label>
+      <!-- Its own menu, so every country shows its flag (drawn ones too). -->
+      <CountrySelect :model-value="country" :options="countryChoices" :label="t('coinFields.country')" data-testid="country-filter" @update:model-value="$emit('update:country', $event)" />
+    </div>
 
     <label v-if="classifications.length || classification" class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('collection.view.classification') }}</span>
@@ -67,14 +64,16 @@
 // "View by" grouping, grid/list layout and the country, presentation and
 // rarity filters of the collection, shared by the desktop and PWA headers.
 import { LayoutGrid, List } from 'lucide-vue-next'
+import { computed } from 'vue'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
-import { withCountryFlag } from '@/utils/countryFlags'
+import CountrySelect, { type CountrySelectOption } from '@/components/CountrySelect.vue'
 import type { CoinCountryCount, CollectionClassification } from '@/api/client'
 import { t, type MessageKey } from '@/i18n'
 import {
   COIN_GROUPINGS,
   COIN_PRESENTATIONS,
   COIN_RARITIES,
+  collectionClassificationLabel,
   presentationLabel,
   rarityLabel,
   type CoinGroupBy,
@@ -95,7 +94,7 @@ const GROUPING_KEYS: Record<CoinGroupBy, MessageKey> = {
   presentation: 'coinFields.presentation',
 }
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   groupBy: CoinGroupBy
   layout: CollectionLayout
   country: string
@@ -123,19 +122,18 @@ defineEmits<{
   'update:rarity': [value: string]
 }>()
 
+// "All countries", "Extinct countries" when there are any, then each country with its count.
+const countryChoices = computed((): CountrySelectOption[] => [
+  { value: '', label: t('collection.view.allCountries') },
+  ...(props.extinctCountries ? [{ value: EXTINCT_COUNTRIES, label: t('collection.view.extinctCountries', { count: props.extinctCountries }) }] : []),
+  ...props.countryOptions.map((option) => ({ value: option.country, label: `${option.country} (${option.count})`, country: option.country })),
+])
+
 function groupingLabel(grouping: CoinGroupBy): string {
   return t(GROUPING_KEYS[grouping])
 }
 
-// The usual kinds are named in the app's language; others as Numista names them.
-const CLASSIFICATION_KEYS: Record<string, MessageKey> = {
-  standard: 'collection.view.classificationStandard',
-  'circulating-commemorative': 'collection.view.classificationCirculatingCommemorative',
-  'non-circulating': 'collection.view.classificationNonCirculating',
-}
-
 function classificationLabel(option: CollectionClassification): string {
-  const key = CLASSIFICATION_KEYS[option.key]
-  return key ? t(key) : option.label
+  return collectionClassificationLabel(option)
 }
 </script>

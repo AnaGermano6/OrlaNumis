@@ -1,13 +1,21 @@
 import type { Messages } from '../../types'
 
 const messages: Messages['banknotes'] = {
-  title: 'Notas de banco',
+  title: 'Galeria de notas',
   add: 'Adicionar nota',
   addTitle: 'Adicionar nota de banco',
   badge: 'Nota de banco',
   searchPlaceholder: 'Pesquisar notas por nome, país, inscrição…',
   failed: 'Não foi possível carregar as notas. Tente de novo daqui a pouco.',
   repeatedOnly: 'Só repetidas para troca',
+  groupCount: { one: '{count} nota', other: '{count} notas' },
+  select: 'Selecionar notas',
+  classification: 'Tipo de nota',
+  bulk: {
+    selected: { one: '{count} nota selecionada', other: '{count} notas selecionadas' },
+    confirmDelete: { one: 'Eliminar {count} nota? Esta ação não pode ser anulada.', other: 'Eliminar {count} notas? Esta ação não pode ser anulada.' },
+    deleteFailed: 'Não foi possível eliminar as notas',
+  },
   kpis: {
     label: 'Números das notas',
     banknotes: 'Notas',

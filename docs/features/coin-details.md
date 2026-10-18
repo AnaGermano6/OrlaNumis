@@ -20,7 +20,7 @@ Each coin in your collection can hold rich, structured metadata that captures it
 - **Weight** — In grams
 - **Diameter** — In millimeters
 - **Thickness** — Optional thickness measurement
-- **Grade** — Numerical grade (VF, EF, AU, MS, etc.)
+- **Grade** — chosen from a list, each grade with what it means: UNC, AU, XF, VF, F, VG and G, and the collector finishes BNC and Proof (PRF). A grade written otherwise (an import, the AI's "MS-65") stays selectable
 
 ### Numismatic Details
 - **Mint Mark** — Mint location indicator

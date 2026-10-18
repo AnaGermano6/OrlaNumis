@@ -107,7 +107,7 @@ Saving the record and uploading its images are separate steps. If an upload fail
 
 AI intake era suggestions must match a configured era. An unsupported suggestion is kept in Notes and the review shows a warning; choose a configured era or leave it **Unknown** before confirming.
 
-Coins without a photo can get their official images (ECB, INCM, Monnaie de Paris, Münze Österreich) from the coin's page, or in batches from **Collection → Overview**.
+Coins without a photo can get their official images (ECB, INCM, Monnaie de Paris, Münze Österreich) from the coin's page.
 
 ---
 

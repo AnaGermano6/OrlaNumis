@@ -28,7 +28,7 @@
         <CatalogPhoto
           :url="photo.thumbnail"
           :via="photoLoadVia(photo)"
-          :alt="photo.title || t('photos.photo')"
+          :alt="photo.title || (kind === 'banknote' ? t('photos.banknote.photo') : t('photos.photo'))"
           :credit="photoCaption(photo)"
           fluid
           @unavailable="markUnavailable(photo)"
@@ -43,7 +43,7 @@
             :aria-pressed="isChosen(side, photo)"
             @click="toggle(side, photo)"
           >
-            {{ side === 'obverse' ? t('common.obverse') : t('common.reverse') }}
+            {{ sideLabel(side) }}
           </button>
         </div>
         <a v-if="photo.pageUrl" :href="photo.pageUrl" target="_blank" rel="noopener noreferrer" class="text-2xs text-gold underline">{{ t('photos.viewSource') }}</a>
@@ -72,11 +72,19 @@ const props = withDefaults(defineProps<{
   /** Year, country… so a €2 commemorative's ECB image is found too. */
   details?: CoinPhotoDetails
   modelValue: RealPhotoChoice
-}>(), { numistaTypeId: null, details: () => ({}) })
+  /** What the photos are of: a coin, or a banknote. */
+  kind?: 'coin' | 'banknote'
+}>(), { numistaTypeId: null, details: () => ({}), kind: 'coin' })
 
 const emit = defineEmits<{
   'update:modelValue': [value: RealPhotoChoice]
 }>()
+
+// A banknote has a front and a back; a coin an obverse and a reverse.
+function sideLabel(side: PhotoSide): string {
+  if (props.kind === 'banknote') return side === 'obverse' ? t('banknoteForm.front') : t('banknoteForm.back')
+  return side === 'obverse' ? t('common.obverse') : t('common.reverse')
+}
 
 const query = ref(props.initialQuery)
 const photos = ref<CoinPhotoCandidate[]>([])

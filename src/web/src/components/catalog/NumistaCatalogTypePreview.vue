@@ -71,9 +71,9 @@
       </div>
 
       <div class="grid gap-2">
-        <h3 class="m-0 text-base font-medium text-text-primary">{{ t('photos.title') }}</h3>
-        <p class="m-0 text-chip text-text-muted">{{ t('photos.chooseHint') }}</p>
-        <RealPhotoPicker v-model="photos" :initial-query="photoQuery" :numista-type-id="type.id" :details="photoDetails" />
+        <h3 class="m-0 text-base font-medium text-text-primary" data-testid="real-photos-title">{{ category === 'banknote' ? t('photos.banknote.title') : t('photos.title') }}</h3>
+        <p class="m-0 text-chip text-text-muted">{{ category === 'banknote' ? t('photos.banknote.chooseHint') : t('photos.chooseHint') }}</p>
+        <RealPhotoPicker v-model="photos" :initial-query="photoQuery" :numista-type-id="type.id" :details="photoDetails" :kind="category" />
       </div>
 
       <div class="flex flex-wrap justify-end gap-2 border-t border-border-subtle pt-3">

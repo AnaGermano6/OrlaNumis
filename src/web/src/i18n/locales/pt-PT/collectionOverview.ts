@@ -16,7 +16,7 @@ const messages: Messages['collectionOverview'] = {
     highlights: 'Destaques das moedas',
   },
   banknotes: {
-    title: 'Notas de banco',
+    title: 'Notas',
     open: 'Ver notas',
     highlights: 'Destaques das notas',
   },
@@ -74,15 +74,6 @@ const messages: Messages['collectionOverview'] = {
     removeWishlist: 'Retirar da lista de desejos',
     removedWishlist: 'Retirada da lista de desejos: {title}',
     removeWishlistFailed: 'Não foi possível retirar da lista de desejos. Tente novamente.',
-  },
-  photos: {
-    missing: { one: '{count} moeda sem fotografia', other: '{count} moedas sem fotografia' },
-    body: 'Procura as imagens oficiais: as do Banco Central Europeu e as das casas da moeda (INCM, Monnaie de Paris, Münze Österreich). Não gasta pedidos ao Numista.',
-    start: 'Procurar fotos oficiais',
-    progress: 'A procurar… {checked} de {total}',
-    done: { one: 'Fotografias oficiais adicionadas a {count} moeda.', other: 'Fotografias oficiais adicionadas a {count} moedas.' },
-    left: { one: '{count} não tem fotografia oficial.', other: '{count} não têm fotografia oficial.' },
-    failed: 'Não foi possível procurar as fotografias. Tente novamente.',
   },
 }
 
