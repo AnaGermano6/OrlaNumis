@@ -25,7 +25,7 @@ Orla Numis is based on [Aurearia](https://github.com/briandenicola/Aurearia) by 
 - **Coin gallery** with search and filters by face value, country (extinct countries included), coin type, presentation, rarity and set; grouping by country, year, rarity or presentation; grid or list.
 - **Banknotes** with their own form and gallery, and a **collection overview** with the totals, the new releases and the duplicates to trade.
 - **Coin details**: numismatic fields, quantity, images, structured catalog references, Numista market value, sets, activity journal and timeline.
-- **Official photos** from the ECB, INCM, Monnaie de Paris and Münze Österreich, one coin at a time or in batches.
+- **Official photos** from the ECB, INCM, Monnaie de Paris and Münze Österreich, for a coin added or from its page.
 
 ### ➕ Adding coins
 - From the **Numista catalog**, manually, or with **AI Assist Mode** from photos.

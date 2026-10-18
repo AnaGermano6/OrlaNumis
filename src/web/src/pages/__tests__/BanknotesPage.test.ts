@@ -94,9 +94,10 @@ describe('BanknotesPage', () => {
     const wrapper = mountPage()
     await flushPromises()
 
-    const countrySelect = wrapper.get('[data-testid="banknotes-country"]')
-    expect(countrySelect.findAll('option').map((option) => option.text()).slice(1)).toEqual(['🇵🇹 Portugal (2)'])
-    await countrySelect.setValue('Portugal')
+    await wrapper.get('[data-testid="banknotes-country"]').trigger('click')
+    const options = [...document.querySelectorAll<HTMLElement>('[data-testid="country-select-option"]')]
+    expect(options.map((option) => option.textContent?.trim())).toEqual(['Todos os países', '🇵🇹Portugal (2)'])
+    options[1]!.click()
     await flushPromises()
     expect(mocks.getCoins).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'banknote', country: 'Portugal' }))
 

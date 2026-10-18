@@ -41,10 +41,10 @@
           </td>
           <td class="min-w-[12rem] px-3 py-2">
             <RouterLink :to="`/coin/${coin.id}`" class="font-medium text-text-primary hover:text-gold">{{ coin.name }}</RouterLink>
-            <span class="block text-chip text-text-secondary md:hidden">{{ [coin.country ? withCountryFlag(coin.country) : '', yearText(coin), quantityOf(coin) > 1 ? t('collection.list.quantityShort', { count: quantityOf(coin) }) : ''].filter(Boolean).join(' · ') }}</span>
+            <span class="block text-chip text-text-secondary md:hidden"><CountryFlag v-if="hasCountryFlag(coin.country)" :country="coin.country" class="mr-1" />{{ [coin.country, yearText(coin), quantityOf(coin) > 1 ? t('collection.list.quantityShort', { count: quantityOf(coin) }) : ''].filter(Boolean).join(' · ') }}</span>
           </td>
           <td class="hidden px-3 py-2 text-text-secondary md:table-cell">
-            <template v-if="coin.country"><span v-if="countryFlag(coin.country)" class="mr-1" aria-hidden="true" data-testid="country-flag">{{ countryFlag(coin.country) }}</span>{{ coin.country }}</template>
+            <template v-if="coin.country"><span v-if="hasCountryFlag(coin.country)" class="mr-1" aria-hidden="true" data-testid="country-flag"><CountryFlag :country="coin.country" /></span>{{ coin.country }}</template>
             <template v-else>—</template>
           </td>
           <td class="hidden whitespace-nowrap px-3 py-2 text-text-secondary md:table-cell">{{ yearText(coin) || '—' }}</td>
@@ -68,7 +68,8 @@ import type { Coin, ImageType } from '@/types'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { t } from '@/i18n'
 import { presentationLabel, rarityLabel } from '@/utils/coinAttributes'
-import { countryFlag, withCountryFlag } from '@/utils/countryFlags'
+import CountryFlag from '@/components/CountryFlag.vue'
+import { hasCountryFlag } from '@/utils/countryFlags'
 import { formatCurrency } from '@/utils/format'
 import { formatNumistaYear } from '@/utils/numistaCatalog'
 

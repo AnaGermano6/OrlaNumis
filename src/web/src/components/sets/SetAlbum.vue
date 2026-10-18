@@ -46,7 +46,7 @@
     <p v-if="!shown.length" class="text-body text-text-secondary" data-testid="album-empty">{{ t('sets.album.nothing') }}</p>
     <section v-for="section in sections" :key="section.id" :aria-label="section.title || undefined">
       <h3 v-if="section.title" class="mb-2 mt-0 text-base font-medium text-text-secondary" data-testid="album-section">
-        <span v-if="section.flag" class="mr-1" aria-hidden="true" data-testid="album-section-flag">{{ section.flag }}</span>{{ section.title }}
+        <span v-if="section.country && hasCountryFlag(section.country)" class="mr-1" aria-hidden="true" data-testid="album-section-flag"><CountryFlag :country="section.country" /></span>{{ section.title }}
         <span class="text-chip text-text-muted">· {{ t('sets.catalogue.progress', { owned: section.owned, total: section.slots.length }) }}</span>
       </h3>
       <ul class="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
@@ -109,7 +109,8 @@ import { RouterLink } from 'vue-router'
 import { Check, Coins } from 'lucide-vue-next'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { intlLocale, t } from '@/i18n'
-import { countryFlag } from '@/utils/countryFlags'
+import CountryFlag from '@/components/CountryFlag.vue'
+import { hasCountryFlag } from '@/utils/countryFlags'
 import type { AlbumSlot } from '@/utils/setAlbum'
 
 const SHOW = ['all', 'owned', 'missing'] as const
@@ -148,7 +149,7 @@ const shown = computed(() => props.slots.filter((slot) => show.value === 'all' |
 // The places in sections: one without a title, or one per year (newest
 // first) or country (by name), the places without one last.
 const sections = computed(() => {
-  if (group.value === 'none') return shown.value.length ? [{ id: 'all', title: '', flag: '', slots: shown.value, owned: ownedOf(shown.value) }] : []
+  if (group.value === 'none') return shown.value.length ? [{ id: 'all', title: '', country: '', slots: shown.value, owned: ownedOf(shown.value) }] : []
   const byKey = new Map<string, AlbumSlot[]>()
   for (const slot of shown.value) {
     const key = group.value === 'year' ? String(slot.year || '') : (slot.country ?? '')
@@ -161,7 +162,7 @@ const sections = computed(() => {
   return keys.map((key) => ({
     id: key || 'other',
     title: key || t('sets.album.noGroup'),
-    flag: group.value === 'country' ? countryFlag(key) : '',
+    country: group.value === 'country' ? key : '',
     slots: byKey.get(key) ?? [],
     owned: ownedOf(byKey.get(key) ?? []),
   }))

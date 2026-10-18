@@ -39,13 +39,10 @@
             <option v-for="option in GROUPINGS" :key="option" :value="option">{{ t(GROUPING_LABELS[option]) }}</option>
           </select>
         </label>
-        <label class="flex min-w-0 flex-col gap-1">
+        <div class="flex min-w-0 flex-col gap-1">
           <span class="section-label mb-0">{{ t('coinFields.country') }}</span>
-          <select v-model="country" class="form-select h-10 w-full bg-card py-0 text-body" data-testid="banknotes-country">
-            <option value="">{{ t('collection.view.allCountries') }}</option>
-            <option v-for="option in countries" :key="option.country" :value="option.country">{{ withCountryFlag(option.country) }} ({{ option.count }})</option>
-          </select>
-        </label>
+          <CountrySelect v-model="country" :options="countryChoices" :label="t('coinFields.country')" data-testid="banknotes-country" />
+        </div>
         <!-- Numista's kinds of banknote in the collection, when it says any. -->
         <label v-if="showClassification" class="flex min-w-0 flex-col gap-1">
           <span class="section-label mb-0">{{ t('banknotes.classification') }}</span>
@@ -100,7 +97,7 @@
       <!-- By country, year or rarity, as the coin gallery viewed by one of them. -->
       <section v-for="group in groups" :key="group.key" class="mb-8 last:mb-0" :aria-label="group.label" data-testid="banknotes-group">
         <h2 class="mb-3 flex items-baseline gap-2 border-b border-border-subtle pb-1 font-display text-lg font-medium text-heading">
-          <span v-if="groupBy === 'country' && countryFlag(group.label)" class="font-sans" aria-hidden="true" data-testid="group-flag">{{ countryFlag(group.label) }}</span>
+          <span v-if="groupBy === 'country' && hasCountryFlag(group.label)" class="font-sans" aria-hidden="true" data-testid="group-flag"><CountryFlag :country="group.label" /></span>
           {{ group.label }}
           <span class="font-sans text-chip font-normal text-text-muted">{{ t('banknotes.groupCount', { count: group.coins.length }) }}</span>
         </h2>
@@ -160,7 +157,9 @@ import { useBulkSelect } from '@/composables/useBulkSelect'
 import { useDialog } from '@/composables/useDialog'
 import { collectionClassificationLabel, groupCoins, type CoinGroupBy } from '@/utils/coinAttributes'
 import type { MessageKey } from '@/i18n'
-import { countryFlag, withCountryFlag } from '@/utils/countryFlags'
+import CountryFlag from '@/components/CountryFlag.vue'
+import CountrySelect, { type CountrySelectOption } from '@/components/CountrySelect.vue'
+import { hasCountryFlag } from '@/utils/countryFlags'
 
 // Every banknote is loaded, to show each country's together: pages of 100, up to 2000.
 const PAGE_SIZE = 100
@@ -197,6 +196,11 @@ const groupBy = ref<BanknoteGrouping>(readGroupBy())
 const sortKey = ref('updated_at_desc')
 const layout = ref<(typeof LAYOUTS)[number]>(readLayout())
 
+// "All countries", then each country with its flag and count.
+const countryChoices = computed((): CountrySelectOption[] => [
+  { value: '', label: t('collection.view.allCountries') },
+  ...countries.value.map((option) => ({ value: option.country, label: `${option.country} (${option.count})`, country: option.country })),
+])
 const filtered = computed(() => Boolean(search.value.trim() || country.value || repeated.value || classification.value))
 // By country (by name), year (oldest first) or rarity, as the coin gallery; those without one last.
 const groups = computed(() => groupCoins(banknotes.value, groupBy.value))

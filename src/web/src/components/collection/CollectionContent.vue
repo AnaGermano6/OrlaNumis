@@ -20,7 +20,7 @@
         :aria-label="groupBy === 'none' ? undefined : group.label"
       >
         <h2 v-if="groupBy !== 'none'" class="mb-3 flex items-baseline gap-2 border-b border-border-subtle pb-1 font-display text-lg font-medium text-heading">
-          <span v-if="groupBy === 'country' && countryFlag(group.label)" class="font-sans" aria-hidden="true" data-testid="group-flag">{{ countryFlag(group.label) }}</span>
+          <span v-if="groupBy === 'country' && hasCountryFlag(group.label)" class="font-sans" aria-hidden="true" data-testid="group-flag"><CountryFlag :country="group.label" /></span>
           {{ group.label }}
           <span class="font-sans text-chip font-normal text-text-muted">{{ t('collection.groups.count', { count: group.coins.length }) }}</span>
         </h2>
@@ -64,7 +64,8 @@ import SwipeGallery from '@/components/SwipeGallery.vue'
 import CoinListTable from '@/components/collection/CoinListTable.vue'
 import { groupCoins, type CoinGroupBy } from '@/utils/coinAttributes'
 import { t } from '@/i18n'
-import { countryFlag } from '@/utils/countryFlags'
+import CountryFlag from '@/components/CountryFlag.vue'
+import { hasCountryFlag } from '@/utils/countryFlags'
 
 const props = withDefaults(defineProps<{
   loading: boolean

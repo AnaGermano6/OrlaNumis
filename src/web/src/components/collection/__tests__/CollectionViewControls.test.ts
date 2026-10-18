@@ -39,14 +39,25 @@ describe('CollectionViewControls', () => {
     expect(wrapper.find('[data-testid="classification-filter"]').exists()).toBe(false)
   })
 
-  it('shows the flag of each country, and keeps the plain name as the value', async () => {
+  it('shows the flag of each country, drawn ones too, and keeps the plain name as the value', async () => {
     const wrapper = mount(CollectionViewControls, {
-      props: { ...baseProps, countryOptions: [{ country: 'Croácia', count: 4 }, { country: 'Jugoslávia', count: 1 }] },
+      props: { ...baseProps, extinctCountries: 1, countryOptions: [{ country: 'Croácia', count: 4 }, { country: 'Jugoslávia', count: 1 }] },
+      attachTo: document.body,
     })
 
-    const select = wrapper.get('[data-testid="country-filter"]')
-    expect(select.findAll('option').map((option) => option.text()).slice(1)).toEqual(['🇭🇷 Croácia (4)', 'Jugoslávia (1)'])
-    await select.setValue('Croácia')
+    const menu = wrapper.get('[data-testid="country-filter"]')
+    expect(menu.attributes('role')).toBe('combobox')
+    expect(menu.text()).toBe('All countries')
+    await menu.trigger('click')
+    const options = [...document.querySelectorAll<HTMLElement>('[data-testid="country-select-option"]')]
+    expect(options.map((option) => option.textContent?.trim())).toEqual(['All countries', 'Extinct countries (1)', '🇭🇷Croácia (4)', 'Jugoslávia (1)'])
+    // Yugoslavia has no emoji: its flag is drawn.
+    expect(options[3]!.querySelector('img[data-testid="country-flag-image"]')).not.toBeNull()
+
+    options[2]!.click()
+    await wrapper.vm.$nextTick()
     expect(wrapper.emitted('update:country')).toEqual([['Croácia']])
+    expect(document.querySelector('[data-testid="country-select-list"]')).toBeNull()
+    wrapper.unmount()
   })
 })

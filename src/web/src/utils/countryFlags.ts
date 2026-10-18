@@ -3,15 +3,24 @@
 // or a person writes them. A country that no longer exists (USSR,
 // Yugoslavia, Ottoman Empire…) or a name that is not recognised has no flag.
 import { EXTRA_COUNTRY_ALIASES, foldCountryName, lookupCountry } from '@/utils/worldCountries'
+import { historicFlagImage } from '@/utils/historicFlags'
 
 // Codes the browser names that have no flag: former countries, and private
 // or reserved codes.
 const NO_FLAG = new Set(['AN', 'BU', 'CS', 'DD', 'DY', 'FX', 'HV', 'NH', 'NT', 'QO', 'QU', 'RH', 'SU', 'TP', 'VD', 'YD', 'YU', 'ZR', 'ZZ'])
 
 // Names collections use that the browser does not, with the flag they fly.
+// Some countries that no longer exist flew a living country's flag:
+// Czechoslovakia the Czech Republic's, the Ottoman Empire Turkey's (the same
+// crescent and star), and colonies their mother country's.
 const FLAG_ALIASES: Record<string, string[]> = {
   ...EXTRA_COUNTRY_ALIASES,
-  PT: ['Região Autónoma dos Açores', 'Açores', 'Azores', 'Região Autónoma da Madeira', 'Madeira'],
+  CZ: [...(EXTRA_COUNTRY_ALIASES.CZ ?? []), 'Checoslováquia', 'Tchecoslováquia', 'Czechoslovakia'],
+  TR: ['Império Otomano', 'Ottoman Empire'],
+  NL: [...(EXTRA_COUNTRY_ALIASES.NL ?? []), 'Índias Orientais Holandesas', 'Índias Orientais Neerlandesas', 'Netherlands East Indies', 'Dutch East Indies'],
+  FR: ['África Ocidental Francesa', 'French West Africa', 'África Equatorial Francesa', 'French Equatorial Africa'],
+  GB: [...(EXTRA_COUNTRY_ALIASES.GB ?? []), 'Índia Britânica', 'British India', 'África Oriental Britânica', 'British East Africa', 'África Ocidental Britânica', 'British West Africa', 'Estabelecimentos do Estreito', 'Straits Settlements', 'Terra Nova', 'Newfoundland'],
+  PT: ['Região Autónoma dos Açores', 'Açores', 'Azores', 'Região Autónoma da Madeira', 'Madeira', 'Índia Portuguesa', 'Portuguese India'],
   MK: ['Macedónia', 'Macedônia', 'Macedonia'],
   VA: ['Vaticano', 'Vatican', 'Santa Sé', 'Holy See'],
   MU: ['Maurícias', 'Mauritius'],
@@ -74,6 +83,11 @@ export function flagOfCode(code: string | null | undefined): string {
 /** The flag emoji of a stored country name, or '' when it has none. */
 export function countryFlag(country: string | null | undefined): string {
   return flagOfCode(countryFlagCode(country))
+}
+
+/** Whether a country has a flag to show: an emoji, or a drawing of a country that no longer exists. */
+export function hasCountryFlag(country: string | null | undefined): boolean {
+  return Boolean(countryFlag(country) || historicFlagImage(country))
 }
 
 /** "🇭🇷 Croácia", or the name alone when it has no flag. */

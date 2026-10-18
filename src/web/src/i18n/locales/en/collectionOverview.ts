@@ -73,13 +73,4 @@ export default {
     removedWishlist: 'Removed from the wishlist: {title}',
     removeWishlistFailed: 'It could not be removed from the wishlist. Try again.',
   },
-  photos: {
-    missing: { one: '{count} coin without a photo', other: '{count} coins without a photo' },
-    body: 'Looks for their official images: the European Central Bank\'s and the mints\' (INCM, Monnaie de Paris, Münze Österreich). It spends no Numista request.',
-    start: 'Look for official photos',
-    progress: 'Looking… {checked} of {total}',
-    done: { one: 'Official photos added to {count} coin.', other: 'Official photos added to {count} coins.' },
-    left: { one: '{count} has no official photo.', other: '{count} have no official photo.' },
-    failed: 'The photos could not be looked for. Try again.',
-  },
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countryFlag, countryFlagCode, flagOfCode, withCountryFlag, withFlagOfCode } from '@/utils/countryFlags'
+import { countryFlag, countryFlagCode, flagOfCode, hasCountryFlag, withCountryFlag, withFlagOfCode } from '@/utils/countryFlags'
 
 describe('country flags', () => {
   it('finds the flag of a country written in Portuguese or English, with or without accents', () => {
@@ -17,9 +17,21 @@ describe('country flags', () => {
     expect(countryFlagCode('Kosovo')).toBe('XK')
   })
 
-  it('gives no flag to a country that no longer exists or a name it does not know', () => {
-    for (const name of ['União Soviética', 'Jugoslávia', 'Checoslováquia', 'Império Otomano', 'Atlântida', '', null, undefined]) {
+  it("gives a country that no longer exists the living flag it flew, or a drawing (no emoji)", () => {
+    // The same flag as a living country's: Czechoslovakia's, the Ottoman Empire's, a colony's.
+    expect(countryFlag('Checoslováquia')).toBe('🇨🇿')
+    expect(countryFlag('Império Otomano')).toBe('🇹🇷')
+    expect(countryFlag('Índia Portuguesa')).toBe('🇵🇹')
+    expect(countryFlag('Índias Orientais Holandesas')).toBe('🇳🇱')
+    expect(countryFlag('África Ocidental Francesa')).toBe('🇫🇷')
+    // Drawn, not an emoji.
+    for (const name of ['União Soviética', 'Jugoslávia', 'Antilhas Holandesas', 'Indochina Francesa']) {
       expect(countryFlag(name)).toBe('')
+      expect(hasCountryFlag(name)).toBe(true)
+    }
+    for (const name of ['Atlântida', '', null, undefined]) {
+      expect(countryFlag(name)).toBe('')
+      expect(hasCountryFlag(name)).toBe(false)
     }
   })
 
