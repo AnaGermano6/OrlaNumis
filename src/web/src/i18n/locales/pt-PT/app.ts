@@ -22,7 +22,6 @@ const messages: Messages['app'] = {
   },
   footer: {
     label: 'Rodapé',
-    version: 'Versão {version}',
     catalogue: 'Dados do catálogo: Numista',
     photos: 'Fotos oficiais: BCE, INCM, Monnaie de Paris e Münze Österreich',
     basedOn: 'Baseada no projeto {project}, de Brian DeNicola (licença MIT)',

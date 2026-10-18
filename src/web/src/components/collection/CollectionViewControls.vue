@@ -75,6 +75,7 @@ import {
   COIN_GROUPINGS,
   COIN_PRESENTATIONS,
   COIN_RARITIES,
+  collectionClassificationLabel,
   presentationLabel,
   rarityLabel,
   type CoinGroupBy,
@@ -127,15 +128,7 @@ function groupingLabel(grouping: CoinGroupBy): string {
   return t(GROUPING_KEYS[grouping])
 }
 
-// The usual kinds are named in the app's language; others as Numista names them.
-const CLASSIFICATION_KEYS: Record<string, MessageKey> = {
-  standard: 'collection.view.classificationStandard',
-  'circulating-commemorative': 'collection.view.classificationCirculatingCommemorative',
-  'non-circulating': 'collection.view.classificationNonCirculating',
-}
-
 function classificationLabel(option: CollectionClassification): string {
-  const key = CLASSIFICATION_KEYS[option.key]
-  return key ? t(key) : option.label
+  return collectionClassificationLabel(option)
 }
 </script>

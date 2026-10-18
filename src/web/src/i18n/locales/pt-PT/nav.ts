@@ -2,7 +2,7 @@ import type { Messages } from '../../types'
 
 const messages: Messages['nav'] = {
   collection: 'Coleção',
-  gallery: 'Galeria',
+  gallery: 'Galeria de moedas',
   addCoin: 'Adicionar moeda',
   identifyCoin: 'Identificar moeda',
   analysisHistory: 'Histórico de análises',
@@ -18,7 +18,7 @@ const messages: Messages['nav'] = {
   settings: 'Definições',
   admin: 'Administração',
   logout: 'Terminar sessão',
-  banknotes: 'Notas de banco',
+  banknotes: 'Galeria de notas',
   collectionOverview: 'Visão geral',
   commemorativeCatalogue: 'Catálogo de comemorativas',
 }

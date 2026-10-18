@@ -27,7 +27,7 @@ export default {
   loading: 'Loading collection...',
   selectAll: 'Select All',
   deselectAll: 'Deselect All',
-  selectedCount: '{count} selected',
+  selectedCount: { one: '{count} selected', other: '{count} selected' },
   empty: {
     noMatchTitle: 'No coins match your search',
     emptyTitle: 'Your collection is empty',

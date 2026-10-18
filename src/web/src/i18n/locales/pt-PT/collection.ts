@@ -29,7 +29,7 @@ const messages: Messages['collection'] = {
   loading: 'A carregar a coleção...',
   selectAll: 'Selecionar tudo',
   deselectAll: 'Desmarcar tudo',
-  selectedCount: '{count} selecionadas',
+  selectedCount: { one: '{count} selecionada', other: '{count} selecionadas' },
   empty: {
     noMatchTitle: 'Nenhuma moeda corresponde à pesquisa',
     emptyTitle: 'A sua coleção está vazia',

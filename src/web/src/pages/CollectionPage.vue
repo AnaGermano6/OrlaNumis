@@ -13,6 +13,14 @@
       <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? t('common.pull.refreshing') : pullDistance >= 60 ? t('common.pull.release') : t('common.pull.pull') }}</span>
     </div>
 
+    <!-- Its name, as the banknotes': in the title bar on a computer, above the
+         filters in a phone's browser (the installed app has its own header). -->
+    <DesktopPageContext :title="t('nav.gallery')">
+      <header v-if="!isPwa" class="page-header" data-testid="gallery-title">
+        <h1>{{ t('nav.gallery') }}</h1>
+      </header>
+    </DesktopPageContext>
+
     <PwaCollectionHeader
       v-if="isPwa"
       v-model:search="search"
@@ -184,6 +192,7 @@ import CollectionViewControls, { type CollectionLayout } from '@/components/coll
 import PwaCollectionHeader from '@/components/collection/PwaCollectionHeader.vue'
 import DesktopCollectionHeader from '@/components/collection/DesktopCollectionHeader.vue'
 import CollectionContent from '@/components/collection/CollectionContent.vue'
+import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import CollectionPagination from '@/components/CollectionPagination.vue'
 import BulkActionBar from '@/components/BulkActionBar.vue'
 import BulkSetPickerModal from '@/components/BulkSetPickerModal.vue'

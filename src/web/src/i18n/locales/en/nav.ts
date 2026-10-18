@@ -1,6 +1,6 @@
 export default {
   collection: 'Collection',
-  gallery: 'Gallery',
+  gallery: 'Coin gallery',
   addCoin: 'Add Coin',
   identifyCoin: 'Identify Coin',
   analysisHistory: 'Analysis History',
@@ -16,7 +16,7 @@ export default {
   settings: 'Settings',
   admin: 'Admin',
   logout: 'Logout',
-  banknotes: 'Banknotes',
+  banknotes: 'Banknote gallery',
   collectionOverview: 'Overview',
   commemorativeCatalogue: 'Commemorative catalogue',
 }

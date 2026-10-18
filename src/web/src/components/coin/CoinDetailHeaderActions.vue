@@ -2,7 +2,7 @@
   <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 max-md:mb-4">
     <button class="btn btn-ghost btn-xs justify-self-start whitespace-nowrap" @click="router.push(backTarget)">
       <ArrowLeft :size="14" />
-      {{ isBanknote && !isWishlist ? t('coinDetail.backToBanknotes') : t('coinDetail.backToGallery') }}
+      {{ backLabel }}
     </button>
     <div class="flex min-w-0 items-center justify-end gap-[0.45rem]">
       <AppIconButton
@@ -64,6 +64,8 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const backTarget = computed(() => props.isWishlist ? '/wishlist' : props.isBanknote ? '/banknotes' : '/')
+// Named as the page it goes back to.
+const backLabel = computed(() => props.isWishlist ? t('coinDetail.backToWishlist') : props.isBanknote ? t('coinDetail.backToBanknotes') : t('coinDetail.backToGallery'))
 const { isPwa } = usePwa()
 // In the installed PWA the action row keeps only Edit/Delete inline; share moves into the
 // overflow menu. In the browser every action stays on the row.

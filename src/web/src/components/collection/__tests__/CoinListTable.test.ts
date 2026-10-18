@@ -30,4 +30,14 @@ describe('CoinListTable', () => {
     expect(sublines[0]).toBe('🇿🇦 África do Sul · 1984 · × 3')
     expect(sublines[1]).toBe('🇿🇦 África do Sul · 1984')
   })
+
+  it('leaves out the presentation where it means nothing, as for banknotes', () => {
+    const wrapper = mount(CoinListTable, {
+      props: { coins: [coin(1, 1)], showPresentation: false },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    })
+
+    expect(wrapper.findAll('th').map((th) => th.text())).not.toContain('Apresentação')
+    expect(wrapper.findAll('tbody tr td')).toHaveLength(8)
+  })
 })

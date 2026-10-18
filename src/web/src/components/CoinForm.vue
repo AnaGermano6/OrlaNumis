@@ -144,29 +144,23 @@
         <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
           <div class="form-group min-w-0">
             <label class="form-label" for="coin-grade">{{ t('coinFields.grade') }}</label>
-            <input id="coin-grade" v-model="form.grade" class="form-input" :placeholder="t('coinForm.gradePlaceholder')" />
+            <!-- As the banknotes': each grade with what it means. -->
+            <select id="coin-grade" v-model="gradeModel" class="form-select" data-testid="coin-grade">
+              <option value="">{{ t('coinForm.notSpecified') }}</option>
+              <option v-if="customGrade" :value="customGrade">{{ customGrade }}</option>
+              <optgroup :label="t('coinForm.gradeGroups.conservation')">
+                <option v-for="grade in COIN_GRADES" :key="grade" :value="grade">{{ coinGradeLabel(grade) }}</option>
+              </optgroup>
+              <optgroup :label="t('coinForm.gradeGroups.finishes')">
+                <option v-for="grade in COIN_FINISHES" :key="grade" :value="grade">{{ coinGradeLabel(grade) }}</option>
+              </optgroup>
+            </select>
           </div>
           <div class="form-group min-w-0">
             <label class="form-label" for="coin-quantity">{{ t('coinFields.quantity') }}</label>
             <QuantityInput id="coin-quantity" v-model="form.quantity" />
           </div>
         </div>
-        <!-- What each grade means, opened when wanted: one column, the width of the section. -->
-        <details class="text-chip text-text-muted" data-testid="grade-guide">
-          <summary class="cursor-pointer text-text-secondary transition-colors hover:text-gold">{{ t('coinForm.gradeGuide.title') }}</summary>
-          <p class="mb-2 mt-2">{{ t('coinForm.gradeGuide.intro') }}</p>
-          <ul class="m-0 grid list-none gap-1 p-0">
-            <li v-for="item in GRADE_GUIDE" :key="item.key">
-              <span class="font-semibold text-text-primary" data-testid="grade-guide-term">{{ item.abbr ?? t(item.abbrKey!) }}</span> — {{ t(item.key) }}
-            </li>
-          </ul>
-          <p class="mb-2 mt-3 font-medium text-text-secondary">{{ t('coinForm.gradeGuide.finishes') }}</p>
-          <ul class="m-0 grid list-none gap-1 p-0">
-            <li v-for="item in FINISH_GUIDE" :key="item.key">
-              <span class="font-semibold text-text-primary" data-testid="grade-guide-term">{{ item.abbr }}</span> — {{ t(item.key) }}
-            </li>
-          </ul>
-        </details>
       </fieldset>
 
       <!-- Inscriptions, Images & Descriptions -->
@@ -318,32 +312,15 @@ import { usePwa } from '@/composables/usePwa'
 import { useCoinOptions } from '@/composables/useCoinOptions'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { materialLabel } from '@/utils/format'
-import { t, type MessageKey } from '@/i18n'
+import { t } from '@/i18n'
 import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
-import { COIN_CIRCULATIONS, COIN_PRESENTATIONS, COIN_RARITIES, circulationLabel, deriveCoinYear, presentationLabel, rarityLabel } from '@/utils/coinAttributes'
+import { COIN_CIRCULATIONS, COIN_FINISHES, COIN_GRADES, COIN_PRESENTATIONS, COIN_RARITIES, circulationLabel, coinGradeLabel, deriveCoinYear, presentationLabel, rarityLabel } from '@/utils/coinAttributes'
 import { formatNumistaYear } from '@/utils/numistaCatalog'
 import { collectionCurrencySymbol } from '@/utils/collectionCurrency'
 
 function unwrapMintLocations(data: MintLocationsResponse): MintLocation[] {
   return Array.isArray(data) ? data : data.mintLocations ?? []
 }
-
-// The conservation grades, from the most worn, with their international
-// abbreviations; then the finishes a mint sells collector coins in.
-const GRADE_GUIDE: { abbr?: string; abbrKey?: MessageKey; key: MessageKey }[] = [
-  { abbr: 'G', key: 'coinForm.gradeGuide.g' },
-  { abbr: 'VG', key: 'coinForm.gradeGuide.vg' },
-  { abbr: 'F', key: 'coinForm.gradeGuide.f' },
-  { abbr: 'VF', key: 'coinForm.gradeGuide.vf' },
-  { abbr: 'XF / EF', key: 'coinForm.gradeGuide.xf' },
-  { abbr: 'AU', key: 'coinForm.gradeGuide.au' },
-  { abbr: 'UNC', key: 'coinForm.gradeGuide.unc' },
-  { abbrKey: 'coinForm.gradeGuide.msAbbr', key: 'coinForm.gradeGuide.ms' },
-]
-const FINISH_GUIDE: { abbr: string; key: MessageKey }[] = [
-  { abbr: 'BNC', key: 'coinForm.gradeGuide.bnc' },
-  { abbr: 'Proof', key: 'coinForm.gradeGuide.proof' },
-]
 
 const { isPwa } = usePwa()
 const { categoryOptions, eraOptions, materialOptions, loadOptions } = useCoinOptions()
@@ -363,6 +340,15 @@ const countryModel = computed({
 const presentationModel = computed({
   get: () => props.form.presentation ?? '',
   set: (value: string) => { props.form.presentation = value },
+})
+const gradeModel = computed({
+  get: () => props.form.grade ?? '',
+  set: (value: string) => { props.form.grade = value },
+})
+// A grade written otherwise (an import, the AI, an older edit: "S", "MS-65") stays selectable.
+const customGrade = computed(() => {
+  const grade = props.form.grade?.trim() ?? ''
+  return grade && !([...COIN_GRADES, ...COIN_FINISHES] as readonly string[]).includes(grade) ? grade : ''
 })
 // A coin unless it says it is a banknote (older items have no kind).
 const kindModel = computed({

@@ -180,6 +180,7 @@
       :numista-type-id="numistaTypeId"
       :details="coinPhotoDetails(coin)"
       :has-primary-image="Boolean(coin.images?.some((image) => image.isPrimary))"
+      :kind="isBanknote ? 'banknote' : 'coin'"
       @close="showRealPhotos = false"
       @saved="refreshCoin"
     />

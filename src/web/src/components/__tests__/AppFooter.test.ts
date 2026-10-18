@@ -6,12 +6,12 @@ import { setLocale } from '@/i18n'
 describe('AppFooter', () => {
   afterEach(() => setLocale('en'))
 
-  it('names the app, its version, where its data comes from and the year', () => {
+  it('names the app, where its data comes from and the year, without the version', () => {
     setLocale('pt-PT')
     const wrapper = mount(AppFooter)
 
     expect(wrapper.get('footer').attributes('aria-label')).toBe('Rodapé')
-    expect(wrapper.get('[data-testid="app-version"]').text()).toMatch(/^Versão \S+$/)
+    expect(wrapper.text()).not.toContain('Versão')
     expect(wrapper.text()).toContain('Dados do catálogo: Numista')
     expect(wrapper.text()).toContain('Fotos oficiais: BCE, INCM, Monnaie de Paris e Münze Österreich')
     expect(wrapper.text()).toContain(`© ${new Date().getFullYear()} Orla Numis`)

@@ -8,7 +8,7 @@ The collection has three views:
 
 - **Collection overview** (`/collection`) — totals, the releases (each added to the collection with its Numista details, see [Numista Catalog Lookup](numista-integration.md#new-coins-from-the-releases)), the duplicates to trade (**Show in the gallery** opens the coin gallery, or the banknotes, with only them), and the coins still without a photo, with a button to fetch their official photos in batches
 - **Coin gallery** (`/`) — every collection coin, with search, filters, grouping and select mode
-- **Banknotes** (`/banknotes`) — the same for banknotes, with search, country, sort and view
+- **Banknote gallery** (`/banknotes`) — the same for banknotes, in groups: **View by** country (each with its flag), year or rarity, with how many in each; search, sort, country, **Banknote type** (as Numista classifies it, when it says) and grid or list. The list has no presentation column
 
 ## Coin Gallery
 
@@ -41,6 +41,8 @@ Choose **Select coins** in the title bar (or **Select** in the installed app), p
 
 - **Add to set** — adds the selected coins to one of your standard sets
 - **Delete** — deletes them, after confirmation
+
+The banknotes have the same: **Select banknotes** on their page, then **Select all** or one by one, **Add to set** or **Delete**.
 
 ### Random sort
 

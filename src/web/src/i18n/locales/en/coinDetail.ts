@@ -7,7 +7,8 @@ export default {
   deleteTitle: 'Delete Coin',
   duplicateFailed: 'Failed to duplicate coin',
   backToOverview: 'Back to Overview',
-  backToGallery: 'Back to Gallery',
+  backToGallery: 'Back to the coin gallery',
+  backToWishlist: 'Back to the wishlist',
   metadata: {
     store: 'Store:',
   },
@@ -195,5 +196,5 @@ export default {
   demonetizedOn: 'Demonetized on {date}',
   commemorativeCoin: 'Commemorative',
   nonCirculatingCoin: 'Non-circulating',
-  backToBanknotes: 'Back to banknotes',
+  backToBanknotes: 'Back to the banknote gallery',
 }

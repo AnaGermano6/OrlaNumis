@@ -9,7 +9,7 @@
     >
       <div class="flex items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
         <div class="min-w-0">
-          <h3 :id="titleId" class="m-0 font-display text-lg font-medium text-heading">{{ t('photos.title') }}</h3>
+          <h3 :id="titleId" class="m-0 font-display text-lg font-medium text-heading">{{ kind === 'banknote' ? t('photos.banknote.title') : t('photos.title') }}</h3>
           <p class="m-0 truncate text-body text-gold">{{ coinName }}</p>
         </div>
         <button
@@ -24,8 +24,8 @@
       </div>
 
       <div class="min-h-0 overflow-y-auto px-5 py-4">
-        <p class="mb-3 mt-0 text-chip text-text-muted">{{ t('photos.chooseHint') }}</p>
-        <RealPhotoPicker v-model="choice" :initial-query="coinName" :numista-type-id="numistaTypeId" :details="details" />
+        <p class="mb-3 mt-0 text-chip text-text-muted">{{ kind === 'banknote' ? t('photos.banknote.chooseHint') : t('photos.chooseHint') }}</p>
+        <RealPhotoPicker v-model="choice" :initial-query="coinName" :numista-type-id="numistaTypeId" :details="details" :kind="kind" />
       </div>
 
       <div class="flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle px-5 py-3">
@@ -49,7 +49,7 @@ import { t } from '@/i18n'
 import RealPhotoPicker from '@/components/photos/RealPhotoPicker.vue'
 import { photoCreditLine, type CoinPhotoDetails, type PhotoSide, type RealPhotoChoice } from '@/utils/coinPhotos'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   coinId: number
   coinName: string
   numistaTypeId: number | null
@@ -57,7 +57,9 @@ const props = defineProps<{
   details?: CoinPhotoDetails
   /** Whether the coin already has a primary image (kept as primary if so). */
   hasPrimaryImage: boolean
-}>()
+  /** A banknote's photos are spoken of as a banknote's. */
+  kind?: 'coin' | 'banknote'
+}>(), { details: undefined, kind: 'coin' })
 
 const emit = defineEmits<{
   close: []

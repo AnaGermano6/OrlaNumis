@@ -24,6 +24,11 @@ const messages: Messages['photos'] = {
   },
   swapSides: 'Trocar anverso e reverso',
   swapSidesFailed: 'Não foi possível trocar as imagens. Tente novamente.',
+  banknote: {
+    title: 'Fotos reais da nota',
+    chooseHint: 'Escolha uma foto para a frente e outra para o verso. Ficam guardadas na nota, com o crédito do autor no campo Notas.',
+    photo: 'Foto da nota',
+  },
 }
 
 export default messages

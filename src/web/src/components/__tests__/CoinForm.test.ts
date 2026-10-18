@@ -132,25 +132,36 @@ describe('CoinForm', () => {
     }
   })
 
-  it('explains each grade under the grade field, folded until opened', async () => {
+  it('chooses the grade from a list that says what each means, keeping one written otherwise', async () => {
     const { setLocale } = await import('@/i18n')
     setLocale('pt-PT')
+    const form = reactive<Partial<Coin>>({ name: 'Coin', category: 'Modern', material: 'Silver', grade: 'S' })
     const wrapper = mount(CoinForm, {
-      props: { form: reactive({ name: 'Coin', category: 'Modern', material: 'Silver', grade: '' }), submitLabel: 'Save' },
+      props: { form, submitLabel: 'Save' },
       global: { stubs: { RouterLink: { template: '<a><slot /></a>' }, AutocompleteInput: true, CreateMintModal: true, AuthenticatedImage: true, X: true, Camera: true } },
     })
     await flushPromises()
 
-    const guide = wrapper.get('[data-testid="grade-guide"]')
-    expect(guide.element.tagName).toBe('DETAILS')
-    expect((guide.element as HTMLDetailsElement).open).toBe(false)
-    expect(guide.get('summary').text()).toBe('O que significa cada grau?')
-    // From the most worn up, then the collector finishes.
-    expect(guide.findAll('[data-testid="grade-guide-term"]').map((term) => term.text())).toEqual(['G', 'VG', 'F', 'VF', 'XF / EF', 'AU', 'UNC', 'MS-60 a MS-70', 'BNC', 'Proof'])
-    // One column: each grade on its own line, its meaning beside it.
-    expect(guide.findAll('li')[3]!.text()).toBe('VF — Muito bem conservada (MBC). Desgaste ligeiro nas partes mais altas; a maior parte dos pormenores está nítida.')
-    expect(guide.text()).toContain('Muito bem conservada (MBC).')
+    const select = wrapper.get('[data-testid="coin-grade"]')
+    expect(select.element.tagName).toBe('SELECT')
     expect(wrapper.get('label[for="coin-grade"]').text()).toBe('Grau')
+    // The list says what each grade means: no guide besides it.
+    expect(wrapper.find('[data-testid="grade-guide"]').exists()).toBe(false)
+    expect(select.findAll('optgroup').map((group) => group.attributes('label'))).toEqual(['Conservação', 'Acabamentos de coleção'])
+    expect(select.findAll('option').map((option) => option.text())).toEqual([
+      'Não indicada', 'S',
+      'UNC — Sem circulação (Soberba, FDC)', 'AU — Quase sem circulação', 'XF — Extremamente bem conservada (Bela)', 'VF — Muito bem conservada (MBC)',
+      'F — Bem conservada (BC)', 'VG — Entre regular e bem conservada', 'G — Regular (REG)',
+      'BNC — Brilhante não circulada', 'PRF — Proof',
+    ])
+    expect((select.element as HTMLSelectElement).value).toBe('S')
+
+    await select.setValue('VF')
+    expect(form.grade).toBe('VF')
+    // The written grade is no longer offered once another is chosen.
+    expect(select.findAll('option').map((option) => option.text())).not.toContain('S')
+    await select.setValue('')
+    expect(form.grade).toBe('')
     setLocale('en')
   })
 

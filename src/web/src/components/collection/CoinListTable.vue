@@ -10,7 +10,7 @@
           <th class="hidden px-3 py-2 md:table-cell">{{ t('collection.list.year') }}</th>
           <th class="hidden px-3 py-2 lg:table-cell">{{ t('coinFields.grade') }}</th>
           <th class="hidden px-3 py-2 lg:table-cell">{{ t('coinFields.rarity') }}</th>
-          <th class="hidden px-3 py-2 lg:table-cell">{{ t('coinFields.presentation') }}</th>
+          <th v-if="showPresentation" class="hidden px-3 py-2 lg:table-cell">{{ t('coinFields.presentation') }}</th>
           <th class="hidden whitespace-nowrap px-3 py-2 !text-center sm:table-cell">{{ t('coinFields.quantity') }}</th>
           <th class="hidden whitespace-nowrap px-3 py-2 !text-right sm:table-cell">{{ t('coinFields.currentValue') }}</th>
         </tr>
@@ -50,7 +50,7 @@
           <td class="hidden whitespace-nowrap px-3 py-2 text-text-secondary md:table-cell">{{ yearText(coin) || '—' }}</td>
           <td class="hidden px-3 py-2 text-text-secondary lg:table-cell">{{ coin.grade || '—' }}</td>
           <td class="hidden px-3 py-2 text-text-secondary lg:table-cell">{{ rarityLabel(coin.rarity) || '—' }}</td>
-          <td class="hidden px-3 py-2 text-text-secondary lg:table-cell">{{ presentationLabel(coin.presentation) || '—' }}</td>
+          <td v-if="showPresentation" class="hidden px-3 py-2 text-text-secondary lg:table-cell">{{ presentationLabel(coin.presentation) || '—' }}</td>
           <td class="hidden px-3 py-2 !text-center tabular-nums text-text-primary sm:table-cell" data-testid="list-quantity">{{ quantityOf(coin) }}</td>
           <td class="hidden whitespace-nowrap px-3 py-2 !text-right text-text-primary sm:table-cell">{{ coin.currentValue != null ? formatCurrency(coin.currentValue) : '—' }}</td>
         </tr>
@@ -77,7 +77,9 @@ const props = withDefaults(defineProps<{
   imageSide?: ImageType | null
   selectable?: boolean
   selectedIds?: Set<number>
-}>(), { imageSide: null, selectable: false, selectedIds: () => new Set<number>() })
+  /** Off for banknotes, which come in no coin card or capsule. */
+  showPresentation?: boolean
+}>(), { imageSide: null, selectable: false, selectedIds: () => new Set<number>(), showPresentation: true })
 
 defineEmits<{
   'toggle-select': [coinId: number]
