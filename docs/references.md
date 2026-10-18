@@ -1,6 +1,6 @@
 # References
 
-> Canonical index of external standards, frameworks, services, and tooling referenced by Ancient Coins documentation, ADRs, and configuration. Prefer linking here from new docs rather than repeating long URLs everywhere.
+> Canonical index of external standards, frameworks, services, and tooling referenced by Orla Numis's documentation and configuration. Prefer linking here from new docs rather than repeating long URLs everywhere.
 
 ## How to add a reference
 
@@ -8,15 +8,12 @@
 2. Use the official vendor/specification URL when possible.
 3. Record the project's current version pin or range exactly as it appears in repo config; use `n/a` only when the project consumes a hosted service rather than a package.
 4. Link the place(s) in this repo where the reference is actively used.
-5. If the new reference changes architecture or security posture, pair it with an ADR.
 
 ## Standards & RFCs
 
 | Name | URL | Version pin | Where used in this project |
 |---|---|---|---|
-| JSON Web Token (RFC 7519) | <https://www.rfc-editor.org/rfc/rfc7519> | n/a | [docs/authentication.md](authentication.md), [docs/adr/0003-jwt-with-refresh-and-webauthn.md](adr/0003-jwt-with-refresh-and-webauthn.md), [src/api/services/auth_service.go](../src/api/services/auth_service.go) |
-| WebAuthn Level 3 | <https://www.w3.org/TR/webauthn-3/> | n/a | [docs/authentication.md](authentication.md), [src/api/handlers/webauthn.go](../src/api/handlers/webauthn.go), [src/web/src/pages/LoginPage.vue](../src/web/src/pages/LoginPage.vue) |
-| FIDO2 / Passkeys overview | <https://fidoalliance.org/fido2/> | n/a | [docs/authentication.md](authentication.md), [docs/adr/0003-jwt-with-refresh-and-webauthn.md](adr/0003-jwt-with-refresh-and-webauthn.md) |
+| JSON Web Token (RFC 7519) | <https://www.rfc-editor.org/rfc/rfc7519> | n/a | [docs/authentication.md](authentication.md), [src/api/services/auth_service.go](../src/api/services/auth_service.go) |
 | OWASP ASVS | <https://owasp.org/www-project-application-security-verification-standard/> | 4.0.3 | [docs/security-principles.md](security-principles.md), [docs/threat-model.md](threat-model.md) |
 | OWASP Top 10 | <https://owasp.org/www-project-top-ten/> | 2021 | [docs/security-principles.md](security-principles.md), [docs/threat-model.md](threat-model.md) |
 | CWE Catalog | <https://cwe.mitre.org/> | n/a | [docs/security-principles.md](security-principles.md), [docs/threat-model.md](threat-model.md) |
@@ -32,7 +29,6 @@
 | Gin | <https://gin-gonic.com/> | `v1.12.0` | [src/api/go.mod](../src/api/go.mod), [src/api/main.go](../src/api/main.go), [docs/ARCHITECTURE.md](ARCHITECTURE.md) |
 | GORM | <https://gorm.io/> | `v1.30.5` | [src/api/go.mod](../src/api/go.mod), [src/api/repository/](../src/api/repository/), [docs/ARCHITECTURE.md](ARCHITECTURE.md) |
 | pure-Go SQLite (`github.com/glebarez/sqlite`) | <https://github.com/glebarez/sqlite> | `v1.11.0` | [src/api/go.mod](../src/api/go.mod), [src/api/database/database.go](../src/api/database/database.go) |
-| go-webauthn/webauthn | <https://github.com/go-webauthn/webauthn> | `v0.17.3` | [src/api/go.mod](../src/api/go.mod), [src/api/handlers/webauthn.go](../src/api/handlers/webauthn.go), [docs/authentication.md](authentication.md) |
 | golang-jwt/jwt/v5 | <https://github.com/golang-jwt/jwt> | `v5.3.1` | [src/api/go.mod](../src/api/go.mod), [src/api/services/auth_service.go](../src/api/services/auth_service.go) |
 | Vue | <https://vuejs.org/> | `^3.5.33` | [src/web/package.json](../src/web/package.json), [src/web/src/](../src/web/src/), [docs/ARCHITECTURE.md](ARCHITECTURE.md) |
 | Pinia | <https://pinia.vuejs.org/> | `^3.0.4` | [src/web/package.json](../src/web/package.json), [src/web/src/stores/](../src/web/src/stores/) |
@@ -52,7 +48,6 @@
 | Anthropic API / Claude | <https://docs.anthropic.com/> | n/a | [src/agent/app/llm/provider.py](../src/agent/app/llm/provider.py), [docs/ARCHITECTURE.md](ARCHITECTURE.md), [docs/getting-started.md](getting-started.md) |
 | Ollama | <https://ollama.com/> | n/a | [src/api/services/ollama_service.go](../src/api/services/ollama_service.go), [src/agent/app/llm/provider.py](../src/agent/app/llm/provider.py), [docs/getting-started.md](getting-started.md) |
 | SearXNG | <https://docs.searxng.org/> | n/a | [src/agent/app/tools/search.py](../src/agent/app/tools/search.py), [docs/ARCHITECTURE.md](ARCHITECTURE.md) |
-| Pushover | <https://pushover.net/api> | n/a | [src/api/services/pushover_service.go](../src/api/services/pushover_service.go), [docs/ARCHITECTURE.md](ARCHITECTURE.md) |
 | Numista API | <https://api.numista.com/> | n/a | [src/api/handlers/numista.go](../src/api/handlers/numista.go), [docs/getting-started.md](getting-started.md) |
 | GitHub Security Advisories | <https://docs.github.com/en/code-security/security-advisories> | n/a | [SECURITY.md](../SECURITY.md), [docs/incident-response.md](incident-response.md) |
 
@@ -62,13 +57,12 @@
 |---|---|---|---|
 | Task | <https://taskfile.dev/> | task runner via `Taskfile.yml` | [Taskfile.yml](../Taskfile.yml), [README.md](../README.md), [docs/getting-started.md](getting-started.md) |
 | Docker | <https://docs.docker.com/> | base images pinned in Dockerfiles, not a single repo package | [Dockerfile](../Dockerfile), [src/agent/Dockerfile](../src/agent/Dockerfile), [docs/deployment.md](deployment.md) |
-| Docker Compose | <https://docs.docker.com/compose/> | compose spec via local CLI | [docker-compose.yaml](../docker-compose.yaml), [docs/deployment.md](deployment.md) |
+| Docker Compose | <https://docs.docker.com/compose/> | compose spec via local CLI | [docker-compose.dev.yml](../docker-compose.dev.yml), [docs/deployment.md](deployment.md) |
 | uv | <https://docs.astral.sh/uv/> | `0.11.22` | [src/agent/uv.lock](../src/agent/uv.lock), [src/agent/Dockerfile](../src/agent/Dockerfile), [.github/workflows/ci.yml](../.github/workflows/ci.yml) |
 | Swaggo / swag | <https://github.com/swaggo/swag> | `v1.16.6` | [src/api/go.mod](../src/api/go.mod), [src/api/docs/](../src/api/docs/), [docs/api-reference.md](api-reference.md) |
 | Ruff | <https://docs.astral.sh/ruff/> | `>=0.9.0,<1.0` | [src/agent/pyproject.toml](../src/agent/pyproject.toml), [.pre-commit-config.yaml](../.pre-commit-config.yaml) |
 | Pytest | <https://docs.pytest.org/> | `>=8.0,<10.0` | [src/agent/pyproject.toml](../src/agent/pyproject.toml), [src/agent/tests/](../src/agent/tests/) |
-| pip-audit | <https://pypi.org/project/pip-audit/> | `>=2.9.0,<3.0` | [src/agent/pyproject.toml](../src/agent/pyproject.toml), [.github/workflows/security-scan.yml](../.github/workflows/security-scan.yml) |
+| pip-audit | <https://pypi.org/project/pip-audit/> | `>=2.9.0,<3.0` | [src/agent/pyproject.toml](../src/agent/pyproject.toml) |
 | Vitest | <https://vitest.dev/> | `^4.1.5` | [src/web/package.json](../src/web/package.json), [src/web/src/__tests__/](../src/web/src/__tests__/) |
-| ESLint | <https://eslint.org/> | `^10.3.0` | [src/web/package.json](../src/web/package.json), [docs/CHANGELOG.md](CHANGELOG.md) |
+| ESLint | <https://eslint.org/> | `^10.3.0` | [src/web/package.json](../src/web/package.json), [src/web/eslint.config.js](../src/web/eslint.config.js) |
 | Gitleaks | <https://github.com/gitleaks/gitleaks> | `v8.30.1` (via pre-commit hook) | [.gitleaks.toml](../.gitleaks.toml), [.pre-commit-config.yaml](../.pre-commit-config.yaml), [docs/incident-response.md](incident-response.md) |
-| govulncheck | <https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck> | `v1.4.0` | [.github/workflows/security-scan.yml](../.github/workflows/security-scan.yml), [docs/security-principles.md](security-principles.md), [docs/threat-model.md](threat-model.md) |

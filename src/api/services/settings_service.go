@@ -207,8 +207,7 @@ var settingDefaults = map[string]string{
 	// prior 15s magic literal; 90s is proportionate to the work performed
 	// while remaining well under the 300s agent-proxy ceiling. Pairing this
 	// with the raised 420s hard timeout above keeps the post-quick-lookup
-	// pipeline budget at 420-90-20=310s, at or above the pre-change ~265s
-	// (see .squad/decisions/inbox/cassius-quick-lookup-budget.md).
+	// pipeline budget at 420-90-20=310s, at or above the pre-change ~265s.
 	SettingDeepIdentificationQuickLookupTimeoutSeconds: "90",
 	SettingDeepIdentificationEventRetentionHours:       "24",
 	SettingDeepIdentificationResultRetentionDays:       "90",

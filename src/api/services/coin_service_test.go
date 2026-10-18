@@ -110,8 +110,13 @@ func TestCreateCoin_RejectsSameOwnerWishlistReferenceURLDuplicate(t *testing.T) 
 		Name: "Duplicate listing", Category: models.CategoryModern, Material: models.MaterialSilver,
 		ReferenceURL: sourceURL, IsWishlist: true, UserID: 1,
 	}
-	if err := svc.CreateCoin(duplicate); !errors.Is(err, ErrWishlistReferenceDuplicate) {
+	err := svc.CreateCoin(duplicate)
+	if !errors.Is(err, ErrWishlistReferenceDuplicate) {
 		t.Fatalf("duplicate error=%v, want ErrWishlistReferenceDuplicate", err)
+	}
+	var withCoin *WishlistDuplicateError
+	if !errors.As(err, &withCoin) || withCoin.CoinID != first.ID {
+		t.Fatalf("duplicate error=%#v, want the first coin %d", err, first.ID)
 	}
 
 	for _, allowed := range []*models.Coin{
@@ -369,8 +374,7 @@ func TestUpdateCoin_NormalizesAndReplacesReferences(t *testing.T) {
 	}
 }
 
-// TestCreateCoin_PersistsReferencesForWishlist asserts the rule established by
-// ADR 0013 (docs/adr/0013-wishlist-coins-may-hold-catalog-references.md):
+// TestCreateCoin_PersistsReferencesForWishlist asserts the rule that
 // wishlist coins are no longer stripped of their References relation.
 // IsWishlist records acquisition intent only; it no longer participates in
 // reference handling. The incoming reference carries an occupied primary key

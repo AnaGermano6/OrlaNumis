@@ -1,6 +1,6 @@
 # Progressive Web App (PWA) Guide
 
-Aurearia is a Progressive Web App — you can install it on your phone, tablet, or desktop and use it just like a native app. Once installed, it launches in its own window (no browser toolbar), loads instantly from cache, and gives you quick access to your collection right from your home screen.
+Orla Numis is a Progressive Web App — you can install it on your phone, tablet, or desktop and use it just like a native app. Once installed, it launches in its own window (no browser toolbar), loads instantly from cache, and gives you quick access to your collection right from your home screen.
 
 The app is built with the [VitePWA](https://vite-pwa-org.netlify.app/) plugin and works on iOS, Android, and desktop browsers.
 
@@ -15,7 +15,7 @@ The app is built with the [VitePWA](https://vite-pwa-org.netlify.app/) plugin an
 3. Scroll down and tap **"Add to Home Screen"**
 4. Give it a name and tap **Add**
 
-The app icon will appear on your home screen. Tap it to launch Aurearia in full-screen standalone mode.
+The app icon will appear on your home screen. Tap it to launch Orla Numis in full-screen standalone mode.
 
 ### Android (Chrome)
 
@@ -37,7 +37,7 @@ The app will open in its own window without browser chrome. You can find it in y
 
 ## How the PWA Differs from the Desktop Experience
 
-When you run Aurearia as an installed PWA, the interface adapts to give you a more mobile-friendly experience. Here's what changes:
+When you run Orla Numis as an installed PWA, the interface adapts to give you a more mobile-friendly experience. Here's what changes:
 
 ### Gallery View
 
@@ -94,29 +94,6 @@ In a browser tab the same two pages keep the two-column wizard, which is built f
 mouse and a wide window. The capture screen follows whichever theme you picked in
 **Settings → Appearance** (Dark, Light, British Museum, Louvre, Capitoline, Byzantine,
 Modern Greek), exactly like the rest of the app.
-
-### Biometric Login (Face ID / Touch ID / Fingerprint)
-
-Aurearia supports WebAuthn/FIDO2 passkey authentication, letting you sign in with your device's biometrics instead of typing a password.
-
-#### Setting Up Biometric Login
-
-1. Sign in with your username and password
-2. Go to **Settings → Account**
-3. Tap **"Register Biometric"**
-4. Follow your device's prompt to register your face, fingerprint, or device PIN
-
-Your passkey is stored securely on your device:
-- **iOS** — iCloud Keychain / Passwords app
-- **Android** — Device fingerprint or face unlock
-
-#### Signing In with Biometrics
-
-1. On the login screen, enter your username (the app remembers your last username automatically)
-2. If a biometric credential exists for that username, a **"🔐 Sign in with Biometrics"** button appears
-3. Tap it and authenticate with Face ID, Touch ID, or your device's fingerprint sensor
-
-> **Note:** Biometric login requires HTTPS in production. It uses your device's built-in authenticator (not external security keys).
 
 ---
 

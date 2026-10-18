@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/briandenicola/ancient-coins-api/models"
 	"github.com/briandenicola/ancient-coins-api/repository"
@@ -88,4 +90,51 @@ func wishlistQueries(coins []models.Coin, years map[int]bool) []services.CoinPho
 		queries = append(queries, query)
 	}
 	return queries
+}
+
+// NumistaType godoc
+//
+//	@Summary		Find the Numista type of a new coin
+//	@Description	The Numista type of a coin of the releases or the catalogue, to fill in its details when it is added: its own when it comes from Numista, the one the catalogue knows it by, else the one of Numista's coins of its country, year and face value whose ECB image, mint page or name is the coin's. The candidates are those coins, to choose from when none is sure. Numista is asked once a day at most for a country, year and face value.
+//	@Tags			Coins
+//	@Produce		json
+//	@Param			source		query		string	true	"Where the coin comes from"	Enums(ecb, incm, mdp, moe, numista)
+//	@Param			country		query		string	false	"ISO code of its country; none for a joint issue"
+//	@Param			title		query		string	true	"Its title, as the release names it"
+//	@Param			faceValue	query		number	true	"Its (lowest) face value"
+//	@Param			from		query		string	true	"First month of issue (YYYY-MM)"
+//	@Param			pageUrl		query		string	false	"Its page"
+//	@Param			imageUrl	query		string	false	"Its picture"
+//	@Success		200			{object}	services.ReleaseNumistaType
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		401			{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/coin-releases/numista-type [get]
+func (h *CoinReleasesHandler) NumistaType(c *gin.Context) {
+	faceValue, err := strconv.ParseFloat(c.Query("faceValue"), 64)
+	release := services.CoinRelease{
+		Source:    c.Query("source"),
+		Country:   strings.ToUpper(strings.TrimSpace(c.Query("country"))),
+		Title:     strings.TrimSpace(c.Query("title")),
+		FaceValue: faceValue,
+		From:      strings.TrimSpace(c.Query("from")),
+		PageURL:   httpsURL(c.Query("pageUrl")),
+		ImageURL:  httpsURL(c.Query("imageUrl")),
+	}
+	if err != nil || faceValue <= 0 || release.Title == "" || !releaseMonth.MatchString(release.From) || !services.IsCoinReleaseSource(release.Source) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Give the coin's source, title, face value and month of issue"})
+		return
+	}
+	c.JSON(http.StatusOK, h.releases.NumistaType(c.Request.Context(), release))
+}
+
+var releaseMonth = regexp.MustCompile(`^\d{4}-\d{2}$`)
+
+// httpsURL is an https address, or "".
+func httpsURL(value string) string {
+	value = strings.TrimSpace(value)
+	if !strings.HasPrefix(value, "https://") || len(value) > 2048 {
+		return ""
+	}
+	return value
 }

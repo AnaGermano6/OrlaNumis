@@ -777,7 +777,7 @@ func TestDeepIdentificationService_StartJob_QueueDepthAndPerUserLimit(t *testing
 	// Same user, different fingerprint: this is a genuinely new request, not
 	// a duplicate submission, so it must be refused with ErrDeepJobAtCapacity
 	// rather than silently handed job1's identity (approved breaking change,
-	// 2026-08-17 - see .squad/decisions/inbox/cassius-job-at-capacity.md).
+	// 2026-08-17).
 	job2, reused2, err := svc.StartJob(newDeepStartJob(t, user.ID, "second"))
 	if !errors.Is(err, ErrDeepJobAtCapacity) {
 		t.Fatalf("expected ErrDeepJobAtCapacity for a non-matching submission at the per-user limit, got job=%v reused=%v err=%v", job2, reused2, err)

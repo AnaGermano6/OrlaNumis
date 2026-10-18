@@ -3709,6 +3709,98 @@ const docTemplate = `{
                 }
             }
         },
+        "/coin-releases/numista-type": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The Numista type of a coin of the releases or the catalogue, to fill in its details when it is added: its own when it comes from Numista, the one the catalogue knows it by, else the one of Numista's coins of its country, year and face value whose ECB image, mint page or name is the coin's. The candidates are those coins, to choose from when none is sure. Numista is asked once a day at most for a country, year and face value.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Find the Numista type of a new coin",
+                "parameters": [
+                    {
+                        "enum": [
+                            "ecb",
+                            "incm",
+                            "mdp",
+                            "moe",
+                            "numista"
+                        ],
+                        "type": "string",
+                        "description": "Where the coin comes from",
+                        "name": "source",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ISO code of its country; none for a joint issue",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Its title, as the release names it",
+                        "name": "title",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "Its (lowest) face value",
+                        "name": "faceValue",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "First month of issue (YYYY-MM)",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Its page",
+                        "name": "pageUrl",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Its picture",
+                        "name": "imageUrl",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.ReleaseNumistaType"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/coins": {
             "get": {
                 "security": [
@@ -3737,7 +3829,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Filter by category (Roman, Greek, Byzantine, Modern, Other)",
+                        "description": "Filter by category, one of the admin-configured categories (Modern and Other by default)",
                         "name": "category",
                         "in": "query"
                     },
@@ -4112,67 +4204,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/coins/daily": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "One coin (or banknote) of the collection for the day, preferring those with a photo: the same all day, another the next.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "Coin of the day",
-                "parameters": [
-                    {
-                        "enum": [
-                            "coin",
-                            "banknote"
-                        ],
-                        "type": "string",
-                        "description": "A coin (default) or a banknote",
-                        "name": "kind",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "The viewer's day, YYYY-MM-DD (default: today, UTC)",
-                        "name": "date",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.DailyCoinResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -6050,7 +6081,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns suggested missing set/tag assignments with confidence and reasons",
+                "description": "Returns suggested missing set assignments with confidence and reasons",
                 "produces": [
                     "application/json"
                 ],
@@ -6125,7 +6156,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Applies recommended set/tag assignment and marks recommendation accepted",
+                "description": "Applies a recommended set assignment and marks the recommendation accepted",
                 "produces": [
                     "application/json"
                 ],
@@ -6586,6 +6617,64 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/{id}/wishlist-matches": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The wishlist coins that are the collection coin, so that one just added to the collection can leave the wishlist: of the same Numista type or official photo (the ECB's image of a €2 commemorative, a mint's page of a collector coin), or of the same kind and year under the same name. Numista is not asked. A wishlist coin has none.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Find a collection coin on the wishlist",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Coin ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.WishlistMatchesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -10139,9 +10228,6 @@ const docTemplate = `{
                                 },
                                 "name": {
                                     "type": "string"
-                                },
-                                "pinned": {
-                                    "type": "boolean"
                                 }
                             }
                         }
@@ -10155,7 +10241,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Includes pin cap rejection: you can pin up to 5 sets",
+                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -11480,7 +11566,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates profile, privacy, coin-of-day, emperor-tracker, and PWA swipe navigation preferences for the authenticated user.",
+                "description": "Updates the profile and the PWA swipe navigation preference of the authenticated user.",
                 "consumes": [
                     "application/json"
                 ],
@@ -13771,18 +13857,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.DailyCoinResponse": {
-            "type": "object",
-            "properties": {
-                "coin": {
-                    "$ref": "#/definitions/models.Coin"
-                },
-                "date": {
-                    "type": "string",
-                    "example": "2026-10-13"
-                }
-            }
-        },
         "handlers.DeleteAnalysisResponse": {
             "type": "object",
             "properties": {
@@ -14832,6 +14906,28 @@ const docTemplate = `{
                 "totalPurchasePrice": {
                     "type": "number",
                     "example": 1250
+                }
+            }
+        },
+        "handlers.WishlistMatch": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.WishlistMatchesResponse": {
+            "type": "object",
+            "properties": {
+                "coins": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.WishlistMatch"
+                    }
                 }
             }
         },
@@ -18328,7 +18424,7 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "aurearia-2026-10-16-030000-auto.zip"
+                    "example": "orla-numis-2026-10-16-030000-auto.zip"
                 },
                 "size": {
                     "type": "integer"
@@ -18633,8 +18729,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "wishlist": {
-                    "description": "Wishlist is true when a coin of the wishlist is this one.",
+                    "description": "Wishlist is true when a coin of the wishlist is this one;\nWishlistCoinID is that coin, to take it off the wishlist.",
                     "type": "boolean"
+                },
+                "wishlistCoinId": {
+                    "type": "integer"
                 }
             }
         },
@@ -18947,6 +19046,31 @@ const docTemplate = `{
                 }
             }
         },
+        "services.ReleaseNumistaType": {
+            "type": "object",
+            "properties": {
+                "candidates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaCatalogSearchItem"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "ok",
+                        "unconfigured",
+                        "unauthorized",
+                        "quota_limited",
+                        "unavailable"
+                    ]
+                },
+                "typeId": {
+                    "description": "TypeID is the coin's type; absent when none is sure.",
+                    "type": "integer"
+                }
+            }
+        },
         "services.RestoreResult": {
             "type": "object",
             "properties": {
@@ -19206,7 +19330,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},
-	Title:            "Aurearia API",
+	Title:            "Orla Numis API",
 	Description:      "REST API for managing a personal coin collection. Supports coin CRUD, image uploads, AI-powered analysis, user management, and admin features.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

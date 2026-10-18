@@ -21,9 +21,8 @@ from app.tools.search import fetch_registered_dealer_page, validate_search_sourc
 
 HANDOFF_FIXTURE = (
     Path(__file__).parents[3]
-    / "specs"
-    / "362-coin-copilot-attribution"
     / "contracts"
+    / "coin-copilot"
     / "fixtures"
     / "deep-analysis-handoff-invalid.json"
 )

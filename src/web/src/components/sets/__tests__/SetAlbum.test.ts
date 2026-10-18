@@ -60,7 +60,7 @@ describe('SetAlbum', () => {
     const sections = () => wrapper.findAll('[data-testid="album-section"]').map((node) => node.text().replace(/\s+/g, ' '))
     expect(sections()).toEqual(['2026 · 0 de 1', '2022 · 2 de 2', 'Sem informação · 0 de 1'])
     await wrapper.get('[data-testid="album-group-country"]').trigger('click')
-    expect(sections()).toEqual(['Áustria · 1 de 1', 'Portugal · 1 de 2', 'Sem informação · 0 de 1'])
+    expect(sections()).toEqual(['🇦🇹Áustria · 1 de 1', '🇵🇹Portugal · 1 de 2', 'Sem informação · 0 de 1'])
     await wrapper.get('[data-testid="album-group-none"]').trigger('click')
     expect(sections()).toEqual([])
     expect(titles(wrapper)).toEqual(['Rotary', 'Gago Coutinho', 'Erasmus', 'Ainda sem nada'])

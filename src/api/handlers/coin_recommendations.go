@@ -21,7 +21,7 @@ func NewCoinRecommendationHandler(service *services.CoinRecommendationService) *
 // List returns generated recommendations for a coin owned by the authenticated user.
 //
 //	@Summary		List coin recommendations
-//	@Description	Returns suggested missing set/tag assignments with confidence and reasons
+//	@Description	Returns suggested missing set assignments with confidence and reasons
 //	@Tags			coins
 //	@Produce		json
 //	@Security		BearerAuth
@@ -54,7 +54,7 @@ func (h *CoinRecommendationHandler) List(c *gin.Context) {
 // Accept applies a recommendation for the authenticated user's coin.
 //
 //	@Summary		Accept recommendation
-//	@Description	Applies recommended set/tag assignment and marks recommendation accepted
+//	@Description	Applies a recommended set assignment and marks the recommendation accepted
 //	@Tags			coins
 //	@Produce		json
 //	@Security		BearerAuth

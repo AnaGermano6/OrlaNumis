@@ -1,2740 +1,350 @@
 # API Reference
 
-Complete REST API reference for Aurearia. All endpoints are served under the `/api` prefix (e.g., `http://localhost:8080/api/coins`). Interactive documentation is also available via Swagger UI at `/swagger/index.html`, and the committed review artifact lives at `docs/openapi.json`.
+Every endpoint of the Orla Numis API, grouped by area. It is generated from [`openapi.json`](openapi.json), the OpenAPI document produced from the code's annotations (`task openapi`), which also has each endpoint's parameters, bodies and responses. A running app serves it interactively at `/swagger/index.html`.
 
-## Authentication
+- **Base path** — `/api` (for example `http://localhost:8080/api/coins`).
+- **Authentication** — every endpoint except `/auth/login`, `/auth/register` and `/auth/refresh` needs `Authorization: Bearer <access token>`. The container liveness checks (`/health`, `/healthz`) are outside `/api`. Get a token from `POST /api/auth/login` and renew it with `POST /api/auth/refresh`. See [Authentication](authentication.md).
+- **Ownership** — data endpoints only reach the signed-in user's own coins, sets and drafts. `/admin/*` endpoints need the admin role.
+- **Errors** — failures answer with a JSON body `{"error": "…"}` and the matching HTTP status.
+- **Internal** — `/internal/*` endpoints are called by the Python agent with its service token, never by browsers.
 
-Most endpoints require authentication via one of two methods:
-
-| Method | Header | Example |
-| ------ | ------ | ------- |
-| JWT Bearer Token | `Authorization: Bearer <token>` | Obtained from `/api/auth/login` |
-| API Key | `X-API-Key: <key>` | Generated via `/api/auth/api-keys` |
-
-To obtain a JWT token, call the [login](#post-apiauthlogin) endpoint. Tokens can be refreshed via the [refresh](#post-apiauthrefresh) endpoint. API keys are managed through the [API Keys](#api-keys) endpoints.
-
----
-
-## Public Endpoints
-
-These endpoints do not require authentication.
-
-### GET /api/auth/setup
-
-Check whether any users exist. Used by the frontend to determine if the app needs first-time setup.
-
-**Response:**
-
-```json
-{ "needsSetup": true }
-```
-
-### POST /api/auth/register
-
-Create a new user account. The **first user** to register is automatically assigned the **admin** role.
-
-**Request Body:**
-
-```json
-{
-  "username": "collector",
-  "password": "s3cur3P@ss",
-  "email": "collector@example.com"
-}
-```
-
-| Field | Type | Required | Validation |
-| ----- | ---- | -------- | ---------- |
-| `username` | string | Yes | 3–50 characters |
-| `password` | string | Yes | Minimum 8 characters |
-| `email` | string | Yes | Must be a valid email address |
-
-**Response:**
-
-```json
-{
-  "token": "eyJhbGciOi...",
-  "refreshToken": "dGhpcyBpcyBh...",
-  "user": {
-    "id": 1,
-    "username": "collector",
-    "role": "admin"
-  }
-}
-```
-
-### POST /api/auth/login
-
-Authenticate and receive a JWT token.
-
-**Request Body:**
-
-```json
-{
-  "username": "collector",
-  "password": "s3cur3P@ss"
-}
-```
-
-**Response:**
-
-```json
-{
-  "token": "eyJhbGciOi...",
-  "refreshToken": "dGhpcyBpcyBh...",
-  "user": {
-    "id": 1,
-    "username": "collector",
-    "role": "admin"
-  }
-}
-```
-
-**Example:**
+To regenerate this page after changing the API:
 
 ```sh
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "collector", "password": "s3cur3P@ss"}'
-```
-
-### POST /api/auth/refresh
-
-Refresh an expired JWT using a refresh token.
-
-**Request Body:**
-
-```json
-{ "refreshToken": "dGhpcyBpcyBh..." }
-```
-
-**Response:** Same shape as the login response (`token`, `refreshToken`, `user`).
-
-### POST /api/auth/webauthn/login/begin
-
-Begin a WebAuthn (biometric/passkey) login ceremony.
-
-**Request Body:**
-
-```json
-{ "username": "collector" }
-```
-
-**Response:** `options` is the `PublicKeyCredentialRequestOptions` object to pass to `navigator.credentials.get({ publicKey: options })`; `options.challenge` is required and matches the server-side login session.
-
-### POST /api/auth/webauthn/login/finish
-
-Complete a WebAuthn login ceremony. The request body contains the authenticator assertion response from the browser WebAuthn API.
-
-**Query Parameters:**
-
-| Param | Description |
-| ----- | ----------- |
-| `username` | The username that initiated the ceremony |
-
-**Response:** Same shape as the login response (`token`, `refreshToken`, `user`).
-
-### GET /api/auth/webauthn/check
-
-Check whether a user has registered biometric/passkey credentials.
-
-**Query Parameters:**
-
-| Param | Description |
-| ----- | ----------- |
-| `username` | The username to check |
-
-**Response:**
-
-```json
-{ "hasCredentials": true }
-```
-
----
-
-## Protected Endpoints
-
-All endpoints below require a valid `Authorization: Bearer <token>` or `X-API-Key` header.
-
----
-
-### Coins
-
-#### GET /api/coins
-
-List coins in the collection with filtering, sorting, and pagination.
-
-**Query Parameters:**
-
-| Param | Type | Default | Description |
-| ----- | ---- | ------- | ----------- |
-| `category` | string | — | Filter by category (`Roman`, `Greek`, `Byzantine`, `Modern`, `Other`) |
-| `era` | string | — | Filter by era (`ancient`, `medieval`, `modern`) |
-| `search` | string | — | Full-text search across name, ruler, denomination, and other fields |
-| `wishlist` | string | — | `true` for wishlist only, `false` for collection only |
-| `sort` | string | `updated_at` | Field name to sort by (e.g., `name`, `purchase_date`, `current_value`, `updated_at`, `random`) |
-| `order` | string | `desc` | Sort direction: `asc` or `desc` |
-| `seed` | int | — | Optional deterministic seed used when `sort=random` |
-| `page` | int | `1` | Page number (1-indexed) |
-| `limit` | int | `50` | Results per page |
-
-**Response:**
-
-```json
-{
-  "coins": [ { "id": 1, "name": "Augustus Denarius", "..." : "..." } ],
-  "total": 142,
-  "page": 1,
-  "limit": 50
-}
-```
-
-**Example — search Roman coins sorted by value:**
-
-```sh
-curl "http://localhost:8080/api/coins?category=Roman&sort=currentValue&order=desc&limit=10" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-#### GET /api/coins/:id
-
-Get a single coin with all fields and associated images.
-
-**Example:**
-
-```sh
-curl http://localhost:8080/api/coins/42 \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-#### POST /api/coins
-
-Create a new coin. Only `name` is required; all other fields are optional. See the [field reference](getting-started.md#field-reference-for-import) for the full list.
-
-**Request Body:**
-
-```json
-{
-  "name": "Nero Sestertius - Port of Ostia",
-  "category": "Roman",
-  "era": "ancient",
-  "material": "Bronze",
-  "denomination": "Sestertius",
-  "ruler": "Nero",
-  "purchasePrice": 1200.00,
-  "references": [
-    {
-      "catalog": "RIC",
-      "volume": "I",
-      "number": "180",
-      "certainty": "high",
-      "uri": "https://numismatics.org/ocre/results?q=RIC+I+180"
-    }
-  ],
-  "isWishlist": false
-}
-```
-
-**Example:**
-
-```sh
-curl -X POST http://localhost:8080/api/coins \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Nero Sestertius", "category": "Roman", "material": "Bronze"}'
-```
-
-#### PUT /api/coins/:id
-
-Update an existing coin. Send any fields you want to change.
-
-**Request Body:** Same schema as create — only include the fields you want to update.
-
-#### GET /api/coins/:id/references
-
-List structured catalog references for a user-owned coin.
-
-#### POST /api/coins/:id/references
-
-Add a structured catalog reference to a user-owned coin.
-
-**Request Body:**
-
-```json
-{
-  "catalog": "RIC",
-  "volume": "VII",
-  "number": "162",
-  "certainty": "probable",
-  "uri": "https://numismatics.org/ocre/results?q=RIC+VII+162"
-}
-```
-
-#### PUT /api/coins/:id/references/:referenceId
-
-Update an existing structured reference.
-
-#### DELETE /api/coins/:id/references/:referenceId
-
-Delete an existing structured reference.
-
-#### POST /api/coins/:id/purchase
-
-Move a wishlist coin into the collection by setting `isWishlist` to `false`. Use this when you acquire a coin you were tracking on your wishlist.
-
-#### POST /api/coins/:id/sell
-
-Mark a coin as sold.
-
-**Request Body:**
-
-```json
-{
-  "salePrice": 750.00,
-  "buyerName": "John Smith"
-}
-```
-
-#### DELETE /api/coins/:id
-
-Delete a coin and all of its associated images (both database records and uploaded files).
-
----
-
-### Images
-
-#### POST /api/coins/:id/images
-
-Upload an image file via multipart form data.
-
-**Form Fields:**
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `image` | file | Yes | The image file |
-| `imageType` | string | No | One of: `obverse`, `reverse`, `detail`, `other` |
-| `isPrimary` | string | No | `true` to set as the primary/cover image |
-
-**Example:**
-
-```sh
-curl -X POST http://localhost:8080/api/coins/42/images \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "image=@coin-obverse.jpg" \
-  -F "imageType=obverse" \
-  -F "isPrimary=true"
-```
-
-#### POST /api/coins/:id/images/base64
-
-Upload an image as a base64-encoded string. Useful for programmatic uploads or when working with image data directly.
-
-**Supported extensions:** `jpg`, `jpeg`, `png`, `gif`, `webp`
-
-**Request Body:**
-
-```json
-{
-  "image": "/9j/4AAQSkZJRg...",
-  "fileExtension": "jpg",
-  "imageType": "obverse",
-  "isPrimary": true
-}
-```
-
-#### DELETE /api/coins/:id/images/:imageId
-
-Delete an image by ID. Removes both the database record and the uploaded file.
-
-#### GET /api/proxy-image
-
-Proxy an external image URL through the server. Useful to avoid CORS issues when displaying images from third-party sites.
-
-**Query Parameters:**
-
-| Param | Description |
-| ----- | ----------- |
-| `url` | The external image URL to proxy |
-
-**Example:**
-
-```sh
-curl "http://localhost:8080/api/proxy-image?url=https://example.com/coin.jpg" \
-  -H "Authorization: Bearer $TOKEN" \
-  --output coin.jpg
-```
-
-#### GET /api/scrape-image
-
-Scrape the `og:image` meta tag from a URL. Returns the image URL found in the page's OpenGraph metadata.
-
-**Query Parameters:**
-
-| Param | Description |
-| ----- | ----------- |
-| `url` | The page URL to scrape |
-
----
-
-### Journal
-
-Each coin can have journal entries for tracking research notes, provenance details, or condition observations over time.
-
-#### GET /api/coins/:id/journal
-
-List all journal entries for a coin.
-
-#### POST /api/coins/:id/journal
-
-Add a journal entry to a coin.
-
-**Request Body:**
-
-```json
-{ "entry": "Identified mint mark as Rome based on comparison with RIC plates." }
-```
-
-**Example:**
-
-```sh
-curl -X POST http://localhost:8080/api/coins/42/journal \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"entry": "Cleaned with distilled water. No change to surfaces."}'
-```
-
-#### DELETE /api/coins/:id/journal/:entryId
-
-Delete a journal entry by ID.
-
----
-
-### AI Analysis
-
-AI-powered coin analysis using Ollama vision models. Requires Ollama to be running and configured in admin settings.
-
-#### POST /api/coins/:id/analyze
-
-Run AI analysis on a coin's images. Analyzes either the obverse or reverse side.
-
-**Query Parameters:**
-
-| Param | Values | Description |
-| ----- | ------ | ----------- |
-| `side` | `obverse`, `reverse` | Which side to analyze |
-
-**Example:**
-
-```sh
-curl -X POST "http://localhost:8080/api/coins/42/analyze?side=obverse" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-#### DELETE /api/coins/:id/analyze
-
-Delete a stored AI analysis for a coin.
-
-**Query Parameters:**
-
-| Param | Values | Description |
-| ----- | ------ | ----------- |
-| `side` | `obverse`, `reverse` | Which analysis to delete |
-
-#### POST /api/extract-text
-
-Extract text from an image using OCR. Accepts a multipart form upload.
-
-**Form Fields:**
-
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `file` | file | The image file to extract text from |
-
-**Example:**
-
-```sh
-curl -X POST http://localhost:8080/api/extract-text \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "file=@inscription.jpg"
-```
-
-#### GET /api/ollama-status
-
-Check Ollama connectivity and whether the configured vision model is available.
-
-**Response:**
-
-```json
-{
-  "connected": true,
-  "model": "llava",
-  "modelAvailable": true
-}
-```
-
----
-
-### Statistics
-
-#### GET /api/stats
-
-Get collection statistics including totals, category breakdowns, material breakdowns, and grade distributions.
-
-**Example:**
-
-```sh
-curl http://localhost:8080/api/stats \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-#### GET /api/stats/distribution
-
-Get era × category cross-tabulation data for the collection heat map visualization.
-
-**Response:**
-
-```json
-{
-  "cells": [
-    { "era": "Roman Republic", "category": "Roman", "count": 5 },
-    { "era": "Imperial", "category": "Roman", "count": 12 }
-  ]
-}
-```
-
-#### GET /api/coins/:id/value-history
-
-Get value tracking entries for a specific coin, ordered oldest first.
-
-**Path Parameters:**
-
-| Param | Type | Description |
-| ----- | ---- | ----------- |
-| `id` | int | Coin ID |
-
-**Response:**
-
-```json
-[
-  { "id": 1, "coinId": 42, "value": 250.00, "source": "ai_estimate", "createdAt": "2024-06-01T12:00:00Z" },
-  { "id": 2, "coinId": 42, "value": 275.00, "source": "manual", "createdAt": "2024-07-01T12:00:00Z" }
-]
-```
-
-#### GET /api/suggestions
-
-Get autocomplete suggestions for coin fields (e.g., rulers, mints, denominations). Used by the frontend to power form autocomplete.
-
----
-
-### Numista
-
-Features 341–342 use application-owned typed contracts for direct and
-photo-assisted text lookup. Expected lookup domain outcomes use HTTP 200;
-malformed input, authentication, authorization, and unexpected failures retain
-normal HTTP status semantics.
-
-#### POST /api/numista/query-proposal
-
-Build a `numista-query-v2` proposal locally. This authenticated endpoint
-validates `path` (`direct` or `photo`) and bounded `evidence`; it does not call
-Numista, search images, rank candidates, persist data, or publish provider
-telemetry.
-
-```json
-{
-  "path": "direct",
-  "evidence": {
-    "issuer": "Honorius",
-    "mint": "SMNT",
-    "reverseInscription": "GLORIA ROMANORVM",
-    "denomination": "AE3",
-    "material": "Bronze"
-  }
-}
-```
-
-```json
-{
-  "query": "Honorius GLORIA ROMANORVM Nicomedia",
-  "querySource": "generated",
-  "generationVersion": "numista-query-v2"
-}
-```
-
-Generated `q` uses subject, reverse inscription/type, and a reliable mint.
-Exact normalized `SMN` and `SMNT` aliases become `Nicomedia`. Denomination,
-date, material, catalog references, obverse/visible text, and prose remain in
-`evidence` for deterministic scoring but are excluded from `q`.
-
-**Errors:** `400` invalid/oversized/unknown fields, `401` unauthenticated.
-
-#### POST /api/numista/lookup
-
-Run broad lookup. `query` is required (1–500 characters), `path` is `direct`
-or `photo`, and `evidence` is required but may be empty. `querySource` is
-`generated`, `user-edited`, or `manual`. Generated and user-edited requests
-carry `generationVersion: "numista-query-v2"`; manual requests omit it.
-
-```json
-{
-  "query": "Honorius GLORIA ROMANORVM Nicomedia",
-  "path": "direct",
-  "evidence": {
-    "issuer": "Honorius",
-    "denomination": "AE3",
-    "mint": "SMNT",
-    "dateText": "393–423 CE",
-    "material": "Bronze",
-    "reverseInscription": "GLORIA ROMANORVM"
-  },
-  "querySource": "generated",
-  "generationVersion": "numista-query-v2"
-}
-```
-
-The response contains `status`, `effectiveQuery`, application-owned
-`candidates`, optional `guidanceCode`, `retryAfterSeconds`, optional
-search-cache metadata, `stage: "broad"`, `querySource`, `searchAttempt`, and
-`searchAttemptCount`.
-
-Manual and user-edited queries are searched exactly once as submitted. The
-server rebuilds a claimed generated proposal from its evidence and version;
-a mismatch is treated as user-edited. Only an empty verified generated primary
-may trigger one distinct relaxed search. `effectiveQuery` is the exact primary
-or relaxed query used for the returned/final outcome, `searchAttempt` is
-`primary` or `relaxed`, and `searchAttemptCount` is `1` or `2`.
-
-Statuses are exactly `success`, `empty`, `unconfigured`, `quota-limited`,
-`timeout`, and `unavailable`. `cache.hit` means a fresh stored in-memory entry
-was reused; `cache.coalesced` means this caller joined in-flight work. They are
-mutually exclusive. Cache metadata also contains `createdAt`, `expiresAt`, and
-`ageSeconds`.
-
-**Errors:** `400` invalid/oversized/unknown fields, `401` unauthenticated,
-`500` unexpected application failure. Expected provider/configuration states
-remain typed HTTP 200 outcomes.
-
-#### POST /api/numista/enrich
-
-Submit the complete broad candidate set with the same `query`, `path`, and
-`evidence`. The candidate array must contain 1–50 unique valid application
-candidates.
-
-The service reranks before choosing targets, applies the administrator limit
-with a current runtime cap of five, fetches details with concurrency two,
-reranks again, and returns every candidate with `stage: "enriched"`. Candidate
-states are `not_requested`, `enriched`, `cached`, or `failed`; failed details
-retain the broad candidate.
-
-Surrounding whitespace is trimmed from the enrichment query during validation.
-Broad lookup preserves exact manual/user-edited input. For a generated
-fallback, enrichment retains the effective relaxed query and its
-source/attempt attribution.
-
-**Errors:** `400` invalid candidates/IDs/query, `401` unauthenticated,
-`500` unexpected application failure.
-
-#### GET /api/numista/search
-
-Deprecated compatibility adapter backed by the shared lookup service. It
-preserves the legacy `{count,types}` response for older clients.
-
-**Query Parameters:**
-
-| Param | Description |
-| ----- | ----------- |
-| `q` | Required search terms, 1–500 characters |
-
-**Example:**
-
-```sh
-curl "http://localhost:8080/api/numista/search?q=Augustus+denarius" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-Non-success/non-empty domain outcomes map to a generic HTTP 503 on this legacy
-route. New clients should use the typed POST routes. It performs one exact
-query and never receives generated-query relaxation.
-
-#### Photo and Quick Capture compatibility
-
-- `POST /api/coins/lookup` additively returns `proposedNumistaQuery`,
-  `numistaEvidence`, and nullable `numistaLookup`. It makes no Numista provider
-  request during photo analysis. Deprecated `numistaCandidates` remains empty
-  until explicit search; `candidateReferences` retains NGC compatibility only.
-- Quick Capture create/update multipart requests accept optional
-  `selectedNumistaId` and canonical `selectedNumistaUrl`. Update omission
-  preserves the selection; `clearSelectedNumista=true` removes it.
-- Draft responses, including `GET /api/quick-capture/drafts`, add nullable
-  `selectedNumistaReference`. Promotion copies exactly that reference
-  transactionally and remains idempotent.
-
----
-
-### AI Agent
-
-Chat with an AI-powered coin search agent backed by Anthropic models. The agent can search your collection, answer numismatic questions, and provide research assistance.
-
-#### POST /api/agent/chat
-
-Send a message to the AI agent. The response is streamed via **Server-Sent Events (SSE)**.
-
-**Request Body:**
-
-```json
-{
-  "messages": [
-    { "role": "user", "content": "What Roman denarii do I have from the Julio-Claudian dynasty?" }
-  ],
-  "conversationId": "optional-conversation-id"
-}
-```
-
-**SSE Stream Format:**
-
-The response uses `Content-Type: text/event-stream`. Each event is a JSON object:
-
-```
-data: {"type": "text", "content": "Based on your collection..."}
-
-data: {"type": "text", "content": " I found 3 denarii..."}
-
-data: {"type": "done"}
-```
-
-**Example:**
-
-```sh
-curl -N -X POST http://localhost:8080/api/agent/chat \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"messages": [{"role": "user", "content": "Show me my most valuable coins"}]}'
-```
-
-> **Note:** Use `curl -N` (no-buffer) to see streamed events in real time.
-
-#### Coin Copilot (default-off durable read-only API)
-
-Coin Copilot is selected only when the `CoinCopilotEnabled` setting is enabled
-and the configured model passes a fail-closed tool-calling capability preflight.
-Otherwise clients continue using `POST /api/agent/chat`. All endpoints below
-require bearer authentication, derive ownership server-side, and return `404`
-for both unknown and foreign thread/run identifiers.
-
-The feature is read-only. Go owns threads, runs, checkpoints, retention,
-cancellation, and SSE sequence allocation; Python remains stateless and
-database-free. Public payloads do not expose chain-of-thought, provider-native
-traces, credentials, raw tool arguments/results, or dollar-cost estimates.
-Reliable provider-reported input/output token usage is included in run usage.
-
-##### GET /api/agent/copilot/capability
-
-Resolve whether the drawer should use durable Copilot mode or legacy chat.
-
-```json
-{
-  "mode": "copilot",
-  "enabled": true,
-  "modelToolCallingSupported": true,
-  "reason": null
-}
-```
-
-`mode` is `copilot` or `legacy`. Legacy reasons are `disabled`,
-`provider_unconfigured`, `model_tool_calling_unsupported`, or
-`temporarily_unavailable`.
-
-##### POST /api/agent/copilot/runs
-
-Start a durable run. Requires `Idempotency-Key` (1–128 printable ASCII
-characters).
-
-```json
-{
-  "goal": "Compare my Flavian bronzes and identify collection gaps.",
-  "threadId": "cct_optional",
-  "appContext": {
-    "route": "/stats",
-    "activeCoinId": null,
-    "activeDraftId": null
-  }
-}
-```
-
-`activeCoinId` is emitted only on coin-detail routes and `activeDraftId` only
-on the exact active Quick Capture draft route. Both are optional positive safe
-integers and remain non-authoritative hints; they never bypass owner-scoped
-target resolution or clarification.
-
-Returns `202` for a new run or `200` for an identical idempotent replay:
-
-```json
-{
-  "run": {
-    "id": "ccr_example",
-    "threadId": "cct_example",
-    "status": "queued",
-    "goal": "Compare my Flavian bronzes and identify collection gaps.",
-    "checkpointVersion": 0,
-    "lastSeq": 0,
-    "attempt": 0,
-    "finalAnswer": null,
-    "failureCode": null,
-    "failureMessage": null,
-    "resumeDeadline": null,
-    "usage": {
-      "iterations": 0,
-      "toolCalls": 0,
-      "inputTokens": 0,
-      "outputTokens": 0
-    },
-    "createdAt": "2026-09-17T22:00:00Z",
-    "updatedAt": "2026-09-17T22:00:00Z"
-  },
-  "reused": false
-}
-```
-
-Conflicting reuse or active-run/queue capacity returns `409`; unavailable
-feature/model returns `503` and the client should use legacy chat.
-
-##### GET /api/agent/copilot/threads/:threadId
-
-Return the owner-scoped thread, user-visible messages, and run snapshots.
-
-##### DELETE /api/agent/copilot/threads/:threadId
-
-Delete a settled thread and its runs, checkpoints, events, and resume requests.
-Returns `204`. An active run returns `409`; cancel it and wait for settlement
-before retrying.
-
-##### GET /api/agent/copilot/runs/:runId
-
-Return the current durable run snapshot. Run states are `queued`, `running`,
-`paused`, `cancel_requested`, `completed`, `failed`, and `cancelled`.
-
-##### POST /api/agent/copilot/runs/:runId/cancel
-
-Request cancellation. Queued/paused runs can settle immediately; running runs
-transition through `cancel_requested`. Returns `202` while settling, `200` for
-an immediate/idempotent cancelled result, or `409` if natural completion or
-failure already won.
-
-##### POST /api/agent/copilot/runs/:runId/resume
-
-Resume a paused run with a fresh `Idempotency-Key`:
-
-```json
-{
-  "answer": "Owned collection only",
-  "expectedCheckpointVersion": 4
-}
-```
-
-Returns `202`, or `200` for an identical replay. A stale checkpoint, expired
-7-day resume window, non-paused run, or conflicting key returns `409`.
-Disabling the feature blocks starts and resumes but existing runs remain
-readable and cancellable.
-
-##### Deep Analysis handoff events
-
-When all attribution gates are enabled, a `tool_completed` event for
-`deep_analysis_handoff` may include `deepAnalysisHandoffResult`. Its sole
-top-level discriminant is `outcome`:
-
-`accepted`, `reused_active`, `reused_result`, `status`, `retry_available`,
-`missing_images`, `target_unavailable`, `not_eligible`, `unavailable`, or
-`cancelled`.
-
-Unknown, foreign, and unbound identifiers return exactly:
-
-```json
-{"outcome":"not_eligible","reason":null}
-```
-
-Only a previously validated durable owner binding may return
-`target_unavailable`, also without target metadata. Results may contain the
-bounded target/job projection, persisted narrative and fields, disagreements,
-coverage, attributions, limitations, truncation counts, and the exact relative
-review URL `/deep-analysis/{jobId}`. They never contain proposal mutation or
-apply controls. Public events accept at most 64 KiB; persisted callback results
-accept at most 32 KiB and disclose deterministic omission counts.
-
-`CoinCopilotEnabled`, `CoinCopilotAttributionEnabled`, model tool capability,
-and `DeepIdentificationEnabled` are checked before new admission or rerun.
-After durable acceptance, status/events/cancel/review/edit/confirmed apply and
-worker settlement remain available under finish-existing semantics.
-
-##### GET /api/agent/copilot/runs/:runId/events
-
-Replay and follow the authoritative Go-persisted SSE stream. Send
-`?since=<sequence>` or `Last-Event-ID: <sequence>`; `since` takes precedence.
-Go replays every retained event with `seq > cursor` in ascending order before
-following live events. Event `id:` equals `data.seq`; keepalive comments consume
-no sequence.
-
-```text
-id: 14
-event: tool_completed
-data: {"seq":14,"threadId":"cct_example","runId":"ccr_example","executionId":"cce_example","type":"tool_completed","ts":"2026-09-17T22:41:12Z","payload":{"toolCallId":"call_02","toolName":"collection_summary","stepId":"step-2","status":"succeeded","durationMs":38,"resultSummary":"Collection summary returned.","truncated":false}}
-```
-
-Application events are `run_started`, `plan_updated`, `tool_started`,
-`tool_completed`, `clarification_required`, `run_paused`, `run_resumed`,
-`run_cancelled`, `run_completed`, and `run_failed`. Clients must ignore unknown
-event types.
-
-If the requested cursor predates the 7-day retained event window, Go first
-emits an unsequenced `stream_truncated` control event containing `earliestSeq`
-and `lastSeq`, then replays the retained tail. When a run is terminal, Go
-replays remaining events, emits the unsequenced terminal control event below,
-and closes:
-
-```text
-event: end
-data: {"runId":"ccr_example","status":"completed"}
-```
-
-The default run budget is 8 reasoning iterations, 12 tool calls, one tool at a
-time, 120 seconds, and 32 KiB persisted tool results. Timeout configuration is
-limited to 15–150 seconds so the 30-second credential buffer remains within the
-absolute 180-second execution-token TTL. Dollar-cost enforcement is deferred;
-iteration, tool-call, wall-clock, sequential-concurrency, and payload limits
-remain enforced.
-
-#### GET /api/agent/models
-
-List available Anthropic models that can be used with the agent.
-
-#### GET /api/agent/coin-search-prompt
-
-Get the system prompt for coin search queries. Returns the current prompt and the built-in default.
-
-**Response:**
-
-```json
-{
-  "prompt": "You are a numismatic search specialist...",
-  "default": "You are a numismatic search specialist..."
-}
-```
-
-#### GET /api/agent/coin-shows-prompt
-
-Get the system prompt for coin show queries. Returns the current prompt and the built-in default.
-
-**Response:**
-
-```json
-{
-  "prompt": "You are a coin show search specialist...",
-  "default": "You are a coin show search specialist..."
-}
-```
-
-#### GET /api/agent/valuation-prompt
-
-Get the system prompt for valuation queries. Returns the current prompt and the built-in default.
-
-**Response:**
-
-```json
-{
-  "prompt": "You are an expert numismatist and coin appraiser...",
-  "default": "You are an expert numismatist and coin appraiser..."
-}
-```
-
-#### POST /api/coins/:id/estimate-value
-
-Estimate a coin's current market value using the AI agent. The agent searches for comparable listings and returns a structured estimate. The estimate is also saved to the coin's journal.
-
-**Path Parameters:**
-
-| Param | Type | Description |
-| ----- | ---- | ----------- |
-| `id` | int | Coin ID |
-
-**Response:**
-
-```json
-{
-  "estimatedValue": 275,
-  "confidence": "high",
-  "reasoning": "Found 4 comparable Augustus denarii in VF condition listed at $250-300.",
-  "comparables": [
-    { "source": "VCoins - Example Dealer", "price": "$285", "url": "https://www.vcoins.com/..." },
-    { "source": "MA-Shops", "price": "$250", "url": "https://www.ma-shops.com/..." }
-  ]
-}
-```
-
-#### GET /api/agent/portfolio-summary
-
-Get aggregated collection data for AI portfolio analysis. Returns totals, category/material/era/ruler breakdowns, and top coins by value.
-
-**Response:**
-
-```json
-{
-  "totalCoins": 42,
-  "totalValue": 12500.00,
-  "totalInvested": 9800.00,
-  "categories": { "Roman": 20, "Greek": 15, "Byzantine": 7 },
-  "materials": { "Silver": 25, "Bronze": 12, "Gold": 5 },
-  "eras": [{ "name": "Imperial", "count": 18 }],
-  "rulers": [{ "name": "Augustus", "count": 5 }],
-  "topCoins": [{ "name": "Augustus Aureus", "category": "Roman", "era": "Imperial", "ruler": "Augustus", "grade": "VF", "currentValue": 2500.00 }]
-}
-```
-
-#### GET /api/agent/status
-
-Check the AI agent service configuration status. Returns the current provider and whether it is configured.
-
-**Response:**
-
-```json
-{
-  "provider": "anthropic",
-  "configured": true
-}
-```
-
----
-
-### Conversations
-
-Save and manage AI agent conversation history.
-
-#### GET /api/agent/conversations
-
-List all saved conversations.
-
-#### GET /api/agent/conversations/:id
-
-Get a saved conversation by ID, including the full message history.
-
-#### POST /api/agent/conversations
-
-Save a conversation.
-
-**Request Body:**
-
-```json
-{
-  "title": "Julio-Claudian Research",
-  "messages": [
-    { "role": "user", "content": "What coins do I have from Augustus?" },
-    { "role": "assistant", "content": "You have 5 coins from Augustus..." }
-  ]
-}
-```
-
-#### DELETE /api/agent/conversations/:id
-
-Delete a saved conversation.
-
----
-
-### User
-
-#### GET /api/auth/me
-
-Get the current authenticated user's information.
-
-**Response:**
-
-```json
-{
-  "id": 1,
-  "username": "collector",
-  "role": "admin",
-  "email": "user@example.com",
-  "avatarPath": "avatars/user-1.jpg",
-  "isPublic": false,
-  "bio": "Ancient coin enthusiast",
-  "emailMissing": false,
-  "createdAt": "2024-01-01T00:00:00Z"
-}
-```
-
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `id` | int | User ID |
-| `username` | string | Username |
-| `role` | string | `user` or `admin` |
-| `email` | string | Email address |
-| `avatarPath` | string | Relative path to avatar image |
-| `isPublic` | bool | Whether the user's profile is publicly visible |
-| `bio` | string | User bio / description |
-| `emailMissing` | bool | `true` if the account has no email set (legacy accounts) |
-| `createdAt` | string | ISO 8601 creation timestamp |
-
-#### POST /api/auth/change-password
-
-Change the current user's password.
-
-**Request Body:**
-
-```json
-{
-  "currentPassword": "oldP@ss",
-  "newPassword": "n3wS3cur3P@ss"
-}
-```
-
-#### GET /api/user/export
-
-Export the entire collection as a ZIP download containing:
-
-- `coins.json` (full coin records including `era`, structured `references`, and legacy `referenceUrl` / `referenceText`)
-- `images/*` (all attached coin images)
-
-**Example:**
-
-```sh
-curl http://localhost:8080/api/user/export \
-  -H "Authorization: Bearer $TOKEN" \
-  --output my-collection.zip
-```
-
-#### POST /api/user/import
-
-Import coins from a JSON array. See the [Getting Started guide](getting-started.md#import--export) for the full field reference and import behavior.
-
-**Request Body:** A JSON array of coin objects.
-
-```sh
-curl -X POST http://localhost:8080/api/user/import \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d @my-coins.json
-```
-
-**Response:**
-
-```json
-{ "message": "Import complete", "imported": 42 }
-```
-
----
-
-### API Keys
-
-Manage API keys for programmatic access. API keys are an alternative to JWT
-tokens and are useful for scripts, integrations, automation, and MCP clients.
-External-tool access accepts `read` (default), `read,copilot`, `read,write`,
-or `read,write,copilot`.
-
-#### POST /api/auth/api-keys
-
-Generate a new API key. The full key is returned **only once** in the response — store it securely.
-
-**Request Body:**
-
-```json
-{
-  "name": "My Integration",
-  "scope": "read,write"
-}
-```
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `name` | string | No | Descriptive name to help identify the key |
-| `scope` | string | No | Capability scope: `read` (default), `read,copilot`, `read,write`, or `read,write,copilot` |
-
-**Response:**
-
-```json
-{
-  "id": 1,
-  "name": "My Integration",
-  "key": "ak_abc123def456...",
-  "prefix": "ak_abc1",
-  "capabilities": "read,write",
-  "createdAt": "2024-03-15T10:30:00Z"
-}
-```
-
-**Example:**
-
-```sh
-# Generate a read+write key for external tool access
-curl -X POST http://localhost:8080/api/auth/api-keys \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "LibreChat", "scope": "read,write"}'
-
-# Use the key for normal API access
-curl http://localhost:8080/api/coins \
-  -H "X-API-Key: ak_abc123def456..."
-```
-
-#### GET /api/auth/api-keys
-
-List all API keys for the current user. Only the key prefix is shown (not the
-full key). Each key includes its canonical capability combination.
-
-**Response:**
-
-```json
-{
-  "apiKeys": [
-    {
-      "id": 1,
-      "name": "LibreChat",
-      "prefix": "ak_abc1",
-      "capabilities": "read,write",
-      "lastUsedAt": "2024-03-15T13:45:00Z",
-      "createdAt": "2024-03-15T10:30:00Z"
-    }
-  ]
-}
-```
-
-#### DELETE /api/auth/api-keys/:id
-
-Revoke an API key. The key will immediately stop working.
-
----
-
-## External Tool Server
-
-The External Tool Server has two adapters: versioned OpenAPI operations under
-`/api/v1/tools/*` and native stateless Streamable HTTP MCP at `/api/mcp`.
-Authenticated operations use `X-API-Key`, and both adapters are gated by the
-same admin kill switch, which defaults to OFF. For setup and client guidance,
-see the [External Tool Server Guide](external-tool-server.md).
-
-### Key Differences from Main API
-
-- **Admin Kill Switch** — The entire surface is disabled by default. Enable Admin → AI → External Tool Server Enabled, then save the AI settings.
-- **Scoped API Keys** — OpenAPI writes require `write`; MCP Copilot tools
-  require the separate exact `copilot` capability. Neither capability implies
-  the other.
-- **Two-Phase Writes** — Updates require `propose_update` (returns preview + token) followed by `commit_update` (with explicit `confirm=true`). No single-call writes.
-- **Field Allowlist** — External writes are restricted to `grade`, `currentValue`, `notes`, `tags`, `referenceText`, `referenceUrl`, `references`. Identity fields are rejected.
-- **Stricter Rate Limiting** — 50 requests per minute per API key (vs. 120 req/min for in-app).
-- **Journaled Audit Trail** — External commits write journal entries with source `external_tool_server`, API key name, and changed fields.
-
-### POST /api/mcp
-
-Native stateless MCP endpoint using Streamable HTTP with JSON responses.
-Requests must include an active API key with `read`; the maximum request body
-is 128 KiB.
-
-Read tools:
-
-- `search_collection`
-- `get_coin`
-- `list_wishlist`
-- `collection_stats`
-- `top_coins_by_value`
-
-Keys with the explicit `copilot` capability also discover:
-
-- `start_copilot_run`
-- `get_copilot_run`
-- `resume_copilot_run`
-- `cancel_copilot_run`
-
-The endpoint accepts MCP JSON-RPC messages rather than an application-specific
-REST body. It returns protocol-level initialization, discovery, and tool-call
-responses. Tool errors use safe not-found, invalid-input, unavailable, or
-state-conflict messages without leaking cross-owner data or internal errors.
-The endpoint exposes no general application mutation tools.
-
-See [MCP Agentic Harness](features/mcp-agentic-harness.md) for client setup,
-tool semantics, and lifecycle guidance. Use
-[MCP Client Setup](mcp-client-setup.md) for copy-ready client configurations,
-discovery verification, key rotation, and troubleshooting.
-
-### GET /api/v1/tools/openapi.json
-
-Returns the OpenAPI 3.0 specification describing all external tool endpoints. This endpoint is **unauthenticated** (respects only the kill-switch gate) and is suitable for client auto-import (OpenWebUI, LibreChat, n8n).
-
-**Response:** JSON-formatted OpenAPI document with request/response schemas, capability requirements, and error codes.
-
-### POST /api/v1/tools/search_my_collection
-
-Search your collection by query string. Requires API key with `read` capability.
-
-**Request Body:**
-
-```json
-{
-  "query": "denarius augustus",
-  "limit": 10
-}
-```
-
-**Response:**
-
-```json
-{
-  "coins": [
-    {
-      "id": 42,
-      "name": "Denarius of Augustus",
-      "category": "Roman",
-      "era": "ancient",
-      "ruler": "Augustus",
-      "material": "silver",
-      "currentValue": 450.00
-    }
-  ]
-}
-```
-
-### POST /api/v1/tools/get_coin
-
-Retrieve a single coin by ID. Requires API key with `read` capability.
-
-**Request Body:**
-
-```json
-{
-  "coin_id": 42
-}
-```
-
-**Response:**
-
-```json
-{
-  "coin": {
-    "id": 42,
-    "name": "Denarius of Augustus",
-    "category": "Roman"
-  }
-}
-```
-
-### POST /api/v1/tools/collection_summary
-
-Get aggregate statistics. Requires API key with `read` capability.
-
-**Request Body:**
-
-```json
-{}
-```
-
-**Response:**
-
-```json
-{
-  "summary": {
-    "totalCoins": 127,
-    "totalWishlist": 8,
-    "totalSold": 12,
-    "totalCurrentUsd": 34500.00,
-    "totalPurchaseUsd": 28200.00
-  }
-}
-```
-
-### POST /api/v1/tools/top_coins_by_value
-
-Retrieve top coins by current value. Requires API key with `read` capability.
-
-**Request Body:**
-
-```json
-{
-  "limit": 5
-}
-```
-
-**Response:**
-
-```json
-{
-  "coins": [
-    {
-      "id": 15,
-      "name": "Aureus of Nero",
-      "currentValue": 5200.00
-    }
-  ]
-}
-```
-
-### POST /api/v1/tools/propose_update
-
-Propose changes to allowlisted fields on a coin (phase 1 of 2). Returns a proposal preview and token without persisting changes. Requires API key with `write` capability.
-
-**Request Body:**
-
-```json
-{
-  "coin_id": 42,
-  "changes": {
-    "grade": "EF",
-    "notes": "Re-graded by NGC",
-    "currentValue": 480.00
-  }
-}
-```
-
-**Response:**
-
-```json
-{
-  "proposal": {
-    "proposalId": "prop_1234567890abcdef",
-    "proposalToken": "tok_abcdef1234567890",
-    "coinId": 42,
-    "coinName": "Denarius of Augustus",
-    "changedFields": ["grade", "notes", "currentValue"],
-    "changes": {
-      "grade": "EF",
-      "notes": "Re-graded by NGC",
-      "currentValue": 480.00
-    },
-    "expiresAt": "2026-06-01T08:46:00Z"
-  }
-}
-```
-
-**Errors:**
-
-- `400` — Invalid or disallowed field change
-- `404` — Coin not found or cross-user access denied
-
-### POST /api/v1/tools/commit_update
-
-Commit a proposal with explicit confirmation (phase 2 of 2). Persists changes and journals the write. Requires API key with `write` capability.
-
-**Request Body:**
-
-```json
-{
-  "proposal_id": "prop_1234567890abcdef",
-  "token": "tok_abcdef1234567890",
-  "confirm": true
-}
-```
-
-**Response:**
-
-```json
-{
-  "result": {
-    "proposalId": "prop_1234567890abcdef",
-    "status": "committed",
-    "coinId": 42,
-    "changedFields": ["grade", "notes", "currentValue"],
-    "journalSource": "external_tool_server",
-    "message": "Update committed successfully"
-  }
-}
-```
-
-**Errors:**
-
-- `400` — `confirm` is not `true`
-- `401` — Invalid or mismatched token
-- `409` — Proposal expired or already committed
-
-### External Tool Server Error Codes
-
-| Status | Meaning |
-|---|---|
-| `400` | Invalid request, disallowed field, or missing confirmation |
-| `401` | Invalid, revoked, or mismatched API key/token |
-| `403` | Insufficient capability (read-only key on write tool) |
-| `404` | Coin/proposal not found or cross-user access denied |
-| `409` | Proposal not in pending state or expired |
-| `413` | MCP request body exceeds 128 KiB |
-| `429` | Per-key rate limit exceeded (50 req/min) |
-| `503` | External tool server is disabled (admin toggle OFF) |
-
----
-
-### WebAuthn (Credential Registration)
-
-Manage WebAuthn/passkey credentials for biometric login. Login ceremonies use the [public endpoints](#public-endpoints) above.
-
-#### POST /api/auth/webauthn/register/begin
-
-Begin a WebAuthn credential registration ceremony. Returns challenge data for the browser WebAuthn API.
-
-#### POST /api/auth/webauthn/register/finish
-
-Complete credential registration. The request body contains the authenticator attestation response from the browser WebAuthn API.
-
-#### GET /api/auth/webauthn/credentials
-
-List all registered WebAuthn credentials for the current user.
-
-#### DELETE /api/auth/webauthn/credentials/:id
-
-Delete a registered WebAuthn credential.
-
----
-
-### User Profile
-
-#### PUT /api/user/profile
-
-Update the current user's profile. All fields are optional. **Note:** changing `isPublic` from `true` to `false` deletes all existing followers.
-
-**Request Body:**
-
-```json
-{
-  "email": "newemail@example.com",
-  "bio": "Specializing in Roman Republican coins",
-  "isPublic": true
-}
-```
-
-**Response:** The updated user profile (same shape as [GET /api/auth/me](#get-apiauthme)).
-
-#### POST /api/user/avatar
-
-Upload a profile avatar via multipart form data.
-
-**Form Fields:**
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `avatar` | file | Yes | Image file (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`) |
-
-**Response:**
-
-```json
-{ "avatarPath": "avatars/user-1.jpg" }
-```
-
-#### DELETE /api/user/avatar
-
-Delete the current user's avatar image.
-
-**Response:**
-
-```json
-{ "message": "Avatar deleted" }
-```
-
----
-
-## Social
-
-Social features for following other collectors, browsing their public coins, and leaving comments and ratings.
-
-All social endpoints require authentication.
-
----
-
-### Follow Management
-
-#### POST /api/social/follow/:userId
-
-Send a follow request to another user. The target user must have a public profile.
-
-**Response (201):**
-
-```json
-{ "message": "Follow request sent" }
-```
-
-**Errors:**
-
-| Status | Condition |
-| ------ | --------- |
-| `400` | Attempting to follow yourself |
-| `403` | Target user is not public or has blocked you |
-| `409` | Already following or a pending request exists |
-
-#### DELETE /api/social/follow/:userId
-
-Unfollow a user. Removes pending or accepted follow records (does not affect blocks).
-
-**Response:**
-
-```json
-{ "message": "Unfollowed user" }
-```
-
-#### PUT /api/social/followers/:userId/accept
-
-Accept a pending follow request from another user.
-
-**Response:**
-
-```json
-{ "message": "Follower accepted" }
-```
-
-#### PUT /api/social/followers/:userId/block
-
-Block a user. Creates or updates the follow record to blocked status.
-
-**Response:**
-
-```json
-{ "message": "User blocked" }
-```
-
-#### DELETE /api/social/followers/:userId/block
-
-Unblock a previously blocked user. Removes the blocked follow record.
-
-**Response:**
-
-```json
-{ "message": "User unblocked" }
-```
-
-#### GET /api/social/followers
-
-List users who follow you (both pending and accepted).
-
-**Response:**
-
-```json
-{
-  "followers": [
-    {
-      "id": 2,
-      "username": "numismatist",
-      "avatarPath": "avatars/user-2.jpg",
-      "isPublic": true,
-      "bio": "Greek coin specialist",
-      "status": "accepted"
-    }
-  ]
-}
-```
-
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `status` | string | `"pending"` or `"accepted"` |
-
-#### GET /api/social/following
-
-List users you are following (accepted only).
-
-**Response:**
-
-```json
-{
-  "following": [
-    {
-      "id": 3,
-      "username": "romanfan",
-      "avatarPath": "avatars/user-3.jpg",
-      "isPublic": true,
-      "bio": "Imperial Rome enthusiast",
-      "isFollowing": true,
-      "coinCount": 87
-    }
-  ]
-}
-```
-
-#### GET /api/social/blocked
-
-List users you have blocked.
-
-**Response:**
-
-```json
-{
-  "blocked": [
-    {
-      "id": 5,
-      "username": "spammer",
-      "avatarPath": ""
-    }
-  ]
-}
-```
-
----
-
-### User Discovery
-
-#### GET /api/users/search
-
-Search for public users by username prefix.
-
-**Query Parameters:**
-
-| Param | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `q` | string | Yes | Search query (minimum 2 characters) |
-
-**Response:**
-
-```json
-{
-  "users": [
-    {
-      "id": 3,
-      "username": "romanfan",
-      "avatarPath": "avatars/user-3.jpg",
-      "isPublic": true,
-      "bio": "Imperial Rome enthusiast",
-      "isFollowing": true,
-      "followStatus": "accepted",
-      "coinCount": 87
-    }
-  ]
-}
-```
-
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `isFollowing` | bool | Whether you currently follow this user |
-| `followStatus` | string | `""`, `"pending"`, `"accepted"`, or `"blocked"` |
-| `coinCount` | int | Number of coins in the user's collection |
-
-#### GET /api/users/:username
-
-Get a user's public profile by username.
-
-**Response:**
-
-```json
-{
-  "id": 3,
-  "username": "romanfan",
-  "avatarPath": "avatars/user-3.jpg",
-  "isPublic": true,
-  "bio": "Imperial Rome enthusiast",
-  "isFollowing": true,
-  "followStatus": "accepted",
-  "coinCount": 87,
-  "followerCount": 12,
-  "followingCount": 5
-}
-```
-
----
-
-### Follower Gallery
-
-#### GET /api/social/following/:userId/coins
-
-Get a followed user's public coin collection. Requires an accepted follow relationship and the user must have a public profile.
-
-**Response:**
-
-```json
-{
-  "coins": [
-    {
-      "id": 10,
-      "name": "Augustus Denarius",
-      "category": "Roman",
-      "denomination": "Denarius",
-      "ruler": "Augustus",
-      "era": "27 BC - 14 AD",
-      "material": "Silver",
-      "grade": "VF",
-      "images": []
-    }
-  ],
-  "username": "romanfan"
-}
-```
-
-> **Note:** Only a limited set of coin fields is returned (no purchase price, sale info, or private notes).
-
-#### GET /api/social/following/:userId/coins/:coinId
-
-Get a single coin's details from a followed user's collection, including comments and ratings.
-
-**Response:** Same limited coin fields as the list endpoint, plus:
-
-```json
-{
-  "comments": [
-    {
-      "id": 1,
-      "userId": 2,
-      "username": "numismatist",
-      "avatarPath": "avatars/user-2.jpg",
-      "comment": "Beautiful example!",
-      "rating": 5,
-      "createdAt": "2024-06-01T12:00:00Z"
-    }
-  ],
-  "rating": {
-    "average": 4.5,
-    "count": 2,
-    "userRating": 5
-  }
-}
-```
-
----
-
-### Comments & Ratings
-
-#### POST /api/social/coins/:coinId/comments
-
-Add a comment to a coin. You must have an accepted follow relationship with the coin's owner, or be the owner yourself.
-
-**Request Body:**
-
-```json
-{
-  "comment": "Excellent patina on this piece!",
-  "rating": 5
-}
-```
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `comment` | string | Yes | Comment text |
-| `rating` | int | No | Star rating, 0–5 (0 means no rating) |
-
-**Response (201):** The created comment enriched with user info:
-
-```json
-{
-  "id": 1,
-  "userId": 2,
-  "username": "numismatist",
-  "avatarPath": "avatars/user-2.jpg",
-  "comment": "Excellent patina on this piece!",
-  "rating": 5,
-  "createdAt": "2024-06-01T12:00:00Z"
-}
-```
-
-#### GET /api/social/coins/:coinId/comments
-
-Get all comments on a coin.
-
-**Response:**
-
-```json
-{
-  "comments": [
-    {
-      "id": 1,
-      "userId": 2,
-      "username": "numismatist",
-      "avatarPath": "avatars/user-2.jpg",
-      "comment": "Excellent patina on this piece!",
-      "rating": 5,
-      "createdAt": "2024-06-01T12:00:00Z"
-    }
-  ]
-}
-```
-
-#### DELETE /api/social/coins/:coinId/comments/:commentId
-
-Delete a comment. Only the comment author or the coin owner may delete a comment.
-
-#### PUT /api/social/coins/:coinId/rating
-
-Create or update your star rating for a coin.
-
-**Request Body:**
-
-```json
-{ "rating": 4 }
-```
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `rating` | int | Yes | Star rating, 1–5 |
-
-**Response:**
-
-```json
-{
-  "average": 4.5,
-  "count": 3,
-  "userRating": 4
-}
-```
-
-#### GET /api/social/coins/:coinId/rating
-
-Get the aggregate rating for a coin.
-
-**Response:**
-
-```json
-{
-  "average": 4.5,
-  "count": 3,
-  "userRating": 4
-}
-```
-
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `average` | float | Average star rating across all users |
-| `count` | int | Total number of ratings |
-| `userRating` | int | Your rating (0 if you haven't rated) |
-
----
-
-## Admin Endpoints
-
-These endpoints require the **admin** role. Regular users will receive a `403 Forbidden` response.
-
-### GET /api/admin/users
-
-List all registered users.
-
-### DELETE /api/admin/users/:id
-
-Delete a user account.
-
-### POST /api/admin/users/:id/reset-password
-
-Reset a user's password (admin override).
-
-**Request Body:**
-
-```json
-{ "newPassword": "t3mpP@ss" }
-```
-
-### GET /api/admin/settings
-
-Get all application settings.
-
-### GET /api/admin/settings/defaults
-
-Get the default values for all settings.
-
-### PUT /api/admin/settings
-
-Update one or more settings.
-
-**Request Body:**
-
-```json
-[
-  { "key": "ollama_url", "value": "http://localhost:11434" },
-  { "key": "ollama_model", "value": "llava" },
-  { "key": "log_level", "value": "info" }
-]
-```
-
-**Example:**
-
-```sh
-curl -X PUT http://localhost:8080/api/admin/settings \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{"key": "ollama_url", "value": "http://ollama:11434"}]'
-```
-
-Numista operational settings use these exact keys and integer ranges. Invalid
-stored values fall back independently to the default and make
-`configurationValid` false in Numista health. Settings are read live; TTL
-changes apply to new cache writes, while existing entries keep their expiry.
-
-| Key | Default | Valid range |
-| ----- | -----: | ----- |
-| `NumistaSearchTTLHours` | 24 | 1–720 hours |
-| `NumistaDetailTTLHours` | 168 | 1–2160 hours |
-| `NumistaEnrichmentLimit` | 5 | 1–10 configured; current runtime caps at 5 |
-| `NumistaSearchResultLimit` | 20 | 1–50 candidates |
-| `NumistaSearchTimeoutSeconds` | 4 | 1–10 seconds |
-| `NumistaDetailTimeoutSeconds` | 3 | 1–10 seconds |
-
-### GET /api/admin/numista/health
-
-Return the admin-only, in-memory rolling Numista health summary. The ring holds
-the latest 500 events and resets when the API process restarts. It contains no
-API key, query, evidence text, image, provider body, raw error, or user
-identity; correlation uses only a 16-hex-character digest.
-
-| Field | Exact meaning |
-| ----- | ----- |
-| `configured` | `NumistaAPIKey` is non-empty. |
-| `configurationValid` | All six numeric settings are in range; independent of key presence. |
-| `statusCounts` | Sparse owned provider-loader outcomes plus unconfigured pre-cache bypasses. Fresh hits, coalesced waiters, and cancellations do not increment a status. |
-| `broadRequestCount` / `detailRequestCount` | Provider loader operations, not browser/API request totals. |
-| `freshCacheHitCount` | Fresh search or detail cache reuses. |
-| `coalescedRequestCount` | Callers that joined in-flight work, including a coalesced caller that later cancelled. |
-| `providerLoadCount` | Search and detail loads owned after a cache miss. |
-| `providerFailureCount` | Owned loads whose typed status was neither `success` nor `empty`. |
-| `cancelledRequestCount` | Caller cancellations; they do not become timeout/unavailable statuses. |
-| `freshCacheHitRate` | `freshCacheHitCount / (freshCacheHitCount + providerLoadCount)`; coalesced calls are excluded. |
-| `p50ElapsedMs` / `p95ElapsedMs` | R-7 linearly interpolated latency over owned provider loads, rounded to milliseconds; cache/coalesced calls are excluded. |
-| `enrichmentAttempted/Succeeded/Failed` | Owned detail-provider loads and their result, one attempt per detail loader. |
-| `lastOutcome` / `lastCheckedAt` | Most recent owned provider outcome or unconfigured bypass. |
-| `lastQuotaLimitedAt` / `lastRetryAfterSeconds` | Most recent owned 429 and positive observed retry value, when supplied. No remaining-quota estimate is invented. |
-
-The endpoint returns `401` or `403` to unauthorized callers.
-
-### GET /api/admin/logs
-
-Get application logs with optional filtering.
-
-**Query Parameters:**
-
-| Param | Type | Default | Description |
-| ----- | ---- | ------- | ----------- |
-| `level` | string | — | Filter by log level (`trace`, `debug`, `info`, `warn`, `error`) |
-| `limit` | int | `100` | Number of log entries to return |
-
-**Example:**
-
-```sh
-curl "http://localhost:8080/api/admin/logs?level=error&limit=50" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-### GET /api/admin/test-anthropic
-
-Test Anthropic API connectivity by validating the configured API key.
-
-**Response:**
-
-```json
-{ "available": true, "message": "Anthropic API key is valid" }
-```
-
-or
-
-```json
-{ "available": false, "message": "Anthropic API key is not configured" }
-```
-
-### GET /api/admin/test-searxng
-
-Test SearXNG connectivity by checking the configured endpoint.
-
-**Response:**
-
-```json
-{ "available": true, "message": "SearXNG is reachable at http://localhost:8888" }
-```
-
-or
-
-```json
-{ "available": false, "message": "SearXNG URL is not configured" }
-```
-
-### GET /api/admin/valuation-runs
-
-List valuation run history (paginated).
-
-**Query Parameters:**
-
-| Param | Type | Default | Description |
-| ----- | ---- | ------- | ----------- |
-| `page` | int | `1` | Page number |
-| `limit` | int | `20` | Results per page |
-
-**Response:**
-
-```json
-{
-  "runs": [
-    {
-      "id": 1,
-      "triggerType": "manual",
-      "triggeredByUserID": 1,
-      "status": "completed",
-      "coinsValued": 10,
-      "startedAt": "2026-04-13T02:00:00Z",
-      "completedAt": "2026-04-13T02:05:00Z"
-    }
-  ],
-  "total": 1,
-  "page": 1,
-  "limit": 20
-}
-```
-
-### GET /api/admin/valuation-runs/:id
-
-Get a single valuation run with all per-coin results.
-
-**Path Parameters:**
-
-| Param | Type | Description |
-| ----- | ---- | ----------- |
-| `id` | int | Valuation run ID |
-
-### POST /api/admin/valuation-runs/trigger
-
-Manually trigger a valuation run for all users with owned coins. The valuation runs asynchronously.
-
-**Response (202):**
-
-```json
-{ "message": "Valuation started", "users": 3 }
-```
-
-### POST /api/admin/valuation-runs/:id/cancel
-
-Cancel a running valuation. Signals the run to stop after the current coin finishes processing.
-
-**Path Parameters:**
-
-| Param | Type | Description |
-| ----- | ---- | ----------- |
-| `id` | int | Valuation run ID |
-
-**Response:**
-
-```json
-{ "message": "Cancellation signal sent" }
-```
-
-### GET /api/admin/availability-runs
-
-**Query Parameters:**
-
-| Param | Type | Default | Description |
-| ----- | ---- | ------- | ----------- |
-| `page` | int | `1` | Page number |
-| `limit` | int | `20` | Results per page |
-
-**Response:**
-
-```json
-{
-  "runs": [
-    {
-      "id": 1,
-      "userId": 1,
-      "triggerType": "manual",
-      "coinsChecked": 5,
-      "available": 3,
-      "unavailable": 1,
-      "unknown": 1,
-      "errors": 0,
-      "durationMs": 4200,
-      "startedAt": "2026-04-13T02:00:00Z",
-      "completedAt": "2026-04-13T02:00:04Z"
-    }
-  ],
-  "total": 1
-}
-```
-
-### GET /api/admin/availability-runs/:id
-
-Get details for a single availability check run, including per-coin results.
-
-**Response:** Same as above with an additional `results` array containing per-coin outcomes (coinId, coinName, url, status, reason, httpStatus, agentUsed).
-
----
-
-### POST /api/wishlist/check-availability
-
-Trigger a manual availability check for the authenticated user's wishlist coins. Checks each coin's reference URL via HTTP + keyword heuristics, escalating ambiguous results to the AI agent.
-
-**Response:**
-
-```json
-{
-  "runId": 42,
-  "coinsChecked": 5,
-  "available": 3,
-  "unavailable": 1,
-  "unknown": 1,
-  "durationMs": 4200
-}
-```
-
-### PUT /api/coins/:id/listing-status
-
-Update a coin's listing status (e.g., to dismiss an unavailable flag).
-
-**Request Body:**
-
-```json
-{ "status": "" }
-```
-
----
-
-## Static Resources
-
-| Path | Description |
-| ---- | ----------- |
-| `/swagger/index.html` | Interactive Swagger UI API documentation |
-| `/uploads/*` | Uploaded coin images (served as static files) |
-
----
-
-## Common Patterns
-
-### Pagination
-
-List endpoints support pagination via `page` and `limit` query parameters. The default page size is **50**.
-
-```sh
-# Get page 3 with 20 results per page
-curl "http://localhost:8080/api/coins?page=3&limit=20" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-The response includes `total`, `page`, and `limit` fields so clients can calculate the total number of pages.
-
-### Sorting
-
-List endpoints support sorting via `sort` and `order` query parameters.
-
-```sh
-# Sort by purchase price, highest first
-curl "http://localhost:8080/api/coins?sort=purchasePrice&order=desc" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-### Error Responses
-
-Errors return an appropriate HTTP status code with a JSON body:
-
-```json
-{ "error": "coin not found" }
-```
-
-| Status | Meaning |
-| ------ | ------- |
-| `400` | Bad request (invalid input) |
-| `401` | Unauthorized (missing or invalid token/key) |
-| `403` | Forbidden (insufficient permissions) |
-| `404` | Resource not found |
-| `500` | Internal server error |
-
----
-
-## Tags
-
-Manage user-defined tags for organizing coins. All tag endpoints require authentication.
-
-### GET /api/tags
-
-List all tags for the authenticated user.
-
-**Response:**
-
-```json
-{
-  "tags": [
-    { "id": 1, "name": "Favorites", "color": "#e5a00d" },
-    { "id": 2, "name": "For Sale", "color": "#3b82f6" }
-  ]
-}
-```
-
-### POST /api/tags
-
-Create a new tag.
-
-**Request Body:**
-
-```json
-{ "name": "Favorites", "color": "#e5a00d" }
-```
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `name` | string | Yes | Tag display name |
-| `color` | string | No | Hex color code for the tag badge |
-
-**Response (201):** The created tag object.
-
-### PUT /api/tags/:id
-
-Update a tag's name or color.
-
-**Request Body:**
-
-```json
-{ "name": "Top Picks", "color": "#f59e0b" }
-```
-
-### DELETE /api/tags/:id
-
-Delete a tag. Removes the tag from all coins it was attached to.
-
-### POST /api/coins/:id/tags
-
-Attach a tag to a coin.
-
-**Request Body:**
-
-```json
-{ "tagId": 1 }
-```
-
-### DELETE /api/coins/:id/tags/:tagId
-
-Detach a tag from a coin.
-
----
-
-## Coin Sets
-
-Coin sets organize coins into named groups. All set endpoints require authentication and are scoped to the current user.
-
-Set types:
-
-| Type | Behavior |
-| ---- | -------- |
-| `standard` | Manual collection of coins. Existing tags are backfilled into compatible standard sets. |
-| `goal` | Manual goal set where completion is owned collection coins divided by owned plus wishlist members. |
-| `smart` | Dynamic set populated from validated criteria; manual add/remove is not allowed. |
-| `agentic` | Human-reviewed set created from an async proposal workflow; manual membership changes are not allowed. |
-
-### GET /api/sets
-
-List set summaries for the authenticated user. The API migrates legacy tags into standard sets before returning results.
-
-**Response:**
-
-```json
-{
-  "sets": [
-    {
-      "id": 1,
-      "name": "Twelve Caesars",
-      "color": "#c9a84c",
-      "setType": "goal",
-      "coinCount": 8,
-      "totalValue": 1250.0,
-      "completionPercentage": 66.7,
-      "pinned": true,
-      "pinnedAt": "2026-09-01T15:24:56Z"
-    }
-  ]
-}
-```
-
-`pinned` is derived from `pinnedAt`: `true` when `pinnedAt` is non-null, `false` when it is `null`.
-
-### POST /api/sets
-
-Create a standard, goal, or smart set directly. For Agentic sets, submit a proposal request with `POST /api/set-builder/runs`.
-
-**Request Body:**
-
-```json
-{
-  "name": "Silver Denarii",
-  "description": "Republican and imperial silver denarii",
-  "color": "#c9a84c",
-  "setType": "smart",
-  "smartCriteria": {
-    "operator": "and",
-    "rules": [
-      { "field": "material", "op": "eq", "value": "Silver" },
-      { "field": "denomination", "op": "contains", "value": "Denarius" }
-    ]
-  }
-}
-```
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `name` | string | Yes | Set name, unique per user |
-| `description` | string | No | Set notes |
-| `color` | string | No | Hex display color |
-| `setType` | string | Yes | `standard`, `goal`, or `smart` for direct creation |
-| `templateId` | string | No | Reserved for compatible templates |
-| `targetCompletionDate` | string | No | Reserved for goal planning (`YYYY-MM-DD`) |
-| `smartCriteria` | object | Conditional | Required for smart sets |
-
-### POST /api/sets/import-csv
-
-Create a compatible set from CSV target definitions where enabled.
-
-**Request Body:**
-
-```json
-{
-  "name": "Lincoln Wheat Cents",
-  "setType": "goal",
-  "csv": "Label,Year,MintMark,Denomination,Country,Material\n1909-S VDB,1909,S,Cent,United States,Copper"
-}
-```
-
-### GET /api/sets/templates
-
-List built-in target templates available to compatible set workflows.
-
-### GET /api/sets/:id
-
-Get set details, summary value, completion metadata when applicable, and display metadata.
-
-### PUT /api/sets/:id
-
-Update set metadata and criteria. Smart criteria are validated before persistence.
-
-Also accepts an optional `pinned` boolean to pin or unpin the set in the sidebar's Sets submenu:
-
-```json
-{ "pinned": true }
-```
-
-| Behavior | Result |
-| -------- | ------ |
-| `pinned: true` on an unpinned set | Sets `pinnedAt` to the current UTC time |
-| `pinned: true` on an already-pinned set | No-op — the original `pinnedAt` (and pin order) is preserved |
-| `pinned: false` | Clears `pinnedAt` (`null`) |
-
-A user may pin at most **5 sets**. Pinning a 6th set returns **400** with:
-
-```json
-{ "error": "you can pin up to 5 sets" }
-```
-
-Unpinning is never capped. The response body (same shape as `GET /api/sets/:id`) includes `pinned` and `pinnedAt`.
-
-### DELETE /api/sets/:id
-
-Delete a set and its memberships, targets, snapshots, and alerts.
-
-### GET /api/sets/:id/coins
-
-List coins in a set. Smart sets return derived matches from their criteria.
-
-### POST /api/sets/:id/coins
-
-Add a coin to a standard or goal set.
-
-**Request Body:**
-
-```json
-{ "coinId": 42, "notes": "Upgrade candidate" }
-```
-
-### DELETE /api/sets/:id/coins/:coinId
-
-Remove a coin from a standard or goal set.
-
-### GET /api/sets/:id/completion
-
-Return completion metrics for goal sets and other compatible completion workflows.
-
-**Response:**
-
-```json
-{
-  "totalTargets": 12,
-  "completedTargets": 8,
-  "completionPercentage": 66.7,
-  "missingTargets": []
-}
-```
-
-### POST /api/set-builder/runs
-
-Submit an Agentic set proposal request. The request returns immediately; the server runs the Python agent workflow asynchronously and notifies the user when a proposal is ready for review.
-
-**Request Body:**
-
-```json
-{ "prompt": "Roman emperors from the Severan dynasty with one slot per ruler" }
-```
-
-### GET /api/set-builder/proposals
-
-List human-reviewable Agentic set proposals for the current user.
-
-### GET /api/set-builder/proposals/:id
-
-Fetch one proposal with scope interpretation, proposed roster slots, transcript summary, pre-match summary, and status.
-
-### PUT /api/set-builder/proposals/:id
-
-Edit proposal metadata and slots during human review.
-
-### POST /api/set-builder/proposals/:id/approve
-
-Approve a pending proposal and create the Agentic set. Approval is the only operation that creates the set roster.
-
-### POST /api/set-builder/proposals/:id/reject
-
-Reject a pending proposal without creating a set.
-
-### POST /api/set-builder/proposals/:id/regenerate
-
-Submit feedback and request a regenerated proposal.
-
-### POST /api/sets/:id/snapshot
-
-Capture or replace today's valuation snapshot for the set.
-
-### GET /api/sets/:id/trends
-
-Return valuation snapshots for a set. Supports `?range=1m`, `3m`, `1y`, or `all`.
-
-### GET /api/sets/:id/analytics
-
-Return ROI, acquisition-rate, and performer metrics for a set.
-
-### POST /api/sets/compare
-
-Compare up to five sets over a range.
-
-**Request Body:**
-
-```json
-{ "setIds": [1, 2], "range": "1y" }
-```
-
-### POST /api/sets/preview-smart
-
-Preview smart set criteria without saving the set.
-
-**Request Body:** A smart criteria object using whitelisted fields and operators.
-
----
-
-## Bulk Operations
-
-### POST /api/coins/bulk
-
-Perform a bulk action on a set of coins. Requires authentication.
-
-**Request Body:**
-
-```json
-{
-  "action": "tag",
-  "coinIds": [1, 2, 3],
-  "tagId": 1
-}
-```
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `action` | string | Yes | One of `delete`, `tag`, `untag`, `status` |
-| `coinIds` | int[] | Yes | Array of coin IDs to act on |
-| `tagId` | int | Conditional | Required when `action` is `tag` or `untag` |
-
-**Response:**
-
-```json
-{ "message": "Bulk action completed", "affected": 3 }
-```
-
----
-
-## Notifications
-
-All notification endpoints require authentication and are scoped to the authenticated user.
-
-### GET /api/notifications
-
-List notifications for the authenticated user.
-
-**Response:**
-
-```json
-{
-  "notifications": [
-    {
-      "id": 1,
-      "type": "follow_request",
-      "message": "numismatist wants to follow you",
-      "read": false,
-      "createdAt": "2024-06-01T12:00:00Z"
-    }
-  ]
-}
-```
-
-### GET /api/notifications/unread-count
-
-Get the number of unread notifications.
-
-**Response:**
-
-```json
-{ "count": 3 }
-```
-
-### PUT /api/notifications/:id/read
-
-Mark a single notification as read.
-
-**Response:**
-
-```json
-{ "message": "Notification marked as read" }
-```
-
-### PUT /api/notifications/read-all
-
-Mark all notifications as read for the authenticated user.
-
-**Response:**
-
-```json
-{ "message": "All notifications marked as read" }
-```
-
-### DELETE /api/notifications/:id
-
-Delete a notification.
-
----
-
-## Showcases
-
-Curated collections of coins that can be published with a shareable URL. All endpoints except the public slug endpoint require authentication.
-
-### GET /api/showcases
-
-List showcases for the authenticated user.
-
-**Response:**
-
-```json
-{
-  "showcases": [
-    {
-      "id": 1,
-      "name": "Roman Imperial Highlights",
-      "description": "My best imperial coins",
-      "slug": "roman-imperial-highlights",
-      "isPublished": true,
-      "coinCount": 8,
-      "createdAt": "2024-06-01T12:00:00Z"
-    }
-  ]
-}
-```
-
-### GET /api/showcases/:id
-
-Get a showcase with its coins.
-
-**Response:**
-
-```json
-{
-  "id": 1,
-  "name": "Roman Imperial Highlights",
-  "description": "My best imperial coins",
-  "slug": "roman-imperial-highlights",
-  "isPublished": true,
-  "coins": [ { "id": 10, "name": "Augustus Denarius", "..." : "..." } ],
-  "createdAt": "2024-06-01T12:00:00Z"
-}
-```
-
-### POST /api/showcases
-
-Create a new showcase.
-
-**Request Body:**
-
-```json
-{
-  "name": "Roman Imperial Highlights",
-  "description": "My best imperial coins"
-}
-```
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `name` | string | Yes | Showcase title |
-| `description` | string | No | Short description |
-
-**Response (201):** The created showcase object.
-
-### PUT /api/showcases/:id
-
-Update a showcase's metadata or publish status.
-
-**Request Body:**
-
-```json
-{
-  "name": "Updated Title",
-  "description": "Updated description",
-  "isPublished": true
-}
-```
-
-### DELETE /api/showcases/:id
-
-Delete a showcase. Does not delete the coins themselves.
-
-### PUT /api/showcases/:id/coins
-
-Set the coins included in a showcase. Replaces the existing coin list.
-
-**Request Body:**
-
-```json
-{ "coinIds": [10, 22, 35] }
-```
-
-**Response:**
-
-```json
-{ "message": "Showcase coins updated" }
-```
-
----
-
-### Public Showcase
-
-#### GET /api/showcase/:slug
-
-Get a published showcase by its URL slug. **No authentication required.**
-
-Returns `404` if the showcase does not exist or is not published.
-
-**Response:** Same shape as [GET /api/showcases/:id](#get-apishowcasesid) (without private fields).
-
----
-
-## PDF Export
-
-### GET /api/user/export/catalog
-
-Download a PDF catalog of the authenticated user's coin collection. The PDF includes photos, grades, provenance, valuations, era, and structured reference summaries for each coin.
-
-**Response:** `Content-Type: application/pdf` with `Content-Disposition: attachment` headers.
-
-**Example:**
-
-```sh
-curl http://localhost:8080/api/user/export/catalog \
-  -H "Authorization: Bearer $TOKEN" \
-  --output my-catalog.pdf
-```
-# Structured storage
-
-All endpoints below require authentication and are owner-scoped. Inaccessible
-location and coin IDs return a generic `404`.
-
-- `GET /api/storage-locations` returns Standard Locations and Coin Trays with
-  nullable `rows`/`columns`, plus `occupied` and `capacity`.
-- `POST /api/storage-locations` accepts `name`, optional
-  `type: "standard"|"tray"` (omission means `standard`), and tray dimensions.
-- `PUT /api/storage-locations/{id}` renames a location and may resize an empty
-  tray. It returns `tray_occupied` when an occupied tray cannot be resized.
-- `DELETE /api/storage-locations/{id}` returns `location_referenced` when one
-  or more coins still reference the location. Create/update name conflicts
-  return `duplicate_location`.
-- `GET /api/storage-locations/{id}/occupancy?coinId={id}` returns only
-  one-based occupied slot numbers and the current coin's slot.
-- `GET /api/storage-trays` returns all owned trays and minimal positioned coin
-  data in one aggregate response.
-
-Coin create/update accepts nullable `storageLocationId` and `storageSlot`.
-Standard requires a null slot; Tray requires `1..rows*columns`. Concurrent
-claims return `409` with `code: "slot_occupied"`. Omitted update fields
-preserve the existing assignment, while an explicit null location clears both
-fields.
+task openapi
+```
+
+and update the tables below from `docs/openapi.json`.
+
+
+## Auth
+
+| Method | Path | Summary |
+|---|---|---|
+| `POST` | `/auth/login` | Login |
+| `POST` | `/auth/refresh` | Refresh tokens |
+| `POST` | `/auth/register` | Register a new user |
+
+## User
+
+| Method | Path | Summary |
+|---|---|---|
+| `POST` | `/auth/change-password` | Change password |
+| `GET` | `/auth/me` | Get current user |
+| `POST` | `/user/avatar` | Upload avatar |
+| `DELETE` | `/user/avatar` | Delete avatar |
+| `GET` | `/user/export` | Export collection |
+| `GET` | `/user/export/catalog` | Export PDF catalog |
+| `POST` | `/user/import` | Import collection |
+| `PUT` | `/user/profile` | Update profile |
+
+## Coins
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/coin-catalogue` | A country's coin catalogue |
+| `GET` | `/coin-catalogue/countries` | Countries of the coin catalogue |
+| `GET` | `/coin-catalogue/joint-issues` | Joint issues of the euro area |
+| `PUT` | `/coin-catalogue/overrides` | Hide a coin of the catalogue, or join it to another |
+| `DELETE` | `/coin-catalogue/overrides` | Show a coin of the catalogue again |
+| `GET` | `/coin-options` | Get coin category and era options |
+| `GET` | `/coin-photos/search` | Search real coin photos |
+| `GET` | `/coin-releases` | List new and upcoming coins |
+| `GET` | `/coin-releases/numista-type` | Find the Numista type of a new coin |
+| `GET` | `/coins` | List coins |
+| `POST` | `/coins` | Create a coin |
+| `POST` | `/coins/bulk` | Bulk coin action |
+| `GET` | `/coins/countries` | List collection countries |
+| `POST` | `/coins/country-from-numista` | Fill coin countries from Numista |
+| `GET` | `/coins/denominations` | List collection face values |
+| `POST` | `/coins/intake/commit` | Commit coin intake draft |
+| `POST` | `/coins/intake/draft` | Create coin intake draft |
+| `POST` | `/coins/lookup` | Coin lookup from images |
+| `POST` | `/coins/match-category-era` | Match a category/era candidate against known values |
+| `POST` | `/coins/official-photos/batch` | Add official images to coins without photos |
+| `GET` | `/coins/official-photos/missing` | Count coins without photos |
+| `GET` | `/coins/statuses` | List coins by legal tender and commemorative status |
+| `GET` | `/coins/summary` | Get collection summary |
+| `GET` | `/coins/{id}` | Get a coin |
+| `PUT` | `/coins/{id}` | Update a coin |
+| `DELETE` | `/coins/{id}` | Delete a coin |
+| `POST` | `/coins/{id}/duplicate` | Duplicate a coin |
+| `POST` | `/coins/{id}/images/import` | Import a real coin photo |
+| `GET` | `/coins/{id}/market-value` | Get a coin's Numista market value |
+| `POST` | `/coins/{id}/official-photos` | Add a coin's official images |
+| `POST` | `/coins/{id}/purchase` | Mark coin as purchased |
+| `GET` | `/coins/{id}/recommendations` | List coin recommendations |
+| `POST` | `/coins/{id}/recommendations/{recommendationId}/accept` | Accept recommendation |
+| `POST` | `/coins/{id}/recommendations/{recommendationId}/reject` | Reject recommendation |
+| `GET` | `/coins/{id}/status` | Get a coin's legal tender and commemorative status |
+| `GET` | `/coins/{id}/value-history` | Get coin value history |
+| `GET` | `/coins/{id}/wishlist-matches` | Find a collection coin on the wishlist |
+| `GET` | `/exchange-rates` | Get exchange rates |
+| `GET` | `/stats` | Get collection statistics |
+| `GET` | `/stats/distribution` | Get collection distribution |
+| `GET` | `/suggestions` | Get autocomplete suggestions |
+
+## Images
+
+| Method | Path | Summary |
+|---|---|---|
+| `POST` | `/coins/{id}/images` | Upload a coin image |
+| `POST` | `/coins/{id}/images/swap-sides` | Swap a coin's obverse and reverse images |
+| `DELETE` | `/coins/{id}/images/{imageId}` | Delete a coin image |
+| `GET` | `/proxy-image` | Proxy an external image |
+| `GET` | `/scrape-image` | Scrape image URL from a web page |
+| `GET` | `/uploads/{filepath}` | Serve authorized uploaded media |
+
+## Coin References
+
+| Method | Path | Summary |
+|---|---|---|
+| `POST` | `/coins/{id}/references` | Create coin reference |
+| `PUT` | `/coins/{id}/references/{referenceId}` | Update coin reference |
+| `DELETE` | `/coins/{id}/references/{referenceId}` | Delete coin reference |
+| `POST` | `/references/migrate-legacy` | Migrate legacy references |
+
+## Journal
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/coins/{id}/journal` | List journal entries |
+| `POST` | `/coins/{id}/journal` | Add journal entry |
+| `DELETE` | `/coins/{id}/journal/{entryId}` | Delete journal entry |
+
+## Analysis
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/ai-status` | Check AI provider status |
+| `POST` | `/coins/{id}/analyze` | Queue coin image analysis |
+| `DELETE` | `/coins/{id}/analyze` | Delete coin analysis |
+| `POST` | `/coins/{id}/grade` | Queue coin grading |
+| `POST` | `/extract-text` | Extract text from image |
+| `GET` | `/ollama-status` | Check Ollama status |
+
+## AI Jobs
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/ai-jobs/{id}` | Get AI job |
+| `GET` | `/coins/{id}/ai-jobs` | List coin AI jobs |
+
+## Wishlist
+
+| Method | Path | Summary |
+|---|---|---|
+| `PUT` | `/coins/{id}/listing-status` | Update coin listing status |
+| `GET` | `/wishlist/availability-runs` | List my wishlist availability runs |
+| `GET` | `/wishlist/availability-runs/{id}` | Get my wishlist availability run detail |
+| `POST` | `/wishlist/check-availability` | Check wishlist availability |
+| `POST` | `/wishlist/url-intake/analyze` | Analyze wishlist listing URL |
+
+## Wishlist Search Alerts
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/wishlist/search-alerts` | List wishlist search alerts |
+| `POST` | `/wishlist/search-alerts` | Create wishlist search alert |
+| `PUT` | `/wishlist/search-alerts/{alertId}` | Update wishlist search alert |
+| `DELETE` | `/wishlist/search-alerts/{alertId}` | Delete wishlist search alert |
+| `GET` | `/wishlist/search-alerts/{alertId}/candidates` | List wishlist search alert candidates |
+| `POST` | `/wishlist/search-alerts/{alertId}/candidates/{candidateId}/convert` | Convert wishlist search alert candidate |
+| `POST` | `/wishlist/search-alerts/{alertId}/candidates/{candidateId}/dismiss` | Dismiss wishlist search alert candidate |
+| `POST` | `/wishlist/search-alerts/{alertId}/candidates/{candidateId}/restore` | Restore wishlist search alert candidate |
+| `POST` | `/wishlist/search-alerts/{alertId}/criteria-adjustments` | Adjust wishlist search alert criteria |
+| `POST` | `/wishlist/search-alerts/{alertId}/run` | Run wishlist search alert |
+| `GET` | `/wishlist/search-alerts/{alertId}/runs` | List wishlist search alert runs |
+| `GET` | `/wishlist/search-alerts/{alertId}/runs/{runId}` | Get wishlist search alert run |
+
+## Quick Capture
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/quick-capture/drafts` | List Quick Capture drafts |
+| `POST` | `/quick-capture/drafts` | Create Quick Capture draft |
+| `GET` | `/quick-capture/drafts/{id}` | Get Quick Capture draft |
+| `PUT` | `/quick-capture/drafts/{id}` | Update Quick Capture draft |
+| `POST` | `/quick-capture/drafts/{id}/discard` | Discard Quick Capture draft |
+| `POST` | `/quick-capture/drafts/{id}/promote` | Promote Quick Capture draft |
+
+## Numista
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/numista/catalog/issuers` | Search Numista issuers |
+| `GET` | `/numista/catalog/search` | Search the Numista coin catalogue |
+| `GET` | `/numista/catalog/types/{id}` | Get a Numista coin type |
+| `GET` | `/numista/catalog/types/{id}/market-value` | Get a Numista type's market value |
+| `POST` | `/numista/enrich` | Enrich and rerank Numista candidates |
+| `POST` | `/numista/lookup` | Run broad Numista lookup |
+| `POST` | `/numista/query-proposal` | Build a Numista query proposal |
+| `GET` | `/numista/search` | Search Numista catalog |
+| `GET` | `/translate` | Translate a short text |
+
+## Catalogs
+
+| Method | Path | Summary |
+|---|---|---|
+| `POST` | `/admin/catalogs` | Create catalog |
+| `PUT` | `/admin/catalogs/{id}` | Update catalog |
+| `DELETE` | `/admin/catalogs/{id}` | Delete catalog |
+| `GET` | `/catalogs` | List catalogs |
+
+## Mint Locations
+
+| Method | Path | Summary |
+|---|---|---|
+| `POST` | `/admin/mint-locations` | Create mint location |
+| `PUT` | `/admin/mint-locations/{id}` | Update mint location |
+| `DELETE` | `/admin/mint-locations/{id}` | Delete mint location |
+| `GET` | `/mint-locations` | List mint locations |
+| `POST` | `/mint-locations` | Create a private mint location |
+| `GET` | `/mint-locations/geocode` | Geocode a mint name |
+| `PUT` | `/mint-locations/{id}` | Update a private mint location |
+| `DELETE` | `/mint-locations/{id}` | Delete a private mint location |
+
+## Sets
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/set-builder/proposals/{id}` | Get Agentic set proposal |
+| `PUT` | `/set-builder/proposals/{id}` | Update Agentic set proposal |
+| `POST` | `/set-builder/proposals/{id}/approve` | Approve Agentic set proposal |
+| `POST` | `/set-builder/proposals/{id}/regenerate` | Regenerate Agentic set proposal |
+| `POST` | `/set-builder/proposals/{id}/reject` | Reject Agentic set proposal |
+| `POST` | `/set-builder/runs` | Queue Agentic set proposal |
+| `GET` | `/sets` | List user sets |
+| `POST` | `/sets` | Create a set |
+| `POST` | `/sets/import-csv` | Create set from CSV |
+| `POST` | `/sets/preview-smart` | Preview smart set |
+| `GET` | `/sets/{id}` | Get set details |
+| `PUT` | `/sets/{id}` | Update a set |
+| `DELETE` | `/sets/{id}` | Delete a set |
+| `GET` | `/sets/{id}/analytics` | Get set analytics |
+| `GET` | `/sets/{id}/checklist` | Get a checklist set's slots |
+| `GET` | `/sets/{id}/coins` | List coins in a set |
+| `POST` | `/sets/{id}/coins` | Add coin to set |
+| `PUT` | `/sets/{id}/coins/order` | Reorder set coins |
+| `DELETE` | `/sets/{id}/coins/{coinId}` | Remove coin from set |
+| `GET` | `/sets/{id}/completion` | Get set completion |
+| `POST` | `/sets/{id}/snapshot` | Create set snapshot |
+| `GET` | `/sets/{id}/trends` | Get set trends |
+
+## Stats
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/stats/time-machine` | Get the collection as of a past date |
+| `GET` | `/stats/time-machine/bounds` | Get the time machine's date range |
+
+## Deep Identification
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/deep-identification/capability` | Report whether Deep Analysis is enabled for the current user |
+| `GET` | `/deep-identification/jobs` | List the owner's Deep Analysis jobs |
+| `POST` | `/deep-identification/jobs` | Start a Deep Analysis job |
+| `GET` | `/deep-identification/jobs/{id}` | Get a Deep Analysis job |
+| `DELETE` | `/deep-identification/jobs/{id}` | Delete a Deep Analysis job |
+| `POST` | `/deep-identification/jobs/{id}/apply` | Confirm a Deep Analysis proposal through the existing write path |
+| `POST` | `/deep-identification/jobs/{id}/cancel` | Cancel a Deep Analysis job |
+| `GET` | `/deep-identification/jobs/{id}/events` | Stream a Deep Analysis job's events (SSE) |
+| `PATCH` | `/deep-identification/jobs/{id}/proposal` | Save owner edits and per-field decisions on a Deep Analysis proposal |
+| `POST` | `/deep-identification/jobs/{id}/retry` | Retry a Deep Analysis job |
+
+## Agent
+
+| Method | Path | Summary |
+|---|---|---|
+| `POST` | `/agent/chat` | Chat with coin search agent (streaming) |
+| `GET` | `/agent/coin-search-prompt` | Get coin search prompt |
+| `GET` | `/agent/coin-shows-prompt` | Get coin shows prompt |
+| `POST` | `/agent/collection/proposals/{proposalId}/cancel` | Cancel collection proposal |
+| `POST` | `/agent/collection/proposals/{proposalId}/commit` | Commit collection proposal |
+| `GET` | `/agent/conversations` | List saved conversations |
+| `POST` | `/agent/conversations` | Save conversation |
+| `GET` | `/agent/conversations/{id}` | Get conversation |
+| `DELETE` | `/agent/conversations/{id}` | Delete conversation |
+| `GET` | `/agent/models` | List available Anthropic models |
+| `GET` | `/agent/portfolio-summary` | Get portfolio summary for AI analysis |
+| `GET` | `/agent/status` | Get agent status |
+| `GET` | `/agent/valuation-prompt` | Get valuation prompt |
+| `POST` | `/coins/{id}/estimate-value` | Queue coin value estimate |
+
+## Coin Copilot
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/agent/copilot/capability` | Resolve Coin Copilot or legacy mode |
+| `POST` | `/agent/copilot/runs` | Start a durable Coin Copilot run |
+| `GET` | `/agent/copilot/runs/{runId}` | Read an owner-scoped Coin Copilot run |
+| `POST` | `/agent/copilot/runs/{runId}/cancel` | Cancel a Coin Copilot run |
+| `GET` | `/agent/copilot/runs/{runId}/events` | Replay and follow Coin Copilot events |
+| `POST` | `/agent/copilot/runs/{runId}/resume` | Resume a paused Coin Copilot run |
+| `GET` | `/agent/copilot/threads/{threadId}` | Read an owner-scoped Coin Copilot thread |
+
+## Health (collection quality)
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/coins/health` | List coin health scores |
+| `GET` | `/coins/{id}/health` | Get metadata health for a single coin |
+| `GET` | `/stats/health` | Get collection health summary |
+
+## Admin
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/admin/availability-cycles` | List availability cycles |
+| `GET` | `/admin/availability-cycles/{id}` | Get availability cycle detail |
+| `GET` | `/admin/availability-runs` | List legacy availability check runs |
+| `GET` | `/admin/availability-runs/{id}` | Get legacy availability run detail |
+| `POST` | `/admin/availability/run` | Trigger manual wishlist availability check |
+| `GET` | `/admin/backups` | Full backups |
+| `POST` | `/admin/backups` | Make a full backup now |
+| `PUT` | `/admin/backups/upload` | Import a full backup |
+| `GET` | `/admin/backups/{name}` | Download a full backup |
+| `DELETE` | `/admin/backups/{name}` | Delete a full backup |
+| `POST` | `/admin/backups/{name}/restore` | Restore a full backup |
+| `POST` | `/admin/collection-currency` | Change the collection currency |
+| `GET` | `/admin/deep-identification/observability` | Get Deep Identification observability |
+| `GET` | `/admin/health/summary` | Get admin collection health summary |
+| `GET` | `/admin/logs` | Get application logs |
+| `GET` | `/admin/numista/health` | Get Numista operational health |
+| `GET` | `/admin/settings` | Get application settings |
+| `PUT` | `/admin/settings` | Update application settings |
+| `GET` | `/admin/settings/defaults` | Get setting defaults |
+| `GET` | `/admin/test-anthropic` | Test Anthropic connection |
+| `GET` | `/admin/test-searxng` | Test SearXNG connection |
+| `GET` | `/admin/users` | List all users |
+| `DELETE` | `/admin/users/{id}` | Delete a user |
+| `POST` | `/admin/users/{id}/reset-password` | Reset user password |
+| `PUT` | `/admin/users/{id}/role` | Update user role |
+| `GET` | `/admin/valuation-runs` | List valuation runs |
+| `POST` | `/admin/valuation-runs/trigger` | Trigger manual valuation |
+| `GET` | `/admin/valuation-runs/{id}` | Get valuation run detail |
+| `POST` | `/admin/valuation-runs/{id}/cancel` | Cancel a valuation run |
+| `GET` | `/admin/wishlist-search-alert-runs` | List all wishlist search alert runs |
+
+## Admin Security
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/admin/security/events` | List security events |
+| `GET` | `/admin/security/exposure-check` | Get exposure check |
+| `GET` | `/admin/security/summary` | Get security summary |
+| `POST` | `/admin/users/{id}/unlock` | Unlock user |
+
+## Internal
+
+| Method | Path | Summary |
+|---|---|---|
+| `POST` | `/internal/tools/collection_summary` | Get collection aggregate summary |
+| `POST` | `/internal/tools/commit_update` | Commit an update proposal |
+| `POST` | `/internal/tools/get_coin` | Get a single coin by ID |
+| `POST` | `/internal/tools/numista_detail` | Deep-identification Numista detail tool |
+| `POST` | `/internal/tools/numista_search` | Deep-identification Numista search tool |
+| `POST` | `/internal/tools/propose_update` | Create an update proposal |
+| `POST` | `/internal/tools/search_my_collection` | Search user's collection |
+| `POST` | `/internal/tools/top_coins_by_value` | Get top coins by current value |

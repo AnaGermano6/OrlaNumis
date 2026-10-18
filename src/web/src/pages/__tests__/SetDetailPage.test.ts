@@ -137,7 +137,7 @@ describe('SetDetailPage', () => {
       expect.objectContaining({ key: 'ecb:gago', title: 'Gago Coutinho', owned: true, coinId: 5, coinImage: 'coins/gago.jpg' }),
     ])
     const info = wrapper.get('[data-testid="set-checklist-info"]').text()
-    expect(info).toContain('Catalogue · Portugal · €2')
+    expect(info).toContain('Catalogue · 🇵🇹 Portugal · €2')
     expect(info).toContain('Kept up to date by itself')
     expect(wrapper.find('[data-testid="set-checklist-partial"]').exists()).toBe(true)
     // Its coins are the catalogue's: none are added by hand.

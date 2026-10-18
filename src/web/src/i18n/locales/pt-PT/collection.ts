@@ -136,6 +136,7 @@ const messages: Messages['collection'] = {
     demonetized: 'Só moedas desmonetizadas',
     commemorative: 'Só moedas comemorativas',
     regular: 'Só moedas não comemorativas',
+    repeated: 'Só repetidas para troca',
     remove: 'Remover o filtro: {filter}',
   },
 }

@@ -261,7 +261,7 @@ func (s *CoinLookupService) buildVisionPrompt(imageRoles []string, includePriceE
    - Denomination (e.g., "Denarius", "Tetradrachm", "Solidus")
    - Date or date range when visible or strongly inferable
    - Material (Gold, Silver, Bronze, Copper, Electrum, Other)
-   - Category (Roman, Greek, Byzantine, Modern, Other)
+   - Category (Modern or Other)
    - One short obverse description
    - One short reverse description if a reverse image is present
    - Grade only if visible on a slab/label

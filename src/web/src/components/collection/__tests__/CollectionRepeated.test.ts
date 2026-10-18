@@ -65,4 +65,20 @@ describe('CollectionRepeated', () => {
     expect(wrapper.get('[data-testid="repeated-empty"]').text()).toContain('Ainda não tem notas repetidas')
     expect(wrapper.find('[data-testid="repeated-counts"]').exists()).toBe(false)
   })
+
+  it('opens the gallery with only these, from a button shown when there are some', async () => {
+    mocks.getCoins.mockResolvedValue({ data: { coins: [coin(1, '1 euro 2009', 2)], total: 1 } })
+    const wrapper = render('banknote', { repeatedCoins: 1, spareCoins: 1 })
+    await flushPromises()
+
+    const open = wrapper.get('[data-testid="repeated-open"]')
+    expect(open.text()).toBe('Ver na galeria')
+    await open.trigger('click')
+    expect(wrapper.emitted('open')).toHaveLength(1)
+
+    mocks.getCoins.mockResolvedValue({ data: { coins: [], total: 0 } })
+    const none = render('coin', { repeatedCoins: 0, spareCoins: 0 })
+    await flushPromises()
+    expect(none.find('[data-testid="repeated-open"]').exists()).toBe(false)
+  })
 })

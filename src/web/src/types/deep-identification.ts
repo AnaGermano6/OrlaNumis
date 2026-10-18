@@ -17,8 +17,8 @@ export interface DeepIdentificationObservabilitySummary {
   janitor: { recoverySweeps: number; retentionSweeps: number; failures: number }
 }
 
-// Deep Agentic Coin Identification (344-deep-agentic-coin-identification).
-// Contract anchor: specs/344-deep-agentic-coin-identification/contracts/deep-identification.openapi.yaml
+// Deep Agentic Coin Identification: the shapes of the /deep-identification
+// routes in docs/openapi.json.
 export type DeepProviderId = 'numista' | 'ngc' | 'rpc'
 
 export type DeepJobStatus = 'queued' | 'running' | 'partial' | 'completed' | 'failed' | 'cancelled'

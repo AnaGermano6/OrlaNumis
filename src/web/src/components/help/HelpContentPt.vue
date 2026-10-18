@@ -87,15 +87,15 @@
     </details>
 
     <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim">
-      <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Usar as funcionalidades do Aurearia</summary>
+      <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Usar as funcionalidades da Orla Numis</summary>
       <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>O Aurearia permite catalogar a coleção, planear aquisições, partilhar com outros colecionadores e pesquisar com ajuda de IA. Estes fluxos são opcionais: comece por importar a coleção ou pela Captura rápida e ative as integrações quando precisar.</p>
+        <p>A Orla Numis permite catalogar a coleção, planear aquisições, partilhar com outros colecionadores e pesquisar com ajuda de IA. Estes fluxos são opcionais: comece por importar a coleção ou pela Captura rápida e ative as integrações quando precisar.</p>
 
         <h4>Registo rápido</h4>
         <ul>
           <li><strong>Por onde começar</strong> — Os dois fluxos de registo estão em <strong>Identificar moeda</strong> na barra lateral; a lista de rascunhos é a ação <strong>Todos os rascunhos</strong> nessa página.</li>
           <li><strong>Identificação de moedas</strong> — Fotografe uma moeda ou uma cápsula NGC Ancients, reveja os dados extraídos e guarde o resultado na coleção ou na lista de desejos. <strong>Identificar moeda → Histórico de análises</strong> guarda as identificações aprofundadas anteriores, incluindo os resultados e as consultas a cada fornecedor.</li>
-          <li><strong>Notas por voz</strong> — Nos navegadores compatíveis, use <strong>Ditar notas</strong> na identificação rápida ou na Análise aprofundada de uma moeda guardada, reveja a transcrição (no idioma da interface) e submeta com a ação habitual. O fornecedor do navegador ou do dispositivo pode processar o áudio; o Aurearia não o guarda. Pode sempre escrever.</li>
+          <li><strong>Notas por voz</strong> — Nos navegadores compatíveis, use <strong>Ditar notas</strong> na identificação rápida ou na Análise aprofundada de uma moeda guardada, reveja a transcrição (no idioma da interface) e submeta com a ação habitual. O fornecedor do navegador ou do dispositivo pode processar o áudio; a Orla Numis não o guarda. Pode sempre escrever.</li>
           <li><strong>Captura rápida</strong> — Guarde fotografias e notas tiradas numa feira como rascunhos, retome-os mais tarde e promova um rascunho completo para a coleção ou para a lista de desejos. Os rascunhos ficam fora dos totais da coleção, da lista de desejos, das estatísticas e da saúde até serem promovidos.</li>
         </ul>
 
@@ -103,7 +103,6 @@
         <ul>
           <li><strong>Alertas de pesquisa da lista de desejos</strong> — Guarde critérios de pesquisa, execute alertas de forma agendada ou manual, reveja os candidatos, rejeite as más correspondências e converta os candidatos aceites em itens da lista de desejos.</li>
           <li><strong>Saúde da coleção</strong> — Use as vistas de saúde nas Estatísticas para acompanhar a pontuação, imagens em falta, lacunas de metadados, lacunas de análise por IA e melhorias sugeridas.</li>
-          <li><strong>Tabuleiro de museu</strong> — Use a vista Tabuleiro para dispor as moedas visualmente, com espaçamento proporcional ao tamanho, como num gabinete. As moedas que possui mostram a data de compra em <code>AAAA-MM-DD</code>; os itens da lista de desejos aparecem mais transparentes e mostram <code>TBD</code>.</li>
           <li><strong>Mapa das casas da moeda</strong> — Use Estatísticas → Mapa para ver as localizações das casas da moeda e a distribuição geográfica das moedas com casa da moeda associada.</li>
         </ul>
 
@@ -167,7 +166,7 @@
         <ul>
           <li><strong>Captura com a câmara</strong> — A Captura rápida, a identificação de moedas e os carregamentos de imagens só ligam a câmara depois de tocar numa ação de câmara.</li>
           <li><strong>Ferramentas de imagem</strong> — Anexe imagens carregadas ou URLs colados, use variantes de imagem responsivas, remova fundos, recorte moedas e extraia texto de cartões de loja ou certificados.</li>
-          <li><strong>PWA/offline</strong> — Instale o Aurearia como PWA para ter navegação ao estilo de aplicação móvel, leitura offline, navegação na coleção em cache e um botão do agente arrastável.</li>
+          <li><strong>PWA/offline</strong> — Instale a Orla Numis como PWA para ter navegação ao estilo de aplicação móvel, leitura offline, navegação na coleção em cache e um botão do agente arrastável.</li>
         </ul>
 
         <h4>Alertas</h4>

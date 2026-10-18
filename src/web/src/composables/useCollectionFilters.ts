@@ -58,6 +58,7 @@ export function useCollectionFilters() {
   const selectedCirculation = ref(store.selectedCirculation)
   const selectedCommemorative = ref(store.selectedCommemorative)
   const selectedClassification = ref(store.selectedClassification)
+  const selectedRepeated = ref(store.selectedRepeated)
   const groupBy = ref<CoinGroupBy>(readGroupBy())
   const countryOptions = ref<CoinCountryCount[]>([])
   const fillingCountries = ref(false)
@@ -132,6 +133,7 @@ export function useCollectionFilters() {
     store.selectedCirculation = selectedCirculation.value
     store.selectedCommemorative = selectedCommemorative.value
     store.selectedClassification = selectedClassification.value
+    store.selectedRepeated = selectedRepeated.value
     store.searchQuery = search.value
 
     // For random sort, generate a per-session seed (stable across pagination within a session)
@@ -157,6 +159,7 @@ export function useCollectionFilters() {
       circulation: selectedCirculation.value || undefined,
       commemorative: selectedCommemorative.value || undefined,
       classification: selectedClassification.value || undefined,
+      repeated: selectedRepeated.value ? 'true' : undefined,
       search: search.value || undefined,
       set: selectedSet.value || undefined,
       wishlist: 'false',
@@ -169,7 +172,7 @@ export function useCollectionFilters() {
     else void store.fetchCoins({ ...params, page: page.value })
   }
 
-  watch([selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification], () => {
+  watch([selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated], () => {
     page.value = 1
     loadCoins()
   })
@@ -260,6 +263,7 @@ export function useCollectionFilters() {
     selectedCirculation,
     selectedCommemorative,
     selectedClassification,
+    selectedRepeated,
     selectedRarity,
     groupBy,
     countryOptions,

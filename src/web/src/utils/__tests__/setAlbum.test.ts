@@ -24,29 +24,32 @@ describe('set album', () => {
 
   it("shows a challenge's slots by country, or by coin of the year's series", () => {
     const filled = checklistAlbumSlot({ key: 'country:DE', country: 'DE', year: 2005, owned: true, coinId: 8, coinName: '10 cêntimos' }, { source: 'challenge', challenge: 'euro-countries' })
-    expect(filled).toEqual(expect.objectContaining({ title: 'Alemanha', detail: '10 cêntimos', year: 2005, owned: true }))
+    expect(filled).toEqual(expect.objectContaining({ title: 'Alemanha', flag: '🇩🇪', detail: '10 cêntimos', year: 2005, owned: true }))
     expect(filled.country).toBeUndefined()
     expect(checklistAlbumSlot({ key: 'country:FR', country: 'FR', owned: false, imageUrl: 'https://ecb/fr.jpg' }, { source: 'challenge', challenge: 'euro-countries' }))
       .toEqual(expect.objectContaining({ title: 'França', detail: 'Qualquer moeda do euro', year: null, owned: false, imageUrl: 'https://ecb/fr.jpg' }))
 
     const joint = { source: 'challenge', challenge: 'joint-issue', year: 2007 } as const
     expect(checklistAlbumSlot({ key: 'joint:PT', country: 'PT', title: '50th anniversary of the Treaty of Rome', year: 2007, owned: true, coinName: 'Tratado de Roma' }, joint))
-      .toEqual(expect.objectContaining({ title: 'Portugal', detail: 'Tratado de Roma', year: 2007 }))
+      .toEqual(expect.objectContaining({ title: 'Portugal', flag: '🇵🇹', detail: 'Tratado de Roma', year: 2007 }))
     expect(checklistAlbumSlot({ key: 'joint:IT', country: 'IT', title: '50th anniversary of the Treaty of Rome', year: 2007, owned: false, imageUrl: 'https://ecb/it.jpg' }, joint))
       .toEqual(expect.objectContaining({ title: 'Itália', detail: undefined, imageUrl: 'https://ecb/it.jpg' }))
 
     const series = { source: 'challenge', challenge: 'annual-series', country: 'PT', year: 2002 } as const
-    expect(checklistAlbumSlot({ key: 'annual:1cent', country: 'PT', year: 2002, faceValue: 0.01, owned: false }, series).title).toBe('1 cêntimo')
+    const cent = checklistAlbumSlot({ key: 'annual:1cent', country: 'PT', year: 2002, faceValue: 0.01, owned: false }, series)
+    expect(cent.title).toBe('1 cêntimo')
+    // The series is one country's: its flag is on the set, not on each coin.
+    expect(cent.flag).toBeUndefined()
     expect(checklistAlbumSlot({ key: 'annual:50cent', country: 'PT', year: 2002, faceValue: 0.5, owned: true, coinName: 'Meu' }, series)).toEqual(expect.objectContaining({ title: '50 cêntimos', detail: 'Meu' }))
     expect(nbsp(euroCoinName(2))).toBe('2 €')
   })
 
   it("describes what a checklist set lists", () => {
-    expect(nbsp(checklistDescription({ source: 'catalogue', country: 'PT', faceValue: 2 }))).toBe('Catálogo · Portugal · 2 €')
-    expect(checklistDescription({ source: 'catalogue', country: 'PT', currency: 'PTE', faceValue: 100 })).toBe('Catálogo · Portugal · Escudos · 100 escudos')
+    expect(nbsp(checklistDescription({ source: 'catalogue', country: 'PT', faceValue: 2 }))).toBe('Catálogo · 🇵🇹 Portugal · 2 €')
+    expect(checklistDescription({ source: 'catalogue', country: 'PT', currency: 'PTE', faceValue: 100 })).toBe('Catálogo · 🇵🇹 Portugal · Escudos · 100 escudos')
     expect(checklistDescription({ source: 'challenge', challenge: 'euro-countries' })).toBe('Uma moeda de cada país do euro')
     expect(checklistDescription({ source: 'challenge', challenge: 'joint-issue', year: 2007 })).toBe('Emissão comum de 2007: a mesma moeda, um lugar por país')
-    expect(checklistDescription({ source: 'challenge', challenge: 'annual-series', country: 'PT', year: 2002 })).toBe('Portugal 2002: série anual')
+    expect(checklistDescription({ source: 'challenge', challenge: 'annual-series', country: 'PT', year: 2002 })).toBe('🇵🇹 Portugal 2002: série anual')
   })
 
   it("leaves a goal set's wishlist coins to find, and fills an agentic set's targets with their coins", () => {

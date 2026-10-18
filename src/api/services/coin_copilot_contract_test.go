@@ -65,8 +65,7 @@ func loadDeepAnalysisHandoffFixture(t *testing.T, name string) map[string]json.R
 	}
 	path := filepath.Join(
 		filepath.Dir(currentFile),
-		"..", "..", "..", "specs", "362-coin-copilot-attribution",
-		"contracts", "fixtures", name,
+		"..", "..", "..", "contracts", "coin-copilot", "fixtures", name,
 	)
 	raw, err := os.ReadFile(path)
 	if err != nil {

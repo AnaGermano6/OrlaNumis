@@ -1,6 +1,6 @@
 # Architecture
 
-> Full-system architecture for the Aurearia PWA. Covers all three services, their interactions, and the design rules that keep the system maintainable.
+> Full-system architecture for the Orla Numis PWA. Covers all three services, their interactions, and the design rules that keep the system maintainable.
 
 ---
 
@@ -30,7 +30,6 @@
   - [LLM Provider Abstraction](#llm-provider-abstraction)
   - [SSE Streaming](#sse-streaming)
 - [Coin Copilot Durable Harness](#coin-copilot-durable-harness)
-- [Native MCP Adapter](#native-mcp-adapter)
 - [Data Flow Diagrams](#data-flow-diagrams)
   - [Standard API Request](#standard-api-request)
   - [Agent Chat (SSE Streaming)](#agent-chat-sse-streaming)
@@ -39,7 +38,6 @@
 - [Database Schema](#database-schema)
   - [Core Domain Models](#core-domain-models)
   - [Authentication Models](#authentication-models)
-  - [Social and Notification Models](#social-and-notification-models)
   - [AI and Agent Models](#ai-and-agent-models)
   - [System Models](#system-models)
 - [Authentication and Authorization](#authentication-and-authorization)
@@ -53,7 +51,7 @@
 
 ## System Overview
 
-Aurearia is a full-stack PWA for managing a personal coin collection, with deep support for ancient and historical coins. The system is composed of three services:
+Orla Numis is a full-stack PWA for managing a personal coin collection, with deep support for ancient and historical coins. The system is composed of three services:
 
 | Service | Tech Stack | Port | Path |
 |---------|-----------|------|------|
@@ -142,7 +140,6 @@ Orchestrate repos, enforce domain rules, perform data transformations. HTTP-agno
 func (s *CoinService) UpdateCoin(existing *models.Coin, updates *models.Coin, ...) error {
     s.repo.Update(existing, updates)
     if valueChanged { s.repo.RecordValueHistory(...) }
-    s.repo.RecordValueSnapshot(userID)
 }
 ```
 
@@ -165,7 +162,7 @@ func (r *CoinRepository) FindByID(id, userID uint) (*models.Coin, error) {
 - `ImageRepository.SetPrimaryAndCreate` (clear primary + insert)
 
 **6. Errors stay internal.**
-Never expose raw `err.Error()` from GORM, Ollama, or WebAuthn to clients. Log server-side, return generic messages. Validation errors from `ShouldBindJSON` are acceptable.
+Never expose raw `err.Error()` from GORM or Ollama to clients. Log server-side, return generic messages. Validation errors from `ShouldBindJSON` are acceptable.
 
 **7. Go API contains zero LLM logic.**
 All AI inference is proxied to the Python agent via `services/agent_proxy.go`.
@@ -222,9 +219,9 @@ Three route groups with distinct auth levels:
 
 | Group | Prefix | Auth | Example Routes |
 |-------|--------|------|----------------|
-| `api` (public) | `/api` | None (rate-limited) | `/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/webauthn/*`, `/showcase/:slug` |
-| `protected` | `/api` | JWT or API Key | `/coins`, `/coins/bulk`, `/sets`, `/agent/chat`, `/deep-identification/*`, `/stats`, `/social/*`, `/notifications`, `/showcases/*`, `/api-keys`, `/wishlist/availability-runs`, `/wishlist/availability-runs/:id` |
-| `admin` | `/api/admin` | JWT + admin role | `/users`, `/settings`, `/logs`, `/availability-runs` (legacy), `/availability-runs/:id` (legacy), `/availability/run`, `/availability-cycles`, `/availability-cycles/:id`, `/valuation-runs`, `/deep-identification/ocre/health`, `/deep-identification/observability`, `/mint-locations/:id/nomisma/*`, `/test-anthropic`, `/test-searxng` |
+| `api` (public) | `/api` | None (rate-limited) | `/auth/login`, `/auth/register`, `/auth/refresh` |
+| `protected` | `/api` | JWT | `/coins`, `/coins/bulk`, `/sets`, `/coin-catalogue`, `/agent/chat`, `/deep-identification/*`, `/stats`, `/wishlist/availability-runs`, `/wishlist/availability-runs/:id` |
+| `admin` | `/api/admin` | JWT + admin role | `/users`, `/settings`, `/logs`, `/availability-runs` (legacy), `/availability-runs/:id` (legacy), `/availability/run`, `/availability-cycles`, `/availability-cycles/:id`, `/valuation-runs`, `/deep-identification/observability`, `/backups`, `/test-anthropic`, `/test-searxng` |
 
 ### Shared GORM Scopes
 
@@ -233,11 +230,9 @@ Reusable query scopes in `repository/scopes.go`:
 | Scope | Purpose |
 |-------|---------|
 | `OwnedBy(userID)` | Filter by `user_id` |
-| `ByID(id)` | Filter by primary key |
 | `OwnedByID(id, userID)` | Filter by both |
-| `ActiveCollection(userID)` | Non-wishlist, non-sold coins |
-| `PublicCoins(userID)` | Public, non-wishlist, non-sold |
-| `ByCoinID(coinID)` | Filter by `coin_id` |
+| `ActiveCollection(userID)` | Non-wishlist coins |
+| `OfKind(kind)` | Coins or banknotes |
 
 ### Architecture Tests
 
@@ -274,7 +269,6 @@ src/web/src/
 │   ├── useBulkSelect.ts
 │   ├── useDialog.ts
 │   ├── useImageProcessor.ts
-│   ├── useNotifications.ts
 │   ├── usePullToRefresh.ts
 │   ├── usePwa.ts
 │   ├── useSettingsProfile.ts
@@ -295,15 +289,15 @@ src/web/src/
 
 Routes are lazy-loaded. Auth-protected routes use `meta: { requiresAuth: true }` enforced by a `beforeEach` guard.
 
-**Key pages:** Collection, CoinDetail, AddCoin, EditCoin, Wishlist, Sold, Stats, Timeline, Showcases, Followers, Notifications, Settings, Admin.
+**Key pages:** Collection (gallery), CollectionOverview, Banknotes, CoinDetail, AddCoin, EditCoin, Wishlist, Sets, SetDetail, CommemorativeCatalogue, Stats and its subviews, CoinLookup, DeepAnalysis, Settings, Admin.
 
-**Public pages:** Login, Register, PublicShowcase.
+**Public pages:** Login, Register.
 
 ### State Management (Pinia)
 
 | Store | Key State | Key Actions |
 |-------|-----------|-------------|
-| `auth` | `token`, `user`, `refreshToken` | `doLogin`, `doRegister`, `doWebAuthnLogin`, `logout` |
+| `auth` | `token`, `user`, `refreshToken` | `doLogin`, `doRegister`, `logout` |
 | `coins` | `coins[]`, `currentCoin`, `stats`, `valueHistory`, `searchQuery`, `selectedCategory` | `fetchCoins`, `fetchCoin`, `createCoin`, `updateCoin`, `deleteCoin`, `fetchStats` |
 
 Auth state is persisted in `localStorage` and rehydrated on app load.
@@ -320,18 +314,16 @@ Auth state is persisted in `localStorage` and rehydrated on app load.
   3. On success, retries all queued requests with new token
   4. On failure, redirects to login
 - **Agent chat** uses native `fetch` + manual SSE parsing (not Axios) for streaming
-- **WebAuthn helpers** — binary to base64url conversion utilities
 
 ### Composables
 
 | Composable | Purpose |
 |-----------|---------|
 | `useCoinSearchChat` | Agent chat streaming, message history, SSE parsing |
-| `useCollectionFilters` | Search, sort, category, tag filtering |
-| `useBulkSelect` | Multi-select with bulk actions (tag, delete) |
+| `useCollectionFilters` | Search, sort, face value, country, set and other filters, grouping |
+| `useBulkSelect` | Multi-select with bulk actions (add to set, delete) |
 | `useDialog` | Confirmation dialog state |
 | `useImageProcessor` | Client-side image resize/compress before upload |
-| `useNotifications` | Notification polling and unread counts |
 | `usePullToRefresh` | Touch-based pull-to-refresh for mobile |
 | `usePwa` | PWA install prompt and update detection |
 | `useSettingsProfile` | Profile edit form state |
@@ -420,7 +412,7 @@ Each team is a LangGraph `StateGraph` with verification stages:
 - Search agents pass only tool-returned data downstream — never invented details
 - Verification agents confirm every URL is live and every date is in the future
 - All worker outputs conform to defined Pydantic schemas — no free-form text
-- Deep Identification is **vision-first** (ADR 0012, Feature 351): the single
+- Deep Identification is **vision-first**: the single
   vision LLM call already made on every job produces a typed `CoinHypothesis`
   (per-field confidence, no citation) instead of a discarded prose string.
   `route()` is then a **deterministic pure function** of the catalog, bounds,
@@ -530,46 +522,6 @@ recovery remain active until outstanding state settles.
 
 ---
 
-## Native MCP Adapter
-
-Feature 366 adds a stateless Streamable HTTP adapter at `POST /api/mcp` inside
-the Go API:
-
-```text
-MCP client
-  │  X-API-Key
-  ▼
-ExternalToolServerEnabled
-  -> AuthRequired
-  -> per-key external rate limit
-  -> RequireCapability("read")
-  ▼
-handlers.MCPHandler
-  -> fresh stateless MCP server for the authenticated request
-  ▼
-services.MCPService
-  ├─ CollectionToolsService / CoinRepository
-  └─ CoinCopilotService
-```
-
-The handler owns protocol adaptation only. `MCPService` validates bounded
-inputs and delegates to existing owner-scoped application and repository
-boundaries. It never reaches SQLite directly. A fresh stateless MCP server is
-created per authenticated request, so protocol sessions cannot cross API-key
-or owner boundaries.
-
-Five tools expose read-only collection, wishlist, and statistics data. Four Coin Copilot lifecycle tools are registered only when the API key
-contains the exact `copilot` token. These tools reuse the durable Go-owned
-Copilot service and preserve its feature flags, admission limits,
-idempotency, checkpoint versions, cancellation, and owner checks. The Python
-service is never exposed directly.
-
-The OpenAPI adapter under `/api/v1/tools/*` remains a separate contract. It may
-perform confirm-gated writes for keys with `write`; the native MCP adapter does
-not register those operations. See [ADR 0021](adr/0021-stateless-mcp-api-adapter.md).
-
----
-
 ## Data Flow Diagrams
 
 ### Standard API Request
@@ -645,7 +597,6 @@ Scheduler / User        Go API               Python Agent
   │                       │   └── if ambiguous: ──▶│ POST /check-availability
   │                       │       agent verdict ◀──│
   │                       │── update listing_status│
-  │                       │── create notifications │
   │                       │── save run + results   │
 ```
 
@@ -659,15 +610,13 @@ SQLite via GORM. All tables are auto-migrated from Go model structs in `database
 
 | Model | Table | Key Fields | Relations |
 |-------|-------|-----------|-----------|
-| `Coin` | `coins` | Name, Category, Denomination, Ruler, Era, Mint, Material, Weight, Grade, PurchasePrice, CurrentValue, IsWishlist, IsSold, ListingStatus, UserID | → User, → []CoinImage, → []Tag (M2M via `coin_tags`) |
+| `Coin` | `coins` | Kind (coin/banknote), Name, Category, Denomination, Ruler, Era, Year, Country, Mint, Material, Weight, Grade, Quantity, PurchasePrice, CurrentValue, IsWishlist, ListingStatus, UserID | → User, → []CoinImage, → []CoinReference, → []CoinSet |
 | `CoinImage` | `coin_images` | CoinID, FilePath, ImageType (obverse/reverse/detail), IsPrimary | → Coin |
-| `Tag` | `tags` | UserID, Name, Color | |
-| `CoinTag` | `coin_tags` | CoinID, TagID | Join table |
-| `CoinSet` | `coin_sets` | UserID, Name, Color, SetType (`standard`/`goal`/`smart`/`agentic`), SmartCriteria, TargetCompletionDate, AgenticStatus | → User, → []CoinSetMembership, → []CoinSetTarget |
+| `CoinSet` | `coin_sets` | UserID, Name, Color, SetType (`standard`/`goal`/`smart`/`agentic`/`checklist`), SmartCriteria, TargetCompletionDate, AgenticStatus | → User, → []CoinSetMembership, → []CoinSetTarget |
 | `CoinSetMembership` | `coin_set_memberships` | SetID, CoinID, Notes | Join table for manual set membership |
 | `CoinSetTarget` | `coin_set_targets` | SetID, Label, Year, MintMark, Denomination, Country, Material, MatchRules, SortOrder | Target slots for compatible completion workflows |
 | `CoinSetValuationSnapshot` | `coin_set_valuation_snapshots` | SetID, UserID, SnapshotDate, TotalValue, TotalInvested, CoinCount, CompletionPercentage | Time-series trend data |
-| `CoinSetMilestoneAlert` | `coin_set_milestone_alerts` | SetID, UserID, Metric, Threshold, Direction, LastTriggeredAt | Snapshot-triggered milestone notifications |
+| `CatalogueOverride` | `catalogue_overrides` | UserID, CoinKey, SameAs | A catalogue coin hidden, or joined to another |
 | `CoinJournal` | `coin_journals` | CoinID, UserID, Entry, CreatedAt | |
 | `CoinValueHistory` | `coin_value_histories` | CoinID, UserID, Value, Confidence, RecordedAt | |
 
@@ -675,20 +624,9 @@ SQLite via GORM. All tables are auto-migrated from Go model structs in `database
 
 | Model | Table | Key Fields |
 |-------|-------|-----------|
-| `User` | `users` | Username, Email, PasswordHash, Role (user/admin), AvatarPath, IsPublic, Bio |
+| `User` | `users` | Username, Email, PasswordHash, Role (user/admin), AvatarPath, Bio, LockedUntil |
 | `RefreshToken` | `refresh_tokens` | UserID, TokenHash (SHA-256), ExpiresAt, RevokedAt |
-| `ApiKey` | `api_keys` | UserID, KeyHash, KeyPrefix, Name, LastUsedAt, RevokedAt |
-| `WebAuthnCredential` | `webauthn_credentials` | UserID, CredentialID, PublicKey, SignCount, Name |
-
-### Social and Notification Models
-
-| Model | Table | Key Fields |
-|-------|-------|-----------|
-| `Follow` | `follows` | FollowerID, FollowingID, Status (pending/accepted/blocked) |
-| `CoinComment` | `coin_comments` | CoinID, UserID, Comment, Rating |
-| `Notification` | `notifications` | UserID, Type, Title, Message, ReferenceID, IsRead |
-| `Showcase` | `showcases` | UserID, Slug, Title, Description, IsActive |
-| `ShowcaseCoin` | `showcase_coins` | ShowcaseID, CoinID, SortOrder |
+| `SecurityEvent` | `security_events` | Type, UserID, Username, ClientIP, UserAgent, Message |
 
 ### AI and Agent Models
 
@@ -715,34 +653,21 @@ SQLite via GORM. All tables are auto-migrated from Go model structs in `database
 | Model | Table | Key Fields |
 |-------|-------|-----------|
 | `AppSetting` | `app_settings` | Key, Value — key-value store for runtime configuration |
+| `NumistaUsage` | `numista_usages` | Month, Requests — Numista API requests counted by month |
 
 ---
 
 ## Authentication and Authorization
 
-The system supports three authentication methods:
+Username and password, with JWT tokens:
 
-**1. JWT Bearer Token (primary)**
 - Access token: HS256, 15-minute TTL, claims: `userId`, `username`, `role`
 - Refresh token: random `rt_...` string, SHA-256 hashed in DB, 30-day TTL
 - Rotation on refresh: old token revoked + new token issued in a single transaction
 
-**2. API Key**
-- Generated per user, `ak_...` prefix
-- SHA-256 hashed in DB, matched on request
-- Supports revocation, tracks `last_used_at`
+**Auth middleware** (`middleware/auth.go`): checks the `Authorization: Bearer <token>` header and sets `userId` and `userRole` in the Gin context. There is no API-key or query-parameter alternative.
 
-**3. WebAuthn / Passkeys**
-- FIDO2 registration and login ceremonies
-- Session data stored in-memory (handler-level map)
-- On successful login, issues standard JWT + refresh token pair
-- Supports dynamic origin fallback for PWA and mobile
-
-**Auth middleware order** (`middleware/auth.go`):
-1. Check `X-API-Key` header → hash and lookup
-2. Check `Authorization: Bearer <token>` header → validate JWT
-3. Check `?token=` query param → validate JWT (image proxy fallback)
-4. Set `userId` and `userRole` in Gin context
+**Lockout:** 5 failed passwords in 15 minutes lock the account for 15 minutes; 20 failures from one IP in 15 minutes block the IP until they age out.
 
 **Rate limiting:** Public auth endpoints are rate-limited to 10 requests/minute per IP.
 
@@ -780,7 +705,7 @@ The Go API acts as a **thin proxy** between the frontend and the Python agent se
 
 ## Background Schedulers
 
-Two goroutine-based schedulers run in the Go API:
+Goroutine-based schedulers run in the Go API: wishlist availability, wishlist search alerts, collection valuation, set value snapshots (`SetSnapshotEnabled`, off by default) and the automatic full backup (`BackupEnabled`, `BackupStartTime` 03:00, `BackupKeep` 7; `services/backup_scheduler.go`). The first two and valuation are described below.
 
 ### Wishlist Availability Scheduler
 
@@ -788,7 +713,6 @@ Two goroutine-based schedulers run in the Go API:
 - **Config:** `WishlistCheckEnabled`, `WishlistCheckStartTime` (HH:MM, default `02:00`), `WishlistCheckInterval` (minutes, default `120`)
 - **Behavior:** Enqueues an `AvailabilityCycle` (parent) and fans out one child `AvailabilityRun` per wishlist owner (including owners with zero URLs) via `RunAdminCycle()`; a scheduled run processes synchronously so the next-run anchor still derives from `GetLastScheduledRun().CompletedAt`
 - **Observability:** Duplicate cycles (queued/running within 5 minutes) return the existing cycle and `ErrAvailabilityRunInProgress`; stale queued/running cycles and orphaned child runs are recovered as `failed` on worker startup; terminal child/cycle rows are pruned to the most recent 20 per owner/overall after each cycle finalizes
-- **Notifications:** Every child run (including zero-URL owners) ends with a guaranteed terminal notification (`NotifyAvailabilityRunTerminal`); admin-triggered cycles additionally notify admins on child failure (`NotifyAdminCycleChildFailure`) — both are independent of the pre-existing per-coin `NotifyWishlistUnavailable` notification
 - **Source:** `services/availability_scheduler.go`, `services/availability_service.go`, `repository/availability_cycle_repository.go`
 
 ### Collection Valuation Scheduler
@@ -798,13 +722,13 @@ Two goroutine-based schedulers run in the Go API:
 - **Behavior:** Gets users with owned coins, runs `ValuateCollectionForUser()` for each
 - **Source:** `services/valuation_scheduler.go`
 
-Both compute next-run from a daily anchor time plus interval cadence.
+They compute the next run from a daily anchor time plus an interval.
 
 ### Shared schedule timing
 
 All schedulers use `services/schedule_timing.go`:
 
-- **Time zone:** start times are read in `ScheduleTimezone` (IANA name, blank = server time, which is UTC in the default Docker image). Coin of the Day may override it with `CoinOfDayTimezone`. Unknown zones are rejected on save. Purchase reminders keep each user's own zone; only the daily check time uses the shared zone.
+- **Time zone:** start times are read in `ScheduleTimezone` (IANA name, blank = server time, which is UTC in the default Docker image). Unknown zones are rejected on save.
 - **Slot grid:** a job runs at its start time, then every interval, restarting at the start time each day. Intervals of a day or longer run at the start time every whole number of days. Wall-clock time is kept across daylight-saving changes.
 - **Restarts:** jobs with run history resume at the first slot after the last completed scheduled run. A slot missed while the server was down runs once at startup; a slot skipped while running (for example after moving the start time earlier) is not run late.
 - **Setting changes:** each scheduler re-reads its settings at least once a minute, so saved changes apply without a restart.
@@ -881,8 +805,7 @@ cd src/web && npx vue-tsc --noEmit
 | `JWT_SECRET` | (required in prod, min 32 chars) | JWT signing key |
 | `PORT` | `8080` | HTTP listen port |
 | `UPLOAD_DIR` | `./uploads` | Coin image storage |
-| `WEBAUTHN_RP_ID` | `localhost` | WebAuthn relying party ID |
-| `WEBAUTHN_ORIGIN` | `http://localhost:8080` | WebAuthn expected origin |
+| `BACKUP_DIR` | — | Folder of the full backups |
 | `CORS_ORIGINS` | (derived) | Allowed CORS origins |
 | `AGENT_SERVICE_URL` | `http://localhost:8081` | Python agent base URL |
 | `AGENT_INTERNAL_SERVICE_TOKEN` | — | Shared API → agent credential for hardened agent endpoints |
@@ -905,8 +828,8 @@ AI provider, model names, system prompts, scheduler configs, and feature toggles
 
 Deep Analysis defaults to disabled. Its settings cover enablement, worker count,
 per-user concurrency, queue depth, hard timeout, event/result retention,
-provider count, Numista call budget, and OCRE enablement/call budget. RPC remains
-disabled and non-automatable. Disabling OCRE prevents new OCRE calls.
+provider count and Numista call budget. Numista is the only automated provider;
+RPC remains disabled and non-automatable.
 
 The admin-only Deep Analysis operations view combines durable aggregate job and
 provider-run status/latency with process-local SSE, cleanup, and janitor
@@ -935,5 +858,5 @@ setting. Provider-reported input/output token totals remain observable.
 | **PWA over native app** | One codebase for desktop and mobile. Offline-capable with Workbox. Installable from browser. |
 | **No emojis in UI** | Numismatic audience. Professional tone. Enforced by convention. |
 | **Settings as key-value pairs** | Flexible runtime config without schema migrations. Admin UI for non-technical users. |
-| **Provider-specific authority boundaries** | Nomisma reconciles controlled vocabulary; OCRE contributes Roman Imperial type evidence under ODbL; NGC is link-out only; RPC automation is paused. |
+| **Provider-specific authority boundaries** | Numista provides catalog evidence; NGC is link-out only; RPC automation is paused. |
 | **Confirm-gated deep writes** | Provider evidence can propose fields but cannot mutate a coin or draft without explicit owner review and apply. |

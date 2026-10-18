@@ -85,7 +85,7 @@ describe('useCoinShareCard', () => {
       },
     }))
     expect(share).toHaveBeenCalledWith(expect.objectContaining({
-      text: `${obverseReverseSummary}\n\nShared from Aurearia - Coin Collection`,
+      text: `${obverseReverseSummary}\n\nShared from Orla Numis - Coin Collection`,
     }))
   })
 

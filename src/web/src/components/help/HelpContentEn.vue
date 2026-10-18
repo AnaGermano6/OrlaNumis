@@ -87,15 +87,15 @@
     </details>
 
     <details class="group mb-2 overflow-hidden rounded-sm border border-border-subtle open:border-gold-dim">
-      <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Using Aurearia - Coin Collection Features</summary>
+      <summary class="flex cursor-pointer list-none items-center gap-2 bg-surface px-4 py-3 text-base font-semibold text-text-primary transition-colors before:text-chip before:text-text-muted before:content-['▸'] before:transition-transform hover:bg-card-hover group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">Using Orla Numis Features</summary>
       <div class="data-table overflow-x-auto px-4 py-4 text-base leading-[1.65] text-text-secondary [&_a:hover]:underline [&_code]:text-text-primary [&_h4:first-child]:mt-0 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:text-text-primary [&_li]:mb-[0.35rem] [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre [&_pre]:rounded-sm [&_pre]:border [&_pre]:border-border-subtle [&_pre]:bg-input [&_pre]:p-3 [&_pre]:text-chip [&_pre]:text-text-primary [&_table]:my-3 [&_table]:table-fixed [&_table]:text-body [&_td]:px-[0.65rem] [&_td]:py-2 [&_td]:break-words [&_th]:px-[0.65rem] [&_th]:py-2 [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc">
-        <p>Aurearia - Coin Collection supports collection cataloging, acquisition planning, social sharing, and AI-assisted research. These workflows are optional; start with collection import or Quick Capture, then enable integrations as needed.</p>
+        <p>Orla Numis supports collection cataloging, acquisition planning, social sharing, and AI-assisted research. These workflows are optional; start with collection import or Quick Capture, then enable integrations as needed.</p>
 
         <h4>Fast Intake</h4>
         <ul>
           <li><strong>Where to start</strong> — Both intake flows live under <strong>Identify Coin</strong> in the sidebar; the drafts list is the <strong>All drafts</strong> action on that page.</li>
           <li><strong>Coin Lookup</strong> — Photograph a coin or NGC Ancients slab, review extracted details, and save the result to your collection or wish list. <strong>Identify Coin → Analysis History</strong> keeps past deep identification jobs, including their artifacts and provider runs.</li>
-          <li><strong>Voice notes</strong> — On supported browsers, use <strong>Dictate notes</strong> in Quick Identify or saved-coin Deep Analysis, review the English transcript, then submit with the existing action. Your browser or device provider may process the audio; Aurearia does not store it. Typing remains available.</li>
+          <li><strong>Voice notes</strong> — On supported browsers, use <strong>Dictate notes</strong> in Quick Identify or saved-coin Deep Analysis, review the English transcript, then submit with the existing action. Your browser or device provider may process the audio; Orla Numis does not store it. Typing remains available.</li>
           <li><strong>Quick Capture</strong> — Save show-floor photos and notes as drafts, resume them later, and promote a completed draft into either your collection or wish list. Drafts stay out of collection, wish list, stats, and health totals until promotion.</li>
         </ul>
 
@@ -103,7 +103,6 @@
         <ul>
           <li><strong>Wishlist search alerts</strong> — Save search criteria, run alerts on a schedule or manually, review candidates, dismiss poor matches, and convert accepted candidates into wish list items.</li>
           <li><strong>Collection health</strong> — Use Stats health views to track the score, missing images, metadata gaps, AI coverage gaps, and suggested improvements.</li>
-          <li><strong>Museum Tray</strong> — Use the Tray view to arrange coins visually with size-aware spacing for a cabinet-style browsing experience. Owned coins show purchase dates in <code>YYYY-MM-DD</code>; wishlist placeholders are more transparent and show <code>TBD</code>.</li>
           <li><strong>Mint Map</strong> — Use Stats → Map to see mint locations and geographic distribution for coins with mapped mint data.</li>
         </ul>
 
@@ -167,7 +166,7 @@
         <ul>
           <li><strong>Camera capture</strong> — Quick Capture, Coin Lookup, and image upload flows start the camera only after you tap a camera action.</li>
           <li><strong>Image tools</strong> — Attach uploaded or pasted image URLs, use responsive image variants, remove backgrounds, clip coins, and extract text from store cards or certificates.</li>
-          <li><strong>PWA/offline</strong> — Install Aurearia as a PWA for mobile-style navigation, offline read access, cached collection browsing, and a draggable agent launcher in PWA mode.</li>
+          <li><strong>PWA/offline</strong> — Install Orla Numis as a PWA for mobile-style navigation, offline read access, cached collection browsing, and a draggable agent launcher in PWA mode.</li>
         </ul>
 
         <h4>Alerts</h4>

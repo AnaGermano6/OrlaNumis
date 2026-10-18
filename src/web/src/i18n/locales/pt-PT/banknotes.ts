@@ -7,6 +7,7 @@ const messages: Messages['banknotes'] = {
   badge: 'Nota de banco',
   searchPlaceholder: 'Pesquisar notas por nome, país, inscrição…',
   failed: 'Não foi possível carregar as notas. Tente de novo daqui a pouco.',
+  repeatedOnly: 'Só repetidas para troca',
   kpis: {
     label: 'Números das notas',
     banknotes: 'Notas',

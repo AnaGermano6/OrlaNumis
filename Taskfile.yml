@@ -1,7 +1,7 @@
 version: '3'
 
 env:
-  DOCKER_REPO: bjd145
+  DOCKER_REPO: aurearia
 
 vars:
   NPM: '{{if eq OS "windows"}}npm.cmd{{else}}npm{{end}}'
@@ -25,9 +25,15 @@ tasks:
       - go build -o ancient-coins-api .
 
   openapi:
-    desc: Regenerate Swagger artifacts and version annotation (writes files; no install)
+    desc: Regenerate the Swagger artifacts and docs/openapi.json, with the version from VERSION (writes files; no install)
+    dir: src/api
+    env:
+      GOTOOLCHAIN: local
+      GOPROXY: 'off'
     cmds:
-      - node scripts/delivery/openapi.mjs
+      - sed -i.bak "s|^\(//[[:space:]]*@version[[:space:]]*\).*|\1$(cat ../../VERSION)|" main.go && rm main.go.bak
+      - '"$(go env GOPATH)/bin/swag" init -g main.go -o ./docs --parseDependency --parseInternal'
+      - cp docs/swagger.json ../../docs/openapi.json
 
   setup:openapi:
     desc: Install the pinned Swagger generator (requires setup authorization)
@@ -55,7 +61,6 @@ tasks:
   check:
     desc: All base completion gates; prepared tools required; OpenAPI writes files
     cmds:
-      - task: check:delivery
       - task: check:go
       - task: check:web
       - task: check:agent
@@ -67,7 +72,9 @@ tasks:
     cmds:
       - GOTOOLCHAIN=local GOPROXY=off go build ./...
       - GOTOOLCHAIN=local GOPROXY=off go vet ./...
-      - GOTOOLCHAIN=local GOPROXY=off node ../../scripts/delivery/gofmt-check.mjs
+      - |
+        unformatted="$(GOTOOLCHAIN=local "$(GOTOOLCHAIN=local go env GOROOT)/bin/gofmt" -l .)"
+        if [ -n "$unformatted" ]; then echo "gofmt required (run gofmt -w on these files):"; echo "$unformatted"; exit 1; fi
       - task: test
 
   check:web:
@@ -93,24 +100,8 @@ tasks:
   check:openapi:
     desc: Regenerate OpenAPI and fail on snapshot drift (writes files; no install)
     cmds:
-      - node scripts/delivery/openapi.mjs --check
-
-  check:governance:
-    desc: Read-only offline active-governance consistency checks
-    cmds:
-      - node scripts/delivery/check-governance.mjs
-
-  check:delivery:
-    desc: Delivery guard fixtures, SpecKit regression, and offline governance check
-    cmds:
-      - node --test scripts/delivery/governance.test.mjs scripts/delivery/validation.test.mjs scripts/delivery/native-integration.test.mjs scripts/delivery/publish.test.mjs
-      - pwsh -NoProfile -File scripts/delivery/specify.test.ps1
-      - task: check:governance
-
-  review:read-only:
-    desc: Start the restricted native reviewer; requires an owner-approved scope and lease
-    cmds:
-      - copilot --agent aurearia-reviewer --excluded-tools sql skill {{.CLI_ARGS}}
+      - task: openapi
+      - git diff --exit-code -- src/api/main.go src/api/docs docs/openapi.json
 
   build-web:
     desc: Build the Vue frontend
@@ -150,12 +141,6 @@ tasks:
     dir: src/api
     cmds:
       - GOTOOLCHAIN=local GOPROXY=off CGO_ENABLED=1 go test -race ./...
-
-  test-critical-workflows:
-    desc: Run F013 critical browser workflow tests
-    dir: src/web
-    cmds:
-      - '{{.NPM}} run test:browser'
 
   build-agent:
     desc: Legacy setup alias (installs dependencies; NOT a validation/build gate)

@@ -56,8 +56,7 @@ func (r CatalogParseReason) String() string {
 //
 // This type intentionally carries no sentinel values and no policy decisions:
 // callers (ReferenceMigrationService, Feature 352 deep-identification, etc.)
-// decide for themselves what to do when NeedsVolume is true. See FR-016/FR-019
-// in specs/352-deep-identification-structured-results/spec.md.
+// decide for themselves what to do when NeedsVolume is true.
 type ParsedCatalogReference struct {
 	// Catalog is the alias-normalized, canonical catalog code (e.g. "RIC")
 	// once the first token has been successfully resolved via

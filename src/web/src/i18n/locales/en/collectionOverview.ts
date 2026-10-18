@@ -23,12 +23,9 @@ export default {
     noYear: 'No banknote has a year yet.',
     noValue: 'No banknote has a current value yet.',
   },
-  daily: {
-    coin: 'Coin of the day',
-    banknote: 'Banknote of the day',
-  },
   repeated: {
     title: 'Duplicates to trade',
+    open: 'Show in the gallery',
     coins: { one: '{count} coin held more than once', other: '{count} coins held more than once' },
     banknotes: { one: '{count} banknote held more than once', other: '{count} banknotes held more than once' },
     spares: { one: '{count} piece to trade', other: '{count} pieces to trade' },
@@ -72,6 +69,9 @@ export default {
     savedWishlist: 'Saved to the wishlist: {title}',
     alreadyWishlist: 'It is already on the wishlist.',
     wishlistFailed: 'It could not be saved to the wishlist. Try again.',
+    removeWishlist: 'Remove from wishlist',
+    removedWishlist: 'Removed from the wishlist: {title}',
+    removeWishlistFailed: 'It could not be removed from the wishlist. Try again.',
   },
   photos: {
     missing: { one: '{count} coin without a photo', other: '{count} coins without a photo' },

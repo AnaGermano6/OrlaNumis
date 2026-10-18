@@ -1,22 +1,22 @@
 # Bulk Operations
 
-> Multi-select coins for batch tagging, status changes, and export
+> Select several coins to add them to a set or delete them in one go.
 
 ## Overview
 
-Use select mode in collection-oriented views to apply the same action to multiple coins without opening each detail page.
+Use select mode in the coin gallery to apply the same action to several coins without opening each detail page.
 
 ## Key Features
 
-- **Select mode** — Enter selection from the collection toolbar and choose one or more coins.
-- **Batch organization** — Apply tags or add coins to collection sets in one action.
-- **Status workflows** — Use batch actions for supported status updates where the UI exposes them.
-- **PWA-friendly controls** — Mobile/PWA layouts keep select actions reachable from compact controls.
+- **Select mode** — Choose **Select coins** in the title bar (or **Select** in the installed app), then pick one or more coins. **Select all** and **Deselect all** work on the current page.
+- **Add to set** — Adds the selected coins to one of your standard sets.
+- **Delete** — Deletes the selected coins, after confirmation.
+- **Installed-app friendly** — The action bar stays at the bottom of the screen, within reach.
+
+The API behind it is `POST /api/coins/bulk`, with the actions `set`, `delete` and `export` (the selected coins as data).
 
 ## Related Features
 
 - [Collection Management](collection-management.md)
-- [Wish List](wish-list.md)
+- [Coin Sets](coin-sets.md)
 - [Coin Details](coin-details.md)
-
-See also: [Collection Management](collection-management.md), [Coin Sets](coin-sets.md)

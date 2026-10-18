@@ -8,10 +8,10 @@ Ask the agent to compare your collection against a collecting goal, theme, ruler
 
 ## Key Features
 
-- **Goal-driven prompts** — Ask about missing emperors, denominations, mints, eras, or set goals.
+- **Goal-driven prompts** — Ask about missing rulers, denominations, mints, years, or set goals.
 - **Collection-aware suggestions** — Agent prompts can use your collection context where available.
 - **Acquisition handoff** — Suggested targets can lead into AI coin search, wishlist entries, or search alerts.
-- **Emperor Tracker pairing** — The Emperor Tracker highlights missing or suggested Roman figures and can kick off agent searches.
+- **Checklist sets** — Sets made from the commemorative catalogue already show what is missing from a series.
 
 ## Related Features
 

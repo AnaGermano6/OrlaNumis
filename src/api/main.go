@@ -38,7 +38,7 @@ func (r *SchedulerRegistry) StopAll() {
 	}
 }
 
-//	@title						Aurearia API
+//	@title						Orla Numis API
 //	@version					4.3.0
 //	@description				REST API for managing a personal coin collection. Supports coin CRUD, image uploads, AI-powered analysis, user management, and admin features.
 //	@BasePath					/api

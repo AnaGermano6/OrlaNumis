@@ -212,10 +212,14 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/coins/:id/status", coinHandler.Status)
 		protected.GET("/coins/statuses", coinHandler.StatusGroups)
 		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(d.exchangeRates).WithSettings(d.settingsSvc).WithCirculation(coinCirculation).Summary)
-		protected.GET("/coins/daily", handlers.NewDailyCoinHandler(d.coinRepo).Daily)
 		// New and upcoming coins: the ECB's €2 commemoratives and the mints' collector coins.
 		coinReleases := services.NewCoinReleasesService(ecbCoinPhotos, incmCoinPhotos, mdpCoinPhotos, moeCoinPhotos).WithNumista(numistaCatalogSvc)
-		protected.GET("/coin-releases", handlers.NewCoinReleasesHandler(coinReleases, d.coinRepo, coinPhotoSearch).Releases)
+		coinReleasesHandler := handlers.NewCoinReleasesHandler(coinReleases, d.coinRepo, coinPhotoSearch)
+		protected.GET("/coin-releases", coinReleasesHandler.Releases)
+		// The Numista type of a release, to fill in the coin added from it.
+		protected.GET("/coin-releases/numista-type", coinReleasesHandler.NumistaType)
+		// The wishlist coins a coin just added to the collection is.
+		protected.GET("/coins/:id/wishlist-matches", coinReleasesHandler.WishlistMatches)
 		// Checklist sets list the catalogue's coins or a challenge's; smart
 		// sets choose coins by their kind too.
 		catalogueOverrides := repository.NewCatalogueOverrideRepository(database.DB)

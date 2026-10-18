@@ -1,13 +1,13 @@
 # Incident Response
 
-> Operational playbook for security incidents in Ancient Coins. [SECURITY.md](../SECURITY.md) defines the reporting channel and disclosure window; this document defines what happens after a report or alert exists.
+> Operational playbook for security incidents in Orla Numis. [SECURITY.md](../SECURITY.md) defines the reporting channel and disclosure window; this document defines what happens after a report or alert exists.
 
 ## Severity classification
 
-| Severity | Meaning | Ancient Coins examples |
+| Severity | Meaning | Orla Numis examples |
 |---|---|---|
-| P0 | Active compromise or immediately exploitable issue with user-impacting exposure. Treat as stop-the-line work. | Confirmed auth bypass, leaked JWT signing secret, publicly reachable API key dump, XSS with token theft, exposed user data from a public endpoint. |
-| P1 | High-risk issue with credible exploitation path, but no confirmed active abuse yet. | Dependency advisory with a working exploit in a deployed path, mutable CI action compromise suspicion, broken WebAuthn origin validation in production, secrets committed to `main` but not yet abused. |
+| P0 | Active compromise or immediately exploitable issue with user-impacting exposure. Treat as stop-the-line work. | Confirmed auth bypass, leaked JWT signing secret or agent service token, XSS with token theft, exposed user data or a full backup reachable from outside. |
+| P1 | High-risk issue with credible exploitation path, but no confirmed active abuse yet. | Dependency advisory with a working exploit in a deployed path, mutable CI action compromise suspicion, broken trusted-proxy configuration in production, secrets committed to `main` but not yet abused. |
 | P2 | Moderate-risk issue that should be remediated promptly but does not require immediate service interruption. | Missing cache-control headers on auth responses, non-root container hardening gap, missing body-size limits, low-confidence suspicious report needing validation. |
 | P3 | Low-risk issue, hardening work, or accepted platform limitation. | Documentation-only correction, noisy false positive from scanners, browser-memory limitations around password clearing. |
 
@@ -15,14 +15,14 @@
 
 ### Current solo-project model
 
-- **Incident Commander:** Brian (`briandenicola`) owns triage, containment, remediation decisions, and external communication.
-- **Primary operator:** Brian performs repo, hosting, secret rotation, and release actions.
+- **Incident Commander:** the repository owner owns triage, containment, remediation decisions, and external communication.
+- **Primary operator:** the repository owner performs repo, hosting, secret rotation, and backup/restore actions.
 - **Documentation owner:** update [threat-model.md](threat-model.md), [security-principles.md](security-principles.md), and the post-incident record before closing the incident.
 
 ### If collaborators are added later
 
 - Add named backups for Incident Commander and release operator.
-- Route notifications through CODEOWNERS / repository maintainers.
+- Route alerts to the repository maintainers.
 - Document who can approve hotfix merges, secret rotation, and advisory publication.
 
 ## Detection signals
@@ -30,7 +30,6 @@
 | Signal | Source | What it indicates | First action |
 |---|---|---|---|
 | Secret scan failure | `gitleaks` in local pre-commit or CI | Credential-like content entered the diff or repo history surface. | Validate whether it is real, rotate if real, and quarantine the branch if needed. |
-| Weekly security scan | `.github/workflows/security-scan.yml` weekly cron | Dependency or config drift surfaced outside normal feature work. | Open or update a finding in [threat-model.md](threat-model.md) and prioritize by severity. |
 | Dependency dashboard / alerts | Dependabot dashboard, GitHub alerts, package ecosystem advisories | Known vulnerable package or action version. | Assess reachability, exposure, and available patched version. |
 | Private report | [SECURITY.md](../SECURITY.md) / GitHub Security Advisories | External researcher or user found a security issue. | Acknowledge within the 72-hour SLA and begin triage. |
 | User or operator report | Issues, email, direct observation, suspicious runtime behavior | Potential incident not yet tied to a scanner finding. | Reproduce, preserve evidence, and classify severity. |
@@ -46,7 +45,7 @@
 
 ### 2. Contain
 
-- Revoke or rotate exposed secrets, tokens, or API keys.
+- Revoke or rotate exposed secrets, tokens, or provider API keys (Anthropic, Numista).
 - Disable affected workflows, endpoints, or features if leaving them live increases blast radius.
 - Freeze unrelated deploys until the incident is understood.
 - Preserve evidence: commit SHA, workflow run URL, logs, screenshots, reproduction steps.
@@ -62,7 +61,7 @@
 
 - Ship the smallest safe fix first, then follow with hardening if needed.
 - Add or update tests, scanners, or config so the same class of issue is harder to reintroduce.
-- If the fix changes architecture or policy, open/update an ADR and [security-principles.md](security-principles.md).
+- If the fix changes architecture or policy, update [security-principles.md](security-principles.md) and [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### 5. Communicate
 
@@ -83,7 +82,7 @@ When an issue needs a formal advisory, use GitHub Security Advisories and includ
 - **Title:** short, concrete summary (`Stored XSS in AI analysis rendering`)
 - **Severity:** P0/P1/P2/P3 plus CVSS if later needed
 - **Affected surface:** API, frontend, agent, CI, dependency, or deployment path
-- **Affected versions / branches:** `main`, released image tags, or commit range
+- **Affected versions / branches:** `main` or a commit range
 - **Impact:** what an attacker could do
 - **Conditions required:** auth required? admin only? public route?
 - **Mitigation / fix:** patched commit, workaround, config change, rotation instructions
@@ -121,4 +120,4 @@ Recommended structure:
 - [threat-model.md](threat-model.md)
 - [security-principles.md](security-principles.md)
 - [references.md](references.md)
-- [ADR process](adr/README.md)
+- [deployment.md](deployment.md) — backup and restore

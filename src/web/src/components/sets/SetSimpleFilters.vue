@@ -6,7 +6,7 @@
         <label for="filterCountry" class="form-label mb-1 block">{{ t('sets.filters.country') }}</label>
         <select id="filterCountry" class="form-input w-full" :value="modelValue.country" @change="update({ country: ($event.target as HTMLSelectElement).value })">
           <option value="">{{ t('sets.filters.any') }}</option>
-          <option v-for="country in countryOptions" :key="country" :value="country">{{ country }}</option>
+          <option v-for="country in countryOptions" :key="country" :value="country">{{ withCountryFlag(country) }}</option>
         </select>
       </div>
       <div class="form-group m-0">
@@ -95,6 +95,7 @@ import { getCoinCountries, getSuggestions, previewSmartSet } from '@/api/client'
 import type { SmartSetPreview } from '@/types'
 import { intlLocale, t } from '@/i18n'
 import { COIN_PRESENTATIONS, presentationLabel } from '@/utils/coinAttributes'
+import { withCountryFlag } from '@/utils/countryFlags'
 import { formatCurrency } from '@/utils/format'
 import { COIN_CLASSIFICATIONS, classificationLabel, filtersToCriteria, type CoinClassification, type SimpleSetFilters } from '@/utils/setFilters'
 

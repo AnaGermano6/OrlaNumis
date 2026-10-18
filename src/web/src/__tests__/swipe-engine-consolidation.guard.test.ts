@@ -1,7 +1,6 @@
 /**
  * Architectural guard: swipe engine consolidation.
  *
- * Design authority: .squad/decisions/inbox/maximus-pwa-swipe-reliability-review.md §9-§13
  * Purpose: prevent new inline one-finger horizontal swipe state machines from being
  * added to the codebase after Phase 2 migration to the shared `useSwipeGesture` primitive.
  *

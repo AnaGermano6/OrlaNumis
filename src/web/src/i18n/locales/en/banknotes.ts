@@ -5,6 +5,7 @@ export default {
   badge: 'Banknote',
   searchPlaceholder: 'Search banknotes by name, country, inscription…',
   failed: 'The banknotes could not be loaded. Try again in a moment.',
+  repeatedOnly: 'Only duplicates to trade',
   kpis: {
     label: 'Banknote figures',
     banknotes: 'Banknotes',

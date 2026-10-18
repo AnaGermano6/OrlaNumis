@@ -6,7 +6,7 @@
         <div class="flex min-w-0 flex-1 items-center">
           <button class="flex shrink-0 cursor-pointer items-center gap-2 rounded-sm border-0 bg-transparent px-2.5 py-1.5 transition-colors hover:bg-gold-glow" @click="sidebarOpen = !sidebarOpen">
             <img src="/coin-logo.jpg" :alt="t('app.brandFull')" class="h-9 w-9 rounded-full border-2 border-gold-dim object-cover" />
-            <span class="font-display text-lg font-semibold whitespace-nowrap text-gold">Aurearia</span>
+            <span class="font-display text-lg font-semibold whitespace-nowrap text-gold">Orla Numis</span>
           </button>
           <div v-if="!isPwa" class="desktop-page-title-group min-w-0 items-center gap-2">
             <span class="text-text-muted" aria-hidden="true">|</span>
@@ -54,7 +54,7 @@
       <aside v-if="sidebarOpen" class="fixed inset-y-0 left-0 z-[1300] flex w-[280px] flex-col overflow-y-auto border-r border-border-subtle bg-card">
         <div class="flex items-center gap-3 border-b border-border-subtle px-5 pt-5 pb-4">
           <img src="/coin-logo.jpg" :alt="t('app.brandFull')" class="h-10 w-10 rounded-full border-2 border-gold-dim object-cover" />
-          <span class="flex-1 font-display text-base font-semibold text-gold">Aurearia<span v-if="!isPwa" class="hidden sm:inline"> - {{ t('app.brandTagline') }}</span></span>
+          <span class="flex-1 font-display text-base font-semibold text-gold">Orla Numis<span v-if="!isPwa" class="hidden sm:inline"> - {{ t('app.brandTagline') }}</span></span>
           <button class="rounded-sm border-0 bg-transparent p-[0.3rem] text-text-secondary transition-colors hover:bg-gold-glow hover:text-text-primary" :class="{ 'bg-gold-glow text-gold': editMode }" @click="toggleEditMode" :title="editMode ? t('common.done') : t('app.sidebar.reorderMenu')">
             <GripVertical :size="18" />
           </button>

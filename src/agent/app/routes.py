@@ -86,8 +86,7 @@ async def wishlist_url_extract(
         raise HTTPException(status_code=502, detail="Listing extraction failed") from exc
 
 
-# Wishlist search alert discovery route anchor:
-# specs/337-wishlist-search-alerts/contracts/agent-discovery-contract.md
+# Wishlist search alert discovery routes.
 
 
 @router.post("/copilot/capability", response_model=CopilotCapabilityResponse)
@@ -489,8 +488,7 @@ async def wishlist_featured_summary(request: WishlistFeaturedSummaryRequest, htt
     return WishlistFeaturedSummaryResponse(summary=summary)
 
 
-# Dynamic Set Builder workflow route anchor:
-# specs/011-dynamic-set-builder-correction-plan.md (Phase 2)
+# Dynamic Set Builder workflow route.
 @router.post("/set-builder/run", response_model=SetBuilderResponse)
 async def set_builder_run(request: SetBuilderRequest, http_request: Request):
     """Run the multi-agent set-builder workflow. Stateless; returns structured
@@ -512,8 +510,7 @@ async def set_builder_run(request: SetBuilderRequest, http_request: Request):
     return await cancel_on_disconnect(http_request, run_set_builder_workflow(request))
 
 
-# Deep Agentic Coin Identification streaming route anchor:
-# specs/344-deep-agentic-coin-identification/contracts/agent-internal-contract.md §3
+# Deep Agentic Coin Identification streaming route.
 @router.post("/deep-identify/stream")
 async def deep_identify_stream(request: DeepIdentifyRequest):
     """Run the deep-identification pipeline and stream typed SSE frames.

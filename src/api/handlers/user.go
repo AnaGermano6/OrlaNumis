@@ -213,7 +213,7 @@ func (h *UserHandler) ImportCollection(c *gin.Context) {
 // UpdateProfile updates the authenticated user's profile info.
 //
 //	@Summary		Update profile
-//	@Description	Updates profile, privacy, coin-of-day, emperor-tracker, and PWA swipe navigation preferences for the authenticated user.
+//	@Description	Updates the profile and the PWA swipe navigation preference of the authenticated user.
 //	@Tags			User
 //	@Accept			json
 //	@Produce		json

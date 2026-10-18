@@ -117,8 +117,7 @@ type DeepIdentificationService struct {
 	// intakeMu prevents workers from claiming a queued intake job before its
 	// obverse/reverse artifacts have been persisted. Shared, load-bearing
 	// synchronization between job-creation (CreateJobFromIntake) and the
-	// worker claim loop (workerLoop) - see
-	// .squad/decisions/inbox/maximus-service-decomposition.md for why this
+	// worker claim loop (workerLoop). This
 	// keeps job lifecycle and the worker pool on one type rather than
 	// splitting them across a shared-mutex seam.
 	intakeMu sync.RWMutex

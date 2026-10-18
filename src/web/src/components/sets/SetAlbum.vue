@@ -46,7 +46,7 @@
     <p v-if="!shown.length" class="text-body text-text-secondary" data-testid="album-empty">{{ t('sets.album.nothing') }}</p>
     <section v-for="section in sections" :key="section.id" :aria-label="section.title || undefined">
       <h3 v-if="section.title" class="mb-2 mt-0 text-base font-medium text-text-secondary" data-testid="album-section">
-        {{ section.title }}
+        <span v-if="section.flag" class="mr-1" aria-hidden="true" data-testid="album-section-flag">{{ section.flag }}</span>{{ section.title }}
         <span class="text-chip text-text-muted">· {{ t('sets.catalogue.progress', { owned: section.owned, total: section.slots.length }) }}</span>
       </h3>
       <ul class="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
@@ -89,7 +89,7 @@
             </span>
             <span class="flex min-w-0 flex-1 flex-col gap-1 p-3">
               <span v-if="slot.detail" class="truncate text-label font-semibold uppercase tracking-[0.08em] text-text-muted" :title="slot.detail">{{ slot.detail }}</span>
-              <span class="line-clamp-2 text-body font-medium leading-snug" :class="slot.owned ? 'text-text-primary' : 'text-text-secondary'" :title="slot.title" data-testid="album-title">{{ slot.title }}</span>
+              <span class="line-clamp-2 text-body font-medium leading-snug" :class="slot.owned ? 'text-text-primary' : 'text-text-secondary'" :title="slot.title" data-testid="album-title"><span v-if="slot.flag" class="mr-1" aria-hidden="true" data-testid="album-flag">{{ slot.flag }}</span>{{ slot.title }}</span>
               <span v-if="slot.year" class="text-chip text-gold">{{ slot.year }}</span>
             </span>
           </component>
@@ -109,6 +109,7 @@ import { RouterLink } from 'vue-router'
 import { Check, Coins } from 'lucide-vue-next'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { intlLocale, t } from '@/i18n'
+import { countryFlag } from '@/utils/countryFlags'
 import type { AlbumSlot } from '@/utils/setAlbum'
 
 const SHOW = ['all', 'owned', 'missing'] as const
@@ -147,7 +148,7 @@ const shown = computed(() => props.slots.filter((slot) => show.value === 'all' |
 // The places in sections: one without a title, or one per year (newest
 // first) or country (by name), the places without one last.
 const sections = computed(() => {
-  if (group.value === 'none') return shown.value.length ? [{ id: 'all', title: '', slots: shown.value, owned: ownedOf(shown.value) }] : []
+  if (group.value === 'none') return shown.value.length ? [{ id: 'all', title: '', flag: '', slots: shown.value, owned: ownedOf(shown.value) }] : []
   const byKey = new Map<string, AlbumSlot[]>()
   for (const slot of shown.value) {
     const key = group.value === 'year' ? String(slot.year || '') : (slot.country ?? '')
@@ -157,7 +158,13 @@ const sections = computed(() => {
     if (!a || !b) return a ? -1 : b ? 1 : 0
     return group.value === 'year' ? Number(b) - Number(a) : a.localeCompare(b, intlLocale())
   })
-  return keys.map((key) => ({ id: key || 'other', title: key || t('sets.album.noGroup'), slots: byKey.get(key) ?? [], owned: ownedOf(byKey.get(key) ?? []) }))
+  return keys.map((key) => ({
+    id: key || 'other',
+    title: key || t('sets.album.noGroup'),
+    flag: group.value === 'country' ? countryFlag(key) : '',
+    slots: byKey.get(key) ?? [],
+    owned: ownedOf(byKey.get(key) ?? []),
+  }))
 })
 
 function ownedOf(slots: AlbumSlot[]): number {

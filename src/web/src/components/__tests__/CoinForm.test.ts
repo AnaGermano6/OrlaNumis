@@ -132,6 +132,28 @@ describe('CoinForm', () => {
     }
   })
 
+  it('explains each grade under the grade field, folded until opened', async () => {
+    const { setLocale } = await import('@/i18n')
+    setLocale('pt-PT')
+    const wrapper = mount(CoinForm, {
+      props: { form: reactive({ name: 'Coin', category: 'Modern', material: 'Silver', grade: '' }), submitLabel: 'Save' },
+      global: { stubs: { RouterLink: { template: '<a><slot /></a>' }, AutocompleteInput: true, CreateMintModal: true, AuthenticatedImage: true, X: true, Camera: true } },
+    })
+    await flushPromises()
+
+    const guide = wrapper.get('[data-testid="grade-guide"]')
+    expect(guide.element.tagName).toBe('DETAILS')
+    expect((guide.element as HTMLDetailsElement).open).toBe(false)
+    expect(guide.get('summary').text()).toBe('O que significa cada grau?')
+    // From the most worn up, then the collector finishes.
+    expect(guide.findAll('[data-testid="grade-guide-term"]').map((term) => term.text())).toEqual(['G', 'VG', 'F', 'VF', 'XF / EF', 'AU', 'UNC', 'MS-60 a MS-70', 'BNC', 'Proof'])
+    // One column: each grade on its own line, its meaning beside it.
+    expect(guide.findAll('li')[3]!.text()).toBe('VF — Muito bem conservada (MBC). Desgaste ligeiro nas partes mais altas; a maior parte dos pormenores está nítida.')
+    expect(guide.text()).toContain('Muito bem conservada (MBC).')
+    expect(wrapper.get('label[for="coin-grade"]').text()).toBe('Grau')
+    setLocale('en')
+  })
+
   it('sets the circulation by hand, or leaves it to Numista', async () => {
     const form = reactive<Partial<Coin>>({ name: 'Coin', category: 'Modern', material: 'Silver', circulation: '' })
     const wrapper = mount(CoinForm, {

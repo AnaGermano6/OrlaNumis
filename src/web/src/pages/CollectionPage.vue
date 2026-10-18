@@ -85,7 +85,17 @@
     </div>
 
     <!-- Filters the Collection page's cards turn on; the gallery has no other control for them. -->
-    <div v-if="selectedCirculation || selectedCommemorative" class="mb-3 flex flex-wrap items-center gap-2" data-testid="gallery-active-filters">
+    <div v-if="selectedCirculation || selectedCommemorative || selectedRepeated" class="mb-3 flex flex-wrap items-center gap-2" data-testid="gallery-active-filters">
+      <button
+        v-if="selectedRepeated"
+        type="button"
+        class="chip active inline-flex items-center gap-1"
+        :aria-label="t('collection.activeFilters.remove', { filter: t('collection.activeFilters.repeated') })"
+        data-testid="gallery-filter-repeated"
+        @click="selectedRepeated = false"
+      >
+        {{ t('collection.activeFilters.repeated') }} <X :size="12" aria-hidden="true" />
+      </button>
       <button
         v-if="selectedCirculation"
         type="button"
@@ -118,7 +128,7 @@
       :is-pwa="isPwa"
       :view-mode="viewMode"
       :grid-side="gridSide"
-      :has-filters="!!(search || selectedDenomination || selectedSet || selectedCountry || selectedPresentation || selectedRarity || selectedCirculation || selectedCommemorative || selectedClassification)"
+      :has-filters="!!(search || selectedDenomination || selectedSet || selectedCountry || selectedPresentation || selectedRarity || selectedCirculation || selectedCommemorative || selectedClassification || selectedRepeated)"
       :total="store.total"
       :page="page"
       :per-page="COINS_PER_PAGE"
@@ -187,7 +197,7 @@ const router = useRouter()
 const {
   search, page, sortKey, selectedSet, userSets,
   selectedDenomination, denominationOptions,
-  selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, groupBy, countryOptions, fillingCountries,
+  selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated, groupBy, countryOptions, fillingCountries,
   fetchUserSets, loadCoins, loadCountryOptions, fillCountriesOnce,
 } = useCollectionFilters()
 

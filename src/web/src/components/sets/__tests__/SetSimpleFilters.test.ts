@@ -41,7 +41,7 @@ describe('SetSimpleFilters', () => {
     await flushPromises()
 
     expect(mocks.getCoinCountries).toHaveBeenCalledWith('coin')
-    expect(wrapper.findAll('#filterCountry option').map((option) => option.text())).toEqual(['Qualquer', 'Alemanha', 'Portugal'])
+    expect(wrapper.findAll('#filterCountry option').map((option) => option.text())).toEqual(['Qualquer', '🇩🇪 Alemanha', '🇵🇹 Portugal'])
     expect(wrapper.findAll('#filterDenominationOptions option').map((option) => option.attributes('value'))).toEqual(['1 euro', '2 euro'])
     expect(mocks.previewSmartSet).toHaveBeenCalledWith(filtersToCriteria(emptyFilters()))
     expect(wrapper.get('[data-testid="filter-preview"]').text()).toContain('3 moedas da coleção')

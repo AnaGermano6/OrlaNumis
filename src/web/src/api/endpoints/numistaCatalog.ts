@@ -1,7 +1,7 @@
 // Numista catalogue browsing: find a coin type and add it with its details
 // filled in. Responses are cached server-side to stay inside Numista's free plan.
 import { api } from '@/api/http'
-import type { CoinMarketValue, NumistaCatalogPhoto, NumistaDataStatus, NumistaIssueSummary } from '@/api/endpoints/coins'
+import type { CoinMarketValue, CoinRelease, NumistaCatalogPhoto, NumistaDataStatus, NumistaIssueSummary } from '@/api/endpoints/coins'
 
 export interface NumistaCatalogIssuer {
   code: string
@@ -106,3 +106,23 @@ export const getNumistaCatalogType = (typeId: number, lang: string) =>
 
 export const getNumistaTypeMarketValue = (typeId: number, params: { currency: string; issueId?: number; year?: number }) =>
   api.get<CoinMarketValue>(`/numista/catalog/types/${typeId}/market-value`, { params })
+
+/** The Numista type of a new coin, when it is sure, and Numista's coins of its country, year and face value it may be. */
+export interface ReleaseNumistaType {
+  status: NumistaDataStatus
+  typeId?: number
+  candidates: NumistaCatalogSearchItem[]
+}
+
+export const getReleaseNumistaType = (release: CoinRelease) =>
+  api.get<ReleaseNumistaType>('/coin-releases/numista-type', {
+    params: {
+      source: release.source,
+      country: release.country || undefined,
+      title: release.title,
+      faceValue: release.faceValue,
+      from: release.from,
+      pageUrl: release.pageUrl || undefined,
+      imageUrl: release.imageUrl || undefined,
+    },
+  })

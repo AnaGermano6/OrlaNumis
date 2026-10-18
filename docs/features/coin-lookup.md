@@ -27,7 +27,7 @@ dictation. Start dictation, review or edit the resulting text, and then use the
 existing **Analyze Photos** or **Deep Analysis** action. Recognition never
 submits analysis automatically.
 
-Speech recognition may send audio to the browser or device provider. Aurearia
+Speech recognition may send audio to the browser or device provider. Orla Numis
 does not upload or retain raw audio; only the reviewed transcript is handled as
 ordinary notes after explicit submission. Browser support varies, and typing
 remains the complete fallback when the microphone control is unavailable or
@@ -129,8 +129,8 @@ configuration details.
 ### Optional
 
 - **Numista API Key** in **Admin → System** for fallback catalog matches
-- **Deep Analysis** and **OCRE** toggles in **Admin → System** for the optional
-  background workflow and Roman Imperial authority evidence
+- **Deep Analysis** toggle in **Admin → System** for the optional background
+  workflow
 - Admin-configured Category and Era values in **Admin → Coin Properties**
 
 ## Related Features

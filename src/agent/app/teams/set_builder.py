@@ -1,8 +1,6 @@
 """Team: Dynamic Set Builder — group-chat/magentic-style workflow that turns a
 free-text prompt into a structured Set Proposal for human review.
 
-Contract anchor: specs/011-dynamic-set-builder-correction-plan.md (Phase 2)
-and `specs/spec - Dynamic Set Builder.md` (FR-001..FR-016).
 
 Roles:
 - Intent Analyst: extracts numismatic subject, scope, ambiguity, boundedness.

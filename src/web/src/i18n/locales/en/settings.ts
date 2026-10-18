@@ -36,13 +36,6 @@ export default {
     defaultViewHint: 'Preferred collection view on mobile / PWA',
     swipe: 'Swipe',
     grid: 'Grid',
-    felt: 'Tray Felt Color',
-    feltHint: 'Choose the tray background color',
-    felts: {
-      red: 'Red',
-      green: 'Green',
-      navy: 'Navy',
-    },
     defaultSort: 'Default Sort',
     defaultSortHint: 'How coins are sorted by default',
     swipeNav: 'Swipe Navigation',

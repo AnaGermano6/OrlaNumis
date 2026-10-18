@@ -24,19 +24,6 @@ the `tools` capability through `/api/show`. Disabled, unconfigured,
 unsupported, ambiguous, or unavailable states use the unchanged legacy
 `POST /api/agent/chat` flow.
 
-## External MCP lifecycle
-
-Feature 366 makes the existing durable lifecycle available to external agentic
-harnesses through native MCP. An API key with `read,copilot` can start, inspect,
-resume, and cancel owner-scoped runs at `/api/mcp`. These protocol tools call
-the same Go `CoinCopilotService`; they do not expose Python directly or bypass
-feature flags, capability preflight, admission limits, idempotency,
-checkpoint-version checks, cancellation, or retention.
-
-The MCP lifecycle does not add new Coin Copilot reasoning tools and does not
-grant collection mutation. See [MCP Agentic Harness](mcp-agentic-harness.md)
-for connection setup and the external tool boundary.
-
 ## Deep Analysis handoff
 
 When `CoinCopilotAttributionEnabled` and `DeepIdentificationEnabled` are also
@@ -90,7 +77,7 @@ accepted. Execution timeout is valid from 15 through 150 seconds. The maximum
 plus the 30-second credential buffer stays within the token's absolute
 180-second TTL.
 
-Dollar-cost enforcement is deferred until Aurearia has a trustworthy, current
+Dollar-cost enforcement is deferred until Orla Numis has a trustworthy, current
 provider/model pricing source. Reliable provider-reported input/output token
 usage remains observable. Iteration, tool-call, wall-clock, bounded
 concurrency, and payload limits remain enforced. Concurrent results are
@@ -124,16 +111,9 @@ events, cancellation, report/proposal review, edits, and confirmed apply remain
 available. Existing threads/runs remain readable and cancellable; additive
 tables and nullable columns remain in place.
 
-Rollback must target a binary containing the Feature 362 source-vocabulary
-guard. The mixed-binary workflow boots that guard against a copied migrated
-database, proves unknown `copilot_draft` rows and artifacts remain byte
-preserved and unadopted, then re-upgrades and verifies restoration. See
-[ADR 0017](../adr/0017-coin-copilot-deep-analysis-handoff.md) and the
-[Feature 362 evidence](../../specs/362-coin-copilot-attribution/quickstart-evidence.md).
+The contract of the hand-off between Coin Copilot and Deep Analysis, with its
+fixtures, is in [`contracts/coin-copilot/`](../../contracts/coin-copilot/).
 
 Operational verification is documented in
-[Testing Strategy](../testing.md#10-coin-copilot-contract-and-operations-testing).
-The manual workflow is
-[Feature 359 quickstart](../../specs/359-coin-copilot-harness/quickstart.md),
-and the public REST/SSE contract is in
-[API Reference](../api-reference.md#coin-copilot-default-off-durable-read-only-api).
+[Testing Strategy](../testing.md), and the REST/SSE routes are listed in the
+[API Reference](../api-reference.md).

@@ -127,12 +127,7 @@ async function handleSubmit() {
       await showAlert(t('editCoin.cleanupPending'), { title: t('editCoin.cleanupPendingTitle') })
     }
     router.back()
-  } catch (error: unknown) {
-    const code = (error as { response?: { data?: { code?: string } } })?.response?.data?.code
-    if (!coinSaved && code === 'slot_occupied') {
-      await showAlert(t('addCoin.slotTaken'), { title: t('addCoin.slotUnavailable') })
-      return
-    }
+  } catch {
     await showAlert(
       coinSaved
         ? t('editCoin.imageNotUploaded')

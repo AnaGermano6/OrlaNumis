@@ -25,12 +25,9 @@ const messages: Messages['collectionOverview'] = {
     noYear: 'Ainda nenhuma nota tem ano.',
     noValue: 'Ainda nenhuma nota tem valor atual.',
   },
-  daily: {
-    coin: 'Moeda do dia',
-    banknote: 'Nota do dia',
-  },
   repeated: {
     title: 'Repetidas para troca',
+    open: 'Ver na galeria',
     coins: { one: '{count} moeda repetida', other: '{count} moedas repetidas' },
     banknotes: { one: '{count} nota repetida', other: '{count} notas repetidas' },
     spares: { one: '{count} exemplar para troca', other: '{count} exemplares para troca' },
@@ -74,6 +71,9 @@ const messages: Messages['collectionOverview'] = {
     savedWishlist: 'Guardada na lista de desejos: {title}',
     alreadyWishlist: 'Já está na lista de desejos.',
     wishlistFailed: 'Não foi possível guardar na lista de desejos. Tente novamente.',
+    removeWishlist: 'Retirar da lista de desejos',
+    removedWishlist: 'Retirada da lista de desejos: {title}',
+    removeWishlistFailed: 'Não foi possível retirar da lista de desejos. Tente novamente.',
   },
   photos: {
     missing: { one: '{count} moeda sem fotografia', other: '{count} moedas sem fotografia' },

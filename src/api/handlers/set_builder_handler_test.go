@@ -18,8 +18,7 @@ import (
 
 // Brutus (QA): Phase 3 coverage for POST /set-builder/runs.
 //
-// Correction plan acceptance target (specs/011-dynamic-set-builder-correction-plan.md,
-// Phase 0 + Phase 3 #1): "Submitting an Agentic prompt no longer creates a set
+// Acceptance target: "Submitting an Agentic prompt no longer creates a set
 // immediately" and "Approval is the only code path that creates the actual set."
 // This file proves the currently wired submit endpoint honors that contract at the
 // HTTP layer without touching handler/service/repository implementation files that

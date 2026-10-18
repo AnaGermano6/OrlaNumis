@@ -1,5 +1,5 @@
-# Local development stack: builds both images from this checkout instead of
-# pulling the published Docker Hub images used by docker-compose.yaml.
+# The app's Docker Compose stack: builds both images (the app and the AI agent)
+# from this checkout.
 #
 #   docker compose -f docker-compose.dev.yml up -d --build   # build + start
 #   docker compose -f docker-compose.dev.yml logs -f app      # follow API logs

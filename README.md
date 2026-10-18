@@ -1,10 +1,7 @@
-# Aurearia
+# Orla Numis
 
-> A self-hosted Progressive Web App for cataloging, analyzing, and sharing a personal coin collection.
+> A self-hosted Progressive Web App for cataloguing a personal coin and banknote collection.
 
-> **Note:** This application is 100% vibe coded. It exists for the author to learn and experiment with GitHub Copilot CLI.
-
-[![CI](https://github.com/briandenicola/coin-collection-app/actions/workflows/ci.yml/badge.svg)](https://github.com/briandenicola/coin-collection-app/actions/workflows/ci.yml)
 ![Go](https://img.shields.io/badge/Go-1.26.6-00ADD8?logo=go)
 ![Vue](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript)
@@ -14,146 +11,54 @@
 
 ## What is this?
 
-**Aurearia** is a self-hosted, full-featured Progressive Web App for managing a personal coin collection end-to-end, with an emphasis on ancient and historical coins. Catalog, value, analyze, organize, and share your coins with powerful AI-assisted tools, offline access, and community features — all on your own server.
+**Orla Numis** catalogues a personal collection of coins and banknotes on your own computer or server: records with photos and catalog references, Numista integration, sets and checklists, statistics, a wish list, backups, and optional AI tools. The interface is in English and European Portuguese.
 
-**For collectors who want:**
-- 🏛️ Detailed numismatic records with provenance, images, and structured references
-- 🤖 AI-powered analysis of coin photos (Claude or self-hosted Ollama)
-- 🔍 Smart discovery tools for finding, tracking, and monitoring coins
-- 📊 Rich portfolio analytics with value trends and gap analysis
-- 🤝 Social features to follow collectors and share curated collections
-- 📱 Install as a PWA; offline read access on mobile and desktop
-- 🔒 Complete control of data; runs entirely on your infrastructure
+Built for one collector, plus invited people if you choose. If you expose it outside a trusted home network, follow the hardening checklist in [`docs/deployment.md`](docs/deployment.md): TLS, reverse-proxy security headers, trusted proxy IP handling, closed registration, a private agent network, backups and monitoring.
 
-Built for a single collector plus invited friends. Not a marketplace, SaaS, or reference database replacement. If you expose it outside a trusted home network, follow the public-facing hardening checklist in [`docs/deployment.md`](docs/deployment.md): TLS, reverse-proxy security headers, trusted proxy IP handling, invite/closed registration, private agent networking, backups, and monitoring are required.
-
-**Product vision, personas, and detailed requirements** in [`docs/prd.md`](docs/prd.md). This README highlights features; see documentation links below for deep dives.
+Orla Numis is based on [Aurearia](https://github.com/briandenicola/Aurearia) by Brian DeNicola, under the MIT license; its footer says so too. Some internal names keep the first name, so that existing data stays where it is: the Docker Compose projects (`aurearia-dev`, `aurearia-qa`) and their volumes, the backup folder (`~/Aurearia-backups`, `AUREARIA_BACKUP_DIR`), and the backups made before the rename (`aurearia-….zip`, still listed and restored).
 
 ---
 
 ## ✨ Feature Highlights
 
-### 🏛️ Collection Management
-Organize coins with rich metadata: denomination, ruler, material, weight, inscriptions, grades, provenance, images, and free-text notes. Flexible filtering, full-text search, random shuffle with deterministic seed, and swipe/grid gallery views. **[Learn more →](docs/features/collection-management.md)**
+### 🏛️ Collection
+- **Coin gallery** with search and filters by face value, country (extinct countries included), coin type, presentation, rarity and set; grouping by country, year, rarity or presentation; grid or list.
+- **Banknotes** with their own form and gallery, and a **collection overview** with the totals, the new releases and the duplicates to trade.
+- **Coin details**: numismatic fields, quantity, images, structured catalog references, Numista market value, sets, activity journal and timeline.
+- **Official photos** from the ECB, INCM, Monnaie de Paris and Münze Österreich, one coin at a time or in batches.
 
-**Quick Capture** — Save sparse mobile/PWA intake drafts with photos or notes, resume/edit/discard them later, and explicitly promote a completed draft into exactly one normal collection coin without affecting collection, wishlist, sold, stats, or health counts before promotion. **[Learn more →](docs/quick-capture.md)**
+### ➕ Adding coins
+- From the **Numista catalog**, manually, or with **AI Assist Mode** from photos.
+- **Identify Coin** at a show: NGC certificate extraction and verification, Numista matches, save to the wish list or collection.
+- **Quick Capture** drafts for photos and notes taken on the go.
+- **Import** from CSV, JSON or a uCoin.net export.
 
-### 🤖 AI-Powered Analysis
-**Obverse & Reverse Analysis** — Upload coin photos for AI inspection with condition assessment, grade estimates, historical context, and market insights. Supports Anthropic Claude or self-hosted Ollama vision models.
+### 🗂️ Sets
+- Lists from the **commemorative catalogue** (each euro country's €2 commemoratives and collector coins), ready-made **challenges**, sets **by filters**, free sets, goals with a wish list, and AI proposals reviewed before they are created.
 
-**Deep Analysis** — Optionally send obverse/reverse photos, notes, and ephemeral hint images through a resumable background workflow. The router combines image evidence with available authority providers, streams replayable progress, and produces a cited report plus an editable proposal that is never written without confirmation. Numista and Nomisma-backed OCRE evidence are supported; NGC is link-out only and automated RPC research is paused. **[Learn more →](docs/features/deep-analysis.md)**
+### 📊 Stats
+- Summary cards, distributions, top coins, acquisition flow, a heat map, timeline, mint map, **collection health** with quick fixes, and a **Time Machine** that shows the collection on any past date.
 
-**Nomisma Authority Linking** — Admins can explicitly reconcile global mint locations to Nomisma.org concepts with visible CC BY 4.0 attribution; private/user-defined mints remain local.
+### 🎯 Wish list
+- Dealer pages turned into wishlist coins, availability checks, saved search alerts with a review queue, and **Mark as purchased**.
 
-**Coin Agent** — Ask one chat surface to search dealer listings, find shows, analyze portfolio questions, and answer collection questions such as missing metadata. **[Learn more →](docs/features/ai-search-agent.md)**
+### 🤖 AI (optional)
+- Photo analysis and grade estimates, **Deep Analysis** with Numista evidence and cited proposals, a **Coin Agent** chat for dealer and auction searches, shows and price trends, and the read-only **Coin Copilot** (beta). Anthropic Claude or a self-hosted Ollama.
 
-### 🎯 Discovery & Acquisition
-**AI Coin Search** — Chat with an agent to find real dealer listings matching your description. Imports structured results with images, metadata, prices, and candidate catalog references.
+### 💾 Backups
+- **Export ZIP** and an insurance **PDF** of your collection, and a **full backup** of the whole database and every photo, made every day by itself, with import and restore.
 
-**Coin Lookup** — Take or upload photos at a show to identify a coin or NGC Ancients slab. The app extracts NGC certification numbers, links to official NGC verification, enriches non-NGC lookups with Numista matches, and can save results to your wish list or collection. **[Learn more →](docs/features/coin-lookup.md)**
+### 📱 Installed app
+- Installable PWA with offline reading, swipe gallery, pull to refresh, camera capture and voice dictation.
 
-**Wish List** — Track coins you want with automatic availability checking, saved search alerts, AI search, price tracking, and one-click purchase-to-collection conversion. **[Learn more →](docs/features/wish-list.md)**
-
-### 📊 Portfolio Intelligence
-**Collection Statistics** — Dashboard and subviews for category/material/grade distributions, top coins by value, mint maps, timeline, Emperor Tracker, and health scorecards. **[Learn more →](docs/features/statistics.md)**
-
-**Collection Time Machine** — Scrub a timeline to see the collection exactly as it stood on any past date: what you owned, what it was worth then, and how it was distributed. Reconstructed from purchase/sold dates and recorded valuation history, and explicit about which figures rest on a real valuation versus a purchase-price fallback. **[Learn more →](docs/features/time-machine.md)**
-
-**Coin Sets** — Organize coins into standard, goal, smart, or human-reviewed Agentic sets with tray presentation, completion tracking, snapshots, and comparison tools. **[Learn more →](docs/features/coin-sets.md)**
-
-### 🤝 Social & Community
-**Follow Collectors** — Send follow requests, view follower galleries, leave comments, rate coins 1-5 stars.
-
-**Profiles** — Customize avatar, bio, and privacy settings. Toggle public/private profile with follower management.
-
-**Showcases** — Create curated public subsets with shareable URLs (e.g., `/s/favorite-denarii`). **[Learn more →](docs/features/social-features.md)**
-
-### 📱 Mobile & Offline
-**PWA Installation** — Install on iOS, Android, desktop (Chrome/Edge/Brave). Standalone app window, no browser UI.
-
-**Offline Read Access** — Service worker caches collection data and images for offline browsing. Writes require an active network connection.
-
-**Mobile Gestures** — Swipe gallery, pull-to-refresh, camera capture, touch-optimized controls. **[Learn more →](docs/features/pwa-features.md)**
-
-### 🔐 Security & Control
-**Multiple Auth Methods** — JWT + refresh tokens, WebAuthn passkeys (FIDO2), OIDC login/account linking, and API keys for programmatic access.
-
-**External Tool Server and MCP** — Connect OpenWebUI, LibreChat, automation,
-and agentic harnesses with scoped API keys. The OpenAPI adapter supports
-confirm-gated collection updates; the native `/api/mcp` adapter exposes
-read-only collection, wishlist, and statistics tools plus explicitly scoped
-Coin Copilot lifecycle operations.
-
-**Fine-Grained Privacy** — Public/private profiles, per-coin privacy toggle, role-based admin access. **[Learn more →](docs/authentication.md)**
-
-### More Features
-**Structured Catalog References** — Formally link coins to RIC, RPC, SNG, Numista catalogs.
-**Activity Journals** — Timestamped logs per coin (cleaned, graded, displayed).
-**PDF Export** — Generate insurance catalogs with photos, provenance, valuations.
-**OCR Text Extraction** — Extract text from store cards and certificates.
-**Daily Featured Coins** — Automated scheduler to rediscover forgotten coins.
-**Image Operations** — Background removal, circle clipping, automatic extraction.
-**Bulk Operations** — Multi-select for batch tagging, status changes, exports.
-**Configurable Coin Properties** — Admin-defined Era and Category option lists for tailoring collection metadata.
+### 🔐 Security
+- Username and password with JWT access and refresh tokens, account lockout, automatic IP blocking, rate limits, closed registration after the first user, and private media served only to their owner.
 
 ---
-
-## 🎯 Feature Matrix
-
-| Feature | Collection | Wish List | Social | Analytics | Admin | Mobile |
-|---------|:-:|:-:|:-:|:-:|:-:|:-:|
-| Create/Edit Coins | ✅ | ✅ | — | — | ✅ | ✅ |
-| Quick Capture | ✅ | ✅ | — | — | — | ✅ |
-| Coin Lookup | ✅ | ✅ | — | — | ✅ | ✅ |
-| AI Analysis | ✅ | ✅ | — | — | — | ✅ |
-| Search & Filter | ✅ | ✅ | — | — | — | ✅ |
-| Saved Search Alerts | — | ✅ | — | — | ✅ | ✅ |
-| Tags & Sets | ✅ | ✅ | — | ✅ | — | ✅ |
-| Valuations | ✅ | ✅ | — | ✅ | ✅ | ✅ |
-| Offer/Sold | ✅ | ✅ | — | ✅ | — | ✅ |
-| Comments/Ratings | — | — | ✅ | — | — | ✅ |
-| Follow/Share | — | — | ✅ | — | — | ✅ |
-| Offline Access | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ |
-| PWA Install | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-
----
-
-## 🆕 What's New
-
-**v4.0 (Latest)**
-- **Deep Analysis** — Optional persisted coin-identification jobs with image analysis, provider routing, replayable SSE progress, cancellation/retry, cited reports, and confirm-gated proposals.
-- **OCRE Evidence** — Roman Imperial coin-type candidates from fixed-template Nomisma SPARQL with canonical links and ODbL 1.0 / American Numismatic Society attribution.
-- **Nomisma Mint Authorities** — Admin-confirmed authority links for global mint locations with CC BY 4.0 attribution.
-- **RPC Status** — Automated RPC integration remains paused because no supported API or downloadable corpus is available; no RPC images or data are ingested.
-- **Numista Lookup Improvements** — Richer editable queries, deterministic relevance scoring, bounded enrichment, caching, telemetry, and selected-reference persistence.
-- **v3 Foundation** — OIDC account linking, security hardening, expanded analytics, and other post-v2 platform work are included in this release.
-
-**v2.0**
-- **Quick Capture** — Mobile-first draft intake for show-floor photos/notes, resumable drafts, owner-scoped media, and idempotent promotion into normal collection coins.
-- **Coin Lookup** — Photo-based show workflow for NGC Ancients cert extraction, official NGC verification links, Numista fallback matches, and saving lookups to wish list or collection.
-- **Configurable Coin Properties** — Admin-managed Era and Category options used by coin forms and lookup saves.
-- **Coin Sets** — Organize coins into themed collections with trend tracking and completion analysis. Standard, goal, smart, and human-reviewed Agentic set types. Snapshot history and value milestones.
-- **Museum Tray Dates** — Tray cards show purchase dates in `YYYY-MM-DD`; wishlist placeholders are more transparent and display `TBD`.
-- **Structured Storage Trays** — Define backward-compatible Standard Locations or fixed 1–20 by 1–20 Coin Trays in Settings. Assign coins to exact one-based slots and open **Collection → Storage Trays** for a read-only physical layout. The existing Museum Tray remains the curated, responsive collection view.
-- **Health Scorecard** — Track AI coverage, image coverage, and metadata completeness.
-- Enhanced AI agent teams (grading, price trends, gap analysis, photography guide, similar lots).
-
-**v1.0**
-- ✅ Collection CRUD with rich metadata
-- ✅ AI-powered coin analysis (Claude/Ollama)
-- ✅ AI coin search agent with dealer discovery
-- ✅ Wish list with availability checking
-- ✅ Sold coin tracking with profit/loss
-- ✅ Social features (follow, comment, rate)
-- ✅ Collection statistics and portfolios
-- ✅ PWA with offline read access
-- ✅ External OpenAPI tools and native MCP agentic-harness integration
-- ✅ Multi-auth (JWT, WebAuthn, API keys)
-- ✅ Daily featured coins scheduler
 
 ## Architecture
 
-Three services, two containers in production:
+Three services, two containers:
 
 ```
 Browser ──► Vue 3 SPA  ──► Go API (Gin, GORM, SQLite) ──► Python LangGraph Agent
@@ -166,99 +71,55 @@ Browser ──► Vue 3 SPA  ──► Go API (Gin, GORM, SQLite) ──► Pyth
 | Frontend | Vue 3, TypeScript, Vite, Pinia (PWA)  | `src/web/`   |
 | Agent    | Python 3.12, FastAPI, LangGraph       | `src/agent/` |
 
-The Go API serves both REST (`/api/*`) and the compiled Vue SPA; it proxies AI requests (including SSE streams) to the Python agent. The Python service is stateless — all configuration (provider, keys, prompts, user context) is passed per-request.
-
-Full details in **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)**; the binding rationale is captured in **[ADR 0002 — Three-Service Architecture](docs/adr/0002-three-service-architecture.md)**.
+The Go API serves the REST API (`/api/*`) and the compiled Vue SPA, and proxies AI requests (including SSE streams) to the Python agent. The agent is stateless: provider, keys, prompts and context come with each request. Details in **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)**.
 
 ## Quick Start
 
-**Prerequisites:** [Go 1.26.6](https://go.dev/dl/), [Node.js 20+](https://nodejs.org/), [Task](https://taskfile.dev/) (optional), [Docker](https://docs.docker.com/get-docker/) (optional), [Ollama](https://ollama.ai/) (optional — for local AI).
+With [Docker](https://docs.docker.com/get-docker/) and [Task](https://taskfile.dev/):
 
 ```sh
-git clone <repo-url> && cd coin-collection-app
-task init        # generates .env with a random JWT secret
+task init                                                # .env with random secrets
+docker compose -f docker-compose.dev.yml up -d --build   # build and start both containers
+```
+
+Open `http://localhost:8080` and register: the first user becomes the admin, who can configure Numista and the AI providers in **Admin**. A walkthrough is in **[`docs/getting-started.md`](docs/getting-started.md)**; running on a server is in **[`docs/deployment.md`](docs/deployment.md)**.
+
+For development without Docker ([Go 1.26.6](https://go.dev/dl/), [Node.js 24](https://nodejs.org/), Python 3.12 with [uv](https://docs.astral.sh/uv/)):
+
+```sh
 task up          # API (:8080) + web (:5173)
 task up-all      # API + web + Python agent (:8081)
 ```
 
-The first registered user becomes the admin and can configure AI providers from the Admin page. For a guided walkthrough see **[`docs/getting-started.md`](docs/getting-started.md)**; for production deployment see **[`docs/deployment.md`](docs/deployment.md)**.
-
 ### Running tests
 
 ```sh
-task test            # Go architecture + unit tests
-task test-agent      # Python agent tests
-( cd src/web && npm run type-check )
+task check:go      # Go build, vet, gofmt and tests
+task check:web     # lint, type-check, tests and build of the web app
+task check:agent   # Ruff and pytest of the agent
+task check         # all of the above plus the OpenAPI snapshot
 ```
 
-Run `task --list` to see all targets.
+The same checks run on every pull request (`.github/workflows/ci.yml`). See **[`docs/testing.md`](docs/testing.md)**.
 
 ## 📚 Documentation
 
-### Quick Navigation
-
 | Purpose | Where to Look |
-|---------|---|
-| **Features overview** | [Feature Index](docs/features/INDEX.md) — detailed docs for each feature |
-| **Getting started** | [`docs/getting-started.md`](docs/getting-started.md) — step-by-step walkthrough |
-| **Installation** | [`docs/deployment.md`](docs/deployment.md) — local dev & production setup |
-| **Architecture** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system design & patterns |
-| **API reference** | [`docs/api-reference.md`](docs/api-reference.md) — all endpoints, schemas |
-| **Product roadmap** | [`docs/prd.md`](docs/prd.md) — goals, personas, requirements |
-
-### All Documentation
-
-| Area | Path |
-|------|------|
-| **Features (per-area detail)** | [`docs/features/INDEX.md`](docs/features/INDEX.md) — Browse by feature area |
-| Feature: Collection Management | [`docs/features/collection-management.md`](docs/features/collection-management.md) |
-| Feature: Quick Capture | [`docs/quick-capture.md`](docs/quick-capture.md) |
-| Feature: Coin Lookup | [`docs/features/coin-lookup.md`](docs/features/coin-lookup.md) |
-| Feature: Deep Analysis | [`docs/features/deep-analysis.md`](docs/features/deep-analysis.md) |
-| Feature: Coin Sets | [`docs/features/coin-sets.md`](docs/features/coin-sets.md) |
-| Feature: Wish List | [`docs/features/wish-list.md`](docs/features/wish-list.md) |
-| Feature: AI Analysis | [`docs/features/ai-analysis.md`](docs/features/ai-analysis.md) |
-| Feature: AI Search Agent | [`docs/features/ai-search-agent.md`](docs/features/ai-search-agent.md) |
-| Feature: Statistics | [`docs/features/statistics.md`](docs/features/statistics.md) |
-| Feature: Time Machine | [`docs/features/time-machine.md`](docs/features/time-machine.md) |
-| Feature: Notifications | [`docs/features/notifications.md`](docs/features/notifications.md) |
-| Feature: Image Operations | [`docs/features/image-operations.md`](docs/features/image-operations.md) |
-| Feature: Admin Settings | [`docs/features/admin-settings.md`](docs/features/admin-settings.md) |
-| **Product & Vision** | [`docs/prd.md`](docs/prd.md) — vision, personas, goals |
-| **Architecture** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system design |
-| **API Reference** | [`docs/api-reference.md`](docs/api-reference.md) — all endpoints |
-| **Authentication** | [`docs/authentication.md`](docs/authentication.md) — JWT, WebAuthn, API keys |
-| **OIDC Setup** | [`docs/oidc-setup.md`](docs/oidc-setup.md) — Entra ID, Pocket ID, and account linking |
-| **Deployment** | [`docs/deployment.md`](docs/deployment.md) — local dev & production |
-| **Getting Started** | [`docs/getting-started.md`](docs/getting-started.md) — step-by-step guide |
-| **PWA Guide** | [`docs/pwa-guide.md`](docs/pwa-guide.md) — installation & offline access |
-| **Social Features** | [`docs/social-feature.md`](docs/social-feature.md) — follow, comment, rate |
-| **External Tool Server** | [`docs/external-tool-server.md`](docs/external-tool-server.md) — OpenAPI and native MCP integration |
-| **MCP Agentic Harness** | [`docs/features/mcp-agentic-harness.md`](docs/features/mcp-agentic-harness.md) — Feature 366 tools, capabilities, and boundaries |
-| **MCP Client Setup** | [`docs/mcp-client-setup.md`](docs/mcp-client-setup.md) — Copilot CLI, VS Code, Claude Code, verification, and troubleshooting |
-| **Security** | [`docs/security-principles.md`](docs/security-principles.md) — threat model, hardening |
-| **Incident Response** | [`docs/incident-response.md`](docs/incident-response.md) — breach procedures |
-| **References** | [`docs/references.md`](docs/references.md) — tools, standards, citations |
-| **Design System** | [`docs/design-system.md`](docs/design-system.md) — tokens, typography, shared UI primitives |
-| **Software Design** | [`docs/SDD.md`](docs/SDD.md) — technical specifications |
-| **ADRs** | [`docs/adr/`](docs/adr/) — architecture decision records |
-| **Specs** | [`specs/`](specs/) — in-flight features |
-| **Changelog** | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — version history |
-
-**Design System** — Tokens, typography, status tones and shared UI primitives are documented in [`docs/design-system.md`](docs/design-system.md) and locked by [ADR 0004](docs/adr/0004-design-token-system.md).
-
-**Product Authority** — Per [Constitution §0](.specify/memory/constitution.md), the hierarchy is: Constitution → PRD → Active Spec → Plan → Tasks → Backlog → Decisions → Agent Judgment.
-
-## Governance
-
-- **Constitution:** [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (v3.1.0) — non-negotiable contract for how this project is built. §0 defines the Hierarchy of Authority.
-- **Spec workflow:** features ship through `specs/NNN-*/{spec,plan,tasks}.md` per the templates in [`.specify/templates/`](.specify/templates/).
-- **Decision records:** [`docs/adr/`](docs/adr/) (Michael Nygard format, established by **[ADR 0001](docs/adr/0001-record-architecture-decisions.md)**).
-- **Project decisions ledger:** [`.squad/decisions.md`](.squad/decisions.md); proposals land in [`.squad/decisions/inbox/`](.squad/decisions/inbox/).
-- **AI team (Squad):** [`.squad/team.md`](.squad/team.md) and per-agent charters under [`.squad/agents/`](.squad/agents/).
-- **Quality Gate & Definition of Done:** Constitution §17 and §21 — enforced on every PR.
-- **Contributing:** [`CONTRIBUTING.md`](CONTRIBUTING.md).
-- **Security:** [`SECURITY.md`](SECURITY.md).
+|---|---|
+| **Features overview** | [`docs/features.md`](docs/features.md), and each area in [`docs/features/`](docs/features/INDEX.md) |
+| **Getting started** | [`docs/getting-started.md`](docs/getting-started.md) |
+| **Installation and deployment** | [`docs/deployment.md`](docs/deployment.md) |
+| **Installed app (PWA)** | [`docs/pwa-guide.md`](docs/pwa-guide.md) |
+| **Quick Capture** | [`docs/quick-capture.md`](docs/quick-capture.md) |
+| **Architecture** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
+| **API reference** | [`docs/api-reference.md`](docs/api-reference.md) and [`docs/openapi.json`](docs/openapi.json) |
+| **Authentication** | [`docs/authentication.md`](docs/authentication.md) |
+| **Testing** | [`docs/testing.md`](docs/testing.md) |
+| **Design system** | [`docs/design-system.md`](docs/design-system.md) |
+| **Security** | [`docs/security-principles.md`](docs/security-principles.md), [`docs/threat-model.md`](docs/threat-model.md), [`docs/incident-response.md`](docs/incident-response.md), [`SECURITY.md`](SECURITY.md) |
+| **References** | [`docs/references.md`](docs/references.md) |
+| **Cross-service contracts** | [`contracts/`](contracts/) |
+| **Contributing** | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 
 ## License
 

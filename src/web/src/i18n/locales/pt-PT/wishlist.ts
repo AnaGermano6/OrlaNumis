@@ -24,6 +24,17 @@ const messages: Messages['wishlist'] = {
     fromImageHint: 'Fotografe ou carregue uma moeda para identificação.',
     another: 'Adicionar de outra forma',
   },
+  leave: {
+    title: 'Na lista de desejos',
+    message: {
+      one: 'Esta moeda estava na sua lista de desejos: {names}. Retirá-la da lista de desejos, agora que já a tem?',
+      other: 'Estas {count} moedas da lista de desejos são esta: {names}. Retirá-las da lista de desejos, agora que já a tem?',
+    },
+    confirm: { one: 'Retirar', other: 'Retirar todas' },
+    keep: 'Manter na lista',
+    done: { one: 'Retirada da lista de desejos.', other: '{count} moedas retiradas da lista de desejos.' },
+    failed: 'Não foi possível retirar a moeda da lista de desejos. Apague-a na página dela, na lista de desejos.',
+  },
 }
 
 export default messages

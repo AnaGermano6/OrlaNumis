@@ -4,6 +4,7 @@
 // them to fill in; the official images are added when it is saved.
 import type { RouteLocationRaw } from 'vue-router'
 import type { CoinRelease } from '@/api/client'
+import type { CatalogPrefill } from '@/utils/numistaCatalogPrefill'
 import type { Coin, CoinMutationPayload, CoinReferenceInput } from '@/types'
 import { intlLocale, t } from '@/i18n'
 import { rarityFromMintage } from '@/utils/coinAttributes'
@@ -123,10 +124,59 @@ export function buildReleaseWishlistCoin(release: CoinRelease, options: ReleaseP
   }
 }
 
+// A catalogue's references, once each.
+function mergeReferences(...lists: CoinReferenceInput[][]): CoinReferenceInput[] {
+  const seen = new Set<string>()
+  return lists.flat().filter((reference) => {
+    const key = `${reference.catalog.toLowerCase()}|${reference.number}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+/**
+ * A release's form values completed with its Numista type's (see
+ * buildCatalogPrefill): what the coin is made of, weighs and measures, its
+ * mint, ruler, sides, catalogue references and Numista's notes. The release
+ * keeps what the collection writes its own way (its name, face value,
+ * country, year, circulation and source page), and the metal and rarity it
+ * says itself.
+ */
+export function completeReleasePrefill(release: CoinRelease, numista: CatalogPrefill, options: ReleasePrefillOptions): ReleasePrefill {
+  const own = buildReleasePrefill(release, options)
+  const found = numista.fields
+  const variantMetal = release.variants?.length === 1 ? materialFromComposition(release.variants[0], options.materials) : ''
+  const metal = variantMetal && variantMetal !== materialFromComposition('', options.materials) ? variantMetal : ''
+  // The release's mintage, when it says one, rather than Numista's.
+  const mintage = t('catalog.notes.mintage', { value: '' }).trim()
+  const numistaNotes = (found.notes ?? '').split('\n').filter((line) => line && !(release.volume && line.startsWith(mintage)))
+  const notes = [...new Set([...(own.fields.notes ?? '').split('\n'), ...numistaNotes].filter(Boolean))].join('\n')
+  return {
+    fields: {
+      ...own.fields,
+      era: found.era || own.fields.era,
+      ruler: found.ruler || own.fields.ruler,
+      mint: found.mint || own.fields.mint,
+      material: (metal || found.material || own.fields.material) as Coin['material'],
+      weightGrams: found.weightGrams ?? own.fields.weightGrams,
+      diameterMm: found.diameterMm ?? own.fields.diameterMm,
+      presentation: found.presentation || own.fields.presentation,
+      rarity: own.fields.rarity || found.rarity,
+      obverseInscription: found.obverseInscription || own.fields.obverseInscription,
+      reverseInscription: found.reverseInscription || own.fields.reverseInscription,
+      obverseDescription: found.obverseDescription || own.fields.obverseDescription,
+      reverseDescription: found.reverseDescription || own.fields.reverseDescription,
+      notes: clip(notes, 5000),
+    },
+    references: mergeReferences(numista.references, own.references),
+  }
+}
+
 /** The Add Coin page, filled in with a release. */
 export function releaseAddRoute(release: CoinRelease): RouteLocationRaw {
-  const { source, kind, country, title, variants, faceValue, currency, pageUrl, from, volume, upcoming } = release
-  return { name: 'add-coin', query: { release: JSON.stringify({ source, kind, country, title, variants, faceValue, currency, pageUrl, from, volume, upcoming }) } }
+  const { source, kind, country, title, variants, faceValue, currency, imageUrl, pageUrl, from, volume, upcoming } = release
+  return { name: 'add-coin', query: { release: JSON.stringify({ source, kind, country, title, variants, faceValue, currency, imageUrl, pageUrl, from, volume, upcoming }) } }
 }
 
 /** The release the Add Coin page was opened with; null when there is none or it does not read. */
@@ -139,7 +189,7 @@ export function releaseFromQuery(value: unknown): CoinRelease | null {
     return null
   }
   if (!raw || typeof raw !== 'object') return null
-  const { source, kind, country, title, variants, faceValue, currency, pageUrl, from, volume, upcoming } = raw
+  const { source, kind, country, title, variants, faceValue, currency, imageUrl, pageUrl, from, volume, upcoming } = raw
   if (!SOURCES.includes(source as CoinRelease['source']) || (kind !== 'commemorative' && kind !== 'collector')) return null
   if (typeof title !== 'string' || !title.trim() || typeof faceValue !== 'number' || !(faceValue > 0) || typeof from !== 'string') return null
   return {
@@ -150,7 +200,7 @@ export function releaseFromQuery(value: unknown): CoinRelease | null {
     variants: Array.isArray(variants) ? variants.filter((variant): variant is string => typeof variant === 'string') : undefined,
     faceValue,
     currency: currency === 'PTE' ? 'PTE' : undefined,
-    imageUrl: '',
+    imageUrl: typeof imageUrl === 'string' && /^https:\/\//.test(imageUrl) ? imageUrl : '',
     pageUrl: typeof pageUrl === 'string' && /^https:\/\//.test(pageUrl) ? pageUrl : '',
     from,
     to: from,

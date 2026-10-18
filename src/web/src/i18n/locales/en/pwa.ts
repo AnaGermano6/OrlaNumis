@@ -1,7 +1,7 @@
 export default {
   update: {
     title: 'Update available',
-    body: 'A new version of Aurearia is ready. Refresh to update.',
+    body: 'A new version of Orla Numis is ready. Refresh to update.',
   },
   install: {
     share: 'Share',

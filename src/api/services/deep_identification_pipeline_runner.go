@@ -70,7 +70,7 @@ func NewDeepIdentificationPipelineRunner(
 }
 
 // deepPipelineDefaultMaxConcurrency/ProviderTimeout/RecursionLimit are fixed,
-// documented defaults (see .squad/decisions/inbox for rationale): the live
+// documented defaults: the live
 // DeepIdentificationSettings snapshot (settings_service.go) exposes
 // MaxProviders and HardTimeout but not yet a separate concurrency/per-
 // provider-timeout/recursion-limit knob, so these are derived in code

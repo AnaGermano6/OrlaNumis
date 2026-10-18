@@ -164,6 +164,17 @@ func TestBackupService_MakesListsAndPrunes(t *testing.T) {
 	if backups[2].Coins != 1 || backups[2].Files != 2 {
 		t.Fatalf("listed manual backup = %+v", backups[2])
 	}
+	if !strings.HasPrefix(info.Name, "orla-numis-") {
+		t.Fatalf("a new backup is named %s", info.Name)
+	}
+	// One made before the app was renamed is listed with them, by its date.
+	writeUpload(t, test.dir, "aurearia-2025-01-01-000000-manual.zip", "")
+	if listed, _ := test.backups.List(); len(listed) != 4 || listed[3].Name != "aurearia-2025-01-01-000000-manual.zip" {
+		t.Fatalf("with an older backup: %+v", listed)
+	}
+	if err := test.backups.Delete("aurearia-2025-01-01-000000-manual.zip"); err != nil {
+		t.Fatal(err)
+	}
 	if last := test.backups.LastAutomatic(); last == nil || !last.Equal(backups[0].CreatedAt) {
 		t.Fatalf("last automatic = %v, want %v", last, backups[0].CreatedAt)
 	}

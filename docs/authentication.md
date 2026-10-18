@@ -1,6 +1,6 @@
 # Authentication Guide
 
-This guide covers all authentication mechanisms in Ancient Coins — JWT tokens, refresh tokens, WebAuthn biometrics, and API keys — along with code examples and production security recommendations.
+This guide covers how Orla Numis signs users in — username and password, JWT access tokens and refresh tokens — with code examples and production security recommendations. There is no other sign-in method.
 
 ## JWT Authentication (Primary)
 
@@ -9,6 +9,8 @@ JWT is the primary authentication method. Users log in with a username and passw
 ### Registration
 
 The first user to register is automatically assigned the **admin** role. All subsequent users are regular users.
+
+After the first user, new accounts are refused while the `RegistrationMode` setting is `closed` (the default); set it to `open` to let others register.
 
 Registration requires a **username**, **password**, and **email** (validated as a proper email format).
 
@@ -139,202 +141,20 @@ The frontend uses an **axios interceptor** that automatically handles token refr
 
 ---
 
-## WebAuthn / FIDO2 (Biometric Login)
+## How Requests Are Checked
 
-WebAuthn enables passwordless login using Face ID, Touch ID, fingerprint sensors, and other platform authenticators. This uses the `go-webauthn/webauthn` v0.16.1 library on the backend.
+Protected routes require the `Authorization: Bearer <access token>` header (`src/api/middleware/auth.go`). The middleware checks the signature and expiry and puts `userId` and `userRole` in the Gin context. There is no API-key or query-parameter alternative: photos and other uploads are fetched by the web app with the same header.
 
-### Configuration
+## Sign-in Protection
 
-| Environment Variable | Description | Default |
-| -------------------- | ----------- | ------- |
-| `WEBAUTHN_RP_ID` | Relying Party ID — your domain name | `localhost` |
-| `WEBAUTHN_ORIGIN` | Full origin URL (supports comma-separated list for multiple origins) | `http://localhost:8080` |
-
-The server also supports **dynamic origin detection** — it auto-detects the request origin and adds it to the allowed origins list, which simplifies development setups.
-
-### Authenticator Settings
-
-| Setting | Value | Notes |
-| ------- | ----- | ----- |
-| `AuthenticatorAttachment` | `platform` | Only biometric authenticators (Face ID, Touch ID, fingerprint) — no USB security keys |
-| `ResidentKey` | `preferred` | Enables discoverable credentials for iOS Passwords integration |
-
-### Registering a Credential
-
-Registration requires an existing JWT session — the user must be logged in first.
-
-**Step 1 — Begin registration:**
-
-```sh
-curl -X POST http://localhost:8080/api/auth/webauthn/register/begin \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-Returns `PublicKeyCredentialCreationOptions` for the browser.
-
-**Step 2 — Browser ceremony:**
-
-The frontend calls `navigator.credentials.create()` with the options from Step 1. The user sees a Face ID / Touch ID / fingerprint prompt.
-
-**Step 3 — Finish registration:**
-
-```sh
-curl -X POST http://localhost:8080/api/auth/webauthn/register/finish \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ ... credential response from browser ... }'
-```
-
-The credential is stored in the database and linked to the user's account.
-
-### Logging In with Biometrics
-
-WebAuthn login is **public** — no existing JWT is required.
-
-**Step 1 — Begin login:**
-
-```sh
-curl -X POST http://localhost:8080/api/auth/webauthn/login/begin \
-  -H "Content-Type: application/json" \
-  -d '{"username": "alice"}'
-```
-
-Returns a challenge for the browser.
-
-**Step 2 — Browser ceremony:**
-
-The frontend calls `navigator.credentials.get()` with the challenge. The user sees a biometric prompt.
-
-**Step 3 — Finish login:**
-
-```sh
-curl -X POST "http://localhost:8080/api/auth/webauthn/login/finish?username=alice" \
-  -H "Content-Type: application/json" \
-  -d '{ ... assertion response from browser ... }'
-```
-
-**Response:** Returns a JWT access token and refresh token, same as a password login.
-
-### Managing Credentials
-
-**Check if a user has registered credentials:**
-
-```sh
-curl "http://localhost:8080/api/auth/webauthn/check?username=alice"
-```
-
-**List your credentials** (requires JWT):
-
-```sh
-curl http://localhost:8080/api/auth/webauthn/credentials \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-**Delete a credential** (requires JWT):
-
-```sh
-curl -X DELETE http://localhost:8080/api/auth/webauthn/credentials/CREDENTIAL_ID \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-### Frontend Behavior
-
-- The login page **remembers the last username** in `localStorage` and shows a biometric login button when that user has registered WebAuthn credentials.
-- Session data for in-progress ceremonies is stored **in-memory** on the server (a Go `map`). If the server restarts mid-ceremony, the user will need to start the registration or login flow again.
-- **Known limitation:** In-memory ceremony sessions have **no TTL** — abandoned registration/login flows accumulate indefinitely. This is tracked as finding B-7 in the [threat model](threat-model.md#backend-api-findings).
-
----
-
-## API Keys (Programmatic Access)
-
-API keys provide a simple authentication method for scripts, CI pipelines,
-third-party integrations, and MCP clients. External-tool routes enforce the
-key's capability tokens.
-
-### Generating a Key
-
-```sh
-curl -X POST http://localhost:8080/api/auth/api-keys \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "My MCP Client", "scope": "read,copilot"}'
-```
-
-**Response:**
-
-```json
-{
-  "id": 1,
-  "name": "My MCP Client",
-  "key": "ak_a1b2c3d4e5f6...full key shown only once...",
-  "keyPrefix": "d4e5f6a1",
-  "capabilities": "read,copilot"
-}
-```
-
-> **Important:** The full API key is returned **only once** at creation. Copy it immediately — it cannot be retrieved later. The `keyPrefix` (last 8 characters) is stored for identification.
-
-### Using an API Key
-
-Pass the key in the `X-API-Key` header:
-
-```sh
-curl http://localhost:8080/api/coins \
-  -H "X-API-Key: ak_a1b2c3d4e5f6..."
-```
-
-### Listing Keys
-
-```sh
-curl http://localhost:8080/api/auth/api-keys \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-Returns all keys for your account (prefix and name only — never the full key).
-
-### Revoking a Key
-
-```sh
-curl -X DELETE http://localhost:8080/api/auth/api-keys/1 \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-Revoked keys are soft-deleted and immediately rejected on future requests.
-
-### Key Details
-
-| Property | Value |
-| -------- | ----- |
-| **Format** | `ak_` prefix + 32 random hex bytes |
-| **Server storage** | SHA-256 hash in the database (`ApiKey` model) |
-| **Identification** | `KeyPrefix` — last 8 characters, stored for display |
-| **Name** | Optional label for identifying the key's purpose |
-| **Capabilities** | `read`, `read,copilot`, `read,write`, or `read,write,copilot` |
-| **Tracking** | `LastUsedAt` timestamp updated on each use |
-
-For external tools, `write` and `copilot` are independent, explicit
-capabilities. `write` implies `read` but never implies `copilot`. Use a
-dedicated `read` key for MCP data tools or `read,copilot` when the client also
-needs Coin Copilot lifecycle operations.
-
----
-
-## Auth Middleware Priority
-
-The auth middleware in `src/api/middleware/auth.go` checks credentials in this order:
-
-1. **API Key** — Check the `X-API-Key` header. If present, hash the key and look it up in the database. Reject if the key is revoked.
-2. **JWT** — If no API key is provided, check the `Authorization: Bearer <token>` header. Validate the JWT signature and expiry.
-
-Both methods populate `userId` and `userRole` in the Gin context, so downstream handlers don't need to know which auth method was used.
-
-### JWT Query Parameter Fallback
-
-In addition to the `Authorization` header, the middleware accepts a `?token=` query parameter (`src/api/middleware/auth.go`, lines 35–51). This is used for image proxy URLs where a header cannot be set (e.g., `<img>` tags). The query param is internally converted to a `Bearer` header and follows the same validation path.
+- **Lockout** — repeated failed sign-ins lock the account for a while. Administrators see locked users in **Administration → Security** and can unlock them.
+- **IP blocking** — repeated password failures from one IP block that IP for a while, automatically.
+- **Rate limits** — sign-in and registration are rate limited; a `429` response carries `Retry-After`, and the login page counts down.
+- **Generic errors** — a failed sign-in never says whether the username exists.
 
 ### JWT Claim Fields
 
-The access token contains these claims (set in `src/api/services/auth_service.go`, lines 82–93):
+The access token contains these claims (set in `src/api/services/auth_service.go`):
 
 | Claim | Type | Description |
 |-------|------|-------------|
@@ -358,25 +178,9 @@ Change the `JWT_SECRET` environment variable to a strong, random value (minimum 
 export JWT_SECRET=$(openssl rand -base64 48)
 ```
 
-### WebAuthn Domain
+### Registration
 
-Set `WEBAUTHN_RP_ID` to your production domain and `WEBAUTHN_ORIGIN` to the full URL:
-
-```sh
-export WEBAUTHN_RP_ID=coins.example.com
-export WEBAUTHN_ORIGIN=https://coins.example.com
-```
-
-> **Note:** The RP ID is bound to the domain — credentials registered on one domain cannot be used on another.
-
-### API Key Handling
-
-- Treat API keys like passwords. They authenticate as the owning user wherever
-  API-key authentication is accepted; external-tool routes additionally
-  enforce their capability tokens.
-- Keys are shown **only once** at generation. Store them in a secrets manager or password vault.
-- Send keys only in `X-API-Key`. Never place them in URLs, prompts, logs, or
-  committed client configuration.
+Keep `RegistrationMode` at `closed` unless you are inviting someone, and close it again afterwards.
 
 ### Refresh Token Storage
 
@@ -387,5 +191,5 @@ Refresh tokens are currently stored in `localStorage` on the frontend. This is a
 | Setting | Environment Variable | Example Value |
 | ------- | -------------------- | ------------- |
 | JWT signing secret | `JWT_SECRET` | Output of `openssl rand -base64 48` |
-| WebAuthn domain | `WEBAUTHN_RP_ID` | `coins.example.com` |
-| WebAuthn origin | `WEBAUTHN_ORIGIN` | `https://coins.example.com` |
+| Allowed browser origins | `CORS_ORIGINS` | `https://coins.example.com` |
+| Reverse proxy addresses | `TRUSTED_PROXIES` | `10.0.0.0/8` |

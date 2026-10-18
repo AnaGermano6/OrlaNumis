@@ -2,15 +2,12 @@
  * Tests for S1 (Appearance section renders Swipe Navigation row and emits on toggle),
  * S3 (toggle calls PUT /user/profile with exactly { pwaSwipeNavEnabled }),
  * S4 (request rejection reverts toggle and surfaces error -- no silent failure).
- *
- * Design authority: .squad/decisions/inbox/maximus-pwa-swipe-reliability-review.md §13
  */
 
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SettingsAppearanceSection from '@/components/settings/SettingsAppearanceSection.vue'
 import type { Theme } from '@/types'
-import type { FeltColor } from '@/composables/useTrayPreference'
 
 const mockUpdateProfile = vi.fn()
 
@@ -32,7 +29,6 @@ const defaultProps = {
   timezones: ['UTC', 'America/New_York'],
   defaultView: 'grid' as 'grid' | 'swipe',
   defaultSort: 'updated_at_desc',
-  trayFeltColor: 'red' as FeltColor,
 }
 
 function mountSection() {

@@ -1,5 +1,5 @@
 export default {
-  brandFull: 'Aurearia - Coin Collection',
+  brandFull: 'Orla Numis - Coin Collection',
   brandTagline: 'Coin Collection',
   header: {
     selectCoins: 'Select coins',
@@ -23,5 +23,6 @@ export default {
     version: 'Version {version}',
     catalogue: 'Catalogue data: Numista',
     photos: 'Official photos: ECB, INCM, Monnaie de Paris and Münze Österreich',
+    basedOn: 'Based on the {project} project, by Brian DeNicola (MIT license)',
   },
 }

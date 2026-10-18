@@ -8,6 +8,14 @@ import type { Coin } from '@/types'
 const mocks = vi.hoisted(() => ({
   getCoins: vi.fn(),
   getCoinCountries: vi.fn(),
+  replace: vi.fn(),
+  route: { query: {} as Record<string, string> },
+}))
+
+vi.mock('vue-router', async (importOriginal) => ({
+  ...await importOriginal<typeof import('vue-router')>(),
+  useRoute: () => mocks.route,
+  useRouter: () => ({ replace: mocks.replace }),
 }))
 
 vi.mock('@/api/client', () => ({
@@ -44,6 +52,7 @@ describe('BanknotesPage', () => {
   beforeEach(() => {
     setLocale('pt-PT')
     localStorage.clear()
+    mocks.route.query = {}
     mocks.getCoins.mockResolvedValue({ data: { coins: [banknote(1, '1000 escudos'), banknote(2, '500 escudos')], total: 2 } })
     mocks.getCoinCountries.mockResolvedValue({ data: [{ country: 'Portugal', count: 2 }] })
   })
@@ -69,7 +78,9 @@ describe('BanknotesPage', () => {
     const wrapper = mountPage()
     await flushPromises()
 
-    await wrapper.get('[data-testid="banknotes-country"]').setValue('Portugal')
+    const countrySelect = wrapper.get('[data-testid="banknotes-country"]')
+    expect(countrySelect.findAll('option').map((option) => option.text()).slice(1)).toEqual(['🇵🇹 Portugal (2)'])
+    await countrySelect.setValue('Portugal')
     await flushPromises()
     expect(mocks.getCoins).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'banknote', country: 'Portugal' }))
 
@@ -92,5 +103,20 @@ describe('BanknotesPage', () => {
     const empty = wrapper.get('[data-testid="banknotes-empty"]')
     expect(empty.text()).toContain('Ainda não tem notas de banco')
     expect(empty.get('a').attributes('href')).toBe('/banknotes/add')
+  })
+
+  it("shows only the duplicates to trade when opened from the Collection page's, until the filter is removed", async () => {
+    mocks.route.query = { repeated: 'true' }
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(mocks.getCoins).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'banknote', repeated: 'true' }))
+    const chip = wrapper.get('[data-testid="banknotes-filter-repeated"]')
+    expect(chip.text()).toBe('Só repetidas para troca')
+    await chip.trigger('click')
+    await flushPromises()
+    expect(mocks.replace).toHaveBeenCalledWith({ query: {} })
+    expect(mocks.getCoins).toHaveBeenLastCalledWith(expect.objectContaining({ repeated: undefined }))
+    expect(wrapper.find('[data-testid="banknotes-filter-repeated"]').exists()).toBe(false)
   })
 })

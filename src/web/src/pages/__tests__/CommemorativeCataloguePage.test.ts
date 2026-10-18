@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
   push: vi.fn(),
   saveToWishlist: vi.fn(),
+  removeFromWishlist: vi.fn(),
   hideCatalogueCoin: vi.fn(),
   joinCatalogueCoin: vi.fn(),
   showCatalogueCoin: vi.fn(),
@@ -25,7 +26,7 @@ vi.mock('@/api/client', () => ({
   showCatalogueCoin: mocks.showCatalogueCoin,
 }))
 vi.mock('vue-router', () => ({ useRoute: () => mocks.route, useRouter: () => ({ replace: mocks.replace, push: mocks.push }) }))
-vi.mock('@/composables/useReleaseWishlist', () => ({ useReleaseWishlist: () => ({ saveToWishlist: mocks.saveToWishlist }) }))
+vi.mock('@/composables/useReleaseWishlist', () => ({ useReleaseWishlist: () => ({ saveToWishlist: mocks.saveToWishlist, removeFromWishlist: mocks.removeFromWishlist }) }))
 vi.mock('@/composables/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }))
 
 function country(code: string, commemoratives: number, ownedCommemoratives: number, collector = 0, ownedCollector = 0, currency?: string): CatalogueCountry {
@@ -82,7 +83,8 @@ describe('CommemorativeCataloguePage', () => {
     expect(wrapper.text()).not.toContain('Todas as moedas de 2 € comemorativas publicadas')
     const euro = wrapper.get('[data-testid="catalogue-group-euro"]')
     expect(euro.get('h2').text()).toBe('Moedas do euro')
-    expect(euro.findAll('button').map((button) => button.find('span').text())).toEqual(['Alemanha', 'França', 'Portugal'])
+    expect(euro.findAll('button').map((button) => button.find('span').text())).toEqual(['🇩🇪Alemanha', '🇫🇷França', '🇵🇹Portugal'])
+    expect(euro.findAll('[data-testid="catalogue-flag"]').every((flag) => flag.attributes('aria-hidden') === 'true')).toBe(true)
     const other = wrapper.get('[data-testid="catalogue-group-other"]')
     expect(other.get('h2').text()).toBe('Outras moedas')
     expect(text(other.get('[data-testid="catalogue-country-PT-PTE"]'))).toContain('Escudos · 1 de 46')
@@ -90,7 +92,7 @@ describe('CommemorativeCataloguePage', () => {
     // Portugal in euros has the most coins of the collection: its euro coins only.
     expect(mocks.getCoinCatalogue).toHaveBeenCalledWith('PT', undefined)
     expect(mocks.replace).toHaveBeenCalledWith({ query: { country: 'PT' } })
-    expect(wrapper.get('#catalogue-country-title').text()).toBe('Portugal')
+    expect(wrapper.get('#catalogue-country-title').text()).toBe('🇵🇹Portugal')
     expect(wrapper.get('[data-testid="catalogue-owned"]').text()).toBe('Tem 3 de 5')
     // In the server's order: the newest first.
     expect(cards(wrapper)).toEqual(['Rotary', 'World scouting', 'Sustainable development', 'Faróis', 'Mosteiro dos Jerónimos'])
@@ -122,7 +124,7 @@ describe('CommemorativeCataloguePage', () => {
     await flushPromises()
     expect(mocks.getCoinCatalogue).toHaveBeenLastCalledWith('PT', 'PTE')
     expect(mocks.replace).toHaveBeenLastCalledWith({ query: { country: 'PT', currency: 'PTE' } })
-    expect(wrapper.get('#catalogue-country-title').text()).toBe('Portugal · Escudos')
+    expect(wrapper.get('#catalogue-country-title').text()).toBe('🇵🇹Portugal · Escudos')
     expect(cards(wrapper)).toEqual(['Colombo e Portugal', 'Discovery of Azores'])
     expect(wrapper.findAll('[data-testid^="catalogue-value-"]').map((chip) => text(chip))).toEqual(['Todos os valores', '100 escudos', '200 escudos'])
     await wrapper.get('[data-testid="catalogue-value-100"]').trigger('click')
@@ -139,7 +141,7 @@ describe('CommemorativeCataloguePage', () => {
 
     const select = wrapper.get('[data-testid="catalogue-country-select"]')
     expect(select.findAll('optgroup').map((group) => group.attributes('label'))).toEqual(['Moedas do euro', 'Outras moedas'])
-    expect(select.findAll('option').map((option) => option.text())).toEqual(['Alemanha — 0 de 30', 'França — 1 de 70', 'Portugal — 3 de 5', 'Portugal · Escudos — 1 de 46'])
+    expect(select.findAll('option').map((option) => option.text())).toEqual(['🇩🇪 Alemanha — 0 de 30', '🇫🇷 França — 1 de 70', '🇵🇹 Portugal — 3 de 5', '🇵🇹 Portugal · Escudos — 1 de 46'])
     await select.setValue('FR')
     await flushPromises()
     expect(mocks.getCoinCatalogue).toHaveBeenLastCalledWith('FR', undefined)
@@ -184,7 +186,7 @@ describe('CommemorativeCataloguePage', () => {
   })
 
   it('saves a coin the collection does not have to the wishlist', async () => {
-    mocks.saveToWishlist.mockResolvedValue('saved')
+    mocks.saveToWishlist.mockResolvedValue({ result: 'saved', coinId: 5 })
     const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()
 

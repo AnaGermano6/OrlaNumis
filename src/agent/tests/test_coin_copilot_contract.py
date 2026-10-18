@@ -43,9 +43,8 @@ SPECIALIST_FIXTURES = FIXTURES / "specialists"
 INVALID_SPECIALIST_FIXTURES = FIXTURES / "specialists_invalid"
 HANDOFF_FIXTURES = (
     Path(__file__).parents[3]
-    / "specs"
-    / "362-coin-copilot-attribution"
     / "contracts"
+    / "coin-copilot"
     / "fixtures"
 )
 

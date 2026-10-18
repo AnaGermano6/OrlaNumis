@@ -9,7 +9,7 @@ import {
 
 const fixturesDirectory = resolve(
   process.cwd(),
-  '../../specs/362-coin-copilot-attribution/contracts/fixtures',
+  '../../contracts/coin-copilot/fixtures',
 )
 
 function loadFixture(name: string): Record<string, unknown> {

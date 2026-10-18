@@ -292,8 +292,7 @@ func TestDeepIdentificationHandler_CreateJob_HappyPathReturns202(t *testing.T) {
 // therefore InputFingerprint) genuinely differ from the user's first
 // in-flight job must be refused with 409 job_at_capacity, never handed the
 // first job's envelope as if it were an answer for the second submission.
-// This is an approved breaking change to a shipped endpoint (see
-// .squad/decisions/inbox/cassius-job-at-capacity.md): the endpoint used to
+// This is an approved breaking change to a shipped endpoint: the endpoint used to
 // return 200 reused=true with the unrelated job in this exact scenario.
 func TestDeepIdentificationHandler_CreateJob_AtCapacityWithDifferentFingerprintReturns409(t *testing.T) {
 	deps := setupDeepIdentificationHandlerTest(t, 1, true)

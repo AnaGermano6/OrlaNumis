@@ -1,7 +1,6 @@
 /**
  * Behaviour-level characterization tests for SwipeGallery's inline swipe engine.
  *
- * Design authority: .squad/decisions/inbox/maximus-pwa-swipe-reliability-review.md §§9–13
  * Purpose: pin the current intended contract of the Gallery drag engine BEFORE production
  * migration to the shared useSwipeGesture primitive (Phase 2 / PR 3 of the consolidation plan).
  * PR 3 must pass these tests unmodified after migration.

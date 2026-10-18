@@ -50,9 +50,9 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['coin-logo.jpg'],
       manifest: {
-        name: 'Aurearia - Coin Collection',
-        short_name: 'Aurearia',
-        description: 'Track and manage your coin collection',
+        name: 'Orla Numis - Coin Collection',
+        short_name: 'Orla Numis',
+        description: 'Track and manage your coin and banknote collection',
         theme_color: '#1a1a2e',
         background_color: '#0f0f1a',
         display: 'standalone',
@@ -101,23 +101,10 @@ export default defineConfig({
         // is unaffected, which is why only image uploads broke, and only in
         // the installed PWA. Confirmed by iOS private browsing, where service
         // workers are disabled and the same upload succeeds.
-        runtimeCaching: [
-          {
-            // Cache only public showcase reads; all authenticated API reads stay network-only.
-            urlPattern: /^https?:\/\/.*\/api\/showcase(?:\/.*)?$/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'showcase-api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 300,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-        ],
+        //
+        // No API route is cached at all: every API read is authenticated and
+        // stays network-only.
+        runtimeCaching: [],
       },
     }),
   ],

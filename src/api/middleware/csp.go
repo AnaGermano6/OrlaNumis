@@ -87,8 +87,8 @@ const backgroundRemovalWorkerPathPrefix = "/assets/workers/"
 // ndarray, whose compileConstructor() calls `new Function(...)` to build a
 // typed-array constructor at runtime. Under a strict script-src this throws
 // `EvalError: Evaluating a string as JavaScript violates ... script-src`.
-// Aurelia proved the cause and the fix experimentally (commit fbbe8503,
-// .squad/agents/aurelia/history.md): a strict CSP on the worker's own
+// The cause and the fix were proved experimentally (commit fbbe8503):
+// a strict CSP on the worker's own
 // response reproduces the exact production EvalError; granting
 // 'unsafe-eval' only to that response makes @imgly/background-removal
 // complete successfully, with the page's own CSP (appCSP) left untouched.

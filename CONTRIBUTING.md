@@ -1,124 +1,88 @@
 # Contributing
 
-Guidelines for contributing to the Aurearia application.
-
-Read constitution 4.0.0 and applicable accepted ADRs first. ADR 0019 was accepted
-via owner-approved PR #734. Policy acceptance does not itself authorize execution,
-publication, or release.
+Guidelines for changing Orla Numis.
 
 ## Getting Started
 
 ```bash
-# Clone and setup
-git clone <repo-url>
-task init        # generates .env with JWT secret
-
-# Run locally (two terminals, or use task)
-task up          # starts both API and web dev servers
+task init        # creates .env with random secrets
+task up          # API and web dev servers (task up-all adds the Python agent)
 ```
 
 | Service | URL | Source |
 |---|---|---|
 | API | `http://localhost:8080/api/*` | `src/api/` |
 | Web | `http://localhost:5173` | `src/web/` |
-| Swagger | `http://localhost:8080/swagger/index.html` | auto-generated |
+| Agent | `http://localhost:8081` (internal) | `src/agent/` |
+| Swagger | `http://localhost:8080/swagger/index.html` | generated |
 
-## Branch Strategy
+Or run everything in Docker: `docker compose -f docker-compose.dev.yml up -d --build` (see [docs/deployment.md](docs/deployment.md)).
 
-| Branch | Purpose |
-|---|---|
-| `main` | Production-ready code |
-| `beta` | Ordinary feature/bug development and integration |
-| Other branches/worktrees | Only when explicitly authorized |
+## Branches and Pull Requests
 
-Select work by the owner-approved issue/spec/process plan, not the newest spec.
-Use the smallest sufficient lane from constitution §18.1. A bug needs a
-reproduction, bounded cause/non-goals, regression evidence, and review; a feature
-needs criteria, plan, and tasks. High-risk changes add compatibility/recovery
-evidence, independent review, and explicit owner approval.
-
-For SpecKit on `beta`, set `$env:SPECIFY_FEATURE` to the exact selected spec
-directory name in the same process as each script invocation. Do not run the
-branch-creating script implicitly. Follow `.github/agents/speckit.specify.agent.md`
-for its existing dry-run/manual-file preparation path.
-
-Implemented, verified, accepted, and released are distinct states. Preserve
-review restrictions and record the tested/reviewed commit or tree. Green CI
-does not authorize a beta-to-main merge or release.
+- `main` holds the released code.
+- Work on a feature branch and open a pull request to `main`. The Quality Gate ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the Go, web and agent checks on every pull request.
+- Keep a pull request to one coherent change, and describe what changed and how it was verified.
 
 ## Code Architecture
 
-Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before making API changes. The key rules:
+Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before changing the API. The key rules:
 
-1. **Only the composition root (`main.go` + `deps.go`) imports the `database` package** -- everything else uses dependency injection
-2. **Handlers are thin** -- parse request, call service/repo, return response
-3. **Services hold business logic** -- HTTP-agnostic, orchestrate repos
-4. **Repositories own all DB access** -- every GORM query lives here
+1. **Only the composition root (`main.go` + `deps.go`) imports the `database` package** — everything else uses dependency injection
+2. **Handlers are thin** — parse the request, call a service or repository, return the response
+3. **Services hold business logic** — HTTP-agnostic, orchestrating repositories
+4. **Repositories own all database access** — every GORM query lives there
 5. **Multi-step writes use transactions**
 6. **Never leak internal errors to clients**
 
-These rules are enforced by `src/api/architecture_test.go`.
+`src/api/architecture_test.go` enforces them.
 
-## Adding a New Feature
+## Adding a Feature
 
-### New API Endpoint
+### New API endpoint
 
-1. **Model** -- Add/update structs in `src/api/models/`
-2. **Repository** -- Add DB methods to the appropriate `src/api/repository/*_repository.go`
-3. **Service** (if business logic needed) -- Add to `src/api/services/*_service.go`
-4. **Handler** -- Add thin HTTP handler in `src/api/handlers/`
-5. **Wire** -- Register in `src/api/main.go` (create repo/service, pass to handler constructor)
-6. **Swagger** -- Add annotations, then run `task openapi` and `task check:openapi` with the pinned generator already prepared
-7. **Test** -- Run `go test ./...` from `src/api/` to verify architecture rules pass
+1. **Model** — add or update structs in `src/api/models/` (and the migration in `src/api/database/database.go` when a column or table goes away)
+2. **Repository** — add the database methods in `src/api/repository/`
+3. **Service** — business logic in `src/api/services/`
+4. **Handler** — a thin HTTP handler in `src/api/handlers/`
+5. **Wire** — register it in `src/api/deps.go` and the `routes_*.go` files
+6. **Swagger** — add the annotations, run `task openapi` and commit the regenerated files
+7. **Test** — `task check:go`
 
-### New Vue Page/Component
+### New Vue page or component
 
-1. Add component in `src/web/src/pages/` or `src/web/src/components/`
-2. Add route in `src/web/src/router/index.ts` if it's a page
-3. Run applicable frontend gates from `docs/testing.md` §6: zero-warning lint,
-   strict type-check, full tests, and build, plus affected browser workflows.
+1. Add it under `src/web/src/pages/` or `src/web/src/components/`
+2. Add the route in `src/web/src/router/index.ts` for a page
+3. Add the texts in both `src/web/src/i18n/locales/en` and `pt-PT`; a test fails on keys nothing uses
+4. Run `task check:web`
 
 ## Code Style
 
 ### Go (API)
-- Follow standard Go conventions (`gofmt`, `go vet`)
-- Use constructor injection for dependencies
-- Return typed errors from services (sentinel errors like `ErrNotFound`)
+- Standard Go conventions (`gofmt`, `go vet`)
+- Constructor injection for dependencies
+- Typed errors from services (sentinel errors such as `ErrNotFound`)
 - Log internal errors server-side, return generic messages to clients
 
 ### TypeScript (Web)
-- Use optional chaining (`?.`) and nullish coalescing (`??`) on array access
-- Docker builds use stricter TS checking than local -- always verify with `vue-tsc`
-- No emojis in UI, prompts, or AI responses
+- Optional chaining (`?.`) and nullish coalescing (`??`) on array access
+- The production build type-checks strictly — verify with `npm run type-check`
+- Follow [docs/design-system.md](docs/design-system.md)
+- No emojis in the UI, prompts or AI responses
 
 ## Build and Test
 
-Use [docs/testing.md §6](docs/testing.md#6-running-tests-locally-vs-ci) for the
-shared Taskfile completion gates, locked environment, Windows invocation, and
-CI-only evidence. From the root, run applicable `task check:go`,
-`task check:web`, `task check:agent`, `task check:openapi` and
-`task check:delivery`; `task check` runs all base gates. OpenAPI generation
-writes files. Dependency setup uses separate authorized `setup:*` targets.
-Obtain required authorization before setup, builds, or containers; missing
-execution is incomplete rather than passed. Race, security, browser,
-compatibility and release checks remain additional where applicable.
+From the repository root:
 
-Native Copilot domain instructions and skills are documented in
-[the integration guide](docs/agentic-native-integration.md). Start a fresh client
-session after instruction changes; static fixtures do not prove runtime
-discovery. Squad is optional. Required independent review uses the read/search-only
-profile with supplied diffs/evidence and an owner-approved bounded lease.
+```bash
+task check:go       # build, vet, gofmt, tests
+task check:web      # lint, type-check, tests, build
+task check:agent    # Ruff and pytest in the locked environment
+task check:openapi  # regenerates the OpenAPI artifacts and fails on drift (writes files)
+task check          # all of the above
+```
 
-Keep pure-document review proportional, but exercise executable policy/prompts
-and workflows with relevant behavior/fixtures. Independent review and explicit
-owner release approval cannot be replaced by task checkboxes.
-
-Use the PR template's canonical completion record to bind each criterion and
-affected workflow to its result, evidence link and tested commit/tree. Handoffs
-link it and record only their delta. Stale reviews and unresolved blocks cannot
-support acceptance. See [acceptance and release controls](docs/agentic-acceptance-controls.md)
-for the proposed main protections, exact-candidate approval and activation status.
-Beta validation/publishing is not main release or local-server deployment approval.
+Dependencies are installed separately with `task setup:go`, `task setup:web`, `task setup:agent` and `task setup:openapi`. See [docs/testing.md](docs/testing.md).
 
 ## Commit Messages
 
@@ -126,15 +90,6 @@ Use conventional commits:
 
 ```
 feat: add coin grading service
-fix: handle null purchase price in stats
-refactor: extract social access rules to service layer
+fix: handle a missing purchase price in stats
+refactor: extract set rules to the service layer
 ```
-
-Include the co-author trailer when using Copilot:
-```
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
-```
-
-Cite the governing Principle/section in commits and PRs. Commit/push only when
-authorized, stage only approved paths, and preserve unrelated work. A handoff
-does not automatically commit or stash the worktree.

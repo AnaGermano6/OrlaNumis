@@ -498,8 +498,7 @@ async def build_hypothesis_from_vision(
 ) -> CoinHypothesis:
     """Legacy direct-vision `CoinHypothesis` compatibility wrapper.
 
-    Degrade ladder (spec FR-006; documented deviation from tasks.md
-    T020/T027 recorded in `.squad/decisions/inbox/cassius-vision-hypothesis.md`):
+    Degrade ladder:
 
         structured call -> retry once (schema failure only)
             -> prose extraction -> deterministic quick-evidence hypothesis

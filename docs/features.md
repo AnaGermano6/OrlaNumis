@@ -1,490 +1,60 @@
 ﻿# Features
 
-> **This page has been reorganized!** Detailed feature documentation has moved to individual files in the [`docs/features/`](features/) directory for better discoverability and maintainability.
-
-**👉 [Go to Feature Index →](features/INDEX.md)** to browse features by category.
-
----
-
-## Quick Feature Reference
-
-### 🏛️ Core Collection
-- [**Collection Management**](features/collection-management.md) — Browse, filter, search with swipe/grid views
-- [**Coin Details**](features/coin-details.md) — Rich metadata, images, provenance, journals, references
-- [**Coin of the Day**](features/coin-of-the-day.md) — Daily featured coin scheduler
-
-### 🎯 Discovery & Acquisition
-- [**Quick Capture**](quick-capture.md) — Mobile-first intake drafts for show-floor photos and notes
-- [**Coin Lookup**](features/coin-lookup.md) — Photo-based lookup for NGC Ancients slabs and Numista matches
-- [**Wish List**](features/wish-list.md) — Track coins with AI search and availability checking
-- [**Wishlist Search Alerts**](features/wish-list.md#wishlist-search-alerts) — Saved search criteria with manual or scheduled candidate discovery
-- [**Sold Coins**](features/sold-coins.md) — Track sales with profit/loss analysis
-
-### 🤖 AI Features
-- [**AI Coin Analysis**](features/ai-analysis.md) — Vision model analysis of obverse/reverse photos
-- [**AI Coin Search Agent**](features/ai-search-agent.md) — Chat agent for dealer discovery
-- [**Coin Copilot**](features/coin-copilot.md) — Default-off, read-only multi-step collection analysis in the existing chat drawer
-- [**How Coin Copilot Works**](features/how-coin-copilot-works.md) — Collector's guide to Copilot's helpers and workflow, with diagrams
-- [**AI Grading**](features/ai-grading.md) — Grade estimation from photos
-- [**Price Trends**](features/price-trends.md) — Market trend analysis
-- [**Gap Analysis**](features/gap-analysis.md) — Collection gap suggestions
-- [**Photography Guide**](features/photography-guide.md) — Photo quality feedback
-- [**Similar Lots**](features/similar-lots.md) — Find matching auction listings
-
-### 📊 Organization & Analytics
-- [**Coin Sets**](features/coin-sets.md) — Themed collections with trend tracking
-- [**Tray View**](features/coin-sets.md#tray-view) — Cabinet-style visual browsing for collection and set pages
-- [**Custom Tags**](features/custom-tags.md) — Flexible categorization
-- [**Collection Statistics**](features/statistics.md) — Portfolio analytics & charts
-- [**Stats Subviews**](features/statistics.md#stats-subviews) — Timeline, map, health, value details, investment breakdown, and emperor tracker views
-- [**Collection Showcase**](features/collection-showcase.md) — Share curated public subsets
-
-### 🤝 Social & Community
-- [**Social Features**](features/social-features.md) — Follow, comment, rate
-- [**User Profiles**](features/user-profiles.md) — Avatars, bio, privacy controls
-
-### 🔐 Admin & Configuration
-- [**Admin Settings**](features/admin-settings.md) — User management, AI config, OIDC, security, scheduling, catalogs, and configurable coin properties
-- [**Authentication**](authentication.md) — JWT, WebAuthn, API keys
-- [**External Tool Server**](external-tool-server.md) — OpenAPI and native MCP adapters for external clients
-- [**MCP Agentic Harness**](features/mcp-agentic-harness.md) — Feature 366 read tools, Coin Copilot lifecycle, setup, and security boundaries
-
-### 📱 Mobile & Offline
-- [**PWA Features**](features/pwa-features.md) — Installable app, offline read access
-- [**Camera Capture**](features/camera-capture.md) — Direct device camera integration
+Orla Numis is a self-hosted catalogue for a personal coin and banknote collection. This page is the one-page overview; each area has its own page in [`features/`](features/INDEX.md).
 
-### 🔧 Advanced
-- [**Image Operations**](features/image-operations.md) — Background removal, OCR, clipping, authenticated image serving, and responsive image variants
-- [**PDF Export**](features/pdf-export.md) — Insurance/provenance catalogs
-- [**Bulk Operations**](features/bulk-operations.md) — Multi-select batch actions
-- [**Notifications**](features/notifications.md) — In-app alerts
-- [**Numista Catalog**](features/numista-integration.md) — Catalog reference integration
-- [**Data Import/Export**](features/import-export.md) — JSON backup/restore
-
----
-
-## Detailed Feature Documentation
-
-### Collection Management
-
-The main collection page supports browsing your coins with filtering, search, and sorting:
-
-- **Card Gallery** — Responsive card grid showing each coin's primary image with name, ruler, denomination, and category. Supports filtering by category (Roman, Greek, Byzantine, Modern), tag filter, and full-text search across all fields.
-- **Face Toggle** — Switch between obverse and reverse images on coin cards (grid mode).
-- **Sorting** — Sort by date added, date last updated, or current value (ascending or descending).
-- **Swipe / Grid Toggle** — Switch between a swipeable card carousel (ideal for mobile/PWA) and a traditional grid layout. Default view preference is configurable in Settings.
-- **Pagination** — Coins are loaded with pagination for large collections.
-- **Category Colors** — Each category has a distinct color accent: purple for Roman, olive for Greek, red for Byzantine, and steel blue for Modern.
-- **Bulk Select Mode** — Enter select mode to multi-select coins for batch operations (tagging, status changes, export). In PWA mode, a dedicated "Select" button appears in the header.
-
-### Wish List
-
-Track coins you'd like to acquire with an AI-powered search agent:
-
-- **Add to Wish List** — When creating a coin, toggle the "Wishlist" flag. The coin appears in the dedicated Wish List view instead of the main collection.
-- **AI Coin Search Agent** — Click "Find Coins" to open a chat drawer powered by the AI agent service (Anthropic Claude or Ollama, configurable in Admin). Describe the coins you're looking for (e.g., "Roman silver denarii of Julius Caesar under $500") and the agent searches the web for real listings and references. Results appear as cards with images, metadata, estimated prices, and source links — each with an "Add to Wishlist" button for one-click import.
-- **Purchase** — Move a wishlist coin to your main collection when you acquire it. A styled purchase modal prompts for the purchase price and date, replacing the default browser confirm dialog.
-- **Wish List Gallery** — A separate page showing only wishlist items with sorting support.
-- **Coin Lookup Entry Point** — Launch Coin Lookup directly from the Wish List page to photograph a coin at a show and save the result as a wishlist item.
-- **Availability Check** — Click "Check Availability" on the Wish List page to verify whether listed coins are still for sale. The system visits each coin's reference URL and uses HTTP status codes plus keyword heuristics (sold indicators, buy-now buttons) to determine listing status. Ambiguous results are escalated to the AI agent (Team 6) for deeper analysis. Results show as a summary banner (available / unavailable / unknown counts) and per-card status indicators (green dot, red "Unavailable" overlay, amber dot). Unavailable coins can be dismissed to clear the status.
-- **Scheduled Checks** — Admins can enable automatic availability checks with a configurable start time and repeat interval (e.g., starting at 2:00 AM, repeating every 120 minutes). Run history with per-coin drill-down is available in the Admin Availability tab.
-
-### Wishlist Search Alerts
-
-Save recurring acquisition searches separate from one-off agent chat:
-
-- **Alert Criteria** — Name, query, optional category, material, price range, source URLs, and cadence.
-- **Manual or Scheduled Runs** — Alerts can run on demand or by daily/weekly/monthly cadence. Manual-only alerts never run automatically.
-- **Candidate Review** — Results are stored as reviewable candidates with source URL, price, image, and reason. Unavailable/sold and price-mismatched candidates are filtered before persistence.
-- **Run History** — Each run records status, trigger type, counts, duration, and per-candidate details.
-- **Wishlist Promotion** — Accepted candidates can be converted into wishlist coins while preserving source metadata and structured catalog references when complete.
-
-### Sold Coins
-
-Track coins you've sold with profit/loss visibility:
-
-- **Sell from Detail Page** — Click "Sell" on any collection coin's detail page. A styled modal prompts for the sale price and buyer name.
-- **Profit / Loss Tracking** — Sold coins display the sale price, original cost basis, and calculated profit or loss (green for profit, red for loss).
-- **Sold Gallery** — A dedicated gallery page showing all sold coins with their sale history, accessible from the navigation bar.
-- **Stats Integration** — Sold coins are excluded from active collection totals while their sold values are tracked separately.
-
-## Auction Tracking (removed)
-
-Auction tracking was removed in 2026-10: the Auctions page, NumisBids and CNG
-lots, price alerts, bid reminders, ending-soon alerts and the auction calendar,
-with their endpoints, schedules and MCP tools. See
-[Auction Tracking](features/auction-tracking.md). The AI agent's auction
-search (the auction search sources in Admin → System) is separate and stays.
-
-## Coin Details
-
-Each coin can store:
-
-- **Core fields** — Name, denomination, ruler/authority, era (`ancient`, `medieval`, `modern`), category, material, weight, diameter
-- **Numismatic details** — Mint mark, obverse/reverse inscriptions, grade, RIC number, rarity rating
-- **Financial data** — Purchase price, current value, acquisition date, dealer/source
-- **Images** — Multiple image uploads per coin (obverse, reverse, edge, detail, full) with a gallery viewer. Supports file upload, paste-from-URL (fetched via server proxy), and direct camera capture in PWA mode.
-- **Camera Capture (PWA)** — In PWA/mobile mode, a "Photo" button appears on upload sections letting you take coin photos directly with the rear camera. Available on the coin detail page and the add/edit form.
-- **AI Analysis** — Markdown-formatted analysis from the configured Anthropic or Ollama provider, stored with the coin (obverse and reverse analyzed separately)
-- **Structured Catalog References** — Add and manage normalized references per coin (`catalog`, `volume`, `number`, optional invoice number, optional authority URI) directly in coin detail.
-- **Activity Journal** — Timestamped log entries per coin (e.g., "cleaned", "sent to NGC for grading", "displayed at coin show"). Add and delete entries directly from the detail page.
-- **Numista Catalog Lookup** — Search the Numista coin catalog directly from a coin's detail page. Results show thumbnails, title, issuer, and year range with links to the full Numista catalog entry.
-- **Notes** — Free-text notes field
+The interface is in English and European Portuguese (pt-PT). Every value is kept and shown in one collection currency, chosen by the administrator.
 
-## AI Coin Analysis
+## Collection
 
-Upload photos of a coin and click **Analyze with AI** to get a numismatic
-analysis through the configured Anthropic or Ollama provider. The analysis
-covers identification, obverse/reverse descriptions, inscriptions, condition
-assessment, historical context, and estimated market value. Obverse and reverse
-sides are analyzed separately with dedicated prompts. If accepted, the analysis
-is saved to the coin's record.
+- **Coin gallery** — search, and filters of the same size in equal columns: face value, sort, view by (country, year, rarity, presentation), country (including extinct countries), coin type, presentation, rarity, set, grid or list, obverse or reverse. → [Collection Management](features/collection-management.md)
+- **Banknotes** — their own form and gallery.
+- **Collection overview** — totals, the releases, the duplicates to trade, and the coins still without a photo, with official photos fetched in batches (ECB, INCM, Monnaie de Paris, Münze Österreich).
+- **Coin details** — numismatic fields, quantity, images, catalog references, Numista market value, sets, activity journal and timeline. → [Coin Details](features/coin-details.md)
+- **Select mode** — add several coins to a set, or delete them. → [Bulk Operations](features/bulk-operations.md)
 
-To enable AI analysis:
+## Adding coins
 
-Configure either Anthropic or Ollama in **Admin → AI Configuration**. Ollama
-deployments must run a compatible local vision model.
+- **From the Numista catalog** — search Numista and fill the coin from its entry. → [Numista Catalog Lookup](features/numista-integration.md)
+- **Manually**, or with **AI Assist Mode** from photos of the obverse, reverse and a coin card.
+- **Identify Coin** — photograph a coin or an NGC slab at a show, verify the NGC certificate, and save to the wish list or collection. → [Coin Lookup](features/coin-lookup.md)
+- **Quick Capture** — show-floor drafts with photos and notes, promoted later. → [Quick Capture](quick-capture.md)
+- **Import** — CSV (with a template), JSON, or a uCoin.net export. → [Data Import/Export](features/import-export.md)
 
-## AI Coin Search Agent
+## Wish list
 
-Chat with an AI agent that searches the web for coins matching your description. Powered by the multi-agent Python service (supports Anthropic Claude with built-in web search or Ollama with SearXNG), the agent returns structured coin suggestions with names, categories, materials, price estimates, source links, and candidate catalog references. Each suggestion can be added to your wishlist with one click.
+Coins you want to buy, a link to a dealer page turned into a wishlist coin, availability checks, saved search alerts with a review queue, and **Mark as purchased** to move a coin into the collection. → [Wish List](features/wish-list.md)
 
-Key features:
+## Sets
 
-- **Streaming Responses** — Agent replies stream in real-time via Server-Sent Events (SSE) with a progressive text display and blinking cursor, so you see results as they arrive.
-- **Real-time Status Indicators** — During agent processing, status indicators show which team and step is active (searching, fetching, formatting).
-- **SSE Progress Events** — The agent streams structured progress events so the frontend can display step-by-step status updates.
-- **Multi-team Architecture** — The agent uses specialized teams: coin search finds listings, coin shows finds upcoming events, portfolio review analyzes your collection, coin analysis examines uploaded images, coin grading estimates grades from photos, gap analysis identifies missing coins in your collection, photo guide critiques your coin photography, price trends analyzes market direction from auction history, and similar lots finds matching active auction listings.
-- **Automatic Image Extraction** — When you add a coin to your wishlist, the system automatically extracts the listing's primary image using `og:image` meta tag scraping from the source page. Falls back to the agent-provided image URL if scraping finds nothing.
-- **Candidate Catalog References** — Suggestions can include structured candidate references (`catalog`, `volume`, `number`, optional invoice number, optional authority `uri`) which are carried into wishlist coin creation.
-- **Paste Image URL** — If automatic extraction misses an image, you can paste an image URL directly on the coin detail page to fetch and attach it.
-- **Save Conversations** — Save search conversations for later reference. Saved chats appear in the Settings → Conversations tab where you can reopen or delete them.
-- **Configurable Model & Prompt** — Admins can select the Claude model from a dropdown populated from the Anthropic API, and customize the agent's system prompt.
+Lists from the commemorative catalogue, ready-made challenges (a coin of each euro country, a joint issue, a year's series, coins of your year of birth), sets by filters, free sets, goals with a wish list, and AI proposals reviewed before they are created. The **Commemorative catalogue** lists each euro country's commemoratives and collector coins, with those you have; a coin can be hidden, or joined to another listed twice. → [Coin Sets](features/coin-sets.md)
 
-To enable the search agent:
+## Stats
 
-1. Get an API key from [console.anthropic.com](https://console.anthropic.com/)
-2. Configure it in **Admin → AI Configuration → Anthropic API Key**
-3. Optionally select a different model or customize the agent prompt in Admin settings
+Summary cards, distributions, top coins, acquisition flow, distribution heat map, timeline, mint map, collection health with quick fixes, and the **Time Machine**, which shows the collection as it stood on any past date. → [Collection Statistics](features/statistics.md), [Time Machine](features/time-machine.md)
 
-## Coin Copilot
+## AI (optional)
 
-Coin Copilot is a default-off mode in the existing app-wide chat drawer. When
-enabled and the configured model passes a tool-calling capability preflight, it
-can sequence owner-scoped collection search, coin detail, collection summary,
-top-value, portfolio-review, and structural gap-analysis capabilities in one
-read-only run. It cannot write coins, browse the web, search dealers or
-auctions, execute code, access a filesystem, or call the database directly.
+With Anthropic Claude or Ollama configured by an administrator:
 
-Go owns durable threads, runs, checkpoints, cancellation, idempotency, replay,
-retention, and all collection access. Python remains stateless and receives a
-fresh execution-scoped read credential for each initial execution or resume.
-The browser can reconnect to the persisted SSE stream, cancel an active run,
-and answer a clarification to resume the same run from its latest committed
-checkpoint.
+- **Coin analysis** of obverse/reverse photos, and a **grade estimate**. → [AI Coin Analysis](features/ai-analysis.md), [AI Grading](features/ai-grading.md)
+- **Deep Analysis** — a resumable background identification with Numista evidence, a cited report and fields you accept one by one. → [Deep Analysis](features/deep-analysis.md)
+- **Coin Agent** — one chat for dealer and auction searches, coin shows, price trends, similar lots, gap analysis and questions about your collection. → [Coin Agent](features/ai-search-agent.md)
+- **Coin Copilot (beta, off by default)** — a read-only, multi-step version of the chat that shows its plan and sources. → [Coin Copilot](features/coin-copilot.md), [How it works](features/how-coin-copilot-works.md)
+- **Valuation** — scheduled value estimates for the collection.
 
-The rollout fails closed: when `CoinCopilotEnabled` is false (the default), the
-provider is unavailable, or model tool-calling support cannot be verified, the
-drawer uses the unchanged legacy `/api/agent/chat` supervisor. Disabling the
-flag is also the rollback: new starts and resumes stop, while existing runs
-remain readable and cancellable.
+## Backups and export
 
-Default limits are 8 reasoning iterations, 12 tool calls, one tool at a time,
-120 seconds per execution, one active run per owner, and 32 KiB persisted tool
-results. The execution timeout is configurable only through 150 seconds so its
-30-second credential buffer remains within the absolute 180-second token TTL.
-Dollar-cost enforcement is deferred until a trustworthy provider/model pricing
-source exists. Reliable provider-reported input/output token usage remains
-observable, while iteration, tool-call, wall-clock, sequential-concurrency, and
-payload limits remain enforced.
+- **Export ZIP** of your collection and photos, and an **insurance/provenance PDF**. → [PDF Export](features/pdf-export.md)
+- **Full backup** (administrators) — the whole database and every photo in one zip, made every day by itself (the last 7 kept), with download, import and restore. → [Data Import/Export](features/import-export.md)
 
-Privacy rules prohibit chain-of-thought, scratchpads, provider-native traces,
-credentials, prompts, raw collection payloads, and raw tool arguments/results
-from public events and operational logs. Events are retained for 7 days after a
-terminal state; checkpoints and bounded tool results for 30 days; final
-thread/run summaries until the owner deletes the thread.
+## Installed app and mobile
 
-## Coin Lookup
+Installable PWA with offline reading, swipe gallery, pull to refresh, camera capture and voice dictation for notes. → [PWA Features](features/pwa-features.md), [PWA Guide](pwa-guide.md)
 
-Use **Lookup Coin** from the main menu or Wish List page when evaluating a coin at a show. Capture or upload one or more photos of the coin or slab label. The app sends the images through the configured vision provider, extracts visible label text and coin fields, and looks for NGC Ancients certification numbers.
+## Administration
 
-When an NGC cert is found, the result includes the normalized cert and an official NGC Ancients verification link in the form `https://www.ngccoin.com/certlookup/{compactCert}/NGCAncients/`. The lookup returns immediately after NGC extraction instead of waiting on catalog enrichment. When no NGC cert is found, the app uses configured Numista access to search for possible catalog matches and displays links to Numista entries.
+Users, AI providers, Numista (with the requests used this month), search sources, coin properties, catalogs, security (readiness checks, events, locked users), schedules, collection health and logs. → [Admin Settings](features/admin-settings.md)
 
-Lookup results can be saved directly to the Wish List or Collection. The save flow creates the coin first, uploads the captured photos, then adds generated NGC or Numista structured references.
+## Sign-in and security
 
-When enabled, **Deep Analysis** is an optional slower path from lookup or a
-saved coin. It persists background work, streams replayable progress, routes to
-available evidence providers, and returns a cited report plus an editable,
-confirm-gated proposal. OCRE supplies Roman Imperial type evidence with ODbL
-1.0 / American Numismatic Society attribution; Nomisma authority links use CC
-BY 4.0. Automated RPC integration is paused.
-
-## Numista Catalog Integration
-
-Look up coins in the [Numista](https://en.numista.com/) catalog directly from any coin's detail page or as a fallback from Coin Lookup when no NGC cert is detected. The search uses coin names, denominations, rulers, and extracted fields to find matching entries, displaying thumbnails and linking to full catalog pages.
-
-To enable Numista lookup:
-
-1. Get a free API key at [numista.com/api](https://en.numista.com/api/) (2,000 requests/month free)
-2. Configure it in **Admin → System Settings → Numista API Key**
-
-## Collection Statistics
-
-The **Stats** page shows:
-
-- **Summary cards** — Total coins, total value, average value, unique rulers
-- **Category breakdown** — Distribution across Roman, Greek, Byzantine, Modern, and Other
-- **Material distribution** — Breakdown by gold, silver, bronze, copper, and electrum
-- **Grade distribution** — Bar chart showing coin counts by grade (VF, EF, AU, etc.) with a blue gradient
-- **Value over time** — SVG line chart tracking total portfolio value and total invested over time, built from automatic snapshots recorded after every coin create, update, or delete
-- **Top coins by value** — Ranked list of the most valuable coins in your collection
-- **Era/Region Heat Map** — SVG-based heat map showing the distribution of your collection across time periods and geographic regions, highlighting concentrations and gaps at a glance. Available via the `/stats/distribution` endpoint.
-
-## Image Text Extraction
-
-Upload photos of store cards, certificates, or coin holder labels and extract text via OCR powered by Ollama. Useful for quickly capturing dealer information, grades, and reference numbers when adding coins.
-
-## Social Features
-
-Follow other collectors and interact with their coin collections:
-
-- **Follow / Unfollow** — Send follow requests to other public users. Requests start as `pending` until the other user accepts.
-- **Accept / Block** — Review incoming follow requests and accept or block them. Blocked users cannot re-request unless explicitly unblocked.
-- **Follower Gallery** — View an accepted follower's coin collection in a read-only gallery (pricing/value and AI analysis are hidden).
-- **Comments & Star Ratings** — Leave comments and 1–5 star ratings on coins belonging to users you follow. Both the commenter and the coin owner can delete comments.
-- **User Search & Discovery** — Search for other collectors by username. Only public users appear in search results.
-- **Privacy Controls** — Toggle your profile between public and private. Setting your profile to private permanently removes all existing followers. Mark individual coins as private to hide them from followers.
-
-For the full social API reference, see the [API Reference](api-reference.md#social).
-
-## User Profiles
-
-- **Avatar** — Upload a custom avatar image (stored in `uploads/avatars/`). The default is the Ed-Mar coin logo.
-- **Bio** — Add a personal bio to your profile.
-- **Public/Private Toggle** — Control whether your profile appears in search results and can receive follow requests.
-- **Email** — Required for new registrations. Legacy users are prompted with a dismissible modal to add their email.
-
-## User Settings
-
-All authenticated users can access **Settings**, organized in a tabbed layout:
-
-- **Account** — Change password (requires current password), register WebAuthn/FIDO2 passkeys for passwordless login, manage avatar and profile settings including feature toggles (Coin of the Day, Emperor Tracker).
-- **Appearance** — Choose from seven color themes: Dark (default), Light, British Museum (sandstone neutrals with bronze-green accents), Louvre (warm cream stone with Napoleon III gold), Capitoline (terracotta warmth with aged copper-bronze), Byzantine (imperial crimson grounds with Byzantine gold), or Modern Greek (deep navy grounds with white Hellenic accents). Set time zone, choose default gallery view (swipe or grid), default sort order, and enable Swipe Navigation for the installed PWA. Visual preferences persist locally; Swipe Navigation is stored account-wide.
-- **Data** — Export your entire collection as JSON, import coins from a JSON file, download an insurance/provenance PDF catalog of your collection (with photos, grades, provenance, valuations, and structured references), and manage scoped API keys for scripts, OpenAPI clients, and MCP harnesses. See the [Getting Started Guide](getting-started.md#import--export) for the full import file format.
-- **Conversations** — View, reopen, or delete saved AI search agent conversations.
-- **Tags** — Create, rename, and delete custom tags with color selection. Tags created here can be attached to any coin in your collection.
-- **Help** — Beginner's guide to ancient coin collecting.
-
-## Admin Settings
-
-The first registered user is the admin. Admins can access **Admin** to manage:
-
-- **Users** — View all registered users, delete accounts, and reset passwords.
-- **AI Configuration** — Select your AI Provider: Anthropic (recommended) or Ollama. Configure Ollama (URL, vision model, timeout, analysis prompts), Anthropic (API key, model dropdown, editable agent prompt for the search agent), and SearXNG URL for Ollama web search.
-- **System** — Set the application log level, configure Numista catalog access,
-  and control default-off Deep Analysis and OCRE settings and budgets.
-- **Coin Properties** — Configure newline-delimited Category and Era option lists used by coin forms and lookup saves.
-- **Logs** — View real-time application logs with level filtering, auto-refresh, and log export.
-- **Availability Checks** — Enable/disable automatic wishlist availability checking, configure the daily start time and repeat interval, and view paginated run history with per-coin drill-down results (URL, status, reason, HTTP code, whether the AI agent was used).
-- **Valuation Runs** — Scheduled collection valuation using the AI agent. Configurable interval (default: 7 days), start time (default: 03:00), and max coins per run (default: 50). View run history with per-coin results. Trigger or cancel runs manually.
-
-## Authentication
-
-The application supports multiple authentication methods for flexibility and security:
-
-- **JWT + Refresh Tokens** — 15-minute access tokens with 30-day rolling refresh tokens. The frontend silently refreshes expired tokens so users stay logged in.
-- **WebAuthn / Passkeys** — FIDO2 biometric authentication (Face ID, Touch ID, fingerprint). Register a passkey in Settings → Account, then use it to log in without a password. Requires HTTPS in production.
-- **API Keys** — Generate API keys in Settings → Data for programmatic access.
-  Keys use `X-API-Key`; external adapters enforce `read`, `write`, and
-  `copilot` capability tokens.
-
-For a detailed walkthrough of each auth method, see the [Authentication Guide](authentication.md).
-
-## External Tool Server
-
-The External Tool Server exposes Aurearia through two distinct adapters:
-
-- `/api/v1/tools/*` provides OpenAPI operations for OpenWebUI, LibreChat, and
-  automation, including explicitly authorized two-phase collection updates.
-- `/api/mcp` provides native stateless Streamable HTTP MCP for agentic
-  harnesses, with read-only collection, wishlist, and statistics tools plus
-  explicitly scoped Coin Copilot lifecycle operations.
-
-**Key Features:**
-
-- **Default-Off** — Admin must enable in System Settings. Disabled by default for security.
-- **Scoped API Keys** — Supported combinations are `read`, `read,copilot`,
-  `read,write`, and `read,write,copilot`. Write and Copilot must each be
-  explicitly chosen.
-- **Two-Phase Writes** — External writes require `propose_update` (returns preview + token) followed by `commit_update` (with explicit confirm). No auto-writes.
-- **Journaling** — External commits write audit entries with source `external_tool_server`, API key name, and changed fields.
-- **Tenant Isolation** — Every operation is scoped to the API key owner. No cross-user access.
-- **Per-Key Rate Limiting** — Stricter rate limits (50 req/min) prevent abuse from external clients.
-- **Field Allowlist** — External writes restricted to `grade`, `currentValue`, `notes`, `tags`, `referenceText`, `referenceUrl`, `references`. Identity fields are rejected.
-- **OpenAPI Adapter** — Served document at `/api/v1/tools/openapi.json` for
-  client auto-import.
-- **Native MCP Adapter** — Stateless Streamable HTTP at `/api/mcp`; do not
-  proxy the broader OpenAPI write surface into MCP.
-
-**Available Tools:**
-
-- Read: `search_my_collection`, `get_coin`, `collection_summary`, `top_coins_by_value`
-- Write: `propose_update`, `commit_update`
-- MCP read: `search_collection`, `get_coin`, `list_wishlist`,
-  `collection_stats`, `top_coins_by_value`
-- MCP Copilot: `start_copilot_run`, `get_copilot_run`,
-  `resume_copilot_run`, `cancel_copilot_run`
-
-For setup instructions and client configuration, see the
-[External Tool Server Guide](external-tool-server.md). For the native protocol
-contract and boundaries, see [MCP Agentic Harness](features/mcp-agentic-harness.md).
-
-## PWA Features
-
-The app is a Progressive Web App installable on iOS, Android, and desktop:
-
-- **Swipe Gallery** — Touch-based card carousel for browsing coins on mobile, with position persistence across navigation.
-- **Pull-to-Refresh** — Pull down from the top of the gallery to refresh the coin list.
-- **Camera Capture** — Take coin photos directly with the device camera from upload sections.
-- **Hamburger Menu** — Gallery controls (filters, sort, view) in a compact popover menu.
-- **Background Removal** — Remove image backgrounds in-place on the coin detail page using client-side ML.
-
-For installation instructions and a full feature guide, see the [PWA Guide](pwa-guide.md).
-
-## AI Grading Assistant
-
-Upload coin photos and ask the AI agent to estimate the grade (VF, EF, AU, etc.) with reasoning and a confidence score. The grading assistant is accessible through the AI agent chat — send photos and ask "Grade this coin."
-
-- **Vision-Based Grading** — The agent examines surface wear, strike quality, and detail preservation to estimate a Sheldon-scale grade.
-- **Reasoning and Confidence** — Each grade estimate includes an explanation of the factors considered and a confidence level.
-- **Agent Team 7** — Powered by the `coin_grading.py` agent team in the Python agent service.
-
-## Price Trend Analysis
-
-Ask the AI agent about price trends for a specific coin type. The agent searches NumisBids and other auction sources for historical sale data, analyzes results over time, and reports market direction.
-
-- **Historical Auction Data** — Searches for past auction results of similar coins to build a price history.
-- **Market Direction** — Identifies whether prices are trending up, down, or stable for a given coin type.
-- **Agent Team 9** — Powered by the `price_trends.py` agent team in the Python agent service.
-
-## Collection Gap Analysis
-
-The AI agent reviews your collection and suggests what is missing for completeness. It analyzes your holdings by category, era, ruler, and material to find gaps, then suggests specific coins to fill them with estimated prices.
-
-- **Portfolio-Aware** — Uses the portfolio summary from the Go API to understand your current holdings.
-- **Targeted Suggestions** — Recommends specific coins with estimated market prices to fill identified gaps.
-- **Agent Team 7** — Powered by the `gap_analysis.py` agent team in the Python agent service.
-
-## Coin Photography Guide
-
-Upload coin photos and ask the AI agent for photography tips. The agent evaluates your photos and provides actionable advice on lighting, focus, background, and positioning.
-
-- **Photo Quality Analysis** — The agent critiques uploaded images and identifies areas for improvement.
-- **Practical Tips** — Suggestions cover lighting angles, background choices, camera settings, and coin positioning.
-- **Agent Team 10** — Powered by the `photo_guide.py` agent team in the Python agent service.
-
-## Similar Lot Finder
-
-Find active auction lots similar to coins in your collection. The agent searches NumisBids for matching lots and ranks results by relevance.
-
-- **Collection-Based Search** — Describe a coin or reference one in your collection to find similar active listings.
-- **Relevance Ranking** — Results are sorted by how closely they match the target coin.
-- **Agent Team 11** — Powered by the `similar_lots.py` agent team in the Python agent service.
-
-## Collection Showcase
-
-Create curated subsets of your collection to share publicly. Each showcase gets a unique shareable URL.
-
-- **Create and Manage** — Create showcases from your collection, each with a title, description, and slug for the public URL (`/s/:slug`).
-- **Two-Column Coin Picker** — Add or remove coins from a showcase using a side-by-side picker interface.
-- **Published / Draft Toggle** — Control visibility of each showcase. Only published showcases are accessible via the public URL.
-- **Public View** — The public showcase page is read-only and requires no authentication. It displays coin images and basic metadata.
-- **API Endpoints** — `GET/POST /showcases`, `GET/PUT/DELETE /showcases/:id`, `PUT /showcases/:id/coins`. Public endpoint: `GET /api/showcase/:slug` (no auth required).
-
-## Custom Tags and Labels
-
-Create user-defined categories beyond the built-in fields. Tags provide flexible, personal organization for your collection.
-
-- **Create and Manage** — Create, rename, and delete custom tags with color selection in **Settings → Tags**.
-- **Attach to Coins** — Attach or detach tags on any coin in your collection. Tags display on coin cards and the detail page.
-- **API Endpoints** — `GET/POST /tags`, `PUT/DELETE /tags/:id`, `POST /coins/:id/tags`, `DELETE /coins/:id/tags/:tagId`.
-
-## Bulk Operations
-
-Multi-select coins for batch operations across your collection.
-
-- **Select Mode** — Enter select mode, tap coins to select them, then apply a bulk action.
-- **Supported Actions** — Batch status changes, tagging, and export.
-- **PWA Integration** — In PWA mode, a dedicated **Select** button appears in the header. The agent FAB is automatically hidden during bulk select mode.
-- **API Endpoint** — `POST /coins/bulk`.
-
-## Notifications
-
-An in-app notification system with an unread badge count in the navigation bar.
-
-- **Social Notifications** — Follow requests, comments, and star ratings generate notifications.
-- **Mark as Read** — Mark individual notifications or all at once as read.
-- **Delete** — Remove notifications you no longer need.
-- **Real-Time Badge** — The unread count badge polls automatically using a shared composable.
-- **API Endpoints** — `GET /notifications`, `GET /notifications/unread-count`, `PUT /notifications/:id/read`, `PUT /notifications/read-all`, `DELETE /notifications/:id`.
-
-## Insurance / Provenance PDF Export
-
-Generate a downloadable PDF catalog of your collection with photos, grades, provenance details, valuations, era, and structured catalog references. Useful for insurance documentation or sharing with dealers.
-
-- **Download from Settings** — Available in **Settings → Data** as a one-click download.
-- **API Endpoint** — `GET /user/export/catalog`.
-
-## Configuration
-
-### Environment Variables
-
-| Variable          | Default                         | Description |
-| ----------------- | ------------------------------- | ----------- |
-| `JWT_SECRET`      | *(auto-generated for dev)*      | JWT signing key (`openssl rand -base64 48`) |
-| `DB_PATH`         | `./ancientcoins.db`             | SQLite database file path |
-| `PORT`            | `8080`                          | HTTP server port |
-| `UPLOAD_DIR`      | `./uploads`                     | Directory for uploaded coin images |
-| `WEBAUTHN_RP_ID`  | `localhost`                     | Relying Party ID for FIDO2/WebAuthn |
-| `WEBAUTHN_ORIGIN` | `http://localhost:8080`         | Origin URL for WebAuthn |
-| `AGENT_SERVICE_URL` | `http://agent:8081`           | Python agent service URL |
-| `AGENT_INTERNAL_SERVICE_TOKEN` | —                 | Shared API → agent credential required by hardened agent endpoints |
-| `AGENT_LOG_LEVEL` | `INFO`                          | Python agent log level |
-| `CORS_ORIGINS`    | *(WebAuthn origin + localhost)* | Comma-separated allowed CORS origins |
-
-### Admin-Managed Settings
-
-These are configured in the Admin UI (not environment variables) and stored in the database:
-
-| Setting              | Description |
-| -------------------- | ----------- |
-| `AIProvider`          | Explicit provider choice: `anthropic` or `ollama` (must be set before agent features work) |
-| `AnthropicAPIKey`     | API key for Claude models |
-| `AnthropicModel`      | Claude model to use (default: `claude-sonnet-5`) |
-| `OllamaURL`          | Ollama server URL (default: `http://localhost:11434`) |
-| `OllamaModel`        | Vision model name (default: `llava`) |
-| `OllamaTimeout`      | AI request timeout in seconds (default: `300`) |
-| `SearXNGURL`         | SearXNG search engine URL (required for Ollama web search) |
-| `NumistaAPIKey`       | Numista catalog API key for coin lookups |
-| `DeepIdentificationEnabled` | Enables optional persisted Deep Analysis jobs (default: `false`) |
-| `DeepIdentificationOCREEnabled` | Enables OCRE evidence in Deep Analysis (default: `false`) |
-| `DeepIdentificationOCRECallBudget` | Maximum OCRE calls per job (default: `3`) |
-| `CoinSearchPrompt`   | System prompt for the AI coin search agent |
-| `CoinShowsPrompt`    | System prompt for the coin shows agent |
-| `ValuationPrompt`    | System prompt for the value estimator |
-| `ObversePrompt`       | Custom prompt for obverse image analysis |
-| `ReversePrompt`       | Custom prompt for reverse image analysis |
-| `TextExtractionPrompt`| Custom prompt for OCR text extraction |
-| `LogLevel`            | Application log level (trace/debug/info/warn/error) |
-# Structured Storage Trays
-
-Storage locations support two owner-scoped types. Standard Locations preserve
-the previous unslotted behavior. Coin Trays have fixed rows and columns (each
-1–20, maximum 400 wells) and require an exact free slot for every assigned
-coin. Bulk assignment accepts only Standard Locations or clear.
-
-The authenticated **Storage Trays** page renders persisted coordinates,
-including empty wells, in a contained horizontal scroller. It is distinct from
-the responsive, paged Museum Tray at `/tray`. Existing databases are upgraded
-additively: locations become Standard, IDs and assignments stay unchanged, and
-legacy coin slots remain null.
+Username and password with JWT access and refresh tokens, account lockout, automatic blocking of IPs with repeated failures, rate limits, closed registration after the first user, and private media served only to their owner. → [Authentication](authentication.md), [Security Principles](security-principles.md), [Deployment](deployment.md)

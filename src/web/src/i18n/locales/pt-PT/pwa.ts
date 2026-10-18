@@ -3,7 +3,7 @@ import type { Messages } from '../../types'
 const messages: Messages['pwa'] = {
   update: {
     title: 'Atualização disponível',
-    body: 'Está disponível uma nova versão do Aurearia. Atualize para a instalar.',
+    body: 'Está disponível uma nova versão da Orla Numis. Atualize para a instalar.',
   },
   install: {
     share: 'Partilhar',

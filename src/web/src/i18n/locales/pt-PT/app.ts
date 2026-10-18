@@ -1,7 +1,7 @@
 import type { Messages } from '../../types'
 
 const messages: Messages['app'] = {
-  brandFull: 'Aurearia - Coleção de Moedas',
+  brandFull: 'Orla Numis - Coleção de Moedas',
   brandTagline: 'Coleção de Moedas',
   header: {
     selectCoins: 'Selecionar moedas',
@@ -25,6 +25,7 @@ const messages: Messages['app'] = {
     version: 'Versão {version}',
     catalogue: 'Dados do catálogo: Numista',
     photos: 'Fotos oficiais: BCE, INCM, Monnaie de Paris e Münze Österreich',
+    basedOn: 'Baseada no projeto {project}, de Brian DeNicola (licença MIT)',
   },
 }
 

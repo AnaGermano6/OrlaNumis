@@ -32,11 +32,10 @@ The Wish List helps collectors systematically track and acquire coins. It integr
 ### Viewing Your Wish List
 
 - **Dedicated Gallery** — Separate view from main collection
-- **Same Filters/Sort** — Full-text search, category filtering, sorting by price/date
+- **Search and Sort** — Full-text search, sorting by price/date
 - **Status Indicators** — Show if coin is actively listed, unavailable, or unknown
 - **Price Tracking** — Note current asking prices and compare over time
 - **Lookup Saves** — Coins saved from Coin Lookup include captured photos and generated NGC or Numista references
-- **Tray Placeholders** — Wishlist items shown in tray-based set views are deliberately more transparent and display `TBD` where owned coins show purchase dates
 
 ## Availability Checking
 
@@ -101,6 +100,16 @@ Alert runs are persisted with status, trigger type, candidate counts, and run de
 4. Click **Confirm**
 5. Coin moves to main collection with purchase data
 6. Edit page opens to add images, detailed notes, and provenance
+
+### Added to the Collection Another Way
+
+A coin added to the collection as a new coin (Add Coin, a release, the
+Numista catalog, AI Assist) may still be on the wish list. Once it is saved,
+Orla Numis looks for it there (by its Numista type, its official photo, or the
+same year and name) and asks whether to take it off: **Take it off** deletes
+the wishlist coin, **Keep on the wishlist** leaves it. A release the
+collection has keeps its heart while it is on the wish list, so it can be
+taken off from the releases too.
 
 ## AI Coin Search Agent
 

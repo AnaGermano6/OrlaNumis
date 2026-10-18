@@ -13,7 +13,7 @@ Each coin in your collection can hold rich, structured metadata that captures it
 - **Denomination** — Value (denarius, aureus, sestertius, etc.)
 - **Ruler** — Authority or monarch on the coin
 - **Era** — Time period (ancient, medieval, modern)
-- **Category** — Roman, Greek, Byzantine, Modern, or Other
+- **Category** — one of the admin-configured categories (Modern and Other by default)
 
 ### Physical Characteristics
 - **Material** — Gold, silver, bronze, copper, electrum, or other
@@ -112,16 +112,18 @@ Track the coin's history with timestamped entries:
 - **Add Entries** — Click the plus icon in Activity section
 - **Delete Entries** — Remove entries you no longer need
 
-## Wish List & Sold Status
+## Market Value
 
-- **Wishlist** — Mark coins you'd like to acquire (excludes from main collection stats)
-- **Sold** — Mark coins you've sold with sale price and buyer information
-- **Status Transitions** — Move coins between collection, wishlist, and sold states
+When the coin is linked to a Numista type, the **Market value (Numista)** section shows Numista's community estimates for each issue and grade, in the collection currency, with your grade highlighted.
 
-## Privacy Controls
+## Sets
 
-- **Private Coin** — Hide from followers and public showcases
-- **Affects** — Social features and collection sharing
+The **Sets** section lists the sets the coin belongs to. Add the coin to a set, take it out of one, or accept a suggested set.
+
+## Wish List
+
+- **Wishlist** — Coins you'd like to acquire stay out of the collection totals and stats
+- **Mark as purchased** — Moves a wishlist coin into the collection, with the price, date and place of purchase
 
 ## History & Versioning
 
@@ -132,7 +134,6 @@ Track the coin's history with timestamped entries:
 
 - See [AI Coin Analysis](ai-analysis.md) for vision-model analysis
 - [Numista Catalog Lookup](numista-integration.md) for catalog references
-- [Custom Tags](custom-tags.md) to categorize the coin
 - [Coin Sets](coin-sets.md) to group coins thematically
 
 ## API Endpoints
