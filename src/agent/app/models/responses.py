@@ -574,7 +574,6 @@ class WishlistFeaturedSummaryResponse(StrictResponseModel):
 
 
 # Wishlist search alert discovery DTOs.
-# Contract anchor: specs/337-wishlist-search-alerts/contracts/agent-discovery-contract.md
 class AlertDiscoveryProvenance(StrictResponseModel):
     field: Annotated[str, StringConstraints(min_length=1, max_length=100)]
     value: Annotated[str, StringConstraints(min_length=1, max_length=4000)]
@@ -663,7 +662,6 @@ class IntakeDraftResponse(BaseModel):
 
 
 # Dynamic Set Builder workflow DTOs.
-# Contract anchor: specs/011-dynamic-set-builder-correction-plan.md (Phase 2)
 class SetBuilderScopeOption(StrictResponseModel):
     """One candidate scope interpretation offered by the Intent Analyst role."""
 
@@ -724,8 +722,7 @@ class SetBuilderResponse(StrictResponseModel):
     turns_used: int = Field(default=0, ge=0)
 
 
-# Deep Agentic Coin Identification DTOs (344-deep-agentic-coin-identification).
-# Contract anchor: specs/344-deep-agentic-coin-identification/contracts/agent-internal-contract.md §4-5
+# Deep Agentic Coin Identification DTOs.
 ProviderName = Literal["numista", "ngc", "rpc"]
 ProviderStatus = Literal["contributed", "no_match", "failed", "timed_out", "not_automated", "unavailable", "skipped"]
 ProviderErrorKind = Literal[

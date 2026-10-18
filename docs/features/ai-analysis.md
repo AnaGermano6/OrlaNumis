@@ -122,8 +122,7 @@ Beyond basic image analysis, the chat agent includes specialized analysis teams:
 ### Deep Analysis
 
 Deep Analysis is a separate optional identification workflow, not a replacement
-for saved obverse/reverse analysis. It is **vision-first** (ADR 0012, Feature
-351): the single vision LLM call already made on every job produces a typed
+for saved obverse/reverse analysis. It is **vision-first**: the single vision LLM call already made on every job produces a typed
 hypothesis (a per-field, per-confidence read of what the images alone show,
 with no citation), a **deterministic router** function then selects providers
 from that hypothesis plus the quick-lookup evidence (no LLM call — identical
@@ -191,7 +190,6 @@ GET    /api/ai-status               # Check AI provider status
 - [AI Grading Assistant](ai-grading.md) — Specialized grade estimation
 - [Coin Photography Guide](photography-guide.md) — Photo quality feedback
 - [Collection Statistics](statistics.md) — AI coverage metrics in health scorecard
-- [Collection Showcase](collection-showcase.md) — Share analyzed coins publicly
 - [Deep Analysis](deep-analysis.md) — Multi-provider identification and cited proposals
 
 ## See Also

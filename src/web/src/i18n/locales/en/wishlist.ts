@@ -22,4 +22,15 @@ export default {
     fromImageHint: 'Photograph or upload a coin for identification.',
     another: 'Add another way',
   },
+  leave: {
+    title: 'On your wishlist',
+    message: {
+      one: 'This coin was on your wishlist: {names}. Take it off the wishlist now that you have it?',
+      other: 'These {count} wishlist coins are this one: {names}. Take them off the wishlist now that you have it?',
+    },
+    confirm: { one: 'Take it off', other: 'Take them off' },
+    keep: 'Keep on the wishlist',
+    done: { one: 'Taken off the wishlist.', other: '{count} coins taken off the wishlist.' },
+    failed: 'The coin could not be taken off the wishlist. Delete it from its page on the wishlist.',
+  },
 }

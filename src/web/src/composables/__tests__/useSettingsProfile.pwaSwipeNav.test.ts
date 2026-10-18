@@ -5,7 +5,6 @@ import { updateProfile } from '@/api/client'
 import type { User } from '@/types'
 
 // QA contract tests for the pwaSwipeNavEnabled preference in useSettingsProfile.
-// Design authority: .squad/decisions/inbox/maximus-pwa-swipe-setting-review.md §3 §4
 //
 // Verified contracts:
 // - DEFAULT-OFF: a user with no stored preference defaults to false (fail closed).

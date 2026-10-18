@@ -11,7 +11,7 @@ import (
 
 const (
 	nominatimBaseURL      = "https://nominatim.openstreetmap.org/search"
-	nominatimUserAgent    = "Aurearia/1.0 (self-hosted coin collection app)"
+	nominatimUserAgent    = "OrlaNumis/1.0 (self-hosted coin collection app)"
 	nominatimMaxResults   = 3
 	geocodeRequestTimeout = 8 * time.Second
 )

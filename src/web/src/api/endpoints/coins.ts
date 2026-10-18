@@ -299,6 +299,9 @@ export const duplicateCoin = (id: number) => api.post<Coin>(`/coins/${id}/duplic
 
 export const deleteCoin = (id: number) => api.delete(`/coins/${id}`)
 
+/** The wishlist coins a collection coin is: of its Numista type, official photo, or year and name. */
+export const getWishlistMatches = (id: number) => api.get<{ coins: Array<{ id: number; name: string }> }>(`/coins/${id}/wishlist-matches`)
+
 export const createCoinReference = (coinId: number, reference: CoinReferenceInput) =>
   api.post<CoinReference>(`/coins/${coinId}/references`, reference)
 
@@ -565,15 +568,6 @@ export const getExchangeRates = () => api.get<ExchangeRates>('/exchange-rates')
 /** The collection's headline numbers, for its coins or its banknotes (every item when kind is omitted). */
 export const getCollectionSummary = (kind?: CoinKind) => api.get<CollectionSummary>('/coins/summary', kind ? { params: { kind } } : undefined)
 
-/** The coin (or banknote) of the day; coin is null when the collection has none of that kind. */
-export interface DailyCoin {
-  date: string
-  coin: Coin | null
-}
-
-/** The collection's coin or banknote of the viewer's day (YYYY-MM-DD). */
-export const getDailyCoin = (kind: CoinKind, date: string) => api.get<DailyCoin>('/coins/daily', { params: { kind, date } })
-
 /** A coin the ECB lists or a mint sells, issued lately or to come. */
 export interface CoinRelease {
   /** The ECB, the mint (Portugal's incm, France's mdp, Austria's moe), or Numista (Portugal's escudos). */
@@ -602,8 +596,9 @@ export interface CoinRelease {
   volume?: number
   upcoming: boolean
   owned: boolean
-  /** A coin of the wishlist is this one. */
+  /** A coin of the wishlist is this one; wishlistCoinId is that coin. */
   wishlist?: boolean
+  wishlistCoinId?: number
   /** Identifies a coin of the catalogue, to hide it or join it to another. */
   id?: string
   /** For a coin joined to another of the catalogue: that one's id. */

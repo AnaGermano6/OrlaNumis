@@ -78,6 +78,11 @@ describe('useCollectionFilters', () => {
     // And the Numista kind of coin.
     filters.selectedClassification.value = 'non-circulating'
     await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ classification: 'non-circulating', commemorative: 'true' }))
+
+    // And only the duplicates to trade, off when not asked for.
+    expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ repeated: undefined })
+    filters.selectedRepeated.value = true
+    await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ repeated: 'true', classification: 'non-circulating' }))
     wrapper.unmount()
   })
 

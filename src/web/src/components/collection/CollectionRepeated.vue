@@ -2,8 +2,14 @@
   <section class="mb-4 rounded-md border border-border-subtle bg-card p-4" :aria-labelledby="titleId" :data-testid="`repeated-${kind}`">
     <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
       <h3 :id="titleId" class="m-0 font-display text-lg font-medium text-heading">{{ t('collectionOverview.repeated.title') }}</h3>
-      <span v-if="repeatedCount > 0" class="text-body text-text-secondary" data-testid="repeated-counts">
-        {{ countLine }}
+      <span class="flex flex-wrap items-center gap-3">
+        <span v-if="repeatedCount > 0" class="text-body text-text-secondary" data-testid="repeated-counts">
+          {{ countLine }}
+        </span>
+        <!-- The gallery (the coins' or the banknotes'), showing only these. -->
+        <button v-if="coins.length" type="button" class="btn btn-secondary btn-sm" data-testid="repeated-open" @click="emit('open')">
+          <LayoutGrid :size="14" aria-hidden="true" /> {{ t('collectionOverview.repeated.open') }}
+        </button>
       </span>
     </div>
 
@@ -48,7 +54,7 @@
 // many copies are left to trade.
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Banknote, Coins } from 'lucide-vue-next'
+import { Banknote, Coins, LayoutGrid } from 'lucide-vue-next'
 import { getCoins, type CollectionSummary } from '@/api/client'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { t } from '@/i18n'
@@ -59,6 +65,8 @@ const props = defineProps<{
   kind: 'coin' | 'banknote'
   summary: CollectionSummary | null
 }>()
+
+const emit = defineEmits<{ open: [] }>()
 
 /** Shown before "Show all". */
 const PREVIEW = 6

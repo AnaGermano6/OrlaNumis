@@ -6,10 +6,8 @@ package services
 // This file is deliberately separate from deep_identification_service_test.go
 // and deep_identification_proposal_test.go (Cassius's tests-first files for
 // the same phases) to avoid merge collisions while the team works
-// concurrently. It expresses the FROZEN CONTRACT recorded in
-// .squad/decisions/inbox/maximus-analysis-history-wishlist-featured.md
-// (D1, D2, D6, D8, D13) and specs/354-.../spec.md (FR-001, FR-002,
-// FR-007..011, FR-021..028).
+// concurrently. It expresses the frozen contract of the analysis history
+// (FR-001, FR-002, FR-007..011, FR-021..028).
 //
 // These tests intentionally exercise BEHAVIOR (does the janitor still
 // delete artifacts? does re-apply return the same/new coin id? is the

@@ -20,7 +20,7 @@
       >
         <optgroup v-for="group in groups" :key="group.id" :label="group.title">
           <option v-for="entry in group.entries" :key="entryKey(entry)" :value="entryKey(entry)">
-            {{ entryName(entry) }} — {{ t('sets.catalogue.progress', { owned: owned(entry), total: total(entry) }) }}
+            {{ withFlagOfCode(entry.country, entryName(entry)) }} — {{ t('sets.catalogue.progress', { owned: owned(entry), total: total(entry) }) }}
           </option>
         </optgroup>
       </select>
@@ -42,7 +42,7 @@
               :data-testid="`catalogue-country-${entryKey(entry)}`"
               @click="choose(entryKey(entry))"
             >
-              <span class="block truncate font-medium text-text-primary">{{ releaseCountryName(entry.country) }}</span>
+              <span class="block truncate font-medium text-text-primary"><span v-if="flagOfCode(entry.country)" class="mr-1.5" aria-hidden="true" data-testid="catalogue-flag">{{ flagOfCode(entry.country) }}</span>{{ releaseCountryName(entry.country) }}</span>
               <span class="block text-chip text-text-muted">
                 <template v-if="entry.currency">{{ currencyName(entry.currency) }} · </template>{{ t('sets.catalogue.progress', { owned: owned(entry), total: total(entry) }) }}
               </span>
@@ -56,7 +56,9 @@
 
       <section v-if="selected" class="mt-6" aria-labelledby="catalogue-country-title" data-testid="catalogue-country">
         <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 id="catalogue-country-title" class="m-0 font-display text-lg font-medium text-heading">{{ selectedSummary ? entryName(selectedSummary) : '' }}</h2>
+          <h2 id="catalogue-country-title" class="m-0 font-display text-lg font-medium text-heading">
+            <template v-if="selectedSummary"><span v-if="flagOfCode(selectedSummary.country)" class="mr-2 font-sans" aria-hidden="true">{{ flagOfCode(selectedSummary.country) }}</span>{{ entryName(selectedSummary) }}</template>
+          </h2>
           <span class="flex flex-wrap items-center gap-3">
             <span v-if="selectedSummary" class="text-body text-text-secondary" data-testid="catalogue-owned">
               {{ t('sets.catalogue.owned', { owned: owned(selectedSummary), total: total(selectedSummary) }) }}
@@ -200,6 +202,7 @@ import CoinReleaseCard from '@/components/collection/CoinReleaseCard.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { intlLocale, t } from '@/i18n'
 import { formatFaceValue, releaseCountryName, releaseFaceValues } from '@/utils/coinReleases'
+import { flagOfCode, withFlagOfCode } from '@/utils/countryFlags'
 import { randomSetColor } from '@/utils/setColors'
 
 const OWNED = ['all', 'owned', 'missing'] as const

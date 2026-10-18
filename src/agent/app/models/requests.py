@@ -686,7 +686,6 @@ class AvailabilityCheckRequest(StrictRequestModel):
 
 
 # Wishlist search alert discovery DTOs.
-# Contract anchor: specs/337-wishlist-search-alerts/contracts/agent-discovery-contract.md
 class AlertDiscoveryCriteriaSnapshot(StrictRequestModel):
     """Immutable criteria snapshot supplied by the Go API."""
 
@@ -762,7 +761,6 @@ class ComparablesSearchRequest(StrictRequestModel):
 
 
 # Dynamic Set Builder workflow DTOs.
-# Contract anchor: specs/011-dynamic-set-builder-correction-plan.md (Phase 2)
 class SetBuilderRequest(StrictRequestModel):
     """Stateless set-builder workflow request.
 
@@ -785,8 +783,7 @@ class SetBuilderRequest(StrictRequestModel):
     feedback: BoundedSetBuilderFeedback = ""
 
 
-# Deep Agentic Coin Identification DTOs (344-deep-agentic-coin-identification).
-# Contract anchor: specs/344-deep-agentic-coin-identification/contracts/agent-internal-contract.md §2
+# Deep Agentic Coin Identification DTOs.
 BoundedDeepDataURI = Annotated[str, StringConstraints(max_length=MAX_DEEP_IMAGE_DATA_URI_LENGTH)]
 BoundedDeepNotes = Annotated[str, StringConstraints(max_length=MAX_DEEP_NOTES_LENGTH)]
 

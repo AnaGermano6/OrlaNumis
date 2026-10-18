@@ -215,7 +215,7 @@ type PurchaseRequest struct {
 //	@Tags			Coins
 //	@Produce		json
 //	@Param			kind		query		string	false	"Only coins or only banknotes (every item when omitted)"	Enums(coin, banknote)
-//	@Param			category	query		string	false	"Filter by category (Roman, Greek, Byzantine, Modern, Other)"
+//	@Param			category	query		string	false	"Filter by category, one of the admin-configured categories (Modern and Other by default)"
 //	@Param			era			query		string	false	"Filter by era (ancient, medieval, modern)"
 //	@Param			country		query		string	false	"Filter by country (exact)"
 //	@Param			denomination	query		string	false	"Filter by face value, as written (\"2 euro\")"
@@ -889,11 +889,17 @@ func handleCoinMutationError(c *gin.Context, err error) bool {
 		respondError(c, http.StatusBadRequest, err.Error(), err)
 		return true
 	case errors.Is(err, services.ErrWishlistReferenceDuplicate):
-		c.JSON(http.StatusConflict, gin.H{
+		body := gin.H{
 			"error":   "A wishlist coin already uses this source URL",
 			"message": "A wishlist coin already uses this source URL",
 			"code":    "wishlist_duplicate",
-		})
+		}
+		// The coin already there, to open it or take it off the wishlist.
+		var duplicate *services.WishlistDuplicateError
+		if errors.As(err, &duplicate) {
+			body["coinId"] = duplicate.CoinID
+		}
+		c.JSON(http.StatusConflict, body)
 		return true
 	case isUniqueConstraintError(err):
 		respondError(c, http.StatusBadRequest, services.ErrReferenceDuplicate.Error(), err)

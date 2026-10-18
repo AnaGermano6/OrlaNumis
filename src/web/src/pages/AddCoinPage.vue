@@ -169,7 +169,7 @@
         <template v-else-if="entryMode === 'manual'">
           <div v-if="catalogSource" class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-gold bg-gold-glow p-3" role="status">
             <p class="m-0 min-w-0 text-body text-text-primary">
-              <I18nT keypath="addCoin.fromCatalog" :params="{ title: catalogSource.title }">
+              <I18nT keypath="addCoin.fromCatalog">
                 <template #title><strong>{{ catalogSource.title }}</strong></template>
               </I18nT>
               {{ catalogSource.wishlist ? t('addCoin.fromCatalogWishlistHint') : t('addCoin.fromCatalogHint') }}
@@ -179,12 +179,52 @@
           </div>
           <div v-else-if="releaseSource" class="mb-4 rounded-md border border-gold bg-gold-glow p-3" role="status" data-testid="release-source">
             <p class="m-0 min-w-0 text-body text-text-primary">
-              <I18nT keypath="addCoin.fromRelease" :params="{ title: releaseSource.title }">
+              <I18nT keypath="addCoin.fromRelease">
                 <template #title><strong>{{ releaseSource.title }}</strong></template>
               </I18nT>
               {{ releaseSource.wishlist ? t('addCoin.fromCatalogWishlistHint') : t('addCoin.fromCatalogHint') }}
               <span class="mt-1 block text-chip text-text-secondary">{{ t('addCoin.releaseImages') }}</span>
             </p>
+            <!-- The coin's Numista type completes what the release says. -->
+            <div v-if="releaseNumista" class="mt-3 border-t border-border-subtle pt-3" data-testid="release-numista">
+              <p v-if="releaseNumista.state === 'loading'" class="m-0 text-chip text-text-secondary">{{ t('addCoin.releaseNumista.loading') }}</p>
+              <template v-else-if="releaseNumista.state === 'found'">
+                <p class="m-0 text-body text-text-primary">
+                  <I18nT keypath="addCoin.releaseNumista.found">
+                    <template #title><SafeExternalLink :href="releaseNumista.type.url" class="font-medium text-gold">{{ releaseNumista.type.title }}</SafeExternalLink></template>
+                  </I18nT>
+                </p>
+                <button type="button" class="btn btn-secondary btn-sm mt-2" data-testid="release-numista-other" @click="chooseReleaseNumista">{{ t('addCoin.releaseNumista.notThis') }}</button>
+              </template>
+              <template v-else-if="releaseNumista.state === 'choose' || releaseNumista.state === 'none'">
+                <p class="m-0 text-body text-text-primary">
+                  {{ releaseNumista.state === 'none' ? t('addCoin.releaseNumista.none') : releaseNumista.candidates.length ? t('addCoin.releaseNumista.choose') : t('addCoin.releaseNumista.search') }}
+                </p>
+                <ul v-if="releaseNumista.state === 'choose' && releaseNumista.candidates.length" class="m-0 mt-2 grid list-none gap-2 p-0 md:grid-cols-2">
+                  <li v-for="item in releaseNumista.candidates" :key="item.id" class="min-w-0">
+                    <button
+                      type="button"
+                      class="flex w-full min-w-0 items-center gap-3 rounded-sm border bg-card p-2 text-left transition-colors hover:border-gold focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
+                      :class="item.id === releaseNumistaTypeId ? 'border-gold' : 'border-border-subtle'"
+                      :aria-pressed="item.id === releaseNumistaTypeId"
+                      data-testid="release-numista-candidate"
+                      @click="applyReleaseNumistaType(item.id)"
+                    >
+                      <CatalogPhoto :url="item.obverseThumbnail" :alt="t('catalog.obversePhoto')" size="3rem" />
+                      <span class="min-w-0">
+                        <strong class="block font-medium text-text-primary [overflow-wrap:anywhere]">{{ item.title }}</strong>
+                        <span class="block text-chip text-text-secondary">{{ numistaYearRange(item.minYear, item.maxYear) }}</span>
+                      </span>
+                    </button>
+                  </li>
+                </ul>
+                <span class="mt-2 flex flex-wrap gap-2">
+                  <button type="button" class="btn btn-secondary btn-sm" data-testid="release-numista-search" @click="entryMode = 'catalog'">{{ t('addCoin.releaseNumista.searchCatalog') }}</button>
+                  <button v-if="releaseNumistaTypeId" type="button" class="btn btn-secondary btn-sm" data-testid="release-numista-only" @click="useReleaseOnly">{{ t('addCoin.releaseNumista.releaseOnly') }}</button>
+                </span>
+              </template>
+              <p v-else class="m-0 text-chip text-text-secondary" role="alert">{{ releaseNumista.message }}</p>
+            </div>
           </div>
           <CoinForm
             ref="coinFormRef"
@@ -218,22 +258,32 @@ import {
   createIntakeDraft,
   extractText,
   importCoinImage,
+  getNumistaCatalogType,
+  getReleaseNumistaType,
   listCatalogs,
   updateCoin,
   uploadImage,
+  type CoinRelease,
+  type NumistaCatalogSearchItem,
+  type NumistaCatalogType,
 } from '@/api/client'
 import { useCoinsStore } from '@/stores/coins'
 import CoinForm from '@/components/CoinForm.vue'
 import I18nT from '@/components/I18nT.vue'
 import NumistaCatalogBrowser from '@/components/catalog/NumistaCatalogBrowser.vue'
+import CatalogPhoto from '@/components/catalog/CatalogPhoto.vue'
+import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import { buildCatalogPrefill, type CatalogSelection } from '@/utils/numistaCatalogPrefill'
-import { buildReleasePrefill, releaseFromQuery } from '@/utils/releasePrefill'
+import { buildReleasePrefill, completeReleasePrefill, releaseFromQuery } from '@/utils/releasePrefill'
+import { numistaLang, numistaYearRange } from '@/utils/numistaCatalog'
+import { numistaStatusMessage } from '@/utils/numistaMarketValue'
 import { photoCreditLine, type RealPhotoChoice } from '@/utils/coinPhotos'
 import { validQuantity } from '@/utils/coinAttributes'
 import type { CoinPhotoCandidate } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
 import { usePwa } from '@/composables/usePwa'
 import { useCoinOptions } from '@/composables/useCoinOptions'
+import { useWishlistLeave } from '@/composables/useWishlistLeave'
 import CoinLookupCaptureWizard from '@/components/coin-lookup/CoinLookupCaptureWizard.vue'
 import { normalizeGalleryImage } from '@/utils/galleryImage'
 import { Library, PencilLine, Sparkles } from 'lucide-vue-next'
@@ -251,6 +301,7 @@ const store = useCoinsStore()
 const { showAlert } = useDialog()
 const { isPwa } = usePwa()
 const { categoryOptions, materialOptions, eraOptions, loadOptions } = useCoinOptions()
+const { offerToLeaveWishlist } = useWishlistLeave()
 
 const wishlistDefault = route.query.wishlist === 'true'
 const entryMode = ref<EntryMode>(isPwa ? 'agentic' : 'manual')
@@ -636,6 +687,104 @@ function applyRelease() {
   releaseReferences.value = references
   releaseSource.value = { title: release.title, wishlist: release.upcoming }
   entryMode.value = 'manual'
+  openedRelease = release
+  filledIn = { ...form }
+  void lookUpReleaseNumista(release)
+}
+
+// The release's Numista type, looked up when the page opens with a release:
+// its details fill in the fields the user has not changed, or the user
+// chooses among Numista's coins of its country, year and face value.
+type ReleaseNumista =
+  | { state: 'loading' }
+  | { state: 'found'; type: NumistaCatalogType; candidates: NumistaCatalogSearchItem[] }
+  | { state: 'choose'; candidates: NumistaCatalogSearchItem[] }
+  | { state: 'none' }
+  | { state: 'failed'; message: string }
+const releaseNumista = ref<ReleaseNumista | null>(null)
+const releaseNumistaTypeId = ref<number | null>(null)
+let openedRelease: CoinRelease | null = null
+let releaseCandidates: NumistaCatalogSearchItem[] = []
+// What the page last put in each field: one that still holds it is not the user's.
+let filledIn: Partial<Coin> = {}
+let numistaLookup = 0
+
+function fillUntouched(values: Partial<Coin>) {
+  const fields = form as Record<string, unknown>
+  const filled = filledIn as Record<string, unknown>
+  for (const [key, value] of Object.entries({ ...createEmptyForm(defaultCategory.value, defaultMaterial.value), ...values })) {
+    if (fields[key] === filled[key]) {
+      fields[key] = value
+      filled[key] = value
+    }
+  }
+}
+
+async function lookUpReleaseNumista(release: CoinRelease) {
+  const lookup = ++numistaLookup
+  releaseNumista.value = { state: 'loading' }
+  try {
+    const { data } = await getReleaseNumistaType(release)
+    if (lookup !== numistaLookup) return
+    releaseCandidates = data.candidates ?? []
+    if (data.status !== 'ok') releaseNumista.value = { state: 'failed', message: numistaStatusMessage(data.status) }
+    else if (data.typeId) await applyReleaseNumistaType(data.typeId)
+    else releaseNumista.value = releaseCandidates.length ? { state: 'choose', candidates: releaseCandidates } : { state: 'none' }
+  } catch {
+    if (lookup === numistaLookup) releaseNumista.value = { state: 'failed', message: t('addCoin.releaseNumista.failed') }
+  }
+}
+
+async function applyReleaseNumistaType(typeId: number) {
+  const release = openedRelease
+  if (!release) return
+  const lookup = ++numistaLookup
+  releaseNumista.value = { state: 'loading' }
+  try {
+    const { data } = await getNumistaCatalogType(typeId, numistaLang())
+    let registry: CatalogRegistry[] = []
+    try {
+      registry = await listCatalogs()
+    } catch {
+      // Without the registry only the Numista reference is saved; others go to notes.
+    }
+    if (lookup !== numistaLookup) return
+    if (data.status !== 'ok' || !data.type) {
+      releaseNumista.value = { state: 'failed', message: numistaStatusMessage(data.status) || t('addCoin.releaseNumista.failed') }
+      return
+    }
+    // The issue of the release's year, when Numista has one only.
+    const year = Number.parseInt(release.from.slice(0, 4), 10)
+    const issues = (data.issues ?? []).filter((issue) => issue.year === year)
+    const catalog = buildCatalogPrefill(
+      { type: data.type, issue: issues.length === 1 ? issues[0] : undefined, wishlist: release.upcoming },
+      { categories: categoryOptions.value, eras: eraOptions.value, materials: materialOptions.value, registry },
+    )
+    const { fields, references } = completeReleasePrefill(release, catalog, { categories: categoryOptions.value, materials: materialOptions.value })
+    fillUntouched(fields)
+    releaseReferences.value = references
+    releaseNumistaTypeId.value = typeId
+    releaseNumista.value = { state: 'found', type: data.type, candidates: releaseCandidates }
+  } catch {
+    if (lookup === numistaLookup) releaseNumista.value = { state: 'failed', message: t('addCoin.releaseNumista.failed') }
+  }
+}
+
+// "Not this coin": Numista's other coins of its country, year and face value.
+function chooseReleaseNumista() {
+  releaseNumista.value = { state: 'choose', candidates: releaseCandidates }
+}
+
+// Back to what the release says alone.
+function useReleaseOnly() {
+  const release = openedRelease
+  if (!release) return
+  numistaLookup += 1
+  const { fields, references } = buildReleasePrefill(release, { categories: categoryOptions.value, materials: materialOptions.value })
+  fillUntouched(fields)
+  releaseReferences.value = references
+  releaseNumistaTypeId.value = null
+  releaseNumista.value = { state: 'choose', candidates: releaseCandidates }
 }
 
 async function handleManualSubmit() {
@@ -666,11 +815,8 @@ async function handleManualSubmit() {
     savedNotes = form.notes || ''
     await completeSavedCoin()
   } catch (error: unknown) {
-    const code = (error as { response?: { data?: { code?: string } } })?.response?.data?.code
     if (savedCoinId.value !== null) {
       saveCompletionError.value = apiErrorMessage(error, t('addCoin.imageOrCardFailed'))
-    } else if (code === 'slot_occupied') {
-      await showAlert(t('addCoin.slotTaken'), { title: t('addCoin.slotUnavailable') })
     } else {
       await showAlert(apiErrorMessage(error, t('addCoin.addFailed')), { title: t('common.error') })
     }
@@ -728,6 +874,7 @@ async function completeSavedCoin() {
     pendingCard = null
   }
   saveCompletionError.value = ''
+  await offerToLeaveWishlist(coinID)
   await router.push(`/coin/${coinID}`)
 }
 
@@ -750,7 +897,10 @@ watch(entryMode, (mode) => {
 
 // A coin picked in the Numista catalogue replaces the release's.
 watch(catalogSource, (source) => {
-  if (source) releaseSource.value = null
+  if (!source) return
+  releaseSource.value = null
+  releaseNumista.value = null
+  numistaLookup += 1
 })
 
 onMounted(async () => {

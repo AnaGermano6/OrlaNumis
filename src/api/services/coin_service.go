@@ -23,6 +23,19 @@ var (
 	ErrWishlistReferenceDuplicate = errors.New("a wishlist coin already uses this source URL")
 )
 
+// WishlistDuplicateError is ErrWishlistReferenceDuplicate with the wishlist
+// coin that already uses the source URL.
+type WishlistDuplicateError struct {
+	CoinID uint
+}
+
+func (e *WishlistDuplicateError) Error() string { return ErrWishlistReferenceDuplicate.Error() }
+
+// Is makes errors.Is(err, ErrWishlistReferenceDuplicate) hold.
+func (e *WishlistDuplicateError) Is(target error) bool {
+	return target == ErrWishlistReferenceDuplicate
+}
+
 var builtInCoinEras = map[models.Era]struct{}{
 	models.EraAncient:  {},
 	models.EraMedieval: {},
@@ -204,8 +217,8 @@ func (s *CoinService) createPreparedCoinInTx(tx *gorm.DB, coin *models.Coin, all
 	create := func(tx *gorm.DB) error {
 		txRepo := s.repo.WithTx(tx)
 		if coin.IsWishlist && coin.ReferenceURL != "" && !allowAcknowledgedURLDuplicate {
-			if _, err := txRepo.FindWishlistByReferenceURL(coin.UserID, coin.ReferenceURL); err == nil {
-				return ErrWishlistReferenceDuplicate
+			if existing, err := txRepo.FindWishlistByReferenceURL(coin.UserID, coin.ReferenceURL); err == nil {
+				return &WishlistDuplicateError{CoinID: existing.ID}
 			} else if !repository.IsRecordNotFound(err) {
 				return err
 			}

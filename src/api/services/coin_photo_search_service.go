@@ -27,7 +27,7 @@ const (
 	commonsTimeout        = 15 * time.Second
 	// Wikimedia asks clients to identify themselves with a way to learn more;
 	// anonymous or browser-like agents are rate-limited much sooner.
-	CommonsUserAgent = "Aurearia/1.0 (https://github.com/briandenicola/Aurearia; self-hosted coin collection app)"
+	CommonsUserAgent = "OrlaNumis/1.0 (self-hosted coin collection app, based on https://github.com/briandenicola/Aurearia)"
 )
 
 // CommonsClient searches Wikimedia Commons files.

@@ -23,11 +23,6 @@
           <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ kpi.label }}</span>
         </div>
       </div>
-      <!-- A coin and a banknote of the collection for the day -->
-      <div class="mt-3 grid gap-3 md:grid-cols-2">
-        <CollectionDaily kind="coin" />
-        <CollectionDaily kind="banknote" />
-      </div>
     </section>
 
     <!-- Coins: the gallery's numbers and highlights -->
@@ -44,7 +39,7 @@
         @show-extinct="openGallery({ country: EXTINCT_COUNTRIES })"
       />
       <CollectionHighlights :summary="coins" :title="t('collectionOverview.coins.highlights')" />
-      <CollectionRepeated kind="coin" :summary="coins" />
+      <CollectionRepeated kind="coin" :summary="coins" @open="openGallery({ repeated: true })" />
       <CollectionMissingPhotos />
     </section>
 
@@ -56,7 +51,7 @@
       </div>
       <BanknoteKpis :summary="banknotes" />
       <CollectionHighlights :summary="banknotes" kind="banknote" :title="t('collectionOverview.banknotes.highlights')" />
-      <CollectionRepeated v-if="banknotes && banknotes.coins > 0" kind="banknote" :summary="banknotes" />
+      <CollectionRepeated v-if="banknotes && banknotes.coins > 0" kind="banknote" :summary="banknotes" @open="router.push({ name: 'banknotes', query: { repeated: 'true' } })" />
       <p v-if="banknotes && banknotes.coins === 0" class="m-0 text-body text-text-secondary" data-testid="overview-no-banknotes">
         {{ t('banknotes.empty.title') }}.
         <router-link to="/banknotes/add" class="text-gold underline">{{ t('banknotes.add') }}</router-link>
@@ -79,7 +74,6 @@ import { getCollectionSummary, type CollectionSummary } from '@/api/client'
 import BanknoteKpis from '@/components/collection/BanknoteKpis.vue'
 import CollectionHighlights from '@/components/collection/CollectionHighlights.vue'
 import CollectionKpis from '@/components/collection/CollectionKpis.vue'
-import CollectionDaily from '@/components/collection/CollectionDaily.vue'
 import CollectionMissingPhotos from '@/components/collection/CollectionMissingPhotos.vue'
 import CollectionRepeated from '@/components/collection/CollectionRepeated.vue'
 import CoinReleases from '@/components/collection/CoinReleases.vue'
@@ -113,7 +107,7 @@ const totals = computed(() => [
 ])
 
 // A coin card opens the gallery with only that card's filter on.
-function openGallery(filter: { circulation?: string; commemorative?: string; presentation?: string; country?: string }) {
+function openGallery(filter: { circulation?: string; commemorative?: string; presentation?: string; country?: string; repeated?: boolean }) {
   store.searchQuery = ''
   store.selectedDenomination = ''
   store.selectedRarity = ''
@@ -122,6 +116,7 @@ function openGallery(filter: { circulation?: string; commemorative?: string; pre
   store.selectedCommemorative = filter.commemorative ?? ''
   store.selectedPresentation = filter.presentation ?? ''
   store.selectedCountry = filter.country ?? ''
+  store.selectedRepeated = filter.repeated ?? false
   void router.push('/')
 }
 

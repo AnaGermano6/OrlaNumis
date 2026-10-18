@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setLocale } from '@/i18n'
 import type { CoinRelease } from '@/api/client'
-import { buildReleasePrefill, buildReleaseWishlistCoin, releaseAddRoute, releaseDenomination, releaseFromQuery } from '@/utils/releasePrefill'
+import { buildReleasePrefill, buildReleaseWishlistCoin, completeReleasePrefill, releaseAddRoute, releaseDenomination, releaseFromQuery } from '@/utils/releasePrefill'
+import type { CatalogPrefill } from '@/utils/numistaCatalogPrefill'
 
 const OPTIONS = { categories: ['Roman', 'Modern', 'Other'], materials: ['Silver', 'Gold', 'Other'] }
 
@@ -85,12 +86,43 @@ describe('release prefill', () => {
     const original = release({ variants: ['BNC'], volume: 10000, upcoming: true })
     const location = releaseAddRoute(original) as { name: string; query: { release: string } }
     expect(location.name).toBe('add-coin')
-    expect(releaseFromQuery(location.query.release)).toEqual({ ...original, imageUrl: '', to: original.from, owned: false })
+    expect(releaseFromQuery(location.query.release)).toEqual({ ...original, to: original.from, owned: false })
 
     expect(releaseFromQuery(undefined)).toBeNull()
     expect(releaseFromQuery('{oops')).toBeNull()
     expect(releaseFromQuery(JSON.stringify({ ...original, source: 'shop' }))).toBeNull()
     expect(releaseFromQuery(JSON.stringify({ ...original, faceValue: -1 }))).toBeNull()
     expect(releaseFromQuery(JSON.stringify({ ...original, pageUrl: 'javascript:alert(1)' }))?.pageUrl).toBe('')
+    expect(releaseFromQuery(JSON.stringify({ ...original, imageUrl: 'http://cdn/farois.jpg' }))?.imageUrl).toBe('')
+  })
+
+  it("completes a release with its Numista type, keeping what the collection writes its own way", () => {
+    const numista: CatalogPrefill = {
+      fields: {
+        name: '5 Euros (Lighthouses) 2025 – Portugal', country: 'Portugal', denomination: '5 Euros', year: 2025, era: 'modern', ruler: '',
+        mint: 'Imprensa Nacional-Casa da Moeda', material: 'Silver', weightGrams: 14, diameterMm: 30, rarity: 'scarce', presentation: 'coincard',
+        obverseInscription: 'PORTUGAL', reverseInscription: 'CABO DE SÃO VICENTE', obverseDescription: 'Coat of arms', reverseDescription: 'The lighthouse',
+        notes: 'Numista: Lighthouses (Portugal) – https://pt.numista.com/catalogue/pieces601.html\nComposição: Prata 0,925\nTiragem: 3000',
+        isWishlist: false,
+      },
+      references: [{ catalog: 'Numista', number: '601', uri: 'https://pt.numista.com/catalogue/pieces601.html' }, { catalog: 'KM', number: '999' }],
+    }
+    const { fields, references } = completeReleasePrefill(release({ volume: 2500, variants: ['Prata Proof', 'BNC'] }), numista, OPTIONS)
+    expect(fields).toMatchObject({
+      // The release's.
+      name: '5 euro 2025 – Faróis de Portugal', denomination: '5 euro', country: 'Portugal', year: 2025, circulation: 'non_circulating',
+      referenceUrl: 'https://loja.incm.pt/products/farois', rarity: 'very_rare',
+      // Numista's.
+      era: 'modern', mint: 'Imprensa Nacional-Casa da Moeda', material: 'Silver', weightGrams: 14, diameterMm: 30, presentation: 'coincard',
+      obverseInscription: 'PORTUGAL', reverseInscription: 'CABO DE SÃO VICENTE', obverseDescription: 'Coat of arms', reverseDescription: 'The lighthouse',
+    })
+    // The release's mintage, not Numista's.
+    expect(fields.notes).toBe('Versões: Prata Proof, BNC\nTiragem: 2500\nNumista: Lighthouses (Portugal) – https://pt.numista.com/catalogue/pieces601.html\nComposição: Prata 0,925')
+    expect(references).toEqual(numista.references)
+
+    // The metal a release says is kept; a Numista coin's own reference is not repeated.
+    const gold = completeReleasePrefill(release({ source: 'numista', variants: ['Ouro Proof'], pageUrl: 'https://pt.numista.com/catalogue/pieces601.html' }), numista, OPTIONS)
+    expect(gold.fields.material).toBe('Gold')
+    expect(gold.references).toEqual(numista.references)
   })
 })

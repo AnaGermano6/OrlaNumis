@@ -24,14 +24,10 @@ No analysis result writes to a coin or intake draft automatically.
 |---|---|---|
 | Image model | Observes coin faces and normalizes visible evidence | Uses the configured Anthropic or Ollama model |
 | Numista | Catalog candidates through configured API access | Subject to Numista API terms and quotas |
-| Nomisma | Controlled-vocabulary reconciliation, including mint concepts | Nomisma.org, CC BY 4.0 |
-| OCRE | Roman Imperial coin-type candidates through fixed-template Nomisma SPARQL | Online Coins of the Roman Empire, American Numismatic Society, ODbL 1.0 |
 | NGC | Certification extraction and official verification link | No automated NGC data API or scraping |
 | RPC | Not automated | Paused: no supported API or downloadable corpus is available; no RPC images or data are ingested |
 
-OCRE queries interpolate only validated Nomisma identifier slugs into fixed
-templates. Free text and legends are used for local scoring, not as executable
-SPARQL.
+Numista is the only automated reference provider.
 
 ## Workflow
 
@@ -56,14 +52,11 @@ or being unavailable does not fail evidence returned by other providers.
 
 ## Configuration
 
-Both controls default to off:
-
-- `DeepIdentificationEnabled` enables the background workflow.
-- `DeepIdentificationOCREEnabled` allows OCRE to be selected.
+`DeepIdentificationEnabled` enables the background workflow. It defaults to
+off.
 
 Admins can also configure worker count, per-user concurrency, queue depth,
-timeout, retention, provider count, and provider call budgets. Disabling OCRE
-is an immediate rollback: no new OCRE requests are made.
+timeout, retention, provider count, and provider call budgets.
 
 `DeepIdentificationRPCEnabled` remains false and does not make RPC automatable.
 
@@ -84,13 +77,12 @@ claims, reports, tokens, or per-job identifiers.
   events contain bounded status and count data.
 - Hint images are ephemeral and are not promoted into the coin image gallery.
 - Browser speech recognition may send audio to the browser or device provider.
-  Aurearia does not upload or retain raw audio; after explicit submission, the
+  Orla Numis does not upload or retain raw audio; after explicit submission, the
   reviewed transcript is handled as ordinary job notes. Typing remains
   available when recognition is unsupported or permission is denied.
 
-## Related Decisions
+## Related Features
 
-- [ADR 0009 - Nomisma Authority Linking](../adr/0009-nomisma-authority-linking.md)
-- [ADR 0010 - OCRE ODbL Provider](../adr/0010-ocre-odbl-provider.md)
 - [Coin Lookup](coin-lookup.md)
+- [Numista Catalog Lookup](numista-integration.md)
 - [AI Coin Analysis](ai-analysis.md)

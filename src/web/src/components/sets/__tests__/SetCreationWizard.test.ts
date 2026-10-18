@@ -118,7 +118,7 @@ describe('SetCreationWizard', () => {
 
     const submit = wrapper.get('button[type="submit"]')
     expect(submit.attributes('disabled')).toBeDefined()
-    expect(wrapper.findAll('#challengeCountry option').map((option) => option.text())).toContain('Portugal')
+    expect(wrapper.findAll('#challengeCountry option').map((option) => option.text())).toContain('🇵🇹 Portugal')
     await wrapper.get('#challengeCountry').setValue('PT')
     await wrapper.get('#challengeYear').setValue('1998')
     // Before the euro.

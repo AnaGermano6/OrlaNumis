@@ -342,6 +342,10 @@ func TestMarkWishlistReleases(t *testing.T) {
 	if !releases[0].Wishlist || releases[1].Wishlist || releases[2].Wishlist || releases[0].Owned {
 		t.Fatalf("releases = %+v", releases)
 	}
+	// The wishlist coin comes with the mark, to take it off the wishlist.
+	if releases[0].WishlistCoinID != 4 || releases[1].WishlistCoinID != 0 {
+		t.Fatalf("wishlist coins = %d, %d", releases[0].WishlistCoinID, releases[1].WishlistCoinID)
+	}
 	// Marking ownership leaves the wishlist mark alone, and the other way round.
 	MarkOwnedReleases(releases, map[string]uint{"numista:7": 9})
 	if !releases[0].Wishlist || !releases[1].Owned || !releases[2].Owned {

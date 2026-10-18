@@ -6,8 +6,7 @@ package services
 // DeepSynthesis (Python: app/models/responses.py).
 //
 // Five field-shape drift points were fixed (documentation-only, T093) in
-// specs/344-deep-agentic-coin-identification/contracts/agent-internal-
-// contract.md:
+// the agent internal contract:
 //
 //  1. §1 Mint(userID)/InternalTokenRequired -> MintForJob(userID, jobID)/
 //     InternalJobTokenRequired - a token-minting *function signature*, not a

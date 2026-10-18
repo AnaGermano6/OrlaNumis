@@ -65,7 +65,7 @@
               <label for="challengeCountry" class="form-label mb-1 block">{{ t('sets.filters.country') }}</label>
               <select id="challengeCountry" v-model="seriesCountry" class="form-input w-full" required>
                 <option value="" disabled>{{ t('sets.wizard.chooseCountry') }}</option>
-                <option v-for="code in euroCountries" :key="code" :value="code">{{ releaseCountryName(code) }}</option>
+                <option v-for="code in euroCountries" :key="code" :value="code">{{ withFlagOfCode(code, releaseCountryName(code)) }}</option>
               </select>
             </div>
             <div class="form-group m-0">
@@ -151,6 +151,7 @@ import { getJointIssues, type JointIssue } from '@/api/client'
 import SetSimpleFilters from '@/components/sets/SetSimpleFilters.vue'
 import { randomSetColor } from '@/utils/setColors'
 import { releaseCountryName } from '@/utils/coinReleases'
+import { withFlagOfCode } from '@/utils/countryFlags'
 import { criteriaToFilters, emptyFilters, EURO_COUNTRIES, filtersName, filtersToCriteria, type SimpleSetFilters } from '@/utils/setFilters'
 import { intlLocale, t } from '@/i18n'
 

@@ -989,30 +989,6 @@ func (r *CoinRepository) CollectionCoinsWithReferences(userID uint, kind string)
 	return coins, err
 }
 
-// DailyCoin picks one of the user's collection coins (not the wishlist's)
-// of a kind by seed, among those with a photo when there are any; nil when
-// the collection has none. The same seed picks the same coin.
-func (r *CoinRepository) DailyCoin(userID uint, kind string, seed uint32) (*models.Coin, error) {
-	var ids []uint
-	withPhoto := "EXISTS (SELECT 1 FROM coin_images i WHERE i.coin_id = coins.id)"
-	if err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).Where(withPhoto).Order("id").Pluck("id", &ids).Error; err != nil {
-		return nil, err
-	}
-	if len(ids) == 0 {
-		if err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).Order("id").Pluck("id", &ids).Error; err != nil {
-			return nil, err
-		}
-	}
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	var coin models.Coin
-	if err := r.db.Preload("Images").Preload("References").First(&coin, ids[seed%uint32(len(ids))]).Error; err != nil {
-		return nil, err
-	}
-	return &coin, nil
-}
-
 // CollectionSummary returns the collection's coin, type, country and coincard
 // counts and its value, for the items of a kind ("" for all).
 func (r *CoinRepository) CollectionSummary(userID uint, kind string) (CollectionSummary, error) {

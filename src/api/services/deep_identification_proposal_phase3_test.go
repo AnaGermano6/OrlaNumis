@@ -2,8 +2,7 @@ package services
 
 // Feature 352 Phase 3 — collection-valued proposal write surface
 // (catalogReferences). Covers FR-001..FR-005, FR-012..FR-015, FR-045 and
-// AC-001..003/AC-008..010 from
-// specs/352-deep-identification-structured-results/spec.md.
+// AC-001..003/AC-008..010 of the deep identification structured results.
 
 import (
 	"errors"

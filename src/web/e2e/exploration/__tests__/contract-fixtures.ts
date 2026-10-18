@@ -10,9 +10,8 @@ import type {
 const repositoryRoot = resolve(process.cwd(), '..', '..')
 const contractRoot = resolve(
   repositoryRoot,
-  'specs',
-  '360-ai-driven-browser-testing',
   'contracts',
+  'browser-exploration',
 )
 
 export const clone = <T>(value: T): T => structuredClone(value)

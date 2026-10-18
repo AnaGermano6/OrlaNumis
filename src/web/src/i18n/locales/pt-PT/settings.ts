@@ -38,13 +38,6 @@ const messages: Messages['settings'] = {
     defaultViewHint: 'Vista da coleção preferida no telemóvel / PWA',
     swipe: 'Deslizar',
     grid: 'Grelha',
-    felt: 'Cor do feltro do tabuleiro',
-    feltHint: 'Escolha a cor de fundo do tabuleiro',
-    felts: {
-      red: 'Vermelho',
-      green: 'Verde',
-      navy: 'Azul-marinho',
-    },
     defaultSort: 'Ordenação predefinida',
     defaultSortHint: 'Como as moedas são ordenadas por predefinição',
     swipeNav: 'Navegação por deslize',

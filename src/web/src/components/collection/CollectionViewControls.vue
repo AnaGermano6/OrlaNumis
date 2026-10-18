@@ -10,10 +10,10 @@
 
     <label class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('coinFields.country') }}</span>
-      <select class="form-select h-10 w-full bg-card py-0 text-body" :value="country" @change="$emit('update:country', ($event.target as HTMLSelectElement).value)">
+      <select class="form-select h-10 w-full bg-card py-0 text-body" data-testid="country-filter" :value="country" @change="$emit('update:country', ($event.target as HTMLSelectElement).value)">
         <option value="">{{ t('collection.view.allCountries') }}</option>
         <option v-if="extinctCountries" :value="EXTINCT_COUNTRIES">{{ t('collection.view.extinctCountries', { count: extinctCountries }) }}</option>
-        <option v-for="option in countryOptions" :key="option.country" :value="option.country">{{ option.country }} ({{ option.count }})</option>
+        <option v-for="option in countryOptions" :key="option.country" :value="option.country">{{ withCountryFlag(option.country) }} ({{ option.count }})</option>
       </select>
     </label>
 
@@ -68,6 +68,7 @@
 // rarity filters of the collection, shared by the desktop and PWA headers.
 import { LayoutGrid, List } from 'lucide-vue-next'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
+import { withCountryFlag } from '@/utils/countryFlags'
 import type { CoinCountryCount, CollectionClassification } from '@/api/client'
 import { t, type MessageKey } from '@/i18n'
 import {

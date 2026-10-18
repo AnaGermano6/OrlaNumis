@@ -1,8 +1,6 @@
 /**
  * Tests for the useSwipeGesture shared primitive.
  *
- * Design authority: .squad/decisions/inbox/maximus-pwa-swipe-reliability-review.md §§9-13
- *
  * Covers: touchAction apply/restore, axis lock, arced swipe, exclusions,
  * cancel semantics, enabled reactive gate, button/anchor starts, stale
  * text selection irrelevant, multi-touch abort, pointer type filter.

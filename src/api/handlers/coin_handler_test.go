@@ -382,6 +382,7 @@ func TestCoinHandler_Create_ReturnsConflictForDuplicateWishlistReferenceURL(t *t
 		"isWishlist":   true,
 	})
 
+	var firstID float64
 	for attempt, wantStatus := range []int{http.StatusCreated, http.StatusConflict} {
 		req := httptest.NewRequest(http.MethodPost, "/api/coins", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
@@ -391,8 +392,15 @@ func TestCoinHandler_Create_ReturnsConflictForDuplicateWishlistReferenceURL(t *t
 		if recorder.Code != wantStatus {
 			t.Fatalf("attempt %d status=%d, want %d: %s", attempt+1, recorder.Code, wantStatus, recorder.Body.String())
 		}
-		if wantStatus == http.StatusConflict && !strings.Contains(recorder.Body.String(), `"code":"wishlist_duplicate"`) {
-			t.Fatalf("duplicate response=%s", recorder.Body.String())
+		var resp map[string]interface{}
+		_ = json.Unmarshal(recorder.Body.Bytes(), &resp)
+		if wantStatus == http.StatusCreated {
+			firstID, _ = resp["id"].(float64)
+			continue
+		}
+		// The coin already on the wishlist comes back, to take it off.
+		if resp["code"] != "wishlist_duplicate" || firstID == 0 || resp["coinId"] != firstID {
+			t.Fatalf("duplicate response=%s, want coinId %v", recorder.Body.String(), firstID)
 		}
 	}
 }
@@ -1628,8 +1636,7 @@ func TestCoinHandler_ActiveCollectionCountInvariant(t *testing.T) {
 }
 
 // TestCoinHandler_Create_WishlistWithReferencesStoresReferences is the
-// primary regression test for the ADR 0013 rule
-// (docs/adr/0013-wishlist-coins-may-hold-catalog-references.md): wishlist
+// primary regression test for the rule that wishlist
 // coins are no longer stripped of their References relation.
 //
 //	POST /api/coins with isWishlist:true and a non-empty references array

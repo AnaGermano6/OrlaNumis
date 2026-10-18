@@ -4,8 +4,6 @@
  * Owns the pointer lifecycle, touch-action management, axis lock, edge guard,
  * exclusion filtering, and commit evaluation. Consumers own navigation, animation,
  * boundary logic, and feature gating.
- *
- * Design authority: .squad/decisions/inbox/maximus-pwa-swipe-reliability-review.md §§9-13
  */
 
 import { onMounted, onUnmounted, ref, watch, type Ref } from 'vue'

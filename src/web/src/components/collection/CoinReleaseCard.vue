@@ -45,8 +45,9 @@
       <span class="text-chip text-gold">{{ releasePeriod(release) }}</span>
       <span v-if="release.variants?.length" class="text-chip text-text-muted">{{ release.variants.join(' · ') }}</span>
       <span v-if="release.volume" class="text-chip text-text-muted">{{ t('collectionOverview.releases.volume', { volume: formatCount(release.volume) }) }}</span>
-      <!-- Add Coin filled in with this coin (not one still to come); and the
-           wishlist at once, a heart beside it or a button of its own. -->
+      <!-- Add Coin filled in with this coin (not one still to come, nor one the
+           collection has); and the wishlist at once, a heart beside it or a
+           button of its own. -->
       <span v-if="canAdd || canWish" class="mt-auto flex gap-2 pt-2">
         <RouterLink
           v-if="canAdd"
@@ -64,11 +65,12 @@
           type="button"
           class="btn btn-secondary btn-sm justify-center"
           :class="canAdd ? 'shrink-0 px-2' : 'w-full'"
-          :disabled="wishlisted || saving"
+          :disabled="saving || (wishlisted && !wishlistCoinId)"
+          :aria-pressed="wishlisted"
           :aria-label="wishlistLabel"
           :title="wishlistLabel"
           data-testid="release-wishlist"
-          @click="save"
+          @click="toggleWishlist"
         >
           <Heart :size="14" :class="wishlisted ? 'fill-current text-gold' : ''" />
           <span v-if="!canAdd" class="whitespace-nowrap">{{ wishlisted ? t('collectionOverview.releases.onWishlist') : t('collectionOverview.releases.wishlistShort') }}</span>
@@ -82,8 +84,8 @@
 // A coin the ECB lists or a mint sells: its picture (opening the source's
 // page), country, face values, title, date, variants and mintage, marked when
 // it is to come, the collection has it or the wishlist; where asked, buttons
-// to add it to the collection or the wishlist.
-import { computed, ref } from 'vue'
+// to add it to the collection, and to put it on the wishlist or take it off.
+import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Check, Coins, Heart, MoreHorizontal, Plus } from 'lucide-vue-next'
 import type { CoinRelease } from '@/api/client'
@@ -97,9 +99,9 @@ const props = withDefaults(defineProps<{
   release: CoinRelease
   /** Off where the country is already said, as in a country's catalogue. */
   showCountry?: boolean
-  /** Offers to add the coin to the collection (not one still to come). */
+  /** Offers to add the coin to the collection (not one still to come, nor one it has). */
   addable?: boolean
-  /** Offers to save the coin to the wishlist at once (not one the collection has). */
+  /** Offers to save the coin to the wishlist at once (not one the collection has), or to take it off. */
   wishlistable?: boolean
   /** Offers the catalogue's options for the coin: hide it, join it to another. */
   manageable?: boolean
@@ -107,27 +109,57 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{ manage: [] }>()
 
-const { saveToWishlist } = useReleaseWishlist()
+const { saveToWishlist, removeFromWishlist } = useReleaseWishlist()
 const { showToast } = useToast()
 const saving = ref(false)
-const savedNow = ref(false)
+// On the wishlist, and its coin (to take it off with a second press).
+const wishlisted = ref(props.release.wishlist === true)
+const wishlistCoinId = ref<number | null>(props.release.wishlistCoinId ?? null)
+// A list loaded again says what the server knows.
+watch(() => [props.release.wishlist, props.release.wishlistCoinId] as const, ([onWishlist, coinId]) => {
+  wishlisted.value = onWishlist === true
+  wishlistCoinId.value = coinId ?? null
+})
 
-const canAdd = computed(() => props.addable && !props.release.upcoming)
-const canWish = computed(() => props.wishlistable && !props.release.owned)
-const wishlisted = computed(() => props.release.wishlist === true || savedNow.value)
-const wishlistLabel = computed(() => wishlisted.value ? t('collectionOverview.releases.onWishlist') : t('collectionOverview.releases.saveWishlist'))
+const canAdd = computed(() => props.addable && !props.release.upcoming && !props.release.owned)
+// A coin the collection has may still be on the wishlist: the heart takes it off.
+const canWish = computed(() => props.wishlistable && (!props.release.owned || wishlisted.value))
+const wishlistLabel = computed(() => !wishlisted.value
+  ? t('collectionOverview.releases.saveWishlist')
+  : wishlistCoinId.value ? t('collectionOverview.releases.removeWishlist') : t('collectionOverview.releases.onWishlist'))
+
+async function toggleWishlist() {
+  if (saving.value) return
+  if (wishlisted.value) await remove()
+  else await save()
+}
 
 async function save() {
-  if (wishlisted.value || saving.value) return
   saving.value = true
   try {
-    const result = await saveToWishlist(props.release)
-    savedNow.value = true
+    const { result, coinId } = await saveToWishlist(props.release)
+    wishlisted.value = true
+    wishlistCoinId.value = coinId ?? null
     showToast(result === 'saved'
       ? t('collectionOverview.releases.savedWishlist', { title: props.release.title })
       : t('collectionOverview.releases.alreadyWishlist'), result === 'saved' ? 'success' : 'info')
   } catch {
     showToast(t('collectionOverview.releases.wishlistFailed'), 'error')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function remove() {
+  if (!wishlistCoinId.value) return
+  saving.value = true
+  try {
+    await removeFromWishlist(wishlistCoinId.value)
+    wishlisted.value = false
+    wishlistCoinId.value = null
+    showToast(t('collectionOverview.releases.removedWishlist', { title: props.release.title }), 'success')
+  } catch {
+    showToast(t('collectionOverview.releases.removeWishlistFailed'), 'error')
   } finally {
     saving.value = false
   }

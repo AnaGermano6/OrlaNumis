@@ -112,43 +112,6 @@
       </div>
     </div>
 
-    <!-- Tray Felt Color -->
-    <div class="flex justify-between items-center py-3 border-b border-border-subtle gap-4 md:flex-row flex-col md:items-center items-stretch">
-      <div class="flex flex-col gap-[0.15rem]">
-        <span class="text-base font-medium">{{ t('settings.appearance.felt') }}</span>
-        <span class="text-sm text-text-muted">{{ t('settings.appearance.feltHint') }}</span>
-      </div>
-      <div class="flex flex-wrap gap-1 bg-surface rounded-full p-[0.2rem]">
-        <button
-          class="px-3 py-[0.35rem] rounded-full text-chip cursor-pointer transition-all duration-200 border-0 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-          :class="trayFeltColor === 'red'
-            ? 'bg-[var(--felt-red-dim)] text-felt-red-bright'
-            : 'bg-transparent text-text-secondary'"
-          @click="$emit('set-tray-felt-color', 'red')"
-        >
-          {{ t('settings.appearance.felts.red') }}
-        </button>
-        <button
-          class="px-3 py-[0.35rem] rounded-full text-chip cursor-pointer transition-all duration-200 border-0 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-          :class="trayFeltColor === 'green'
-            ? 'bg-[var(--felt-green-dim)] text-felt-green-bright'
-            : 'bg-transparent text-text-secondary'"
-          @click="$emit('set-tray-felt-color', 'green')"
-        >
-          {{ t('settings.appearance.felts.green') }}
-        </button>
-        <button
-          class="px-3 py-[0.35rem] rounded-full text-chip cursor-pointer transition-all duration-200 border-0 focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-          :class="trayFeltColor === 'navy'
-            ? 'bg-[var(--felt-navy-dim)] text-felt-navy-bright'
-            : 'bg-transparent text-text-secondary'"
-          @click="$emit('set-tray-felt-color', 'navy')"
-        >
-          {{ t('settings.appearance.felts.navy') }}
-        </button>
-      </div>
-    </div>
-
     <!-- Default Sort -->
     <div class="flex justify-between items-center py-3 gap-4 md:flex-row flex-col md:items-center items-stretch">
       <div class="flex flex-col gap-[0.15rem]">
@@ -189,7 +152,6 @@
 import { BaseToggle } from '@/components/ui'
 import { ref } from 'vue'
 import type { Theme } from '@/types'
-import type { FeltColor } from '@/composables/useTrayPreference'
 import { useSettingsProfile } from '@/composables/useSettingsProfile'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import SettingsCurrencySetting from '@/components/settings/SettingsCurrencySetting.vue'
@@ -201,7 +163,6 @@ defineProps<{
   timezones: string[]
   defaultView: 'grid' | 'swipe'
   defaultSort: string
-  trayFeltColor: FeltColor
 }>()
 
 defineEmits<{
@@ -209,7 +170,6 @@ defineEmits<{
   'save-timezone': [tz: string]
   'set-default-view': [view: 'grid' | 'swipe']
   'save-default-sort': [sort: string]
-  'set-tray-felt-color': [color: FeltColor]
 }>()
 
 // savePwaSwipeNav handles auth-store sync, localStorage write, optimistic update, and rollback.

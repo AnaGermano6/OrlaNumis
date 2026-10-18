@@ -1,6 +1,4 @@
-"""Phase 2 QA for the Python set-builder workflow.
-
-Contract anchor: specs/011-dynamic-set-builder-correction-plan.md (Phase 2).
+"""QA for the Python set-builder workflow.
 
 Model-level tests exercise the `SetBuilderRequest` / `SetBuilderResponse`
 schemas (`app/models/requests.py`, `app/models/responses.py`). Route-level

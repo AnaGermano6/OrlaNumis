@@ -42,11 +42,10 @@ describe('HelpSection', () => {
     // tracking, the calendar and shipments were removed.
     // So were notifications, reminders, tags, Quick Access, the Emperor tracker,
     // Coin of the Day, API keys and the external tool server, OIDC and passkeys.
-    for (const removed of ['Value Details', 'Investment Breakdown', 'Save to Notes', 'Calendar', 'Shipment', 'auction alerts', 'notification', 'Purchase reminders', 'Custom tags', 'Quick Access', 'Emperor Tracker', 'Coin of the Day', 'X-API-Key', 'External Tool Server', 'OIDC', 'passkey']) {
+    for (const removed of ['Value Details', 'Investment Breakdown', 'Save to Notes', 'Calendar', 'Shipment', 'auction alerts', 'notification', 'Purchase reminders', 'Custom tags', 'Quick Access', 'Emperor Tracker', 'Coin of the Day', 'X-API-Key', 'External Tool Server', 'OIDC', 'passkey', 'Museum Tray']) {
       expect(text).not.toContain(removed)
     }
     expect(text).toContain('Quick Capture, Coin Lookup, and image upload flows start the camera only after you tap')
-    expect(text).toContain('Owned coins show purchase dates in YYYY-MM-DD')
     expect(text).toContain('Only approval creates the Agentic set')
   })
 

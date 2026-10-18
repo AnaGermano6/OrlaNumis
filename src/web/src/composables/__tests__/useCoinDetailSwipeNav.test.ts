@@ -1,8 +1,7 @@
 ﻿/**
  * Contract-based regression tests for the PWA-only coin-detail swipe navigation composable.
  *
- * Design authority: .squad/decisions/inbox/maximus-pwa-detail-swipe-review.md
- * Covers criteria 1-16 from the acceptance checklist plus the USER CONTRACT in the spawn prompt.
+ * Covers the acceptance criteria of the coin-detail swipe navigation.
  *
  * Tests are authored against the PUBLIC CONTRACT of useCoinDetailSwipeNav.
  * Adjust to the composable exported API if Aurelia's implementation differs in
@@ -1059,7 +1058,6 @@ describe('overflow menu -- accessibility unchanged', () => {
 
 // ===========================================================================
 // 22. Preference gate -- account-wide pwaSwipeNavEnabled setting
-//     Design authority: .squad/decisions/inbox/maximus-pwa-swipe-setting-review.md
 // ===========================================================================
 
 describe('preference gate -- pwaSwipeNavEnabled', () => {

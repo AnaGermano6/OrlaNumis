@@ -38,4 +38,15 @@ describe('CollectionViewControls', () => {
     const wrapper = mount(CollectionViewControls, { props: baseProps })
     expect(wrapper.find('[data-testid="classification-filter"]').exists()).toBe(false)
   })
+
+  it('shows the flag of each country, and keeps the plain name as the value', async () => {
+    const wrapper = mount(CollectionViewControls, {
+      props: { ...baseProps, countryOptions: [{ country: 'Croácia', count: 4 }, { country: 'Jugoslávia', count: 1 }] },
+    })
+
+    const select = wrapper.get('[data-testid="country-filter"]')
+    expect(select.findAll('option').map((option) => option.text()).slice(1)).toEqual(['🇭🇷 Croácia (4)', 'Jugoslávia (1)'])
+    await select.setValue('Croácia')
+    expect(wrapper.emitted('update:country')).toEqual([['Croácia']])
+  })
 })

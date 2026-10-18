@@ -19,17 +19,12 @@ ago", "The beginning"), or type an exact date.
 
 - The coin is not a wish list entry, and
 - it has a purchase date on or before D (the purchase date itself counts — scrub
-  to the day you bought a coin and you will see it), and
-- it was either never sold, or sold *after* D.
+  to the day you bought a coin and you will see it).
 
 **What each coin was worth on date D:** the most recent valuation recorded at or
 before D, taken from the per-coin valuation history the valuation scheduler
 writes. When no valuation had been recorded yet, the purchase price is used
 instead.
-
-**Collection health score:** the most recent daily health snapshot at or before
-D. Dates before health snapshots began simply show no score rather than a
-misleading one.
 
 ## Honesty about the numbers
 
@@ -57,8 +52,8 @@ with equal confidence:
 - **Answering "when did I…".** Scrub to find the date a category first appeared
   or the collection crossed a value threshold.
 - **A year in review.** The "Added That Year" figure counts acquisitions in the
-  twelve months before the selected date — the raw material for a shareable
-  year-end summary or a [Showcase](collection-showcase.md).
+  twelve months before the selected date — the raw material for a year-end
+  summary.
 
 ## API
 
@@ -75,12 +70,9 @@ returns `400`.
 - Valuation history only exists from the point the valuation scheduler first
   ran, so the further back you scrub the more the figures lean on purchase
   price. This is disclosed on the page rather than hidden.
-- Sold coins leave the timeline on their sold date; realized gains are not part
-  of this view. See [Sold Coins](sold-coins.md).
 - Dates are handled in UTC and a date is treated as end-of-day.
 
 ## Related
 
 - [Collection Statistics](statistics.md)
-- [Collection Health Scorecard](../../specs/208-collection-health-scorecard)
 - [Price Trends](price-trends.md)

@@ -14,7 +14,7 @@ promotion step.
 4. When Numista lookup is available in the review context, edit and explicitly
    submit the query. Select at most one candidate, or leave it unselected.
 5. Select **Save as Draft**. Active drafts remain excluded from collection,
-   wish-list, sold, statistics, and health counts.
+   wish-list, statistics, and health counts.
 6. Open **Quick Capture** to resume, edit images or fields, replace or remove a
    retained Numista selection, or discard the draft.
 7. Promote only after required normal coin fields are complete. Promotion can

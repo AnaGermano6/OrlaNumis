@@ -1,54 +1,68 @@
 # Getting Started Guide
 
-This guide walks you through setting up Aurearia for the first time, adding your first coin, and importing your collection with JSON or CSV.
+This guide walks you through setting up Orla Numis for the first time, adding your first coin, and importing your collection.
 
 ## First-Time Setup
 
-### Required Environment Variables
+### Environment Variables
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `JWT_SECRET` | **Yes** (production) | dev default | JWT signing key. Must be 32+ characters. In release mode (`GIN_MODE=release`), the app fatals on startup if missing. |
-| `WEBAUTHN_RP_ID` | No | `localhost` | Domain name for WebAuthn Relying Party ID |
-| `WEBAUTHN_ORIGIN` | No | `http://localhost:8080` | Full origin URL for WebAuthn (comma-separated for multiple) |
-| `CORS_ORIGINS` | No | *(smart defaults)* | Comma-separated allowed CORS origins. Falls back to WebAuthn origins + localhost |
+| `JWT_SECRET` | **Yes** | — | JWT signing key, 32+ characters. In release mode (`GIN_MODE=release`) the app stops on startup without it. |
+| `AGENT_INTERNAL_SERVICE_TOKEN` | **Yes** (with the AI agent) | — | Shared API ↔ agent credential. Set the same high-entropy value for the Go API and the Python agent. |
+| `CORS_ORIGINS` | No | localhost origins outside release mode | Comma-separated browser origins allowed to call the API |
+| `TRUSTED_PROXIES` | Release mode | — | Your reverse proxy's IP/CIDR, or `none` when there is no proxy |
 | `AGENT_SERVICE_URL` | No | `http://localhost:8081` | URL of the Python agent service |
-| `AGENT_INTERNAL_SERVICE_TOKEN` | **Yes** (Docker/production-like) | — | Shared API → agent credential. Set the same high-entropy value for the Go API and Python agent; AI features fail with "Internal service credential is not configured" when the agent is missing it. |
+| `AUREARIA_BACKUP_DIR` | No | `~/Aurearia-backups/<compose project>` | Where the full backups are kept (Docker Compose) |
 
-Run `task --list` to see all available Taskfile commands.
+`task init` creates `.env` with a random `JWT_SECRET` and `AGENT_INTERNAL_SERVICE_TOKEN`. Run `task --list` to see every Taskfile command.
 
 ### 1. Start the Application
 
-Run the app using one of the methods described in the [README](../README.md):
+With Docker Compose (the app and the AI agent, built from this checkout):
 
 ```sh
-task run                    # development (Go + Vite)
-docker compose up           # production (two containers)
+task init
+docker compose -f docker-compose.dev.yml up -d --build
 ```
 
-For Docker Compose, copy `.env.example` to `.env` and set `JWT_SECRET` plus `AGENT_INTERNAL_SERVICE_TOKEN` before starting the stack.
+The app is at `http://localhost:8080`. Data and uploads live in Docker volumes; full backups go to `~/Aurearia-backups/aurearia-dev`.
+
+For development without Docker:
+
+```sh
+task up        # Go API on :8080 and the Vite dev server on :5173
+task up-all    # the same plus the Python agent on :8081
+```
 
 ### 2. Create Your Admin Account
 
-Navigate to `http://localhost:5173` (development) or `http://localhost:8080` (Docker).
+Open the app and click **Register**. The **first user** becomes the **admin**. After that, registration is closed unless an administrator sets `RegistrationMode` to `open`.
 
-Click **Register** and create your account. The **first user** to register is automatically assigned the **admin** role. All subsequent users will be regular users.
-
-After login, new accounts will see a **Getting Started** prompt. You can always reopen the same guide from the sidebar via **Getting Started** or in **Settings → Help**.
+On the first sign-in a prompt offers the **Getting Started** guide; it is always in **Settings → Help**.
 
 ### 3. Configure Settings (Admin)
 
-As admin, click **Admin** in the navigation bar to configure:
+In **Admin**:
 
-- **AI Configuration** — Select your AI Provider: **Anthropic** (recommended) for Claude models with built-in web search, or **Ollama** for self-hosted models. Configure the provider-specific settings (API key, model, URL) and optionally customize analysis prompts. The Ollama URL is configured here (default `http://localhost:11434`).
-- **System** — Set the log level (`trace`, `debug`, `info`, `warn`, `error`) and configure the Numista API key for catalog lookups.
-- **Logs** — View real-time application logs with level filtering and auto-refresh
+- **AI** — choose **Anthropic** (recommended) or **Ollama**, set the API key or URL and the model, and optionally customize the prompts. The AI features stay off until a provider is configured.
+- **System** — the public app URL, the log level, the search sources, and the **Numista API key** for catalog lookups (free at [numista.com/api](https://en.numista.com/api/), 2,000 requests a month), plus the collection currency.
+- **Coin Properties** — the categories (`Modern` and `Other` by default) and eras offered in the coin forms.
+- **Schedules** — the automatic full backup (on by default, every day at 03:00 server time) and the wish list checks.
+
+See [Admin Settings](features/admin-settings.md).
 
 ### 4. Start Adding Coins
 
-Click **Add Coin** from the collection page. Fill in as many fields as you like — only **Name** is required. Toggle **"Add to wishlist"** at the bottom if you don't own the coin yet.
+Click **Add Coin**:
 
-After saving, you can upload images (obverse, reverse, detail) from the coin detail page.
+- **Catalog** — search Numista and fill the coin from its catalog entry; add your price and date, and save.
+- **Manual Mode** — fill in the fields yourself; only **Name** is required.
+- **AI Assist Mode** — photograph the obverse (required), the reverse and a coin card, and review the draft the AI prepares before saving. Needs an AI provider.
+
+Choose **Add to Wishlist** if you don't own the coin yet. After saving, upload or replace images from the coin's page.
+
+Banknotes have their own form and gallery (**Collection → Banknotes**).
 
 ---
 
@@ -56,221 +70,102 @@ After saving, you can upload images (obverse, reverse, detail) from the coin det
 
 ### Assisted Capture
 
-Add Coin's **AI Assist Mode** uses the same step-by-step capture layout as
-**Identify Coin**: **Obverse**, **Reverse**, then **Card**. Only the obverse is
-required; generate an intake draft immediately or continue to the optional
-reverse and coin-card steps. Skipping the reverse never treats a card as a
-reverse image.
+**AI Assist Mode** uses the same step-by-step layout as **Identify Coin**: **Obverse**, **Reverse**, then **Card**. Only the obverse is required; generate an intake draft immediately or continue to the optional reverse and coin-card steps.
 
-The PWA opens this wizard by default. Camera access starts only when you tap
-**Start Camera**; library uploads remain available if access is denied.
-Desktop keeps **Manual Mode** as its default, with **AI Assist Mode** available
-above the form. **Use manual mode instead** also remains available in the PWA,
-including for PDF coin cards.
+In the installed app, the camera starts only when you tap **Start Camera**; library uploads remain available if access is denied. **Use manual mode instead** is always available, including for PDF coin cards.
 
-**Generate Intake Draft** prepares editable suggestions; it does not add a coin
-to your collection. Review the draft, then explicitly **Confirm and Save Coin**.
+**Generate Intake Draft** prepares editable suggestions; it does not add a coin to your collection. Review the draft, then explicitly **Confirm and Save Coin**.
 
-### Required Fields
-
-| Field | Description |
-| ----- | ----------- |
-| **Name** | A descriptive name (e.g., "Augustus Denarius - Capricorn Reverse") |
-
-### Optional Fields
+### Fields
 
 | Field | Description | Example |
 | ----- | ----------- | ------- |
-| Category | Roman, Greek, Byzantine, Modern, Other | `Roman` |
-| Material | Gold, Silver, Bronze, Copper, Electrum, Other | `Silver` |
-| Denomination | Coin type | `Denarius` |
-| Ruler / Emperor | Issuing authority | `Augustus` |
-| Era / Date | Time period | `27 BC – 14 AD` |
-| Mint | Mint location | `Rome` |
-| Weight (grams) | Coin weight | `3.82` |
-| Diameter (mm) | Coin diameter | `19.5` |
-| Grade | Condition grade | `VF`, `EF`, `MS-65` |
-| Rarity Rating | Reference catalog number | `RIC 207` |
-| Obverse Inscription | Legend on the front | `CAESAR AVGVSTVS DIVI F PATER PATRIAE` |
-| Reverse Inscription | Legend on the back | `C L CAESARES AVGVSTI F COS DESIG PRINC IVVENT` |
-| Obverse Description | Design description | `Laureate head right` |
-| Reverse Description | Design description | `Gaius and Lucius standing facing` |
-| Purchase Price | Amount paid in USD | `450.00` |
-| Current Value | Estimated value in USD | `600.00` |
+| Name | **Required.** A descriptive name | `2 Euro 2007 Treaty of Rome` |
+| Category | One of the configured categories | `Modern` |
+| Material | Gold, Silver, Bronze, Copper, Electrum, Other | `Other` |
+| Denomination | Face value | `2 Euro` |
+| Ruler / Issuer | Issuing authority | `Portugal` |
+| Era | One of the configured eras | `modern` |
+| Year | Year of issue | `2007` |
+| Country | Issuing country | `Portugal` |
+| Mint | Mint location | `Lisbon` |
+| Weight (grams) | Coin weight | `8.5` |
+| Diameter (mm) | Coin diameter | `25.75` |
+| Grade | Condition grade | `UNC`, `VF` |
+| Presentation | Loose, coincard, capsule… | `coincard` |
+| Quantity | How many you hold | `1` |
+| Obverse / Reverse Inscription | Legends | |
+| Obverse / Reverse Description | Designs | |
+| Purchase Price, Current Value | In the collection currency | `3`, `4` |
 | Purchase Date | Date acquired | `2024-03-15` |
-| Store | Dealer or auction | `Heritage Auctions` |
-| Reference URL | External link | `https://www.acsearch.info/...` |
-| Reference Text | Link display label | `ACSearch Listing` |
-| Notes | Free-text notes (Markdown supported) | Any additional info |
-| Wishlist | Toggle if not yet owned | `true` / `false` |
+| Store | Dealer or seller | `Coin shop` |
+| Notes | Free-text notes (Markdown supported) | |
 
 ### Uploading Images
 
-When adding a coin, saving the record and uploading its images are separate
-steps. If an upload fails after the record is saved, **Retry remaining uploads**
-resumes only unfinished uploads without creating another coin. **Open saved coin**
-lets you finish from the coin detail page instead.
+Saving the record and uploading its images are separate steps. If an upload fails after the record is saved, **Retry remaining uploads** resumes only the unfinished uploads without creating another coin; **Open saved coin** lets you finish from the coin's page instead.
 
-AI intake era suggestions must match a configured era. An unsupported suggestion
-is retained in Notes and the review shows a warning; choose a configured era or
-leave it **Unknown** before confirming.
+AI intake era suggestions must match a configured era. An unsupported suggestion is kept in Notes and the review shows a warning; choose a configured era or leave it **Unknown** before confirming.
 
-From the coin detail page, click **Upload Image** and select:
-
-- **Image Type** — `obverse`, `reverse`, `detail`, or `other`
-- **Primary** — Check this to make the image the cover photo in the gallery view
-
-Multiple images can be uploaded per coin. The primary obverse image is shown in the collection gallery by default.
+Coins without a photo can get their official images (ECB, INCM, Monnaie de Paris, Münze Österreich) from the coin's page, or in batches from **Collection → Overview**.
 
 ---
 
 ## Import & Export
 
-The import/export feature lets you back up your collection or migrate data between instances.
+Import and export live in **Settings → Backups**. See [Data Import/Export](features/import-export.md).
 
 ### Exporting Your Collection
 
-1. Navigate to **Settings** (click the gear icon in the nav bar)
-2. Under **Import / Export**, click **Export Collection**
-3. Your browser will download a JSON file containing all your coins
+**Export ZIP** downloads your collection's data and photos in one archive. **Export PDF** makes a catalog for insurance or provenance.
 
-The export includes every field for each coin in your collection. Image files are **not** included in the export — only the image metadata (file paths, types).
+### CSV Import (recommended for a first import)
 
-### CSV Import (Recommended for first-time users)
+Download the **CSV template** from **Settings → Backups**, fill it in a spreadsheet, export it as CSV and import it. Only `name` is required.
 
-CSV is the easiest way to import from spreadsheets. In the app, open **Settings → Data** and download the **CSV Template**.
+| Column | Example |
+| --- | --- |
+| `name` | `2 Euro 2007 EU Presidency` |
+| `category` | `Modern` |
+| `material` | `Other` |
+| `denomination` | `2 Euro` |
+| `ruler` | `Portugal` |
+| `era` | `modern` |
+| `mint` | `Lisbon` |
+| `weightGrams` | `8.5` |
+| `diameterMm` | `25.75` |
+| `grade` | `UNC` |
+| `purchasePrice` | `3` |
+| `currentValue` | `4` |
+| `purchaseDate` | `2024-03-15` |
+| `purchaseLocation` | `Coin shop` |
+| `isWishlist` | `false` |
 
-#### Required and Common Columns
-
-| Column | Required | Example |
-| --- | --- | --- |
-| `name` | **Yes** | `Augustus Denarius` |
-| `category` | No | `Roman` |
-| `material` | No | `Silver` |
-| `denomination` | No | `Denarius` |
-| `ruler` | No | `Augustus` |
-| `era` | No | `27 BC - 14 AD` |
-| `mint` | No | `Rome` |
-| `weightGrams` | No | `3.82` |
-| `diameterMm` | No | `19.5` |
-| `grade` | No | `VF` |
-| `purchasePrice` | No | `450` |
-| `currentValue` | No | `600` |
-| `purchaseDate` | No | `2024-03-15` |
-| `purchaseLocation` | No | `Heritage Auctions` |
-| `isWishlist` | No | `false` |
-
-Boolean columns accept `true/false`, `yes/no`, or `1/0`. Date columns should use `YYYY-MM-DD`.
-
-#### CSV Example
+Boolean columns accept `true/false`, `yes/no` or `1/0`. Dates use `YYYY-MM-DD`. Every column and its accepted aliases are listed in **Settings → Help**.
 
 ```csv
 name,category,material,denomination,ruler,era,mint,weightGrams,diameterMm,grade,purchasePrice,currentValue,purchaseDate,purchaseLocation,isWishlist
-Augustus Denarius,Roman,Silver,Denarius,Augustus,27 BC - 14 AD,Rome,3.82,19.5,VF,450,600,2024-03-15,Heritage Auctions,false
-Constantius II Follis,Roman,Bronze,Follis,Constantius II,337-361 AD,Antioch,2.90,18.1,F,35,45,2025-01-20,Local Show,false
+2 Euro 2007 EU Presidency,Modern,Other,2 Euro,Portugal,modern,Lisbon,8.5,25.75,UNC,3,4,2024-03-15,Coin shop,false
+1 Escudo 1986,Modern,Other,1 Escudo,Portugal,modern,Lisbon,1.7,16,VF,0.5,1,2025-01-20,Local show,false
 ```
 
-### Import File Format
+### JSON Import
 
-The import endpoint accepts a **JSON array of coin objects**. Each object follows the same schema as the export. At minimum, each coin needs a `name` field. All other fields are optional.
-
-#### Minimal Example
+The import also accepts a **JSON array of coin objects**, with the same field names as above. At minimum each coin needs a `name`.
 
 ```json
 [
-  {
-    "name": "Augustus Denarius"
-  },
-  {
-    "name": "Nero Sestertius",
-    "category": "Roman",
-    "material": "Bronze"
-  }
+  { "name": "1 Escudo 1986" },
+  { "name": "2 Euro 2007 EU Presidency", "category": "Modern", "denomination": "2 Euro", "year": 2007, "isWishlist": false }
 ]
 ```
 
-#### Full Example
+- `id`, `userId`, `createdAt` and `updatedAt` are ignored: new IDs are assigned and the coins belong to your account.
+- Images are not imported; upload them afterwards.
+- Each coin is imported on its own: one failing does not stop the others. The response says how many were imported.
+- Duplicates are not detected: importing the same file twice creates the coins twice.
 
-```json
-[
-  {
-    "name": "Augustus Denarius - Capricorn Reverse",
-    "category": "Roman",
-    "denomination": "Denarius",
-    "ruler": "Augustus",
-    "era": "27 BC – 14 AD",
-    "mint": "Rome",
-    "material": "Silver",
-    "weightGrams": 3.82,
-    "diameterMm": 19.5,
-    "grade": "VF",
-    "obverseInscription": "CAESAR AVGVSTVS DIVI F PATER PATRIAE",
-    "reverseInscription": "C L CAESARES",
-    "obverseDescription": "Laureate head of Augustus right",
-    "reverseDescription": "Capricorn right, holding globe",
-    "rarityRating": "RIC 207",
-    "purchasePrice": 450.00,
-    "currentValue": 600.00,
-    "purchaseDate": "2024-03-15T00:00:00Z",
-    "purchaseLocation": "Heritage Auctions",
-    "notes": "Excellent toning. Ex. Smith Collection.",
-    "referenceUrl": "https://www.acsearch.info/search.html?id=12345",
-    "referenceText": "ACSearch Listing",
-    "isWishlist": false
-  }
-]
-```
-
-### Field Reference for Import
-
-| JSON Field | Type | Notes |
-| ---------- | ---- | ----- |
-| `name` | string | **Required**. Coin name/title. |
-| `category` | string | One of: `Roman`, `Greek`, `Byzantine`, `Modern`, `Other`. Defaults to `Other`. |
-| `material` | string | One of: `Gold`, `Silver`, `Bronze`, `Copper`, `Electrum`, `Other`. Defaults to `Other`. |
-| `denomination` | string | Free text. |
-| `ruler` | string | Ruler, emperor, or issuing authority. |
-| `era` | string | Date or period (free text, e.g., `"44 BC"`, `"27 BC – 14 AD"`). |
-| `mint` | string | Mint location. |
-| `weightGrams` | number or null | Weight in grams. |
-| `diameterMm` | number or null | Diameter in millimeters. |
-| `grade` | string | Condition grade (e.g., `VF`, `EF`, `AU`, `MS-65`). |
-| `obverseInscription` | string | Obverse legend text. |
-| `reverseInscription` | string | Reverse legend text. |
-| `obverseDescription` | string | Obverse design description. |
-| `reverseDescription` | string | Reverse design description. |
-| `rarityRating` | string | Catalog reference (e.g., `RIC 207`, `Sear 1625`). |
-| `purchasePrice` | number or null | Purchase price in USD. |
-| `currentValue` | number or null | Estimated current value in USD. |
-| `purchaseDate` | string or null | ISO 8601 date (`"2024-03-15T00:00:00Z"` or `"2024-03-15"`). |
-| `purchaseLocation` | string | Dealer, auction house, or seller. |
-| `notes` | string | Free-text notes. Supports Markdown. |
-| `aiAnalysis` | string | AI-generated analysis (typically set by the app, but can be imported). |
-| `referenceUrl` | string | External URL. |
-| `referenceText` | string | Display text for the reference link. |
-| `isWishlist` | boolean | `true` for wishlist items, `false` (default) for owned coins. |
-
-### Import Behavior
-
-- The `id`, `userId`, `createdAt`, and `updatedAt` fields are **ignored** on import — new IDs are assigned and the coin is associated with your account.
-- The `images` array is **ignored** — images must be uploaded separately after import.
-- Each coin is imported independently. If one coin fails validation, the others still import.
-- The response indicates how many coins were successfully imported:
-  ```json
-  { "message": "Import complete", "imported": 42 }
-  ```
-- **Duplicate detection is not performed** — importing the same file twice will create duplicate entries.
-
-### Importing via the UI
-
-1. Navigate to **Settings**
-2. Under **Import / Export**, click **Import** and select a `.csv` or `.json` file
-3. The file is imported immediately after selection
-4. A success message shows how many coins were imported
-
-### Importing via the API
-
-You can also import directly via the REST API:
+Through the API:
 
 ```sh
 curl -X POST http://localhost:8080/api/user/import \
@@ -279,36 +174,24 @@ curl -X POST http://localhost:8080/api/user/import \
   -d @my-coins.json
 ```
 
+### uCoin
+
+Collections exported from uCoin.net can be added with **Settings → Backups → Import from uCoin** and completed from Numista.
+
 ---
 
 ## AI Coin Analysis
 
-Upload photos of a coin and click **Analyze with AI** on the coin detail page. The request is routed through the Python agent service using whichever AI provider is configured (Anthropic or Ollama). The AI will analyze the images and return a Markdown-formatted report covering:
+With an AI provider configured, a coin's page offers **Analyze with AI** for its obverse and reverse photos, and a grade estimate. The request goes through the Python agent to Anthropic or Ollama. See [AI Coin Analysis](features/ai-analysis.md).
 
-- Coin identification (ruler, denomination, mint)
-- Obverse and reverse design descriptions
-- Inscription readings
-- Condition assessment
-- Historical context
-- Estimated market value range
+To use Ollama:
 
-### Setup
+```sh
+ollama pull llava
+ollama serve
+```
 
-1. Install [Ollama](https://ollama.ai/)
-2. Pull a vision model:
-   ```sh
-   ollama pull llava
-   ```
-3. Start Ollama:
-   ```sh
-   ollama serve
-   ```
-4. In the app, go to **Admin → AI Configuration** and set the Ollama URL to point to your Ollama instance (default: `http://localhost:11434`)
-
-### Custom Prompts
-
-Admins can customize the AI analysis prompt in **Admin → AI Configuration → Analysis Prompt**. Leave blank to use the built-in numismatic analysis prompt. A custom prompt receives the coin images and should instruct the model on what analysis to perform.
-
+Then set the Ollama URL in **Admin → AI** (default `http://localhost:11434`).
 
 ---
 
@@ -321,4 +204,4 @@ pip install pre-commit
 pre-commit install
 ```
 
-This enables the repo hooks in [`.pre-commit-config.yaml`](../.pre-commit-config.yaml), including secret scanning and quick language-specific checks before each commit.
+This enables the hooks in [`.pre-commit-config.yaml`](../.pre-commit-config.yaml): secret scanning and quick language-specific checks before each commit.

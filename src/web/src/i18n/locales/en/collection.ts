@@ -134,6 +134,7 @@ export default {
     demonetized: 'Only demonetized coins',
     commemorative: 'Only commemorative coins',
     regular: 'Only non-commemorative coins',
+    repeated: 'Only duplicates to trade',
     remove: 'Remove the filter: {filter}',
   },
 }

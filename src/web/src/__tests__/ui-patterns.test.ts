@@ -5,48 +5,12 @@ import { withEnglishCopy } from '@/test/i18nSource'
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..')
 const SRC_DIR = join(REPO_ROOT, 'src', 'web', 'src')
-const WEB_INSTRUCTIONS = join(REPO_ROOT, '.github', 'instructions', 'web.instructions.md')
 
 function readRepoFile(pathFromSrc: string): string {
   return readFileSync(join(SRC_DIR, pathFromSrc), 'utf-8')
 }
 
 describe('UI pattern recipes', () => {
-  it('documents reusable UI recipes for future agents', () => {
-    const instructions = readFileSync(WEB_INSTRUCTIONS, 'utf-8')
-
-    expect(instructions).toContain('#### UI Pattern Recipes')
-    expect(instructions).toContain('identify the closest existing page or component pattern')
-    expect(instructions).toContain('Keep controls in one row: `< Previous` then current label then `Next >`')
-    expect(instructions).toContain('Keep Gallery and Tray under the Collection submenu')
-  })
-
-  it('keeps tray pagination in one Previous, drawer label, Next row', () => {
-    const trayControls = withEnglishCopy(readRepoFile(join('components', 'tray', 'TrayControls.vue')))
-
-    // TrayControls no longer has scoped `.drawer-navigation`/`.drawer-label`
-    // CSS classes or a `nav-btn` class — the fixed positioning, the nowrap
-    // row, and the button styling are all inline Tailwind utility classes now.
-    expect(trayControls).toContain('Prev')
-    expect(trayControls).toContain("t('trays.trayOf', { current: drawerIndex + 1, total: totalDrawers })")
-    expect(trayControls).toContain('Next')
-    // Row stays a single non-wrapping flex row (Prev, label, Next side by side).
-    expect(trayControls).toContain('flex flex-nowrap items-center justify-center gap-4 rounded-full')
-    // Pagination pins to the bottom of the viewport, clearing the safe area.
-    expect(trayControls).toContain("fixed bottom-[calc(1rem+env(safe-area-inset-bottom))]")
-    expect(trayControls).not.toContain('Felt Color')
-    expect(trayControls).not.toContain('felt-theme-selector')
-  })
-
-  it('keeps tray felt color in Settings appearance instead of the tray page', () => {
-    const settingsAppearance = readRepoFile(join('components', 'settings', 'SettingsAppearanceSection.vue'))
-    const museumTray = readRepoFile(join('components', 'tray', 'MuseumTray.vue'))
-
-    expect(settingsAppearance).toContain('Tray Felt Color')
-    expect(settingsAppearance).toContain('set-tray-felt-color')
-    expect(museumTray).toContain('grid-template-columns: repeat(6, minmax(0, 1fr))')
-  })
-
   it('shares the camera-first wizard between Identify Coin and Add Coin', () => {
     const lookupPage = readRepoFile(join('pages', 'CoinLookupPage.vue'))
     const addCoinPage = readRepoFile(join('pages', 'AddCoinPage.vue'))
@@ -71,13 +35,10 @@ describe('UI pattern recipes', () => {
   })
 
   it('gives the installed PWA the full-bleed capture shell from the mockup', () => {
-    const instructions = readFileSync(WEB_INSTRUCTIONS, 'utf-8')
     const wizard = readRepoFile(join('components', 'coin-lookup', 'CoinLookupCaptureWizard.vue'))
     const shell = withEnglishCopy(readRepoFile(join('components', 'coin-lookup', 'PwaCaptureShell.vue')))
     const variables = readRepoFile(join('assets', 'styles', 'variables.css'))
     const app = readRepoFile('App.vue')
-
-    expect(instructions).toContain('| Immersive PWA capture |')
 
     // The wizard picks the presentation; both pages keep passing through it.
     expect(wizard).toContain('<PwaCaptureShell')
@@ -192,26 +153,6 @@ describe('UI pattern recipes', () => {
     expect(fabButtonSource).toContain('touch-none')
     expect(fabButtonSource).toContain('bottom-[calc(24px+env(safe-area-inset-bottom))]')
     expect(fabButtonSource).toContain('right-[calc(24px+env(safe-area-inset-right))]')
-  })
-
-  it('keeps the agent chat overlay above tray pagination controls', () => {
-    const chat = readRepoFile(join('components', 'CoinSearchChat.vue'))
-    const trayControls = readRepoFile(join('components', 'tray', 'TrayControls.vue'))
-
-    // Neither component has a scoped `.chat-overlay`/`.tray-controls` class
-    // anymore — both `position: fixed` and their z-index live inline as
-    // Tailwind `fixed` + `z-[N]` classes on their root elements.
-    const chatZIndexMatch = chat.match(/<div class="fixed inset-0 z-\[(\d+)\]/)
-    const trayZIndexMatch = trayControls.match(/class="z-\[(\d+)\][^"]*"/)
-
-    expect(chatZIndexMatch).not.toBeNull()
-    expect(trayZIndexMatch).not.toBeNull()
-    expect(trayControls).toContain("'fixed bottom-[calc(1rem+env(safe-area-inset-bottom))]")
-
-    const chatZIndex = Number(chatZIndexMatch?.[1] ?? 0)
-    const trayZIndex = Number(trayZIndexMatch?.[1] ?? 0)
-
-    expect(chatZIndex).toBeGreaterThan(trayZIndex)
   })
 
   it('keeps the generated service worker from importing hashed Workbox runtime files', () => {

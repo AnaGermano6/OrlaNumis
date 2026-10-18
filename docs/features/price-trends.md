@@ -9,7 +9,7 @@ Ask the agent about market movement for a ruler, denomination, type, or collecti
 ## Key Features
 
 - **Market research prompts** — Query recent sale direction and demand signals for a coin type.
-- **Portfolio context** — Pair with Stats value details and investment breakdown to understand collection movement.
+- **Portfolio context** — Pair with the Stats and the Time Machine to understand collection movement.
 - **Auction awareness** — Use auction lots and similar-lot searches as comparable data sources.
 - **Decision support** — Helps prioritize wishlist alerts, bids, and valuation review.
 

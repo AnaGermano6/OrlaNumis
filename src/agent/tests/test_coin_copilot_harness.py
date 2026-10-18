@@ -21,9 +21,8 @@ from app.tools.copilot_collection_tools import (
 FIXTURE = Path(__file__).parent / "fixtures" / "coin_copilot" / "valid_execute_request.json"
 HANDOFF_FIXTURE = (
     Path(__file__).parents[3]
-    / "specs"
-    / "362-coin-copilot-attribution"
     / "contracts"
+    / "coin-copilot"
     / "fixtures"
     / "deep-analysis-handoff-valid.json"
 )

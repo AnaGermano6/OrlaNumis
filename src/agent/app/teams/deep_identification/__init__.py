@@ -1,7 +1,6 @@
-"""Deep Agentic Coin Identification pipeline (344-deep-agentic-coin-identification).
+"""Deep Agentic Coin Identification pipeline.
 
-Contract anchor: specs/344-deep-agentic-coin-identification/contracts/
-agent-internal-contract.md §6 (graph topology):
+Graph topology:
 
     prepare_evidence -> router -> provider_fanout (bounded) -> evaluator -> synthesizer
 

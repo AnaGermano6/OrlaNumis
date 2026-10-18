@@ -21,7 +21,7 @@
           <span class="section-label mb-0">{{ t('coinFields.country') }}</span>
           <select v-model="country" class="form-select h-10 w-full bg-card py-0 text-body" data-testid="banknotes-country">
             <option value="">{{ t('collection.view.allCountries') }}</option>
-            <option v-for="option in countries" :key="option.country" :value="option.country">{{ option.country }} ({{ option.count }})</option>
+            <option v-for="option in countries" :key="option.country" :value="option.country">{{ withCountryFlag(option.country) }} ({{ option.count }})</option>
           </select>
         </label>
         <label class="flex min-w-0 flex-col gap-1">
@@ -50,6 +50,18 @@
             </button>
           </div>
         </div>
+      </div>
+      <!-- Opened from the Collection page's duplicates to trade. -->
+      <div v-if="repeated" class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="chip active inline-flex items-center gap-1"
+          :aria-label="t('collection.activeFilters.remove', { filter: t('banknotes.repeatedOnly') })"
+          data-testid="banknotes-filter-repeated"
+          @click="clearRepeated"
+        >
+          {{ t('banknotes.repeatedOnly') }} <X :size="12" aria-hidden="true" />
+        </button>
       </div>
     </div>
 
@@ -80,9 +92,10 @@
 // filter, an order and a grid or list (their numbers are on the Collection
 // page). Their own filters, so the coin gallery's never leak in.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { getCoinCountries, getCoins, type CoinCountryCount } from '@/api/client'
 import type { Coin } from '@/types'
-import { CirclePlus } from 'lucide-vue-next'
+import { CirclePlus, X } from 'lucide-vue-next'
 import CoinCard from '@/components/CoinCard.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
@@ -90,6 +103,7 @@ import CoinListTable from '@/components/collection/CoinListTable.vue'
 import CollectionPagination from '@/components/CollectionPagination.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import { t } from '@/i18n'
+import { withCountryFlag } from '@/utils/countryFlags'
 
 const PER_PAGE = 50
 const LAYOUTS = ['grid', 'list'] as const
@@ -101,13 +115,25 @@ const loading = ref(true)
 const failed = ref(false)
 const countries = ref<CoinCountryCount[]>([])
 
+const route = useRoute()
+const router = useRouter()
+
 const search = ref('')
 const country = ref('')
+// Only the banknotes held more than once: "?repeated=true".
+const repeated = ref(route.query.repeated === 'true')
 const sortKey = ref('updated_at_desc')
 const page = ref(1)
 const layout = ref<(typeof LAYOUTS)[number]>(readLayout())
 
-const filtered = computed(() => Boolean(search.value.trim() || country.value))
+const filtered = computed(() => Boolean(search.value.trim() || country.value || repeated.value))
+
+function clearRepeated() {
+  repeated.value = false
+  const query = { ...route.query }
+  delete query.repeated
+  void router.replace({ query })
+}
 
 function readLayout(): (typeof LAYOUTS)[number] {
   try {
@@ -138,6 +164,7 @@ async function load() {
       wishlist: 'false',
       search: search.value.trim() || undefined,
       country: country.value || undefined,
+      repeated: repeated.value ? 'true' : undefined,
       sort,
       order,
       page: page.value,
@@ -172,7 +199,7 @@ watch(search, () => {
     else void load()
   }, 300)
 })
-watch([country, sortKey], () => {
+watch([country, sortKey, repeated], () => {
   if (page.value !== 1) page.value = 1
   else void load()
 })

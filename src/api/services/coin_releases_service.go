@@ -81,8 +81,10 @@ type CoinRelease struct {
 	Upcoming bool `json:"upcoming"`
 	// Owned is true when a coin of the collection is this one.
 	Owned bool `json:"owned"`
-	// Wishlist is true when a coin of the wishlist is this one.
-	Wishlist bool `json:"wishlist"`
+	// Wishlist is true when a coin of the wishlist is this one;
+	// WishlistCoinID is that coin, to take it off the wishlist.
+	Wishlist       bool `json:"wishlist"`
+	WishlistCoinID uint `json:"wishlistCoinId,omitempty"`
 	// Keys identify the coin in the official photos found for a collection
 	// coin: the ECB images of a €2 commemorative, the shop pages of a mint's design.
 	Keys []string `json:"-"`
@@ -180,17 +182,28 @@ func MarkOwnedReleases(releases []CoinRelease, owned map[string]uint) {
 // OwnedKeys, given the wishlist's coins) identifies.
 func MarkWishlistReleases(releases []CoinRelease, wishlist map[string]uint) {
 	for r := range releases {
-		releases[r].Wishlist = releases[r].Wishlist || identified(releases[r], wishlist)
+		if coinID, ok := identifiedBy(releases[r], wishlist); ok {
+			releases[r].Wishlist = true
+			if releases[r].WishlistCoinID == 0 {
+				releases[r].WishlistCoinID = coinID
+			}
+		}
 	}
 }
 
 func identified(release CoinRelease, keys map[string]uint) bool {
+	_, ok := identifiedBy(release, keys)
+	return ok
+}
+
+// identifiedBy returns the coin of the first of the release's keys found.
+func identifiedBy(release CoinRelease, keys map[string]uint) (uint, bool) {
 	for _, key := range release.Keys {
-		if _, ok := keys[key]; ok {
-			return true
+		if coinID, ok := keys[key]; ok {
+			return coinID, true
 		}
 	}
-	return false
+	return 0, false
 }
 
 // MarkWishlist flags the releases a coin of the wishlist is.

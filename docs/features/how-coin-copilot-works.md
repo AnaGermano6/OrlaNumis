@@ -7,7 +7,7 @@
 
 ## In one paragraph
 
-Coin Copilot is the assistant in Aurearia's chat drawer (open it from
+Coin Copilot is the assistant in Orla Numis's chat drawer (open it from
 **Agent** in the sidebar, or from the floating button in the installed app).
 You ask in plain English: "Find me any Caligula coins under $500", "Which of my
 coins are missing an era?", "What have Athenian owls been selling for?". Copilot
@@ -40,7 +40,7 @@ You can tell which one you're talking to: Copilot answers carry a small
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 36, "rankSpacing": 48}}}%%
 flowchart LR
     You(["👤 You<br/>chat drawer"]):::person
-    App[("🏛️ Aurearia server<br/>your collection<br/>the conversation · each step")]:::server
+    App[("🏛️ Orla Numis server<br/>your collection<br/>the conversation · each step")]:::server
     Copilot{{"🧭 Coin Copilot<br/>plans the steps<br/>writes the answer"}}:::copilot
 
     subgraph Helpers["Helpers Copilot can call"]
@@ -55,7 +55,7 @@ flowchart LR
         direction TB
         D("🏪 Dealers<br/>vCoins · MA-Shops · Harlan J. Berk<br/>Forum · Catawiki"):::outside
         A("🔨 Auctions<br/>NumisBids · CNG"):::outside
-        R("📚 References<br/>Numista · Nomisma / OCRE"):::outside
+        R("📚 References<br/>Numista"):::outside
     end
 
     You <--> App
@@ -80,14 +80,14 @@ flowchart LR
 ```
 
 **Colour key** (same in every diagram): 🟨 gold = Coin Copilot ·
-🟦 blue = the Aurearia server · 🟩 green = your collection ·
+🟦 blue = the Orla Numis server · 🟩 green = your collection ·
 🟧 orange = market searches · 🟪 purple = identification ·
 ⬜ grey = outside websites and catalogues.
 
 Three things are worth knowing about this picture:
 
 - **Your collection never leaves the server in bulk.** Collection helpers ask
-  the Aurearia server for exactly what a step needs, using a short-lived
+  the Orla Numis server for exactly what a step needs, using a short-lived
   read-only pass that works for one conversation, for your coins only, and
   expires within three minutes.
 - **The outside world is a fixed list.** Copilot can only reach the dealer and
@@ -130,7 +130,7 @@ sequenceDiagram
     autonumber
     actor You as 👤 You
     participant Chat as 💬 Chat drawer
-    participant Server as 🏛️ Aurearia server
+    participant Server as 🏛️ Orla Numis server
     participant Copilot as 🧭 Coin Copilot
     participant Dealer as 🔎 Dealer search
     participant Sites as 🏪 vCoins · MA-Shops · HJB
@@ -171,7 +171,7 @@ sequenceDiagram
 
 In words:
 
-1. **Your message goes to the Aurearia server first**, not straight to the AI.
+1. **Your message goes to the Orla Numis server first**, not straight to the AI.
    The server records the run and hands Copilot your message, the helpers it
    may use, and a read-only pass.
 2. **Copilot plans.** For a clear request it gets straight on with it. It
@@ -208,7 +208,7 @@ what happens inside it.
 flowchart TD
     Q(["💬 Caligula coins<br/>under $500"]):::person
     P("✂️ Work out keywords<br/>and budget<br/>Caligula · 500 USD"):::copilot
-    Split{"Can Aurearia search<br/>this dealer directly?"}:::decision
+    Split{"Can Orla Numis search<br/>this dealer directly?"}:::decision
     Direct("🎯 Dealer's own search<br/>current stock only<br/>HJB: in stock only"):::collection
     Web("🌐 Web search locked to<br/>that dealer's website,<br/>then read the listing pages"):::market
     Budget("💲 Keep listings<br/>at or under budget<br/>in the budget's currency"):::server
@@ -235,7 +235,7 @@ flowchart TD
 
 - **Why "directly" matters.** A general web search turns up years of old
   listing pages for coins that sold long ago. Searching the dealer's own site
-  only returns what they have *now*, so sold coins don't appear. Aurearia does
+  only returns what they have *now*, so sold coins don't appear. Orla Numis does
   this for vCoins, MA-Shops and Harlan J. Berk. For Harlan J. Berk it also asks
   for items with stock on hand, because their feed keeps closed sale lots.
 - **Other dealers** still go through a web search, but the search is locked to
@@ -244,7 +244,7 @@ flowchart TD
 - **Budgets never convert currencies.** "Under $500" keeps US-dollar listings
   at or under $500. Listings priced in euros or pounds are left out, and the
   answer tells you how many (for example "30 listings priced in another
-  currency were left out"). Aurearia doesn't use exchange rates, so it can't
+  currency were left out"). Orla Numis doesn't use exchange rates, so it can't
   fairly compare €450 with $500.
 - **Five by default.** You'll see 5 listings. If more matched, Copilot says so
   and offers to show more, up to a maximum of 10.
@@ -256,7 +256,7 @@ flowchart TD
   A page only counts as for sale when it has a real "add to cart" or "buy now"
   button, not just the word "purchase" somewhere on the page.
 - **Dealers that push back get a rest.** If a dealer blocks automated searches
-  (a browser challenge or "too many requests"), Aurearia stops asking it for a
+  (a browser challenge or "too many requests"), Orla Numis stops asking it for a
   while (45 minutes by default, or as long as the dealer asks, up to 6 hours).
   The answer says that dealer was skipped, and the other dealers' results
   still show. Repeating the same search within 5 minutes reuses the earlier
@@ -266,7 +266,7 @@ flowchart TD
 
 ## Deep Analysis hand-off
 
-Deep Analysis is Aurearia's slower, more thorough identification workflow. It
+Deep Analysis is Orla Numis's slower, more thorough identification workflow. It
 compares your coin's photos with reference catalogues and writes a cited
 report. If your administrator has enabled it for Copilot, you can start it
 from the chat ("run Deep Analysis on my Trajan denarius").
@@ -276,20 +276,19 @@ from the chat ("run Deep Analysis on my Trajan denarius").
 flowchart TB
     You(["👤 'Run Deep Analysis on my Trajan denarius'"]):::person
     Copilot{{"🧭 Coin Copilot<br/>asks which coin if it's unclear"}}:::copilot
-    Server[("🏛️ Aurearia server<br/>checks it's your coin<br/>snapshots it · queues the job")]:::server
+    Server[("🏛️ Orla Numis server<br/>checks it's your coin<br/>snapshots it · queues the job")]:::server
 
     subgraph Job["🔬 Deep Analysis job · runs in the background"]
         direction TB
         E("📷 Read the evidence<br/>photos · earlier AI analysis · your notes"):::identify
         Rt("🧭 Choose reference sources"):::identify
         N("📚 Numista<br/>catalogue"):::outside
-        O("🏛️ Nomisma / OCRE<br/>Roman Imperial types"):::outside
         G("🔖 NGC<br/>certificate link only"):::outside
         Ev("⚖️ Compare the sources<br/>flag disagreements"):::identify
         Sy("📝 Cited report<br/>+ proposed fields"):::identify
         E --> Rt
-        Rt --> N & O & G
-        N & O & G --> Ev
+        Rt --> N & G
+        N & G --> Ev
         Ev --> Sy
     end
 
@@ -352,12 +351,10 @@ Other things you may see:
 - **Price trends** show the direction, the number of *verified sales* behind it,
   and the date range. Hammer prices and prices including buyer's premium are
   kept separate and never mixed.
-- **Save as Note.** Any finished answer can be saved to your Notes after you
-  review and edit it.
 
 ## What Copilot will never do
 
-- Change a coin, draft, wishlist item, collector profile or setting.
+- Change a coin, draft, wishlist item or setting.
 - Buy, bid, or approve anything.
 - Browse arbitrary websites or reach sites outside the configured lists.
 - Follow instructions that appear *inside* a dealer page or search result.
@@ -366,18 +363,9 @@ Other things you may see:
 - Show you its private reasoning, internal prompts or any credentials.
 - Remember you between conversations beyond the saved chat history.
 
-## Your collector profile
-
-If you fill in **Settings → Collector Profile** (budget range, currency,
-preferred periods and categories, excluded categories, preferred dealers,
-collecting goals), Copilot can take it into account, for example when you ask
-for curator-style guidance. It is treated as a hint from you, never as proof of
-what you own, and Copilot keeps "facts from your collection" separate from
-"suggestions based on your profile".
-
 ## Privacy and what's kept
 
-The Aurearia server keeps Copilot's conversation so runs can resume and you can
+The Orla Numis server keeps Copilot's conversation so runs can resume and you can
 scroll back. It keeps only what the chat shows: messages, the step checklist,
 and bounded helper results. It never keeps the AI's private reasoning, internal
 prompts, credentials, or raw copies of your collection.
@@ -415,7 +403,7 @@ Your administrator can adjust these in *Admin → System → Coin Copilot Limits
 - **Dealers can block automated searches.** vCoins uses bot protection and may
   temporarily refuse searches after many in a short time. The result is then
   *Partial*: that dealer is listed as unavailable and the others still show.
-  Aurearia doesn't try to get around this.
+  Orla Numis doesn't try to get around this.
 - **Keyword search can't judge meaning.** Dealers search their own titles and
   descriptions, so a listing that merely *mentions* Caligula (a Germanicus coin
   "struck under Caligula", or a dealer's colourful description) can appear.
@@ -503,7 +491,7 @@ Note the difference: the Coin Agent's *gap analysis* suggests purchases, while
 Copilot's *Analyze collection gaps* only reports missing information in your
 records.
 
-## Other AI helpers elsewhere in Aurearia
+## Other AI helpers elsewhere in Orla Numis
 
 The same AI service powers several features outside the chat. They aren't part
 of Copilot, but they're useful to know about.
@@ -519,9 +507,7 @@ of Copilot, but they're useful to know about.
 | Wishlist from a link | Wishlist | Reads a dealer page you paste and fills in the wishlist item |
 | Wishlist availability check | Runs on a schedule | Checks whether wishlist listings are still for sale |
 | Wishlist search alerts | Runs on a schedule | Looks for new listings matching your saved searches |
-| Bid recommendation | Auction tracking | Adds a market signal from recent sales to a tracked lot |
 | Dynamic set builder | Coin Sets | Turns "all twelve Caesars" into a proposed set for you to review |
-| Coin of the Day (wishlist) | Coin of the Day | Writes a short note on why a wishlist coin is worth a look |
 
 ## For administrators
 
@@ -549,12 +535,12 @@ Technical details (limits, retention, recovery, rollback) are in
 
 | Term | Plain meaning |
 |---|---|
-| Agent / assistant | The AI you chat with. Aurearia has two: Coin Copilot and the original Coin Agent |
+| Agent / assistant | The AI you chat with. Orla Numis has two: Coin Copilot and the original Coin Agent |
 | Helper (tool) | A specialised task Copilot can ask for, like "search dealer listings" |
 | Run | One request from you and everything Copilot does to answer it |
 | Source | A website or catalogue the answer came from, always linked |
 | Verified / partially verified | Read from the dealer's own site vs pieced together from search-engine snippets |
 | Hammer price | The winning bid at auction, before buyer's premium |
 | Premium-inclusive price | Hammer price plus the auction house's buyer's premium |
-| Deep Analysis | Aurearia's thorough, multi-source identification workflow |
+| Deep Analysis | Orla Numis's thorough, multi-source identification workflow |
 | Read-only | Can look, can't change |

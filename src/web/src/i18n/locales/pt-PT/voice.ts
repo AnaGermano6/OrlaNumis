@@ -1,7 +1,7 @@
 import type { Messages } from '../../types'
 
 const messages: Messages['voice'] = {
-  privacy: 'O reconhecimento de voz pode enviar o áudio para o fornecedor do navegador ou do dispositivo. O Aurearia não guarda áudio.',
+  privacy: 'O reconhecimento de voz pode enviar o áudio para o fornecedor do navegador ou do dispositivo. A Orla Numis não guarda áudio.',
   start: 'Iniciar ditado por voz',
   stop: 'Parar ditado por voz',
   requesting: 'A pedir acesso ao microfone',

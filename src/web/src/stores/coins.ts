@@ -26,6 +26,8 @@ export const useCoinsStore = defineStore('coins', () => {
   const selectedCommemorative = ref('')
   /** '' or a Numista kind of coin (CollectionClassification key). */
   const selectedClassification = ref('')
+  /** Only the coins held more than once (to trade). */
+  const selectedRepeated = ref(false)
   /** True when a grouped view hit ALL_COINS_LIMIT and shows only part of the collection. */
   const truncated = ref(false)
   let allCoinsGeneration = 0
@@ -162,6 +164,7 @@ export const useCoinsStore = defineStore('coins', () => {
     selectedCirculation,
     selectedCommemorative,
     selectedClassification,
+    selectedRepeated,
     truncated,
     fetchAllCoins,
     collectionHealth,

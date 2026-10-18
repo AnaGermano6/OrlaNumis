@@ -32,6 +32,8 @@ const (
 )
 
 const (
+	// backupFormat names the format in a backup's manifest. It keeps the
+	// app's first name, so that every backup, old or new, can be restored.
 	backupFormat        = "aurearia-backup"
 	backupFormatVersion = 1
 	backupManifestName  = "manifest.json"
@@ -47,7 +49,8 @@ const (
 	uploadsRestoringDir = ".restoring"
 )
 
-var backupNamePattern = regexp.MustCompile(`^aurearia-(\d{4}-\d{2}-\d{2}-\d{6})-(auto|manual|pre-restore|uploaded)\.zip$`)
+// Backups made before the app was named Orla Numis keep their "aurearia-" name.
+var backupNamePattern = regexp.MustCompile(`^(?:orla-numis|aurearia)-(\d{4}-\d{2}-\d{2}-\d{6})-(auto|manual|pre-restore|uploaded)\.zip$`)
 
 // ErrBackupNotFound is a backup name that is not one of the folder's backups.
 var ErrBackupNotFound = errors.New("backup not found")
@@ -69,7 +72,7 @@ type BackupManifest struct {
 
 // BackupInfo is a backup of the folder.
 type BackupInfo struct {
-	Name string `json:"name" example:"aurearia-2026-10-16-030000-auto.zip"`
+	Name string `json:"name" example:"orla-numis-2026-10-16-030000-auto.zip"`
 	Kind string `json:"kind" enums:"auto,manual,pre-restore,uploaded"`
 	// CreatedAt is when its data was copied (for an imported backup, when it
 	// was made, not imported).
@@ -186,7 +189,7 @@ func (s *BackupService) create(kind string) (info BackupInfo, err error) {
 
 	// The database first: a copy as of now, outside the backup folder (which
 	// may be a folder of the host, where SQLite's locks are not to be relied on).
-	tmp, err := os.MkdirTemp("", "aurearia-backup-")
+	tmp, err := os.MkdirTemp("", "orla-numis-backup-")
 	if err != nil {
 		return BackupInfo{}, err
 	}
@@ -221,7 +224,7 @@ func (s *BackupService) create(kind string) (info BackupInfo, err error) {
 }
 
 func backupName(at time.Time, kind string) string {
-	return fmt.Sprintf("aurearia-%s-%s.zip", at.UTC().Format(backupTimeLayout), kind)
+	return fmt.Sprintf("orla-numis-%s-%s.zip", at.UTC().Format(backupTimeLayout), kind)
 }
 
 func backupInfo(name, kind string, manifest BackupManifest) BackupInfo {
@@ -512,7 +515,7 @@ func (s *BackupService) validate(zipPath string) (BackupManifest, error) {
 	if database == nil {
 		return manifest, errors.New("the backup has no database")
 	}
-	tmp, err := os.MkdirTemp("", "aurearia-restore-check-")
+	tmp, err := os.MkdirTemp("", "orla-numis-restore-check-")
 	if err != nil {
 		return manifest, err
 	}

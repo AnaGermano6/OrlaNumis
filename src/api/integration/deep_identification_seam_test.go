@@ -21,8 +21,7 @@ package integration_test
 // re-encoding expect, this test fails on the wire, not on an agreeable
 // fake.
 //
-// LLM tradeoff (documented in full in
-// .squad/decisions/inbox/maximus-seam-test.md): the configured LLM
+// LLM tradeoff: the configured LLM
 // provider is Ollama, pointed at a local TCP port nothing is listening on.
 // Every LLM call site inside the deep-identification pipeline (the vision
 // hypothesis node, the evaluator's disagreement summary, and the

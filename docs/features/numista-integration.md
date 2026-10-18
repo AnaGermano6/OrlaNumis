@@ -9,7 +9,7 @@ standalone destination. Saved coins use **Catalog References** as the canonical
 surface. Identify Coin and Quick Capture retain lookup where it provides
 context while reviewing a draft attribution.
 
-Results are decision support only. Aurearia saves a Numista reference only
+Results are decision support only. Orla Numis saves a Numista reference only
 after the collector selects a candidate and confirms the relevant save action;
 it never attaches every result or infers a selection from result order.
 
@@ -19,19 +19,19 @@ it never attaches every result or infers a selection from result order.
 2. Paste the key in **Admin → System → Numista API Key**.
 3. Save the setting.
 
-The configured allowance is shared by collectors using the Aurearia instance.
+The configured allowance is shared by collectors using the Orla Numis instance.
 Fresh equivalent searches and catalog details may be reused across saved-coin
 and photo-assisted lookup. Cache content is disposable and never becomes a
 collection record.
 
 ## Query and Ranking Contract
 
-- Aurearia generates concise Numista text queries from ruler/issuer (or a
+- Orla Numis generates concise Numista text queries from ruler/issuer (or a
   short structured title fallback), reverse inscription/type, and a reliable
   mint. It does not put denomination, date/range, material, catalog
   references, obverse text, slab/label text, notes, or descriptive prose in
   the provider `q`.
-- Those excluded fields remain in the bounded evidence sent to Aurearia's
+- Those excluded fields remain in the bounded evidence sent to Orla Numis's
   deterministic scorer. Omitting a field from `q` does not discard it from
   candidate ranking.
 - Exact normalized mint aliases `SMN` and `SMNT` map to `Nicomedia`.
@@ -73,7 +73,7 @@ collection record.
 5. Review the candidates and select one.
 6. Confirm **Add selected reference**.
 
-If an untouched generated query returns no candidates, Aurearia may try its
+If an untouched generated query returns no candidates, Orla Numis may try its
 single relaxed query and identifies that effective query in the result. An
 edited query is never rewritten or relaxed.
 
@@ -86,10 +86,31 @@ transition, but it does not contain the full lookup panel. It provides only a
 compact link back to the saved coin's Catalog References section.
 
 Selecting a result changes only local review state. A `CoinReference` is
-created only after **Add selected reference** succeeds. Aurearia reconstructs
+created only after **Add selected reference** succeeds. Orla Numis reconstructs
 the canonical URL as
 `https://en.numista.com/catalogue/pieces<identifier>.html`; manual reference
 validation and deduplication remain authoritative.
+
+## New Coins from the Releases
+
+**Add to collection** on a new coin of the collection overview's releases
+opens Add Coin with what the ECB or the mint says, and looks up the coin's
+Numista type:
+
+- a coin listed from Numista is its own type, and a mint's coin the catalogue
+  has matched to Numista keeps that type, with no new request;
+- otherwise Numista's coins of the country, year and face value are searched
+  (once a day at most for each), and the coin is the one whose ECB image or
+  mint page is the coin's, or the only one whose name is the coin's.
+
+When the type is sure, its details complete the form: metal, weight,
+diameter, mint, sides and their lettering, the Numista and other catalogue
+references, and Numista's notes. The coin keeps its own name, face value,
+country, year, circulation, rarity and source page, and a field the user has
+already changed is left alone. **Not this coin** lists the other candidates
+and can go back to the release's details alone. When none is sure, the
+candidates are listed to choose from, with a link to search the Numista
+catalog. Nothing is saved until the coin is.
 
 ## Identify Coin and Quick Capture
 
@@ -178,7 +199,7 @@ a successful broad search into `empty`.
 
 ## Navigation and Compatibility
 
-- Aurearia adds no standalone Numista route, sidebar item, or top-level menu
+- Orla Numis adds no standalone Numista route, sidebar item, or top-level menu
   item.
 - Existing coin detail, Actions, Identify Coin, and Quick Capture routes remain
   available.
@@ -196,6 +217,7 @@ POST /api/numista/query-proposal      # Local versioned proposal; no provider ca
 POST /api/numista/lookup             # Typed explicit lookup
 POST /api/numista/enrich             # Bounded progressive detail enrichment
 GET  /api/numista/search?q=...       # Deprecated compatibility adapter
+GET  /api/coin-releases/numista-type # The Numista type of a new coin, and its candidates
 POST /api/coins/lookup               # Analyze photos; does not eagerly search Numista
 GET  /api/admin/numista/health       # Admin-only redacted rolling health
 ```
@@ -234,8 +256,5 @@ infrastructure.
 - [Quick Capture](../quick-capture.md) — Draft retention and promotion
 - [Admin Settings](admin-settings.md) — Configure the Numista API key
 - [API Reference](../api-reference.md#numista) — Typed request/response contract
-- [ADR 0007](../adr/0007-shared-numista-lookup.md) — Shared boundary and migration
-- [Feature 342 contract](../../specs/342-numista-text-query-tuning/contracts/numista-query.openapi.yaml) — Proposal and attribution fields
-- [Feature 342 measurement](../../specs/342-numista-text-query-tuning/live-evidence.md) — Sanitized comparison and limitations
 
 See also: [Numista.com](https://en.numista.com/)

@@ -1,5 +1,5 @@
 export default {
-  privacy: 'Voice recognition may send audio to your browser or device provider. Aurearia does not store audio.',
+  privacy: 'Voice recognition may send audio to your browser or device provider. Orla Numis does not store audio.',
   start: 'Start voice dictation',
   stop: 'Stop voice dictation',
   requesting: 'Requesting microphone',

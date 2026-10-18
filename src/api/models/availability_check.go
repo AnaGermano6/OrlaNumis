@@ -20,8 +20,8 @@ const (
 )
 
 // GenericAvailabilityFailureMessage is the single generic, safe-for-display failure
-// message used for AvailabilityRun.FailMessage, AvailabilityCycle.FailMessage, and the
-// wishlist_availability_run notification body. It intentionally never includes URLs,
+// message used for AvailabilityRun.FailMessage and AvailabilityCycle.FailMessage.
+// It intentionally never includes URLs,
 // query text, or internal error details (FR-015).
 const GenericAvailabilityFailureMessage = "The availability check could not be completed due to an internal error. Please try again later."
 

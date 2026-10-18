@@ -30,7 +30,7 @@ func TestExplorationContractConstantsMatchOpenAPI(t *testing.T) {
 
 func loadExplorationOpenAPISchemas(t *testing.T) map[string]any {
 	t.Helper()
-	path := filepath.Join("..", "..", "..", "specs", "360-ai-driven-browser-testing", "contracts", "exploration-agent.openapi.yaml")
+	path := filepath.Join("..", "..", "..", "contracts", "browser-exploration", "exploration-agent.openapi.yaml")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read OpenAPI contract: %v", err)

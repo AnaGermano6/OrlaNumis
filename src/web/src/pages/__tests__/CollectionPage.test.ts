@@ -32,5 +32,6 @@ describe('CollectionPage', () => {
     expect(source).toContain('data-testid="gallery-active-filters"')
     expect(source).toContain("@click=\"selectedCirculation = ''\"")
     expect(source).toContain("@click=\"selectedCommemorative = ''\"")
+    expect(source).toContain('@click="selectedRepeated = false"')
   })
 })

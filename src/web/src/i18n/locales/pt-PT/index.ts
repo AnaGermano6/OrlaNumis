@@ -49,7 +49,6 @@ import stats from './stats'
 import swipe from './swipe'
 import timeline from './timeline'
 import toasts from './toasts'
-import trays from './trays'
 import ucoinImport from './ucoinImport'
 import upload from './upload'
 import voice from './voice'
@@ -109,7 +108,6 @@ const messages: Messages = {
   swipe,
   timeline,
   toasts,
-  trays,
   ucoinImport,
   upload,
   voice,

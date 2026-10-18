@@ -3,6 +3,7 @@
 import type { ChecklistDefinition, ChecklistSlot, Coin, CoinSetCompletion } from '@/types'
 import { t } from '@/i18n'
 import { formatFaceValue, releaseCountryName } from '@/utils/coinReleases'
+import { flagOfCode, withFlagOfCode } from '@/utils/countryFlags'
 
 export interface AlbumSlot {
   key: string
@@ -12,6 +13,8 @@ export interface AlbumSlot {
   year?: number | null
   /** The country's name, to group by. */
   country?: string
+  /** The flag before the title, when the title is the country. */
+  flag?: string
   owned: boolean
   /** Wanted: a goal set's coin on the wishlist. */
   wishlist?: boolean
@@ -57,6 +60,7 @@ export function checklistAlbumSlot(slot: ChecklistSlot, definition: ChecklistDef
   } else {
     // A country's slot: the country (no grouping by it), and the coin filling it.
     album.title = country
+    album.flag = flagOfCode(slot.country) || undefined
     album.detail = definition.challenge === 'joint-issue' ? slot.coinName : (slot.coinName ?? t('sets.album.anyEuroCoin'))
   }
   return album
@@ -99,7 +103,7 @@ export function agenticAlbumSlots(completion: CoinSetCompletion | null): AlbumSl
 /** What a checklist set lists, in a line: "Catálogo · Portugal · 2 €". */
 export function checklistDescription(definition: ChecklistDefinition): string {
   if (definition.source === 'catalogue') {
-    const parts = [t('sets.album.fromCatalogue'), releaseCountryName(definition.country ?? '')]
+    const parts = [t('sets.album.fromCatalogue'), withFlagOfCode(definition.country, releaseCountryName(definition.country ?? ''))]
     if (definition.currency === 'PTE') parts.push(t('sets.catalogue.currencies.PTE'))
     if (definition.faceValue) parts.push(formatFaceValue(definition.faceValue, definition.currency || undefined))
     return parts.join(' · ')
@@ -107,7 +111,7 @@ export function checklistDescription(definition: ChecklistDefinition): string {
   switch (definition.challenge) {
     case 'euro-countries': return t('sets.challenges.euroCountries.title')
     case 'joint-issue': return t('sets.challenges.jointIssue.description', { year: definition.year ?? '' })
-    case 'annual-series': return t('sets.challenges.annualSeries.named', { country: releaseCountryName(definition.country ?? ''), year: definition.year ?? '' })
+    case 'annual-series': return t('sets.challenges.annualSeries.named', { country: withFlagOfCode(definition.country, releaseCountryName(definition.country ?? '')), year: definition.year ?? '' })
     default: return ''
   }
 }

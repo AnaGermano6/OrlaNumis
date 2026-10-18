@@ -1,10 +1,8 @@
 # Design System
 
-The single written standard for Aurearia's web UI. Every new or changed view in
-`src/web` must follow it. The agent-facing summary lives in
-[`.github/instructions/web.instructions.md`](../.github/instructions/web.instructions.md);
-this document is the canonical version and adds the parts that summary omits
-(status tones, shared primitives, tables).
+The single written standard for Orla Numis's web UI. Every new or changed view in
+`src/web` must follow it, including the status tones, shared primitives and
+tables.
 
 Enforcement lives in `src/web/src/__tests__/design-tokens.test.ts`. Budgets in
 that suite are ratchets: they may only decrease.

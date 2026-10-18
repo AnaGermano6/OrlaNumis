@@ -1,111 +1,94 @@
 # Collection Management
 
-> Organize, filter, search, and browse your ancient coin collection with flexible viewing and sorting options.
+> Browse, filter, group, search and organize your coins and banknotes.
 
 ## Overview
 
-Collection Management is the heart of Ancient Coins. It provides a responsive gallery interface for browsing your coins with powerful filtering, full-text search, category organization, and flexible sorting.
+The collection has three views:
 
-## Features
+- **Collection overview** (`/collection`) — totals, the releases (each added to the collection with its Numista details, see [Numista Catalog Lookup](numista-integration.md#new-coins-from-the-releases)), the duplicates to trade (**Show in the gallery** opens the coin gallery, or the banknotes, with only them), and the coins still without a photo, with a button to fetch their official photos in batches
+- **Coin gallery** (`/`) — every collection coin, with search, filters, grouping and select mode
+- **Banknotes** (`/banknotes`) — the same for banknotes, with search, country, sort and view
 
-### Card Gallery
-- Responsive grid layout with coin cards showing primary image, name, ruler, denomination, and category
-- Category-based color coding: purple (Roman), olive (Greek), red (Byzantine), steel blue (Modern)
-- Click any card to open the coin's detail page
+## Coin Gallery
 
-### Filtering & Organization
-- **Category Filter** — Filter by Roman, Greek, Byzantine, Modern, or Other
-- **Tag Filter** — Show only coins with specific custom tags
-- **Status Filter** — Filter by collection coins, wishlist, or sold coins
-- **Full-Text Search** — Search across name, inscription, ruler, denomination, and notes
+### Search and filters
 
-### Viewing Modes
+The search takes the first row; below it, every field has the same size, in equal columns:
 
-#### Swipe Gallery (Mobile/PWA)
-- Touch-based card carousel for browsing on mobile devices
-- Swipe left/right to navigate coins
-- Position persists across page navigation
-- Pull-to-refresh to reload collection
-- Face toggle to switch between obverse and reverse images on cards
+- **Face value** — the collection's face values, most common first, with how many coins of each
+- **Sort** — recently updated, newest or oldest first, value, random
+- **View by** — all coins, or grouped by country, year, rarity or presentation
+- **Country** — each with its flag, including *Extinct countries* (USSR, Yugoslavia, Ottoman Empire…), which have none
+- **Coin type** — standard circulation, circulating commemorative or non-circulating, as Numista classifies it
+- **Presentation** — loose, coincard, capsule…
+- **Rarity**
+- **Set** — shown when you have standard sets
+- **Layout** — grid or list
+- **Face** — obverse or reverse on the cards
 
-#### Grid View (Desktop)
-- Traditional responsive card grid
-- Adaptive columns based on screen size
-- Same filtering and search options as swipe mode
+Search covers the name, denomination, ruler, era, mint, inscriptions, notes and country.
 
-#### Museum Tray
-- Cabinet-style tray presentation for collection and set browsing
-- Purchase date appears under each owned coin in `YYYY-MM-DD` format
-- Wishlist placeholders are intentionally more transparent and show `TBD` instead of a purchase date
-- Uses the selected felt color from Settings → Appearance
+A filter turned on from the collection overview (current or commemorative coins, only the duplicates to trade) shows as a chip above the gallery; its × removes it.
 
-### Sorting Options
-- **Date Added** — Newest or oldest first (default)
-- **Last Updated** — Recently modified coins
-- **Current Value** — Highest or lowest value coins
-- **Random** — Deterministic shuffle with configurable seed for reproducible browsing sessions
+The country's flag also shows in the titles of the view by country, and in the list layout of coins and banknotes alike. The flags are the system's emoji, so they need no download; Chrome and Edge on Windows show the two letters of the country code instead.
 
-### Pagination
-- Large collections load coins in pages for better performance
-- Seamless infinite scroll or explicit pagination controls (configurable)
+Grouping by country fills in, once per browser session, the country of coins linked to Numista but saved without one.
 
-### Bulk Operations
-- Enter multi-select mode to choose multiple coins
-- Batch tagging across selected coins
-- Batch status changes (move to wishlist, mark as sold, etc.)
-- Batch export to CSV or JSON
+### Select mode
+
+Choose **Select coins** in the title bar (or **Select** in the installed app), pick coins, then:
+
+- **Add to set** — adds the selected coins to one of your standard sets
+- **Delete** — deletes them, after confirmation
+
+### Random sort
+
+Random sort uses a seed kept in `sessionStorage` (`coins:randomSeed`), so pagination stays stable within a session. Choosing Random again reshuffles; in the installed app, coming back after a while reshuffles too.
+
+### Mobile and installed app
+
+- Swipe gallery for browsing on phones, with the position kept across navigation
+- Pull to refresh
+- The filters open from a menu, full width
 
 ## How to Access
 
-1. After login, you'll land on the Collection page by default
-2. Use the header to access filters, search, and sort controls
-3. Switch between **Swipe** and **Grid** views in Settings → Appearance
-4. Click any coin card to view full details
-
-## Configuration
-
-### User Preferences (Settings → Appearance)
-- **Default Gallery View** — Choose swipe or grid as your default
-- **Default Sort Order** — Select your preferred sort option
-- **Time Zone** — Affects timestamps throughout the app
-
-### Random Seed Persistence
-When using random sort, a seed is stored in `sessionStorage` under `coins:randomSeed` for reproducible browsing within a session. Navigate away and come back to maintain the same shuffle.
+1. After signing in, the coin gallery opens
+2. Use the search and the filters above the gallery
+3. Click a coin card to open its details
 
 ## API Reference
 
-### Collection Endpoints
-
 ```
-GET  /api/coins                    # List all collection coins
-POST /api/coins                    # Create a new coin
-GET  /api/coins/:id               # Get coin details
-PUT  /api/coins/:id               # Update a coin
+GET    /api/coins                 # List coins (filters below)
+POST   /api/coins                 # Create a coin
+GET    /api/coins/:id             # Coin details
+PUT    /api/coins/:id             # Update a coin
 DELETE /api/coins/:id             # Delete a coin
-POST /api/coins/bulk              # Bulk operations
+POST   /api/coins/bulk            # Bulk actions: set, delete
+GET    /api/coins/denominations   # Face values with their counts
+GET    /api/coins/countries       # Countries with their counts
 ```
 
-### Query Parameters
-- `?search=...` — Full-text search
-- `?category=...` — Filter by category
-- `?status=...` — Filter by status (collection, wishlist, sold)
-- `?tags=...` — Filter by tag IDs
-- `?sort=...` — Sort field (date_added, updated_at, current_value, random)
-- `?order=...` — Order direction (asc, desc)
-- `?seed=...` — Seed for random sort (validates as integer)
-- `?page=...` — Page number for pagination
-- `?limit=...` — Items per page
+### Query parameters of `GET /api/coins`
 
-## Mobile PWA Considerations
+- `kind` — `coin` or `banknote`
+- `search` — full-text search
+- `denomination`, `country`, `extinct`, `presentation`, `rarity`
+- `circulation`, `commemorative`, `classification`
+- `category`, `era`
+- `set` — a set ID
+- `repeated` — only coins held more than once
+- `wishlist` — `true` for the wish list, `false` for the collection
+- `sort`, `order`, `seed` — sorting
+- `page`, `limit` — pagination (up to 100 per page)
 
-- In PWA mode, a **Select** button appears in the header to enter bulk-select mode
-- Camera capture button appears on the detail page for adding photos directly
-- Pull-to-refresh gesture works on both iOS and Android
-- Gallery view preference syncs across devices when signed in
+The complete list is in [`docs/openapi.json`](../openapi.json).
 
 ## See Also
 
-- [Coin Details](coin-details.md) — Store comprehensive metadata per coin
-- [Coin Sets](coin-sets.md) — Organize coins into themed collections
-- [Custom Tags](custom-tags.md) — Create flexible organizational categories
+- [Coin Details](coin-details.md) — The full record of each coin
+- [Coin Sets](coin-sets.md) — Organize coins into sets
+- [Bulk Operations](bulk-operations.md) — Select mode
 - [Collection Statistics](statistics.md) — Analyze your collection

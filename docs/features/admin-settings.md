@@ -1,149 +1,139 @@
 # Admin Settings
 
-> Configure AI providers, manage users, enable scheduled tasks, and manage system-wide settings.
+> Configure AI providers, manage users, set up integrations and schedules, and watch security and health.
 
 ## Overview
 
-Admin Settings are accessed by admins and provide configuration for AI providers, user management, logging, OIDC, catalogs, security, and scheduled tasks. The first registered user is assigned admin automatically.
+Administration is available to admins only. The first registered user is assigned admin automatically. The tabs are grouped into **Configuration** (Users, AI, System, Coin Properties, Catalogs) and **Operations** (Security, Schedules, Health, Logs).
 
-## Users Tab
+## Users
 
-**User Management:**
-- View all registered users
-- Delete user accounts (with confirmation)
-- Reset user passwords
-- See user creation date
-- View last login time
+- View all registered users, their role and creation date
+- Edit a user, change their role, reset their password
+- Unlock a user locked out after failed sign-ins
+- Delete a user account (with confirmation)
 
-## AI Configuration Tab
+## AI Configuration
 
 **Provider Selection:**
 - Choose **Anthropic Claude** (recommended) or **Ollama**
-- Both require valid configuration before AI features work
+- AI features stay unavailable until a provider is configured
 
 **Anthropic Setup:**
-1. Get API key: [console.anthropic.com](https://console.anthropic.com/)
-2. Paste into **Anthropic API Key**
-3. Model auto-populated from API; manually select if desired
-4. (Optional) Customize agent prompts
+1. Get an API key: [console.anthropic.com](https://console.anthropic.com/)
+2. Paste it into **Anthropic API Key**
+3. Pick the model (the list comes from the API)
+4. (Optional) Customize the agent prompts
 
 **Ollama Setup:**
 1. Run Ollama: `ollama serve`
 2. Set **Ollama URL** (default: http://localhost:11434)
-3. Set **Vision Model** (default: llava)
-4. Set timeout (default: 300s)
-5. Set **SearXNG URL** for web search (default: http://localhost:8888)
+3. Set the **Vision Model** (default: llava)
+4. Set the timeout (default: 300s)
+5. Set the **SearXNG URL** for web search (default: http://localhost:8888)
 
-## System Tab
+## System
 
-**Application Settings:**
+- **Public App URL** — the full browser URL of the app, used in outbound links
 - **Log Level** — trace, debug, info, warn, error
-- **Numista API Key** — For coin catalog lookups
-- **Public App URL** — Used in outbound links and notifications
-- **Version Info** — Displays app version/build date
+- **Search Sources** — the dealer and auction hostnames the coin search, wishlist alerts and auction search may use
+- **Numista** — the API key, lookup limits, operational health, and the requests made this month against the monthly limit (`NumistaMonthlyLimit`, 2,000 by default). From 90% of the limit, background requests (catalogue searches, market values, country filling) wait for the next month; your own lookups go on.
+- **Coin Copilot (beta)** — enable the read-only multi-step assistant, its limits, and the hand-off to Deep Analysis
+- **Deep Analysis** — enable the background identification workflow and set its limits
+- **Collection currency** — the currency every value is kept and shown in
 
-## Coin Properties Tab
+## Coin Properties
 
-**Configurable Coin Metadata:**
-- **Categories** — Newline-delimited list of category values shown in coin forms
-- **Eras** — Newline-delimited list of era values shown in coin forms
-- **Lookup Compatibility** — Coin Lookup normalizes extracted era values to backend-supported save values while user-facing forms use the configured lists
-- **Defaults** — Roman, Greek, Byzantine, Modern, Other categories and ancient, medieval, modern eras are available by default
+- **Categories** — one category per line, shown in the coin forms. The defaults are `Modern` and `Other`.
+- **Eras** — one era per line. The defaults are `ancient`, `medieval` and `modern`; the coin form adds *Unspecified*.
+- **Portuguese names** — a name per option, shown instead of the value when the site is in Portuguese
+- **Custom Locations** — global mint coordinates and aliases used by the mint map
 
-## Catalogs Tab
+## Catalogs
 
-Manage normalized numismatic catalog definitions used by structured references:
+Manage the catalog definitions used by structured references:
 
-- Configure catalog labels and metadata
-- Mark catalogs that require volume values, such as RIC/RPC/SNG
-- Keep catalog rules consistent with create/edit validation
+- Catalog labels and metadata
+- Catalogs that require a volume, such as RIC/RPC/SNG
+- The same rules apply to create and edit validation
 
-## OIDC Login Tab
+## Security
 
-Configure OpenID Connect providers for login and account linking:
+- **Security Overview** — failed sign-ins, locked accounts and recent events
+- **Public-Facing Readiness** — checks to run before exposing the app outside a home network (trusted proxies, CORS, public URL, registration, internal tokens)
+- **Security Events** — filter by type, user, IP and date
+- **Locked Users** — unlock accounts
+- **Registration** — shown in the readiness checks. The `RegistrationMode` setting is `closed` by default: after the first user, new accounts are refused unless it is `open`.
 
-- Microsoft Entra ID and generic OIDC/Pocket ID-style providers
-- Write-only client secrets
-- Separate login and account-link callback URLs
-- Provider tests before enabling
+Repeated password failures from one IP block that IP for a while automatically.
 
-## Security Tab
+## Schedules
 
-Monitor account security controls:
+Background jobs, with their start time read in the **Schedule Time Zone**:
 
-- Registration mode
-- User lockout/unlock actions
-- Local recovery-admin visibility
+- **Wishlist Availability Check** — checks the wish list's listing URLs, with run history and a manual run
+- **Wishlist Search Alerts** — scheduled discovery for saved search alerts, with run history
+- **Collection Valuation** — scheduled valuation runs, manual trigger and cancellation (needs AI)
+- **Automatic Full Backup** — the daily backup of the whole database and every upload: on or off, start time, and how many automatic backups to keep (7 by default). See [Data Import/Export](import-export.md).
 
-## Logs Tab
+## Health
 
-**Real-Time Logging:**
-- View application logs as they occur
-- Filter by log level
-- Auto-refresh toggle
-- Export logs to file
+Aggregate collection health across all users: median score, low-score coins and the most common missing fields.
 
-## Schedules Tab
+## Logs
 
-Centralized schedule configuration for background jobs:
-
-- **Wishlist Availability** — Automatic URL availability checks and run history
-- **Wishlist Search Alerts** — Scheduled alert discovery for non-manual alerts
-- **Coin of the Day** — Daily featured coin notifications and manual run
-- **Collection Health** — Daily health snapshots
-- **Collection Valuation** — Scheduled valuation runs, manual trigger, and cancellation
-
-## Valuation Runs Tab
-
-**Scheduled Collection Valuations:**
-- Enable/disable automated valuation runs
-- Configure interval (default: 7 days)
-- Set start time (default: 03:00 AM)
-- Set max coins per run (default: 50)
-- View run history:
-  - Run timestamp
-  - Coins processed
-  - Updated values
-  - Agent usage stats
-- Manual trigger button
-- Cancel in-progress runs
-
-## Health Tab
-
-Operational health views for scheduler/job runs and collection health snapshots.
+- Application logs as they occur
+- Filter by level
+- Auto-refresh
+- Export to a text file
 
 ## API Endpoints
 
 ```
-GET    /admin/users                  # List users
-DELETE /admin/users/:id              # Delete user
-POST   /admin/users/:id/reset-password # Reset password
-PUT    /admin/users/:id/role         # Update user role
+GET    /admin/users                       # List users
+PUT    /admin/users/:id/role              # Update a user's role
+POST   /admin/users/:id/reset-password    # Reset a password
+POST   /admin/users/:id/unlock            # Unlock a user
+DELETE /admin/users/:id                   # Delete a user
 
-GET    /admin/settings               # Get all settings
-GET    /admin/settings/defaults      # Get default settings
-PUT    /admin/settings               # Update settings
+GET    /admin/settings                    # All settings
+GET    /admin/settings/defaults           # Default settings
+PUT    /admin/settings                    # Update settings
+POST   /admin/collection-currency         # Change the collection currency
 
-GET    /admin/logs                   # View logs
-GET    /admin/test-anthropic         # Test Anthropic connection
-GET    /admin/test-searxng           # Test SearXNG connection
+GET    /admin/logs                        # Application logs
+GET    /admin/test-anthropic              # Test the Anthropic connection
+GET    /admin/test-searxng                # Test the SearXNG connection
+GET    /admin/numista/health              # Numista operational health
 
-GET    /admin/availability-runs      # View availability check history
-GET    /admin/availability-runs/:id  # View one availability run
+GET    /admin/security/summary            # Security overview
+GET    /admin/security/events             # Security events
+GET    /admin/security/exposure-check     # Public-facing readiness
 
-GET    /admin/valuation-runs         # View valuation run history
-GET    /admin/valuation-runs/:id     # View one valuation run
-POST   /admin/valuation-runs/trigger # Trigger valuation run
-POST   /admin/valuation-runs/:id/cancel # Cancel run
-GET    /admin/coin-of-day-runs       # View coin-of-day run history
-POST   /admin/coin-of-day/run        # Trigger coin-of-day asynchronously
+GET    /admin/availability-cycles         # Availability check history
+POST   /admin/availability/run            # Run an availability check now
+GET    /admin/wishlist-search-alert-runs  # Search alert run history
+GET    /admin/valuation-runs              # Valuation run history
+POST   /admin/valuation-runs/trigger      # Run a valuation now
+POST   /admin/valuation-runs/:id/cancel   # Cancel a valuation run
+
+GET    /admin/backups                     # Full backups
+POST   /admin/backups                     # Make a full backup now
+PUT    /admin/backups/upload              # Import a full backup
+GET    /admin/backups/:name               # Download a full backup
+DELETE /admin/backups/:name               # Delete a full backup
+POST   /admin/backups/:name/restore       # Restore a full backup
+
+GET    /admin/health/summary              # Collection health summary
 ```
+
+The complete list is in [`docs/openapi.json`](../openapi.json).
 
 ## Security Notes
 
 - The first registered user becomes an admin automatically
-- Admin users can promote/demote other users through role management
-- Sensitive settings such as provider secrets are write-only after saving
-- Most settings are per-instance; user-specific preferences remain in user/account settings
+- Admins can promote and demote other users
+- Secrets such as provider keys are write-only once saved
+- Most settings apply to the whole instance; personal preferences stay in each user's settings
 
 See also: [AI Coin Analysis](ai-analysis.md), [Coin Lookup](coin-lookup.md), [Authentication](../authentication.md)

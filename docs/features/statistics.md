@@ -1,227 +1,55 @@
 # Collection Statistics
 
-> View comprehensive analytics and visualizations of your collection's composition, value, and performance.
+> Charts, rankings and quality metrics of your collection.
 
 ## Overview
 
-The Stats page provides deep insights into your collection through interactive charts, rankings, and distribution analysis. Identify your most valuable coins, understand your collecting patterns, and spot gaps in your collection at a glance.
-
-## Summary Cards
-
-Quick-view metrics at the top:
-
-- **Total Coins** — Count of coins in active collection (excludes sold and wishlist)
-- **Total Value** — Current estimated total value of all coins
-- **Average Value** — Mean value per coin
-- **Unique Rulers** — Count of distinct rulers/authorities in collection
-
-## Stats Subviews
-
-The Stats sidebar expands into focused pages:
+**Stats** opens a summary and expands into focused views. Wishlist coins and quick-capture drafts stay out of the collection figures.
 
 | View | Route | Purpose |
 |---|---|---|
-| Summary | `/stats` | Portfolio summary cards, distributions, rankings, and overview charts |
-| Timeline | `/stats/timeline` | Chronological collection timeline and lifecycle history |
-| Map | `/stats/mint-map` | Mint geography for coins with mapped mint data |
-| Health | `/stats/health` | Collection health score, missing metadata/images/AI analysis, stale valuations, and cleanup suggestions |
-| Time Machine | `/stats/time-machine` | The collection replayed as it stood on any past date |
+| Summary | `/stats` | Summary cards, distributions, top coins and overview charts |
+| Distribution | `/stats/distribution` | The collection by era and category, as a heat map |
+| Timeline | `/stats/timeline` | When each coin joined the collection |
+| Map | `/stats/mint-map` | Mint geography for coins with a mapped mint |
+| Health | `/stats/health` | Collection health score and what to fix |
+| Time Machine | `/stats/time-machine` | The collection as it stood on any past date — see [Time Machine](time-machine.md) |
 
-## Category Breakdown
+## Summary
 
-Pie chart showing distribution across:
-- Roman
-- Greek
-- Byzantine
-- Modern
-- Other
+- **Summary cards** — coins owned, coins on the wish list, total value, total invested and ROI
+- **Distributions** — by coin type, era, category, material and grade, plus the top rulers
+- **Price ranges** — how many coins fall in each value band, in the collection currency
+- **Top coins** — the most valuable coins
+- **Acquisition flow** — coins bought by purchase period, ruler, era and type (only coins with a purchase date)
 
-Hover to see:
-- Count of coins in category
-- Percentage of collection
-- Total category value
+## Health
 
-## Material Distribution
+A score from 0 to 100 and a grade (A–F), weighted across four dimensions:
 
-Breakdown by material type:
-- Gold
-- Silver
-- Bronze
-- Copper
-- Electrum
-- Other
+- **Metadata** — the main fields filled in
+- **Image coverage** — obverse and reverse photos
+- **Valuation freshness** — how recent the current value is
+- **AI coverage** — coins with an AI analysis
 
-Shows:
-- Coin count per material
-- Percentage of collection
-- Total material value
-- Average value per material
+Below the score, a list of what needs attention, with quick actions (edit metadata, upload images, run a valuation, run an AI analysis). Administrators see the health of every collection in **Administration → Health**.
 
-## Grade Distribution
+## Map
 
-Bar chart showing coins by grade:
-- VF (Very Fine)
-- EF (Extremely Fine)
-- AU (About Uncirculated)
-- MS (Mint State)
-- Other grades
-
-Features:
-- Blue gradient coloring
-- Hover for exact counts
-- Identify grade gaps in collection
-
-## Top Coins by Value
-
-Ranked list of your most valuable coins:
-
-| Rank | Coin Name | Category | Material | Current Value | Purchase Price | ROI |
-|------|-----------|----------|----------|---|---|---|
-| 1 | Julius Caesar Aureus | Roman | Gold | $2,850 | $1,200 | +137% |
-| ... | ... | ... | ... | ... | ... | ... |
-
-Features:
-- Click any coin to open detail page
-- Sort by value, ROI, or acquisition date
-- Filter by category or material
-
-## Era/Region Heat Map
-
-SVG-based heat map showing distribution across:
-
-**Time Periods (Rows)**:
-- 500 BC - Ancient
-- 1 AD - Ancient Roman
-- 500 AD - Medieval
-- 1000 AD - Medieval
-- 1500 AD - Early Modern
-- 1800 AD - Modern
-
-**Geographic Regions (Columns)**:
-- Mediterranean
-- Near East
-- Asia Minor
-- Europe
-- Other
-
-**Heat Intensity** reflects:
-- Concentration of coins in each era/region cell
-- Bright = high concentration
-- Dim = few or no coins
-- Helps identify collection strengths and gaps
-
-## Health Scorecard
-
-Overall collection metrics:
-
-| Metric | Score | Status |
-|--------|-------|--------|
-| **AI Coverage** | 85% | Coins with AI analysis |
-| **Image Coverage** | 92% | Coins with images |
-| **Reference Coverage** | 72% | Coins with catalog references |
-| **Metadata Completeness** | 88% | Avg % of fields filled per coin |
-
-The Health subview also lists per-coin health details, missing images, missing AI analysis, missing catalog references, and stale valuation coverage so cleanup can be prioritized.
-
-Status indicators:
-- 🟢 Green: >80%
-- 🟡 Yellow: 50-80%
-- 🔴 Red: <50%
-
-## Collection Composition
-
-Detailed breakdown:
-- **By Era** — Coins per time period with percentages
-- **By Region** — Geographic distribution
-- **By Material** — Precious metals vs. base metals
-- **By Grade** — Distribution across grades
-- **Price Range** — Histogram of value distribution
-
-## Sold Coin Analytics
-
-Separate section for coins you've sold:
-
-- **Total Sold** — Count of coins sold
-- **Total Sale Value** — Revenue from sales
-- **Total Cost Basis** — Original investment
-- **Overall Profit/Loss** — (Revenue - Basis)
-- **Annualized ROI** — Return based on holding period
-- **Top Sales** — Most expensive coins sold
-
-## Wishlist Analytics
-
-Metrics for coins on wishlist:
-
-- **Total Wishlist Coins** — Count in wishlist
-- **Total Estimated Cost** — Sum of estimated prices
-- **Average Estimated Price** — Cost per coin
-- **Availability Status** — % available/unavailable/unknown
-- **Priority Coins** — Most-watched items
-
-## Filters & Date Ranges
-
-### Date Range Selection
-- Last 30 days
-- Last 90 days
-- Last year
-- All time
-- Custom range (date picker)
-
-### Filters
-- **By Category** — Focus on Roman, Greek, etc.
-- **By Material** — Gold only, silver only, etc.
-- **By Status** — Collection only, with sold, with wishlist
-- **By Grade Range** — Narrow to specific grades
-
-## Export Options
-
-Collection-level export is available from **Settings -> Data** as JSON backup and PDF catalog generation. The Stats page focuses on interactive dashboards rather than separate chart export endpoints.
-
-## Data & Accuracy
-
-### Snapshot Frequency
-- Automatic: After every coin create/update/delete
-- Manual: Click "Capture Snapshot" to force a snapshot
-
-### Value Sources (in priority order)
-1. **Current Value** field — If set manually
-2. **AI Analysis** — If coin has AI-generated valuation
-3. **Purchase Price** — If no valuation available
-4. **Estimated Range** — If no other data exists
-
-### Recalculation
-- Stats recalculate when:
-  - New coin added/removed
-  - Coin value updated
-  - Coin status changed (collection → sold → wishlist)
-  - Snapshot is generated
-
-## Admin Configuration
-
-Most stats auto-calculate from collection data and require no admin configuration. Emperor Tracker visibility is controlled per user from **Settings -> Account**.
-
-No separate chart toggles are currently required for the summary, health, value, map, or investment views.
+Mints with coordinates appear on the map with the coins struck there. Global mint locations are managed in **Administration → Coin Properties**; your own in **Settings → Data**.
 
 ## API Endpoints
 
 ```
-GET    /api/stats                   # Summary cards, charts, rankings, value totals
-GET    /api/stats/distribution      # Era/region heat map
-GET    /api/stats/health            # Collection health summary
-GET    /api/coins/health            # Paginated per-coin health list
-GET    /api/coins/:id/health        # Single coin health score
-GET    /api/stats/emperors          # Emperor tracker progress
+GET    /api/stats                     # Summary statistics
+GET    /api/stats/distribution        # Distribution by era and category
+GET    /api/stats/health              # Collection health
+GET    /api/stats/time-machine        # The collection as of a date
+GET    /api/stats/time-machine/bounds # The time machine's date range
 ```
-
-## Performance
-
-- Stats calculations are computed from your collection data and refreshed when coin values, status, or metadata change
-- Health metrics are computed from metadata, image, valuation freshness, and per-side AI analysis coverage
-- Value history depends on snapshots recorded as collection values change
 
 ## Related Features
 
-- [Collection Management](collection-management.md) — Browse collection
-- [Coin Sets](coin-sets.md) — Set-specific trend tracking
-- [Collection Showcase](collection-showcase.md) — Share statistics publicly
-- [AI Analysis](ai-analysis.md) — AI coverage metrics
+- [Collection Time Machine](time-machine.md)
+- [Coin Sets](coin-sets.md) — Per-set analytics and value trend
+- [Collection Management](collection-management.md)

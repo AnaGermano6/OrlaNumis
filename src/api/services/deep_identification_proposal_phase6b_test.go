@@ -3,9 +3,8 @@ package services
 // Feature 352 Phase 6b — wishlist apply-path structured references
 // (applyToWishlist calling CoinReferenceService.AppendForCoin after
 // CoinService.CreateCoin). Covers US-6, FR-013, FR-030, FR-040, FR-045,
-// FR-048..FR-051 and AC-020/AC-033..AC-036 from
-// specs/352-deep-identification-structured-results/spec.md, and the
-// plan.md Phase 6b apply-path row + R2/R8 risk items.
+// FR-048..FR-051 and AC-020/AC-033..AC-036 of the deep identification
+// structured results, and the Phase 6b apply-path row + R2/R8 risk items.
 //
 // This file deliberately mirrors the structure of
 // deep_identification_proposal_phase3_test.go (the "coin" target's
