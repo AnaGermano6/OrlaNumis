@@ -193,6 +193,37 @@ func Summarize(slots []ChecklistSlot) ChecklistSummary {
 	return summary
 }
 
+// ChecklistCountry counts a checklist's slots of one country.
+type ChecklistCountry struct {
+	// Country is an ISO code.
+	Country string `json:"country" example:"PT"`
+	Owned   int    `json:"owned"`
+	Total   int    `json:"total"`
+}
+
+// SummarizeByCountry counts the slots of each country, in the order the
+// countries first come; slots without a country are left out.
+func SummarizeByCountry(slots []ChecklistSlot) []ChecklistCountry {
+	countries := []ChecklistCountry{}
+	index := map[string]int{}
+	for _, slot := range slots {
+		if slot.Country == "" {
+			continue
+		}
+		i, ok := index[slot.Country]
+		if !ok {
+			i = len(countries)
+			index[slot.Country] = i
+			countries = append(countries, ChecklistCountry{Country: slot.Country})
+		}
+		countries[i].Total++
+		if slot.Owned {
+			countries[i].Owned++
+		}
+	}
+	return countries
+}
+
 // CatalogueSlots lists a catalogue checklist's coins, newest first, without
 // looking at the collection.
 func (s *SetChecklistService) CatalogueSlots(ctx context.Context, definition ChecklistDefinition) []ChecklistSlot {

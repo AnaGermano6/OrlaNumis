@@ -46,6 +46,17 @@ export interface CoinSetSummary {
   completionPercentage?: number | null
   valueChangePercent?: number | null
   agenticStatus?: string | null
+  /** A checklist set's slots, country by country. */
+  countries?: SetCountryCount[]
+  /** True while a checklist set's list is partly known. */
+  partial?: boolean
+}
+
+/** How many of a checklist set's slots of one country (an ISO code) the collection fills. */
+export interface SetCountryCount {
+  country: string
+  owned: number
+  total: number
 }
 
 export interface CoinSetDetail extends CoinSetSummary {

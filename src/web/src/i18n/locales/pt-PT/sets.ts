@@ -140,6 +140,35 @@ const messages: Messages['sets'] = {
     wishlistItems: { one: '{count} item da lista de desejos', other: '{count} itens da lista de desejos' },
     stillNeeded: 'Itens da lista de desejos ainda em falta',
   },
+  byCountry: {
+    title: 'Completude por país',
+    viewLabel: 'Ver',
+    views: {
+      sets: 'Conjuntos',
+      countries: 'Por país',
+    },
+    intro: 'Os lugares dos seus conjuntos do catálogo e dos desafios, país a país. Uma moeda que esteja em dois conjuntos conta em cada um.',
+    empty: 'Nenhum dos seus conjuntos tem ainda lugares por país: têm-nos os conjuntos do catálogo e dos desafios.',
+    missing: {
+      one: 'falta {count}',
+      other: 'faltam {count}',
+    },
+    missingOf: {
+      one: 'falta {count} de {total}',
+      other: 'faltam {count} de {total}',
+    },
+    complete: 'Completo',
+    progress: '{owned} de {total}',
+    sets: {
+      one: 'em {count} conjunto',
+      other: 'em {count} conjuntos',
+    },
+    partial: 'lista ainda a ser lida',
+    others: {
+      one: '{count} conjunto não tem lugares por país (por filtros, livre ou de objetivo) e não conta aqui.',
+      other: '{count} conjuntos não têm lugares por país (por filtros, livres ou de objetivo) e não contam aqui.',
+    },
+  },
   catalogue: {
     title: 'Catálogo de comemorativas',
     link: 'As comemorativas e as moedas de coleção de 5 €, 10 € e 20 € de cada país, com as que já tem.',

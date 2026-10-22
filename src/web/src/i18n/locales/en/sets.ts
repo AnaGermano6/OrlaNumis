@@ -138,6 +138,35 @@ export default {
     wishlistItems: { one: '{count} wishlist item', other: '{count} wishlist items' },
     stillNeeded: 'Wishlist items still needed',
   },
+  byCountry: {
+    title: 'Completion by country',
+    viewLabel: 'View',
+    views: {
+      sets: 'Sets',
+      countries: 'By country',
+    },
+    intro: 'The places of your sets from the catalogue and the challenges, country by country. A coin in two sets counts in each.',
+    empty: 'None of your sets has places by country yet: sets from the catalogue and the challenges have them.',
+    missing: {
+      one: '{count} missing',
+      other: '{count} missing',
+    },
+    missingOf: {
+      one: '{count} of {total} missing',
+      other: '{count} of {total} missing',
+    },
+    complete: 'Complete',
+    progress: '{owned} of {total}',
+    sets: {
+      one: 'in {count} set',
+      other: 'in {count} sets',
+    },
+    partial: 'list still being read',
+    others: {
+      one: '{count} set has no places by country (a set by filters, free or with a goal), so it is not counted here.',
+      other: '{count} sets have no places by country (sets by filters, free or with a goal), so they are not counted here.',
+    },
+  },
   catalogue: {
     title: 'Commemorative catalogue',
     link: 'Each country\'s commemoratives and €5, €10 and €20 collector coins, with those you have.',

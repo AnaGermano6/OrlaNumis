@@ -61,6 +61,34 @@ describe('SetsPage', () => {
     expect(wrapper.text()).toContain('12')
   })
 
+  it('shows the places of the sets country by country, and remembers the choice', async () => {
+    localStorage.removeItem('sets:view')
+    mockGetSets.mockResolvedValue({ data: { sets: [
+      { id: 3, name: 'Portugal · 2 €', color: '#c9a84c', setType: 'checklist', coinCount: 12, totalValue: 30, completionPercentage: 33.3, countries: [{ country: 'PT', owned: 12, total: 36 }] },
+      { id: 4, name: 'Mine', color: '#c9a84c', setType: 'standard', coinCount: 2, totalValue: 0 },
+    ] } })
+    const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="sets-view-sets"]').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.find('[data-testid="sets-by-country"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="sets-view-countries"]').trigger('click')
+    expect(wrapper.get('[data-testid="sets-country-PT"]').text()).toContain('24 missing')
+    expect(localStorage.getItem('sets:view')).toBe('countries')
+
+    const again = mount(SetsPage, { global: { stubs: { Teleport: true } } })
+    await flushPromises()
+    expect(again.find('[data-testid="sets-by-country"]').exists()).toBe(true)
+    localStorage.removeItem('sets:view')
+  })
+
+  it('offers the view by country only when a set has places by country', async () => {
+    mockGetSets.mockResolvedValue({ data: { sets: [{ id: 4, name: 'Mine', color: '#c9a84c', setType: 'standard', coinCount: 2, totalValue: 0 }] } })
+    const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
+    await flushPromises()
+    expect(wrapper.find('[data-testid="sets-view"]').exists()).toBe(false)
+  })
+
   it('creates a challenge set and opens it', async () => {
     mockCreateSetApi.mockResolvedValue({ data: { id: 42 } })
     const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })

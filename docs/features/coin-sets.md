@@ -6,6 +6,8 @@
 
 **Sets** (`/sets`) lists your sets, each with its kind, coin count and, for lists to complete, how much is done. **Create set** offers four paths and one other kind.
 
+**Completion by country** — when a set has places by country (sets from the catalogue and the challenges), **View** switches between **Sets** and **By country**, and the choice is remembered. By country lists each country of the sets' places, with its flag, the places filled out of all ("21 of 62") and how many are missing; the countries with most places come first. Opening a country lists its sets, each with what it is missing there, and leads to the set. A coin in two sets counts in each, as it fills a place in both; a list still being read (the réis types) says so. Sets by filters, free and goal sets have no places by country and are only counted below the list. `GET /api/sets` gives each checklist set its `countries` (`country`, `owned`, `total`) and `partial`.
+
 ## Ways to create a set
 
 ### From the catalogue (checklist)

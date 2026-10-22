@@ -35,7 +35,7 @@ func (h *SetHandler) WithSettingsSupport(settingsSvc *services.SettingsService) 
 // List returns all sets for the authenticated user with summary data.
 //
 //	@Summary		List user sets
-//	@Description	Get all sets for the authenticated user with aggregate summaries
+//	@Description	Get all sets for the authenticated user with aggregate summaries. A checklist set also has countries (its slots counted country by country: country, owned, total) and partial (true while its list is partly known).
 //	@Tags			sets
 //	@Produce		json
 //	@Security		BearerAuth
