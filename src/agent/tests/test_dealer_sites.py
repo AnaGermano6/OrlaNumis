@@ -1,8 +1,8 @@
 """Direct dealer-site search: parsers against saved real pages, budget rules, and wiring.
 
 The fixtures under tests/fixtures/dealer_sites are trimmed copies of real
-responses captured in September 2026 (vCoins and MA-Shops search pages, HJB's
-inventory API), so a site markup change shows up as a failing parser test.
+responses captured in September 2026 (vCoins and MA-Shops search pages), so a
+site markup change shows up as a failing parser test.
 """
 
 import json
@@ -25,7 +25,6 @@ from app.tools.dealer_sites import (
     apply_budget,
     extract_search_terms,
     parse_budget,
-    parse_hjb_results,
     parse_mashops_results,
     parse_price,
     parse_vcoins_results,
@@ -34,24 +33,18 @@ from app.tools.search import RegisteredDealerHttp
 
 FIXTURES = Path(__file__).parent / "fixtures" / "dealer_sites"
 LLM = LLMConfig(provider="anthropic", api_key="test", model="test")
-ALL_ADAPTER_HOSTS = {"vcoins.com", "ma-shops.com", "hjbltd.com"}
+ALL_ADAPTER_HOSTS = {"vcoins.com", "ma-shops.com"}
 
 
 def fixture_text(name: str) -> str:
     return (FIXTURES / name).read_text(encoding="utf-8")
 
 
-def fixture_json(name: str) -> Any:
-    return json.loads(fixture_text(name))
-
-
 class FixtureDealerHttp:
     """Serves saved pages and records every request an adapter makes."""
 
-    def __init__(self, hjb_payload: Any | None = None):
+    def __init__(self):
         self.gets: list[tuple[str, dict[str, str]]] = []
-        self.posts: list[tuple[str, dict[str, Any]]] = []
-        self.hjb_payload = hjb_payload if hjb_payload is not None else fixture_json("hjb_filter_results_caligula.json")
 
     async def get_text(self, url: str, params: dict[str, str]) -> str:
         self.gets.append((url, dict(params)))
@@ -63,9 +56,7 @@ class FixtureDealerHttp:
         raise AssertionError(f"unexpected GET {url}")
 
     async def post_json(self, url: str, body: dict[str, Any]) -> Any:
-        self.posts.append((url, dict(body)))
-        assert urlsplit(url).hostname == "www.hjbltd.com"
-        return self.hjb_payload
+        raise AssertionError(f"unexpected POST {url}")
 
 
 # --- parsers --------------------------------------------------------------
@@ -103,25 +94,6 @@ def test_mashops_parser_uses_discount_price_ignores_shipping_and_handles_new_bad
     assert by_shop["MA-Shops (fenzl)"].title.startswith("Sesterz 37-41 Caligula")  # row with a "New!" badge
     assert all(listing.currency == "USD" for listing in listings)
     assert all(listing.url.startswith("https://www.ma-shops.com/") for listing in listings)
-
-
-def test_hjb_parser_keeps_only_items_with_stock():
-    assert parse_hjb_results(fixture_json("hjb_filter_results_sold_only.json")) == []
-
-    [listing] = parse_hjb_results(fixture_json("hjb_filter_results_caligula.json"))
-    assert listing == SiteListing(
-        title="Caligula. AE 21",
-        url="https://www.hjbltd.com/#!/inventory/item-detail/cc/117376",
-        dealer="Harlan J. Berk",
-        price=Decimal("400"),
-        currency="USD",
-        image_url=listing.image_url,
-    )
-
-
-@pytest.mark.parametrize("payload", [None, [], {"status": "error", "message": "No data found"}, {"status": "ok"}])
-def test_hjb_parser_treats_unexpected_payloads_as_no_results(payload):
-    assert parse_hjb_results(payload) == []
 
 
 @pytest.mark.parametrize(
@@ -169,9 +141,9 @@ def test_budget_never_converts_currencies():
 
 
 def test_adapter_selection_splits_configured_hosts():
-    adapters, remaining = adapters_for_hosts({"www.vcoins.com", "ma-shops.com", "catawiki.com", "hjbltd.com"})
-    assert [adapter.name for adapter in adapters] == ["vcoins", "ma_shops", "harlan_j_berk"]
-    assert remaining == {"catawiki.com"}
+    adapters, remaining = adapters_for_hosts({"www.vcoins.com", "ma-shops.com", "catawiki.com", "cgb.fr"})
+    assert [adapter.name for adapter in adapters] == ["vcoins", "ma_shops"]
+    assert remaining == {"catawiki.com", "cgb.fr"}
 
 
 # --- end to end through run_market_search ---------------------------------
@@ -193,14 +165,14 @@ async def test_market_search_queries_dealer_sites_directly_and_enforces_budget(m
     )
 
     assert result.outcome == "complete"
-    assert {attempt.provider for attempt in result.provider_attempts} == {"vcoins", "ma_shops", "harlan_j_berk"}
+    assert {attempt.provider for attempt in result.provider_attempts} == {"vcoins", "ma_shops"}
     assert result.items, "expected listings within budget"
     for item in result.items:
         assert item.currency == "USD" and item.listed_price <= 500
         assert item.availability == "available"
         assert item.verification_state == "verified"
     # Sources take turns instead of the first dealer filling every slot.
-    assert [item.provider for item in result.items[:3]] == ["vcoins", "ma_shops", "harlan_j_berk"]
+    assert [item.provider for item in result.items[:2]] == ["vcoins", "ma_shops"]
     # Listings the site's own search matched on the title come first.
     assert result.items[0].title == "Roman Empire, Caligula 37-41, Bronze Quadrans"
     # € and £ listings can't be compared with a US$ budget, and the result says so.
@@ -208,12 +180,10 @@ async def test_market_search_queries_dealer_sites_directly_and_enforces_budget(m
 
     vcoins_url, vcoins_params = http.gets[0]
     assert vcoins_params["searchQuery"] == "Caligula"
+    # Modern coins and banknotes: vCoins' world coins, not its ancient or US ones.
+    categories = ("searchCategoryAncient", "searchCategoryUs", "searchCategoryWorld")
+    assert tuple(vcoins_params[name] for name in categories) == ("False", "False", "True")
     assert http.gets[1][1] == {"searchstr": "Caligula"}
-    hjb_url, hjb_body = http.posts[0]
-    assert hjb_url == "https://www.hjbltd.com/api/cms/filter_results"
-    assert hjb_body["Keyword"] == "Caligula"
-    assert hjb_body["Quantity"] == 1  # in-stock only
-    assert (hjb_body["PriceLow"], hjb_body["PriceHigh"]) == (0, 500)
 
 
 @pytest.mark.asyncio
@@ -230,24 +200,14 @@ async def test_explicit_search_terms_and_budget_override_parsing():
 
 
 @pytest.mark.asyncio
-async def test_hjb_sold_lots_never_reach_results():
-    result = await run_market_search(
-        {"query": "Caligula", "limit": 10},
-        llm_config=LLM,
-        source_hosts={"hjbltd.com"},
-        dealer_http=FixtureDealerHttp(hjb_payload=fixture_json("hjb_filter_results_sold_only.json")),
-    )
-    assert result.outcome == "no_match"
-    assert result.items == []
-
-
-@pytest.mark.asyncio
 async def test_one_dealer_failing_keeps_the_others(monkeypatch):
     class FlakyHttp(FixtureDealerHttp):
-        async def post_json(self, url, body):
-            import httpx
+        async def get_text(self, url, params):
+            if urlsplit(url).hostname == "www.ma-shops.com":
+                import httpx
 
-            raise httpx.TransportError("blocked")
+                raise httpx.TransportError("blocked")
+            return await super().get_text(url, params)
 
     result = await run_market_search(
         {"query": "Caligula", "limit": 10},
@@ -256,7 +216,7 @@ async def test_one_dealer_failing_keeps_the_others(monkeypatch):
         dealer_http=FlakyHttp(),
     )
     statuses = {attempt.provider: attempt.status for attempt in result.provider_attempts}
-    assert statuses == {"vcoins": "success", "ma_shops": "success", "harlan_j_berk": "failure"}
+    assert statuses == {"vcoins": "success", "ma_shops": "failure"}
     assert result.outcome == "partial"
     assert result.items
 
@@ -309,13 +269,13 @@ def test_web_search_tool_is_restricted_to_configured_domains():
 
 @pytest.mark.asyncio
 async def test_registered_dealer_http_refuses_hosts_outside_the_boundary():
-    http = RegisteredDealerHttp({"hjbltd.com"})
+    http = RegisteredDealerHttp({"ma-shops.com"})
     with pytest.raises(ValueError):
         await http.post_json("https://api.example.org/api/cms/filter_results", {})
 
 
 def test_every_adapter_host_is_in_the_default_dealer_list():
-    default_sources = {"vcoins.com", "ma-shops.com", "forumancientcoins.com", "catawiki.com", "hjbltd.com"}
+    default_sources = {"ma-shops.com", "cgb.fr", "delcampe.net", "catawiki.com", "vcoins.com"}
     assert {adapter.host for adapter in dealer_sites.DEALER_SITE_ADAPTERS} <= default_sources
 
 
@@ -475,10 +435,10 @@ async def test_market_search_returns_five_by_default_and_reports_how_many_more_m
         source_hosts=ALL_ADAPTER_HOSTS,
         dealer_http=FixtureDealerHttp(),
     )
-    # 5 vCoins + 4 MA-Shops + 1 HJB listings match; the owner sees 5 and is told about the rest.
+    # 5 vCoins + 4 MA-Shops listings match; the owner sees 5 and is told about the rest.
     assert len(result.items) == 5
     assert result.truncation.truncated is True
-    assert result.truncation.omitted_items == 5
+    assert result.truncation.omitted_items == 4
 
 
 def test_market_and_auction_tool_descriptions_state_the_default_limit():
@@ -534,7 +494,7 @@ async def test_coin_agent_search_uses_dealer_sites_directly_and_enforces_budget(
     content = state["messages"][-1].content
     payload = json.loads(content.split("```json\n", 1)[1].split("\n```", 1)[0])
     assert payload and len(payload) <= coin_search.LEGACY_MAX_LISTINGS
-    assert http.gets and http.posts
+    assert {urlsplit(url).hostname for url, _params in http.gets} == {"www.vcoins.com", "www.ma-shops.com"}
     for item in payload:
         assert item["availability"] == "Available"
         assert item["estPrice"].startswith("$")

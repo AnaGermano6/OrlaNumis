@@ -61,7 +61,7 @@ a modern collection does not:
 - **Mint Mark** — Mint location indicator
 - **Obverse Inscription** — Text on the front
 - **Reverse Inscription** — Text on the back
-- **Structured Catalog References** — Formal references (RIC, RPC, SNG, Numista, etc.) with catalog, volume, number, optional invoice number, and authority URI
+- **Structured Catalog References** — Formal references (KM, Y, Pick, Numista, etc.) with catalog, volume, number, optional invoice number, and authority URI
 
 ### Banknote Details
 
@@ -134,7 +134,7 @@ Includes identification, description, inscriptions, condition assessment, histor
 ## Structured Catalog References
 
 ### Reference Management
-- **Add Multiple References** — Track coins across different catalogs (RIC, RPC, SNG, Numista, etc.)
+- **Add Multiple References** — Track coins and banknotes across different catalogs (KM, Y, Pick, Numista, etc.)
 - **Reference Fields**:
   - Catalog (required): which reference catalog
   - Volume (required for some catalogs)
@@ -143,11 +143,18 @@ Includes identification, description, inscriptions, condition assessment, histor
   - Authority URI: optional link to the authoritative source
 
 ### Built-in Catalogs
-- **RIC** — Roman Imperial Coinage (requires volume)
-- **RPC** — Roman Provincial Coinage (requires volume)
-- **SNG** — Sylloge Nummorum Greacorum (requires volume)
+Registered at every start, for modern coins and banknotes:
+- **KM** — Krause-Mishler (Standard Catalog of World Coins)
+- **Y** — Y numbers
+- **Pick** — Standard Catalog of World Paper Money (banknotes)
 - **Numista** — Numista catalog ID
-- **Other** — Custom catalog references
+- **NGC** — NGC certification
+- **REDBOOK** — Red Book (US coins)
+
+Others can be added in Admin → Catalogs. Until October 2026 the app also
+registered catalogues of ancient and medieval coins (RIC, RPC, SNG, Sear,
+Crawford, Spink…); those no reference used were removed once, and one added
+again in Admin is kept.
 
 ### Numista Integration
 - Direct search from the coin detail page

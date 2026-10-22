@@ -25,6 +25,11 @@ Sites investigated for a direct adapter and deliberately left on web search
   lots carry closing times and bids rather than dealer stock at an asking
   price. It was moved out of the dealer sources into the auction sources
   instead of getting a dealer adapter.
+
+Harlan J. Berk (``hjbltd.com``), a dealer of ancient coins, had an adapter
+until 2026-10, when the default sources became European sites of modern coins
+and banknotes; ``cgb.fr`` and ``delcampe.net`` stay on web search until each
+is checked as above.
 """
 
 from __future__ import annotations
@@ -159,11 +164,13 @@ async def search_vcoins(
 ) -> list[SiteListing]:
     # vCoins prices stay in each dealer's own currency, so budget filtering
     # happens after parsing rather than through its price-range parameters.
+    # The collection is of modern coins and banknotes, so only vCoins' world
+    # coins are searched, not its ancient or US coins.
     params = {
         "search": "true",
         "searchQuery": terms,
-        "searchCategoryAncient": "True",
-        "searchCategoryUs": "True",
+        "searchCategoryAncient": "False",
+        "searchCategoryUs": "False",
         "searchCategoryWorld": "True",
         "searchCategoryMints": "True",
         "searchTitleAndDescription": "True",
@@ -225,77 +232,9 @@ async def search_mashops(
     return parse_mashops_results(await http.get_text(MASHOPS_SEARCH_URL, {"searchstr": terms}))
 
 
-# --- Harlan J. Berk -------------------------------------------------------
-
-HJB_SEARCH_URL = "https://www.hjbltd.com/api/cms/filter_results"
-HJB_ANCIENT_COINS_GROUP = "cc"
-
-
-def parse_hjb_results(payload: Any) -> list[SiteListing]:
-    """Parse HJB's inventory JSON, keeping only items with stock on hand.
-
-    ``Quantity`` is the in-stock count; closed Buy-or-Bid lots stay in the
-    unfiltered feed with ``Quantity`` 0, so they're dropped here even though
-    the request already asks for in-stock items only.
-    """
-    if not isinstance(payload, Mapping) or payload.get("status") != "ok":
-        return []
-    data = payload.get("data")
-    items = data.get("items") if isinstance(data, Mapping) else None
-    if not isinstance(items, Sequence) or isinstance(items, str | bytes):
-        return []
-    listings: list[SiteListing] = []
-    for item in items:
-        if not isinstance(item, Mapping):
-            continue
-        try:
-            quantity = int(item.get("Quantity") or 0)
-        except (TypeError, ValueError):
-            quantity = 0
-        number = str(item.get("InventoryNumber") or "").strip()
-        title = str(item.get("Title") or "").strip()
-        if quantity < 1 or not number.isdigit() or not title:
-            continue
-        group = str(item.get("InventoryGroup") or HJB_ANCIENT_COINS_GROUP).strip() or HJB_ANCIENT_COINS_GROUP
-        raw_price = item.get("Price")
-        try:
-            price = Decimal(str(raw_price)) if raw_price not in (None, "") else None
-        except InvalidOperation:
-            price = None
-        image = item.get("Image") if isinstance(item.get("Image"), str) else ""
-        listings.append(SiteListing(
-            title=html_lib.unescape(title),
-            # HJB is a hash-routed app; item pages only exist under #!/.
-            url=f"https://www.hjbltd.com/#!/inventory/item-detail/{group}/{number}",
-            dealer="Harlan J. Berk",
-            price=price,
-            currency="USD",
-            image_url=image,
-        ))
-    return listings
-
-
-async def search_hjb(
-    http: DealerHttp, terms: str, max_price: Decimal | None, currency: str | None, limit: int
-) -> list[SiteListing]:
-    body: dict[str, Any] = {
-        "InventoryGroup": HJB_ANCIENT_COINS_GROUP,
-        "Keyword": terms,
-        "Offset": 1,
-        "FetchNext": 60,
-        "Quantity": 1,  # in-stock only
-    }
-    if max_price is not None and currency in (None, "USD"):
-        # HJB ignores the whole request ("No data found") unless both bounds are sent.
-        body["PriceLow"] = 0
-        body["PriceHigh"] = int(max_price)
-    return parse_hjb_results(await http.post_json(HJB_SEARCH_URL, body))
-
-
 DEALER_SITE_ADAPTERS: tuple[DealerSiteAdapter, ...] = (
     DealerSiteAdapter(name="vcoins", host="vcoins.com", search=search_vcoins),
     DealerSiteAdapter(name="ma_shops", host="ma-shops.com", search=search_mashops),
-    DealerSiteAdapter(name="harlan_j_berk", host="hjbltd.com", search=search_hjb),
 )
 
 

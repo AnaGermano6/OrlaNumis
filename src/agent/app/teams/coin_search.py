@@ -668,7 +668,7 @@ def _create_direct_coin_search_team(llm_config: LLMConfig, search_prompt: str, s
     async def market_node(state: CoinSearchState) -> dict:
         user_msg = state.get("user_message", "")
         result = await run_market_search(
-            {"query": (user_msg.strip() or "ancient coins")[:500], "limit": LEGACY_MAX_LISTINGS},
+            {"query": (user_msg.strip() or "coins")[:500], "limit": LEGACY_MAX_LISTINGS},
             llm_config=llm_config,
             source_hosts=source_hosts,
             search_prompt=search_prompt,

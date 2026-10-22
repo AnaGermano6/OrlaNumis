@@ -3,6 +3,7 @@ package services
 import (
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -60,11 +61,17 @@ func TestSearchSourceDefaultsAreSeparated(t *testing.T) {
 	svc, _ := newTestSettingsService(t)
 	dealers := svc.GetSearchSources(SettingDealerSearchSources)
 	auctions := svc.GetSearchSources(SettingAuctionSearchSources)
-	if len(dealers) != 5 {
+	// European sites of modern coins and banknotes, none of ancient coins only.
+	if strings.Join(dealers, " ") != "ma-shops.com cgb.fr delcampe.net catawiki.com vcoins.com" {
 		t.Fatalf("dealer defaults = %#v", dealers)
 	}
-	if len(auctions) != 3 || auctions[0] != "numisbids.com" || auctions[1] != "cngcoins.com" {
+	if strings.Join(auctions, " ") != "numisbids.com sixbid.com biddr.com tauleryfau.com ibercoin.com" {
 		t.Fatalf("auction defaults = %#v", auctions)
+	}
+	for _, ancient := range []string{"forumancientcoins.com", "hjbltd.com", "cngcoins.com"} {
+		if slices.Contains(dealers, ancient) || slices.Contains(auctions, ancient) {
+			t.Errorf("%s is still a default source", ancient)
+		}
 	}
 	// biddr.com sells through timed auction lots, not dealer stock (#771).
 	if slices.Contains(dealers, "biddr.com") {
@@ -72,6 +79,28 @@ func TestSearchSourceDefaultsAreSeparated(t *testing.T) {
 	}
 	if !slices.Contains(auctions, "biddr.com") {
 		t.Errorf("biddr.com is missing from the default auction sources: %#v", auctions)
+	}
+}
+
+// Sources saved as they come (the admin page saves every field) are stored
+// empty, so that a later default list applies; edited ones are kept.
+func TestSearchSourcesSavedAsTheDefaultFollowLaterDefaults(t *testing.T) {
+	svc, db := newTestSettingsService(t)
+	if err := svc.SetSetting(SettingDealerSearchSources, "MA-Shops.com\ncgb.fr\n delcampe.net\ncatawiki.com\nvcoins.com"); err != nil {
+		t.Fatal(err)
+	}
+	var stored models.AppSetting
+	if err := db.Where("key = ?", SettingDealerSearchSources).First(&stored).Error; err != nil || stored.Value != "" {
+		t.Fatalf("stored = %+v, %v", stored, err)
+	}
+	if got := svc.GetSearchSources(SettingDealerSearchSources); len(got) != 5 || got[0] != "ma-shops.com" {
+		t.Fatalf("sources = %v", got)
+	}
+	if err := svc.SetSetting(SettingDealerSearchSources, "ma-shops.com\ncgb.fr"); err != nil {
+		t.Fatal(err)
+	}
+	if got := svc.GetSearchSources(SettingDealerSearchSources); strings.Join(got, " ") != "ma-shops.com cgb.fr" {
+		t.Fatalf("edited sources = %v", got)
 	}
 }
 

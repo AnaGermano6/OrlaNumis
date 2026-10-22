@@ -54,7 +54,7 @@ Administration is available to admins only. The first registered user is assigne
 Manage the catalog definitions used by structured references:
 
 - Catalog labels and metadata
-- Catalogs that require a volume, such as RIC/RPC/SNG
+- Catalogs that require a volume (none of the built-in ones, which are for modern coins and banknotes)
 - The same rules apply to create and edit validation
 
 ## Security

@@ -211,7 +211,7 @@ async def search_numisbids(query: str) -> list[dict]:
     """Search NumisBids across all auctions and return matching lots.
 
     Args:
-        query: Search terms (e.g. "Roman denarius Augustus")
+        query: Search terms (e.g. "2 euro 2007 Portugal" or "500 escudos 1987")
 
     Returns:
         List of lot summaries with url, title, estimate, imageUrl.

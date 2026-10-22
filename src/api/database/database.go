@@ -148,6 +148,9 @@ func Connect(dbPath string) {
 	if err := dropRetiredCategories(DB); err != nil {
 		log.Fatalf("Failed to drop retired categories: %v", err)
 	}
+	if err := retireOldSearchSources(DB); err != nil {
+		log.Printf("database: could not retire the old search sources: %v", err)
+	}
 	if err := retireOldDefaultPrompts(DB); err != nil {
 		log.Fatalf("Failed to retire the old default prompts: %v", err)
 	}
@@ -196,6 +199,9 @@ func Connect(dbPath string) {
 
 	if err := seedCatalogRegistry(DB); err != nil {
 		log.Fatalf("Failed to seed catalog registry: %v", err)
+	}
+	if err := retireOldCatalogs(DB); err != nil {
+		log.Fatalf("Failed to retire the old catalogs: %v", err)
 	}
 	if err := seedMintLocations(DB); err != nil {
 		log.Fatalf("Failed to seed mint locations: %v", err)
@@ -524,6 +530,45 @@ func retireOldDefaultPrompts(db *gorm.DB) error {
 	return nil
 }
 
+// retiredSearchSources are the dealer and auction lists the app shipped with
+// until 2026-10, for ancient coins (Forum Ancient Coins, Harlan J. Berk, CNG).
+// Saving the admin settings stored them as they were; a list still exactly
+// so is cleared, so that today's default (European sites of modern coins and
+// banknotes) applies. A list the admin changed is kept.
+var retiredSearchSources = map[string]string{
+	"DealerSearchSources":  "vcoins.com\nma-shops.com\nforumancientcoins.com\ncatawiki.com\nhjbltd.com",
+	"AuctionSearchSources": "numisbids.com\ncngcoins.com\nbiddr.com",
+}
+
+// retireOldSearchSources clears the stored search source lists that are the old defaults.
+func retireOldSearchSources(db *gorm.DB) error {
+	for key, retired := range retiredSearchSources {
+		var setting models.AppSetting
+		if err := db.Where("key = ?", key).Limit(1).Find(&setting).Error; err != nil {
+			return err
+		}
+		if setting.Key == "" || searchSourceList(setting.Value) != retired {
+			continue
+		}
+		if err := db.Model(&models.AppSetting{}).Where("key = ?", key).Update("value", "").Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// searchSourceList is a stored list of hostnames one per line, trimmed and
+// in lower case, as the settings keep it.
+func searchSourceList(value string) string {
+	hosts := []string{}
+	for _, line := range strings.Split(strings.ReplaceAll(value, "\r\n", "\n"), "\n") {
+		if host := strings.ToLower(strings.TrimSuffix(strings.TrimSpace(line), ".")); host != "" {
+			hosts = append(hosts, host)
+		}
+	}
+	return strings.Join(hosts, "\n")
+}
+
 // dropColumns drops those of the columns the table still has.
 func dropColumns(tx *gorm.DB, table string, columns []string) error {
 	for _, column := range columns {
@@ -841,23 +886,13 @@ func backfillVendorInvoiceFromCoinReferences(db *gorm.DB) error {
 	})
 }
 
+// seedCatalogRegistry registers, at every start, the catalogues of modern
+// coins and banknotes the app relies on (see retiredCatalogs).
 func seedCatalogRegistry(db *gorm.DB) error {
 	seed := []models.CatalogRegistry{
-		{Catalog: "RIC", DisplayName: "Roman Imperial Coinage", Era: models.EraAncient, VolumeRequired: true},
-		{Catalog: "RPC", DisplayName: "Roman Provincial Coinage", Era: models.EraAncient, VolumeRequired: true},
-		{Catalog: "SEAR", DisplayName: "Sear", Era: models.EraAncient, VolumeRequired: false},
-		{Catalog: "CRAWFORD", DisplayName: "Crawford", Era: models.EraAncient, VolumeRequired: false},
-		{Catalog: "SNG", DisplayName: "Sylloge Nummorum Graecorum", Era: models.EraAncient, VolumeRequired: true},
-		{Catalog: "SPINK", DisplayName: "Spink", Era: models.EraMedieval, VolumeRequired: false},
-		{Catalog: "DUPLESSY", DisplayName: "Duplessy", Era: models.EraMedieval, VolumeRequired: false},
-		{Catalog: "CNI", DisplayName: "Corpus Nummorum Italicorum", Era: models.EraAncient, VolumeRequired: false},
 		{Catalog: "KM", DisplayName: "Krause-Mishler", Era: models.EraModern, VolumeRequired: false},
 		{Catalog: "Y", DisplayName: "Y Number", Era: models.EraModern, VolumeRequired: false},
-		{Catalog: "CRAIG", DisplayName: "Craig", Era: models.EraMedieval, VolumeRequired: false},
 		{Catalog: "REDBOOK", DisplayName: "Red Book", Era: models.EraModern, VolumeRequired: false},
-		{Catalog: "PRICE", DisplayName: "Price (Coinage of Alexander the Great)", Era: models.EraAncient, VolumeRequired: false},
-		{Catalog: "BM", DisplayName: "British Museum Catalogue", Era: models.EraAncient, VolumeRequired: false},
-		{Catalog: "VENÈRA", DisplayName: "La Venèra Hoard", Era: models.EraAncient, VolumeRequired: false},
 		{Catalog: "NGC", DisplayName: "NGC Certification", Era: models.EraModern, VolumeRequired: false},
 		{Catalog: "Pick", DisplayName: "Standard Catalog of World Paper Money (Pick)", Era: models.EraModern, VolumeRequired: false},
 		{Catalog: "Numista", DisplayName: "Numista", Era: models.EraModern, VolumeRequired: false},
@@ -884,6 +919,34 @@ func seedCatalogRegistry(db *gorm.DB) error {
 	}
 
 	return nil
+}
+
+// retiredCatalogs are the catalogues of ancient and medieval coins the app
+// registered at every start until 2026-10; it now registers modern ones only.
+var retiredCatalogs = []string{"RIC", "RPC", "SEAR", "CRAWFORD", "SNG", "SPINK", "DUPLESSY", "CNI", "CRAIG", "PRICE", "BM", "VENÈRA"}
+
+const retiredCatalogsVersionKey = "RetiredCatalogsVersion"
+const currentRetiredCatalogsVersion = "1"
+
+// retireOldCatalogs removes the retired catalogues no reference uses (as
+// deleting one in Admin would), once: one the admin registers again
+// afterwards is kept.
+func retireOldCatalogs(db *gorm.DB) error {
+	var marker models.AppSetting
+	err := db.First(&marker, "key = ?", retiredCatalogsVersionKey).Error
+	if err == nil && marker.Value == currentRetiredCatalogsVersion {
+		return nil
+	}
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return err
+	}
+	return db.Transaction(func(tx *gorm.DB) error {
+		unused := "NOT EXISTS (SELECT 1 FROM coin_references WHERE LOWER(coin_references.catalog) = LOWER(catalog_registries.catalog))"
+		if err := tx.Where("catalog IN ?", retiredCatalogs).Where(unused).Delete(&models.CatalogRegistry{}).Error; err != nil {
+			return err
+		}
+		return tx.Save(&models.AppSetting{Key: retiredCatalogsVersionKey, Value: currentRetiredCatalogsVersion}).Error
+	})
 }
 
 // backfillCoinYears fills Coin.Year from DateRange for coins saved before the
