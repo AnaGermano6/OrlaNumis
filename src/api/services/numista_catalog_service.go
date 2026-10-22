@@ -14,13 +14,16 @@ import (
 	"github.com/briandenicola/ancient-coins-api/models"
 )
 
-// Catalogue data changes rarely; searches are kept for a day so repeating a
-// search while adding several coins costs nothing.
+// Catalogue data changes rarely. A search that found types is kept for a
+// month, so importing or adding coins again costs nothing; one that found
+// none is asked again after a day, as Numista may have catalogued the coin
+// since.
 const (
-	numistaIssuersCacheTTL = 30 * 24 * time.Hour
-	numistaTypeCacheTTL    = 30 * 24 * time.Hour
-	numistaSearchCacheTTL  = 24 * time.Hour
-	NumistaCatalogPageSize = 20
+	numistaIssuersCacheTTL     = 30 * 24 * time.Hour
+	numistaTypeCacheTTL        = 30 * 24 * time.Hour
+	numistaSearchCacheTTL      = 30 * 24 * time.Hour
+	numistaEmptySearchCacheTTL = 24 * time.Hour
+	NumistaCatalogPageSize     = 20
 	// NumistaCatalogMaxPageSize is the most types Numista returns per page.
 	NumistaCatalogMaxPageSize = 50
 	numistaIssuerMatchLimit   = 20
@@ -192,6 +195,19 @@ func trimNumistaIssuers(raw []byte) ([]byte, error) {
 }
 
 // Search returns one page of coin types matching the filters.
+// searchCacheTTL is how long a search's answer is kept: a day when it found
+// no type, a month otherwise.
+func searchCacheTTL(payload []byte) time.Duration {
+	var answer struct {
+		Count int               `json:"count"`
+		Types []json.RawMessage `json:"types"`
+	}
+	if json.Unmarshal(payload, &answer) != nil || (answer.Count == 0 && len(answer.Types) == 0) {
+		return numistaEmptySearchCacheTTL
+	}
+	return numistaSearchCacheTTL
+}
+
 func (s *NumistaCatalogService) Search(ctx context.Context, search NumistaTypeSearch) models.NumistaCatalogSearchResult {
 	search.Page = max(search.Page, 1)
 	if search.Count <= 0 {
@@ -209,7 +225,7 @@ func (s *NumistaCatalogService) Search(ctx context.Context, search NumistaTypeSe
 		search.Category = ""
 	}
 	digest := sha256.Sum256([]byte(key))
-	body, _, _, err := s.cache.Get(ctx, "search:"+hex.EncodeToString(digest[:]), numistaSearchCacheTTL, func(ctx context.Context) ([]byte, error) {
+	body, _, _, err := s.cache.GetFor(ctx, "search:"+hex.EncodeToString(digest[:]), searchCacheTTL, func(ctx context.Context) ([]byte, error) {
 		return s.client.SearchTypes(ctx, search)
 	})
 	if err != nil {

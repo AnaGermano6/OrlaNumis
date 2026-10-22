@@ -170,6 +170,15 @@ export interface NumistaUsageSummary {
   limit: number
   pauseAt: number
   backgroundPaused: boolean
+  /** The requests by what they asked for, and those made in the background. */
+  searches?: number
+  types?: number
+  issues?: number
+  prices?: number
+  other?: number
+  background?: number
+  /** Set while Numista refuses requests for its quota: until then none is sent. */
+  pausedUntil?: string
 }
 
 /** One batch of coin values updated from Numista's prices. */

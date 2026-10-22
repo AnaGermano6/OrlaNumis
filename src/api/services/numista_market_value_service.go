@@ -14,11 +14,12 @@ import (
 )
 
 // Issues almost never change and prices are community estimates that move
-// slowly, so both are reused for days: a personal collection stays far
-// inside Numista's free monthly quota.
+// slowly, so both are reused for a month: browsing a collection of a few
+// hundred items, or valuing it day by day, stays inside Numista's free
+// monthly quota.
 const (
 	numistaIssuesCacheTTL = 30 * 24 * time.Hour
-	numistaPricesCacheTTL = 7 * 24 * time.Hour
+	numistaPricesCacheTTL = 30 * 24 * time.Hour
 )
 
 // NumistaPriceClient is the part of the Numista API the market value lookup uses.

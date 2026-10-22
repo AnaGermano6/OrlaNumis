@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/briandenicola/ancient-coins-api/models"
 )
@@ -124,6 +125,43 @@ func TestNumistaCatalog_MarketValueIncludesCatalogPhotos(t *testing.T) {
 	}
 	if none := marketValue.ForType(context.Background(), 2933, 0, "", "EUR", ""); len(none.CatalogPhotos) != 0 {
 		t.Fatalf("photos must be skipped without a language: %+v", none.CatalogPhotos)
+	}
+}
+
+// A search that found types is kept a month, so importing or adding coins
+// again costs nothing; one that found none is asked again the next day.
+func TestNumistaCatalog_SearchesAreKeptAMonthUnlessTheyFoundNothing(t *testing.T) {
+	client := &fakeNumistaCatalogClient{searchBody: `{"count": 1, "types": [{"id": 1, "title": "2 Euro"}]}`}
+	store := &memoryNumistaCacheStore{entries: map[string]models.NumistaCacheEntry{}}
+	clock := &manualNumistaClock{now: time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC)}
+	catalog := NewNumistaCatalogService(client, NewNumistaResponseCache(store, clock, nil))
+	ctx := context.Background()
+
+	found := NumistaTypeSearch{Query: "2 euro 2007", Issuer: "portugal", Lang: "pt"}
+	catalog.Search(ctx, found)
+	clock.now = clock.now.Add(29 * 24 * time.Hour)
+	catalog.Search(ctx, found)
+	if client.searchCalls != 1 {
+		t.Fatalf("within a month: %d calls", client.searchCalls)
+	}
+	clock.now = clock.now.Add(2 * 24 * time.Hour)
+	catalog.Search(ctx, found)
+	if client.searchCalls != 2 {
+		t.Fatalf("after a month: %d calls", client.searchCalls)
+	}
+
+	client.searchBody = `{"count": 0, "types": []}`
+	none := NumistaTypeSearch{Query: "50 escudos 2026", Issuer: "portugal", Lang: "pt"}
+	catalog.Search(ctx, none)
+	clock.now = clock.now.Add(23 * time.Hour)
+	catalog.Search(ctx, none)
+	if client.searchCalls != 3 {
+		t.Fatalf("an empty search within a day: %d calls", client.searchCalls)
+	}
+	clock.now = clock.now.Add(2 * time.Hour)
+	catalog.Search(ctx, none)
+	if client.searchCalls != 4 {
+		t.Fatalf("an empty search after a day: %d calls", client.searchCalls)
 	}
 }
 

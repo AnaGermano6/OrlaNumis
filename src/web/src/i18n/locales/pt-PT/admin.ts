@@ -234,6 +234,22 @@ const messages: Messages['admin'] = {
     numistaUsage: '{requests} de {limit}',
     numistaUsageNote: 'A partir de {pauseAt}, o catálogo, os valores de mercado e o preenchimento de países deixam de pedir ao Numista até ao fim do mês; as suas pesquisas continuam.',
     numistaUsagePaused: 'Passou de {pauseAt}: o catálogo, os valores de mercado e o preenchimento de países esperam pelo próximo mês; as suas pesquisas continuam.',
+    numistaUsageRefused: 'O Numista recusou um pedido por causa da quota: não se envia nenhum até {time}.',
+    numistaUsageKinds: {
+      searches: 'Pesquisas',
+      types: 'Fichas',
+      issues: 'Emissões',
+      prices: 'Preços',
+      other: 'Outros',
+    },
+    numistaUsageBackground: {
+      one: '{number} feito em segundo plano (catálogo, valores de mercado, valores diários).',
+      other: '{number} feitos em segundo plano (catálogo, valores de mercado, valores diários).',
+    },
+    numistaUsageUncounted: {
+      one: '{number} foi feito antes de se contarem os pedidos por tipo.',
+      other: '{number} foram feitos antes de se contarem os pedidos por tipo.',
+    },
     refreshing: 'A atualizar...',
     loadingNumista: 'A carregar a saúde do Numista',
     numistaUnavailable: 'A saúde do Numista está temporariamente indisponível. Tente novamente.',

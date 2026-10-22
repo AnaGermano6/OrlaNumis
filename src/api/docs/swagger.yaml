@@ -3803,19 +3803,46 @@ definitions:
     - NumistaSearchAttemptRelaxed
   models.NumistaUsageSummary:
     properties:
+      background:
+        example: 250
+        type: integer
       backgroundPaused:
         type: boolean
+      issues:
+        example: 60
+        type: integer
       limit:
         example: 2000
         type: integer
       month:
         example: 2026-10
         type: string
+      other:
+        example: 1
+        type: integer
       pauseAt:
         example: 1800
         type: integer
+      pausedUntil:
+        description: |-
+          PausedUntil is set while Numista refuses requests for its quota: until
+          then none is sent.
+        type: string
+      prices:
+        example: 300
+        type: integer
       requests:
         example: 1234
+        type: integer
+      searches:
+        description: |-
+          The requests by what they asked for: searches, types, a type's issues,
+          an issue's prices, the rest (the list of issuers); and how many were
+          made in the background.
+        example: 120
+        type: integer
+      types:
+        example: 80
         type: integer
     type: object
   models.NumistaValueRun:
@@ -11821,7 +11848,9 @@ paths:
       - sets
   /sets:
     get:
-      description: Get all sets for the authenticated user with aggregate summaries
+      description: 'Get all sets for the authenticated user with aggregate summaries.
+        A checklist set also has countries (its slots counted country by country:
+        country, owned, total) and partial (true while its list is partly known).'
       produces:
       - application/json
       responses:

@@ -59,15 +59,24 @@ func NewNumistaResponseCache(store NumistaCacheStore, clock NumistaClock, logger
 // otherwise loads and stores a fresh one. If loading fails and an older copy
 // exists, that copy is returned with stale=true instead of the error.
 func (c *NumistaResponseCache) Get(ctx context.Context, key string, ttl time.Duration, load func(context.Context) ([]byte, error)) ([]byte, time.Time, bool, error) {
+	return c.GetFor(ctx, key, func([]byte) time.Duration { return ttl }, load)
+}
+
+// GetFor is Get with a lifetime that depends on the stored payload (a
+// search that found nothing is kept less long than one that found types).
+func (c *NumistaResponseCache) GetFor(ctx context.Context, key string, ttl func(payload []byte) time.Duration, load func(context.Context) ([]byte, error)) ([]byte, time.Time, bool, error) {
+	fresh := func(entry *models.NumistaCacheEntry) bool {
+		return entry != nil && c.clock.Now().Sub(entry.FetchedAt) < ttl([]byte(entry.Payload))
+	}
 	entry := c.find(key)
-	if entry != nil && c.clock.Now().Sub(entry.FetchedAt) < ttl {
+	if fresh(entry) {
 		return []byte(entry.Payload), entry.FetchedAt, false, nil
 	}
 
 	c.fetchMu.Lock()
 	defer c.fetchMu.Unlock()
-	if fresh := c.find(key); fresh != nil && c.clock.Now().Sub(fresh.FetchedAt) < ttl {
-		return []byte(fresh.Payload), fresh.FetchedAt, false, nil
+	if again := c.find(key); fresh(again) {
+		return []byte(again.Payload), again.FetchedAt, false, nil
 	}
 
 	body, err := load(ctx)

@@ -153,8 +153,8 @@ lasts. It is off until it is turned on there.
   gets an entry for it), and the new one is recorded as **Numista price**. A
   price equal to the value only marks the value as checked.
 - **How often:** each coin once every 30 days, those never checked first,
-  then the longest unchecked. Prices the app fetched in the last 7 days and
-  issues fetched in the last 30 cost no request.
+  then the longest unchecked. Prices and issues the app fetched in the last
+  30 days cost no request.
 - **Within the quota:** each day's batch may make what is left of the
   background share of the month's quota (90%, see the usage in Admin →
   System), spread over the days left in the month, and never more than
@@ -168,6 +168,28 @@ lasts. It is off until it is turned on there.
 - **Run now** starts a batch at once, on or off, within the same budget. The
   card lists the latest batches: what each updated, kept, found without a
   price, could not look up, and the requests it made of its budget.
+
+## Quota and Repeated Requests
+
+The free plan allows 2,000 requests a month, shared by every stack using the
+same key.
+
+- **The count:** Admin → System shows the month's requests against the quota,
+  by what they asked for (searches, types, a type's issues, an issue's
+  prices, the rest) and how many were made in the background (catalogue,
+  market values, daily values). The count by kind began on 22 October 2026;
+  October's earlier requests were counted from the cache and are shown apart.
+- **Kept answers:** every answer is kept in the database, so restarts and
+  repeated views ask nothing:
+  - types, a type's issues, an issue's prices and the list of issuers: 30 days;
+  - a search that found types: 30 days; one that found none: a day, as Numista
+    may catalogue the coin since;
+  - the catalogue's lists by issuer and year: 90 days to a year.
+- **After a refusal:** when Numista refuses a request for its quota (HTTP
+  429), no request is sent, by hand or in the background, for as long as it
+  says (`Retry-After`), or a quarter of an hour when it does not say, and at
+  most a day. Requests not sent are not counted. Admin → System says until
+  when.
 
 ## New Coins from the Releases
 

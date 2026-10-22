@@ -232,6 +232,22 @@ export default {
     numistaUsage: '{requests} of {limit}',
     numistaUsageNote: 'From {pauseAt}, the catalogue, market values and country filling stop asking Numista until the month ends; your own lookups go on.',
     numistaUsagePaused: 'Past {pauseAt}: the catalogue, market values and country filling wait for next month; your own lookups go on.',
+    numistaUsageRefused: 'Numista refused a request for its quota: none is sent until {time}.',
+    numistaUsageKinds: {
+      searches: 'Searches',
+      types: 'Types',
+      issues: 'Issues',
+      prices: 'Prices',
+      other: 'Other',
+    },
+    numistaUsageBackground: {
+      one: '{number} made in the background (catalogue, market values, daily values).',
+      other: '{number} made in the background (catalogue, market values, daily values).',
+    },
+    numistaUsageUncounted: {
+      one: '{number} was made before requests were counted by kind.',
+      other: '{number} were made before requests were counted by kind.',
+    },
     refreshing: 'Refreshing...',
     loadingNumista: 'Loading Numista health',
     numistaUnavailable: 'Numista health is temporarily unavailable. Try again.',

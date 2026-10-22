@@ -116,6 +116,22 @@
             <p class="mb-0 mt-2 text-sm" :class="health.usage.backgroundPaused ? 'text-loss' : 'text-text-secondary'">
               {{ health.usage.backgroundPaused ? t('admin.system.numistaUsagePaused', { pauseAt: formatCount(health.usage.pauseAt) }) : t('admin.system.numistaUsageNote', { pauseAt: formatCount(health.usage.pauseAt) }) }}
             </p>
+            <p v-if="health.usage.pausedUntil" class="mb-0 mt-2 text-sm text-loss" role="status" data-testid="numista-usage-refused">
+              {{ t('admin.system.numistaUsageRefused', { time: formatTimestamp(health.usage.pausedUntil) }) }}
+            </p>
+            <!-- What the month's requests asked for -->
+            <template v-if="usageKinds.counted > 0">
+              <dl class="mb-0 mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-3" data-testid="numista-usage-kinds">
+                <div v-for="kind in usageKinds.rows" :key="kind.key" class="flex justify-between gap-2">
+                  <dt class="text-text-secondary">{{ t(`admin.system.numistaUsageKinds.${kind.key}`) }}</dt>
+                  <dd class="m-0 font-medium text-text-primary">{{ formatCount(kind.count) }}</dd>
+                </div>
+              </dl>
+              <p class="mb-0 mt-2 text-chip text-text-muted" data-testid="numista-usage-background">
+                {{ t('admin.system.numistaUsageBackground', { count: health.usage.background ?? 0, number: formatCount(health.usage.background ?? 0) }) }}
+                <template v-if="usageKinds.uncounted > 0"> {{ t('admin.system.numistaUsageUncounted', { count: usageKinds.uncounted, number: formatCount(usageKinds.uncounted) }) }}</template>
+              </p>
+            </template>
           </div>
 
           <div v-if="healthLoading" class="flex items-center gap-3 py-6 text-sm text-text-secondary" role="status">
@@ -717,6 +733,16 @@ function formatTimestamp(value?: string | null) {
   const timestamp = new Date(value)
   return Number.isNaN(timestamp.getTime()) ? t('admin.system.notObserved') : timestamp.toLocaleString(intlLocale())
 }
+
+// The month's requests by what they asked for; those made before they were
+// counted by kind are told apart.
+const USAGE_KINDS = ['searches', 'types', 'issues', 'prices', 'other'] as const
+const usageKinds = computed(() => {
+  const usage = health.value?.usage
+  const rows = USAGE_KINDS.map((key) => ({ key, count: usage?.[key] ?? 0 })).filter((row) => row.count > 0)
+  const counted = rows.reduce((sum, row) => sum + row.count, 0)
+  return { rows, counted, uncounted: Math.max(0, (usage?.requests ?? 0) - counted) }
+})
 
 function formatCount(value: number) {
   return new Intl.NumberFormat(intlLocale()).format(value)

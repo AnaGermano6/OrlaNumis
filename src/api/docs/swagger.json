@@ -10219,7 +10219,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all sets for the authenticated user with aggregate summaries",
+                "description": "Get all sets for the authenticated user with aggregate summaries. A checklist set also has countries (its slots counted country by country: country, owned, total) and partial (true while its list is partly known).",
                 "produces": [
                     "application/json"
                 ],
@@ -18311,8 +18311,16 @@
         "models.NumistaUsageSummary": {
             "type": "object",
             "properties": {
+                "background": {
+                    "type": "integer",
+                    "example": 250
+                },
                 "backgroundPaused": {
                     "type": "boolean"
+                },
+                "issues": {
+                    "type": "integer",
+                    "example": 60
                 },
                 "limit": {
                     "type": "integer",
@@ -18322,13 +18330,34 @@
                     "type": "string",
                     "example": "2026-10"
                 },
+                "other": {
+                    "type": "integer",
+                    "example": 1
+                },
                 "pauseAt": {
                     "type": "integer",
                     "example": 1800
                 },
+                "pausedUntil": {
+                    "description": "PausedUntil is set while Numista refuses requests for its quota: until\nthen none is sent.",
+                    "type": "string"
+                },
+                "prices": {
+                    "type": "integer",
+                    "example": 300
+                },
                 "requests": {
                     "type": "integer",
                     "example": 1234
+                },
+                "searches": {
+                    "description": "The requests by what they asked for: searches, types, a type's issues,\nan issue's prices, the rest (the list of issuers); and how many were\nmade in the background.",
+                    "type": "integer",
+                    "example": 120
+                },
+                "types": {
+                    "type": "integer",
+                    "example": 80
                 }
             }
         },
