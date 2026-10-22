@@ -283,6 +283,14 @@ onMounted(async () => {
   await store.fetchCoin(Number(route.params.id))
 })
 
+// Going to the previous or the next coin keeps this page and changes the id.
+watch(() => route.params.id, (id, previous) => {
+  if (!id || id === previous || route.name !== 'coin-detail') return
+  lightboxImage.value = null
+  showRealPhotos.value = false
+  void store.fetchCoin(Number(id))
+})
+
 function refreshCoin() {
   if (coin.value) {
     store.fetchCoin(coin.value.id)

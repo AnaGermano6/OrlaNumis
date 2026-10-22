@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { setLocale } from '@/i18n'
 import type { NumistaCatalogType } from '@/api/client'
-import type { CatalogRegistry } from '@/types'
+import { MATERIALS as ALL_MATERIALS, type CatalogRegistry } from '@/types'
 import { buildCatalogPrefill, categoryForType, eraForYear, materialFromComposition } from '@/utils/numistaCatalogPrefill'
 
 const CATEGORIES = ['Modern', 'Other']
 const ERAS = ['ancient', 'medieval', 'modern']
-const MATERIALS = ['Gold', 'Silver', 'Bronze', 'Copper', 'Electrum', 'Other']
+const MATERIALS: string[] = [...ALL_MATERIALS]
 const REGISTRY: CatalogRegistry[] = [
   { id: 1, catalog: 'KM', displayName: 'Krause-Mishler', era: 'modern', volumeRequired: false },
   { id: 2, catalog: 'Numista', displayName: 'Numista', era: 'modern', volumeRequired: false },
@@ -63,7 +63,7 @@ describe('buildCatalogPrefill', () => {
       country: 'Angola',
       rarity: 'uncommon',
       mint: 'Imprensa Nacional - Casa da Moeda (L)',
-      material: 'Other',
+      material: 'Copper-nickel',
       weightGrams: 3.5,
       diameterMm: 20,
       grade: 'VF',
@@ -123,18 +123,39 @@ describe('catalog field suggestions', () => {
   it.each([
     ['Silver (.900)', 'Silver'],
     ['Prata', 'Silver'],
+    ['Prata 925‰', 'Silver'],
     ['Gold', 'Gold'],
     ['Ouro (.917)', 'Gold'],
-    ['Nordic gold', 'Other'],
+    ['Nordic gold', 'Nordic gold'],
+    ['Ouro nórdico (89% Copper, 5% Aluminium, 5% Zinc, 1% Tin)', 'Nordic gold'],
     ['Electrum', 'Electrum'],
-    ['Aluminium-bronze', 'Bronze'],
+    ['Aluminium-bronze', 'Aluminium bronze'],
+    ['Alumínio-níquel-bronze (92% Copper, 6% Aluminium, 2% Nickel)', 'Aluminium bronze'],
+    ['Bronze (Cu 950 + Sn 30 + Zn 20)', 'Bronze'],
     ['Copper', 'Copper'],
-    ['Copper-nickel', 'Other'],
     ['Cobre', 'Copper'],
-    ['Zinc', 'Other'],
+    ['Cobre  banhado em  prata', 'Copper'],
+    ['Copper-nickel', 'Copper-nickel'],
+    ['Cuproníquel (75% Copper &amp; 25% Nickel)', 'Copper-nickel'],
+    ['Latão de níquel (Copper-Nickel-Zinc)', 'Nickel brass'],
+    ['Latão', 'Brass'],
+    ['Bimetálica: núcleo de níquel revestido de latão de níquel em anel de cuproníquel', 'Bimetallic'],
+    ['Aço  banhado em  cobre (Magnetic)', 'Plated steel'],
+    ['Copper plated steel', 'Plated steel'],
+    ['Aço inoxidável', 'Stainless steel'],
+    ['Níquel revestido de cuproníquel', 'Nickel'],
+    ['Alumínio (97% Aluminium, 3% Magnesium)', 'Aluminium'],
+    ['Zinco  banhado em  cobre (97.5% Zinc, 2.5% Copper)', 'Zinc'],
+    ['Zinc', 'Zinc'],
+    ['Bilhão (prata 333‰)', 'Billon'],
+    ['Aço', 'Other'],
     [undefined, 'Other'],
   ])('maps composition %s to %s', (composition, material) => {
     expect(materialFromComposition(composition, MATERIALS)).toBe(material)
+  })
+
+  it('falls back to Other when a material is not among the options', () => {
+    expect(materialFromComposition('Cuproníquel', ['Gold', 'Silver', 'Other'])).toBe('Other')
   })
 
   it('marks the coin as kept in a coin card when Numista says the type is issued in one', () => {

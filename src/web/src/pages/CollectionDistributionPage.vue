@@ -17,6 +17,21 @@
         </div>
 
         <StatsBarChart
+          v-if="monetarySystems.bars.length"
+          :title="t('stats.charts.byMonetarySystem')"
+          :items="monetarySystems.bars"
+          :fill-class="() => 'fill-era'"
+          :wide="true"
+          data-testid="stats-monetary-systems"
+        >
+          <template #label="{ item }">
+            <span :title="monetarySystemBarLabel(item.label, monetarySystems.others)">{{ monetarySystemBarLabel(item.label, monetarySystems.others) }}</span>
+          </template>
+        </StatsBarChart>
+
+        <!-- Categories and eras only tell something when the collection has more than one. -->
+        <StatsBarChart
+          v-if="categoryItems.length > 1"
           :title="t('stats.charts.byCategory')"
           :items="categoryItems"
           :fill-class="(label: string) => label"
@@ -39,7 +54,7 @@
           :fill-class="() => 'fill-material'"
         >
           <template #label="{ item }">
-            <span :class="`material-${item.label.toLowerCase()}`">{{ materialLabel(item.label) }}</span>
+            <span :class="materialClass(item.label)">{{ materialLabel(item.label) }}</span>
           </template>
         </StatsBarChart>
 
@@ -51,7 +66,7 @@
         />
 
         <StatsBarChart
-          v-if="stats.byEra?.length"
+          v-if="eraItems.length > 1"
           :title="t('stats.charts.byEra')"
           :items="eraItems"
           :fill-class="() => 'fill-era'"
@@ -74,7 +89,7 @@
           :fill-class="() => 'fill-price'"
         />
 
-        <StatsHeatMap ref="heatMapRef" />
+        <StatsHeatMap v-if="categoryItems.length > 1 || eraItems.length > 1" ref="heatMapRef" />
       </div>
     </div>
   </PullToRefresh>
@@ -90,7 +105,8 @@ import type { BarItem } from '@/components/stats/StatsBarChart.vue'
 import StatsHeatMap from '@/components/stats/StatsHeatMap.vue'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
-import { materialLabel } from '@/utils/format'
+import { materialClass, materialLabel } from '@/utils/format'
+import { monetarySystemBarLabel, monetarySystemBars } from '@/utils/monetarySystems'
 import { t } from '@/i18n'
 import { priceRangeLabel } from '@/utils/priceRanges'
 import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
@@ -110,6 +126,7 @@ const materialItems = computed<BarItem[]>(() =>
 const gradeItems = computed<BarItem[]>(() =>
   stats.value?.byGrade?.map((g) => ({ label: g.grade, count: g.count })) ?? [],
 )
+const monetarySystems = computed(() => monetarySystemBars(stats.value?.byMonetarySystem))
 const eraItems = computed<BarItem[]>(() =>
   stats.value?.byEra?.map((e) => ({ label: e.era, count: e.count })) ?? [],
 )
@@ -132,7 +149,6 @@ async function handleRefresh() {
 
 onMounted(() => {
   store.fetchStats()
-  heatMapRef.value?.fetchDistribution()
   if (!store.coins.length) store.fetchCoins()
 })
 </script>

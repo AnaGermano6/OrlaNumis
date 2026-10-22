@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { setLocale } from '@/i18n'
 import type { Coin } from '@/types'
-import { deriveCoinYear, groupCoins, presentationLabel, rarityFromMintage, rarityLabel } from '@/utils/coinAttributes'
+import { deriveCoinYear, groupCoins, monetarySystemShortName, presentationLabel, rarityFromMintage, rarityLabel } from '@/utils/coinAttributes'
 
 function coin(id: number, fields: Partial<Coin>): Coin {
   return { id, name: `Coin ${id}`, ...fields } as Coin
@@ -36,10 +36,10 @@ describe('coin attributes', () => {
 
 describe('groupCoins', () => {
   const coins = [
-    coin(1, { country: 'Portugal', year: 1968, rarity: 'rare', presentation: 'coincard' }),
-    coin(2, { country: 'Angola', year: -27, rarity: 'common' }),
-    coin(3, { year: 1953, presentation: 'loose' }),
-    coin(4, { country: 'Éire', year: 1968, rarity: 'rare', presentation: 'coincard' }),
+    coin(1, { country: 'Portugal', year: 1968, rarity: 'rare', presentation: 'coincard', monetarySystem: 'Escudo (1911-2001)' }),
+    coin(2, { country: 'Angola', year: -27, rarity: 'common', monetarySystem: 'Escudo (1958-1977)' }),
+    coin(3, { year: 1953, presentation: 'loose', monetarySystem: 'Euro' }),
+    coin(4, { country: 'Éire', year: 1968, rarity: 'rare', presentation: 'coincard', monetarySystem: 'Euro' }),
     coin(5, { country: 'Portugal' }),
   ]
   const summary = (by: Parameters<typeof groupCoins>[1]) =>
@@ -51,6 +51,17 @@ describe('groupCoins', () => {
 
   it('groups by country alphabetically, ignoring accents, with no country last', () => {
     expect(summary('country')).toEqual(['Angola:2', 'Éire:4', 'Portugal:1,5', 'No country:3'])
+  })
+
+  it('groups by monetary system alphabetically, with none last', () => {
+    expect(summary('monetarySystem')).toEqual(['Escudo (1911-2001):1', 'Escudo (1958-1977):2', 'Euro:3,4', 'No monetary system:5'])
+  })
+
+  it('names a monetary system without its dates for short labels', () => {
+    expect(monetarySystemShortName('Escudo (1911-2001)')).toBe('Escudo')
+    expect(monetarySystemShortName('Libra esterlina (decimalizada, 1971-hoje)')).toBe('Libra esterlina')
+    expect(monetarySystemShortName('Euro')).toBe('Euro')
+    expect(monetarySystemShortName(undefined)).toBe('')
   })
 
   it('groups by year chronologically, BC first, with no year last', () => {

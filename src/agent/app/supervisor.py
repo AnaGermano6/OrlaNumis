@@ -440,10 +440,12 @@ def create_supervisor(
         """Handle general questions with awareness of app capabilities."""
         general_model = get_chat_model(llm_config)
         general_system = (
-            "You are a knowledgeable numismatist assistant in a coin collecting "
-            "application. You are enthusiastic but informative, helpful and friendly.\n\n"
+            "You are a knowledgeable numismatist assistant in a coin and banknote "
+            "collecting application. You are enthusiastic but informative, helpful and friendly. "
+            "Reply in the language the user writes in (European Portuguese, not Brazilian, "
+            "when they write Portuguese).\n\n"
             "SCOPE AND SAFETY RULES:\n"
-            "- You ONLY discuss topics related to numismatics, coin collecting, ancient coins, "
+            "- You ONLY discuss topics related to numismatics, coin and banknote collecting, "
             "coin history, coin grading, coin markets, and this application's features.\n"
             "- If a user asks about anything unrelated to coins or numismatics, politely decline "
             "and redirect them back to coin-related topics. For example: 'I'm specialized in "

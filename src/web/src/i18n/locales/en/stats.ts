@@ -8,6 +8,8 @@ export default {
     byEra: 'By Era',
     topRulers: 'Top Rulers',
     byCategory: 'By Category',
+    byMonetarySystem: 'By Monetary System',
+    otherMonetarySystems: { one: 'One other system', other: '{count} other systems' },
     byMaterial: 'By Material',
     byGrade: 'By Grade',
     priceRanges: 'Price Range Distribution',

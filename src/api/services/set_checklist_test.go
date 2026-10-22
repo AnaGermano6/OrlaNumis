@@ -70,6 +70,24 @@ func TestSummarize(t *testing.T) {
 	}
 }
 
+func TestSummarizeByCountry(t *testing.T) {
+	slots := []ChecklistSlot{
+		{Key: "joint:PT", Country: "PT", Owned: true},
+		{Key: "joint:DE", Country: "DE"},
+		{Key: "joint:ES", Country: "ES", Owned: true},
+		{Key: "type:1", Country: "PT"},
+		{Key: "loose"},
+	}
+	got := SummarizeByCountry(slots)
+	want := []ChecklistCountry{{Country: "PT", Owned: 1, Total: 2}, {Country: "DE", Total: 1}, {Country: "ES", Owned: 1, Total: 1}}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("countries = %+v, want %+v", got, want)
+	}
+	if got := SummarizeByCountry(nil); got == nil || len(got) != 0 {
+		t.Fatalf("no slots = %#v, want an empty list", got)
+	}
+}
+
 // growingMint is Portugal's mint, whose shop gains coins.
 type growingMint struct{ coins []mintCoin }
 
@@ -336,6 +354,9 @@ func TestSetService_ChecklistSets(t *testing.T) {
 	if sets[0]["coinCount"] != 1 || sets[0]["totalValue"] != 3.5 || fmt.Sprintf("%.1f", sets[0]["completionPercentage"]) != "33.3" {
 		t.Fatalf("listed = %+v", sets[0])
 	}
+	if fmt.Sprint(sets[0]["countries"]) != "[{PT 1 3}]" || sets[0]["partial"] != false {
+		t.Fatalf("countries = %v, partial = %v", sets[0]["countries"], sets[0]["partial"])
+	}
 	detail, err := svc.GetSetDetail(set.ID, 1)
 	if err != nil || detail["coinCount"] != 1 || detail["checklist"] == nil || fmt.Sprintf("%.1f", detail["completionPercentage"]) != "33.3" {
 		t.Fatalf("detail = %+v, %v", detail, err)
@@ -379,11 +400,25 @@ func TestSetService_ChecklistSets(t *testing.T) {
 	if completion, _ := svc.GetCompletion(erasmus.ID, 1); completion["totalTargets"] != 19 || completion["completedTargets"] != 0 {
 		t.Fatalf("Erasmus completion = %+v", completion)
 	}
+	// Listed, it has one slot in each of its 19 countries.
+	listed, _ := svc.ListSets(1)
+	for _, item := range listed {
+		countries, _ := item["countries"].([]ChecklistCountry)
+		if item["id"] == erasmus.ID && (len(countries) != 19 || countries[0] != (ChecklistCountry{Country: "AT", Total: 1})) {
+			t.Fatalf("Erasmus countries = %+v", item["countries"])
+		}
+	}
 
 	// A standard set has no slots and cannot become a checklist.
 	standard, err := svc.CreateSet(1, map[string]interface{}{"name": "Mine"})
 	if err != nil {
 		t.Fatal(err)
+	}
+	listed, _ = svc.ListSets(1)
+	for _, item := range listed {
+		if _, has := item["countries"]; item["id"] == standard.ID && has {
+			t.Fatalf("a standard set has countries: %+v", item)
+		}
 	}
 	if _, _, err := svc.ChecklistSlots(ctx, standard.ID, 1); err != ErrNotChecklistSet {
 		t.Fatalf("standard set slots: %v", err)

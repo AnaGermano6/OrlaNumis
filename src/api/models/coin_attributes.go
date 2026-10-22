@@ -133,6 +133,22 @@ func DeriveCoinYear(dateRange string) *int {
 	return &year
 }
 
+// MonetarySystemFromNumista names a coin's monetary system from its Numista
+// type's currency: its full name, with its dates ("Escudo (1911-2001)", "Real
+// (decimalizado, 1835-1910)"), so the réis of Portugal and the real of Brazil
+// stay apart; every euro is "Euro", whatever the country (Numista has one
+// euro currency per country). Empty when Numista gives no currency.
+func MonetarySystemFromNumista(name, fullName string) string {
+	name = strings.Join(strings.Fields(name), " ")
+	if strings.EqualFold(name, "euro") {
+		return "Euro"
+	}
+	if full := strings.Join(strings.Fields(fullName), " "); full != "" {
+		return full
+	}
+	return name
+}
+
 // NormalizeCoinCountry tidies a country name for storage and grouping.
 func NormalizeCoinCountry(value string) string {
 	return strings.Join(strings.Fields(value), " ")
@@ -147,4 +163,53 @@ type CoinCountryFillResult struct {
 	Remaining int `json:"remaining"`
 	// Failed coins could not be resolved (e.g. Numista did not answer).
 	Failed int `json:"failed"`
+}
+
+// CoinNumistaFillChange is what a fill from Numista sets on one coin: only
+// the fields it fills appear.
+type CoinNumistaFillChange struct {
+	CoinID     uint   `json:"coinId"`
+	Name       string `json:"name"`
+	IsWishlist bool   `json:"isWishlist"`
+	// Material is set from Composition, Numista's words for the metal.
+	Material    Material `json:"material,omitempty"`
+	Composition string   `json:"composition,omitempty"`
+	// PreviousMaterial is the material a correction replaces.
+	PreviousMaterial Material `json:"previousMaterial,omitempty"`
+	// MonetarySystem is set from the type's currency (see MonetarySystemFromNumista).
+	MonetarySystem string   `json:"monetarySystem,omitempty"`
+	WeightGrams    *float64 `json:"weightGrams,omitempty"`
+	DiameterMm     *float64 `json:"diameterMm,omitempty"`
+	Presentation   string   `json:"presentation,omitempty"`
+}
+
+// CoinNumistaFillResult reports a fill of coin records from the Numista
+// types the app has cached: what it would change (preview) or changed.
+type CoinNumistaFillResult struct {
+	// Applied is true once the changes were saved.
+	Applied bool `json:"applied"`
+	// Coins is how many coins get at least one field.
+	Coins         int `json:"coins"`
+	Materials     int `json:"materials"`
+	Weights       int `json:"weights"`
+	Diameters     int `json:"diameters"`
+	Presentations int `json:"presentations"`
+	// MonetarySystems is how many coins and banknotes get a monetary system.
+	MonetarySystems int `json:"monetarySystems"`
+	// ByMaterial counts the materials set, by material.
+	ByMaterial map[string]int `json:"byMaterial"`
+	// Unmatched coins still have no material: Numista's composition fits
+	// none of the app's (e.g. plain steel or iron).
+	Unmatched int `json:"unmatched"`
+	// NotCached coins are linked to a Numista type whose details the app
+	// has not cached yet; they are left as they are.
+	NotCached int `json:"notCached"`
+	// Changes lists every coin the fill changes, by name.
+	Changes []CoinNumistaFillChange `json:"changes"`
+	// Corrections lists the coins whose material is set but is not what
+	// Numista's composition says (e.g. Silver for silver plated copper).
+	// They change only when asked for.
+	Corrections []CoinNumistaFillChange `json:"corrections"`
+	// Corrected is how many corrections were saved.
+	Corrected int `json:"corrected"`
 }

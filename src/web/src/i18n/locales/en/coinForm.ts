@@ -65,6 +65,7 @@ export default {
   notesPlaceholder: 'Any additional notes...',
   mintsUnavailable: 'Mint locations are unavailable',
   countryPlaceholder: 'e.g. Portugal',
+  monetarySystemPlaceholder: 'e.g. Escudo (1911-2001) or Euro',
   notSpecified: 'Not specified',
   year: 'Year',
   yearPlaceholder: 'e.g. 1968',

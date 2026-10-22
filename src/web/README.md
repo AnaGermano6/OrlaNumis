@@ -99,7 +99,6 @@ src/
 | `/process-image` | Redirects to `/settings?tab=process` | — |
 | `/sets` | SetsPage | Yes |
 | `/sets/commemoratives` | CommemorativeCataloguePage | Yes |
-| `/sets/proposals/:id` | SetProposalReviewPage | Yes |
 | `/sets/:id` | SetDetailPage | Yes |
 | `/sets/:id/info` | SetInsightsPage | Yes |
 | any other path | Redirects to `/` | — |

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -138,6 +139,42 @@ func findMentionedValue(lowerQuery string, known []string) (string, bool) {
 	return "", false
 }
 
+// queryMaterials are the materials a question can name, in English or
+// Portuguese, alloys first ("nordic gold" is not gold).
+var queryMaterials = []struct {
+	material models.Material
+	pattern  *regexp.Regexp
+}{
+	{models.MaterialNordicGold, regexp.MustCompile(`nordic gold|ouro nordico`)},
+	{models.MaterialAluminiumBronze, regexp.MustCompile(`alumini?um[- ]bronze|aluminum[- ]bronze|bronze[- ]aluminio`)},
+	{models.MaterialStainlessSteel, regexp.MustCompile(`stainless|aco inoxidavel`)},
+	{models.MaterialPlatedSteel, regexp.MustCompile(`plated steel|aco (?:revestido|banhado)`)},
+	{models.MaterialNickelBrass, regexp.MustCompile(`nickel[- ]brass|latao de niquel`)},
+	{models.MaterialCopperNickel, regexp.MustCompile(`copper[- ]nickel|cupro[- ]?nickel|cuproniquel`)},
+	{models.MaterialBimetallic, regexp.MustCompile(`bimetal`)},
+	{models.MaterialBillon, regexp.MustCompile(`billon|\bbilhao\b`)},
+	{models.MaterialGold, regexp.MustCompile(`gold|\bouro\b`)},
+	{models.MaterialSilver, regexp.MustCompile(`silver|\bprata\b`)},
+	{models.MaterialBronze, regexp.MustCompile(`bronze`)},
+	{models.MaterialCopper, regexp.MustCompile(`copper|\bcobre\b`)},
+	{models.MaterialElectrum, regexp.MustCompile(`electrum|\beletro\b`)},
+	{models.MaterialBrass, regexp.MustCompile(`brass|\blatao\b`)},
+	{models.MaterialNickel, regexp.MustCompile(`nickel|\bniquel\b`)},
+	{models.MaterialAluminium, regexp.MustCompile(`alumini?um|aluminum|\baluminio\b`)},
+	{models.MaterialZinc, regexp.MustCompile(`\bzinco?\b`)},
+}
+
+// mentionedMaterial returns the material a question names, if any.
+func mentionedMaterial(lowerQuery string) (models.Material, bool) {
+	text := foldASCII(lowerQuery)
+	for _, candidate := range queryMaterials {
+		if candidate.pattern.MatchString(text) {
+			return candidate.material, true
+		}
+	}
+	return "", false
+}
+
 // SearchMyCollection searches the user's active collection by filters.
 // Returns up to 'limit' matching coins (default 5, max 20).
 func (s *CollectionToolsService) SearchMyCollection(userID uint, query string, limit *int) ([]CollectionCoinSummary, error) {
@@ -176,16 +213,8 @@ func (s *CollectionToolsService) searchCollection(userID uint, query string, lim
 	}
 
 	// Material
-	if strings.Contains(lower, "gold") {
-		filters.Material = string(models.MaterialGold)
-	} else if strings.Contains(lower, "silver") {
-		filters.Material = string(models.MaterialSilver)
-	} else if strings.Contains(lower, "bronze") {
-		filters.Material = string(models.MaterialBronze)
-	} else if strings.Contains(lower, "copper") {
-		filters.Material = string(models.MaterialCopper)
-	} else if strings.Contains(lower, "electrum") {
-		filters.Material = string(models.MaterialElectrum)
+	if material, ok := mentionedMaterial(lower); ok {
+		filters.Material = string(material)
 	}
 
 	// Era - matched against built-ins (including "modern", previously

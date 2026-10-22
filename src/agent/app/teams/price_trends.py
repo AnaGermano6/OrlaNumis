@@ -39,7 +39,7 @@ for the described coin type.
 
 Search for:
 - Recent auction hammer prices (last 1-2 years)
-- Results from major auction houses (Heritage, CNG, Roma, Nomos, etc.)
+- Results from major auction houses (Heritage, Künker, Catawiki, Sixbid, etc.)
 - Results from NumisBids and other aggregators
 - Different grades/conditions to show price range
 
@@ -75,7 +75,7 @@ auction search results. Output a JSON array wrapped in ```json fences. Each item
   "description": "optional source-observed description",
   "saleDate": "YYYY-MM-DD",
   "amount": 250,
-  "currency": "USD",
+  "currency": "EUR",
   "priceBasis": "hammer|realized_including_premium"
 }
 

@@ -90,6 +90,11 @@ func registerAdminRoutes(api *gin.RouterGroup, d *appDeps) {
 		admin.POST("/valuation-runs/trigger", valAdminHandler.TriggerValuation)
 		admin.POST("/valuation-runs/:id/cancel", valAdminHandler.CancelValuation)
 
+		// The daily batches of coin values from Numista's prices
+		numistaValuesHandler := handlers.NewAdminNumistaValuesHandler(d.numistaValueSvc, d.numistaValueScheduler, d.logger)
+		admin.GET("/numista-values", numistaValuesHandler.Status)
+		admin.POST("/numista-values/run", numistaValuesHandler.Run)
+
 		// Aggregate health metrics
 		adminHealthHandler := handlers.NewAdminHealthHandler(d.healthSvc, d.logger)
 		admin.GET("/health/summary", adminHealthHandler.Summary)

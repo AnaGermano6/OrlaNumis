@@ -92,23 +92,6 @@ export function formatAgentServiceError(error: unknown, fallback = t('errors.age
   return message
 }
 
-export function formatSetBuilderError(error: unknown): string {
-  const message = getApiErrorMessage(error).trim()
-  if (/max_slots|maximum.*slots|less than or equal to 300/i.test(message)) {
-    return t('errors.setBuilder.slotLimit')
-  }
-  if (/agent service returned HTTP 422/i.test(message)) {
-    return t('errors.setBuilder.rejected')
-  }
-  if (/set builder prompt is too long/i.test(message)) {
-    return t('errors.setBuilder.tooLong')
-  }
-  if (/failed to submit set proposal request/i.test(message)) {
-    return t('errors.setBuilder.submitFailed')
-  }
-  return message || t('errors.setBuilder.submitFailed')
-}
-
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {

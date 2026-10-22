@@ -119,21 +119,23 @@
         />
 
         <!-- Coin Properties Tab -->
-        <AdminCoinPropertiesSection
-          v-if="activeTab === 'properties'"
-          :category-options="settings.CoinCategories ?? ''"
-          :era-options="settings.CoinEras ?? ''"
-          :category-labels-pt="settings.CoinCategoryLabelsPtPT ?? ''"
-          :era-labels-pt="settings.CoinEraLabelsPtPT ?? ''"
-          :saving="settingsSaving"
-          :msg="settingsMsg"
-          :error="settingsError"
-          @update:category-options="settings.CoinCategories = $event"
-          @update:era-options="settings.CoinEras = $event"
-          @update:category-labels-pt="settings.CoinCategoryLabelsPtPT = $event"
-          @update:era-labels-pt="settings.CoinEraLabelsPtPT = $event"
-          @save="saveSettings"
-        />
+        <div v-if="activeTab === 'properties'" class="flex flex-col gap-6">
+          <AdminCoinPropertiesSection
+            :category-options="settings.CoinCategories ?? ''"
+            :era-options="settings.CoinEras ?? ''"
+            :category-labels-pt="settings.CoinCategoryLabelsPtPT ?? ''"
+            :era-labels-pt="settings.CoinEraLabelsPtPT ?? ''"
+            :saving="settingsSaving"
+            :msg="settingsMsg"
+            :error="settingsError"
+            @update:category-options="settings.CoinCategories = $event"
+            @update:era-options="settings.CoinEras = $event"
+            @update:category-labels-pt="settings.CoinCategoryLabelsPtPT = $event"
+            @update:era-labels-pt="settings.CoinEraLabelsPtPT = $event"
+            @save="saveSettings"
+          />
+          <AdminNumistaFillSection />
+        </div>
 
         <!-- Catalogs Tab -->
         <AdminCatalogsSection v-if="activeTab === 'catalogs'" />
@@ -207,6 +209,7 @@ import AdminSchedulesSection from '@/components/admin/AdminSchedulesSection.vue'
 import AdminHealthSection from '@/components/admin/AdminHealthSection.vue'
 import AdminCatalogsSection from '@/components/admin/AdminCatalogsSection.vue'
 import AdminCoinPropertiesSection from '@/components/admin/AdminCoinPropertiesSection.vue'
+import AdminNumistaFillSection from '@/components/admin/AdminNumistaFillSection.vue'
 import AdminSecuritySection from '@/components/admin/AdminSecuritySection.vue'
 import { Users, Cpu, Wrench, ScrollText, CalendarClock, Activity, ChevronRight, BookMarked, Settings2, ShieldAlert } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'

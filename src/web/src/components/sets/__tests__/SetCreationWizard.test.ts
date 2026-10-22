@@ -41,7 +41,7 @@ describe('SetCreationWizard', () => {
     await flushPromises()
 
     expect(wrapper.findAll('[data-testid^="set-path-"]').map((node) => node.attributes('data-testid'))).toEqual([
-      'set-path-catalogue', 'set-path-challenge', 'set-path-filters', 'set-path-manual', 'set-path-goal', 'set-path-agentic',
+      'set-path-catalogue', 'set-path-challenge', 'set-path-filters', 'set-path-manual', 'set-path-goal',
     ])
     expect(wrapper.find('form').exists()).toBe(false)
 
@@ -111,6 +111,21 @@ describe('SetCreationWizard', () => {
     expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined()
   })
 
+  it.each([
+    ['escudoTypes', 'escudo-types', 'Escudo types (1911–2001)'],
+    ['reisTypes', 'reis-types', 'Réis types (1835–1910)'],
+  ])("makes the ready-made type set of Portugal's %s", async (option, challenge, name) => {
+    const wrapper = mountWizard()
+    await wrapper.get('[data-testid="set-path-challenge"]').trigger('click')
+    await wrapper.get(`[data-testid="challenge-${option}"] input`).setValue(true)
+
+    expect(wrapper.get<HTMLInputElement>('#setName').element.value).toBe(name)
+    await wrapper.get('form').trigger('submit.prevent')
+    expect(submitted(wrapper)).toEqual(expect.objectContaining({
+      name, setType: 'checklist', checklist: { source: 'challenge', challenge },
+    }))
+  })
+
   it("asks the year's series for a country and a year", async () => {
     const wrapper = mountWizard()
     await wrapper.get('[data-testid="set-path-challenge"]').trigger('click')
@@ -118,8 +133,13 @@ describe('SetCreationWizard', () => {
 
     const submit = wrapper.get('button[type="submit"]')
     expect(submit.attributes('disabled')).toBeDefined()
-    expect(wrapper.findAll('#challengeCountry option').map((option) => option.text())).toContain('🇵🇹 Portugal')
-    await wrapper.get('#challengeCountry').setValue('PT')
+    await wrapper.get('#challengeCountry').trigger('click')
+    const options = [...document.querySelectorAll<HTMLElement>('[data-testid="country-select-option"]')]
+    expect(options[0]!.textContent?.trim()).toBe('Choose a country')
+    // Every euro country has its flag.
+    for (const option of options.slice(1)) expect(option.querySelector('[aria-hidden="true"]')?.textContent?.trim() || option.querySelector('img')).toBeTruthy()
+    options.find((option) => option.textContent?.trim() === '🇵🇹Portugal')!.click()
+    await flushPromises()
     await wrapper.get('#challengeYear').setValue('1998')
     // Before the euro.
     expect(submit.attributes('disabled')).toBeDefined()
@@ -185,28 +205,6 @@ describe('SetCreationWizard', () => {
 
     expect(submitted(wrapper)).toEqual(expect.objectContaining({ name: 'Favourites', setType: 'standard' }))
     expect(submitted(wrapper)).not.toHaveProperty('smartCriteria')
-  })
-
-  it('emits an agentic submit payload with the prompt instead of creating a set locally', async () => {
-    const wrapper = mountWizard()
-    await flushPromises()
-
-    await wrapper.get('[data-testid="set-path-agentic"]').trigger('click')
-    await wrapper.find('#agenticPrompt').setValue('  All US Silver Quarters from 1940s to 1960s  ')
-    await wrapper.find('#setName').setValue('US Silver Quarters')
-
-    expect(wrapper.text()).toContain('How agentic sets work')
-    expect(wrapper.text()).toContain('up to 300 roster slots')
-    expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeUndefined()
-    expect(wrapper.find('button[type="submit"]').text()).toBe('Create')
-
-    await wrapper.find('form').trigger('submit.prevent')
-
-    const events = wrapper.emitted('submit') as unknown[][]
-    const payload = submitted(wrapper)
-    expect(payload.setType).toBe('agentic')
-    expect(payload.agenticPrompt).toBe('All US Silver Quarters from 1940s to 1960s')
-    expect(events[0]![1]).toBeUndefined()
   })
 
   it('shows goal completion guidance, and opens a goal set to edit on its form', async () => {

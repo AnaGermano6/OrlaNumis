@@ -10,7 +10,7 @@ Use the AI agent to estimate a coin grade from uploaded photos. The result is gu
 
 - **Photo-based assessment** — Analyze obverse/reverse photos for wear, strike, surface condition, and eye appeal.
 - **Reasoning and confidence** — Returns a grade estimate with explanation and uncertainty.
-- **Historical grading context** — Ancient coins are evaluated differently from modern mint-state coins.
+- **Grading context** — Circulated coins, uncirculated (UNC, BNC) coins and proofs are graded differently; the analysis proposes a grade on the collection's scale (UNC, AU, XF, VF, F, VG, G, or BNC and Proof).
 - **Collection workflow** — Save final grade decisions on the coin record after reviewing the suggestion.
 
 ## Related Features

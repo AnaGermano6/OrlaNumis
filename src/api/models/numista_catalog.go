@@ -68,6 +68,9 @@ type NumistaCatalogType struct {
 	// FaceValue is the denomination as a number (5 for "5 Euros").
 	FaceValue *float64 `json:"faceValue,omitempty"`
 	Currency  string   `json:"currency,omitempty"`
+	// MonetarySystem is the type's currency system, as a coin stores it
+	// (see MonetarySystemFromNumista): "Escudo (1911-2001)", "Euro".
+	MonetarySystem string `json:"monetarySystem,omitempty"`
 	// CommemoratedTopic is what a commemorative coin celebrates, in the
 	// language asked for when Numista has it (e.g. "O conhecimento").
 	CommemoratedTopic string `json:"commemoratedTopic,omitempty"`
@@ -111,4 +114,12 @@ type NumistaCatalogTypeResult struct {
 	Status string                `json:"status"`
 	Type   *NumistaCatalogType   `json:"type,omitempty"`
 	Issues []NumistaIssueSummary `json:"issues"`
+}
+
+// NumistaCatalogIssuesResult is a type's issues, to tell which one an item is.
+type NumistaCatalogIssuesResult struct {
+	Status string                `json:"status"`
+	Issues []NumistaIssueSummary `json:"issues"`
+	// Stale is true when Numista could not be reached and stored issues are shown.
+	Stale bool `json:"stale"`
 }

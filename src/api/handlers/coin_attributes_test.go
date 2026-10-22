@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/briandenicola/ancient-coins-api/repository"
 	"github.com/gin-gonic/gin"
 )
 
@@ -103,4 +104,40 @@ func TestCoinHandler_YearCanBeTypedOrLeftToTheDate(t *testing.T) {
 
 func itoa(value uint) string {
 	return strconv.FormatUint(uint64(value), 10)
+}
+
+func TestCoinHandler_MonetarySystem(t *testing.T) {
+	router, db := setupCoinHandlerRouter(t)
+	createTestUser(t, db, 1, "collector")
+
+	w := coinRequest(router, http.MethodPost, "/api/coins", map[string]any{
+		"name": "1 Escudo 1986", "category": "Modern", "material": "Other", "monetarySystem": "  Escudo   (1911-2001) ",
+	})
+	if w.Code != http.StatusCreated {
+		t.Fatalf("create: %d %s", w.Code, w.Body.String())
+	}
+	var coin struct {
+		ID             uint   `json:"id"`
+		MonetarySystem string `json:"monetarySystem"`
+		Name           string `json:"name"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &coin); err != nil || coin.MonetarySystem != "Escudo (1911-2001)" {
+		t.Fatalf("created = %+v (%v)", coin, err)
+	}
+
+	w = coinRequest(router, http.MethodPut, "/api/coins/"+itoa(coin.ID), map[string]any{"name": "1 Escudo"})
+	if err := json.Unmarshal(w.Body.Bytes(), &coin); err != nil || w.Code != http.StatusOK || coin.MonetarySystem != "Escudo (1911-2001)" {
+		t.Fatalf("an update without it keeps it: %d %s", w.Code, w.Body.String())
+	}
+	w = coinRequest(router, http.MethodPut, "/api/coins/"+itoa(coin.ID), map[string]any{"monetarySystem": "Euro"})
+	if err := json.Unmarshal(w.Body.Bytes(), &coin); err != nil || w.Code != http.StatusOK || coin.MonetarySystem != "Euro" {
+		t.Fatalf("updated = %d %s", w.Code, w.Body.String())
+	}
+
+	coinRequest(router, http.MethodPost, "/api/coins", map[string]any{"name": "2 Euro", "category": "Modern", "material": "Bimetallic", "monetarySystem": "Euro"})
+	coinRequest(router, http.MethodPost, "/api/coins", map[string]any{"name": "No system", "category": "Modern", "material": "Other"})
+	stats, err := repository.NewCoinRepository(db).GetStats(1)
+	if err != nil || len(stats.ByMonetarySystem) != 1 || stats.ByMonetarySystem[0] != (repository.MonetarySystemCount{MonetarySystem: "Euro", Count: 2}) {
+		t.Fatalf("stats by monetary system = %+v (%v)", stats.ByMonetarySystem, err)
+	}
 }

@@ -155,7 +155,14 @@ type StatsResponse struct {
 	TotalWishlist int64           `json:"totalWishlist" example:"5"`
 	ByCategory    []CategoryCount `json:"byCategory"`
 	ByMaterial    []MaterialCount `json:"byMaterial"`
-	Values        ValueSummary    `json:"values"`
+	// ByMonetarySystem counts the coins of each monetary system, most first.
+	ByMonetarySystem []MonetarySystemCount `json:"byMonetarySystem"`
+	Values           ValueSummary          `json:"values"`
+}
+
+type MonetarySystemCount struct {
+	MonetarySystem string `json:"monetarySystem" example:"Escudo (1911-2001)"`
+	Count          int64  `json:"count" example:"137"`
 }
 
 type CategoryCount struct {

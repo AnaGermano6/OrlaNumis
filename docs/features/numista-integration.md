@@ -91,6 +91,106 @@ the canonical URL as
 `https://en.numista.com/catalogue/pieces<identifier>.html`; manual reference
 validation and deduplication remain authoritative.
 
+## Completing Records from Numista
+
+**Admin → Coin properties → Complete records from Numista** fills in coin
+records from the Numista types the app has already saved, without asking
+Numista: it costs none of the monthly quota.
+
+- **What it fills:**
+  - the **monetary system**, from the type's currency, when none is set, on
+    coins and banknotes: Numista's full name of the currency, with its dates
+    ("Escudo (1911-2001)"), and **Euro** for every euro coin, whatever the
+    country (see [Monetary System](coin-details.md#monetary-system));
+  - on coins, the **material**, from Numista's composition, when the coin's
+    is Other or empty;
+  - the **weight** and the **diameter**, when missing;
+  - **coin card** as the presentation, when none is set and Numista's
+    comments say the type is issued in one.
+- **Which coins:** the user's coins and banknotes (collection and wishlist)
+  with a Numista catalogue reference whose type details are saved; a
+  banknote gets only its monetary system. A coin
+  linked to a type the app has not saved yet is left out and counted.
+- **Preview first:** the section opens with what would change: how many
+  coins, how many of each field, the materials to set, and every coin with
+  its values and Numista's composition. **Save** asks for confirmation and
+  saves all of it at once.
+- **Corrections:** coins whose material is set but differs from Numista's
+  composition (for example, silver plated copper recorded as Silver) are
+  listed apart and change only when **Also correct these coins** is ticked.
+
+How a composition becomes a material:
+
+- Alloys first: nordic gold, aluminium bronze (also aluminium-nickel-bronze
+  and bronzital), stainless steel (also acmonital), nickel brass (also nickel
+  silver), copper-nickel, billon.
+- A coin of two metals is **Bimetallic**, whatever they are.
+- A plated or clad coin counts by its core (silver plated copper is Copper,
+  copper plated zinc is Zinc), except steel: copper, nickel, brass or bronze
+  plated steel is **Plated steel**.
+- The alloy in brackets ("Cuproníquel (75% copper, 25% nickel)") is not read.
+- Plain steel or iron fits no material and stays as it is.
+
+The same rules set the material when a coin is added from the Numista
+catalogue.
+
+## Daily Values from Numista
+
+**Admin → Schedules → Numista Values** keeps the coins' current values in
+step with Numista's estimated prices, a few coins a day, so the month's quota
+lasts. It is off until it is turned on there.
+
+- **Which coins:** every collection item (coins and banknotes, not the
+  wishlist) linked to a Numista type, with a grade Numista prices: UNC (also
+  BNC, MS, FDC, Soberba…), AU, XF, VF, F, VG and G. Coins without a grade, or
+  graded Proof, wait for one; the card counts them.
+- **The price:** Numista's price, in the collection currency, for the coin's
+  grade on the issue of its year (the type's first issue when the year does
+  not pick one). A grade without a price takes the nearest lower grade's,
+  else the nearest higher one's.
+- **The value:** the price replaces the coin's current value. The value it
+  replaces stays in the coin's value history (a coin with no history first
+  gets an entry for it), and the new one is recorded as **Numista price**. A
+  price equal to the value only marks the value as checked.
+- **How often:** each coin once every 30 days, those never checked first,
+  then the longest unchecked. Prices and issues the app fetched in the last
+  30 days cost no request.
+- **Within the quota:** each day's batch may make what is left of the
+  background share of the month's quota (90%, see the usage in Admin →
+  System), spread over the days left in the month, and never more than
+  **Numista requests per day** (40 by default). It stops when that is spent
+  and goes on the next day.
+- **Warnings:** from 75% of the quota the card and, while the batch is on,
+  the collection overview (for an admin) say the quota is running low and the
+  batches get smaller; at the pause they say until when the values wait (the first day of
+  next month). A batch also stops by itself when Numista says the quota is
+  spent, has no key, or does not answer three times in a row.
+- **Run now** starts a batch at once, on or off, within the same budget. The
+  card lists the latest batches: what each updated, kept, found without a
+  price, could not look up, and the requests it made of its budget.
+
+## Quota and Repeated Requests
+
+The free plan allows 2,000 requests a month, shared by every stack using the
+same key.
+
+- **The count:** Admin → System shows the month's requests against the quota,
+  by what they asked for (searches, types, a type's issues, an issue's
+  prices, the rest) and how many were made in the background (catalogue,
+  market values, daily values). The count by kind began on 22 October 2026;
+  October's earlier requests were counted from the cache and are shown apart.
+- **Kept answers:** every answer is kept in the database, so restarts and
+  repeated views ask nothing:
+  - types, a type's issues, an issue's prices and the list of issuers: 30 days;
+  - a search that found types: 30 days; one that found none: a day, as Numista
+    may catalogue the coin since;
+  - the catalogue's lists by issuer and year: 90 days to a year.
+- **After a refusal:** when Numista refuses a request for its quota (HTTP
+  429), no request is sent, by hand or in the background, for as long as it
+  says (`Retry-After`), or a quarter of an hour when it does not say, and at
+  most a day. Requests not sent are not counted. Admin → System says until
+  when.
+
 ## New Coins from the Releases
 
 **Add to collection** on a new coin of the collection overview's releases
@@ -218,8 +318,13 @@ POST /api/numista/lookup             # Typed explicit lookup
 POST /api/numista/enrich             # Bounded progressive detail enrichment
 GET  /api/numista/search?q=...       # Deprecated compatibility adapter
 GET  /api/coin-releases/numista-type # The Numista type of a new coin, and its candidates
+GET  /api/numista/catalog/types/:id/issues # A type's issues: dates, mint marks, a banknote's signatories, Pick number and kind (cached, no prices)
+GET  /api/coins/numista-fill          # What completing coin records from saved types would change
+POST /api/coins/numista-fill          # Complete them (?corrections=true also corrects materials)
 POST /api/coins/lookup               # Analyze photos; does not eagerly search Numista
 GET  /api/admin/numista/health       # Admin-only redacted rolling health
+GET  /api/admin/numista-values        # Admin-only: the daily values batch, the quota and the latest batches
+POST /api/admin/numista-values/run    # Admin-only: run a batch now
 ```
 
 The deprecated GET adapter keeps its legacy `{count,types}` response and maps

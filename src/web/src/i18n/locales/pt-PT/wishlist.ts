@@ -2,6 +2,7 @@ import type { Messages } from '../../types'
 
 const messages: Messages['wishlist'] = {
   checkAvailability: 'Verificar disponibilidade',
+  share: 'Partilhar lista',
   searchAlerts: 'Alertas de pesquisa',
   runHistory: 'Histórico de execuções',
   addTo: 'Adicionar à lista de desejos',

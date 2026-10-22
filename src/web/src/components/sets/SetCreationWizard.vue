@@ -20,8 +20,6 @@
       <p class="mb-0 mt-2 text-chip text-text-muted">
         {{ t('sets.wizard.otherTypes') }}
         <button type="button" class="rounded-sm text-gold underline-offset-2 hover:underline" data-testid="set-path-goal" @click="choose('goal')">{{ t('sets.wizard.paths.goal.title') }}</button>
-        ·
-        <button type="button" class="rounded-sm text-gold underline-offset-2 hover:underline" data-testid="set-path-agentic" @click="choose('agentic')">{{ t('sets.wizard.paths.agentic.title') }}</button>
       </p>
       <div class="mt-4 flex justify-end">
         <button type="button" class="btn btn-secondary" @click="$emit('cancel')">{{ t('common.cancel') }}</button>
@@ -63,10 +61,7 @@
           <div v-if="challenge === 'annualSeries'" class="grid gap-3 pt-2 sm:grid-cols-2">
             <div class="form-group m-0">
               <label for="challengeCountry" class="form-label mb-1 block">{{ t('sets.filters.country') }}</label>
-              <select id="challengeCountry" v-model="seriesCountry" class="form-input w-full" required>
-                <option value="" disabled>{{ t('sets.wizard.chooseCountry') }}</option>
-                <option v-for="code in euroCountries" :key="code" :value="code">{{ withFlagOfCode(code, releaseCountryName(code)) }}</option>
-              </select>
+              <CountrySelect id="challengeCountry" v-model="seriesCountry" :options="euroCountryChoices" :label="t('sets.filters.country')" />
             </div>
             <div class="form-group m-0">
               <label for="challengeYear" class="form-label mb-1 block">{{ t('sets.wizard.year') }}</label>
@@ -104,18 +99,6 @@
           <p class="mt-2 mb-0 text-body text-text-secondary">{{ t('sets.wizard.goalP2') }}</p>
           <p class="mt-2 mb-0 text-chip text-text-muted">{{ t('sets.wizard.goalP3') }}</p>
         </div>
-        <template v-if="path === 'agentic'">
-          <div class="form-group mb-4 rounded-sm border border-border-subtle bg-card p-4">
-            <span class="section-label">{{ t('sets.wizard.agenticTitle') }}</span>
-            <p class="mt-2 mb-0 text-body text-text-secondary">{{ t('sets.wizard.agenticP1') }}</p>
-            <p class="mt-2 mb-0 text-body text-text-secondary">{{ t('sets.wizard.agenticP2') }}</p>
-            <p class="mt-2 mb-0 text-chip text-text-muted">{{ t('sets.wizard.agenticP3') }}</p>
-          </div>
-          <div class="form-group mb-4">
-            <label for="agenticPrompt" class="form-label mb-2 block">{{ t('sets.wizard.agenticPrompt') }}</label>
-            <textarea id="agenticPrompt" v-model="agenticPrompt" rows="3" maxlength="500" class="form-input w-full" :placeholder="t('sets.wizard.agenticPlaceholder')" required />
-          </div>
-        </template>
 
         <div class="form-group mb-4">
           <label for="setName" class="form-label mb-2 block">{{ t('common.name') }}</label>
@@ -151,12 +134,12 @@ import { getJointIssues, type JointIssue } from '@/api/client'
 import SetSimpleFilters from '@/components/sets/SetSimpleFilters.vue'
 import { randomSetColor } from '@/utils/setColors'
 import { releaseCountryName } from '@/utils/coinReleases'
-import { withFlagOfCode } from '@/utils/countryFlags'
+import CountrySelect, { type CountrySelectOption } from '@/components/CountrySelect.vue'
 import { criteriaToFilters, emptyFilters, EURO_COUNTRIES, filtersName, filtersToCriteria, type SimpleSetFilters } from '@/utils/setFilters'
 import { intlLocale, t } from '@/i18n'
 
-type Path = 'catalogue' | 'challenge' | 'filters' | 'manual' | 'goal' | 'agentic'
-type Challenge = 'euroCountries' | 'jointIssue' | 'annualSeries' | 'birthYear'
+type Path = 'catalogue' | 'challenge' | 'filters' | 'manual' | 'goal'
+type Challenge = 'euroCountries' | 'jointIssue' | 'annualSeries' | 'escudoTypes' | 'reisTypes' | 'birthYear'
 
 const PATHS = [
   { id: 'catalogue', icon: BookOpenCheck },
@@ -164,12 +147,14 @@ const PATHS = [
   { id: 'filters', icon: SlidersHorizontal },
   { id: 'manual', icon: Hand },
 ] as const
-const CHALLENGES: Challenge[] = ['euroCountries', 'jointIssue', 'annualSeries', 'birthYear']
+const CHALLENGES: Challenge[] = ['euroCountries', 'jointIssue', 'annualSeries', 'escudoTypes', 'reisTypes', 'birthYear']
 /** The challenges the server keeps as checklists, by their id there. */
 const CHECKLIST_CHALLENGES: Partial<Record<Challenge, ChecklistDefinition['challenge']>> = {
   euroCountries: 'euro-countries',
   jointIssue: 'joint-issue',
   annualSeries: 'annual-series',
+  escudoTypes: 'escudo-types',
+  reisTypes: 'reis-types',
 }
 const EURO_FIRST_YEAR = 1999
 
@@ -187,6 +172,11 @@ const emit = defineEmits<{
 
 const thisYear = new Date().getFullYear()
 const euroCountries = computed(() => [...EURO_COUNTRIES].sort((a, b) => releaseCountryName(a).localeCompare(releaseCountryName(b), intlLocale())))
+// The euro countries in the galleries' menu, each with its flag; the value is the country's code.
+const euroCountryChoices = computed((): CountrySelectOption[] => [
+  { value: '', label: t('sets.wizard.chooseCountry') },
+  ...euroCountries.value.map((code) => ({ value: code, label: releaseCountryName(code), country: releaseCountryName(code) })),
+])
 
 const path = ref<Path | null>(null)
 const name = ref('')
@@ -198,7 +188,6 @@ const seriesCountry = ref('')
 const seriesYear = ref<number>(thisYear)
 const birthYear = ref<number | null>(null)
 const filters = ref<SimpleSetFilters>(emptyFilters())
-const agenticPrompt = ref('')
 /** The euro area's joint issues, once read; the year chosen. */
 const jointIssues = ref<JointIssue[] | null>(null)
 const jointIssuesFailed = ref(false)
@@ -215,11 +204,10 @@ function reset(value: Partial<CreateCoinSetRequest> | undefined) {
   nameEdited.value = Boolean(value?.name)
   description.value = value?.description ?? ''
   color.value = value?.color ?? randomSetColor()
-  agenticPrompt.value = value?.agenticPrompt ?? ''
   filters.value = criteriaToFilters(value?.smartCriteria as SmartCriteriaGroup | undefined) ?? emptyFilters()
   // A set of a known type opens its own form; a new set starts with the choice.
   const type = value?.setType ? normalizeCoinSetType(value.setType) : 'standard'
-  path.value = type === 'goal' ? 'goal' : type === 'agentic' ? 'agentic' : type === 'smart' ? 'filters' : null
+  path.value = type === 'goal' ? 'goal' : type === 'smart' ? 'filters' : null
 }
 reset(props.initialValue)
 watch(() => props.initialValue, reset)
@@ -267,7 +255,6 @@ function validYear(value: number | null | undefined, min: number, max: number): 
 
 const valid = computed(() => {
   if (!name.value.trim()) return false
-  if (path.value === 'agentic') return Boolean(agenticPrompt.value.trim())
   if (path.value !== 'challenge') return true
   if (challenge.value === 'annualSeries') return Boolean(seriesCountry.value) && validYear(seriesYear.value, EURO_FIRST_YEAR, thisYear + 1)
   if (challenge.value === 'birthYear') return validYear(birthYear.value, 1, thisYear)
@@ -294,8 +281,6 @@ function request(): Omit<CreateCoinSetRequest, 'name' | 'description' | 'color'>
       return { setType: 'smart', smartCriteria: filtersToCriteria(filters.value) as unknown as Record<string, unknown> }
     case 'goal':
       return { setType: 'goal' }
-    case 'agentic':
-      return { setType: 'agentic', agenticPrompt: agenticPrompt.value.trim() || undefined }
     default:
       return { setType: 'standard' }
   }

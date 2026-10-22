@@ -89,6 +89,7 @@ const LAYOUTS: { value: CollectionLayout; label: MessageKey; icon: typeof Layout
 const GROUPING_KEYS: Record<CoinGroupBy, MessageKey> = {
   none: 'collection.view.groupNone',
   country: 'coinFields.country',
+  monetarySystem: 'coinFields.monetarySystem',
   year: 'collection.view.groupYear',
   rarity: 'coinFields.rarity',
   presentation: 'coinFields.presentation',

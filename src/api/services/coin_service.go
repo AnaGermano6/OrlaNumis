@@ -185,6 +185,7 @@ func normalizeCoinAttributes(coin *models.Coin) error {
 		coin.Year = nil
 	}
 	coin.Country = models.NormalizeCoinCountry(coin.Country)
+	coin.MonetarySystem = strings.Join(strings.Fields(coin.MonetarySystem), " ")
 	coin.Presentation = strings.TrimSpace(coin.Presentation)
 	if !models.ValidCoinPresentation(coin.Presentation) {
 		return ErrCoinInvalidPresentation

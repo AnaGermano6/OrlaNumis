@@ -47,8 +47,8 @@ func TestCoinCopilotExecutionUsesLegacySearchConfiguration(t *testing.T) {
 			t.Fatalf("missing search prompt on wire: %v", err)
 		}
 		if prompt == "" {
-			if !strings.Contains(actual, `Add "for sale" or "buy now" to your search queries`) {
-				t.Fatalf("legacy default search instructions missing: %q", actual)
+			if actual != DefaultCoinSearchPrompt {
+				t.Fatalf("default search instructions missing: %q", actual)
 			}
 		} else if actual != prompt {
 			t.Fatalf("search prompt = %q, want %q", actual, prompt)

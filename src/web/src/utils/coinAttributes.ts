@@ -108,8 +108,15 @@ export function rarityFromMintage(mintage: number | null | undefined): CoinRarit
   return 'extremely_rare'
 }
 
-export type CoinGroupBy = 'none' | 'country' | 'year' | 'rarity' | 'presentation'
-export const COIN_GROUPINGS: CoinGroupBy[] = ['none', 'country', 'year', 'rarity', 'presentation']
+/** A monetary system without its dates ("Escudo (1911-2001)" → "Escudo"), for short labels. */
+export function monetarySystemShortName(system: string | null | undefined): string {
+  const value = (system ?? '').trim()
+  const cut = value.indexOf(' (')
+  return cut > 0 ? value.slice(0, cut) : value
+}
+
+export type CoinGroupBy = 'none' | 'country' | 'monetarySystem' | 'year' | 'rarity' | 'presentation'
+export const COIN_GROUPINGS: CoinGroupBy[] = ['none', 'country', 'monetarySystem', 'year', 'rarity', 'presentation']
 
 export interface CoinGroup {
   key: string
@@ -132,6 +139,12 @@ function groupKey(coin: Coin, by: Exclude<CoinGroupBy, 'none'>): GroupKey {
       return country
         ? { key: country, label: country, order: country, missing: false }
         : { key: '', label: t('collection.groups.noCountry'), order: '', missing: true }
+    }
+    case 'monetarySystem': {
+      const system = coin.monetarySystem?.trim() ?? ''
+      return system
+        ? { key: system, label: system, order: system, missing: false }
+        : { key: '', label: t('collection.groups.noMonetarySystem'), order: '', missing: true }
     }
     case 'year': {
       const year = coin.year

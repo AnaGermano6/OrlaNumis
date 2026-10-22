@@ -32,13 +32,15 @@ describe('StatsHeatMap', () => {
     })
   })
 
-  it('renders distribution cells from the stats API', async () => {
+  it('loads the distribution when it appears, and again when asked', async () => {
     const wrapper = mount(StatsHeatMap)
+    await flushPromises()
+    expect(mockGetDistribution).toHaveBeenCalledTimes(1)
 
     await exposedFetchDistribution(wrapper)
     await flushPromises()
 
-    expect(mockGetDistribution).toHaveBeenCalledTimes(1)
+    expect(mockGetDistribution).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toContain('Collection Distribution')
     expect(wrapper.text()).toContain('Roman')
     expect(wrapper.text()).toContain('Greek')

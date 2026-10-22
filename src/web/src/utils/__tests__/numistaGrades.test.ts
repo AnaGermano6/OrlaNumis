@@ -20,6 +20,7 @@ describe('numistaGradeForCoinGrade', () => {
     ['About Unc', 'au'],
     ['MS 63', 'unc'],
     ['UNC', 'unc'],
+    ['BNC', 'unc'],
     ['VF/XF', 'xf'],
     ['MBC', 'vf'],
     ['BC', 'f'],

@@ -41,6 +41,8 @@ type appDeps struct {
 	numistaUsage           *services.NumistaUsageService
 	backupSvc              *services.BackupService
 	backupScheduler        *services.BackupScheduler
+	numistaValueSvc        *services.NumistaValueService
+	numistaValueScheduler  *services.NumistaValueScheduler
 	exchangeRates          *services.ExchangeRateService
 	authRateLimit          gin.HandlerFunc
 	apiRateLimit           gin.HandlerFunc
@@ -186,6 +188,13 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	backupSvc := services.NewBackupService(repository.NewBackupRepository(database.DB), cfg.DBPath, cfg.UploadDir, cfg.BackupDir, docs.SwaggerInfo.Version, settingsSvc, logger, database.CheckBackupDatabase)
 	backupScheduler := services.NewBackupScheduler(backupSvc, settingsSvc, logger)
 	schedulerRegistry.Register(backupScheduler)
+	// The coins' values from Numista's prices, a few a day within the quota.
+	numistaValueRepo := repository.NewNumistaValueRepository(database.DB)
+	numistaValueMarket := services.NewNumistaMarketValueService(numistaClient,
+		services.NewNumistaResponseCache(repository.NewNumistaCacheRepository(database.DB), services.NewSystemNumistaClock(), logger))
+	numistaValueSvc := services.NewNumistaValueService(numistaValueRepo, numistaValueMarket, numistaUsage, settingsSvc, logger)
+	numistaValueScheduler := services.NewNumistaValueScheduler(numistaValueSvc, numistaValueRepo, settingsSvc, logger)
+	schedulerRegistry.Register(numistaValueScheduler)
 
 	// Create shared repositories for cross-group access
 	journalRepo := repository.NewJournalRepository(database.DB)
@@ -217,6 +226,8 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 		numistaUsage:           numistaUsage,
 		backupSvc:              backupSvc,
 		backupScheduler:        backupScheduler,
+		numistaValueSvc:        numistaValueSvc,
+		numistaValueScheduler:  numistaValueScheduler,
 		exchangeRates:          exchangeRates,
 		authRateLimit:          authRateLimit,
 		apiRateLimit:           apiRateLimit,

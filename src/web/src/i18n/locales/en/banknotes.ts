@@ -7,6 +7,7 @@ export default {
   failed: 'The banknotes could not be loaded. Try again in a moment.',
   repeatedOnly: 'Only duplicates to trade',
   groupCount: { one: '{count} banknote', other: '{count} banknotes' },
+  groupNone: 'All banknotes',
   select: 'Select banknotes',
   classification: 'Banknote type',
   bulk: {

@@ -28,8 +28,8 @@ upcoming coin shows, numismatic conventions, and coin collecting events.
 
 CRITICAL RULES:
 - Use your search tool to find REAL coin shows and events
-- Search multiple sources: coinshows.com, coinshows-usa.com, ANA (money.org),
-  PNG (pngdealers.org), NYINC, Whitman Expo, local coin club sites, Eventbrite
+- Search multiple sources: numismatic associations and clubs, collectors' fair
+  calendars, town council event pages, the organisers' own sites, Eventbrite
 - Focus on shows within the next 30 days unless the user specifies a different timeframe
 - NEVER invent event details from memory
 
@@ -165,9 +165,9 @@ def create_coin_show_team(
     location_hint = ""
     if user_context and user_context.zip_code:
         location_hint = (
-            f"The user is located near ZIP code {user_context.zip_code}. "
+            f"The user is located near postal code {user_context.zip_code}. "
             "Prioritize shows near this location, but also include major "
-            "national shows."
+            "national and European shows."
         )
 
     async def search_node(state: CoinShowSearchState) -> dict:

@@ -104,25 +104,6 @@ type AgentChatResponse struct {
 
 const DefaultCoinSearchPrompt = services.DefaultCoinSearchPrompt
 
-const DefaultCoinShowsPrompt = `You are a coin show search specialist focused on numismatic conventions and collecting events.
-
-Search for upcoming coin shows, expos, and conventions, especially those featuring ancient, Greek, Roman, or Byzantine coinage. Also include major general numismatic shows.
-
-Key organizations and websites to search:
-- coinshows.com (comprehensive coin show directory)
-- money.org (ANA — American Numismatic Association events)
-- pngdealers.org (PNG show schedule)
-- nyinc.info (New York International Numismatic Convention)
-- biddr.com (live auctions tied to shows)
-
-CRITICAL RULES:
-- ONLY return shows with FUTURE dates — never list past events
-- Focus on shows within the next 30 days unless the user specifies a different timeframe
-- When the user says "near me" or asks for nearby shows, only include shows within approximately 50 miles of their location
-- For each show, find: name, dates, location, venue, website URL
-- If the user mentions a location, prioritize shows near that area
-- Note any special exhibits, notable dealers, or auction events at the show`
-
 func (h *AgentHandler) getCoinSearchPrompt() string {
 	return h.settingsSvc.GetCoinSearchPrompt()
 }
@@ -130,7 +111,7 @@ func (h *AgentHandler) getCoinSearchPrompt() string {
 func (h *AgentHandler) getCoinShowsPrompt(userID uint) string {
 	prompt := h.settingsSvc.GetSetting(services.SettingCoinShowsPrompt)
 	if prompt == "" {
-		prompt = DefaultCoinShowsPrompt
+		prompt = services.DefaultCoinShowsPrompt
 	}
 
 	// Inject current date so the agent knows what "upcoming" means
@@ -450,11 +431,11 @@ func (h *AgentHandler) GetCoinSearchPrompt(c *gin.Context) {
 func (h *AgentHandler) GetCoinShowsPrompt(c *gin.Context) {
 	prompt := h.settingsSvc.GetSetting(services.SettingCoinShowsPrompt)
 	if prompt == "" {
-		prompt = DefaultCoinShowsPrompt
+		prompt = services.DefaultCoinShowsPrompt
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"prompt":  prompt,
-		"default": DefaultCoinShowsPrompt,
+		"default": services.DefaultCoinShowsPrompt,
 	})
 }
 

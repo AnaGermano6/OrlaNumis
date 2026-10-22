@@ -14,13 +14,16 @@ import (
 	"github.com/briandenicola/ancient-coins-api/models"
 )
 
-// Catalogue data changes rarely; searches are kept for a day so repeating a
-// search while adding several coins costs nothing.
+// Catalogue data changes rarely. A search that found types is kept for a
+// month, so importing or adding coins again costs nothing; one that found
+// none is asked again after a day, as Numista may have catalogued the coin
+// since.
 const (
-	numistaIssuersCacheTTL = 30 * 24 * time.Hour
-	numistaTypeCacheTTL    = 30 * 24 * time.Hour
-	numistaSearchCacheTTL  = 24 * time.Hour
-	NumistaCatalogPageSize = 20
+	numistaIssuersCacheTTL     = 30 * 24 * time.Hour
+	numistaTypeCacheTTL        = 30 * 24 * time.Hour
+	numistaSearchCacheTTL      = 30 * 24 * time.Hour
+	numistaEmptySearchCacheTTL = 24 * time.Hour
+	NumistaCatalogPageSize     = 20
 	// NumistaCatalogMaxPageSize is the most types Numista returns per page.
 	NumistaCatalogMaxPageSize = 50
 	numistaIssuerMatchLimit   = 20
@@ -192,6 +195,19 @@ func trimNumistaIssuers(raw []byte) ([]byte, error) {
 }
 
 // Search returns one page of coin types matching the filters.
+// searchCacheTTL is how long a search's answer is kept: a day when it found
+// no type, a month otherwise.
+func searchCacheTTL(payload []byte) time.Duration {
+	var answer struct {
+		Count int               `json:"count"`
+		Types []json.RawMessage `json:"types"`
+	}
+	if json.Unmarshal(payload, &answer) != nil || (answer.Count == 0 && len(answer.Types) == 0) {
+		return numistaEmptySearchCacheTTL
+	}
+	return numistaSearchCacheTTL
+}
+
 func (s *NumistaCatalogService) Search(ctx context.Context, search NumistaTypeSearch) models.NumistaCatalogSearchResult {
 	search.Page = max(search.Page, 1)
 	if search.Count <= 0 {
@@ -209,7 +225,7 @@ func (s *NumistaCatalogService) Search(ctx context.Context, search NumistaTypeSe
 		search.Category = ""
 	}
 	digest := sha256.Sum256([]byte(key))
-	body, _, _, err := s.cache.Get(ctx, "search:"+hex.EncodeToString(digest[:]), numistaSearchCacheTTL, func(ctx context.Context) ([]byte, error) {
+	body, _, _, err := s.cache.GetFor(ctx, "search:"+hex.EncodeToString(digest[:]), searchCacheTTL, func(ctx context.Context) ([]byte, error) {
 		return s.client.SearchTypes(ctx, search)
 	})
 	if err != nil {
@@ -291,6 +307,13 @@ func (s *NumistaCatalogService) IssuerYearTypes(ctx context.Context, issuer stri
 	return s.searchEveryPage(ctx, fmt.Sprintf("issuer-year:v1:%s:%d:%s", issuer, year, lang), search, issuerYearCacheTTL)
 }
 
+// IssuerYearCached tells whether IssuerYearTypes would answer from the cache
+// (its first page stored and still fresh), without asking Numista.
+func (s *NumistaCatalogService) IssuerYearCached(issuer string, year int, lang string) bool {
+	entry := s.cache.find(fmt.Sprintf("issuer-year:v1:%s:%d:%s:1", issuer, year, lang))
+	return entry != nil && s.cache.clock.Now().Sub(entry.FetchedAt) < issuerYearCacheTTL
+}
+
 // issuerValueCacheTTL keeps an issuer's coins of a face value for three
 // months: new ones come out every year.
 const issuerValueCacheTTL = 90 * 24 * time.Hour
@@ -326,8 +349,10 @@ func (s *NumistaCatalogService) searchEveryPage(ctx context.Context, key string,
 					Code string `json:"code"`
 					Name string `json:"name"`
 				} `json:"issuer"`
-				MinYear *int `json:"min_year"`
-				MaxYear *int `json:"max_year"`
+				MinYear          *int   `json:"min_year"`
+				MaxYear          *int   `json:"max_year"`
+				ObverseThumbnail string `json:"obverse_thumbnail"`
+				ReverseThumbnail string `json:"reverse_thumbnail"`
 			} `json:"types"`
 		}
 		if err := json.Unmarshal(body, &response); err != nil {
@@ -339,6 +364,7 @@ func (s *NumistaCatalogService) searchEveryPage(ctx context.Context, key string,
 					ID: item.ID, Title: strings.TrimSpace(item.Title),
 					Issuer:  models.NumistaCatalogIssuer{Code: item.Issuer.Code, Name: item.Issuer.Name},
 					MinYear: item.MinYear, MaxYear: item.MaxYear,
+					ObverseThumbnail: httpsOnly(item.ObverseThumbnail), ReverseThumbnail: httpsOnly(item.ReverseThumbnail),
 				})
 			}
 		}
@@ -403,6 +429,22 @@ func (s *NumistaCatalogService) Type(ctx context.Context, typeID int, lang strin
 	// Issues are optional for prefilling; a failure leaves the list empty.
 	if issues, _, err := cachedNumistaIssues(ctx, s.cache, s.client.Issues, typeID); err == nil {
 		result.Issues = issues
+	}
+	return result
+}
+
+// Issues returns a type's issues (dates, mint marks, a banknote's signatories
+// and Pick number), from the shared cache; no prices are fetched.
+func (s *NumistaCatalogService) Issues(ctx context.Context, typeID int) models.NumistaCatalogIssuesResult {
+	result := models.NumistaCatalogIssuesResult{Status: models.NumistaDataStatusOK, Issues: []models.NumistaIssueSummary{}}
+	issues, stale, err := cachedNumistaIssues(ctx, s.cache, s.client.Issues, typeID)
+	if err != nil {
+		result.Status = numistaStatusForError(err)
+		return result
+	}
+	result.Issues, result.Stale = issues, stale
+	if len(issues) == 0 {
+		result.Status = models.NumistaDataStatusNoIssues
 	}
 	return result
 }
@@ -626,7 +668,8 @@ type providerCatalogType struct {
 		Text         string   `json:"text"`
 		NumericValue *float64 `json:"numeric_value"`
 		Currency     struct {
-			Name string `json:"name"`
+			Name     string `json:"name"`
+			FullName string `json:"full_name"`
 		} `json:"currency"`
 	} `json:"value"`
 	Ruler []struct {
@@ -667,12 +710,7 @@ type providerCatalogType struct {
 	Obverse    providerCatalogSide `json:"obverse"`
 	Reverse    providerCatalogSide `json:"reverse"`
 	Edge       providerCatalogSide `json:"edge"`
-	References []struct {
-		Catalogue struct {
-			Code string `json:"code"`
-		} `json:"catalogue"`
-		Number string `json:"number"`
-	} `json:"references"`
+	References []providerReference `json:"references"`
 }
 
 func parseNumistaCatalogType(body []byte) (*models.NumistaCatalogType, error) {
@@ -694,6 +732,7 @@ func parseNumistaCatalogType(body []byte) (*models.NumistaCatalogType, error) {
 		Denomination:       strings.TrimSpace(raw.Value.Text),
 		FaceValue:          positive(raw.Value.NumericValue),
 		Currency:           strings.TrimSpace(raw.Value.Currency.Name),
+		MonetarySystem:     models.MonetarySystemFromNumista(raw.Value.Currency.Name, raw.Value.Currency.FullName),
 		CommemoratedTopic:  strings.TrimSpace(raw.CommemoratedTopic),
 		Classification:     strings.TrimSpace(raw.Type),
 		IssuedInCoincard:   IssuedInCoincard(raw.Comments),

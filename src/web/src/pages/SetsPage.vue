@@ -49,14 +49,32 @@
       </button>
     </div>
 
-    <div v-else class="flex flex-col gap-4">
-      <SetDashboardCard
-        v-for="set in sets"
-        :key="set.id"
-        :set="set"
-        @click="goToSet(set.id)"
-      />
-    </div>
+    <template v-else>
+      <!-- The sets one by one, or their places country by country. -->
+      <div v-if="hasCountries" class="mb-4 flex h-10 max-w-[320px] rounded-sm border border-border-subtle bg-input p-[2px]" role="group" :aria-label="t('sets.byCountry.viewLabel')" data-testid="sets-view">
+        <button
+          v-for="option in VIEWS"
+          :key="option"
+          type="button"
+          class="min-w-0 flex-1 rounded-[6px] px-2 text-chip transition-all"
+          :class="view === option ? 'bg-gold text-surface font-semibold' : 'bg-transparent font-medium text-text-secondary hover:bg-card-hover hover:text-text-primary'"
+          :aria-pressed="view === option"
+          :data-testid="`sets-view-${option}`"
+          @click="view = option"
+        >
+          {{ t(`sets.byCountry.views.${option}`) }}
+        </button>
+      </div>
+      <SetsByCountry v-if="hasCountries && view === 'countries'" :sets="sets" />
+      <div v-else class="flex flex-col gap-4">
+        <SetDashboardCard
+          v-for="set in sets"
+          :key="set.id"
+          :set="set"
+          @click="goToSet(set.id)"
+        />
+      </div>
+    </template>
 
     <Teleport to="body">
       <div v-if="showCreateModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 px-4 py-8" @click.self="showCreateModal = false">
@@ -80,14 +98,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { BookOpenCheck, ChevronRight, CirclePlus, Layers3, Plus, X } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
-import { formatSetBuilderError, getApiErrorMessage, getSets, createSet as createSetApi, createSetFromCsv, createSetBuilderRun } from '@/api/client'
+import { getApiErrorMessage, getSets, createSet as createSetApi, createSetFromCsv } from '@/api/client'
 import type { CoinSetSummary, CreateCoinSetRequest } from '@/types'
 import SetDashboardCard from '@/components/sets/SetDashboardCard.vue'
+import SetsByCountry from '@/components/sets/SetsByCountry.vue'
 import SetCreationWizard from '@/components/sets/SetCreationWizard.vue'
 import { usePwa } from '@/composables/usePwa'
 import { randomSetColor } from '@/utils/setColors'
@@ -99,6 +118,28 @@ const { isPwa } = usePwa()
 const { showAlert } = useDialog()
 const loading = ref(true)
 const sets = ref<CoinSetSummary[]>([])
+
+const VIEWS = ['sets', 'countries'] as const
+const VIEW_KEY = 'sets:view'
+const view = ref<(typeof VIEWS)[number]>(readView())
+// Only checklist sets have places by country.
+const hasCountries = computed(() => sets.value.some((set) => set.countries?.length))
+
+function readView(): (typeof VIEWS)[number] {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'countries' ? 'countries' : 'sets'
+  } catch {
+    return 'sets'
+  }
+}
+
+watch(view, (value) => {
+  try {
+    localStorage.setItem(VIEW_KEY, value)
+  } catch {
+    // The choice still applies for this visit.
+  }
+})
 const showCreateModal = ref(false)
 const newSet = ref({
   name: '',
@@ -139,16 +180,6 @@ function openCreateModal() {
 
 async function createSet(value: CreateCoinSetRequest, csv?: string) {
   try {
-    if (value.setType === 'agentic') {
-      const res = await createSetBuilderRun({ prompt: value.agenticPrompt || value.name })
-      showCreateModal.value = false
-      resetNewSet()
-      await showAlert(
-        t('sets.list.proposalSubmitted', { id: res.data.run.id }),
-        { title: t('sets.list.proposalSubmittedTitle') },
-      )
-      return
-    }
     if (csv) {
       await createSetFromCsv({ ...value, csv })
     } else {
@@ -164,9 +195,7 @@ async function createSet(value: CreateCoinSetRequest, csv?: string) {
     await loadSets()
   } catch (error) {
     console.error('Failed to create set:', error)
-    const title = value.setType === 'agentic' ? t('sets.list.proposalFailedTitle') : t('sets.list.createFailedTitle')
-    const message = value.setType === 'agentic' ? formatSetBuilderError(error) : (getApiErrorMessage(error) || t('common.requestFailed'))
-    await showAlert(message, { title })
+    await showAlert(getApiErrorMessage(error) || t('common.requestFailed'), { title: t('sets.list.createFailedTitle') })
   }
 }
 

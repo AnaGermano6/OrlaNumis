@@ -1,5 +1,6 @@
 export default {
   checkAvailability: 'Check Availability',
+  share: 'Share List',
   searchAlerts: 'Search Alerts',
   runHistory: 'Run History',
   addTo: 'Add to wishlist',

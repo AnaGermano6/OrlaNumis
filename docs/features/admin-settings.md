@@ -23,7 +23,7 @@ Administration is available to admins only. The first registered user is assigne
 1. Get an API key: [console.anthropic.com](https://console.anthropic.com/)
 2. Paste it into **Anthropic API Key**
 3. Pick the model (the list comes from the API)
-4. (Optional) Customize the agent prompts
+4. (Optional) Customize the agent prompts. The built-in ones are written for this collection (euro coins, escudos and réis, world coins and banknotes) and answer in European Portuguese; **Revert to Default** brings one back
 
 **Ollama Setup:**
 1. Run Ollama: `ollama serve`

@@ -195,19 +195,32 @@ describe('BanknotesPage', () => {
     expect(wrapper.find('[data-testid="banknotes-select-bar"]').exists()).toBe(false)
   })
 
-  it('views the banknotes by country, year or rarity, and remembers the choice', async () => {
+  it('views all the banknotes, or by country, monetary system, year or rarity, and remembers the choice', async () => {
     mocks.getCoins.mockResolvedValue({ data: { coins: [
-      banknote(1, '20 Escudos 1971', 'Portugal', { year: 1971, rarity: 'common' }),
-      banknote(2, '100 Escudos 1972', 'Angola', { year: 1972, rarity: 'scarce' }),
-      banknote(3, '20 Escudos 1978', 'Portugal', { year: 1978, rarity: 'common' }),
+      banknote(1, '20 Escudos 1971', 'Portugal', { year: 1971, rarity: 'common', monetarySystem: 'Escudo (1911-2001)' }),
+      banknote(2, '100 Escudos 1972', 'Angola', { year: 1972, rarity: 'scarce', monetarySystem: 'Escudo (1958-1977)' }),
+      banknote(3, '20 Escudos 1978', 'Portugal', { year: 1978, rarity: 'common', monetarySystem: 'Escudo (1911-2001)' }),
     ], total: 3 } })
     const wrapper = mountPage()
     await flushPromises()
     const headings = () => wrapper.findAll('[data-testid="banknotes-group"] h2').map((heading) => heading.text().replace(/\s+/g, ' '))
 
     const groupBy = wrapper.get('[data-testid="banknotes-group-by"]')
-    expect(groupBy.findAll('option').map((option) => option.text())).toEqual(['País', 'Ano', 'Raridade'])
+    expect(groupBy.findAll('option').map((option) => option.text())).toEqual(['Todas as notas', 'País', 'Sistema monetário', 'Ano', 'Raridade'])
     expect(headings()).toEqual(['🇦🇴 Angola 1 nota', '🇵🇹 Portugal 2 notas'])
+
+    // All of them in one list, in the order asked for, without groups.
+    await groupBy.setValue('none')
+    expect(headings()).toEqual([])
+    const sections = wrapper.findAll('[data-testid="banknotes-group"]')
+    expect(sections).toHaveLength(1)
+    expect(sections[0]!.attributes('aria-label')).toBe('Todas as notas')
+    expect(sections[0]!.text()).toContain('20 Escudos 1971')
+    expect(sections[0]!.text()).toContain('100 Escudos 1972')
+    expect(localStorage.getItem('banknotes:groupBy')).toBe('none')
+
+    await groupBy.setValue('monetarySystem')
+    expect(headings()).toEqual(['Escudo (1911-2001) 2 notas', 'Escudo (1958-1977) 1 nota'])
 
     await groupBy.setValue('year')
     expect(headings()).toEqual(['1971 1 nota', '1972 1 nota', '1978 1 nota'])

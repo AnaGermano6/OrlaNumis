@@ -81,4 +81,20 @@ describe('CollectionRepeated', () => {
     await flushPromises()
     expect(none.find('[data-testid="repeated-open"]').exists()).toBe(false)
   })
+
+  it('offers to share the list of duplicates when there are some', async () => {
+    mocks.getCoins.mockResolvedValue({ data: { coins: [coin(1, '1 euro 2009', 2)], total: 1 } })
+    const wrapper = render('coin', { repeatedCoins: 1, spareCoins: 1 })
+    await flushPromises()
+
+    const share = wrapper.get('[data-testid="repeated-share"]')
+    expect(share.text()).toBe('Partilhar lista')
+    await share.trigger('click')
+    expect(wrapper.emitted('share')).toHaveLength(1)
+
+    mocks.getCoins.mockResolvedValue({ data: { coins: [], total: 0 } })
+    const none = render('coin', { repeatedCoins: 0, spareCoins: 0 })
+    await flushPromises()
+    expect(none.find('[data-testid="repeated-share"]').exists()).toBe(false)
+  })
 })

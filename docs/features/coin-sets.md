@@ -1,10 +1,12 @@
 # Coin Sets
 
-> Group coins into sets: lists from the catalogue, ready-made challenges, rules, free sets, goals with a wish list, and AI proposals.
+> Group coins into sets: lists from the catalogue, ready-made challenges, rules, free sets and goals with a wish list.
 
 ## Overview
 
-**Sets** (`/sets`) lists your sets, each with its kind, coin count and, for lists to complete, how much is done. **Create set** offers four paths and two other kinds.
+**Sets** (`/sets`) lists your sets, each with its kind, coin count and, for lists to complete, how much is done. **Create set** offers four paths and one other kind.
+
+**Completion by country** — when a set has places by country (sets from the catalogue and the challenges), **View** switches between **Sets** and **By country**, and the choice is remembered. By country lists each country of the sets' places, with its flag, the places filled out of all ("21 of 62") and how many are missing; the countries with most places come first. Opening a country lists its sets, each with what it is missing there, and leads to the set. A coin in two sets counts in each, as it fills a place in both; a list still being read (the réis types) says so. Sets by filters, free and goal sets have no places by country and are only counted below the list. `GET /api/sets` gives each checklist set its `countries` (`country`, `owned`, `total`) and `partial`.
 
 ## Ways to create a set
 
@@ -16,19 +18,17 @@ Ready-made goals:
 - **A coin of each euro country** — one place per country, filled by the first euro coin you have
 - **Joint issue** — the same €2 commemorative in every country that issued it (for example the 50 years of the Treaty of Rome), one place per country
 - **A year's series** — a country's eight coins of one year, from 1 cent to €2
+- **Escudo types (1911–2001)** and **Réis types (1835–1910)** — one place for each type of Portugal's circulation coins in escudos and centavos, or in réis (a design of a face value, whatever its years: "50 Centavos, 1927–1968"), with Numista's picture of it; your coin linked to that Numista type fills it. Numista's lists of Portugal's coins year by year make them, kept for a year: patterns are left out, and so are commemorative and collector coins (they are in the catalogue), as Numista classifies them or, when the app does not know, a coin of one year whose title names what it marks. The escudos' years are already listed for the catalogue; the réis' are asked of Numista a few years per view (six), within the background share of the quota, and the set says it is not complete until every year has answered
 - **Coins of my year of birth** — every coin of your collection struck that year, now and later
 
 ### By filters (smart set)
-Country, face value, years, kind of coin (circulation, commemorative, collector) and presentation. The form counts the matching coins as you go. Coins you add later that match join by themselves.
+Country, face value, years, kind of coin (circulation, commemorative, collector) and presentation. The form counts the matching coins as you go. Coins you add later that match join by themselves. The **Country** menu is the galleries' own: each of the collection's countries with its flag, drawn for those that no longer exist (see [Collection Management](collection-management.md)); a year's series picks its euro country from the same menu.
 
 ### Choose the coins (standard set)
 A free set: add the coins you want, one by one, from the set's page or from a coin's page. Standard sets are also the ones offered by the gallery's set filter and by **Add to set** in select mode.
 
 ### Goal with wishlist (goal set)
 Goal sets take both collection and wishlist coins. Completion is collection items divided by collection plus wishlist items: 2 in the collection and 5 on the wish list is 2 / (2 + 5) = 28.6%.
-
-### AI assistant proposal (agentic set)
-Describe the set you want and the agent proposes a roster of up to 300 slots. Creating an agentic set submits a proposal request; no set is created until the proposal is approved. Needs an AI provider.
 
 ## The set page
 
@@ -46,12 +46,6 @@ Each euro country, with its flag, and its commemorative €2 coins and €5, €
 - Filter by all, in my collection, or missing
 - **Catalogue options** (the "…" on a coin): **Hide from the catalogue**, or **It is the same coin as…** when the catalogue lists one coin twice. The other coin stays in its place and counts as yours if you have either. The choices apply to the country's list, the counts of every country and the checklist sets made from the catalogue.
 - Hidden and joined coins are listed below the list, each with a **Show** button.
-
-## Agentic proposals
-
-- The Go API queues the request; the Python agent drafts the scope, the slots and verification notes.
-- A proposal is reviewed on its own page (`/sets/proposals/:id`): edit slots, regenerate with feedback, reject, or approve.
-- Only approval creates the set. Collection coins are then matched to the slots automatically.
 
 ## Security
 
@@ -84,6 +78,7 @@ GET    /api/coin-catalogue/joint-issues       # Joint issues of the euro area
 PUT    /api/coin-catalogue/overrides          # Hide a coin, or join it to another
 DELETE /api/coin-catalogue/overrides          # Show a coin again
 
+# The AI set builder: the app no longer offers it, but the API still answers.
 POST   /api/set-builder/runs                       # Submit an agentic proposal request
 GET    /api/set-builder/proposals/:id              # Review a proposal
 PUT    /api/set-builder/proposals/:id              # Edit a proposal

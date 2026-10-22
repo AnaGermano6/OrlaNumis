@@ -100,7 +100,7 @@ unknown availability; they are not presented as confirmed live inventory.
 Malformed model output remains an explicit provider failure, not "no matches."
 
 Legacy search and Coin Copilot use the same **CoinSearchPrompt** setting and
-the same built-in prompt when that setting is empty. Go resolves the prompt
+the same built-in prompt when that setting is empty. The built-in prompts (search, coin shows, valuation, obverse, reverse, text extraction) are written for this collection: euro coins, escudos and réis, world coins and banknotes, answered in European Portuguese. A prompt saved unchanged from the admin page is stored empty, so a later built-in prompt applies; one you edit is kept. Go resolves the prompt
 and sends it with the configured dealer sources on each Copilot execution;
 the market tool applies it to its search model, not to the top-level
 supervisor. Changing the setting does not require a separate Copilot
@@ -198,9 +198,9 @@ the previous session.
 Enter natural language descriptions:
 
 **Examples**:
-- "Roman silver denarii of Julius Caesar under $500"
-- "Greek silver tetradrachms from Athens, 5th century"
-- "Byzantine gold coins from the reign of Justinian"
+- "Moedas de 2 € comemorativas de Portugal de 2007 abaixo de 15 €"
+- "100 escudos de 1989 em BNC"
+- "Notas de 500 escudos de 1987 em estado UNC"
 - "Find upcoming coin shows in the next 30 days"
 - "Which coins in my collection are missing an era?"
 
@@ -290,9 +290,9 @@ These are imported with the coin to your wishlist.
 
 ### Tips for Better Results
 
-1. **Be Specific** — "Roman denarii of Julius Caesar" is better than "old Roman coins"
-2. **Include Context** — "Silver coins under $500" is more useful than "cheap coins"
-3. **Use Known Terms** — Ruler names, denominations, and eras help narrow search
+1. **Be Specific** — "2 € comemorativa de Portugal de 2007" is better than "moedas de euro"
+2. **Include Context** — "Moedas de prata abaixo de 50 €" is more useful than "moedas baratas"
+3. **Use Known Terms** — Countries, face values, years, grades and presentations (coincard, proof) help narrow search
 4. **Check Results** — Review sources; verify dealer reputation if purchasing
 
 ### Search Limitations

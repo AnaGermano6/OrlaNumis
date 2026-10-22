@@ -221,9 +221,9 @@
  * in phases 1-3 component-by-component. Remove each class block from this
  * file only after the last template reference has been replaced.
  *
- * .material-gold/silver/bronze/copper/electrum: used via dynamic binding
- *   e.g. :class="`material-${material.toLowerCase()}`" in CoinInfoGrid.vue
- *   and CollectionDistributionPage.vue. CoinCard.vue has its own scoped
+ * .material-*: one per coin material, used via dynamic binding
+ *   (:class="materialClass(material)", e.g. material-nickel-brass) in
+ *   CollectionDistributionPage.vue. CoinCard.vue has its own scoped
  *   duplicates; those will be consolidated when CoinCard is migrated.
  *
  * .badge-roman/greek/byzantine/modern/other: removed - CoinCard.vue,
@@ -494,6 +494,18 @@
 .material-bronze { color: var(--mat-bronze); }
 .material-copper { color: var(--mat-copper); }
 .material-electrum { color: var(--mat-electrum); }
+.material-billon { color: var(--mat-billon); }
+.material-aluminium-bronze { color: var(--mat-aluminium-bronze); }
+.material-brass { color: var(--mat-brass); }
+.material-nickel-brass { color: var(--mat-nickel-brass); }
+.material-nordic-gold { color: var(--mat-nordic-gold); }
+.material-copper-nickel { color: var(--mat-copper-nickel); }
+.material-nickel { color: var(--mat-nickel); }
+.material-bimetallic { color: var(--mat-bimetallic); }
+.material-aluminium { color: var(--mat-aluminium); }
+.material-zinc { color: var(--mat-zinc); }
+.material-stainless-steel { color: var(--mat-stainless-steel); }
+.material-plated-steel { color: var(--mat-plated-steel); }
 
 /* Layout */
 .container {

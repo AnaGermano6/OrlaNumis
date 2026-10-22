@@ -170,6 +170,56 @@ export interface NumistaUsageSummary {
   limit: number
   pauseAt: number
   backgroundPaused: boolean
+  /** The requests by what they asked for, and those made in the background. */
+  searches?: number
+  types?: number
+  issues?: number
+  prices?: number
+  other?: number
+  background?: number
+  /** Set while Numista refuses requests for its quota: until then none is sent. */
+  pausedUntil?: string
+}
+
+/** One batch of coin values updated from Numista's prices. */
+export interface NumistaValueRun {
+  id: number
+  triggerType: 'scheduled' | 'manual' | string
+  status: 'running' | 'completed' | 'budget_spent' | 'paused' | 'unconfigured' | 'failed' | string
+  startedAt: string
+  completedAt?: string | null
+  /** Numista requests the batch could make, and made. */
+  budget: number
+  requests: number
+  checked: number
+  updated: number
+  unchanged: number
+  /** Coins whose issue has no price on Numista. */
+  noPrice: number
+  /** Coins Numista did not answer for; tried again next time. */
+  failed: number
+}
+
+/** How the daily update of coin values from Numista stands. */
+export interface NumistaValueStatus {
+  enabled: boolean
+  isRunning: boolean
+  /** Go duration ("5h0m0s") until the next scheduled batch; empty when off. */
+  nextRunIn: string
+  usage: NumistaUsageSummary
+  /** ok, low (from 75% of the quota) or paused (no background requests until resumesOn). */
+  quotaLevel: 'ok' | 'low' | 'paused'
+  /** First day of next month (UTC), YYYY-MM-DD. */
+  resumesOn: string
+  /** Requests the next batch may make. */
+  dailyBudget: number
+  /** Coins linked to Numista with a grade Numista prices; due: not checked in 30 days. */
+  eligible: number
+  due: number
+  /** Linked coins without a grade Numista prices (none, or a proof). */
+  withoutGrade: number
+  currency: string
+  runs: NumistaValueRun[]
 }
 
 export interface SelectedNumistaReference {

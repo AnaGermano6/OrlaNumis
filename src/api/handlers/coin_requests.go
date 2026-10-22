@@ -25,6 +25,8 @@ type CoinCreateRequest struct {
 	// Year is the coin's year (negative for BC); when omitted it is read from dateRange.
 	Year    *int   `json:"year" binding:"omitempty,min=-5000,max=3000"`
 	Country string `json:"country" binding:"max=120"`
+	// MonetarySystem as Numista names it ("Escudo (1911-2001)", "Euro").
+	MonetarySystem string `json:"monetarySystem" binding:"max=120"`
 	// Quantity is how many the collector has; 1 when omitted.
 	Quantity     int    `json:"quantity" binding:"omitempty,min=1,max=9999" minimum:"1" maximum:"9999"`
 	Presentation string `json:"presentation" binding:"max=20" enums:"loose,coincard,capsule,flip,proof_set,blister,slab"`
@@ -39,6 +41,7 @@ type CoinCreateRequest struct {
 	Grade          string          `json:"grade" binding:"max=100"`
 	// Banknote details: series, serial number, signatories, printer, size,
 	// watermark, replacement or specimen, and a grading company's grade.
+	// NumistaIssueID is the issue of the linked Numista type the item is (0: none).
 	Series              string                 `json:"series" binding:"max=200"`
 	SerialNumber        string                 `json:"serialNumber" binding:"max=100"`
 	Signatures          string                 `json:"signatures" binding:"max=300"`
@@ -49,6 +52,7 @@ type CoinCreateRequest struct {
 	NoteVariant         string                 `json:"noteVariant" binding:"max=20" enums:",replacement,specimen"`
 	CertifiedGrade      string                 `json:"certifiedGrade" binding:"max=60"`
 	CertificationNumber string                 `json:"certificationNumber" binding:"max=60"`
+	NumistaIssueID      int                    `json:"numistaIssueId" binding:"min=0,max=2147483647"`
 	ObverseInscription  string                 `json:"obverseInscription" binding:"max=1000"`
 	ReverseInscription  string                 `json:"reverseInscription" binding:"max=1000"`
 	ObverseDescription  string                 `json:"obverseDescription" binding:"max=2000"`
@@ -79,6 +83,8 @@ type CoinUpdateRequest struct {
 	// Year (negative for BC); null means "read it from dateRange".
 	Year    *int    `json:"year" binding:"omitempty,min=-5000,max=3000"`
 	Country *string `json:"country" binding:"omitempty,max=120"`
+	// MonetarySystem as Numista names it ("Escudo (1911-2001)", "Euro").
+	MonetarySystem *string `json:"monetarySystem" binding:"omitempty,max=120"`
 	// Quantity is how many the collector has (1 or more).
 	Quantity     *int    `json:"quantity" binding:"omitempty,min=1,max=9999" minimum:"1" maximum:"9999"`
 	Presentation *string `json:"presentation" binding:"omitempty,max=20" enums:"loose,coincard,capsule,flip,proof_set,blister,slab"`
@@ -102,6 +108,7 @@ type CoinUpdateRequest struct {
 	NoteVariant         *string                `json:"noteVariant" binding:"omitempty,max=20" enums:",replacement,specimen"`
 	CertifiedGrade      *string                `json:"certifiedGrade" binding:"omitempty,max=60"`
 	CertificationNumber *string                `json:"certificationNumber" binding:"omitempty,max=60"`
+	NumistaIssueID      *int                   `json:"numistaIssueId" binding:"omitempty,min=0,max=2147483647"`
 	ObverseInscription  *string                `json:"obverseInscription" binding:"omitempty,max=1000"`
 	ReverseInscription  *string                `json:"reverseInscription" binding:"omitempty,max=1000"`
 	ObverseDescription  *string                `json:"obverseDescription" binding:"omitempty,max=2000"`
@@ -131,6 +138,7 @@ func (r CoinCreateRequest) toCoin(userID uint) models.Coin {
 		DateRange:           r.DateRange,
 		Year:                r.Year,
 		Country:             r.Country,
+		MonetarySystem:      r.MonetarySystem,
 		Quantity:            r.Quantity,
 		Presentation:        r.Presentation,
 		Rarity:              r.Rarity,
@@ -151,6 +159,7 @@ func (r CoinCreateRequest) toCoin(userID uint) models.Coin {
 		NoteVariant:         r.NoteVariant,
 		CertifiedGrade:      r.CertifiedGrade,
 		CertificationNumber: r.CertificationNumber,
+		NumistaIssueID:      r.NumistaIssueID,
 		ObverseInscription:  r.ObverseInscription,
 		ReverseInscription:  r.ReverseInscription,
 		ObverseDescription:  r.ObverseDescription,
@@ -250,6 +259,10 @@ func (r CoinUpdateRequest) toCoin(existing *models.Coin, nullableScalarProvided 
 			updateFields = append(updateFields, field.name)
 		}
 	}
+	if r.NumistaIssueID != nil {
+		updates.NumistaIssueID = *r.NumistaIssueID
+		updateFields = append(updateFields, "NumistaIssueID")
+	}
 	if r.WidthMm != nil || nullableScalarProvided["WidthMm"] {
 		updates.WidthMm = r.WidthMm
 		updateFields = append(updateFields, "WidthMm")
@@ -285,6 +298,10 @@ func (r CoinUpdateRequest) toCoin(existing *models.Coin, nullableScalarProvided 
 	if r.Country != nil {
 		updates.Country = *r.Country
 		updateFields = append(updateFields, "Country")
+	}
+	if r.MonetarySystem != nil {
+		updates.MonetarySystem = *r.MonetarySystem
+		updateFields = append(updateFields, "MonetarySystem")
 	}
 	if r.Quantity != nil {
 		updates.Quantity = *r.Quantity

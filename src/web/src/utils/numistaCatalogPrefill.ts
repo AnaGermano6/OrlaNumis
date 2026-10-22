@@ -47,17 +47,51 @@ function pickConfigured(options: string[], wanted: string, fallback: string): st
   return options.find((option) => option.toLowerCase() === fallback.toLowerCase()) ?? options[0] ?? fallback
 }
 
-/** Maps a Numista composition ("Silver (.900)", "Cuproníquel", "Ouro") to an app material. */
+// Alloys come before the metals they are named after ("ouro nórdico" is not
+// gold, "latão de níquel" is not nickel). The same rules as the API's
+// MaterialFromComposition, which fills existing coins.
+const COMPOSITION_MATERIALS: [Material, RegExp][] = [
+  ['Nordic gold', /ouro nordico|nordic gold/],
+  ['Aluminium bronze', /alumini?(?:o|um)[- ](?:(?:niquel|nickel)[- ])?bronze|bronze[- ]alumini?(?:o|um)|aluminum[- ]bronze|bronzital/],
+  ['Stainless steel', /inoxidavel|stainless|acmonital/],
+  ['Nickel brass', /latao de niquel|nickel[- ]brass|nickel silver|german silver|alpaca|maillechort|argentan/],
+  ['Copper-nickel', /cupro[- ]?(?:niquel|nickel)|(?:copper|cobre)[- ](?:nickel|niquel)/],
+  ['Billon', /\bbilhao\b|\bbillon\b/],
+  ['Gold', /\bouro\b|\bgold\b/],
+  ['Silver', /\bprata\b|\bsilver\b/],
+  ['Electrum', /electrum|\beletro\b|\belectro\b/],
+  ['Bronze', /bronze/],
+  ['Brass', /\blatao\b|\bbrass\b|\btombac/],
+  ['Nickel', /\bniquel\b|\bnickel\b/],
+  ['Aluminium', /\balumini?(?:o|um)\b|\baluminum\b/],
+  ['Zinc', /\bzinco?\b/],
+  ['Copper', /\bcobre\b|\bcopper\b/],
+]
+
+function decodeEntities(value: string): string {
+  return value.replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+}
+
+/**
+ * Maps a Numista composition ("Silver (.900)", "Cuproníquel", "Aço banhado
+ * em cobre", "Bimetálica: …") to an app material. A plated or clad coin
+ * counts by its core, a plated steel one as plated steel.
+ */
 export function materialFromComposition(composition: string | undefined, materials: string[]): string {
-  const text = fold(composition ?? '')
-  let material = 'Other'
-  if (/nordic gold|ouro nordico/.test(text)) material = 'Other'
-  else if (/\bgold\b|\bouro\b/.test(text)) material = 'Gold'
-  else if (/silver|prata/.test(text)) material = 'Silver'
-  else if (/electrum|eletro|electro/.test(text)) material = 'Electrum'
-  else if (/bronze/.test(text)) material = 'Bronze'
-  else if (/^(copper|cobre)\b/.test(text) && !/nickel|niquel|zinc|brass|latao|alumin/.test(text)) material = 'Copper'
-  return pickConfigured(materials, material, 'Other')
+  return pickConfigured(materials, compositionMaterial(composition ?? ''), 'Other')
+}
+
+function compositionMaterial(composition: string): Material {
+  let text = fold(decodeEntities(composition)).split(/\s+/).filter(Boolean).join(' ')
+  // The alloy in brackets names other metals ("Cuproníquel (75% copper").
+  const bracket = text.indexOf('(')
+  if (bracket > 0 && text.slice(0, bracket).trim()) text = text.slice(0, bracket).trim()
+  if (/\b(?:bi|tri)-?metal/.test(text)) return 'Bimetallic'
+  const core = /^(.+?) (?:banhad[oa]s?|revestid[oa]s?|chapead[oa]s?)\b/.exec(text)?.[1]
+    ?? /^.+?[- ](?:plated|clad|coated) (.+)$/.exec(text)?.[1]
+  if (core && /\baco\b|\bsteel\b|\bferro\b|\biron\b/.test(core) && !/inox|stainless/.test(core)) return 'Plated steel'
+  const subject = core ?? text
+  return COMPOSITION_MATERIALS.find(([, pattern]) => pattern.test(subject))?.[0] ?? 'Other'
 }
 
 /** Suggests one of the configured categories from the dates: Modern from 1500. */
@@ -126,6 +160,7 @@ export function buildCatalogPrefill(selection: CatalogSelection, options: Catalo
     // The issue's year, or the type's when it was struck in a single year.
     year: issueYear ?? (type.minYear !== undefined && type.minYear === type.maxYear ? type.minYear : null),
     country: clip(type.issuer.name, 120),
+    monetarySystem: clip(type.monetarySystem ?? '', 120),
     // A starting point from the mintage; the user can change it.
     rarity: rarityFromMintage(issue?.mintage) ?? '',
     // Numista says the type is issued in a coin card.

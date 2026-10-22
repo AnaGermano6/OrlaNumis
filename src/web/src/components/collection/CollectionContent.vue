@@ -57,12 +57,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import type { Coin, ImageType } from '@/types'
 import CoinCard from '@/components/CoinCard.vue'
 import SwipeGallery from '@/components/SwipeGallery.vue'
 import CoinListTable from '@/components/collection/CoinListTable.vue'
 import { groupCoins, type CoinGroupBy } from '@/utils/coinAttributes'
+import { rememberBrowseSequence } from '@/utils/browseSequence'
 import { t } from '@/i18n'
 import CountryFlag from '@/components/CountryFlag.vue'
 import { hasCountryFlag } from '@/utils/countryFlags'
@@ -87,6 +88,10 @@ const props = withDefaults(defineProps<{
 }>(), { groupBy: 'none', layout: 'grid', truncated: false })
 
 const groups = computed(() => groupCoins(props.coins, props.groupBy))
+// A coin's page goes to the previous and the next coin in this order.
+watch(groups, (value) => {
+  rememberBrowseSequence('gallery', value.flatMap((group) => group.coins.map((coin) => coin.id)))
+}, { immediate: true })
 
 defineEmits<{
   'select-all': []

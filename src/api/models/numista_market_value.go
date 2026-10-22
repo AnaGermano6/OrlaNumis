@@ -35,6 +35,20 @@ type NumistaIssueSummary struct {
 	MintLetter string `json:"mintLetter,omitempty"`
 	Mintage    *int64 `json:"mintage,omitempty"`
 	Comment    string `json:"comment,omitempty"`
+	// A banknote's issues are told apart by the date printed on the note
+	// (Month and Day with Year), its signatories, the issue's own Pick number
+	// ("176a") and whether its notes are replacement or specimen notes.
+	Month      int                     `json:"month,omitempty" example:"9"`
+	Day        int                     `json:"day,omitempty" example:"13"`
+	Signatures []NumistaIssueSignature `json:"signatures,omitempty"`
+	Pick       string                  `json:"pick,omitempty" example:"176a"`
+	Variant    string                  `json:"variant,omitempty" enums:"replacement,specimen"`
+}
+
+// NumistaIssueSignature is one of the people who signed a banknote issue.
+type NumistaIssueSignature struct {
+	Name  string `json:"name" example:"José da Silva Lopes"`
+	Title string `json:"title,omitempty" example:"Governor"`
 }
 
 // NumistaGradePrice is Numista's estimated price for one grade (g, vg, f, vf,

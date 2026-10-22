@@ -260,7 +260,7 @@ func (s *CoinLookupService) buildVisionPrompt(imageRoles []string, includePriceE
    - Era (ancient, medieval, or modern)
    - Denomination (e.g., "Denarius", "Tetradrachm", "Solidus")
    - Date or date range when visible or strongly inferable
-   - Material (Gold, Silver, Bronze, Copper, Electrum, Other)
+   - Material (Gold, Silver, Billon, Electrum, Copper, Bronze, Aluminium bronze, Brass, Nickel brass, Nordic gold, Copper-nickel, Nickel, Bimetallic, Aluminium, Zinc, Stainless steel, Plated steel, Other)
    - Category (Modern or Other)
    - One short obverse description
    - One short reverse description if a reverse image is present

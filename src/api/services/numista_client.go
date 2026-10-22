@@ -86,10 +86,33 @@ func numistaBackground(ctx context.Context) bool {
 }
 
 // NumistaUsageRecorder counts the requests made and tells when the
-// background ones should wait.
+// background ones should wait, and when none should be sent because Numista
+// refused one for its quota.
 type NumistaUsageRecorder interface {
-	Record()
+	Record(kind string, background bool)
 	BackgroundPaused() bool
+	Refused(retryAfter time.Duration)
+	RefusingUntil() time.Time
+}
+
+// numistaRequestKind tells what a request path asks for, as the monthly
+// count tells requests apart.
+func numistaRequestKind(path string) string {
+	route, _, _ := strings.Cut(path, "?")
+	parts := strings.Split(strings.Trim(route, "/"), "/")
+	switch {
+	case parts[0] != "types":
+		return models.NumistaRequestOther
+	case len(parts) == 1:
+		return models.NumistaRequestSearch
+	case len(parts) == 2:
+		return models.NumistaRequestType
+	case len(parts) == 3 && parts[2] == "issues":
+		return models.NumistaRequestIssues
+	case len(parts) == 5 && parts[4] == "prices":
+		return models.NumistaRequestPrices
+	}
+	return models.NumistaRequestOther
 }
 
 func recordNumistaAttempt(ctx context.Context) {
@@ -298,8 +321,16 @@ func (c *HTTPNumistaClient) getLimited(ctx context.Context, path string, timeout
 	if apiKey == "" {
 		return nil, &NumistaError{Kind: NumistaErrorUnconfigured}
 	}
-	if c.usage != nil && numistaBackground(ctx) && c.usage.BackgroundPaused() {
-		return nil, &NumistaError{Kind: NumistaErrorQuotaLimited}
+	if c.usage != nil {
+		// Numista refused a request for its quota a moment ago: asking again
+		// now would only be refused, and counted.
+		if until := c.usage.RefusingUntil(); !until.IsZero() {
+			seconds := max(1, int(time.Until(until).Seconds()))
+			return nil, &NumistaError{Kind: NumistaErrorQuotaLimited, RetryAfterSeconds: &seconds}
+		}
+		if numistaBackground(ctx) && c.usage.BackgroundPaused() {
+			return nil, &NumistaError{Kind: NumistaErrorQuotaLimited}
+		}
 	}
 	requestCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -313,7 +344,7 @@ func (c *HTTPNumistaClient) getLimited(ctx context.Context, path string, timeout
 		req.Header.Set("Numista-API-Key", apiKey)
 		recordNumistaAttempt(ctx)
 		if c.usage != nil {
-			c.usage.Record()
+			c.usage.Record(numistaRequestKind(path), numistaBackground(ctx))
 		}
 		resp, err := c.client.Do(req)
 		if err != nil {
@@ -343,7 +374,16 @@ func (c *HTTPNumistaClient) getLimited(ctx context.Context, path string, timeout
 			}
 			continue
 		}
-		return nil, mapNumistaStatus(resp.StatusCode, resp.Header.Get("Retry-After"))
+		err = mapNumistaStatus(resp.StatusCode, resp.Header.Get("Retry-After"))
+		var numistaErr *NumistaError
+		if c.usage != nil && errors.As(err, &numistaErr) && numistaErr.Kind == NumistaErrorQuotaLimited {
+			retryAfter := time.Duration(0)
+			if numistaErr.RetryAfterSeconds != nil {
+				retryAfter = time.Duration(*numistaErr.RetryAfterSeconds) * time.Second
+			}
+			c.usage.Refused(retryAfter)
+		}
+		return nil, err
 	}
 	return nil, &NumistaError{Kind: NumistaErrorUnavailable}
 }

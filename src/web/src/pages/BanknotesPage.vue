@@ -5,6 +5,9 @@
         <AppIconButton :title="selectLabel" :active="selectMode" @click="toggleSelectMode">
           <CheckSquare :size="20" />
         </AppIconButton>
+        <AppIconButton :title="t('collection.export.button')" data-testid="banknotes-export" @click="showExport = true">
+          <FileSpreadsheet :size="20" />
+        </AppIconButton>
         <AppIconButton to="/banknotes/add" :title="t('banknotes.add')">
           <CirclePlus :size="20" />
         </AppIconButton>
@@ -13,6 +16,9 @@
         <h1>{{ t('banknotes.title') }}</h1>
         <span class="ml-auto flex flex-wrap gap-2">
           <button type="button" class="btn btn-secondary btn-sm" :aria-pressed="selectMode" data-testid="banknotes-select" @click="toggleSelectMode">{{ selectLabel }}</button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="showExport = true">
+            <FileSpreadsheet :size="14" aria-hidden="true" /> {{ t('collection.export.button') }}
+          </button>
           <router-link to="/banknotes/add" class="btn btn-primary btn-sm" data-testid="banknotes-add">{{ t('banknotes.add') }}</router-link>
         </span>
       </header>
@@ -94,9 +100,9 @@
         <button type="button" class="btn btn-sm btn-secondary" @click="deselectAll">{{ t('collection.deselectAll') }}</button>
         <span class="ml-2 text-body text-text-secondary" data-testid="banknotes-selected-count">{{ t('collection.selectedCount', { count: selectedIds.size }) }}</span>
       </div>
-      <!-- By country, year or rarity, as the coin gallery viewed by one of them. -->
-      <section v-for="group in groups" :key="group.key" class="mb-8 last:mb-0" :aria-label="group.label" data-testid="banknotes-group">
-        <h2 class="mb-3 flex items-baseline gap-2 border-b border-border-subtle pb-1 font-display text-lg font-medium text-heading">
+      <!-- All in one list, or by country, monetary system, year or rarity, as the coin gallery. -->
+      <section v-for="group in groups" :key="group.key" class="mb-8 last:mb-0" :aria-label="groupBy === 'none' ? t('banknotes.groupNone') : group.label" data-testid="banknotes-group">
+        <h2 v-if="groupBy !== 'none'" class="mb-3 flex items-baseline gap-2 border-b border-border-subtle pb-1 font-display text-lg font-medium text-heading">
           <span v-if="groupBy === 'country' && hasCountryFlag(group.label)" class="font-sans" aria-hidden="true" data-testid="group-flag"><CountryFlag :country="group.label" /></span>
           {{ group.label }}
           <span class="font-sans text-chip font-normal text-text-muted">{{ t('banknotes.groupCount', { count: group.coins.length }) }}</span>
@@ -132,6 +138,7 @@
 
     <BulkActionBar kind="banknote" :visible="selectMode && selectedIds.size > 0" :selected-count="selectedIds.size" @set="showSetPicker = true" @delete="deleteSelected" />
     <BulkSetPickerModal :open="showSetPicker" :sets="standardSets" @select="addSelectedToSet" @close="showSetPicker = false" />
+    <ExportDialog :open="showExport" kind="banknote" :params="listParams()" :count="total" :filtered="filtered" @close="showExport = false" />
   </div>
 </template>
 
@@ -144,7 +151,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { bulkAction, getCoinCountries, getCoins, getCollectionSummary, getSets, type CoinCountryCount, type CollectionClassification } from '@/api/client'
 import { normalizeCoinSetType, type Coin, type CollectionSetOption } from '@/types'
-import { CheckSquare, CirclePlus, X } from 'lucide-vue-next'
+import { CheckSquare, CirclePlus, FileSpreadsheet, X } from 'lucide-vue-next'
 import BulkActionBar from '@/components/BulkActionBar.vue'
 import BulkSetPickerModal from '@/components/BulkSetPickerModal.vue'
 import CoinCard from '@/components/CoinCard.vue'
@@ -159,6 +166,8 @@ import { collectionClassificationLabel, groupCoins, type CoinGroupBy } from '@/u
 import type { MessageKey } from '@/i18n'
 import CountryFlag from '@/components/CountryFlag.vue'
 import CountrySelect, { type CountrySelectOption } from '@/components/CountrySelect.vue'
+import ExportDialog from '@/components/collection/ExportDialog.vue'
+import { rememberBrowseSequence } from '@/utils/browseSequence'
 import { hasCountryFlag } from '@/utils/countryFlags'
 
 // Every banknote is loaded, to show each country's together: pages of 100, up to 2000.
@@ -166,11 +175,14 @@ const PAGE_SIZE = 100
 const MAX_BANKNOTES = 2000
 const LAYOUTS = ['grid', 'list'] as const
 const LAYOUT_KEY = 'banknotes:layout'
-// The banknotes are always shown in groups: by country (at first), year or rarity.
-const GROUPINGS = ['country', 'year', 'rarity'] as const
+// The banknotes are shown all in one list, or in groups: by country (at
+// first), monetary system, year or rarity.
+const GROUPINGS = ['none', 'country', 'monetarySystem', 'year', 'rarity'] as const
 type BanknoteGrouping = (typeof GROUPINGS)[number] & CoinGroupBy
 const GROUPING_LABELS: Record<BanknoteGrouping, MessageKey> = {
+  none: 'banknotes.groupNone',
   country: 'coinFields.country',
+  monetarySystem: 'coinFields.monetarySystem',
   year: 'collection.view.groupYear',
   rarity: 'coinFields.rarity',
 }
@@ -202,8 +214,14 @@ const countryChoices = computed((): CountrySelectOption[] => [
   ...countries.value.map((option) => ({ value: option.country, label: `${option.country} (${option.count})`, country: option.country })),
 ])
 const filtered = computed(() => Boolean(search.value.trim() || country.value || repeated.value || classification.value))
+// The spreadsheet of the banknotes shown, or of the whole collection.
+const showExport = ref(false)
 // By country (by name), year (oldest first) or rarity, as the coin gallery; those without one last.
 const groups = computed(() => groupCoins(banknotes.value, groupBy.value))
+// A banknote's page goes to the previous and the next one in this order.
+watch(groups, (value) => {
+  rememberBrowseSequence('banknotes', value.flatMap((group) => group.coins.map((item) => item.id)))
+}, { immediate: true })
 
 // Select mode, as in the coin gallery: banknotes to add to a set or delete
 // together. The app's flag keeps the floating assistant out of the way.
@@ -317,14 +335,10 @@ watch(groupBy, (value) => {
   }
 })
 
-// Only the latest request's answer is shown.
-let request = 0
-async function load() {
-  const current = ++request
-  loading.value = true
-  failed.value = false
+// The list's filters and order, as the server takes them (without the page).
+function listParams() {
   const [sort, order] = [sortKey.value.slice(0, sortKey.value.lastIndexOf('_')), sortKey.value.slice(sortKey.value.lastIndexOf('_') + 1)]
-  const params = {
+  return {
     kind: 'banknote' as const,
     wishlist: 'false',
     search: search.value.trim() || undefined,
@@ -334,6 +348,15 @@ async function load() {
     sort,
     order,
   }
+}
+
+// Only the latest request's answer is shown.
+let request = 0
+async function load() {
+  const current = ++request
+  loading.value = true
+  failed.value = false
+  const params = listParams()
   try {
     const all: Coin[] = []
     let reported = 0

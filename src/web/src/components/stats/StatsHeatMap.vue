@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getDistribution } from '@/api/client'
 import ZoomableSurface from '@/components/ZoomableSurface.vue'
@@ -79,6 +79,10 @@ function navigateToFiltered(era: string, category: string) {
     router.push({ path: '/', query: { category } })
   }
 }
+
+// It loads when it appears (the pages show it once the stats say there is
+// more than one era or category); a page refreshes it through fetchDistribution.
+onMounted(() => { void fetchDistribution() })
 
 defineExpose({ fetchDistribution })
 </script>

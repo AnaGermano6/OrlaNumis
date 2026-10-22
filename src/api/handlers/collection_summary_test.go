@@ -545,7 +545,7 @@ func TestBanknoteDetails_SaveEditAndSearch(t *testing.T) {
 		"name": "1000 escudos 1996", "kind": "banknote", "category": "Modern", "material": "Paper", "country": "Portugal",
 		"series": "Chapa 13", "serialNumber": " CH 1234567 ", "signatures": "António de Sousa / Luís Campos e Cunha", "printer": "Valora",
 		"widthMm": 160, "heightMm": 75, "watermark": "Pedro Álvares Cabral", "noteVariant": "replacement",
-		"certifiedGrade": "PMG 66 EPQ", "certificationNumber": "8076543-012",
+		"certifiedGrade": "PMG 66 EPQ", "certificationNumber": "8076543-012", "numistaIssueId": 542229,
 	}
 	w := coinRequest(router, http.MethodPost, "/api/coins", body)
 	var created models.Coin
@@ -554,7 +554,8 @@ func TestBanknoteDetails_SaveEditAndSearch(t *testing.T) {
 	}
 	if created.Kind != "banknote" || created.SerialNumber != "CH 1234567" || created.Series != "Chapa 13" || created.Printer != "Valora" ||
 		created.WidthMm == nil || *created.WidthMm != 160 || created.HeightMm == nil || *created.HeightMm != 75 ||
-		created.NoteVariant != "replacement" || created.CertifiedGrade != "PMG 66 EPQ" || created.CertificationNumber != "8076543-012" || created.Material != "Paper" {
+		created.NoteVariant != "replacement" || created.CertifiedGrade != "PMG 66 EPQ" || created.CertificationNumber != "8076543-012" || created.Material != "Paper" ||
+		created.NumistaIssueID != 542229 {
 		t.Fatalf("created = %+v", created)
 	}
 
@@ -570,12 +571,15 @@ func TestBanknoteDetails_SaveEditAndSearch(t *testing.T) {
 	if w := coinRequest(router, http.MethodPut, path, map[string]any{"noteVariant": "error"}); w.Code != http.StatusBadRequest {
 		t.Fatalf("unknown variant: %d %s", w.Code, w.Body.String())
 	}
-	if w := coinRequest(router, http.MethodPut, path, map[string]any{"noteVariant": "", "heightMm": nil, "signatures": "Vítor Constâncio"}); w.Code != http.StatusOK {
+	if w := coinRequest(router, http.MethodPut, path, map[string]any{"numistaIssueId": -1}); w.Code != http.StatusBadRequest {
+		t.Fatalf("negative issue: %d %s", w.Code, w.Body.String())
+	}
+	if w := coinRequest(router, http.MethodPut, path, map[string]any{"noteVariant": "", "heightMm": nil, "signatures": "Vítor Constâncio", "numistaIssueId": 0}); w.Code != http.StatusOK {
 		t.Fatalf("update: %d %s", w.Code, w.Body.String())
 	}
 	var saved models.Coin
 	db.First(&saved, created.ID)
-	if saved.NoteVariant != "" || saved.HeightMm != nil || saved.WidthMm == nil || saved.Signatures != "Vítor Constâncio" || saved.SerialNumber != "CH 1234567" {
+	if saved.NoteVariant != "" || saved.HeightMm != nil || saved.WidthMm == nil || saved.Signatures != "Vítor Constâncio" || saved.SerialNumber != "CH 1234567" || saved.NumistaIssueID != 0 {
 		t.Fatalf("saved = %+v", saved)
 	}
 }
@@ -590,7 +594,7 @@ func TestBanknoteDuplicate_KeepsTheKindAndIssueDetails(t *testing.T) {
 	note := models.Coin{
 		Name: "2000 escudos", Kind: models.CoinKindBanknote, Category: models.CategoryModern, Material: "Paper", UserID: 1,
 		Series: "Chapa 1", Printer: "Valora", WidthMm: &width, Watermark: "Bartolomeu Dias", NoteVariant: "replacement",
-		SerialNumber: "AB 123", CertifiedGrade: "PMG 64 EPQ", CertificationNumber: "123-001",
+		SerialNumber: "AB 123", CertifiedGrade: "PMG 64 EPQ", CertificationNumber: "123-001", NumistaIssueID: 513930,
 	}
 	if err := db.Create(&note).Error; err != nil {
 		t.Fatal(err)
@@ -602,7 +606,7 @@ func TestBanknoteDuplicate_KeepsTheKindAndIssueDetails(t *testing.T) {
 	}
 	if copied.Kind != models.CoinKindBanknote || copied.Series != "Chapa 1" || copied.Printer != "Valora" || copied.WidthMm == nil ||
 		copied.Watermark != "Bartolomeu Dias" || copied.NoteVariant != "replacement" || copied.CertifiedGrade != "PMG 64 EPQ" ||
-		copied.SerialNumber != "" || copied.CertificationNumber != "" {
+		copied.NumistaIssueID != 513930 || copied.SerialNumber != "" || copied.CertificationNumber != "" {
 		t.Fatalf("copied = %+v", copied)
 	}
 }

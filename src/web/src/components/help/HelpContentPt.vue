@@ -28,7 +28,7 @@
           <tbody>
             <tr><td><code>name</code></td><td>texto</td><td>Obrigatória</td></tr>
             <tr><td><code>category</code></td><td>texto</td><td>Uma das categorias configuradas pelo administrador (predefinidas: Modern, Other)</td></tr>
-            <tr><td><code>material</code></td><td>texto</td><td>Gold, Silver, Bronze, Copper, Electrum, Other</td></tr>
+            <tr><td><code>material</code></td><td>texto</td><td>Gold, Silver, Billon, Electrum, Copper, Bronze, Aluminium bronze, Brass, Nickel brass, Nordic gold, Copper-nickel, Nickel, Bimetallic, Aluminium, Zinc, Stainless steel, Plated steel, Other</td></tr>
             <tr><td><code>denomination</code>, <code>ruler</code>, <code>mint</code>, <code>grade</code></td><td>texto</td><td>Campos de texto livre</td></tr>
             <tr><td><code>era</code></td><td>texto</td><td>Uma das épocas configuradas pelo administrador (predefinidas: <code>ancient</code>, <code>medieval</code>, <code>modern</code>). Indique as datas reais da moeda em <code>ruler</code> ou <code>notes</code> — uma época fora da lista configurada não corresponde aos filtros de época.</td></tr>
             <tr><td><code>weightGrams</code>, <code>diameterMm</code>, <code>purchasePrice</code>, <code>currentValue</code></td><td>número</td><td>Use valores decimais. Se ficar em branco, <code>currentValue</code> assume o valor de <code>purchasePrice</code>.</td></tr>
@@ -121,12 +121,10 @@
           <li><strong>Sugestões iniciais</strong> — O painel inclui exemplos de aquisição e uma sugestão de arrumação para moedas sem época.</li>
         </ul>
 
-        <h4>Conjuntos e propostas do agente</h4>
+        <h4>Conjuntos</h4>
         <ul>
-          <li><strong>Tipos de conjunto</strong> — Crie conjuntos normais para organização manual, conjuntos de objetivo em que os itens da lista de desejos representam o que falta, conjuntos inteligentes a partir de regras e conjuntos do agente a partir de uma proposta revista.</li>
-          <li><strong>Fluxo de propostas do agente</strong> — Criar um conjunto do agente envia um pedido em vez de criar logo o conjunto.</li>
-          <li><strong>Revisão humana</strong> — Reveja o âmbito, as posições e as notas do agente; edite, gere novamente com comentários, rejeite ou aprove. Só a aprovação cria o conjunto.</li>
-          <li><strong>Correspondência automática</strong> — Os conjuntos do agente aprovados fazem corresponder automaticamente as moedas da coleção à lista proposta.</li>
+          <li><strong>Tipos de conjunto</strong> — Crie um conjunto a partir do catálogo de comemorativas ou de um desafio (uma lista das moedas a encontrar), por filtros (as moedas que correspondam entram sozinhas), escolhendo as moedas uma a uma, ou como objetivo em que os itens da lista de desejos representam o que falta.</li>
+          <li><strong>Completude</strong> — Os conjuntos do catálogo, dos desafios e de objetivo mostram quanto já tem.</li>
         </ul>
 
         <h4>Vistas de estatísticas</h4>

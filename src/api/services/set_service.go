@@ -61,18 +61,31 @@ func (s *SetService) ChecklistSlots(ctx context.Context, setID, userID uint) (sl
 	if err != nil {
 		return nil, false, err
 	}
-	slots, err = s.checklist.Slots(ctx, userID, definition)
-	return slots, s.checklist.Complete(), err
+	return s.checklist.SlotsAndCompleteness(ctx, userID, definition)
 }
 
 // checklistSummary counts a checklist set's slots; nil when it cannot.
 func (s *SetService) checklistSummary(set *models.CoinSet) *ChecklistSummary {
-	slots, _, err := s.ChecklistSlots(context.Background(), set.ID, set.UserID)
+	if overview := s.checklistOverview(set); overview != nil {
+		return &overview.summary
+	}
+	return nil
+}
+
+// checklistOverview is a checklist set's slots counted, in all and country
+// by country; complete is false while its list is partly known.
+type checklistOverview struct {
+	summary   ChecklistSummary
+	countries []ChecklistCountry
+	complete  bool
+}
+
+func (s *SetService) checklistOverview(set *models.CoinSet) *checklistOverview {
+	slots, complete, err := s.ChecklistSlots(context.Background(), set.ID, set.UserID)
 	if err != nil {
 		return nil
 	}
-	summary := Summarize(slots)
-	return &summary
+	return &checklistOverview{summary: Summarize(slots), countries: SummarizeByCountry(slots), complete: complete}
 }
 
 // NewSetService creates a new SetService.
@@ -134,11 +147,12 @@ func (s *SetService) ListSets(userID uint) ([]map[string]interface{}, error) {
 		}
 
 		var completion interface{}
+		var checklist *checklistOverview
 		switch {
 		case set.SetType == models.CoinSetTypeChecklist:
-			if checklist := s.checklistSummary(&set); checklist != nil {
-				summary = map[string]interface{}{"coinCount": checklist.Owned, "totalValue": checklist.TotalValue}
-				completion = checklist.Completion()
+			if checklist = s.checklistOverview(&set); checklist != nil {
+				summary = map[string]interface{}{"coinCount": checklist.summary.Owned, "totalValue": checklist.summary.TotalValue}
+				completion = checklist.summary.Completion()
 			}
 		case set.SetType == models.CoinSetTypeGoal:
 			if pct, ok := batchedCompletions[set.ID]; ok {
@@ -163,6 +177,11 @@ func (s *SetService) ListSets(userID uint) ([]map[string]interface{}, error) {
 			"completionPercentage": completion,
 			"valueChangePercent":   nil, // Will be populated in US3
 			"agenticStatus":        set.AgenticStatus,
+		}
+		if checklist != nil {
+			// Its slots country by country, for the sets' completion by country.
+			setData["countries"] = checklist.countries
+			setData["partial"] = !checklist.complete
 		}
 		result = append(result, setData)
 	}

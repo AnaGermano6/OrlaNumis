@@ -332,6 +332,10 @@ definitions:
         type: string
       mintLocationId:
         type: integer
+      monetarySystem:
+        description: MonetarySystem as Numista names it ("Escudo (1911-2001)", "Euro").
+        maxLength: 120
+        type: string
       name:
         maxLength: 200
         type: string
@@ -345,6 +349,10 @@ definitions:
       notes:
         maxLength: 5000
         type: string
+      numistaIssueId:
+        maximum: 2147483647
+        minimum: 0
+        type: integer
       obverseDescription:
         maxLength: 2000
         type: string
@@ -416,6 +424,7 @@ definitions:
         description: |-
           Banknote details: series, serial number, signatories, printer, size,
           watermark, replacement or specimen, and a grading company's grade.
+          NumistaIssueID is the issue of the linked Numista type the item is (0: none).
         maxLength: 200
         type: string
       signatures:
@@ -702,6 +711,10 @@ definitions:
         type: string
       mintLocationId:
         type: integer
+      monetarySystem:
+        description: MonetarySystem as Numista names it ("Escudo (1911-2001)", "Euro").
+        maxLength: 120
+        type: string
       name:
         maxLength: 200
         type: string
@@ -715,6 +728,10 @@ definitions:
       notes:
         maxLength: 5000
         type: string
+      numistaIssueId:
+        maximum: 2147483647
+        minimum: 0
+        type: integer
       obverseDescription:
         maxLength: 2000
         type: string
@@ -1266,11 +1283,14 @@ definitions:
         example: 12
         type: integer
     type: object
-  handlers.MissingPhotosResponse:
+  handlers.MonetarySystemCount:
     properties:
       count:
-        example: 326
+        example: 137
         type: integer
+      monetarySystem:
+        example: Escudo (1911-2001)
+        type: string
     type: object
   handlers.NGCDataSwagger:
     properties:
@@ -1442,40 +1462,6 @@ definitions:
     required:
     - query
     type: object
-  handlers.OfficialPhotosBatchRequest:
-    properties:
-      afterId:
-        description: AfterID is the last coin the previous batch looked at (0 to start).
-        example: 0
-        type: integer
-      limit:
-        example: 10
-        maximum: 20
-        minimum: 1
-        type: integer
-    type: object
-  handlers.OfficialPhotosBatchResponse:
-    properties:
-      checked:
-        description: |-
-          Checked is how many coins the batch looked at; WithPhotos how many of
-          them got at least one image, Images how many images in all.
-        example: 10
-        type: integer
-      done:
-        type: boolean
-      images:
-        example: 13
-        type: integer
-      nextAfterId:
-        description: NextAfterID starts the next batch; Done is true when no coin
-          is left.
-        example: 431
-        type: integer
-      withPhotos:
-        example: 7
-        type: integer
-    type: object
   handlers.OfficialPhotosRequest:
     properties:
       sides:
@@ -1589,6 +1575,12 @@ definitions:
       byMaterial:
         items:
           $ref: '#/definitions/handlers.MaterialCount'
+        type: array
+      byMonetarySystem:
+        description: ByMonetarySystem counts the coins of each monetary system, most
+          first.
+        items:
+          $ref: '#/definitions/handlers.MonetarySystemCount'
         type: array
       totalCoins:
         example: 25
@@ -2682,6 +2674,13 @@ definitions:
         $ref: '#/definitions/models.MintLocation'
       mintLocationId:
         type: integer
+      monetarySystem:
+        description: |-
+          MonetarySystem is the currency system the coin belongs to, as Numista
+          names it ("Escudo (1911-2001)", "Real (decimalizado, 1835-1910)"); every
+          euro coin, whatever its country, is "Euro".
+        maxLength: 120
+        type: string
       name:
         maxLength: 200
         type: string
@@ -2694,6 +2693,8 @@ definitions:
       notes:
         maxLength: 5000
         type: string
+      numistaIssueId:
+        type: integer
       obverseAnalysis:
         type: string
       obverseDescription:
@@ -2757,7 +2758,9 @@ definitions:
           Banknote details (see Kind): the series or issue ("Chapa 13"), the
           note's own serial number, its signatories, printer, size, watermark,
           whether it is a replacement or specimen note, and a grading company's
-          grade ("PMG 66 EPQ") with its certificate.
+          grade ("PMG 66 EPQ") with its certificate. NumistaIssueID is the issue of
+          the linked Numista type the item is (a banknote's printed date and
+          signatures), 0 when none was chosen; its market value is that issue's.
         maxLength: 200
         type: string
       sets:
@@ -2866,6 +2869,86 @@ definitions:
         type: boolean
       status:
         type: string
+    type: object
+  models.CoinNumistaFillChange:
+    properties:
+      coinId:
+        type: integer
+      composition:
+        type: string
+      diameterMm:
+        type: number
+      isWishlist:
+        type: boolean
+      material:
+        allOf:
+        - $ref: '#/definitions/models.Material'
+        description: Material is set from Composition, Numista's words for the metal.
+      monetarySystem:
+        description: MonetarySystem is set from the type's currency (see MonetarySystemFromNumista).
+        type: string
+      name:
+        type: string
+      presentation:
+        type: string
+      previousMaterial:
+        allOf:
+        - $ref: '#/definitions/models.Material'
+        description: PreviousMaterial is the material a correction replaces.
+      weightGrams:
+        type: number
+    type: object
+  models.CoinNumistaFillResult:
+    properties:
+      applied:
+        description: Applied is true once the changes were saved.
+        type: boolean
+      byMaterial:
+        additionalProperties:
+          type: integer
+        description: ByMaterial counts the materials set, by material.
+        type: object
+      changes:
+        description: Changes lists every coin the fill changes, by name.
+        items:
+          $ref: '#/definitions/models.CoinNumistaFillChange'
+        type: array
+      coins:
+        description: Coins is how many coins get at least one field.
+        type: integer
+      corrected:
+        description: Corrected is how many corrections were saved.
+        type: integer
+      corrections:
+        description: |-
+          Corrections lists the coins whose material is set but is not what
+          Numista's composition says (e.g. Silver for silver plated copper).
+          They change only when asked for.
+        items:
+          $ref: '#/definitions/models.CoinNumistaFillChange'
+        type: array
+      diameters:
+        type: integer
+      materials:
+        type: integer
+      monetarySystems:
+        description: MonetarySystems is how many coins and banknotes get a monetary
+          system.
+        type: integer
+      notCached:
+        description: |-
+          NotCached coins are linked to a Numista type whose details the app
+          has not cached yet; they are left as they are.
+        type: integer
+      presentations:
+        type: integer
+      unmatched:
+        description: |-
+          Unmatched coins still have no material: Numista's composition fits
+          none of the app's (e.g. plain steel or iron).
+        type: integer
+      weights:
+        type: integer
     type: object
   models.CoinPhotoCandidate:
     properties:
@@ -3018,7 +3101,7 @@ definitions:
         type: string
       source:
         description: |-
-          Source identifies the origin of this value entry: manual, ai_scheduled, or ai_estimate.
+          Source identifies the origin of this value entry: manual, ai_scheduled, ai_estimate or numista.
           Legacy rows with no source default to 'manual' via backfill in database.go.
         type: string
       userId:
@@ -3142,6 +3225,18 @@ definitions:
     - Copper
     - Electrum
     - Other
+    - Billon
+    - Copper-nickel
+    - Nickel brass
+    - Nordic gold
+    - Aluminium bronze
+    - Brass
+    - Nickel
+    - Aluminium
+    - Zinc
+    - Stainless steel
+    - Plated steel
+    - Bimetallic
     type: string
     x-enum-varnames:
     - MaterialGold
@@ -3150,6 +3245,18 @@ definitions:
     - MaterialCopper
     - MaterialElectrum
     - MaterialOther
+    - MaterialBillon
+    - MaterialCopperNickel
+    - MaterialNickelBrass
+    - MaterialNordicGold
+    - MaterialAluminiumBronze
+    - MaterialBrass
+    - MaterialNickel
+    - MaterialAluminium
+    - MaterialZinc
+    - MaterialStainlessSteel
+    - MaterialPlatedSteel
+    - MaterialBimetallic
   models.MintLocation:
     properties:
       aliases:
@@ -3238,6 +3345,19 @@ definitions:
         items:
           $ref: '#/definitions/models.NumistaCatalogIssuer'
         type: array
+      status:
+        type: string
+    type: object
+  models.NumistaCatalogIssuesResult:
+    properties:
+      issues:
+        items:
+          $ref: '#/definitions/models.NumistaIssueSummary'
+        type: array
+      stale:
+        description: Stale is true when Numista could not be reached and stored issues
+          are shown.
+        type: boolean
       status:
         type: string
     type: object
@@ -3364,6 +3484,11 @@ definitions:
         items:
           type: string
         type: array
+      monetarySystem:
+        description: |-
+          MonetarySystem is the type's currency system, as a coin stores it
+          (see MonetarySystemFromNumista): "Escudo (1911-2001)", "Euro".
+        type: string
       obverse:
         $ref: '#/definitions/models.NumistaCatalogSide'
       photos:
@@ -3518,10 +3643,22 @@ definitions:
       userEditedQueryCount:
         type: integer
     type: object
+  models.NumistaIssueSignature:
+    properties:
+      name:
+        example: José da Silva Lopes
+        type: string
+      title:
+        example: Governor
+        type: string
+    type: object
   models.NumistaIssueSummary:
     properties:
       comment:
         type: string
+      day:
+        example: 13
+        type: integer
       id:
         type: integer
       maxYear:
@@ -3532,6 +3669,25 @@ definitions:
         type: string
       mintage:
         type: integer
+      month:
+        description: |-
+          A banknote's issues are told apart by the date printed on the note
+          (Month and Day with Year), its signatories, the issue's own Pick number
+          ("176a") and whether its notes are replacement or specimen notes.
+        example: 9
+        type: integer
+      pick:
+        example: 176a
+        type: string
+      signatures:
+        items:
+          $ref: '#/definitions/models.NumistaIssueSignature'
+        type: array
+      variant:
+        enum:
+        - replacement
+        - specimen
+        type: string
       year:
         description: Year is the Gregorian year for dated issues (negative for BC).
         type: integer
@@ -3647,19 +3803,138 @@ definitions:
     - NumistaSearchAttemptRelaxed
   models.NumistaUsageSummary:
     properties:
+      background:
+        example: 250
+        type: integer
       backgroundPaused:
         type: boolean
+      issues:
+        example: 60
+        type: integer
       limit:
         example: 2000
         type: integer
       month:
         example: 2026-10
         type: string
+      other:
+        example: 1
+        type: integer
       pauseAt:
         example: 1800
         type: integer
+      pausedUntil:
+        description: |-
+          PausedUntil is set while Numista refuses requests for its quota: until
+          then none is sent.
+        type: string
+      prices:
+        example: 300
+        type: integer
       requests:
         example: 1234
+        type: integer
+      searches:
+        description: |-
+          The requests by what they asked for: searches, types, a type's issues,
+          an issue's prices, the rest (the list of issuers); and how many were
+          made in the background.
+        example: 120
+        type: integer
+      types:
+        example: 80
+        type: integer
+    type: object
+  models.NumistaValueRun:
+    properties:
+      budget:
+        description: |-
+          Budget is how many Numista requests the run could make; Requests, how
+          many it made (prices Numista gave in the last days cost none).
+        type: integer
+      checked:
+        description: |-
+          Checked coins had their price looked up: Updated got a new value,
+          Unchanged kept theirs, NoPrice have none on Numista, Failed could not
+          be looked up and are tried again next time.
+        type: integer
+      completedAt:
+        type: string
+      failed:
+        type: integer
+      id:
+        type: integer
+      noPrice:
+        type: integer
+      requests:
+        type: integer
+      startedAt:
+        type: string
+      status:
+        enum:
+        - running
+        - completed
+        - budget_spent
+        - paused
+        - unconfigured
+        - failed
+        type: string
+      triggerType:
+        enum:
+        - scheduled
+        - manual
+        type: string
+      unchanged:
+        type: integer
+      updated:
+        type: integer
+    type: object
+  models.NumistaValueStatus:
+    properties:
+      currency:
+        example: EUR
+        type: string
+      dailyBudget:
+        description: DailyBudget is how many requests the next batch may make.
+        type: integer
+      due:
+        type: integer
+      eligible:
+        description: |-
+          Eligible coins are linked to Numista and have a grade Numista prices;
+          Due ones have not been checked in the last 30 days.
+        type: integer
+      enabled:
+        type: boolean
+      isRunning:
+        type: boolean
+      nextRunIn:
+        description: NextRunIn is the time until the next scheduled batch (when enabled).
+        example: 5h0m0s
+        type: string
+      quotaLevel:
+        description: QuotaLevel is ok, low (from 75% of the quota) or paused (from
+          PauseAt).
+        enum:
+        - ok
+        - low
+        - paused
+        type: string
+      resumesOn:
+        description: ResumesOn is the first day of next month (UTC), when the quota
+          renews.
+        example: "2026-11-01"
+        type: string
+      runs:
+        items:
+          $ref: '#/definitions/models.NumistaValueRun'
+        type: array
+      usage:
+        $ref: '#/definitions/models.NumistaUsageSummary'
+      withoutGrade:
+        description: |-
+          WithoutGrade coins are linked to Numista but have no grade Numista
+          prices (none, or a proof); they wait for one.
         type: integer
     type: object
   models.ProposalSlot:
@@ -4186,6 +4461,9 @@ definitions:
           Title names the coin; a challenge's country slots leave it empty (the
           country says it).
         type: string
+      toYear:
+        description: ToYear is a type's last year, when it was struck over several.
+        type: integer
       year:
         type: integer
     type: object
@@ -4587,6 +4865,39 @@ definitions:
         type: string
       ok:
         type: boolean
+    type: object
+  services.ShareListRequest:
+    properties:
+      contact:
+        description: Contact, when given, is printed at the top (an e-mail, a phone);
+          it is not stored.
+        maxLength: 120
+        type: string
+      format:
+        description: Format is "pdf" or "csv".
+        enum:
+        - pdf
+        - csv
+        type: string
+      includeValues:
+        description: IncludeValues adds each coin's current value.
+        type: boolean
+      lang:
+        description: 'Lang is the language of the list: "pt" (European Portuguese)
+          or "en".'
+        enum:
+        - pt
+        - en
+        type: string
+      list:
+        enum:
+        - trades
+        - wishlist
+        - both
+        type: string
+    required:
+    - format
+    - list
     type: object
   services.TimeMachineBounds:
     properties:
@@ -5542,6 +5853,66 @@ paths:
       summary: Update mint location
       tags:
       - Mint Locations
+  /admin/numista-values:
+    get:
+      description: The month's Numista requests and whether they run low (from 75%
+        of the quota) or are spent for background requests, the next batch's budget,
+        the coins it covers (linked to Numista with a grade Numista prices) and those
+        due a check (none in 30 days), and the latest batches. Admin only.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.NumistaValueStatus'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Numista values batch status
+      tags:
+      - Admin
+  /admin/numista-values/run:
+    post:
+      description: 'Starts one batch in the background: it updates the current value
+        of the coins due from Numista''s price for their grade, within today''s share
+        of the monthly quota. The previous value stays in each coin''s value history.
+        Admin only.'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Run a Numista values batch now
+      tags:
+      - Admin
   /admin/numista/health:
     get:
       description: Returns redacted Numista configuration validity and bounded rolling
@@ -8188,8 +8559,8 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Numista issue ID; defaults to the issue matching the coin's date,
-          else the first
+      - description: Numista issue ID; defaults to the coin's own issue, else the
+          one matching its date, else the first
         in: query
         name: issueId
         type: integer
@@ -8836,6 +9207,147 @@ paths:
       summary: List collection face values
       tags:
       - Coins
+  /coins/export:
+    get:
+      description: Downloads, as an Excel workbook (xlsx) or a CSV, the user's coins
+        and banknotes that the filters keep (the same filters and order as GET /coins,
+        without pages; up to 10,000), one row each with its details, purchase, value,
+        references and sets. Columns are named in the language asked for; a CSV in
+        Portuguese uses ";" and a decimal comma, as Excel there expects.
+      parameters:
+      - default: xlsx
+        description: Spreadsheet format
+        enum:
+        - xlsx
+        - csv
+        in: query
+        name: format
+        type: string
+      - default: pt
+        description: Language of the columns
+        enum:
+        - pt
+        - en
+        in: query
+        name: lang
+        type: string
+      - description: Only coins or only banknotes (every item when omitted)
+        enum:
+        - coin
+        - banknote
+        in: query
+        name: kind
+        type: string
+      - description: Filter by wishlist status
+        enum:
+        - "true"
+        - "false"
+        in: query
+        name: wishlist
+        type: string
+      - description: Filter by country (exact)
+        in: query
+        name: country
+        type: string
+      - description: Filter by face value, as written
+        in: query
+        name: denomination
+        type: string
+      - description: Filter by presentation
+        enum:
+        - loose
+        - coincard
+        - capsule
+        - flip
+        - proof_set
+        - blister
+        - slab
+        in: query
+        name: presentation
+        type: string
+      - description: Filter by rarity
+        enum:
+        - common
+        - uncommon
+        - scarce
+        - rare
+        - very_rare
+        - extremely_rare
+        in: query
+        name: rarity
+        type: string
+      - description: Only coins held more than once
+        in: query
+        name: repeated
+        type: boolean
+      - description: Only coins of countries that no longer exist
+        in: query
+        name: extinct
+        type: boolean
+      - description: Only current or demonetized coins, as Numista says
+        enum:
+        - current
+        - demonetized
+        in: query
+        name: circulation
+        type: string
+      - description: Only commemorative (true) or regular (false) coins, as Numista
+          says
+        in: query
+        name: commemorative
+        type: boolean
+      - description: Only one Numista kind of coin
+        in: query
+        name: classification
+        type: string
+      - description: Only the coins of a set
+        in: query
+        name: set
+        type: integer
+      - description: Search, as in the coin list
+        in: query
+        name: search
+        type: string
+      - default: updated_at
+        description: Sort field
+        enum:
+        - created_at
+        - updated_at
+        - current_value
+        - purchase_date
+        - name
+        - quantity
+        - random
+        in: query
+        name: sort
+        type: string
+      - default: desc
+        description: Sort order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      - text/csv
+      responses:
+        "200":
+          description: The spreadsheet
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Export coins as a spreadsheet
+      tags:
+      - Coins
   /coins/health:
     get:
       description: Returns paginated per-coin metadata health scores for the authenticated
@@ -9049,29 +9561,49 @@ paths:
       summary: Match a category/era candidate against known values
       tags:
       - coins
-  /coins/official-photos/batch:
-    post:
-      consumes:
-      - application/json
-      description: 'Looks at up to limit (default 10, at most 20) of the user''s coins
-        without any image, after afterId, and adds the official images each has (as
-        for one coin): the ECB''s images of a euro coin, or its mint''s photos. Numista
-        types are read from the cache only, so no Numista request is made. Call again
-        with nextAfterId until done.'
-      parameters:
-      - description: Where to start
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.OfficialPhotosBatchRequest'
+  /coins/numista-fill:
+    get:
+      description: 'For the user''s coins and banknotes (collection and wishlist)
+        linked to a Numista type whose details the app has cached, lists what a fill
+        would set: the monetary system from the type''s currency when none is set;
+        and, for coins, the material from Numista''s composition when the coin''s
+        is Other or empty, the weight and the diameter when missing, and a coin card
+        as presentation when none is set and Numista says the type is issued in one.
+        Also lists, as corrections, the coins whose material is set but differs from
+        the composition. Changes nothing and makes no Numista request.'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.OfficialPhotosBatchResponse'
+            $ref: '#/definitions/models.CoinNumistaFillResult'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Preview a fill of coin records from Numista
+      tags:
+      - Coins
+    post:
+      description: 'Saves what the preview lists (see GET /coins/numista-fill): only
+        empty fields are filled, all coins or none, from the cached Numista types;
+        no Numista request is made. With corrections=true, the listed material corrections
+        are saved too. Returns what was changed.'
+      parameters:
+      - description: Also replace the materials that differ from Numista's composition
+        in: query
+        name: corrections
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.CoinNumistaFillResult'
         "400":
           description: Bad Request
           schema:
@@ -9082,27 +9614,42 @@ paths:
             $ref: '#/definitions/handlers.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Add official images to coins without photos
+      summary: Fill coin records from Numista
       tags:
       - Coins
-  /coins/official-photos/missing:
-    get:
-      description: 'Counts the user''s coins (not banknotes) that have no image at
-        all: the ones the official photos batch looks at.'
-      produces:
+  /coins/share-list:
+    post:
+      consumes:
       - application/json
+      description: Makes, as a PDF (with a photo of each item) or a CSV, the user's
+        duplicates to trade (coins and banknotes held more than once, with how many
+        there are to spare), the wishlist, or both; sorted by country, year and name,
+        in Portuguese or English. Values are included only when asked for, and the
+        contact, when given, is printed at the top and not stored.
+      parameters:
+      - description: Which list and how
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/services.ShareListRequest'
+      produces:
+      - application/pdf
+      - text/csv
       responses:
         "200":
-          description: OK
+          description: The file
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/handlers.MissingPhotosResponse'
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Count coins without photos
+      summary: Download a list to share
       tags:
       - Coins
   /coins/statuses:
@@ -10287,6 +10834,34 @@ paths:
       summary: Get a Numista coin type
       tags:
       - Numista
+  /numista/catalog/types/{id}/issues:
+    get:
+      description: 'Returns the issues of a Numista type: year, mint mark, mintage
+        and, for a banknote, the date printed on it, its signatories, its own Pick
+        number ("176a") and whether its notes are replacement or specimen notes. Cached
+        for 30 days; no prices are fetched.'
+      parameters:
+      - description: Numista type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.NumistaCatalogIssuesResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List a Numista type's issues
+      tags:
+      - Numista
   /numista/catalog/types/{id}/market-value:
     get:
       description: Returns Numista's estimated price per grade for an issue of a coin
@@ -11273,7 +11848,9 @@ paths:
       - sets
   /sets:
     get:
-      description: Get all sets for the authenticated user with aggregate summaries
+      description: 'Get all sets for the authenticated user with aggregate summaries.
+        A checklist set also has countries (its slots counted country by country:
+        country, owned, total) and partial (true while its list is partly known).'
       produces:
       - application/json
       responses:
@@ -12113,7 +12690,11 @@ paths:
         enum:
         - name
         - denomination
+        - ruler
+        - era
         - purchaseLocation
+        - country
+        - monetarySystem
         in: query
         name: field
         required: true

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 import CoinDetailPage from '../CoinDetailPage.vue'
 import router from '@/router'
 import { buildRomanDenariusCore } from '@/test/fixtures/coins'
@@ -11,6 +11,7 @@ const routerPush = vi.fn()
 const shareCoinCard = vi.fn()
 const sharing = ref(false)
 const showConfirm = vi.fn()
+const route = reactive({ name: 'coin-detail', params: { id: String(coin.id) } })
 
 vi.mock('@/stores/coins', () => ({
   useCoinsStore: () => ({
@@ -24,7 +25,7 @@ vi.mock('vue-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-router')>()
   return {
     ...actual,
-    useRoute: () => ({ params: { id: String(coin.id) } }),
+    useRoute: () => route,
     useRouter: () => ({ push: routerPush }),
   }
 })
@@ -80,6 +81,18 @@ describe('CoinDetailPage', () => {
     showConfirm.mockResolvedValue(true)
     coin.isWishlist = false
     sharing.value = false
+  })
+
+  it('loads the coin again when the address goes to another one (previous and next)', async () => {
+    mount(CoinDetailPage, { global: { stubs: pageStubs() } })
+    await flushPromises()
+    expect(fetchCoin).toHaveBeenCalledWith(coin.id)
+
+    route.params.id = '999'
+    await flushPromises()
+    expect(fetchCoin).toHaveBeenLastCalledWith(999)
+    route.params.id = String(coin.id)
+    await flushPromises()
   })
 
   it('keeps the beta/main two-image hero display and shows the share action', () => {

@@ -1,13 +1,15 @@
 // Turns a banknote type picked in the Numista catalogue into Add Banknote
 // form values: the catalogue's facts (issuing bank, series, printer, size,
-// watermark, Pick number…), not what belongs to the user's own note (its
-// serial number, price, date).
+// watermark, Pick number…) and those of the issue picked (its printed date,
+// signatories and own Pick number), not what belongs to the user's own note
+// (its serial number, price, date of purchase).
 import { t } from '@/i18n'
 import type { CatalogRegistry, Coin, CoinReferenceInput } from '@/types'
-import { formatNumistaYear, numistaYearRange } from '@/utils/numistaCatalog'
+import { formatNumistaYear, numistaIssuePrintedDate, numistaYearRange } from '@/utils/numistaCatalog'
 import { numistaGradeShort } from '@/utils/numistaGrades'
 import { categoryForType, eraForYear, type CatalogPrefill, type CatalogSelection } from '@/utils/numistaCatalogPrefill'
-import { PICK_CATALOG, banknoteMaterialFromComposition } from '@/utils/banknoteAttributes'
+import { PICK_CATALOG, banknoteMaterialFromComposition, withPickNumber } from '@/utils/banknoteAttributes'
+import { issueSignatures } from '@/utils/banknoteIssue'
 import { rarityFromMintage } from '@/utils/coinAttributes'
 
 export interface BanknotePrefillOptions {
@@ -35,13 +37,13 @@ export function buildBanknotePrefill(selection: CatalogSelection, options: Bankn
   const { type, issue } = selection
   const issueYear = issue?.year
   const year = issueYear ?? type.maxYear ?? type.minYear
-  const dateRange = issueYear !== undefined
-    ? formatNumistaYear(issueYear)
+  const dateRange = issue && issueYear !== undefined
+    ? numistaIssuePrintedDate(issue)
     : issue && (issue.minYear !== undefined || issue.maxYear !== undefined)
       ? numistaYearRange(issue.minYear, issue.maxYear)
       : numistaYearRange(type.minYear, type.maxYear)
 
-  const references: CoinReferenceInput[] = [{ catalog: 'Numista', number: String(type.id), uri: type.url }]
+  let references: CoinReferenceInput[] = [{ catalog: 'Numista', number: String(type.id), uri: type.url }]
   const otherReferences: string[] = []
   for (const reference of type.references) {
     const registered = registeredCatalog(reference.catalogue, options.registry)
@@ -51,6 +53,9 @@ export function buildBanknotePrefill(selection: CatalogSelection, options: Bankn
       otherReferences.push(`${reference.catalogue} ${reference.number}`)
     }
   }
+  // The issue's own Pick number ("176a") is the note's.
+  const pick = registeredCatalog('P', options.registry)
+  if (issue?.pick && pick && !pick.volumeRequired) references = withPickNumber(references, issue.pick)
 
   const notes = [
     t('catalog.notes.source', { title: type.title, issuer: type.issuer.name, url: type.url }),
@@ -73,12 +78,16 @@ export function buildBanknotePrefill(selection: CatalogSelection, options: Bankn
     dateRange: clip(dateRange, 200),
     year: issueYear ?? (type.minYear !== undefined && type.minYear === type.maxYear ? type.minYear : null),
     country: clip(type.issuer.name, 120),
+    monetarySystem: clip(type.monetarySystem ?? '', 120),
     material: banknoteMaterialFromComposition(type.composition) as Coin['material'],
     // Numista gives a banknote's width as its size.
     widthMm: type.diameterMm ?? null,
     heightMm: type.heightMm ?? null,
     printer: clip((type.printers ?? []).join(', '), 200),
     watermark: clip(type.watermark ?? '', 500),
+    signatures: issue ? issueSignatures(issue) : '',
+    noteVariant: issue?.variant ?? '',
+    numistaIssueId: issue?.id,
     grade: selection.grade ? numistaGradeShort(selection.grade) : '',
     obverseInscription: clip(lettering(type.obverse.lettering), 1000),
     reverseInscription: clip(lettering(type.reverse.lettering), 1000),

@@ -41,12 +41,13 @@ describe('HelpSection', () => {
     // The value details, investment breakdown and Notes pages, auction
     // tracking, the calendar and shipments were removed.
     // So were notifications, reminders, tags, Quick Access, the Emperor tracker,
-    // Coin of the Day, API keys and the external tool server, OIDC and passkeys.
-    for (const removed of ['Value Details', 'Investment Breakdown', 'Save to Notes', 'Calendar', 'Shipment', 'auction alerts', 'notification', 'Purchase reminders', 'Custom tags', 'Quick Access', 'Emperor Tracker', 'Coin of the Day', 'X-API-Key', 'External Tool Server', 'OIDC', 'passkey', 'Museum Tray']) {
+    // Coin of the Day, API keys and the external tool server, OIDC and passkeys,
+    // and the AI set proposals.
+    for (const removed of ['Value Details', 'Investment Breakdown', 'Save to Notes', 'Calendar', 'Shipment', 'auction alerts', 'notification', 'Purchase reminders', 'Custom tags', 'Quick Access', 'Emperor Tracker', 'Coin of the Day', 'X-API-Key', 'External Tool Server', 'OIDC', 'passkey', 'Museum Tray', 'Agentic', 'proposal']) {
       expect(text).not.toContain(removed)
     }
     expect(text).toContain('Quick Capture, Coin Lookup, and image upload flows start the camera only after you tap')
-    expect(text).toContain('Only approval creates the Agentic set')
+    expect(text).toContain('Catalogue, challenge and goal sets show how far along you are')
   })
 
   it('explains Coin Copilot and keeps the Coin Agent for when Copilot is off', () => {

@@ -14,11 +14,12 @@ import (
 )
 
 // Issues almost never change and prices are community estimates that move
-// slowly, so both are reused for days: a personal collection stays far
-// inside Numista's free monthly quota.
+// slowly, so both are reused for a month: browsing a collection of a few
+// hundred items, or valuing it day by day, stays inside Numista's free
+// monthly quota.
 const (
 	numistaIssuesCacheTTL = 30 * 24 * time.Hour
-	numistaPricesCacheTTL = 7 * 24 * time.Hour
+	numistaPricesCacheTTL = 30 * 24 * time.Hour
 )
 
 // NumistaPriceClient is the part of the Numista API the market value lookup uses.
@@ -67,12 +68,15 @@ func NumistaTypeIDForCoin(coin *models.Coin) int {
 }
 
 // ForCoin returns the market value for a coin's linked Numista type. issueID
-// selects an issue (0 = the one matching the coin's date, else the first).
-// Provider problems are reported through the result's Status.
+// selects an issue (0 = the coin's own issue, else the one matching its date,
+// else the first). Provider problems are reported through the result's Status.
 func (s *NumistaMarketValueService) ForCoin(ctx context.Context, coin *models.Coin, issueID int, currency, lang string) models.CoinMarketValue {
 	typeID := NumistaTypeIDForCoin(coin)
 	if typeID == 0 {
 		return emptyMarketValue(currency)
+	}
+	if issueID == 0 {
+		issueID = coin.NumistaIssueID
 	}
 	return s.ForType(ctx, typeID, issueID, coin.DateRange, currency, lang)
 }
@@ -151,6 +155,14 @@ type providerIssue struct {
 	MintLetter    string `json:"mint_letter"`
 	Mintage       *int64 `json:"mintage"`
 	Comment       string `json:"comment"`
+	// A banknote issue's printed date, signatories and references.
+	Month      int `json:"month"`
+	Day        int `json:"day"`
+	Signatures []struct {
+		SignerName string `json:"signer_name"`
+		Title      string `json:"title"`
+	} `json:"signatures"`
+	References []providerReference `json:"references"`
 }
 
 func parseNumistaIssues(body []byte) ([]models.NumistaIssueSummary, error) {
@@ -167,7 +179,7 @@ func parseNumistaIssues(body []byte) ([]models.NumistaIssueSummary, error) {
 		if year == nil {
 			year = item.Year
 		}
-		issues = append(issues, models.NumistaIssueSummary{
+		summary := models.NumistaIssueSummary{
 			ID:         item.ID,
 			Year:       year,
 			MinYear:    item.MinYear,
@@ -175,7 +187,21 @@ func parseNumistaIssues(body []byte) ([]models.NumistaIssueSummary, error) {
 			MintLetter: strings.TrimSpace(item.MintLetter),
 			Mintage:    item.Mintage,
 			Comment:    strings.TrimSpace(item.Comment),
-		})
+		}
+		if item.Month >= 1 && item.Month <= 12 {
+			summary.Month = item.Month
+			if item.Day >= 1 && item.Day <= 31 {
+				summary.Day = item.Day
+			}
+		}
+		for _, signature := range item.Signatures {
+			if name := strings.TrimSpace(signature.SignerName); name != "" {
+				summary.Signatures = append(summary.Signatures, models.NumistaIssueSignature{Name: name, Title: strings.TrimSpace(signature.Title)})
+			}
+		}
+		summary.Pick = issuePickNumber(item.References, summary.Comment)
+		summary.Variant = issueNoteVariant(summary.Comment, summary.Pick)
+		issues = append(issues, summary)
 	}
 	return issues, nil
 }

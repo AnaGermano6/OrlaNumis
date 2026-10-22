@@ -47,6 +47,8 @@ export interface NumistaCatalogType {
   maxYear?: number
   denomination?: string
   currency?: string
+  /** The type's monetary system, as a coin stores it ("Escudo (1911-2001)", "Euro"). */
+  monetarySystem?: string
   rulers: string[]
   composition?: string
   technique?: string
@@ -103,6 +105,17 @@ export const searchNumistaCatalog = (params: NumistaCatalogSearchParams) =>
 
 export const getNumistaCatalogType = (typeId: number, lang: string) =>
   api.get<NumistaCatalogTypeResult>(`/numista/catalog/types/${typeId}`, { params: { lang } })
+
+export interface NumistaCatalogIssuesResult {
+  status: NumistaDataStatus
+  issues: NumistaIssueSummary[]
+  /** Numista could not be reached; the stored issues are shown. */
+  stale: boolean
+}
+
+/** A type's issues, to tell which one an item is: from the server's cache, without prices. */
+export const getNumistaTypeIssues = (typeId: number) =>
+  api.get<NumistaCatalogIssuesResult>(`/numista/catalog/types/${typeId}/issues`)
 
 export const getNumistaTypeMarketValue = (typeId: number, params: { currency: string; issueId?: number; year?: number }) =>
   api.get<CoinMarketValue>(`/numista/catalog/types/${typeId}/market-value`, { params })

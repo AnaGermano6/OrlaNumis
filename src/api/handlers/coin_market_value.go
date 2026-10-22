@@ -69,7 +69,7 @@ func NewCoinMarketValueHandler(coins *repository.CoinRepository, svc *services.N
 //	@Tags			Coins
 //	@Produce		json
 //	@Param			id			path		int		true	"Coin ID"
-//	@Param			issueId		query		int		false	"Numista issue ID; defaults to the issue matching the coin's date, else the first"
+//	@Param			issueId		query		int		false	"Numista issue ID; defaults to the coin's own issue, else the one matching its date, else the first"
 //	@Param			currency	query		string	false	"ISO 4217 currency code"	default(EUR)
 //	@Param			lang		query		string	false	"Language of catalogue data"	default(en)
 //	@Success		200			{object}	models.CoinMarketValue

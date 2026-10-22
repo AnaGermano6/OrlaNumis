@@ -100,8 +100,9 @@ SEARCH_PROMPT = with_safety("""You are a numismatic search specialist. Search th
 currently for sale that match the user's request.
 
 Use targeted site-specific queries like:
-- "Domitian denarius for sale site:<configured-host>"
-- "Greek tetradrachm Athens site:<configured-host>"
+- "2 euro 2007 Portugal for sale site:<configured-host>"
+- "100 escudos 1989 site:<configured-host>"
+- "banknote 500 escudos 1987 site:<configured-host>"
 
 Include the user's budget/price range in your searches if mentioned.
 Run at least 3-5 searches across different dealer sites.
@@ -122,17 +123,17 @@ Structure each listing into this exact JSON schema:
     "era": "Time period",
     "ruler": "Ruler name",
     "material": "Gold|Silver|Bronze|Copper|Other",
-    "denomination": "e.g. Denarius, Tetradrachm",
-    "estPrice": "Listed price e.g. $150.00",
+    "denomination": "e.g. 2 euro, 100 escudos, 1000 réis",
+    "estPrice": "Listed price with its currency, e.g. 12,50 € or $150.00",
     "availability": "Available|Sold|Unknown based only on listing text",
     "imageUrl": "Direct https image URL from the listing data, or empty",
     "sourceUrl": "The exact URL from the listing data — never fabricate",
     "sourceName": "Dealer or site name",
     "candidateReferences": [
       {
-        "catalog": "RIC",
-        "volume": "VII",
-        "number": "162",
+        "catalog": "KM",
+        "volume": "",
+        "number": "763",
         "uri": ""
       }
     ]

@@ -4,7 +4,17 @@
 
 ## Overview
 
-Import and export live under **Settings → Backups**.
+Import and export live under **Settings → Backups**; a spreadsheet of the coins is exported from the galleries.
+
+## Spreadsheet export
+
+**Export** in the coin gallery and in the banknote gallery (in the title bar on a computer, by the title in a phone's browser, under the filters in the installed app) downloads a spreadsheet:
+
+- **What:** the gallery's coins or banknotes as its filters and search keep them (all of them when none is on), or **the whole collection**, coins and banknotes; in the gallery's order, the wishlist left out. Up to 10,000 items.
+- **Excel (.xlsx)** — one sheet, its header bold and fixed with filters, numbers and dates as Excel's own (amounts with two decimals, dates as 21/10/2026 in Portuguese), so they sort and add up. It opens in Excel, Numbers, LibreOffice and Google Sheets.
+- **CSV** — the same columns; in Portuguese with ";" between fields and a decimal comma, as Excel there expects, in English with "," and a point; dates as 2026-10-21.
+- **Columns**, named in the app's language: ID, kind (coin or banknote), name, country, monetary system, face value, year, dates, mint, material, weight, diameter, grade, presentation, rarity, quantity, purchase price, date and place, current value and when it was updated (in the collection currency), references, Numista page, sets and notes; and, when there is a banknote, its series, serial number, signatures, printer, width and height. Materials, presentations and rarities are written in the app's language.
+- A text that starts like a formula (`=`, `+`, `@`) is kept as text.
 
 ## Your collection
 

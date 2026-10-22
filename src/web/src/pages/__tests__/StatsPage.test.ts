@@ -9,7 +9,8 @@ const stats: StatsResponse = {
   byCategory: [{ category: 'Roman', count: 20 }, { category: 'Greek', count: 15 }],
   byMaterial: [],
   byGrade: [],
-  byEra: [{ era: 'Republic', count: 10 }],
+  byEra: [{ era: 'Republic', count: 10 }, { era: 'Empire', count: 32 }],
+  byMonetarySystem: [{ monetarySystem: 'Escudo (1911-2001)', count: 30 }, { monetarySystem: 'Euro', count: 12 }],
   byRuler: [{ ruler: 'Augustus', count: 5 }],
   byPriceRange: [],
   values: {
@@ -64,12 +65,43 @@ describe('StatsPage', () => {
     expect(wrapper.text()).not.toContain('Total Invested')
 
     // Distribution charts are present
+    expect(wrapper.text()).toContain('By Monetary System')
+    expect(wrapper.text()).toContain('Escudo (1911-2001)')
     expect(wrapper.text()).toContain('By Coin Type')
     expect(wrapper.text()).toContain('By Era')
     expect(wrapper.text()).toContain('Top Rulers')
+    expect(wrapper.find('.stub-heatmap').exists()).toBe(true)
 
     expect(wrapper.text()).not.toContain('Open Mint Map')
     expect(wrapper.findAll('a[href^="/stats/"]')).toHaveLength(0)
+  })
+
+  it('leaves out categories and eras with one value, and adds up the less common systems', () => {
+    store.stats = {
+      ...stats,
+      byCategory: [{ category: 'Modern', count: 42 }],
+      byEra: [{ era: 'modern', count: 42 }],
+      byMonetarySystem: Array.from({ length: 14 }, (_, i) => ({ monetarySystem: `System ${i + 1}`, count: 20 - i })),
+    }
+
+    const wrapper = mount(StatsPage, {
+      global: {
+        stubs: {
+          PullToRefresh: { template: '<div><slot /></div>' },
+          StatsHeatMap: { template: '<div class="stub-heatmap" />', methods: { fetchDistribution: () => {} } },
+          StatsCoinFlowChart: { template: '<div class="stub-coin-flow" />' },
+        },
+      },
+    })
+
+    expect(wrapper.text()).not.toContain('By Coin Type')
+    expect(wrapper.text()).not.toContain('By Era')
+    expect(wrapper.find('.stub-heatmap').exists()).toBe(false)
+    const systems = wrapper.get('[data-testid="stats-monetary-systems"]').text()
+    expect(systems).toContain('System 12')
+    expect(systems).not.toContain('System 13')
+    expect(systems).toContain('2 other systems')
+    expect(systems).toContain('13')
   })
 
   it('renders stats from the normal stats store without querying quick-capture drafts', () => {

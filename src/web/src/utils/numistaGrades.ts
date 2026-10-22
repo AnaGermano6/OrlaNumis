@@ -34,7 +34,7 @@ export function numistaGradeName(grade: string): string {
 // MBC≈VF, Bela≈XF, Soberba/FDC≈UNC).
 const GRADE_PATTERNS: [NumistaGrade, RegExp][] = [
   ['au', /\b(ABOUT|ALMOST) UNC|\b(A|CH )?AU\b|\bAUNC\b/],
-  ['unc', /\b(UNC|UNCIRCULATED|MS|BU|FDC|SOB|SOBERBA|SOBERBO|FLOR DE CUNHO)\b/],
+  ['unc', /\b(UNC|UNCIRCULATED|MS|BU|BNC|FDC|SOB|SOBERBA|SOBERBO|FLOR DE CUNHO)\b/],
   ['xf', /\bEXTREMELY FINE\b|\b(A|G|CH )?(XF|EF)\b|\bBEL[AO]\b/],
   ['vf', /\bVERY FINE\b|\b(A|G|CH )?VF\b|\bMBC\b/],
   ['vg', /\bVERY GOOD\b|\b(A|G)?VG\b/],

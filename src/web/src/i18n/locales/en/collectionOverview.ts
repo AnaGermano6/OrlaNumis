@@ -23,7 +23,13 @@ export default {
     noYear: 'No banknote has a year yet.',
     noValue: 'No banknote has a current value yet.',
   },
+  numistaValues: {
+    low: 'The Numista quota is running low ({requests} of {limit} requests): the daily update of coin values slows down and stops at {pauseAt}.',
+    paused: "This month's Numista quota for background requests is spent: coin values are updated again from {date}.",
+    open: 'See the schedule',
+  },
   repeated: {
+    share: 'Share list',
     title: 'Duplicates to trade',
     open: 'Show in the gallery',
     coins: { one: '{count} coin held more than once', other: '{count} coins held more than once' },

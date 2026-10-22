@@ -26,7 +26,7 @@ that are similar to the described coin.
 Search across:
 - NumisBids.com active lots
 - Heritage Auctions current listings
-- CNG, Roma, Nomos upcoming sales
+- Künker, Sixbid, Catawiki and other European upcoming sales
 - Any other active numismatic auction platforms
 
 For each lot found, note:

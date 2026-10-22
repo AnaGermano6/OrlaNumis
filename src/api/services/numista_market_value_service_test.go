@@ -129,16 +129,19 @@ func TestNumistaMarketValue_ReusesCacheUntilEachTTLExpires(t *testing.T) {
 	ctx := context.Background()
 
 	svc.ForCoin(ctx, linkedCoin("1968"), 0, "EUR", "")
-	clock.now = clock.now.Add(6 * 24 * time.Hour)
-	svc.ForCoin(ctx, linkedCoin("1968"), 0, "EUR", "")
+	// A month of looking at the coin again, every day, asks Numista nothing.
+	for range 29 {
+		clock.now = clock.now.Add(24 * time.Hour)
+		svc.ForCoin(ctx, linkedCoin("1968"), 0, "EUR", "")
+	}
 	if client.issueCalls != 1 || client.priceCalls != 1 {
 		t.Fatalf("within TTL: %d issue / %d price calls, want 1/1", client.issueCalls, client.priceCalls)
 	}
 
-	clock.now = clock.now.Add(2 * 24 * time.Hour) // prices are now 8 days old, issues 8 days
+	clock.now = clock.now.Add(2 * 24 * time.Hour) // prices and issues are now 31 days old
 	got := svc.ForCoin(ctx, linkedCoin("1968"), 0, "EUR", "")
-	if client.issueCalls != 1 || client.priceCalls != 2 {
-		t.Fatalf("after price TTL: %d issue / %d price calls, want 1/2", client.issueCalls, client.priceCalls)
+	if client.issueCalls != 2 || client.priceCalls != 2 {
+		t.Fatalf("after the TTL: %d issue / %d price calls, want 2/2", client.issueCalls, client.priceCalls)
 	}
 	if !got.FetchedAt.Equal(clock.now) {
 		t.Fatalf("fetchedAt not refreshed: %v", got.FetchedAt)

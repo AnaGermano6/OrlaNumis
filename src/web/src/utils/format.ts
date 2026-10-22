@@ -133,6 +133,18 @@ export function materialLabel(material: string | null | undefined): string {
     case 'Bronze': return t('materials.bronze')
     case 'Copper': return t('materials.copper')
     case 'Electrum': return t('materials.electrum')
+    case 'Billon': return t('materials.billon')
+    case 'Aluminium bronze': return t('materials.aluminiumBronze')
+    case 'Brass': return t('materials.brass')
+    case 'Nickel brass': return t('materials.nickelBrass')
+    case 'Nordic gold': return t('materials.nordicGold')
+    case 'Copper-nickel': return t('materials.copperNickel')
+    case 'Nickel': return t('materials.nickel')
+    case 'Bimetallic': return t('materials.bimetallic')
+    case 'Aluminium': return t('materials.aluminium')
+    case 'Zinc': return t('materials.zinc')
+    case 'Stainless steel': return t('materials.stainlessSteel')
+    case 'Plated steel': return t('materials.platedSteel')
     // What banknotes are printed on.
     case 'Paper': return t('banknoteForm.materials.paper')
     case 'Polymer': return t('banknoteForm.materials.polymer')
@@ -140,6 +152,11 @@ export function materialLabel(material: string | null | undefined): string {
     case 'Other': return t('materials.other')
     default: return material ?? ''
   }
+}
+
+/** CSS class with a coin material's color (`material-nickel-brass`); unknown materials have none. */
+export function materialClass(material: string | null | undefined): string {
+  return `material-${(material ?? '').trim().toLowerCase().replace(/\s+/g, '-')}`
 }
 
 /** Display label for a coin image type (`obverse`, `reverse`, `detail`, `other`). */

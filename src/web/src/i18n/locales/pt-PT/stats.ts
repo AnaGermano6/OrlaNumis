@@ -10,6 +10,8 @@ const messages: Messages['stats'] = {
     byEra: 'Por época',
     topRulers: 'Principais governantes',
     byCategory: 'Por categoria',
+    byMonetarySystem: 'Por sistema monetário',
+    otherMonetarySystems: { one: 'Outro sistema', other: 'Outros {count} sistemas' },
     byMaterial: 'Por material',
     byGrade: 'Por grau',
     priceRanges: 'Distribuição por intervalo de preço',

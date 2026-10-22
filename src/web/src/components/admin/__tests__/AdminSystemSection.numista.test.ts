@@ -317,6 +317,30 @@ describe('AdminSystemSection Numista configuration and health', () => {
     const paused = mount(AdminSystemSection, { props: baseProps() })
     await flushPromises()
     expect(paused.get('[data-testid="numista-usage"]').text()).toContain('Past 1,800: the catalogue, market values and country filling wait for next month')
+    // Before the kinds are counted, none is shown.
+    expect(paused.find('[data-testid="numista-usage-kinds"]').exists()).toBe(false)
+  })
+
+  it('shows what the requests asked for, and that none is sent after a refusal for the quota', async () => {
+    const health = (await mocks.getAdminNumistaHealth()).data
+    mocks.getAdminNumistaHealth.mockReset().mockResolvedValue({
+      data: {
+        ...health,
+        usage: {
+          month: '2026-10', requests: 2223, limit: 2000, pauseAt: 1800, backgroundPaused: true,
+          searches: 10, types: 5, issues: 5, prices: 5, other: 0, background: 3, pausedUntil: '2026-10-22T19:30:00Z',
+        },
+      },
+    })
+    const wrapper = mount(AdminSystemSection, { props: baseProps() })
+    await flushPromises()
+
+    const kinds = wrapper.get('[data-testid="numista-usage-kinds"]')
+    expect(kinds.findAll('dt').map((node) => node.text())).toEqual(['Searches', 'Types', 'Issues', 'Prices'])
+    expect(kinds.findAll('dd').map((node) => node.text())).toEqual(['10', '5', '5', '5'])
+    expect(wrapper.get('[data-testid="numista-usage-background"]').text())
+      .toBe('3 made in the background (catalogue, market values, daily values). 2,198 were made before requests were counted by kind.')
+    expect(wrapper.get('[data-testid="numista-usage-refused"]').text()).toContain('Numista refused a request for its quota: none is sent until')
   })
 
   it('does not claim remaining quota or render sensitive response fields', async () => {

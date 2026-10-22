@@ -22,6 +22,15 @@ describe('set album', () => {
     expect(checklistAlbumSlot({ key: 'numista:1', title: 'Expo 98', faceValue: 1000, currency: 'PTE', owned: false }, { source: 'catalogue', country: 'PT', currency: 'PTE' }).detail).toBe('1000 escudos')
   })
 
+  it("shows a type set's slot by the type and the years it was struck in", () => {
+    const escudos = { source: 'challenge', challenge: 'escudo-types' } as const
+    expect(checklistAlbumSlot({ key: 'type:501', title: '50 Centavos', country: 'PT', year: 1927, toYear: 1968, owned: false, imageUrl: 'https://en.numista.com/501.jpg', pageUrl: 'https://pt.numista.com/catalogue/pieces501.html' }, escudos))
+      .toEqual(expect.objectContaining({ title: '50 Centavos', detail: '1927–1968', year: null, owned: false, imageUrl: 'https://en.numista.com/501.jpg' }))
+    expect(checklistAlbumSlot({ key: 'type:505', title: '10 Centavos', country: 'PT', year: 1915, owned: true, coinId: 4 }, escudos).detail).toBe('1915')
+    expect(checklistDescription(escudos)).toBe('Tipos dos escudos (1911–2001)')
+    expect(checklistDescription({ source: 'challenge', challenge: 'reis-types' })).toBe('Tipos dos réis (1835–1910)')
+  })
+
   it("shows a challenge's slots by country, or by coin of the year's series", () => {
     const filled = checklistAlbumSlot({ key: 'country:DE', country: 'DE', year: 2005, owned: true, coinId: 8, coinName: '10 cêntimos' }, { source: 'challenge', challenge: 'euro-countries' })
     expect(filled).toEqual(expect.objectContaining({ title: 'Alemanha', flag: '🇩🇪', detail: '10 cêntimos', year: 2005, owned: true }))

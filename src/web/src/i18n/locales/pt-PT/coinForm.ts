@@ -67,6 +67,7 @@ const messages: Messages['coinForm'] = {
   notesPlaceholder: 'Notas adicionais...',
   mintsUnavailable: 'As casas da moeda não estão disponíveis',
   countryPlaceholder: 'ex.: Portugal',
+  monetarySystemPlaceholder: 'ex.: Escudo (1911-2001) ou Euro',
   notSpecified: 'Não indicada',
   year: 'Ano',
   yearPlaceholder: 'ex.: 1968',
