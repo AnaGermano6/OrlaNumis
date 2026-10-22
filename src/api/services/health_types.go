@@ -58,6 +58,14 @@ const (
 	HealthLowScoreThreshold        = 60
 )
 
+// Without an AI provider the AI part is left out and the others share its
+// weight in the same proportions.
+const (
+	HealthWeightMetadataWithoutAI           = 50
+	HealthWeightImageCoverageWithoutAI      = 25
+	HealthWeightValuationFreshnessWithoutAI = 25
+)
+
 // HealthWeights is the fixed v1 scoring weight map.
 type HealthWeights struct {
 	Metadata           int `json:"metadata"`

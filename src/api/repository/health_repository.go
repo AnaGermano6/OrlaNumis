@@ -22,9 +22,10 @@ type EligibleCoinRow struct {
 	CoinID                uint
 	Title                 string
 	Category              string
+	Kind                  string
 	Denomination          string
-	Ruler                 string
-	Era                   string
+	Country               string
+	MonetarySystem        string
 	Mint                  string
 	Material              string
 	Grade                 string
@@ -46,7 +47,7 @@ func (r *HealthRepository) ListEligibleCoins(userID uint) ([]EligibleCoinRow, er
 	err := r.db.Model(&models.Coin{}).
 		Scopes(ActiveCollection(userID)).
 		Select(
-			"id AS coin_id, name AS title, category, denomination, ruler, era, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
+			"id AS coin_id, name AS title, kind, category, denomination, country, monetary_system, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
 				"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id AND is_primary = true) AS primary_image_count, " +
 				"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id) AS image_count",
 		).
@@ -77,7 +78,7 @@ func (r *HealthRepository) ListEligibleCoinsPaged(userID uint, page, limit int, 
 	rows := []EligibleCoinRow{}
 	offset := (page - 1) * limit
 
-	selectClause := "id AS coin_id, name AS title, category, denomination, ruler, era, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
+	selectClause := "id AS coin_id, name AS title, kind, category, denomination, country, monetary_system, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
 		"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id AND is_primary = true) AS primary_image_count, " +
 		"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id) AS image_count"
 
@@ -104,7 +105,7 @@ func (r *HealthRepository) ListAllEligibleCoins() ([]EligibleCoinRow, error) {
 	err := r.db.Model(&models.Coin{}).
 		Where("is_wishlist = ?", false).
 		Select(
-			"id AS coin_id, name AS title, category, denomination, ruler, era, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
+			"id AS coin_id, name AS title, kind, category, denomination, country, monetary_system, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
 				"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id AND is_primary = true) AS primary_image_count, " +
 				"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id) AS image_count",
 		).
@@ -123,7 +124,7 @@ func (r *HealthRepository) GetSingleEligibleCoin(coinID, userID uint) (*Eligible
 		Scopes(ActiveCollection(userID)).
 		Where("id = ?", coinID).
 		Select(
-			"id AS coin_id, name AS title, category, denomination, ruler, era, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
+			"id AS coin_id, name AS title, kind, category, denomination, country, monetary_system, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
 				"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id AND is_primary = true) AS primary_image_count, " +
 				"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id) AS image_count",
 		).

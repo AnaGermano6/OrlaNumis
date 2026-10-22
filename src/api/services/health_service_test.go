@@ -508,6 +508,14 @@ func TestScoreCoinValuationFreshness_WithCurrentValueUpdatedAt(t *testing.T) {
 			expectedChecklist: true,
 		},
 		{
+			name:              "A value of unknown age scores as an old one, without needing a purchase date",
+			currentValue:      ptrFloat(100.0),
+			updatedAt:         nil,
+			purchaseDate:      nil,
+			expectedScore:     35,
+			expectedChecklist: true,
+		},
+		{
 			name:              "No CurrentValue scores 0",
 			currentValue:      nil,
 			updatedAt:         ptrTime(now),
@@ -701,4 +709,78 @@ func TestScoreCoinAICoverage_CombinedPlusOneSide(t *testing.T) {
 
 func ptrTime(t time.Time) *time.Time {
 	return &t
+}
+
+// The score fits modern coins and banknotes: country and monetary system
+// instead of ruler and era, no mint asked of a banknote, a value counted
+// without a purchase date.
+func TestHealthScore_FitsModernCoinsAndBanknotes(t *testing.T) {
+	svc := &HealthService{}
+	coin := &repository.EligibleCoinRow{
+		Kind: models.CoinKindCoin, Denomination: "2 euro", Country: "Portugal", MonetarySystem: "Euro",
+		Category: "Modern", Material: "Bimetallic", Grade: "UNC",
+	}
+	if got := svc.scoreCoinMetadata(coin); got != 85 {
+		t.Errorf("a coin without its mint = %d, want 6 of 7 fields (85)", got)
+	}
+	banknote := *coin
+	banknote.Kind = models.CoinKindBanknote
+	if got := svc.scoreCoinMetadata(&banknote); got != 100 {
+		t.Errorf("a banknote, which has no mint = %d, want 100", got)
+	}
+	keys := func(row *repository.EligibleCoinRow) string {
+		out := []string{}
+		for _, item := range svc.generateCoinChecklist(row) {
+			out = append(out, item.Key)
+		}
+		return strings.Join(out, " ")
+	}
+	if got := keys(coin); !strings.Contains(got, "metadata.mint") || strings.Contains(got, "metadata.ruler") || strings.Contains(got, "metadata.era") {
+		t.Errorf("coin checklist = %s", got)
+	}
+	if got := keys(&banknote); strings.Contains(got, "metadata.mint") {
+		t.Errorf("banknote checklist = %s", got)
+	}
+	empty := &repository.EligibleCoinRow{Kind: models.CoinKindCoin}
+	if got := keys(empty); !strings.Contains(got, "metadata.country") || !strings.Contains(got, "metadata.monetarySystem") {
+		t.Errorf("empty checklist = %s", got)
+	}
+	// A value with no purchase date is a value.
+	valued := *coin
+	valued.CurrentValue = ptrFloat(2.5)
+	valued.CurrentValueUpdatedAt = ptrTime(time.Now())
+	if got := keys(&valued); strings.Contains(got, "valuation.") {
+		t.Errorf("a recent value without a purchase date = %s", got)
+	}
+}
+
+// Without an AI provider no item can have an AI analysis: the score leaves
+// that part out, sharing its weight, and the checklist does not ask for it.
+func TestHealthScore_LeavesOutAIWhileNoProviderIsConfigured(t *testing.T) {
+	settings, _ := newTestSettingsService(t)
+	health := setupHealthService(t, setupHealthServiceTestDB(t)).WithSettings(settings)
+	if got := health.weights(); got != (HealthWeights{Metadata: 50, ImageCoverage: 25, ValuationFreshness: 25}) {
+		t.Fatalf("weights without AI = %+v", got)
+	}
+	// Full data, two photos and a fresh value: 100, not the 80 the AI part allowed.
+	if got := health.computeWeightedScore(100, 100, 100, 0); got != 100 {
+		t.Errorf("score without AI = %d, want 100", got)
+	}
+	row := &repository.EligibleCoinRow{Kind: models.CoinKindCoin}
+	for _, item := range health.generateCoinChecklist(row) {
+		if strings.HasPrefix(item.Key, "ai.") {
+			t.Errorf("an AI item is asked for without a provider: %s", item.Key)
+		}
+	}
+
+	// Once a provider is chosen, the AI part counts again.
+	if err := settings.SetSetting(SettingAIProvider, "ollama"); err != nil {
+		t.Fatal(err)
+	}
+	if got := health.weights(); got != DefaultHealthWeights() {
+		t.Fatalf("weights with AI = %+v", got)
+	}
+	if got := health.computeWeightedScore(100, 100, 100, 0); got != 80 {
+		t.Errorf("score with AI and no analysis = %d, want 80", got)
+	}
 }

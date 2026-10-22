@@ -24,7 +24,7 @@
 
       <div class="flex flex-col gap-3">
         <div
-          v-for="(value, key) in summary.dimensions"
+          v-for="(value, key) in dimensions"
           :key="key"
           class="grid grid-cols-[auto_minmax(0,1fr)_50px] items-center gap-3 max-md:grid-cols-[auto_minmax(0,1fr)_45px] max-md:gap-2"
         >
@@ -50,7 +50,7 @@
         <div class="section-label mb-2">{{ t('stats.health.weights') }}</div>
         <div class="flex flex-wrap gap-[0.35rem]">
           <span
-            v-for="(value, key) in summary.weights"
+            v-for="(value, key) in weights"
             :key="key"
             class="rounded-full border border-border-subtle bg-[var(--accent-gold-glow)] px-2 py-[0.15rem] text-sm text-text-secondary"
           >
@@ -63,12 +63,19 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { CollectionHealthSummary } from '@/types'
 import { t } from '@/i18n'
 
-defineProps<{
+const props = defineProps<{
   summary: CollectionHealthSummary
 }>()
+
+// A part with no weight (AI analyses, while no AI provider is set up) does
+// not count, so it is not shown.
+const counted = (key: string) => (props.summary.weights as unknown as Record<string, number> | undefined)?.[key] !== 0
+const dimensions = computed(() => Object.fromEntries(Object.entries(props.summary.dimensions ?? {}).filter(([key]) => counted(key))))
+const weights = computed(() => Object.fromEntries(Object.entries(props.summary.weights ?? {}).filter(([key]) => counted(key))))
 
 function formatDimensionLabel(key: string): string {
   const labels: Record<string, string> = {

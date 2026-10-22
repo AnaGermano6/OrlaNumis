@@ -53,7 +53,7 @@
             <component :is="getSeverityIcon(item.severity)" :size="14" />
           </div>
           <div class="flex flex-1 flex-col gap-[0.15rem]">
-            <div class="text-chip font-medium text-text-primary md:text-body">{{ item.label }}</div>
+            <div class="text-chip font-medium text-text-primary md:text-body">{{ healthItemLabel(item.key, item.label) }}</div>
             <div class="text-sm text-text-muted">{{ formatDimension(item.dimension) }}</div>
           </div>
           <button
@@ -73,6 +73,7 @@
 import { AlertCircle, CircleCheck, AlertTriangle, Info, AlertOctagon } from 'lucide-vue-next'
 import type { HealthGrade, MissingChecklistItem, HealthQuickAction } from '@/types'
 import { t } from '@/i18n'
+import { healthItemLabel } from '@/utils/healthItems'
 
 defineProps<{
   score: number

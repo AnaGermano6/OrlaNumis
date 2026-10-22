@@ -174,7 +174,7 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	timeMachineRepo := repository.NewTimeMachineRepository(database.DB)
 	timeMachineSvc := services.NewTimeMachineService(timeMachineRepo)
 	healthRepo := repository.NewHealthRepository(database.DB)
-	healthSvc := services.NewHealthService(healthRepo, logger)
+	healthSvc := services.NewHealthService(healthRepo, logger).WithSettings(settingsSvc)
 
 	// Create schedulers before routes so they can be passed to admin handlers
 	availScheduler := services.NewAvailabilityScheduler(availSvc, coinRepo, availRepo, settingsSvc, logger).WithCycleRepo(availCycleRepo)

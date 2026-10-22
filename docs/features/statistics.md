@@ -25,12 +25,22 @@
 
 ## Health
 
-A score from 0 to 100 and a grade (A–F), weighted across four dimensions:
+A score from 0 to 100 and a grade (A–F) for the collection's coins and
+banknotes (not the wishlist), weighted across four dimensions:
 
-- **Metadata** — the main fields filled in
-- **Image coverage** — obverse and reverse photos
-- **Valuation freshness** — how recent the current value is
-- **AI coverage** — coins with an AI analysis
+- **Metadata** (40%) — face value, country, monetary system, category,
+  material, grade and, for a coin, its mint (a banknote has a printer instead)
+- **Image coverage** (20%) — two photos or more count in full, one by half
+- **Valuation freshness** (20%) — a value checked within 30 days counts in
+  full, less as it ages; a value of unknown age (no date of when it was set,
+  nor a purchase date) counts as one over six months old. A purchase date is
+  not needed.
+- **AI coverage** (20%) — an AI analysis of each side
+
+While no AI provider is set up (Admin → AI), no item can have an AI analysis:
+that dimension is left out and the others share its weight (metadata 50%,
+images 25%, valuation 25%), and no analysis is asked for. Missing items are
+named in the app's language.
 
 Below the score, a list of what needs attention, with quick actions (edit metadata, upload images, run a valuation, run an AI analysis). Administrators see the health of every collection in **Administration → Health**.
 

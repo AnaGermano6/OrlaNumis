@@ -78,7 +78,7 @@ Background jobs, with their start time read in the **Schedule Time Zone**:
 
 ## Health
 
-Aggregate collection health across all users: median score, low-score coins and the most common missing fields.
+Aggregate collection health across all users: median score, items scoring below 60 and the most common missing fields among them. The score is the one of Statistics → Health (see [Collection Statistics](statistics.md#health)); with a single user both show the same collection.
 
 ## Logs
 
