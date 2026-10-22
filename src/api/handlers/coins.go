@@ -199,6 +199,123 @@ type PurchaseRequest struct {
 	PurchaseLocation string   `json:"purchaseLocation"`
 }
 
+// listFilters reads the coin list's filters and order from the query, as
+// the galleries send them, answering a bad one itself (ok is false).
+func (h *CoinHandler) listFilters(c *gin.Context) (filters repository.CoinListFilters, ok bool) {
+	userID := c.GetUint("userId")
+	// Validate sort field against allowlist (defense-in-depth against SQL injection)
+	sortField := c.DefaultQuery("sort", "updated_at")
+	if !allowedListSortFields[sortField] {
+		allowed := make([]string, 0, len(allowedListSortFields))
+		for k := range allowedListSortFields {
+			allowed = append(allowed, k)
+		}
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("sort must be one of: %s", strings.Join(allowed, ", ")),
+		})
+		return repository.CoinListFilters{}, false
+	}
+
+	// Validate sort order
+	sortOrder := c.DefaultQuery("order", "desc")
+	if sortOrder != "asc" && sortOrder != "desc" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "order must be 'asc' or 'desc'"})
+		return repository.CoinListFilters{}, false
+	}
+
+	kind, kindOK := coinKindQuery(c)
+	if !kindOK {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "kind must be 'coin' or 'banknote'"})
+		return repository.CoinListFilters{}, false
+	}
+	filters = repository.CoinListFilters{
+		Kind:         kind,
+		Category:     c.Query("category"),
+		Era:          c.Query("era"),
+		Country:      models.NormalizeCoinCountry(c.Query("country")),
+		Denomination: c.Query("denomination"),
+		Presentation: strings.TrimSpace(c.Query("presentation")),
+		Repeated:     c.Query("repeated") == "true",
+		Rarity:       strings.TrimSpace(c.Query("rarity")),
+		Search:       c.Query("search"),
+		SortField:    sortField,
+		SortOrder:    sortOrder,
+	}
+	if !models.ValidCoinPresentation(filters.Presentation) || !models.ValidCoinRarity(filters.Rarity) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Unknown presentation or rarity"})
+		return repository.CoinListFilters{}, false
+	}
+	// Parse optional seed for deterministic random sort.
+	// Use strconv.Atoi to ensure it's a real integer (defense against SQL injection).
+	if sortField == "random" {
+		if seedStr := c.Query("seed"); seedStr != "" {
+			if seed, err := strconv.Atoi(seedStr); err == nil {
+				filters.Seed = &seed
+			}
+		}
+		if filters.Seed == nil {
+			// Default seed if none provided — based on current minute to vary slightly.
+			s := int(time.Now().Unix() % 1000000)
+			filters.Seed = &s
+		}
+	}
+	if w := c.Query("wishlist"); w == "true" {
+		v := true
+		filters.Wishlist = &v
+	} else if w == "false" {
+		v := false
+		filters.Wishlist = &v
+	}
+	circulation, commemorative, classification := c.Query("circulation"), c.Query("commemorative"), strings.TrimSpace(c.Query("classification"))
+	if (circulation != "" && circulation != "current" && circulation != "demonetized") || (commemorative != "" && commemorative != "true" && commemorative != "false") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "circulation must be 'current' or 'demonetized', commemorative 'true' or 'false'"})
+		return repository.CoinListFilters{}, false
+	}
+	if (circulation != "" || commemorative != "" || classification != "") && h.circulation != nil {
+		sorted, err := h.circulation.Classify(userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch coins"})
+			return repository.CoinListFilters{}, false
+		}
+		switch circulation {
+		case "current":
+			filters.IDs = sorted.Current
+		case "demonetized":
+			filters.IDs = sorted.Demonetized
+		}
+		switch commemorative {
+		case "true":
+			filters.IDs = intersectIDs(filters.IDs, sorted.Commemorative)
+		case "false":
+			filters.IDs = intersectIDs(filters.IDs, sorted.Regular)
+		}
+		if classification != "" {
+			filters.IDs = intersectIDs(filters.IDs, sorted.ClassificationCoins(classification))
+		}
+	}
+	if c.Query("extinct") == "true" {
+		countries, err := h.repo.DistinctCountries(userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch coins"})
+			return repository.CoinListFilters{}, false
+		}
+		filters.Countries = []string{}
+		for _, country := range countries {
+			if services.IsExtinctCountry(country) {
+				filters.Countries = append(filters.Countries, country)
+			}
+		}
+	}
+	if s := c.Query("set"); s != "" {
+		if setID, err := strconv.ParseUint(s, 10, strconv.IntSize); err == nil {
+			v := uint(setID)
+			filters.SetID = &v
+		}
+	}
+
+	return filters, true
+}
+
 // List returns a paginated list of coins for the authenticated user.
 //
 // The "total" field in the response reflects the total number of coins matching
@@ -257,117 +374,11 @@ func (h *CoinHandler) List(c *gin.Context) {
 		return
 	}
 
-	// Validate sort field against allowlist (defense-in-depth against SQL injection)
-	sortField := c.DefaultQuery("sort", "updated_at")
-	if !allowedListSortFields[sortField] {
-		allowed := make([]string, 0, len(allowedListSortFields))
-		for k := range allowedListSortFields {
-			allowed = append(allowed, k)
-		}
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": fmt.Sprintf("sort must be one of: %s", strings.Join(allowed, ", ")),
-		})
-		return
-	}
-
-	// Validate sort order
-	sortOrder := c.DefaultQuery("order", "desc")
-	if sortOrder != "asc" && sortOrder != "desc" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "order must be 'asc' or 'desc'"})
-		return
-	}
-
-	kind, ok := coinKindQuery(c)
+	filters, ok := h.listFilters(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "kind must be 'coin' or 'banknote'"})
 		return
 	}
-	filters := repository.CoinListFilters{
-		Kind:         kind,
-		Category:     c.Query("category"),
-		Era:          c.Query("era"),
-		Country:      models.NormalizeCoinCountry(c.Query("country")),
-		Denomination: c.Query("denomination"),
-		Presentation: strings.TrimSpace(c.Query("presentation")),
-		Repeated:     c.Query("repeated") == "true",
-		Rarity:       strings.TrimSpace(c.Query("rarity")),
-		Search:       c.Query("search"),
-		SortField:    sortField,
-		SortOrder:    sortOrder,
-		Page:         page,
-		Limit:        limit,
-	}
-	if !models.ValidCoinPresentation(filters.Presentation) || !models.ValidCoinRarity(filters.Rarity) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Unknown presentation or rarity"})
-		return
-	}
-	// Parse optional seed for deterministic random sort.
-	// Use strconv.Atoi to ensure it's a real integer (defense against SQL injection).
-	if sortField == "random" {
-		if seedStr := c.Query("seed"); seedStr != "" {
-			if seed, err := strconv.Atoi(seedStr); err == nil {
-				filters.Seed = &seed
-			}
-		}
-		if filters.Seed == nil {
-			// Default seed if none provided — based on current minute to vary slightly.
-			s := int(time.Now().Unix() % 1000000)
-			filters.Seed = &s
-		}
-	}
-	if w := c.Query("wishlist"); w == "true" {
-		v := true
-		filters.Wishlist = &v
-	} else if w == "false" {
-		v := false
-		filters.Wishlist = &v
-	}
-	circulation, commemorative, classification := c.Query("circulation"), c.Query("commemorative"), strings.TrimSpace(c.Query("classification"))
-	if (circulation != "" && circulation != "current" && circulation != "demonetized") || (commemorative != "" && commemorative != "true" && commemorative != "false") {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "circulation must be 'current' or 'demonetized', commemorative 'true' or 'false'"})
-		return
-	}
-	if (circulation != "" || commemorative != "" || classification != "") && h.circulation != nil {
-		sorted, err := h.circulation.Classify(userID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch coins"})
-			return
-		}
-		switch circulation {
-		case "current":
-			filters.IDs = sorted.Current
-		case "demonetized":
-			filters.IDs = sorted.Demonetized
-		}
-		switch commemorative {
-		case "true":
-			filters.IDs = intersectIDs(filters.IDs, sorted.Commemorative)
-		case "false":
-			filters.IDs = intersectIDs(filters.IDs, sorted.Regular)
-		}
-		if classification != "" {
-			filters.IDs = intersectIDs(filters.IDs, sorted.ClassificationCoins(classification))
-		}
-	}
-	if c.Query("extinct") == "true" {
-		countries, err := h.repo.DistinctCountries(userID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch coins"})
-			return
-		}
-		filters.Countries = []string{}
-		for _, country := range countries {
-			if services.IsExtinctCountry(country) {
-				filters.Countries = append(filters.Countries, country)
-			}
-		}
-	}
-	if s := c.Query("set"); s != "" {
-		if setID, err := strconv.ParseUint(s, 10, strconv.IntSize); err == nil {
-			v := uint(setID)
-			filters.SetID = &v
-		}
-	}
+	filters.Page, filters.Limit = page, limit
 
 	coins, total, err := h.repo.List(userID, filters)
 	if err != nil {
@@ -754,15 +765,16 @@ func (h *CoinHandler) Stats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"totalCoins":    stats.TotalCoins,
-		"totalWishlist": stats.TotalWishlist,
-		"byCategory":    stats.ByCategory,
-		"byMaterial":    stats.ByMaterial,
-		"byGrade":       stats.ByGrade,
-		"byEra":         stats.ByEra,
-		"byRuler":       stats.ByRuler,
-		"byPriceRange":  stats.ByPriceRange,
-		"values":        stats.Values,
+		"totalCoins":       stats.TotalCoins,
+		"totalWishlist":    stats.TotalWishlist,
+		"byCategory":       stats.ByCategory,
+		"byMaterial":       stats.ByMaterial,
+		"byGrade":          stats.ByGrade,
+		"byEra":            stats.ByEra,
+		"byMonetarySystem": stats.ByMonetarySystem,
+		"byRuler":          stats.ByRuler,
+		"byPriceRange":     stats.ByPriceRange,
+		"values":           stats.Values,
 	})
 }
 
@@ -792,7 +804,7 @@ func (h *CoinHandler) Distribution(c *gin.Context) {
 //	@Description	Returns distinct values for the specified field, optionally filtered by a search query. Limited to 20 results.
 //	@Tags			Coins
 //	@Produce		json
-//	@Param			field	query		string	true	"Field to get suggestions for"	Enums(name, denomination, purchaseLocation)
+//	@Param			field	query		string	true	"Field to get suggestions for"	Enums(name, denomination, ruler, era, purchaseLocation, country, monetarySystem)
 //	@Param			q		query		string	false	"Search filter"
 //	@Success		200		{array}		string
 //	@Failure		400		{object}	ErrorResponse
@@ -818,6 +830,8 @@ func (h *CoinHandler) Suggestions(c *gin.Context) {
 		column = "purchase_location"
 	case "country":
 		column = "country"
+	case "monetarySystem":
+		column = "monetary_system"
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid field"})
 		return

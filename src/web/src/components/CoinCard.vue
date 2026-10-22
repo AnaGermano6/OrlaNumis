@@ -52,14 +52,16 @@
         <p v-if="cardInscription" class="overflow-hidden text-chip italic text-text-secondary [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:1]">{{ cardInscription }}</p>
         <div class="flex flex-wrap gap-2">
           <span
-            v-if="coin.category"
+            v-if="badge"
             class="badge"
+            :title="coin.monetarySystem?.trim() || undefined"
             :style="{
-              backgroundColor: colorForLabelBackground(coin.category),
-              color: colorForLabel(coin.category),
-              border: `1px solid ${colorForLabelBackground(coin.category, 30)}`,
+              backgroundColor: colorForLabelBackground(badge.color),
+              color: colorForLabel(badge.color),
+              border: `1px solid ${colorForLabelBackground(badge.color, 30)}`,
             }"
-          >{{ categoryLabel(coin.category) }}</span>
+            data-testid="coin-card-badge"
+          >{{ badge.label }}</span>
           <span v-if="coin.denomination" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary [@media(display-mode:standalone)]:px-3 [@media(display-mode:standalone)]:py-1 [@media(display-mode:standalone)]:text-body">{{ coin.denomination }}</span>
           <span v-if="coin.material" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary [@media(display-mode:standalone)]:px-3 [@media(display-mode:standalone)]:py-1 [@media(display-mode:standalone)]:text-body">{{ materialLabel(coin.material) }}</span>
         </div>
@@ -99,6 +101,7 @@ import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import { t } from '@/i18n'
 import { categoryLabel } from '@/i18n/coinVocabulary'
+import { monetarySystemShortName } from '@/utils/coinAttributes'
 
 const router = useRouter()
 
@@ -128,6 +131,13 @@ function handleClick() {
     router.push(`/coin/${props.coin.id}`)
   }
 }
+
+// The coin's monetary system, without its dates ("Escudo"), or else its category.
+const badge = computed(() => {
+  const system = props.coin.monetarySystem?.trim()
+  if (system) return { label: monetarySystemShortName(system), color: monetarySystemShortName(system) }
+  return props.coin.category ? { label: categoryLabel(props.coin.category), color: props.coin.category } : null
+})
 
 const primaryImage = computed(() => {
   if (props.imageSide) {

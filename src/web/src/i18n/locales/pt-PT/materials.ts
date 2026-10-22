@@ -6,6 +6,18 @@ const messages: Messages['materials'] = {
   bronze: 'Bronze',
   copper: 'Cobre',
   electrum: 'Eletro',
+  billon: 'Bilhão',
+  aluminiumBronze: 'Bronze-alumínio',
+  brass: 'Latão',
+  nickelBrass: 'Latão de níquel',
+  nordicGold: 'Ouro nórdico',
+  copperNickel: 'Cuproníquel',
+  nickel: 'Níquel',
+  bimetallic: 'Bimetálica',
+  aluminium: 'Alumínio',
+  zinc: 'Zinco',
+  stainlessSteel: 'Aço inoxidável',
+  platedSteel: 'Aço revestido',
   other: 'Outro',
 }
 

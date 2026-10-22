@@ -5,7 +5,6 @@ import SetsPage from '@/pages/SetsPage.vue'
 const mockGetSets = vi.fn()
 const mockCreateSetApi = vi.fn()
 const mockCreateSetFromCsv = vi.fn()
-const mockCreateSetBuilderRun = vi.fn()
 const mockShowAlert = vi.fn()
 const mockPush = vi.fn()
 
@@ -14,16 +13,9 @@ vi.mock('@/api/client', () => ({
     const err = error as { response?: { data?: { error?: string } } }
     return err.response?.data?.error ?? ''
   },
-  formatSetBuilderError: (error: unknown) => {
-    const err = error as { response?: { data?: { error?: string } } }
-    const message = err.response?.data?.error ?? ''
-    if (/max_slots/i.test(message)) return 'The set-builder request exceeded the workflow slot limit.'
-    return message
-  },
   getSets: (...args: unknown[]) => mockGetSets(...args),
   createSet: (...args: unknown[]) => mockCreateSetApi(...args),
   createSetFromCsv: (...args: unknown[]) => mockCreateSetFromCsv(...args),
-  createSetBuilderRun: (...args: unknown[]) => mockCreateSetBuilderRun(...args),
   getJointIssues: () => Promise.resolve({ data: { issues: [] } }),
 }))
 
@@ -89,65 +81,19 @@ describe('SetsPage', () => {
     expect(wrapper.find('.card').exists()).toBe(false)
   })
 
-  it('submits an agentic set builder run instead of creating a set locally, then shows a confirmation dialog', async () => {
-    mockCreateSetBuilderRun.mockResolvedValue({ data: { run: { id: 1, status: 'queued' } } })
+  it('shows the server error when a set cannot be created', async () => {
+    mockCreateSetApi.mockRejectedValue({ response: { data: { error: 'Name is required' } } })
     const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
     await flushPromises()
 
     await wrapper.find('.btn-primary').trigger('click')
     await flushPromises()
-
-    await wrapper.get('[data-testid="set-path-agentic"]').trigger('click')
-    await wrapper.find('#agenticPrompt').setValue('All US silver quarters from 1940s to 1960s')
+    await wrapper.get('[data-testid="set-path-manual"]').trigger('click')
     await wrapper.find('#setName').setValue('Silver Quarters')
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(mockCreateSetBuilderRun).toHaveBeenCalledWith({ prompt: 'All US silver quarters from 1940s to 1960s' })
-    expect(mockCreateSetApi).not.toHaveBeenCalled()
-    expect(mockCreateSetFromCsv).not.toHaveBeenCalled()
+    expect(mockShowAlert).toHaveBeenCalledWith('Name is required', { title: 'Failed to Create Set' })
     expect(mockPush).not.toHaveBeenCalled()
-    expect(mockShowAlert).toHaveBeenCalledWith(
-      expect.stringContaining('run #1'),
-      expect.objectContaining({ title: 'Proposal Request Submitted' }),
-    )
-    expect(wrapper.find('.card').exists()).toBe(false)
-  })
-
-  it('shows a dialog with the server error when the agentic run request fails', async () => {
-    mockCreateSetBuilderRun.mockRejectedValue({ response: { data: { error: 'Prompt is required' } } })
-    const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
-    await flushPromises()
-
-    await wrapper.find('.btn-primary').trigger('click')
-    await flushPromises()
-
-    await wrapper.get('[data-testid="set-path-agentic"]').trigger('click')
-    await wrapper.find('#agenticPrompt').setValue('All US silver quarters')
-    await wrapper.find('#setName').setValue('Silver Quarters')
-    await wrapper.find('form').trigger('submit.prevent')
-    await flushPromises()
-
-    expect(mockShowAlert).toHaveBeenCalledWith('Prompt is required', { title: 'Failed to Submit Proposal Request' })
-  })
-
-  it('shows actionable slot-limit guidance when an agentic run request is rejected', async () => {
-    mockCreateSetBuilderRun.mockRejectedValue({ response: { data: { error: 'max_slots 500 is greater than 300' } } })
-    const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
-    await flushPromises()
-
-    await wrapper.find('.btn-primary').trigger('click')
-    await flushPromises()
-
-    await wrapper.get('[data-testid="set-path-agentic"]').trigger('click')
-    await wrapper.find('#agenticPrompt').setValue('US wheat pennies across mints Denver, Philly, and San Fran from 1909 to 1930')
-    await wrapper.find('#setName').setValue('Wheat Pennies')
-    await wrapper.find('form').trigger('submit.prevent')
-    await flushPromises()
-
-    expect(mockShowAlert).toHaveBeenCalledWith(
-      'The set-builder request exceeded the workflow slot limit.',
-      { title: 'Failed to Submit Proposal Request' },
-    )
   })
 })

@@ -23,6 +23,9 @@
         <AppIconButton to="/wishlist/availability-runs" :title="t('wishlist.runHistory')">
           <History :size="20" />
         </AppIconButton>
+        <AppIconButton :title="t('wishlist.share')" data-testid="wishlist-share" @click="showShareList = true">
+          <Share2 :size="20" />
+        </AppIconButton>
         <AppIconButton :title="t('wishlist.addTo')" @click="showAddDialog = true">
           <CirclePlus :size="20" />
         </AppIconButton>
@@ -62,6 +65,15 @@
           <button
             type="button"
             class="pwa-icon-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
+            :title="t('wishlist.share')"
+            :aria-label="t('wishlist.share')"
+            @click="showShareList = true"
+          >
+            <Share2 :size="22" />
+          </button>
+          <button
+            type="button"
+            class="pwa-icon-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
             :title="t('wishlist.addTo')"
             :aria-label="t('wishlist.addTo')"
             @click="showAddDialog = true"
@@ -76,6 +88,9 @@
           <router-link v-if="store.coins.length" to="/wishlist/search-alerts" class="btn btn-secondary">
             <CalendarClock :size="16" /> {{ t('wishlist.searchAlerts') }}
           </router-link>
+          <button type="button" class="btn btn-secondary" @click="showShareList = true">
+            <Share2 :size="16" /> {{ t('wishlist.share') }}
+          </button>
           <router-link to="/wishlist/availability-runs" class="btn btn-secondary">
             <History :size="16" /> {{ t('wishlist.runHistory') }}
           </router-link>
@@ -207,6 +222,7 @@
     </div>
 
     <CoinSearchChat v-if="showChat" @close="showChat = false" @added="loadCoins" />
+    <ShareListDialog :open="showShareList" initial-list="wishlist" @close="showShareList = false" />
   </div>
 </template>
 
@@ -217,18 +233,25 @@ import CoinCard from '@/components/CoinCard.vue'
 import CoinSearchChat from '@/components/CoinSearchChat.vue'
 import PurchaseModal from '@/components/PurchaseModal.vue'
 import WishlistURLIntake from '@/components/wishlist/WishlistURLIntake.vue'
+import ShareListDialog from '@/components/collection/ShareListDialog.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { purchaseCoin, checkWishlistAvailability, updateListingStatus } from '@/api/client'
 import type { Coin, AvailabilityRunSummary } from '@/types'
-import { CirclePlus, Bot, ShieldCheck, CalendarClock, History, ChevronLeft, Link, ScanLine, X } from 'lucide-vue-next'
+import { CirclePlus, Bot, ShieldCheck, CalendarClock, History, ChevronLeft, Link, ScanLine, Share2, X } from 'lucide-vue-next'
 import { usePwa } from '@/composables/usePwa'
+import { rememberBrowseSequence } from '@/utils/browseSequence'
 import { t } from '@/i18n'
 
 const store = useCoinsStore()
+// A wished coin's page goes to the previous and the next one in this order.
+watch(() => store.coins, (coins) => {
+  rememberBrowseSequence('wishlist', coins.filter((coin) => coin.isWishlist).map((coin) => coin.id))
+}, { immediate: true })
 const { isPwa } = usePwa()
 const showChat = ref(false)
 const showAddDialog = ref(false)
+const showShareList = ref(false)
 const addMethod = ref<'url' | null>(null)
 const addDialog = ref<HTMLElement | null>(null)
 const purchaseTarget = ref<Coin | null>(null)

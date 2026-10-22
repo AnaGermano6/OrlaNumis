@@ -82,3 +82,22 @@ func TestCoinCirculationFacts(t *testing.T) {
 		t.Error("an unknown circulation is not valid")
 	}
 }
+
+func TestMonetarySystemFromNumista(t *testing.T) {
+	cases := []struct{ name, fullName, want string }{
+		{"Escudo", "Escudo (1911-2001)", "Escudo (1911-2001)"},
+		{"Real", "Real (decimalizado, 1835-1910)", "Real (decimalizado, 1835-1910)"},
+		{"Real", "Real (1994-hoje)", "Real (1994-hoje)"},
+		{"Euro", "Euro (2002-hoje)", "Euro"},
+		{"Euro", "Euro (2023-hoje)", "Euro"},
+		{" euro ", "", "Euro"},
+		{"Peseta", "", "Peseta"},
+		{"Libra  esterlina", " Libra esterlina  (decimalizada, 1971-hoje) ", "Libra esterlina (decimalizada, 1971-hoje)"},
+		{"", "", ""},
+	}
+	for _, tc := range cases {
+		if got := MonetarySystemFromNumista(tc.name, tc.fullName); got != tc.want {
+			t.Errorf("MonetarySystemFromNumista(%q, %q) = %q, want %q", tc.name, tc.fullName, got, tc.want)
+		}
+	}
+}

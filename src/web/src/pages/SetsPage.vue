@@ -85,7 +85,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { BookOpenCheck, ChevronRight, CirclePlus, Layers3, Plus, X } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
-import { formatSetBuilderError, getApiErrorMessage, getSets, createSet as createSetApi, createSetFromCsv, createSetBuilderRun } from '@/api/client'
+import { getApiErrorMessage, getSets, createSet as createSetApi, createSetFromCsv } from '@/api/client'
 import type { CoinSetSummary, CreateCoinSetRequest } from '@/types'
 import SetDashboardCard from '@/components/sets/SetDashboardCard.vue'
 import SetCreationWizard from '@/components/sets/SetCreationWizard.vue'
@@ -139,16 +139,6 @@ function openCreateModal() {
 
 async function createSet(value: CreateCoinSetRequest, csv?: string) {
   try {
-    if (value.setType === 'agentic') {
-      const res = await createSetBuilderRun({ prompt: value.agenticPrompt || value.name })
-      showCreateModal.value = false
-      resetNewSet()
-      await showAlert(
-        t('sets.list.proposalSubmitted', { id: res.data.run.id }),
-        { title: t('sets.list.proposalSubmittedTitle') },
-      )
-      return
-    }
     if (csv) {
       await createSetFromCsv({ ...value, csv })
     } else {
@@ -164,9 +154,7 @@ async function createSet(value: CreateCoinSetRequest, csv?: string) {
     await loadSets()
   } catch (error) {
     console.error('Failed to create set:', error)
-    const title = value.setType === 'agentic' ? t('sets.list.proposalFailedTitle') : t('sets.list.createFailedTitle')
-    const message = value.setType === 'agentic' ? formatSetBuilderError(error) : (getApiErrorMessage(error) || t('common.requestFailed'))
-    await showAlert(message, { title })
+    await showAlert(getApiErrorMessage(error) || t('common.requestFailed'), { title: t('sets.list.createFailedTitle') })
   }
 }
 

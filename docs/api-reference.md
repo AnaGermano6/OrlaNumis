@@ -54,6 +54,7 @@ and update the tables below from `docs/openapi.json`.
 | `GET` | `/coins` | List coins |
 | `POST` | `/coins` | Create a coin |
 | `POST` | `/coins/bulk` | Bulk coin action |
+| `GET` | `/coins/export` | Export coins as a spreadsheet |
 | `GET` | `/coins/countries` | List collection countries |
 | `POST` | `/coins/country-from-numista` | Fill coin countries from Numista |
 | `GET` | `/coins/denominations` | List collection face values |
@@ -61,8 +62,9 @@ and update the tables below from `docs/openapi.json`.
 | `POST` | `/coins/intake/draft` | Create coin intake draft |
 | `POST` | `/coins/lookup` | Coin lookup from images |
 | `POST` | `/coins/match-category-era` | Match a category/era candidate against known values |
-| `POST` | `/coins/official-photos/batch` | Add official images to coins without photos |
-| `GET` | `/coins/official-photos/missing` | Count coins without photos |
+| `GET` | `/coins/numista-fill` | Preview a fill of coin records from Numista |
+| `POST` | `/coins/numista-fill` | Fill coin records from Numista |
+| `POST` | `/coins/share-list` | Download a list to share |
 | `GET` | `/coins/statuses` | List coins by legal tender and commemorative status |
 | `GET` | `/coins/summary` | Get collection summary |
 | `GET` | `/coins/{id}` | Get a coin |
@@ -175,6 +177,7 @@ and update the tables below from `docs/openapi.json`.
 | `GET` | `/numista/catalog/issuers` | Search Numista issuers |
 | `GET` | `/numista/catalog/search` | Search the Numista coin catalogue |
 | `GET` | `/numista/catalog/types/{id}` | Get a Numista coin type |
+| `GET` | `/numista/catalog/types/{id}/issues` | List a Numista type's issues |
 | `GET` | `/numista/catalog/types/{id}/market-value` | Get a Numista type's market value |
 | `POST` | `/numista/enrich` | Enrich and rerank Numista candidates |
 | `POST` | `/numista/lookup` | Run broad Numista lookup |
@@ -312,6 +315,8 @@ and update the tables below from `docs/openapi.json`.
 | `GET` | `/admin/health/summary` | Get admin collection health summary |
 | `GET` | `/admin/logs` | Get application logs |
 | `GET` | `/admin/numista/health` | Get Numista operational health |
+| `GET` | `/admin/numista-values` | Numista values batch status |
+| `POST` | `/admin/numista-values/run` | Run a Numista values batch now |
 | `GET` | `/admin/settings` | Get application settings |
 | `PUT` | `/admin/settings` | Update application settings |
 | `GET` | `/admin/settings/defaults` | Get setting defaults |

@@ -1,31 +1,32 @@
 package services
 
-const DefaultValuationPrompt = `You are an expert numismatist and coin appraiser. Estimate the current fair market value of a coin.
+const DefaultValuationPrompt = `És um numismata e avaliador de moedas e notas de banco. Estima o valor de mercado atual, justo, de uma peça de uma coleção portuguesa.
 
-Instructions:
-1. Search for CURRENT listings and RECENT sales of comparable coins.
-2. Focus on coins with similar denomination, ruler, era, material, and grade.
-3. Check sources: VCoins, MA-Shops, CNG, Heritage Auctions, Biddr, ForumAncientCoins.
-4. Consider grade/condition when comparing.
+Instruções:
+1. Procura anúncios ATUAIS e vendas RECENTES de peças comparáveis: o mesmo país, valor facial, ano (e marca da casa da moeda), estado e apresentação (solta, coincard, cápsula ou estojo proof).
+2. Fontes a privilegiar: a estimativa de preços do Numista, MA-Shops, Catawiki, eBay (vendas concluídas), Sixbid e NumisBids, e leiloeiras e lojas numismáticas portuguesas e europeias.
+3. As moedas de euro de circulação comuns valem muitas vezes só o valor facial: não as sobrevalorizes. As comemorativas de 2 €, as moedas de coleção, as tiragens baixas, os coincards e os proofs valem acima do valor facial.
+4. Numa nota de banco, tem em conta o estado, a série e se é uma nota de substituição ou um espécime.
+5. Pondera o estado indicado (UNC, AU, XF, VF, F, VG ou G, ou BNC ou Proof) ao comparar.
 
-CRITICAL: Return your response as ONLY a JSON object (wrapped in ` + "```json" + ` and ` + "```" + ` markers) with NO other text before or after:
-- estimatedValue: number (USD, single number not a range)
-- confidence: "high" (3+ comparables), "medium" (1-2), or "low" (general knowledge)
-- reasoning: string (2-3 SHORT sentences only — what you found and how you arrived at the estimate)
-- changeExplanation: string (one concise sentence explaining why the value increased or decreased versus the provided previous value; use "" when no previous value is provided or value is unchanged)
-- comparables: array of { "source": "dealer name", "price": "$X", "url": "listing URL" }
+CRÍTICO: devolve a resposta APENAS como um objeto JSON (entre os marcadores ` + "```json" + ` e ` + "```" + `), sem nenhum texto antes ou depois:
+- estimatedValue: número (na moeda pedida; se nenhuma for indicada, em USD; um só número, não um intervalo)
+- confidence: "high" (3 ou mais comparáveis), "medium" (1 ou 2) ou "low" (conhecimento geral)
+- reasoning: texto em português europeu (2 ou 3 frases CURTAS: o que encontraste e como chegaste à estimativa)
+- changeExplanation: texto em português europeu (uma frase a explicar porque o valor subiu ou desceu face ao valor anterior indicado; "" quando não houver valor anterior ou o valor não mudar)
+- comparables: lista de { "source": "nome do vendedor", "price": "preço", "url": "URL do anúncio" }
 
 ` + "```json" + `
 {
-  "estimatedValue": 275,
+  "estimatedValue": 12.5,
   "confidence": "high",
-  "reasoning": "Found 4 comparable Augustus denarii in VF condition listed at $250-300. Grade and strike quality place this coin at mid-range.",
-  "changeExplanation": "The value increased because recent comparable VF examples are closing above the prior estimate.",
+  "reasoning": "Encontrei 4 exemplares da moeda de 2 € de Portugal de 2007 em BNC, em coincard, entre 10 € e 15 €. O estado e a apresentação colocam-na a meio desse intervalo.",
+  "changeExplanation": "O valor subiu porque as vendas recentes de exemplares em coincard ficaram acima da estimativa anterior.",
   "comparables": [
-    { "source": "VCoins - Example Dealer", "price": "$285", "url": "https://www.vcoins.com/..." },
-    { "source": "MA-Shops", "price": "$250", "url": "https://www.ma-shops.com/..." }
+    { "source": "MA-Shops - Exemplo", "price": "13,00 €", "url": "https://www.ma-shops.com/..." },
+    { "source": "Catawiki", "price": "11,00 €", "url": "https://www.catawiki.com/..." }
   ]
 }
 ` + "```" + `
 
-Only include real listings from your search. Do not fabricate URLs or prices. Do not write any text outside the JSON block.`
+Inclui apenas anúncios reais encontrados na pesquisa. Não inventes URLs nem preços. Não escrevas texto fora do bloco JSON.`

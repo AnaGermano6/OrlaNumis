@@ -7,6 +7,9 @@ const (
 	ValueHistorySourceManual      = "manual"
 	ValueHistorySourceAIScheduled = "ai_scheduled"
 	ValueHistorySourceAIEstimate  = "ai_estimate"
+	// ValueHistorySourceNumista is a value from Numista's estimated price for
+	// the coin's grade, set by the daily batches.
+	ValueHistorySourceNumista = "numista"
 )
 
 type CoinValueHistory struct {
@@ -15,7 +18,7 @@ type CoinValueHistory struct {
 	UserID     uint    `gorm:"not null;index" json:"userId"`
 	Value      float64 `gorm:"not null" json:"value"`
 	Confidence string  `gorm:"type:varchar(20);not null" json:"confidence"`
-	// Source identifies the origin of this value entry: manual, ai_scheduled, or ai_estimate.
+	// Source identifies the origin of this value entry: manual, ai_scheduled, ai_estimate or numista.
 	// Legacy rows with no source default to 'manual' via backfill in database.go.
 	Source     string    `gorm:"type:varchar(20);not null;default:'manual'" json:"source"`
 	RecordedAt time.Time `gorm:"not null;index" json:"recordedAt"`

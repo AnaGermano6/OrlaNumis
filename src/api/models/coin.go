@@ -11,6 +11,21 @@ const (
 	MaterialCopper   Material = "Copper"
 	MaterialElectrum Material = "Electrum"
 	MaterialOther    Material = "Other"
+	// Metals of modern coins. A plated or clad coin counts by its core
+	// (copper plated steel is plated steel, silver plated copper is copper);
+	// a bimetallic coin, by being bimetallic.
+	MaterialBillon          Material = "Billon"
+	MaterialCopperNickel    Material = "Copper-nickel"
+	MaterialNickelBrass     Material = "Nickel brass"
+	MaterialNordicGold      Material = "Nordic gold"
+	MaterialAluminiumBronze Material = "Aluminium bronze"
+	MaterialBrass           Material = "Brass"
+	MaterialNickel          Material = "Nickel"
+	MaterialAluminium       Material = "Aluminium"
+	MaterialZinc            Material = "Zinc"
+	MaterialStainlessSteel  Material = "Stainless steel"
+	MaterialPlatedSteel     Material = "Plated steel"
+	MaterialBimetallic      Material = "Bimetallic"
 )
 
 type Category string
@@ -51,6 +66,10 @@ type Coin struct {
 	Year *int `gorm:"index" json:"year"`
 	// Country is the issuing country or authority (e.g. from the Numista issuer).
 	Country string `gorm:"type:varchar(120);index" json:"country" binding:"max=120"`
+	// MonetarySystem is the currency system the coin belongs to, as Numista
+	// names it ("Escudo (1911-2001)", "Real (decimalizado, 1835-1910)"); every
+	// euro coin, whatever its country, is "Euro".
+	MonetarySystem string `gorm:"type:varchar(120);default:'';index" json:"monetarySystem" binding:"max=120"`
 	// Quantity is how many of this coin or note the collector has (1 or more).
 	Quantity int `gorm:"not null;default:1" json:"quantity" minimum:"1" maximum:"9999"`
 	// Presentation is how the coin is kept or was issued (see CoinPresentations).
@@ -71,7 +90,9 @@ type Coin struct {
 	// Banknote details (see Kind): the series or issue ("Chapa 13"), the
 	// note's own serial number, its signatories, printer, size, watermark,
 	// whether it is a replacement or specimen note, and a grading company's
-	// grade ("PMG 66 EPQ") with its certificate.
+	// grade ("PMG 66 EPQ") with its certificate. NumistaIssueID is the issue of
+	// the linked Numista type the item is (a banknote's printed date and
+	// signatures), 0 when none was chosen; its market value is that issue's.
 	Series                 string          `gorm:"type:varchar(200);default:''" json:"series" binding:"max=200"`
 	SerialNumber           string          `gorm:"type:varchar(100);default:''" json:"serialNumber" binding:"max=100"`
 	Signatures             string          `gorm:"type:varchar(300);default:''" json:"signatures" binding:"max=300"`
@@ -82,6 +103,7 @@ type Coin struct {
 	NoteVariant            string          `gorm:"type:varchar(20);default:''" json:"noteVariant" enums:",replacement,specimen"`
 	CertifiedGrade         string          `gorm:"type:varchar(60);default:''" json:"certifiedGrade" binding:"max=60"`
 	CertificationNumber    string          `gorm:"type:varchar(60);default:''" json:"certificationNumber" binding:"max=60"`
+	NumistaIssueID         int             `gorm:"default:0" json:"numistaIssueId"`
 	ObverseInscription     string          `json:"obverseInscription" binding:"max=1000"`
 	ReverseInscription     string          `json:"reverseInscription" binding:"max=1000"`
 	ObverseDescription     string          `json:"obverseDescription" binding:"max=2000"`

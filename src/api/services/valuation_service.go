@@ -61,8 +61,19 @@ func NewValuationService(
 // valuation; amounts are in the collection currency.
 func BuildCoinDescription(coin *models.Coin, currency string) string {
 	var parts []string
+	if coin.Kind == models.CoinKindBanknote {
+		parts = append(parts, "Item: banknote")
+	}
 	if coin.Name != "" {
 		parts = append(parts, fmt.Sprintf("Name: %s", coin.Name))
+	}
+	if coin.Country != "" {
+		parts = append(parts, fmt.Sprintf("Country: %s", coin.Country))
+	}
+	if coin.Year != nil {
+		parts = append(parts, fmt.Sprintf("Year: %d", *coin.Year))
+	} else if coin.DateRange != "" {
+		parts = append(parts, fmt.Sprintf("Date: %s", coin.DateRange))
 	}
 	if coin.Category != "" && coin.Category != "Other" {
 		parts = append(parts, fmt.Sprintf("Category: %s", string(coin.Category)))
@@ -82,6 +93,10 @@ func BuildCoinDescription(coin *models.Coin, currency string) string {
 	if coin.Grade != "" {
 		parts = append(parts, fmt.Sprintf("Grade/Condition: %s", coin.Grade))
 	}
+	// A coin card or a proof case changes a modern coin's price.
+	if coin.Presentation != "" {
+		parts = append(parts, fmt.Sprintf("Presentation: %s", coin.Presentation))
+	}
 	if coin.WeightGrams != nil {
 		parts = append(parts, fmt.Sprintf("Weight: %.2fg", *coin.WeightGrams))
 	}
@@ -89,7 +104,7 @@ func BuildCoinDescription(coin *models.Coin, currency string) string {
 		parts = append(parts, fmt.Sprintf("Diameter: %.1fmm", *coin.DiameterMm))
 	}
 	if coin.RarityRating != "" {
-		parts = append(parts, fmt.Sprintf("Rarity/RIC: %s", coin.RarityRating))
+		parts = append(parts, fmt.Sprintf("Rarity rating: %s", coin.RarityRating))
 	}
 	if coin.Mint != "" {
 		parts = append(parts, fmt.Sprintf("Mint: %s", coin.Mint))

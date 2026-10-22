@@ -4,10 +4,13 @@
     <div class="grid gap-3 sm:grid-cols-2">
       <div class="form-group m-0">
         <label for="filterCountry" class="form-label mb-1 block">{{ t('sets.filters.country') }}</label>
-        <select id="filterCountry" class="form-input w-full" :value="modelValue.country" @change="update({ country: ($event.target as HTMLSelectElement).value })">
-          <option value="">{{ t('sets.filters.any') }}</option>
-          <option v-for="country in countryOptions" :key="country" :value="country">{{ withCountryFlag(country) }}</option>
-        </select>
+        <CountrySelect
+          id="filterCountry"
+          :model-value="modelValue.country"
+          :options="countryChoices"
+          :label="t('sets.filters.country')"
+          @update:model-value="update({ country: $event })"
+        />
       </div>
       <div class="form-group m-0">
         <label for="filterDenomination" class="form-label mb-1 block">{{ t('sets.filters.denomination') }}</label>
@@ -92,10 +95,10 @@
 // offered as one types.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getCoinCountries, getSuggestions, previewSmartSet } from '@/api/client'
+import CountrySelect, { type CountrySelectOption } from '@/components/CountrySelect.vue'
 import type { SmartSetPreview } from '@/types'
 import { intlLocale, t } from '@/i18n'
 import { COIN_PRESENTATIONS, presentationLabel } from '@/utils/coinAttributes'
-import { withCountryFlag } from '@/utils/countryFlags'
 import { formatCurrency } from '@/utils/format'
 import { COIN_CLASSIFICATIONS, classificationLabel, filtersToCriteria, type CoinClassification, type SimpleSetFilters } from '@/utils/setFilters'
 
@@ -113,10 +116,15 @@ let previewTimer: ReturnType<typeof setTimeout> | undefined
 let suggestTimer: ReturnType<typeof setTimeout> | undefined
 let previewRequest = 0
 
-// The collection's countries; the one chosen stays even when not among them.
-const countryOptions = computed(() => {
+// The collection's countries, each with its flag (drawn ones too, as in the
+// galleries); the one chosen stays even when not among them.
+const countryChoices = computed((): CountrySelectOption[] => {
   const chosen = props.modelValue.country
-  return chosen && !countries.value.includes(chosen) ? [chosen, ...countries.value] : countries.value
+  const names = chosen && !countries.value.includes(chosen) ? [chosen, ...countries.value] : countries.value
+  return [
+    { value: '', label: t('sets.filters.any') },
+    ...names.map((name) => ({ value: name, label: name, country: name })),
+  ]
 })
 
 function update(change: Partial<SimpleSetFilters>) {

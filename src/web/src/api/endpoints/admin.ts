@@ -14,6 +14,7 @@ import type {
   LogEntry,
   MintLocation,
   NumistaHealthSummary,
+  NumistaValueStatus,
   SecurityEventFilters,
   SecurityEventsResponse,
   SecurityExposureCheck,
@@ -181,6 +182,11 @@ export const triggerValuation = () =>
 
 export const cancelValuationRun = (runId: number) =>
   api.post<{ message: string }>(`/admin/valuation-runs/${runId}/cancel`)
+
+// The daily batches of coin values from Numista's prices.
+export const getNumistaValuesStatus = () => api.get<NumistaValueStatus>('/admin/numista-values')
+
+export const runNumistaValuesNow = () => api.post<{ message: string }>('/admin/numista-values/run')
 
 /** Result of switching the collection currency. */
 export interface CollectionCurrencyChange {

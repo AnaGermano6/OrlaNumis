@@ -46,6 +46,18 @@
   --mat-bronze: #cd7f32;
   --mat-copper: #b87333;
   --mat-electrum: #e8d876;
+  --mat-billon: #a99f8c;
+  --mat-aluminium-bronze: #d8ac52;
+  --mat-brass: #c9a440;
+  --mat-nickel-brass: #d6bf6a;
+  --mat-nordic-gold: #e3c45c;
+  --mat-copper-nickel: #b9bec3;
+  --mat-nickel: #a7adb4;
+  --mat-bimetallic: #cbb889;
+  --mat-aluminium: #d3d7db;
+  --mat-zinc: #9aa3aa;
+  --mat-stainless-steel: #b2b8bd;
+  --mat-plated-steel: #b08d6c;
 
   /* Borders & shadows */
   --border-subtle: rgba(201, 168, 76, 0.15);

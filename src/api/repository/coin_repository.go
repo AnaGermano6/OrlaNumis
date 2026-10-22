@@ -74,6 +74,12 @@ type EraCount struct {
 	Count int64  `json:"count"`
 }
 
+// MonetarySystemCount is how many coins a monetary system has.
+type MonetarySystemCount struct {
+	MonetarySystem string `json:"monetarySystem"`
+	Count          int64  `json:"count"`
+}
+
 // RulerCount holds a ruler name and its coin count.
 type RulerCount struct {
 	Ruler string `json:"ruler"`
@@ -102,9 +108,11 @@ type CollectionStats struct {
 	ByMaterial    []MaterialCount `json:"byMaterial"`
 	ByGrade       []GradeCount    `json:"byGrade"`
 	ByEra         []EraCount      `json:"byEra"`
-	ByRuler       []RulerCount    `json:"byRuler"`
-	ByPriceRange  []PriceRange    `json:"byPriceRange"`
-	Values        ValueSummary    `json:"values"`
+	// ByMonetarySystem counts the coins of each monetary system, most first.
+	ByMonetarySystem []MonetarySystemCount `json:"byMonetarySystem"`
+	ByRuler          []RulerCount          `json:"byRuler"`
+	ByPriceRange     []PriceRange          `json:"byPriceRange"`
+	Values           ValueSummary          `json:"values"`
 }
 
 // DistributionCell holds a single cell in the era × category heat map.
@@ -416,6 +424,7 @@ func (r *CoinRepository) Duplicate(id uint, userID uint) (*models.Coin, error) {
 		HeightMm:              source.HeightMm,
 		Watermark:             source.Watermark,
 		NoteVariant:           source.NoteVariant,
+		NumistaIssueID:        source.NumistaIssueID,
 		CertifiedGrade:        source.CertifiedGrade,
 		Category:              source.Category,
 		Denomination:          source.Denomination,
@@ -642,6 +651,12 @@ func (r *CoinRepository) GetStats(userID uint) (*CollectionStats, error) {
 		Scan(&stats.ByEra)
 
 	r.db.Model(&models.Coin{}).
+		Select("monetary_system, count(*) as count").
+		Where("user_id = ? AND is_wishlist = ? AND monetary_system != ''", userID, false).
+		Group("monetary_system").Order("count DESC, monetary_system").
+		Scan(&stats.ByMonetarySystem)
+
+	r.db.Model(&models.Coin{}).
 		Select("ruler, count(*) as count").
 		Where("user_id = ? AND is_wishlist = ? AND ruler != ''", userID, false).
 		Group("ruler").Order("count DESC").Limit(10).
@@ -819,9 +834,51 @@ func (r *CoinRepository) FindMissingCountryWithNumista(userID, coinID uint, limi
 	return coins, total, err
 }
 
+// ShareListCoins lists, with their photos and references, a user's coins
+// and banknotes held more than once (to trade), or those on the wishlist.
+func (r *CoinRepository) ShareListCoins(userID uint, wishlist bool) ([]models.Coin, error) {
+	coins := []models.Coin{}
+	query := r.db.Scopes(OwnedBy(userID)).Where("is_wishlist = ?", wishlist)
+	if !wishlist {
+		query = query.Where("quantity > 1")
+	}
+	err := query.Preload("Images").Preload("References").Order("id").Find(&coins).Error
+	return coins, err
+}
+
 // UpdateCountry sets one coin's country.
 func (r *CoinRepository) UpdateCountry(coinID uint, country string) error {
 	return r.db.Model(&models.Coin{}).Where("id = ?", coinID).Update("country", country).Error
+}
+
+// FindNumistaLinkedCoins lists the user's coins and banknotes, collection
+// and wishlist, that have a Numista catalogue reference, with their
+// references, in id order.
+func (r *CoinRepository) FindNumistaLinkedCoins(userID uint) ([]models.Coin, error) {
+	var coins []models.Coin
+	err := r.db.Scopes(OwnedBy(userID)).
+		Where("id IN (SELECT coin_id FROM coin_references WHERE LOWER(TRIM(catalog)) = 'numista')").
+		Preload("References").Order("id").Find(&coins).Error
+	return coins, err
+}
+
+// UpdateCoinFields sets some fields of the user's coins, each coin's own
+// columns, all or none. Coins the user does not own are left alone.
+func (r *CoinRepository) UpdateCoinFields(userID uint, fields map[uint]map[string]any) error {
+	if len(fields) == 0 {
+		return nil
+	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		for coinID, columns := range fields {
+			if len(columns) == 0 {
+				continue
+			}
+			if err := tx.Model(&models.Coin{}).Scopes(OwnedByID(coinID, userID)).Updates(columns).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // CountryCount is how many coins the user has from one country.
@@ -840,29 +897,6 @@ func (r *CoinRepository) CountryCounts(userID uint, kind string) ([]CountryCount
 		Where("country IS NOT NULL AND country <> '' AND is_wishlist = ?", false).
 		Group("country").Order("country").Scan(&counts).Error
 	return counts, err
-}
-
-// withoutImages keeps the user's coins (not banknotes) with no image at all.
-func withoutImages(userID uint) func(*gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Scopes(OwnedBy(userID), OfKind(models.CoinKindCoin)).
-			Where("NOT EXISTS (SELECT 1 FROM coin_images WHERE coin_images.coin_id = coins.id)")
-	}
-}
-
-// CountWithoutImages counts the user's coins (not banknotes) with no image.
-func (r *CoinRepository) CountWithoutImages(userID uint) (int64, error) {
-	var count int64
-	err := r.db.Model(&models.Coin{}).Scopes(withoutImages(userID)).Count(&count).Error
-	return count, err
-}
-
-// IDsWithoutImages lists, in order, up to limit of those coins after afterID.
-func (r *CoinRepository) IDsWithoutImages(userID, afterID uint, limit int) ([]uint, error) {
-	var ids []uint
-	err := r.db.Model(&models.Coin{}).Scopes(withoutImages(userID)).
-		Where("coins.id > ?", afterID).Order("coins.id").Limit(limit).Pluck("coins.id", &ids).Error
-	return ids, err
 }
 
 // DenominationCount is a face value of the collection and how many coins have it.

@@ -163,7 +163,16 @@ export default {
       aiScheduled: 'AI Scheduled',
       aiEstimate: 'AI Estimate',
       manual: 'Manual',
+      numista: 'Numista price',
     },
+  },
+  browse: {
+    label: 'Previous and next',
+    position: '{position} of {total}',
+    previousCoin: 'Previous coin',
+    nextCoin: 'Next coin',
+    previousBanknote: 'Previous banknote',
+    nextBanknote: 'Next banknote',
   },
   numista: {
     added: 'Numista reference added.',

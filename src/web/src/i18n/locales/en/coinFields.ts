@@ -29,6 +29,7 @@ export default {
   coinType: 'Coin type',
   rarityRating: 'Rarity Rating',
   country: 'Country',
+  monetarySystem: 'Monetary system',
   presentation: 'Presentation',
   rarity: 'Rarity',
   circulation: 'Circulation',

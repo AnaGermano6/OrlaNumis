@@ -6,9 +6,9 @@
 
 The collection has three views:
 
-- **Collection overview** (`/collection`) — totals, the releases (each added to the collection with its Numista details, see [Numista Catalog Lookup](numista-integration.md#new-coins-from-the-releases)), the duplicates to trade (**Show in the gallery** opens the coin gallery, or the banknotes, with only them)
+- **Collection overview** (`/collection`) — totals, the releases (each added to the collection with its Numista details, see [Numista Catalog Lookup](numista-integration.md#new-coins-from-the-releases)), the duplicates to trade (**Show in the gallery** opens the coin gallery, or the banknotes, with only them; **Share list** makes a file of them for other collectors, see [Sharing the Lists](wish-list.md#sharing-the-lists))
 - **Coin gallery** (`/`) — every collection coin, with search, filters, grouping and select mode
-- **Banknote gallery** (`/banknotes`) — the same for banknotes, in groups: **View by** country (each with its flag), year or rarity, with how many in each; search, sort, country, **Banknote type** (as Numista classifies it, when it says) and grid or list. The list has no presentation column
+- **Banknote gallery** (`/banknotes`) — the same for banknotes: **View by** **All banknotes** (one list, without groups, in the order chosen), or in groups by country (each with its flag, the first choice), monetary system, year or rarity, with how many in each; search, sort, country, **Banknote type** (as Numista classifies it, when it says) and grid or list. The list has no presentation column
 
 ## Coin Gallery
 
@@ -18,7 +18,7 @@ The search takes the first row; below it, every field has the same size, in equa
 
 - **Face value** — the collection's face values, most common first, with how many coins of each
 - **Sort** — recently updated, newest or oldest first, value, random
-- **View by** — all coins, or grouped by country, year, rarity or presentation
+- **View by** — all coins, or grouped by country, monetary system, year, rarity or presentation. A monetary system is named as Numista names its currency, with its dates (**Escudo (1911-2001)**, **Real (decimalizado, 1835-1910)**, so the réis of Portugal and the real of Brazil stay apart); every euro coin, whatever its country, is in **Euro**. Coins without one come last
 - **Country** — each with its flag, including *Extinct countries* (USSR, Yugoslavia, Ottoman Empire…)
 - **Coin type** — standard circulation, circulating commemorative or non-circulating, as Numista classifies it
 - **Presentation** — loose, coincard, capsule…

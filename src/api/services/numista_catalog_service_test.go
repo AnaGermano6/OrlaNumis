@@ -51,7 +51,7 @@ const testCatalogTypeDetail = `{
 	"id": 2933, "url": "https://pt.numista.com/2933", "title": "2.50 Escudos", "category": "coin",
 	"issuer": {"code": "angola", "name": "Angola"},
 	"min_year": 1953, "max_year": 1974,
-	"value": {"text": "2.5 Escudos", "numeric_value": 2.5, "currency": {"id": 390, "name": "Escudo"}},
+	"value": {"text": "2.5 Escudos", "numeric_value": 2.5, "currency": {"id": 390, "name": "Escudo", "full_name": "Escudo (1958-1977)"}},
 	"ruler": [{"id": 1, "name": "Província ultramarina de Portugal"}],
 	"composition": {"text": "Cuproníquel"}, "technique": {"text": "Fresado"},
 	"weight": 3.5, "size": 20, "thickness": 1.46, "shape": "Redondo",

@@ -6,6 +6,19 @@
 
 Each coin in your collection can hold rich, structured metadata that captures its numismatic significance, provenance, valuations, and personal notes. The detail page is the primary interface for viewing and editing all coin information.
 
+## Previous and Next
+
+A coin's or banknote's page goes to the previous or the next one of the list
+it was opened from, without going back to it: the coin gallery, the banknote
+gallery or the wishlist, in that list's order (its search, filters, sort and
+groups; an ungrouped gallery, its page). Beside **Back to the gallery** (on a
+phone, in a row below it) are **‹**, the coin's place (**12 of 454**) and
+**›**; the left and right arrow keys do the same, except while typing or with
+a photo open. Each step replaces the page, so the browser's back still goes to
+the list. The order is kept for the browser tab, so a reload keeps it; a coin
+opened from somewhere else (a set, the overview) has them only when it is in
+the last list seen.
+
 ## Core Fields
 
 ### Identification
@@ -14,9 +27,31 @@ Each coin in your collection can hold rich, structured metadata that captures it
 - **Ruler** — Authority or monarch on the coin
 - **Era** — Time period (ancient, medieval, modern)
 - **Category** — one of the admin-configured categories (Modern and Other by default)
+- **Monetary system** — see below
+
+### Monetary System
+
+The currency system the coin or banknote belongs to, as Numista names it, with
+its dates: **Escudo (1911-2001)**, **Real (decimalizado, 1835-1910)** (the réis),
+**Libra esterlina (decimalizada, 1971-hoje)**. Every euro coin is **Euro**,
+whatever its country. It is filled from Numista when a coin is added from the
+catalogue, and for coins already saved by **Complete records from Numista**
+(see [Completing Records from Numista](numista-integration.md#completing-records-from-numista));
+it can also be typed, with the collection's systems suggested.
+
+It takes the place of the era and the category, which ancient coins need and
+a modern collection does not:
+
+- **Galleries** — **View by** monetary system, coins and banknotes.
+- **Cards** — the system without its dates ("Escudo"), with the full name on
+  hover, in place of the category; the category shows while there is no
+  system.
+- **Statistics** — **By monetary system**, the twelve most common and the
+  rest added up. The charts by category and by era, and their heat map, show
+  only when the collection has more than one category or era.
 
 ### Physical Characteristics
-- **Material** — Gold, silver, bronze, copper, electrum, or other
+- **Material** — gold, silver, billon, electrum, copper, bronze, aluminium bronze, brass, nickel brass, nordic gold, copper-nickel, nickel, bimetallic, aluminium, zinc, stainless steel, plated steel, or other. Coins linked to Numista can get it from Numista's composition (see [Completing Records from Numista](numista-integration.md#completing-records-from-numista))
 - **Weight** — In grams
 - **Diameter** — In millimeters
 - **Thickness** — Optional thickness measurement
@@ -27,6 +62,29 @@ Each coin in your collection can hold rich, structured metadata that captures it
 - **Obverse Inscription** — Text on the front
 - **Reverse Inscription** — Text on the back
 - **Structured Catalog References** — Formal references (RIC, RPC, SNG, Numista, etc.) with catalog, volume, number, optional invoice number, and authority URI
+
+### Banknote Details
+
+A banknote has, instead of a coin's mint, weight and diameter:
+
+- **Series or issue** ("Chapa 13"), the **date printed on the note**, the
+  **Pick number** ("176a": the note's number in the Standard Catalog of World
+  Paper Money, a letter for each variant) and the issuing bank
+- this very note's **serial number**, **signatures**, **kind of note**
+  (ordinary, replacement or specimen), grade and a grading company's grade and
+  certificate
+- the paper: material, size, printer and watermark
+
+**Numista issue** — a note linked to a Numista type can say which of its
+issues it is. The issues of a banknote are told apart by the date printed and
+the signatories (the 20 escudos of 13 September 1978 has twelve, one for each
+pair of signatures), so **Choose the issue** lists them as "13/09/1978 ·
+P176a · Vilar / Reis", and choosing one fills in the signatures (full names),
+the Pick number with its variant letter, the printed date and the kind of
+note. The issues come from the server's cache of Numista, loaded only when
+asked for. Adding a banknote from the catalogue does the same with the issue
+picked there. The issue chosen is saved with the note, and its market value is
+that issue's.
 
 ### Financial Data
 - **Purchase Price** — Original acquisition cost
@@ -114,7 +172,7 @@ Track the coin's history with timestamped entries:
 
 ## Market Value
 
-When the coin is linked to a Numista type, the **Market value (Numista)** section shows Numista's community estimates for each issue and grade, in the collection currency, with your grade highlighted.
+When the coin is linked to a Numista type, the **Market value (Numista)** section shows Numista's community estimates for each issue and grade, in the collection currency, with your grade highlighted. It opens on the item's own issue when one was chosen (see [Banknote Details](#banknote-details)), else on the issue of its year.
 
 ## Sets
 

@@ -31,6 +31,7 @@ const messages: Messages['coinFields'] = {
   coinType: 'Tipo de moeda',
   rarityRating: 'Raridade',
   country: 'País',
+  monetarySystem: 'Sistema monetário',
   presentation: 'Apresentação',
   rarity: 'Raridade',
   circulation: 'Circulação',

@@ -10,6 +10,10 @@
         <button v-if="coins.length" type="button" class="btn btn-secondary btn-sm" data-testid="repeated-open" @click="emit('open')">
           <LayoutGrid :size="14" aria-hidden="true" /> {{ t('collectionOverview.repeated.open') }}
         </button>
+        <!-- A file of the duplicates (and what is wanted) for other collectors. -->
+        <button v-if="coins.length" type="button" class="btn btn-secondary btn-sm" data-testid="repeated-share" @click="emit('share')">
+          <Share2 :size="14" aria-hidden="true" /> {{ t('collectionOverview.repeated.share') }}
+        </button>
       </span>
     </div>
 
@@ -54,7 +58,7 @@
 // many copies are left to trade.
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Banknote, Coins, LayoutGrid } from 'lucide-vue-next'
+import { Banknote, Coins, LayoutGrid, Share2 } from 'lucide-vue-next'
 import { getCoins, type CollectionSummary } from '@/api/client'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { t } from '@/i18n'
@@ -66,7 +70,7 @@ const props = defineProps<{
   summary: CollectionSummary | null
 }>()
 
-const emit = defineEmits<{ open: [] }>()
+const emit = defineEmits<{ open: []; share: [] }>()
 
 /** Shown before "Show all". */
 const PREVIEW = 6

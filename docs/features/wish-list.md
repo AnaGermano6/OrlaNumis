@@ -37,7 +37,16 @@ The Wish List helps collectors systematically track and acquire coins. It integr
 - **Price Tracking** — Note current asking prices and compare over time
 - **Lookup Saves** — Coins saved from Coin Lookup include captured photos and generated NGC or Numista references
 
-## Availability Checking
+## Sharing the Lists
+
+**Share List** on the wishlist page, and on the collection overview's duplicates to trade, makes a file to send to other collectors:
+
+- **Which list:** the duplicates to trade (coins and banknotes held more than once, with how many there are to spare), what you are looking for (the wishlist), or both.
+- **PDF or CSV:** a PDF on A4 pages, light for printing, with a small photo of each item, its name, country, face value, year, grade and catalogue references; or a CSV for a spreadsheet, one row per item with the list it is on and its Numista page (";" between fields in Portuguese, as Excel there expects, "," in English).
+- **In the app's language,** sorted by country, year and name.
+- **Values** (the current value, in the collection currency) only when **Include the values** is ticked.
+- **Contact:** an e-mail or phone typed there is printed at the top of the PDF; it is not stored.
+
 
 ### Manual Availability Check
 

@@ -28,7 +28,7 @@
           <tbody>
             <tr><td><code>name</code></td><td>text</td><td>Required</td></tr>
             <tr><td><code>category</code></td><td>text</td><td>One of your admin-configured categories (defaults: Modern, Other)</td></tr>
-            <tr><td><code>material</code></td><td>text</td><td>Gold, Silver, Bronze, Copper, Electrum, Other</td></tr>
+            <tr><td><code>material</code></td><td>text</td><td>Gold, Silver, Billon, Electrum, Copper, Bronze, Aluminium bronze, Brass, Nickel brass, Nordic gold, Copper-nickel, Nickel, Bimetallic, Aluminium, Zinc, Stainless steel, Plated steel, Other</td></tr>
             <tr><td><code>denomination</code>, <code>ruler</code>, <code>mint</code>, <code>grade</code></td><td>text</td><td>Free text fields</td></tr>
             <tr><td><code>era</code></td><td>text</td><td>One of your admin-configured eras (defaults: <code>ancient</code>, <code>medieval</code>, <code>modern</code>). Put the coin's actual dates in <code>ruler</code> or <code>notes</code> — an era outside your configured list will not match era filters.</td></tr>
             <tr><td><code>weightGrams</code>, <code>diameterMm</code>, <code>purchasePrice</code>, <code>currentValue</code></td><td>number</td><td>Use decimal values. <code>currentValue</code> defaults to <code>purchasePrice</code> when left blank.</td></tr>
@@ -121,12 +121,10 @@
           <li><strong>Starter prompts</strong> — The drawer includes acquisition examples plus a collection cleanup starter for missing era metadata.</li>
         </ul>
 
-        <h4>Sets and Agentic Proposals</h4>
+        <h4>Sets</h4>
         <ul>
-          <li><strong>Set types</strong> — Create Standard sets for manual organization, Goal sets where wishlist items represent remaining work, Smart sets from rules, and Agentic sets from a reviewed proposal workflow.</li>
-          <li><strong>Agentic proposal workflow</strong> — Creating an Agentic set submits a request instead of creating a set immediately.</li>
-          <li><strong>Human review</strong> — Review scope, slots, and agent notes; edit, regenerate with feedback, reject, or approve. Only approval creates the Agentic set.</li>
-          <li><strong>Automatic matching</strong> — Approved Agentic sets match owned collection coins to the proposed roster automatically.</li>
+          <li><strong>Set types</strong> — Make a set from the commemorative catalogue or a challenge (a list of the coins to find), from filters (matching coins join by themselves), by choosing the coins one by one, or as a goal where wishlist items are what is still missing.</li>
+          <li><strong>Completion</strong> — Catalogue, challenge and goal sets show how far along you are.</li>
         </ul>
 
         <h4>Stats Views</h4>

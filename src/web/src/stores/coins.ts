@@ -94,13 +94,17 @@ export const useCoinsStore = defineStore('coins', () => {
     }
   }
 
+  // Only the latest coin asked for is shown, when several are asked for in a
+  // row (going quickly to the next coin and the next).
+  let coinRequest = 0
   async function fetchCoin(id: number) {
+    const request = ++coinRequest
     loading.value = true
     try {
       const res = await api.getCoin(id)
-      currentCoin.value = res.data
+      if (request === coinRequest) currentCoin.value = res.data
     } finally {
-      loading.value = false
+      if (request === coinRequest) loading.value = false
     }
   }
 

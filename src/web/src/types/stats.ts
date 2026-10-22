@@ -8,6 +8,8 @@ export interface StatsResponse {
   byMaterial: { material: string; count: number }[]
   byGrade: { grade: string; count: number }[]
   byEra: { era: string; count: number }[]
+  /** Coins of each monetary system, most first. */
+  byMonetarySystem?: { monetarySystem: string; count: number }[]
   byRuler: { ruler: string; count: number }[]
   byPriceRange: { range: string; count: number }[]
   values: {

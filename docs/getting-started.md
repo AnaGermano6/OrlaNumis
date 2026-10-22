@@ -82,7 +82,7 @@ In the installed app, the camera starts only when you tap **Start Camera**; libr
 | ----- | ----------- | ------- |
 | Name | **Required.** A descriptive name | `2 Euro 2007 Treaty of Rome` |
 | Category | One of the configured categories | `Modern` |
-| Material | Gold, Silver, Bronze, Copper, Electrum, Other | `Other` |
+| Material | Gold, Silver, Billon, Electrum, Copper, Bronze, Aluminium bronze, Brass, Nickel brass, Nordic gold, Copper-nickel, Nickel, Bimetallic, Aluminium, Zinc, Stainless steel, Plated steel, Other | `Other` |
 | Denomination | Face value | `2 Euro` |
 | Ruler / Issuer | Issuing authority | `Portugal` |
 | Era | One of the configured eras | `modern` |

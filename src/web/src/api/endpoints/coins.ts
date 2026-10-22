@@ -23,6 +23,7 @@ import type {
   IntakeCommitResponse,
   IntakeDraft,
   LegacyMigrationResult,
+  Material,
   NumistaEnrichmentRequest,
   NumistaLookupOutcome,
   NumistaLookupRequest,
@@ -166,6 +167,18 @@ export interface NumistaIssueSummary {
   mintLetter?: string
   mintage?: number
   comment?: string
+  /** A banknote issue: the date printed on it (with year), its signatories, its own Pick number ("176a") and its kind of note. */
+  month?: number
+  day?: number
+  signatures?: NumistaIssueSignature[]
+  pick?: string
+  variant?: 'replacement' | 'specimen'
+}
+
+/** One of the people who signed a banknote issue. */
+export interface NumistaIssueSignature {
+  name: string
+  title?: string
 }
 
 /** Numista's estimated price for one grade: g, vg, f, vf, xf, au or unc. */
@@ -483,6 +496,81 @@ export interface CoinCountryFillResult {
 /** Fills missing countries from the coins' Numista types (up to 25 per call). */
 export const fillCountriesFromNumista = (lang: string, coinId?: number) =>
   api.post<CoinCountryFillResult>('/coins/country-from-numista', null, { params: { lang, coinId } })
+
+/** What a fill from Numista sets on one coin: only the fields it fills are present. */
+export interface CoinNumistaFillChange {
+  coinId: number
+  name: string
+  isWishlist: boolean
+  material?: Material
+  /** Numista's words for the metal ("Cuproníquel (75% Cu, 25% Ni)"). */
+  composition?: string
+  /** On a correction, the material it replaces. */
+  previousMaterial?: Material
+  weightGrams?: number
+  diameterMm?: number
+  presentation?: string
+  /** The type's monetary system ("Escudo (1911-2001)", "Euro"). */
+  monetarySystem?: string
+}
+
+/** A fill of coin records from the cached Numista types: what it would change, or changed. */
+export interface CoinNumistaFillResult {
+  applied: boolean
+  /** Coins that get at least one field. */
+  coins: number
+  materials: number
+  weights: number
+  diameters: number
+  presentations: number
+  /** Coins and banknotes that get a monetary system. */
+  monetarySystems: number
+  /** Materials set, by material. */
+  byMaterial: Record<string, number>
+  /** Coins whose Numista composition fits none of the app's materials. */
+  unmatched: number
+  /** Coins linked to a Numista type the app has not cached yet. */
+  notCached: number
+  changes: CoinNumistaFillChange[]
+  /** Coins whose material is set but differs from Numista's composition. */
+  corrections: CoinNumistaFillChange[]
+  /** Corrections saved. */
+  corrected: number
+}
+
+/** The coins a gallery's filters keep (or every one), as an Excel workbook or a CSV, and the file's name. */
+export async function exportCoins(params: Record<string, unknown>, format: 'xlsx' | 'csv', lang: string): Promise<{ blob: Blob; filename: string }> {
+  const res = await api.get<Blob>('/coins/export', { params: { ...params, format, lang }, responseType: 'blob' })
+  const disposition = String(res.headers?.['content-disposition'] ?? '')
+  const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? `collection.${format}`
+  return { blob: res.data, filename }
+}
+
+/** A list to send to other collectors: the duplicates to trade, the wishlist, or both. */
+export interface ShareListRequest {
+  list: 'trades' | 'wishlist' | 'both'
+  format: 'pdf' | 'csv'
+  /** "pt" or "en". */
+  lang: string
+  includeValues: boolean
+  /** Printed at the top; not stored. */
+  contact: string
+}
+
+/** Makes the list's file, and the name the server gives it. */
+export async function downloadShareList(request: ShareListRequest): Promise<{ blob: Blob; filename: string }> {
+  const res = await api.post<Blob>('/coins/share-list', request, { responseType: 'blob' })
+  const disposition = String(res.headers?.['content-disposition'] ?? '')
+  const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? `${request.list}.${request.format}`
+  return { blob: res.data, filename }
+}
+
+/** What completing coin records from the cached Numista types would change. No Numista request. */
+export const previewNumistaFill = () => api.get<CoinNumistaFillResult>('/coins/numista-fill')
+
+/** Completes coin records from the cached Numista types, with the material corrections when asked. */
+export const applyNumistaFill = (corrections: boolean) =>
+  api.post<CoinNumistaFillResult>('/coins/numista-fill', null, { params: { corrections } })
 
 /** One Numista kind of coin and how many collection coins are of it. */
 export interface CollectionClassification {

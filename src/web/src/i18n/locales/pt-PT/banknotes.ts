@@ -9,6 +9,7 @@ const messages: Messages['banknotes'] = {
   failed: 'Não foi possível carregar as notas. Tente de novo daqui a pouco.',
   repeatedOnly: 'Só repetidas para troca',
   groupCount: { one: '{count} nota', other: '{count} notas' },
+  groupNone: 'Todas as notas',
   select: 'Selecionar notas',
   classification: 'Tipo de nota',
   bulk: {

@@ -12,15 +12,10 @@ import type {
   CoinSetSummary,
   CreateCoinSetFromCsvRequest,
   CreateCoinSetRequest,
-  CreateSetBuilderRunRequest,
-  RegenerateSetProposalRequest,
   ReorderSetCoinsRequest,
-  SetBuilderRun,
-  SetProposal,
   SmartCriteriaGroup,
   SmartSetPreview,
   UpdateCoinSetRequest,
-  UpdateSetProposalRequest,
 } from '@/types'
 
 // Sets
@@ -29,18 +24,6 @@ export const getSets = () => api.get<{ sets: CoinSetSummary[] }>('/sets')
 export const getSet = (id: number) => api.get<CoinSetDetail>(`/sets/${id}`)
 
 export const createSet = (data: CreateCoinSetRequest) => api.post<CoinSetDetail>('/sets', data)
-
-export const createSetBuilderRun = (data: CreateSetBuilderRunRequest) => api.post<{ run: SetBuilderRun }>('/set-builder/runs', data)
-
-export const getSetProposal = (id: number) => api.get<SetProposal>(`/set-builder/proposals/${id}`)
-
-export const updateSetProposal = (id: number, data: UpdateSetProposalRequest) => api.put<SetProposal>(`/set-builder/proposals/${id}`, data)
-
-export const approveSetProposal = (id: number) => api.post<{ set: CoinSetDetail }>(`/set-builder/proposals/${id}/approve`)
-
-export const rejectSetProposal = (id: number, reason = '') => api.post<{ status: string }>(`/set-builder/proposals/${id}/reject`, { reason })
-
-export const regenerateSetProposal = (id: number, data: RegenerateSetProposalRequest) => api.post<{ run: SetBuilderRun }>(`/set-builder/proposals/${id}/regenerate`, data)
 
 export const updateSet = (id: number, data: UpdateCoinSetRequest) => api.put<CoinSetDetail>(`/sets/${id}`, data)
 

@@ -141,6 +141,25 @@ func (h *NumistaCatalogHandler) Type(c *gin.Context) {
 	c.JSON(http.StatusOK, h.catalog.Type(c.Request.Context(), typeID, lang))
 }
 
+// Issues lists a type's issues, to tell which one an item is.
+//
+//	@Summary		List a Numista type's issues
+//	@Description	Returns the issues of a Numista type: year, mint mark, mintage and, for a banknote, the date printed on it, its signatories, its own Pick number ("176a") and whether its notes are replacement or specimen notes. Cached for 30 days; no prices are fetched.
+//	@Tags			Numista
+//	@Produce		json
+//	@Param			id	path		int	true	"Numista type ID"
+//	@Success		200	{object}	models.NumistaCatalogIssuesResult
+//	@Failure		400	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/numista/catalog/types/{id}/issues [get]
+func (h *NumistaCatalogHandler) Issues(c *gin.Context) {
+	typeID, ok := numistaPathID(c)
+	if !ok {
+		return
+	}
+	c.JSON(http.StatusOK, h.catalog.Issues(c.Request.Context(), typeID))
+}
+
 // MarketValue returns Numista's estimated price per grade for a type's issue.
 //
 //	@Summary		Get a Numista type's market value

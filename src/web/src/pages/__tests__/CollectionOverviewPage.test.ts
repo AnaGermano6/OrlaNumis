@@ -23,7 +23,7 @@ function summary(coins: number, countries: number, value: number, extra: Record<
 function mountPage() {
   return mount(CollectionOverviewPage, { global: { stubs: {
     RouterLink: RouterLinkStub, 'router-link': RouterLinkStub, AuthenticatedImage: true,
-    CollectionRepeated: true, CoinReleases: true,
+    CollectionRepeated: true, CoinReleases: true, NumistaValuesNotice: true,
   } } })
 }
 

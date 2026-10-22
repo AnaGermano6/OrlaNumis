@@ -174,6 +174,7 @@ function formatEntrySource(entry: CoinValueHistory): string {
   const src = entry.source ?? (entry.confidence === 'manual' || !entry.confidence ? 'manual' : 'ai_scheduled')
   if (src === 'ai_scheduled') return t('coinDetail.valuation.sources.aiScheduled')
   if (src === 'ai_estimate') return t('coinDetail.valuation.sources.aiEstimate')
+  if (src === 'numista') return t('coinDetail.valuation.sources.numista')
   return t('coinDetail.valuation.sources.manual')
 }
 </script>

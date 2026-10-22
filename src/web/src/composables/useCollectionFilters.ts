@@ -122,20 +122,11 @@ export function useCollectionFilters() {
     }
   }
 
-  function loadCoins() {
+  // The list's filters and order, as the server takes them (without the page).
+  function listParams() {
     const [sort, order] = sortKey.value.split('_').length === 3
       ? [sortKey.value.split('_').slice(0, 2).join('_'), sortKey.value.split('_')[2]]
       : [sortKey.value.split('_')[0], sortKey.value.split('_')[1]]
-    store.selectedDenomination = selectedDenomination.value
-    store.selectedCountry = selectedCountry.value
-    store.selectedPresentation = selectedPresentation.value
-    store.selectedRarity = selectedRarity.value
-    store.selectedCirculation = selectedCirculation.value
-    store.selectedCommemorative = selectedCommemorative.value
-    store.selectedClassification = selectedClassification.value
-    store.selectedRepeated = selectedRepeated.value
-    store.searchQuery = search.value
-
     // For random sort, generate a per-session seed (stable across pagination within a session)
     let seed: number | undefined
     if (sort === 'random') {
@@ -167,6 +158,20 @@ export function useCollectionFilters() {
       order,
       seed,
     }
+    return params
+  }
+
+  function loadCoins() {
+    store.selectedDenomination = selectedDenomination.value
+    store.selectedCountry = selectedCountry.value
+    store.selectedPresentation = selectedPresentation.value
+    store.selectedRarity = selectedRarity.value
+    store.selectedCirculation = selectedCirculation.value
+    store.selectedCommemorative = selectedCommemorative.value
+    store.selectedClassification = selectedClassification.value
+    store.selectedRepeated = selectedRepeated.value
+    store.searchQuery = search.value
+    const params = listParams()
     // Grouped views show every matching coin in sections, so they load all pages.
     if (groupBy.value !== 'none') void store.fetchAllCoins(params)
     else void store.fetchCoins({ ...params, page: page.value })
@@ -271,6 +276,7 @@ export function useCollectionFilters() {
     fetchUserSets,
     loadCoins,
     loadCountryOptions,
+    listParams,
     fillCountriesOnce,
   }
 }

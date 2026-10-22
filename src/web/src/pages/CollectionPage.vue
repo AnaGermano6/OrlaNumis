@@ -16,8 +16,18 @@
     <!-- Its name, as the banknotes': in the title bar on a computer, above the
          filters in a phone's browser (the installed app has its own header). -->
     <DesktopPageContext :title="t('nav.gallery')">
+      <template #actions>
+        <AppIconButton :title="t('collection.export.button')" data-testid="gallery-export" @click="showExport = true">
+          <FileSpreadsheet :size="20" />
+        </AppIconButton>
+      </template>
       <header v-if="!isPwa" class="page-header" data-testid="gallery-title">
         <h1>{{ t('nav.gallery') }}</h1>
+        <span class="ml-auto">
+          <button type="button" class="btn btn-secondary btn-sm" @click="showExport = true">
+            <FileSpreadsheet :size="14" aria-hidden="true" /> {{ t('collection.export.button') }}
+          </button>
+        </span>
       </header>
     </DesktopPageContext>
 
@@ -50,6 +60,9 @@
           :filling-countries="fillingCountries"
           stacked
         />
+        <button type="button" class="btn btn-secondary btn-sm w-full justify-center" @click="showExport = true">
+          <FileSpreadsheet :size="14" aria-hidden="true" /> {{ t('collection.export.button') }}
+        </button>
       </template>
     </PwaCollectionHeader>
 
@@ -136,7 +149,7 @@
       :is-pwa="isPwa"
       :view-mode="viewMode"
       :grid-side="gridSide"
-      :has-filters="!!(search || selectedDenomination || selectedSet || selectedCountry || selectedPresentation || selectedRarity || selectedCirculation || selectedCommemorative || selectedClassification || selectedRepeated)"
+      :has-filters="hasFilters"
       :total="store.total"
       :page="page"
       :per-page="COINS_PER_PAGE"
@@ -175,6 +188,8 @@
       @select="bulkAddToSet"
       @close="showSetPicker = false"
     />
+
+    <ExportDialog :open="showExport" kind="coin" :params="listParams()" :count="store.total" :filtered="hasFilters" @close="showExport = false" />
   </div>
 </template>
 
@@ -197,8 +212,10 @@ import CollectionPagination from '@/components/CollectionPagination.vue'
 import BulkActionBar from '@/components/BulkActionBar.vue'
 import BulkSetPickerModal from '@/components/BulkSetPickerModal.vue'
 import NeedsAttentionQueue from '@/components/collection/NeedsAttentionQueue.vue'
+import ExportDialog from '@/components/collection/ExportDialog.vue'
+import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { t } from '@/i18n'
-import { X } from 'lucide-vue-next'
+import { FileSpreadsheet, X } from 'lucide-vue-next'
 
 const store = useCoinsStore()
 const router = useRouter()
@@ -207,8 +224,12 @@ const {
   search, page, sortKey, selectedSet, userSets,
   selectedDenomination, denominationOptions,
   selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated, groupBy, countryOptions, fillingCountries,
-  fetchUserSets, loadCoins, loadCountryOptions, fillCountriesOnce,
+  fetchUserSets, loadCoins, loadCountryOptions, fillCountriesOnce, listParams,
 } = useCollectionFilters()
+
+const hasFilters = computed(() => !!(search.value || selectedDenomination.value || selectedSet.value || selectedCountry.value || selectedPresentation.value || selectedRarity.value || selectedCirculation.value || selectedCommemorative.value || selectedClassification.value || selectedRepeated.value))
+// The spreadsheet of the coins shown, or of the whole collection.
+const showExport = ref(false)
 
 // The coins' summary feeds the filters (extinct countries, Numista kinds);
 // refreshed whenever the coin list reloads, so it never goes stale.

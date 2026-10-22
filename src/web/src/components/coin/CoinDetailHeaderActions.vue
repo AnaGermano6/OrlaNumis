@@ -1,10 +1,16 @@
 <template>
-  <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 max-md:mb-4">
-    <button class="btn btn-ghost btn-xs justify-self-start whitespace-nowrap" @click="router.push(backTarget)">
+  <!-- On a phone the previous and next coin get a row of their own, below. -->
+  <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 max-md:mb-4 md:grid-cols-[auto_minmax(0,1fr)_auto]">
+    <button class="btn btn-ghost btn-xs col-start-1 row-start-1 justify-self-start whitespace-nowrap" @click="router.push(backTarget)">
       <ArrowLeft :size="14" />
       {{ backLabel }}
     </button>
-    <div class="flex min-w-0 items-center justify-end gap-[0.45rem]">
+    <CoinBrowseNav
+      :coin-id="coinId"
+      :is-banknote="isBanknote"
+      class="col-span-2 col-start-1 row-start-2 justify-self-center md:col-span-1 md:col-start-2 md:row-start-1 md:justify-self-start"
+    />
+    <div class="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-[0.45rem] md:col-start-3">
       <AppIconButton
         v-if="!collapseSecondaryActions"
         :disabled="sharing"
@@ -39,6 +45,7 @@ import { computed } from 'vue'
 import { ArrowLeft, Pencil, Share2, Trash2 } from 'lucide-vue-next'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import CoinDetailOverflowMenu from '@/components/coin/CoinDetailOverflowMenu.vue'
+import CoinBrowseNav from '@/components/coin/CoinBrowseNav.vue'
 import { usePwa } from '@/composables/usePwa'
 import { t } from '@/i18n'
 

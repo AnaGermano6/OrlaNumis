@@ -165,7 +165,16 @@ const messages: Messages['coinDetail'] = {
       aiScheduled: 'IA agendada',
       aiEstimate: 'Estimativa por IA',
       manual: 'Manual',
+      numista: 'Preço do Numista',
     },
+  },
+  browse: {
+    label: 'Anterior e seguinte',
+    position: '{position} de {total}',
+    previousCoin: 'Moeda anterior',
+    nextCoin: 'Moeda seguinte',
+    previousBanknote: 'Nota anterior',
+    nextBanknote: 'Nota seguinte',
   },
   numista: {
     added: 'Referência do Numista adicionada.',

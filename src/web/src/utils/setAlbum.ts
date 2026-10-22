@@ -54,6 +54,10 @@ export function checklistAlbumSlot(slot: ChecklistSlot, definition: ChecklistDef
   const country = slot.country ? releaseCountryName(slot.country) : ''
   if (definition.source === 'catalogue') {
     album.detail = (slot.faceValues ?? (slot.faceValue ? [slot.faceValue] : [])).map((value) => formatFaceValue(value, slot.currency)).join(' · ')
+  } else if (definition.challenge === 'escudo-types' || definition.challenge === 'reis-types') {
+    // A type: its face value and look, and the years it was struck in.
+    album.year = null
+    album.detail = slot.toYear && slot.year ? `${slot.year}–${slot.toYear}` : slot.year ? String(slot.year) : undefined
   } else if (definition.challenge === 'annual-series') {
     album.title = euroCoinName(slot.faceValue ?? 0)
     album.detail = slot.coinName
@@ -110,6 +114,8 @@ export function checklistDescription(definition: ChecklistDefinition): string {
   }
   switch (definition.challenge) {
     case 'euro-countries': return t('sets.challenges.euroCountries.title')
+    case 'escudo-types': return t('sets.challenges.escudoTypes.title')
+    case 'reis-types': return t('sets.challenges.reisTypes.title')
     case 'joint-issue': return t('sets.challenges.jointIssue.description', { year: definition.year ?? '' })
     case 'annual-series': return t('sets.challenges.annualSeries.named', { country: withFlagOfCode(definition.country, releaseCountryName(definition.country ?? '')), year: definition.year ?? '' })
     default: return ''

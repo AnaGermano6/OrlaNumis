@@ -103,6 +103,14 @@ function normalizeMaterial(value: string): Material {
     au: 'Gold',
     gold: 'Gold',
     electrum: 'Electrum',
+    cupronickel: 'Copper-nickel',
+    'cupro-nickel': 'Copper-nickel',
+    'copper nickel': 'Copper-nickel',
+    'nickel-brass': 'Nickel brass',
+    'aluminum bronze': 'Aluminium bronze',
+    'aluminium-bronze': 'Aluminium bronze',
+    aluminum: 'Aluminium',
+    'bi-metallic': 'Bimetallic',
   }
   return aliases[normalized] ?? MATERIALS.find(material => material.toLowerCase() === normalized) ?? 'Other'
 }

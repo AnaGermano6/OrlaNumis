@@ -8,6 +8,8 @@
 
     <p v-if="failed" class="text-body text-text-secondary" role="alert">{{ t('collectionOverview.failed') }}</p>
 
+    <NumistaValuesNotice />
+
     <!-- The whole collection: coins and banknotes together -->
     <section class="mb-8" aria-labelledby="overview-all-title">
       <h2 id="overview-all-title" class="mb-3 font-display text-lg font-medium text-heading">{{ t('collectionOverview.all.title') }}</h2>
@@ -39,7 +41,7 @@
         @show-extinct="openGallery({ country: EXTINCT_COUNTRIES })"
       />
       <CollectionHighlights :summary="coins" :title="t('collectionOverview.coins.highlights')" />
-      <CollectionRepeated kind="coin" :summary="coins" @open="openGallery({ repeated: true })" />
+      <CollectionRepeated kind="coin" :summary="coins" @open="openGallery({ repeated: true })" @share="showShareList = true" />
     </section>
 
     <!-- Banknotes: their numbers and highlights -->
@@ -50,7 +52,7 @@
       </div>
       <BanknoteKpis :summary="banknotes" />
       <CollectionHighlights :summary="banknotes" kind="banknote" :title="t('collectionOverview.banknotes.highlights')" />
-      <CollectionRepeated v-if="banknotes && banknotes.coins > 0" kind="banknote" :summary="banknotes" @open="router.push({ name: 'banknotes', query: { repeated: 'true' } })" />
+      <CollectionRepeated v-if="banknotes && banknotes.coins > 0" kind="banknote" :summary="banknotes" @open="router.push({ name: 'banknotes', query: { repeated: 'true' } })" @share="showShareList = true" />
       <p v-if="banknotes && banknotes.coins === 0" class="m-0 text-body text-text-secondary" data-testid="overview-no-banknotes">
         {{ t('banknotes.empty.title') }}.
         <router-link to="/banknotes/add" class="text-gold underline">{{ t('banknotes.add') }}</router-link>
@@ -58,6 +60,7 @@
     </section>
 
     <CoinReleases />
+    <ShareListDialog :open="showShareList" initial-list="trades" @close="showShareList = false" />
   </div>
 </template>
 
@@ -76,6 +79,8 @@ import CollectionKpis from '@/components/collection/CollectionKpis.vue'
 import CollectionRepeated from '@/components/collection/CollectionRepeated.vue'
 import CoinReleases from '@/components/collection/CoinReleases.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
+import NumistaValuesNotice from '@/components/collection/NumistaValuesNotice.vue'
+import ShareListDialog from '@/components/collection/ShareListDialog.vue'
 import { useCoinsStore } from '@/stores/coins'
 import { intlLocale, t } from '@/i18n'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
@@ -88,6 +93,7 @@ const all = ref<CollectionSummary | null>(null)
 const coins = ref<CollectionSummary | null>(null)
 const banknotes = ref<CollectionSummary | null>(null)
 const failed = ref(false)
+const showShareList = ref(false)
 
 function count(value: number | undefined): string {
   return value === undefined ? '—' : new Intl.NumberFormat(intlLocale()).format(value)

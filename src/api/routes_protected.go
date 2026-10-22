@@ -39,6 +39,8 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		quickCaptureHandler := handlers.NewQuickCaptureHandler(quickCaptureSvc, d.logger)
 		coinLookupHandler := handlers.NewCoinLookupHandler(d.coinLookupSvc, d.logger)
 		protected.GET("/coins", coinHandler.List)
+		// The coins (all, or a gallery's filtered ones) as an Excel workbook or a CSV.
+		protected.GET("/coins/export", coinHandler.Export)
 		protected.GET("/coins/:id", coinHandler.Get)
 		protected.POST("/coins", coinHandler.Create)
 		protected.POST("/coins/:id/duplicate", d.writeRateLimit, coinHandler.Duplicate)
@@ -190,6 +192,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/numista/catalog/search", numistaCatalogHandler.Search)
 		protected.GET("/numista/catalog/types/:id", numistaCatalogHandler.Type)
 		protected.GET("/numista/catalog/types/:id/market-value", numistaCatalogHandler.MarketValue)
+		protected.GET("/numista/catalog/types/:id/issues", numistaCatalogHandler.Issues)
 		coinPhotoSearch := services.NewCoinPhotoSearchService(numistaCatalogSvc, services.NewHTTPCommonsClient(nil), numistaResponseCache).WithECB(ecbCoinPhotos).WithMint(incmCoinPhotos).WithMint(mdpCoinPhotos).WithMint(moeCoinPhotos)
 		protected.GET("/coin-photos/search", handlers.NewCoinPhotoHandler(coinPhotoSearch).Search)
 		// Coin subjects in the user's language, translated to compare with Numista's titles.
@@ -201,8 +204,6 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		officialPhotosRateLimit := middleware.AuthenticatedRateLimit(300, time.Minute)
 		officialPhotos := handlers.NewOfficialPhotoHandler(d.coinRepo, d.imageHandler, coinPhotoSearch, d.logger)
 		protected.POST("/coins/:id/official-photos", officialPhotosRateLimit, officialPhotos.Add)
-		protected.GET("/coins/official-photos/missing", officialPhotos.Missing)
-		protected.POST("/coins/official-photos/batch", officialPhotosRateLimit, officialPhotos.Batch)
 		coinCountryHandler := handlers.NewCoinCountryHandler(d.coinRepo, services.NewCoinCountryService(d.coinRepo, numistaCatalogSvc))
 		protected.GET("/coins/countries", coinCountryHandler.Countries)
 		protected.GET("/coins/denominations", coinCountryHandler.Denominations)
@@ -223,7 +224,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		// Checklist sets list the catalogue's coins or a challenge's; smart
 		// sets choose coins by their kind too.
 		catalogueOverrides := repository.NewCatalogueOverrideRepository(database.DB)
-		setChecklist := services.NewSetChecklistService(coinReleases, d.coinRepo, coinPhotoSearch).WithOverrides(catalogueOverrides)
+		setChecklist := services.NewSetChecklistService(coinReleases, d.coinRepo, coinPhotoSearch).WithOverrides(catalogueOverrides).WithNumista(numistaCatalogSvc)
 		setService.WithChecklist(setChecklist)
 		setRepo.WithCoinClassifier(func(userID uint, kind string) ([]uint, error) {
 			sorted, err := coinCirculation.Classify(userID)
@@ -261,6 +262,13 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		// ECB rates, to convert amounts into the collection currency.
 		protected.GET("/exchange-rates", handlers.NewExchangeRatesHandler(d.exchangeRates).Rates)
 		protected.POST("/coins/country-from-numista", d.writeRateLimit, coinCountryHandler.FillFromNumista)
+		// The duplicates to trade and the wanted coins, as a PDF or a CSV to send.
+		shareList := handlers.NewShareListHandler(services.NewShareListService(d.coinRepo, d.settingsSvc), d.cfg.UploadDir, d.logger)
+		protected.POST("/coins/share-list", shareList.Download)
+		// Material, weight, diameter and coin card from the cached Numista types.
+		coinNumistaFill := handlers.NewCoinNumistaFillHandler(services.NewCoinNumistaFillService(d.coinRepo, numistaCatalogSvc))
+		protected.GET("/coins/numista-fill", coinNumistaFill.Preview)
+		protected.POST("/coins/numista-fill", d.writeRateLimit, coinNumistaFill.Apply)
 
 		// Wishlist availability checking
 		availHandler := handlers.NewAvailabilityHandler(d.availSvc, d.availScheduler, d.availRepo, d.coinRepo).WithCycleRepo(d.availCycleRepo)

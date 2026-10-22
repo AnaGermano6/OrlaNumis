@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { defineComponent } from 'vue'
 import CollectionContent from '../CollectionContent.vue'
+import { browseNeighbours } from '@/utils/browseSequence'
 import { setLocale } from '@/i18n'
 import type { Coin } from '@/types'
 
@@ -35,6 +36,14 @@ describe('CollectionContent grouping and list layout', () => {
     expect(wrapper.findAll('[data-testid="group-flag"]').map((flag) => flag.attributes('aria-hidden'))).toEqual(['true', 'true'])
     const sections = wrapper.findAll('section')
     expect(sections[1]!.findAll('.card-stub').map((card) => card.text())).toEqual(['50 Escudos', '1 Escudo'])
+  })
+
+  it("remembers the order it shows, for a coin's previous and next", () => {
+    sessionStorage.clear()
+    mountContent({ groupBy: 'country' })
+    // Angola's coin, then Portugal's two.
+    expect(browseNeighbours(2)).toEqual({ origin: 'gallery', position: 1, total: 3, previous: null, next: 1 })
+    expect(browseNeighbours(3)).toEqual({ origin: 'gallery', position: 3, total: 3, previous: 1, next: null })
   })
 
   it('lists coins in a table with country, year, rarity, presentation and value', () => {

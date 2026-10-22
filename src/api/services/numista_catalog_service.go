@@ -291,6 +291,13 @@ func (s *NumistaCatalogService) IssuerYearTypes(ctx context.Context, issuer stri
 	return s.searchEveryPage(ctx, fmt.Sprintf("issuer-year:v1:%s:%d:%s", issuer, year, lang), search, issuerYearCacheTTL)
 }
 
+// IssuerYearCached tells whether IssuerYearTypes would answer from the cache
+// (its first page stored and still fresh), without asking Numista.
+func (s *NumistaCatalogService) IssuerYearCached(issuer string, year int, lang string) bool {
+	entry := s.cache.find(fmt.Sprintf("issuer-year:v1:%s:%d:%s:1", issuer, year, lang))
+	return entry != nil && s.cache.clock.Now().Sub(entry.FetchedAt) < issuerYearCacheTTL
+}
+
 // issuerValueCacheTTL keeps an issuer's coins of a face value for three
 // months: new ones come out every year.
 const issuerValueCacheTTL = 90 * 24 * time.Hour
@@ -326,8 +333,10 @@ func (s *NumistaCatalogService) searchEveryPage(ctx context.Context, key string,
 					Code string `json:"code"`
 					Name string `json:"name"`
 				} `json:"issuer"`
-				MinYear *int `json:"min_year"`
-				MaxYear *int `json:"max_year"`
+				MinYear          *int   `json:"min_year"`
+				MaxYear          *int   `json:"max_year"`
+				ObverseThumbnail string `json:"obverse_thumbnail"`
+				ReverseThumbnail string `json:"reverse_thumbnail"`
 			} `json:"types"`
 		}
 		if err := json.Unmarshal(body, &response); err != nil {
@@ -339,6 +348,7 @@ func (s *NumistaCatalogService) searchEveryPage(ctx context.Context, key string,
 					ID: item.ID, Title: strings.TrimSpace(item.Title),
 					Issuer:  models.NumistaCatalogIssuer{Code: item.Issuer.Code, Name: item.Issuer.Name},
 					MinYear: item.MinYear, MaxYear: item.MaxYear,
+					ObverseThumbnail: httpsOnly(item.ObverseThumbnail), ReverseThumbnail: httpsOnly(item.ReverseThumbnail),
 				})
 			}
 		}
@@ -403,6 +413,22 @@ func (s *NumistaCatalogService) Type(ctx context.Context, typeID int, lang strin
 	// Issues are optional for prefilling; a failure leaves the list empty.
 	if issues, _, err := cachedNumistaIssues(ctx, s.cache, s.client.Issues, typeID); err == nil {
 		result.Issues = issues
+	}
+	return result
+}
+
+// Issues returns a type's issues (dates, mint marks, a banknote's signatories
+// and Pick number), from the shared cache; no prices are fetched.
+func (s *NumistaCatalogService) Issues(ctx context.Context, typeID int) models.NumistaCatalogIssuesResult {
+	result := models.NumistaCatalogIssuesResult{Status: models.NumistaDataStatusOK, Issues: []models.NumistaIssueSummary{}}
+	issues, stale, err := cachedNumistaIssues(ctx, s.cache, s.client.Issues, typeID)
+	if err != nil {
+		result.Status = numistaStatusForError(err)
+		return result
+	}
+	result.Issues, result.Stale = issues, stale
+	if len(issues) == 0 {
+		result.Status = models.NumistaDataStatusNoIssues
 	}
 	return result
 }
@@ -626,7 +652,8 @@ type providerCatalogType struct {
 		Text         string   `json:"text"`
 		NumericValue *float64 `json:"numeric_value"`
 		Currency     struct {
-			Name string `json:"name"`
+			Name     string `json:"name"`
+			FullName string `json:"full_name"`
 		} `json:"currency"`
 	} `json:"value"`
 	Ruler []struct {
@@ -667,12 +694,7 @@ type providerCatalogType struct {
 	Obverse    providerCatalogSide `json:"obverse"`
 	Reverse    providerCatalogSide `json:"reverse"`
 	Edge       providerCatalogSide `json:"edge"`
-	References []struct {
-		Catalogue struct {
-			Code string `json:"code"`
-		} `json:"catalogue"`
-		Number string `json:"number"`
-	} `json:"references"`
+	References []providerReference `json:"references"`
 }
 
 func parseNumistaCatalogType(body []byte) (*models.NumistaCatalogType, error) {
@@ -694,6 +716,7 @@ func parseNumistaCatalogType(body []byte) (*models.NumistaCatalogType, error) {
 		Denomination:       strings.TrimSpace(raw.Value.Text),
 		FaceValue:          positive(raw.Value.NumericValue),
 		Currency:           strings.TrimSpace(raw.Value.Currency.Name),
+		MonetarySystem:     models.MonetarySystemFromNumista(raw.Value.Currency.Name, raw.Value.Currency.FullName),
 		CommemoratedTopic:  strings.TrimSpace(raw.CommemoratedTopic),
 		Classification:     strings.TrimSpace(raw.Type),
 		IssuedInCoincard:   IssuedInCoincard(raw.Comments),

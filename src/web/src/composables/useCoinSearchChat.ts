@@ -1,7 +1,7 @@
 import { computed, ref, nextTick, onMounted, onBeforeUnmount, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { agentChatStream, cancelCollectionProposal, commitCollectionProposal, createCoin, getApiErrorMessage, matchCategoryEra, proxyImage, scrapeImage, uploadImage, saveConversation, getPortfolioSummary, getAgentStatus } from '@/api/client'
-import type { CoinMutationPayload, CoinSuggestion, CoinShow, AgentChatAppContext, AgentChatMessage, Category, CollectionChatResponse, Material } from '@/types'
+import { MATERIALS, type CoinMutationPayload, type CoinSuggestion, type CoinShow, type AgentChatAppContext, type AgentChatMessage, type Category, type CollectionChatResponse, type Material } from '@/types'
 import { useDialog } from '@/composables/useDialog'
 import { useCoinOptions } from '@/composables/useCoinOptions'
 import { useCoinCopilot } from '@/composables/useCoinCopilot'
@@ -50,7 +50,7 @@ export function buildAgentChatAppContext(route: AgentContextRoute): AgentChatApp
 }
 
 const VALID_CATEGORIES = ['Modern', 'Other']
-const VALID_MATERIALS = ['Gold', 'Silver', 'Bronze', 'Copper', 'Electrum', 'Other']
+const VALID_MATERIALS: string[] = MATERIALS
 const VALID_ERAS = ['ancient', 'medieval', 'modern'] as const
 const FIELD_LIMITS = {
   name: 200,

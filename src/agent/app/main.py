@@ -1,4 +1,4 @@
-"""FastAPI entry point for the Ancient Coins multi-agent service."""
+"""FastAPI entry point for the Orla Numis multi-agent service."""
 
 import logging
 from contextlib import asynccontextmanager
@@ -26,7 +26,7 @@ async def lifespan(application: FastAPI):
 
 
 app = FastAPI(
-    title="Ancient Coins Agent Service",
+    title="Orla Numis Agent Service",
     version="0.1.0",
     docs_url="/docs" if settings.debug else None,
     lifespan=lifespan,

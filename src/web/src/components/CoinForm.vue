@@ -98,9 +98,15 @@
           </div>
         </div>
         <p id="coin-year-hint" class="-mt-2 mb-3 text-chip text-text-muted">{{ t('coinForm.yearHint') }}</p>
-        <div class="form-group min-w-0">
-          <label class="form-label">{{ t('coinFields.country') }}</label>
-          <AutocompleteInput v-model="countryModel" field="country" :placeholder="t('coinForm.countryPlaceholder')" />
+        <div class="grid gap-3 md:grid-cols-2">
+          <div class="form-group min-w-0">
+            <label class="form-label">{{ t('coinFields.country') }}</label>
+            <AutocompleteInput v-model="countryModel" field="country" :placeholder="t('coinForm.countryPlaceholder')" />
+          </div>
+          <div class="form-group min-w-0">
+            <label class="form-label">{{ t('coinFields.monetarySystem') }}</label>
+            <AutocompleteInput v-model="monetarySystemModel" field="monetarySystem" :placeholder="t('coinForm.monetarySystemPlaceholder')" />
+          </div>
         </div>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
@@ -333,6 +339,10 @@ const props = defineProps<{
 }>()
 
 // Coins saved before these fields existed may not carry them; edit them as ''.
+const monetarySystemModel = computed({
+  get: () => props.form.monetarySystem ?? '',
+  set: (value: string) => { props.form.monetarySystem = value },
+})
 const countryModel = computed({
   get: () => props.form.country ?? '',
   set: (value: string) => { props.form.country = value },

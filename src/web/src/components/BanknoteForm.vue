@@ -25,6 +25,10 @@
             <input id="banknote-bank" v-model="textModel('ruler').value" class="form-input" maxlength="200" :placeholder="t('banknoteForm.issuingBankPlaceholder')" />
           </div>
         </div>
+        <div class="form-group min-w-0">
+          <label class="form-label">{{ t('coinFields.monetarySystem') }}</label>
+          <AutocompleteInput v-model="textModel('monetarySystem').value" field="monetarySystem" :placeholder="t('coinForm.monetarySystemPlaceholder')" />
+        </div>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
             <label class="form-label">{{ t('banknoteForm.faceValue') }}</label>
@@ -73,6 +77,7 @@
       <!-- This very note -->
       <fieldset class="m-0 rounded-md border border-border-subtle bg-card p-5">
         <h2 class="mb-4 font-display text-lg font-medium text-gold">{{ t('banknoteForm.sections.thisNote') }}</h2>
+        <BanknoteIssuePicker :form="form" />
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
             <label class="form-label" for="banknote-serial">{{ t('banknoteForm.serialNumber') }}</label>
@@ -239,8 +244,9 @@
 
 <script setup lang="ts">
 // The form of a banknote: what it is (country, issuing bank, value, series,
-// printed date, Pick number), this very note (serial number, signatures,
-// replacement or specimen, grade and a grading company's certificate), its
+// printed date, Pick number), this very note (its Numista issue, serial
+// number, signatures, replacement or specimen, grade and a grading company's
+// certificate), its
 // paper (material, size, printer, watermark), purchase, and its front and
 // back. The page saves it and uploads the photos chosen here.
 import { computed, reactive, ref, watch, type WritableComputedRef } from 'vue'
@@ -248,6 +254,7 @@ import { Camera, X } from 'lucide-vue-next'
 import type { Coin, CoinKind } from '@/types'
 import AutocompleteInput from '@/components/AutocompleteInput.vue'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
+import BanknoteIssuePicker from '@/components/catalog/BanknoteIssuePicker.vue'
 import QuantityInput from '@/components/ui/QuantityInput.vue'
 import { usePwa } from '@/composables/usePwa'
 import { useSidePhotoInputs, type PhotoSide } from '@/composables/useSidePhotoInputs'
@@ -283,7 +290,7 @@ const emit = defineEmits<{ submit: [] }>()
 const { isPwa } = usePwa()
 const photos = useSidePhotoInputs(() => props.form)
 
-type TextField = 'country' | 'ruler' | 'denomination' | 'series' | 'rarity' | 'dateRange' | 'serialNumber' | 'noteVariant' | 'signatures' | 'grade'
+type TextField = 'country' | 'monetarySystem' | 'ruler' | 'denomination' | 'series' | 'rarity' | 'dateRange' | 'serialNumber' | 'noteVariant' | 'signatures' | 'grade'
   | 'certificationNumber' | 'printer' | 'watermark' | 'purchaseLocation' | 'obverseInscription' | 'reverseInscription'
   | 'obverseDescription' | 'reverseDescription' | 'notes'
 

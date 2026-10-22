@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('@/api/client', () => mocks)
 
+const countryOptions = () => [...document.querySelectorAll<HTMLElement>('[data-testid="country-select-option"]')]
+
 // A parent keeping the filters, as v-model does.
 function mountFilters(initial: SimpleSetFilters = emptyFilters()) {
   const wrapper = mount(SetSimpleFilters, {
@@ -41,7 +43,12 @@ describe('SetSimpleFilters', () => {
     await flushPromises()
 
     expect(mocks.getCoinCountries).toHaveBeenCalledWith('coin')
-    expect(wrapper.findAll('#filterCountry option').map((option) => option.text())).toEqual(['Qualquer', '🇩🇪 Alemanha', '🇵🇹 Portugal'])
+    const menu = wrapper.get('#filterCountry')
+    expect(menu.attributes('role')).toBe('combobox')
+    expect(menu.text()).toBe('Qualquer')
+    await menu.trigger('click')
+    expect(countryOptions().map((option) => option.textContent?.trim())).toEqual(['Qualquer', '🇩🇪Alemanha', '🇵🇹Portugal'])
+    await menu.trigger('keydown', { key: 'Escape' })
     expect(wrapper.findAll('#filterDenominationOptions option').map((option) => option.attributes('value'))).toEqual(['1 euro', '2 euro'])
     expect(mocks.previewSmartSet).toHaveBeenCalledWith(filtersToCriteria(emptyFilters()))
     expect(wrapper.get('[data-testid="filter-preview"]').text()).toContain('3 moedas da coleção')
@@ -51,7 +58,9 @@ describe('SetSimpleFilters', () => {
     const wrapper = mountFilters()
     await flushPromises()
 
-    await wrapper.get('#filterCountry').setValue('Portugal')
+    await wrapper.get('#filterCountry').trigger('click')
+    countryOptions().find((option) => option.textContent?.includes('Portugal'))!.click()
+    await flushPromises()
     await wrapper.get('#filterYearFrom').setValue('2002')
     await wrapper.get('#filterYearTo').setValue('2010')
     await wrapper.get('[data-testid="filter-classification-commemorative"]').trigger('click')
@@ -86,6 +95,17 @@ describe('SetSimpleFilters', () => {
     const wrapper = mountFilters({ ...emptyFilters(), country: 'Malta' })
     await flushPromises()
 
-    expect(wrapper.get<HTMLSelectElement>('#filterCountry').element.value).toBe('Malta')
+    expect(wrapper.get('#filterCountry').text()).toBe('🇲🇹Malta')
+  })
+
+  it('draws the flag of a country that no longer exists', async () => {
+    mocks.getCoinCountries.mockResolvedValue({ data: [{ country: 'Jugoslávia', count: 1 }] })
+    const wrapper = mountFilters()
+    await flushPromises()
+
+    await wrapper.get('#filterCountry').trigger('click')
+    const yugoslavia = countryOptions().find((option) => option.textContent?.includes('Jugoslávia'))!
+    expect(yugoslavia.querySelector('img[data-testid="country-flag-image"]')).not.toBeNull()
+    await wrapper.get('#filterCountry').trigger('keydown', { key: 'Escape' })
   })
 })

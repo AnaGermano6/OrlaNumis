@@ -185,7 +185,7 @@ describe('useCoinSearchChat wishlist payload', () => {
     const payload = buildWishlistCoinPayload(makeSuggestion({
       era: 'Roman Imperial',
       category: 'Unclassified',
-      material: 'Billon',
+      material: 'Orichalcum',
       estPrice: 'Estimate $1,250.50',
       candidateReferences: [
         { catalog: ' RIC ', number: ' 123 ', volume: ' II ', uri: ' https://example.com/ric ' },

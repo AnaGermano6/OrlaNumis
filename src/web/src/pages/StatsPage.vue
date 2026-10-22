@@ -27,7 +27,21 @@
         </section>
 
         <StatsBarChart
-          v-if="categoryItems.length"
+          v-if="monetarySystems.bars.length"
+          :title="t('stats.charts.byMonetarySystem')"
+          :items="monetarySystems.bars"
+          :fill-class="() => 'fill-era'"
+          :wide="true"
+          data-testid="stats-monetary-systems"
+        >
+          <template #label="{ item }">
+            <span :title="monetarySystemBarLabel(item.label, monetarySystems.others)">{{ monetarySystemBarLabel(item.label, monetarySystems.others) }}</span>
+          </template>
+        </StatsBarChart>
+
+        <!-- Categories and eras only tell something when the collection has more than one. -->
+        <StatsBarChart
+          v-if="categoryItems.length > 1"
           :title="t('stats.charts.byCoinType')"
           :items="categoryItems"
           :fill-class="(label: string) => label"
@@ -45,7 +59,7 @@
         </StatsBarChart>
 
         <StatsBarChart
-          v-if="eraItems.length"
+          v-if="eraItems.length > 1"
           :title="t('stats.charts.byEra')"
           :items="eraItems"
           :fill-class="() => 'fill-era'"
@@ -61,7 +75,7 @@
           :wide="true"
         />
 
-        <StatsHeatMap ref="heatMapRef" />
+        <StatsHeatMap v-if="categoryItems.length > 1 || eraItems.length > 1" ref="heatMapRef" />
 
         <StatsCoinFlowChart />
       </template>
@@ -82,6 +96,7 @@ import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { t } from '@/i18n'
 import { categoryLabel, eraLabel } from '@/i18n/coinVocabulary'
+import { monetarySystemBarLabel, monetarySystemBars } from '@/utils/monetarySystems'
 
 const store = useCoinsStore()
 const stats = computed(() => store.stats)
@@ -90,6 +105,7 @@ const heatMapRef = ref<InstanceType<typeof StatsHeatMap>>()
 const categoryItems = computed<BarItem[]>(() =>
   stats.value?.byCategory.map((c) => ({ label: c.category, count: c.count })) ?? [],
 )
+const monetarySystems = computed(() => monetarySystemBars(stats.value?.byMonetarySystem))
 const eraItems = computed<BarItem[]>(() =>
   stats.value?.byEra?.map((e) => ({ label: e.era, count: e.count })) ?? [],
 )
@@ -106,6 +122,5 @@ async function handleRefresh() {
 
 onMounted(() => {
   store.fetchStats()
-  heatMapRef.value?.fetchDistribution()
 })
 </script>

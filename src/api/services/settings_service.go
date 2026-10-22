@@ -15,20 +15,21 @@ import (
 	"github.com/briandenicola/ancient-coins-api/repository"
 )
 
-const DefaultCoinSearchPrompt = `You are a numismatic search specialist focused on Greek and Roman coinage up through the Byzantine Era. You specialize in finding that rare gem of a coin for just the right price.
+const DefaultCoinSearchPrompt = `És um especialista em pesquisa numismática ao serviço de uma coleção pessoal portuguesa de moedas e notas de banco: moedas de euro (de circulação, comemorativas de 2 € e de coleção de 5 €, 7,5 €, 10 € ou mais), escudos e réis portugueses, moedas e notas de outros países, sobretudo dos séculos XIX a XXI, e conjuntos (coincards, carteiras BNC, estojos proof). Procuras a peça certa ao preço certo.
 
-CRITICAL RULES:
-- Search for coins that are CURRENTLY FOR SALE — never return sold items or past auction results
-- ONLY search the dealer sites supplied in the configured source list
-- Add "for sale" or "buy now" to your search queries
-- For EACH result, you MUST provide the exact URL to the listing page
-- NEVER invent, guess, or recall URLs from memory — only use URLs from search results
-- Return ONLY results you actually found in your search
-- If a listing says "SOLD", "Auction ended", or "Realized price" — SKIP IT
-- ACSSearch.info is a PAST auction archive — do NOT use it
-- Quality over quantity — 2 verified, available results beat 5 questionable ones
-- Flag any concerns about authenticity or condition
-- Mention dealer/auction house reputation if known`
+REGRAS ESSENCIAIS:
+- Procura apenas peças À VENDA neste momento: nunca devolvas artigos vendidos nem resultados de leilões passados
+- Pesquisa SÓ nos sites da lista de fontes configurada
+- Junta "à venda", "comprar" ou "for sale" às pesquisas
+- Para CADA resultado, indica o URL exato da página do anúncio
+- NUNCA inventes, adivinhes ou recordes URLs de memória: usa só URLs dos resultados da pesquisa
+- Se um anúncio disser "vendido", "sold", "leilão terminado" ou "preço de martelo", IGNORA-O
+- Indica o preço na moeda em que está anunciado
+- Distingue o estado (UNC, BNC, Proof ou circulada) e a apresentação (solta, coincard, cápsula ou estojo), porque mudam muito o preço
+- Nas moedas de euro e nos escudos, confirma o país, o ano e, quando existir, a marca da casa da moeda
+- Qualidade acima de quantidade: 2 resultados confirmados e disponíveis valem mais do que 5 duvidosos
+- Assinala dúvidas de autenticidade ou de estado, e a reputação do vendedor quando a conheceres
+- Responde em português europeu (de Portugal)`
 
 func (s *SettingsService) GetCoinSearchPrompt() string {
 	if prompt := s.GetSetting(SettingCoinSearchPrompt); prompt != "" {
@@ -123,27 +124,31 @@ const (
 	SettingCoinCopilotResumeWindowHours           = "CoinCopilotResumeWindowHours"
 )
 
-const DefaultObversePrompt = `You are an expert numismatist specializing in ancient and modern coins. Analyze the obverse (front) of this coin and provide:
-1. **Identification** – Confirm or correct the coin's identification
-2. **Portrait / Design** – Describe the obverse design in detail
-3. **Inscriptions** – Read all visible inscriptions and legends
-4. **Condition** – Assess the obverse condition and grade
-5. **Die Details** – Note any die varieties, errors, or notable features
-6. **Authenticity** – Any observations relevant to authenticity`
+const DefaultObversePrompt = `És um numismata especialista em moedas e notas de banco, sobretudo modernas: euro, escudos e réis, e moedas e notas de outros países dos séculos XIX a XXI. Analisa o anverso (a frente) desta peça e indica:
+1. **Identificação** – confirma ou corrige a identificação: país, valor facial, ano, série ou tema; numa moeda de euro, se é de circulação, comemorativa de 2 € ou de coleção
+2. **Retrato / Desenho** – descreve o retrato ou o desenho em pormenor
+3. **Inscrições** – lê todas as legendas e inscrições visíveis, a marca da casa da moeda e, numa moeda de euro, as estrelas da União Europeia
+4. **Estado** – avalia o estado do anverso e propõe um grau da escala usada na coleção: UNC, AU, XF, VF, F, VG ou G (ou BNC ou Proof, se for um acabamento de coleção)
+5. **Pormenores do cunho** – variantes, erros ou particularidades
+6. **Autenticidade** – observações relevantes para a autenticidade
+Numa nota de banco, descreve a frente, as assinaturas, o número de série e as marcas de segurança visíveis.
+Responde em português europeu (de Portugal).`
 
-const DefaultReversePrompt = `You are an expert numismatist specializing in ancient and modern coins. Analyze the reverse (back) of this coin and provide:
-1. **Identification** – Confirm or correct the coin's identification from the reverse
-2. **Design** – Describe the reverse design, motifs, and symbols in detail
-3. **Inscriptions** – Read all visible inscriptions, legends, and mint marks
-4. **Condition** – Assess the reverse condition and grade
-5. **Die Details** – Note any die varieties, errors, or notable features
-6. **Authenticity** – Any observations relevant to authenticity`
+const DefaultReversePrompt = `És um numismata especialista em moedas e notas de banco, sobretudo modernas: euro, escudos e réis, e moedas e notas de outros países dos séculos XIX a XXI. Analisa o reverso (o verso) desta peça e indica:
+1. **Identificação** – confirma ou corrige a identificação a partir do reverso: país, valor facial, ano, série ou tema; numa moeda de euro, a face comum (o mapa da Europa) e a sua versão
+2. **Desenho** – descreve o desenho, os motivos e os símbolos em pormenor
+3. **Inscrições** – lê todas as legendas e inscrições visíveis, o valor facial e a marca da casa da moeda
+4. **Estado** – avalia o estado do reverso e propõe um grau da escala usada na coleção: UNC, AU, XF, VF, F, VG ou G (ou BNC ou Proof, se for um acabamento de coleção)
+5. **Pormenores do cunho** – variantes, erros ou particularidades
+6. **Autenticidade** – observações relevantes para a autenticidade
+Numa nota de banco, descreve o verso, o número de série, a marca de água e as marcas de segurança visíveis.
+Responde em português europeu (de Portugal).`
 
-const DefaultTextExtractionPrompt = `Extract ALL text visible in this image exactly as written.
-This is a store card or certificate that accompanies a coin purchase.
-Preserve the original layout and formatting as much as possible.
-Include store name, coin description, price, grade, reference numbers, dates, and any other text.
-Return ONLY the extracted text, no commentary.`
+const DefaultTextExtractionPrompt = `Extrai TODO o texto visível nesta imagem, exatamente como está escrito e na língua original.
+A imagem é um cartão, coincard, carteira, certificado, etiqueta ou recibo que acompanha uma moeda ou nota de banco.
+Mantém o mais possível a disposição e a formatação originais.
+Inclui o nome da loja ou da casa da moeda, a descrição da peça, o preço, o estado, a tiragem, os números de referência, as datas e qualquer outro texto.
+Devolve APENAS o texto extraído, sem comentários.`
 
 var settingDefaults = map[string]string{
 	SettingAIProvider:                         "",
@@ -181,6 +186,9 @@ var settingDefaults = map[string]string{
 	SettingValuationCheckInterval:             "7",
 	SettingValuationCheckStartTime:            "03:00",
 	SettingValuationMaxCoins:                  "50",
+	SettingNumistaValuesEnabled:               "false",
+	SettingNumistaValuesStartTime:             "05:00",
+	SettingNumistaValuesDailyRequests:         "40",
 	SettingScheduleTimezone:                   "", // empty = server local time
 	SettingRegistrationMode:                   "closed",
 	SettingBackupStatus:                       "not_configured",
@@ -462,8 +470,31 @@ func (s *SettingsService) GetSetting(key string) string {
 	return setting.Value
 }
 
+// defaultPrompts are the AI prompts' built-in texts, by setting.
+func defaultPrompts() map[string]string {
+	return map[string]string{
+		SettingCoinSearchPrompt:     DefaultCoinSearchPrompt,
+		SettingCoinShowsPrompt:      DefaultCoinShowsPrompt,
+		SettingValuationPrompt:      DefaultValuationPrompt,
+		SettingObversePrompt:        DefaultObversePrompt,
+		SettingReversePrompt:        DefaultReversePrompt,
+		SettingTextExtractionPrompt: DefaultTextExtractionPrompt,
+	}
+}
+
+// NormalizedPrompt is a prompt as compared: without the spaces around it,
+// with plain line ends.
+func NormalizedPrompt(prompt string) string {
+	return strings.TrimSpace(strings.ReplaceAll(prompt, "\r\n", "\n"))
+}
+
 // SetSetting creates or updates a setting value.
 func (s *SettingsService) SetSetting(key, value string) error {
+	// A prompt saved as it comes is stored empty, so that its default, even a
+	// later one, applies; the admin page saves every field it shows.
+	if prompt, ok := defaultPrompts()[key]; ok && NormalizedPrompt(value) == NormalizedPrompt(prompt) {
+		value = ""
+	}
 	if key == SettingDealerSearchSources || key == SettingAuctionSearchSources {
 		normalized, err := NormalizeSearchSourceSetting(value)
 		if err != nil {

@@ -38,6 +38,12 @@
       @update:settings-error="emit('update:valSettingsError', $event)"
     />
 
+    <AdminNumistaValuesSchedule
+      :settings="settings"
+      :settings-saving="settingsSaving"
+      @save="emit('save')"
+    />
+
     <AdminBackupSchedule
       :settings="settings"
       :settings-saving="settingsSaving"
@@ -52,6 +58,7 @@ import AdminWishlistSearchAlertSchedule from '@/components/admin/schedules/Admin
 import AdminBackupSchedule from '@/components/admin/schedules/AdminBackupSchedule.vue'
 import AdminScheduleTimezone from '@/components/admin/schedules/AdminScheduleTimezone.vue'
 import AdminValuationSchedule from '@/components/admin/schedules/AdminValuationSchedule.vue'
+import AdminNumistaValuesSchedule from '@/components/admin/schedules/AdminNumistaValuesSchedule.vue'
 import type { AppSettings } from '@/types'
 import { t } from '@/i18n'
 

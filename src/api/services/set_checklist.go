@@ -37,7 +37,7 @@ type ChecklistDefinition struct {
 	Currency string `json:"currency,omitempty"`
 	// FaceValue keeps the catalogue's coins of that face value; all when 0.
 	FaceValue float64 `json:"faceValue,omitempty"`
-	Challenge string  `json:"challenge,omitempty" enums:"euro-countries,joint-issue,annual-series"`
+	Challenge string  `json:"challenge,omitempty" enums:"euro-countries,joint-issue,annual-series,escudo-types,reis-types"`
 	// Year is the annual series' or the joint issue's.
 	Year int `json:"year,omitempty"`
 }
@@ -68,7 +68,7 @@ func ParseChecklistDefinition(raw map[string]interface{}) (ChecklistDefinition, 
 		definition.Challenge, definition.Year = "", 0
 	case ChecklistSourceChallenge:
 		switch definition.Challenge {
-		case ChallengeEuroCountries:
+		case ChallengeEuroCountries, ChallengeEscudoTypes, ChallengeReisTypes:
 			definition.Country, definition.Year = "", 0
 		case ChallengeJointIssue:
 			if definition.Year < ecbFirstCommemorativeYear || definition.Year > time.Now().Year() {
@@ -105,9 +105,11 @@ type ChecklistSlot struct {
 	Key string `json:"key"`
 	// Title names the coin; a challenge's country slots leave it empty (the
 	// country says it).
-	Title      string    `json:"title,omitempty"`
-	Country    string    `json:"country,omitempty"`
-	Year       int       `json:"year,omitempty"`
+	Title   string `json:"title,omitempty"`
+	Country string `json:"country,omitempty"`
+	Year    int    `json:"year,omitempty"`
+	// ToYear is a type's last year, when it was struck over several.
+	ToYear     int       `json:"toYear,omitempty"`
 	FaceValue  float64   `json:"faceValue,omitempty"`
 	FaceValues []float64 `json:"faceValues,omitempty"`
 	Currency   string    `json:"currency,omitempty"`
@@ -145,6 +147,7 @@ type SetChecklistService struct {
 	coins     *repository.CoinRepository
 	photos    *CoinPhotoSearchService
 	overrides *repository.CatalogueOverrideRepository
+	numista   *NumistaCatalogService
 	now       func() time.Time
 }
 
@@ -158,6 +161,13 @@ func NewSetChecklistService(releases *CoinReleasesService, coins *repository.Coi
 // in the catalogue, and list once those the user joined.
 func (s *SetChecklistService) WithOverrides(overrides *repository.CatalogueOverrideRepository) *SetChecklistService {
 	s.overrides = overrides
+	return s
+}
+
+// WithNumista lets the ready-made type sets list Portugal's types from
+// Numista's catalogue, year by year.
+func (s *SetChecklistService) WithNumista(numista *NumistaCatalogService) *SetChecklistService {
+	s.numista = numista
 	return s
 }
 
@@ -226,10 +236,26 @@ func catalogueSlot(coin CoinRelease) ChecklistSlot {
 // Slots lists a checklist's slots, each filled by a coin of the collection
 // when it has one.
 func (s *SetChecklistService) Slots(ctx context.Context, userID uint, definition ChecklistDefinition) ([]ChecklistSlot, error) {
+	slots, _, err := s.SlotsAndCompleteness(ctx, userID, definition)
+	return slots, err
+}
+
+// SlotsAndCompleteness lists a checklist's slots, and tells whether the list
+// behind them is complete (the catalogue, or a type set's years).
+func (s *SetChecklistService) SlotsAndCompleteness(ctx context.Context, userID uint, definition ChecklistDefinition) ([]ChecklistSlot, bool, error) {
 	coins, err := s.coins.CollectionCoinsWithReferences(userID, models.CoinKindCoin)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
+	if definition.Challenge == ChallengeEscudoTypes || definition.Challenge == ChallengeReisTypes {
+		slots, complete := s.typeSeriesSlots(ctx, definition.Challenge, coins)
+		return slots, complete, nil
+	}
+	slots, err := s.slots(ctx, userID, definition, coins)
+	return slots, s.Complete(), err
+}
+
+func (s *SetChecklistService) slots(ctx context.Context, userID uint, definition ChecklistDefinition, coins []models.Coin) ([]ChecklistSlot, error) {
 	byID := make(map[uint]*models.Coin, len(coins))
 	for i := range coins {
 		byID[coins[i].ID] = &coins[i]

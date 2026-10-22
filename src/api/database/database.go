@@ -1,6 +1,8 @@
 package database
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -108,6 +110,10 @@ func Connect(dbPath string) {
 	if err := DB.AutoMigrate(&models.NumistaUsage{}); err != nil {
 		log.Fatalf("Failed to migrate Numista usage: %v", err)
 	}
+	// The daily batches of coin values from Numista's prices: new standalone tables.
+	if err := DB.AutoMigrate(&models.NumistaValueRun{}, &models.NumistaValueCheck{}); err != nil {
+		log.Fatalf("Failed to migrate Numista value batches: %v", err)
+	}
 	if err := seedNumistaUsage(DB, time.Now()); err != nil {
 		log.Printf("database: could not estimate this month's Numista requests: %v", err)
 	}
@@ -141,6 +147,9 @@ func Connect(dbPath string) {
 	}
 	if err := dropRetiredCategories(DB); err != nil {
 		log.Fatalf("Failed to drop retired categories: %v", err)
+	}
+	if err := retireOldDefaultPrompts(DB); err != nil {
+		log.Fatalf("Failed to retire the old default prompts: %v", err)
 	}
 
 	// 353-wishlist-availability-run-observability: AvailabilityCycle is a brand-new table and
@@ -476,6 +485,43 @@ func dropRetiredCategories(db *gorm.DB) error {
 		}
 		return tx.Model(&models.Coin{}).Where("category IN ?", retiredCategories).Update("category", string(models.CategoryOther)).Error
 	})
+}
+
+// retiredDefaultPrompts are the SHA-256 digests of the AI prompts the app
+// shipped with until 2026-10 (trimmed, with plain line ends), written for
+// ancient Greek and Roman coins. Saving the AI settings stored them as they
+// were; a prompt still exactly so is cleared, so that today's default (this
+// collection's coins and banknotes, in Portuguese) applies. A prompt the
+// admin changed is kept.
+var retiredDefaultPrompts = map[string]string{
+	"CoinSearchPrompt":     "e759e7a2a9cfcd0c4ae05e6edee4c58c430045c21ace16b27d59f795fabde335",
+	"CoinShowsPrompt":      "8502061c93fe969609cc5ec45fbeca70942573fb3a1db6773affff7c61738445",
+	"ValuationPrompt":      "7238a53f1ccac07a7d195cbe86c3b937b7c7395edd97c999d87c84c67428e26b",
+	"ObversePrompt":        "0cc12f52694e457fe10893bf8a00aadc482ff8ddfe03454ce2896b43de3013c6",
+	"ReversePrompt":        "563556bec5379317e31567ef9200de5c62c587124f8d780e20ec31249fb5c2ff",
+	"TextExtractionPrompt": "8fda1b2b72a3ae3e7bb760e175d08b24149b66a37eaba2e21ac79d935bf4e74a",
+}
+
+// retireOldDefaultPrompts clears the stored prompts that are the old defaults.
+func retireOldDefaultPrompts(db *gorm.DB) error {
+	keys := make([]string, 0, len(retiredDefaultPrompts))
+	for key := range retiredDefaultPrompts {
+		keys = append(keys, key)
+	}
+	var settings []models.AppSetting
+	if err := db.Where("key IN ?", keys).Find(&settings).Error; err != nil {
+		return err
+	}
+	for _, setting := range settings {
+		digest := sha256.Sum256([]byte(strings.TrimSpace(strings.ReplaceAll(setting.Value, "\r\n", "\n"))))
+		if hex.EncodeToString(digest[:]) != retiredDefaultPrompts[setting.Key] {
+			continue
+		}
+		if err := db.Model(&models.AppSetting{}).Where("key = ?", setting.Key).Update("value", "").Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // dropColumns drops those of the columns the table still has.

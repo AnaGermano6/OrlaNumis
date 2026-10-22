@@ -346,7 +346,6 @@ describe('Design Token Enforcement (Constitution Principle VI)', () => {
         ['components/settings/SettingsDataSection.vue', 12],
         ['components/ui/BaseButton.vue', 4],
         ['components/ui/BaseBadge.vue', 3],
-        ['pages/SetProposalReviewPage.vue', 2],
         ['pages/SetDetailPage.vue', 1],
         ['pages/TimelinePage.vue', 1],
       ])

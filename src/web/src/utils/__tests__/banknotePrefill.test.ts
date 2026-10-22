@@ -63,5 +63,30 @@ describe('buildBanknotePrefill', () => {
       { catalog: 'Pick', number: '188c' },
     ])
     expect(fields.notes).toContain('XYZ 9')
+    expect(fields).toMatchObject({ signatures: '', noteVariant: '', numistaIssueId: undefined })
+  })
+
+  it("takes the printed date, signatories and Pick number of the issue picked", () => {
+    const issue = {
+      id: 77, year: 1996, month: 1, day: 18, pick: '188a', mintage: 1000,
+      signatures: [{ name: 'António de Sousa', title: 'Governor' }, { name: 'Luís Campos e Cunha', title: 'Deputy Governor' }],
+    }
+    const { fields, references } = buildBanknotePrefill({ type: TYPE, issue, wishlist: false }, { categories: ['Modern'], eras: ['modern'], registry: REGISTRY })
+
+    expect(fields).toMatchObject({
+      name: '1000 Escudos (Pedro Álvares Cabral) 1996 – Portugal',
+      dateRange: '18 de janeiro de 1996',
+      year: 1996,
+      signatures: 'António de Sousa / Luís Campos e Cunha',
+      noteVariant: '',
+      numistaIssueId: 77,
+    })
+    expect(references).toContainEqual({ catalog: 'Pick', number: '188a' })
+    expect(references.filter((reference) => reference.catalog === 'Pick')).toHaveLength(1)
+
+    const specimen = buildBanknotePrefill({ type: TYPE, issue: { id: 78, year: 1996, pick: '188s', variant: 'specimen' }, wishlist: false }, { categories: [], eras: [], registry: [] })
+    // Without Pick in the registry the number stays in the notes.
+    expect(specimen.fields).toMatchObject({ dateRange: '1996', noteVariant: 'specimen', signatures: '' })
+    expect(specimen.references.some((reference) => reference.catalog === 'Pick')).toBe(false)
   })
 })

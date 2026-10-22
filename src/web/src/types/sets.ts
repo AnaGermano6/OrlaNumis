@@ -88,12 +88,11 @@ export interface CreateCoinSetRequest {
   targetCompletionDate?: string | null
   smartCriteria?: Record<string, unknown> | null
   templateId?: string | null
-  agenticPrompt?: string | null
   checklist?: ChecklistDefinition
 }
 
 /** The challenges a checklist set can be. */
-export type ChecklistChallenge = 'euro-countries' | 'joint-issue' | 'annual-series'
+export type ChecklistChallenge = 'euro-countries' | 'joint-issue' | 'annual-series' | 'escudo-types' | 'reis-types'
 
 /**
  * What a checklist set lists: a country's coins in the catalogue (all, or
@@ -120,6 +119,8 @@ export interface ChecklistSlot {
   /** ISO code. */
   country?: string
   year?: number
+  /** A type's last year, when it was struck over several. */
+  toYear?: number
   faceValue?: number
   faceValues?: number[]
   currency?: string
@@ -142,104 +143,6 @@ export interface ChecklistResponse {
 
 export interface CreateCoinSetFromCsvRequest extends CreateCoinSetRequest {
   csv: string
-}
-
-export interface SetBuilderRun {
-  id: number
-  userId: number
-  prompt: string
-  status: 'queued' | 'running' | 'completed' | 'failed'
-  provider?: string
-  model?: string
-  transcriptSummary?: string
-  errorMessage?: string
-  terminationReason?: string
-  usedTurns?: number
-  createdAt: string
-  updatedAt: string
-}
-
-export interface CreateSetBuilderRunRequest {
-  prompt: string
-}
-
-export interface SetProposalSlot {
-  id: number
-  proposalId: number
-  label: string
-  criteria?: Record<string, unknown> | null
-  group?: string
-  sortOrder: number
-  verificationStatus: 'verified' | 'unverified'
-  sourceNote?: string
-  validationNote?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface UpdateSetProposalSlotRequest {
-  label: string
-  criteria?: Record<string, unknown> | null
-  group?: string
-  sortOrder: number
-  verificationStatus: 'verified' | 'unverified'
-  sourceNote?: string
-  validationNote?: string
-}
-
-export interface UpdateSetProposalRequest {
-  proposedName: string
-  description?: string
-  color?: string
-  selectedScope?: string
-  slots: UpdateSetProposalSlotRequest[]
-}
-
-export interface RegenerateSetProposalRequest {
-  feedback: string
-}
-
-export interface SetProposalPrematchSummary {
-  estimatedFilled?: number
-  estimatedTotal?: number
-  notes?: string
-}
-
-export interface SetProposal {
-  id: number
-  userId: number
-  builderRunId: number
-  run?: SetBuilderRun
-  originalPrompt: string
-  status: 'pending' | 'approved' | 'rejected' | 'expired' | 'creation_failed'
-  proposedName: string
-  proposedSlug?: string
-  description?: string
-  color: string
-  selectedScope?: string
-  scopeOptions?: {
-    scopeSummary?: string
-    groupBy?: string
-    options?: Array<{
-      label: string
-      description?: string
-      estimated_slot_count?: number
-      recommended?: boolean
-    }>
-  } | null
-  rosterPayload?: {
-    transcriptSummary?: string
-    turnsUsed?: number
-  } | null
-  preMatchSummary?: SetProposalPrematchSummary | null
-  expiresAt: string
-  rejectedAt?: string | null
-  rejectionReason?: string
-  approvalSetId?: number | null
-  errorMessage?: string
-  slots?: SetProposalSlot[]
-  createdAt: string
-  updatedAt: string
 }
 
 export type UpdateCoinSetRequest = Partial<CreateCoinSetRequest>

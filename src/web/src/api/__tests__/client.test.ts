@@ -524,21 +524,6 @@ describe('API Client', () => {
     it('treats bare HTTP 503 stream failures as agent-service configuration failures', () => {
       expect(client.formatAgentServiceError('HTTP 503')).toBe('Agent service unavailable. Check the internal agent service configuration.')
     })
-
-    it('turns set-builder slot-limit failures into actionable user guidance', () => {
-      expect(client.formatSetBuilderError({
-        response: {
-          data: {
-            detail: [
-              {
-                loc: ['body', 'max_slots'],
-                msg: 'Input should be less than or equal to 300',
-              },
-            ],
-          },
-        },
-      })).toContain('Try a narrower prompt')
-    })
   })
 
   describe('API method wrappers', () => {

@@ -1214,6 +1214,92 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/numista-values": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The month's Numista requests and whether they run low (from 75% of the quota) or are spent for background requests, the next batch's budget, the coins it covers (linked to Numista with a grade Numista prices) and those due a check (none in 30 days), and the latest batches. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Numista values batch status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.NumistaValueStatus"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/numista-values/run": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Starts one batch in the background: it updates the current value of the coins due from Numista's price for their grade, within today's share of the monthly quota. The previous value stays in each coin's value history. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Run a Numista values batch now",
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/numista/health": {
             "get": {
                 "security": [
@@ -4263,6 +4349,199 @@ const docTemplate = `{
                 }
             }
         },
+        "/coins/export": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Downloads, as an Excel workbook (xlsx) or a CSV, the user's coins and banknotes that the filters keep (the same filters and order as GET /coins, without pages; up to 10,000), one row each with its details, purchase, value, references and sets. Columns are named in the language asked for; a CSV in Portuguese uses \";\" and a decimal comma, as Excel there expects.",
+                "produces": [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "text/csv"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Export coins as a spreadsheet",
+                "parameters": [
+                    {
+                        "enum": [
+                            "xlsx",
+                            "csv"
+                        ],
+                        "type": "string",
+                        "default": "xlsx",
+                        "description": "Spreadsheet format",
+                        "name": "format",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "pt",
+                            "en"
+                        ],
+                        "type": "string",
+                        "default": "pt",
+                        "description": "Language of the columns",
+                        "name": "lang",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "coin",
+                            "banknote"
+                        ],
+                        "type": "string",
+                        "description": "Only coins or only banknotes (every item when omitted)",
+                        "name": "kind",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "true",
+                            "false"
+                        ],
+                        "type": "string",
+                        "description": "Filter by wishlist status",
+                        "name": "wishlist",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by country (exact)",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by face value, as written",
+                        "name": "denomination",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "loose",
+                            "coincard",
+                            "capsule",
+                            "flip",
+                            "proof_set",
+                            "blister",
+                            "slab"
+                        ],
+                        "type": "string",
+                        "description": "Filter by presentation",
+                        "name": "presentation",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "common",
+                            "uncommon",
+                            "scarce",
+                            "rare",
+                            "very_rare",
+                            "extremely_rare"
+                        ],
+                        "type": "string",
+                        "description": "Filter by rarity",
+                        "name": "rarity",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Only coins held more than once",
+                        "name": "repeated",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Only coins of countries that no longer exist",
+                        "name": "extinct",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "current",
+                            "demonetized"
+                        ],
+                        "type": "string",
+                        "description": "Only current or demonetized coins, as Numista says",
+                        "name": "circulation",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Only commemorative (true) or regular (false) coins, as Numista says",
+                        "name": "commemorative",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Only one Numista kind of coin",
+                        "name": "classification",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Only the coins of a set",
+                        "name": "set",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search, as in the coin list",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "created_at",
+                            "updated_at",
+                            "current_value",
+                            "purchase_date",
+                            "name",
+                            "quantity",
+                            "random"
+                        ],
+                        "type": "string",
+                        "default": "updated_at",
+                        "description": "Sort field",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort order",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The spreadsheet"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/coins/health": {
             "get": {
                 "security": [
@@ -4584,40 +4863,63 @@ const docTemplate = `{
                 }
             }
         },
-        "/coins/official-photos/batch": {
-            "post": {
+        "/coins/numista-fill": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Looks at up to limit (default 10, at most 20) of the user's coins without any image, after afterId, and adds the official images each has (as for one coin): the ECB's images of a euro coin, or its mint's photos. Numista types are read from the cache only, so no Numista request is made. Call again with nextAfterId until done.",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "For the user's coins and banknotes (collection and wishlist) linked to a Numista type whose details the app has cached, lists what a fill would set: the monetary system from the type's currency when none is set; and, for coins, the material from Numista's composition when the coin's is Other or empty, the weight and the diameter when missing, and a coin card as presentation when none is set and Numista says the type is issued in one. Also lists, as corrections, the coins whose material is set but differs from the composition. Changes nothing and makes no Numista request.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Coins"
                 ],
-                "summary": "Add official images to coins without photos",
+                "summary": "Preview a fill of coin records from Numista",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.CoinNumistaFillResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Saves what the preview lists (see GET /coins/numista-fill): only empty fields are filled, all coins or none, from the cached Numista types; no Numista request is made. With corrections=true, the listed material corrections are saved too. Returns what was changed.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Fill coin records from Numista",
                 "parameters": [
                     {
-                        "description": "Where to start",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.OfficialPhotosBatchRequest"
-                        }
+                        "type": "boolean",
+                        "description": "Also replace the materials that differ from Numista's composition",
+                        "name": "corrections",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.OfficialPhotosBatchResponse"
+                            "$ref": "#/definitions/models.CoinNumistaFillResult"
                         }
                     },
                     "400": {
@@ -4635,26 +4937,44 @@ const docTemplate = `{
                 }
             }
         },
-        "/coins/official-photos/missing": {
-            "get": {
+        "/coins/share-list": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Counts the user's coins (not banknotes) that have no image at all: the ones the official photos batch looks at.",
-                "produces": [
+                "description": "Makes, as a PDF (with a photo of each item) or a CSV, the user's duplicates to trade (coins and banknotes held more than once, with how many there are to spare), the wishlist, or both; sorted by country, year and name, in Portuguese or English. Values are included only when asked for, and the contact, when given, is printed at the top and not stored.",
+                "consumes": [
                     "application/json"
+                ],
+                "produces": [
+                    "application/pdf",
+                    "text/csv"
                 ],
                 "tags": [
                     "Coins"
                 ],
-                "summary": "Count coins without photos",
+                "summary": "Download a list to share",
+                "parameters": [
+                    {
+                        "description": "Which list and how",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/services.ShareListRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "The file"
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/handlers.MissingPhotosResponse"
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
@@ -5906,7 +6226,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Numista issue ID; defaults to the issue matching the coin's date, else the first",
+                        "description": "Numista issue ID; defaults to the coin's own issue, else the one matching its date, else the first",
                         "name": "issueId",
                         "in": "query"
                     },
@@ -8338,6 +8658,46 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.NumistaCatalogTypeResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/numista/catalog/types/{id}/issues": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the issues of a Numista type: year, mint mark, mintage and, for a banknote, the date printed on it, its signatories, its own Pick number (\"176a\") and whether its notes are replacement or specimen notes. Cached for 30 days; no prices are fetched.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Numista"
+                ],
+                "summary": "List a Numista type's issues",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Numista type ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.NumistaCatalogIssuesResult"
                         }
                     },
                     "400": {
@@ -11192,7 +11552,11 @@ const docTemplate = `{
                         "enum": [
                             "name",
                             "denomination",
-                            "purchaseLocation"
+                            "ruler",
+                            "era",
+                            "purchaseLocation",
+                            "country",
+                            "monetarySystem"
                         ],
                         "type": "string",
                         "description": "Field to get suggestions for",
@@ -13034,6 +13398,11 @@ const docTemplate = `{
                 "mintLocationId": {
                     "type": "integer"
                 },
+                "monetarySystem": {
+                    "description": "MonetarySystem as Numista names it (\"Escudo (1911-2001)\", \"Euro\").",
+                    "type": "string",
+                    "maxLength": 120
+                },
                 "name": {
                     "type": "string",
                     "maxLength": 200
@@ -13050,6 +13419,11 @@ const docTemplate = `{
                 "notes": {
                     "type": "string",
                     "maxLength": 5000
+                },
+                "numistaIssueId": {
+                    "type": "integer",
+                    "maximum": 2147483647,
+                    "minimum": 0
                 },
                 "obverseDescription": {
                     "type": "string",
@@ -13139,7 +13513,7 @@ const docTemplate = `{
                     "maxLength": 100
                 },
                 "series": {
-                    "description": "Banknote details: series, serial number, signatories, printer, size,\nwatermark, replacement or specimen, and a grading company's grade.",
+                    "description": "Banknote details: series, serial number, signatories, printer, size,\nwatermark, replacement or specimen, and a grading company's grade.\nNumistaIssueID is the issue of the linked Numista type the item is (0: none).",
                     "type": "string",
                     "maxLength": 200
                 },
@@ -13553,6 +13927,11 @@ const docTemplate = `{
                 "mintLocationId": {
                     "type": "integer"
                 },
+                "monetarySystem": {
+                    "description": "MonetarySystem as Numista names it (\"Escudo (1911-2001)\", \"Euro\").",
+                    "type": "string",
+                    "maxLength": 120
+                },
                 "name": {
                     "type": "string",
                     "maxLength": 200
@@ -13569,6 +13948,11 @@ const docTemplate = `{
                 "notes": {
                     "type": "string",
                     "maxLength": 5000
+                },
+                "numistaIssueId": {
+                    "type": "integer",
+                    "maximum": 2147483647,
+                    "minimum": 0
                 },
                 "obverseDescription": {
                     "type": "string",
@@ -14318,12 +14702,16 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.MissingPhotosResponse": {
+        "handlers.MonetarySystemCount": {
             "type": "object",
             "properties": {
                 "count": {
                     "type": "integer",
-                    "example": 326
+                    "example": 137
+                },
+                "monetarySystem": {
+                    "type": "string",
+                    "example": "Escudo (1911-2001)"
                 }
             }
         },
@@ -14579,48 +14967,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.OfficialPhotosBatchRequest": {
-            "type": "object",
-            "properties": {
-                "afterId": {
-                    "description": "AfterID is the last coin the previous batch looked at (0 to start).",
-                    "type": "integer",
-                    "example": 0
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 20,
-                    "minimum": 1,
-                    "example": 10
-                }
-            }
-        },
-        "handlers.OfficialPhotosBatchResponse": {
-            "type": "object",
-            "properties": {
-                "checked": {
-                    "description": "Checked is how many coins the batch looked at; WithPhotos how many of\nthem got at least one image, Images how many images in all.",
-                    "type": "integer",
-                    "example": 10
-                },
-                "done": {
-                    "type": "boolean"
-                },
-                "images": {
-                    "type": "integer",
-                    "example": 13
-                },
-                "nextAfterId": {
-                    "description": "NextAfterID starts the next batch; Done is true when no coin is left.",
-                    "type": "integer",
-                    "example": 431
-                },
-                "withPhotos": {
-                    "type": "integer",
-                    "example": 7
-                }
-            }
-        },
         "handlers.OfficialPhotosRequest": {
             "type": "object",
             "required": [
@@ -14788,6 +15134,13 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/handlers.MaterialCount"
+                    }
+                },
+                "byMonetarySystem": {
+                    "description": "ByMonetarySystem counts the coins of each monetary system, most first.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.MonetarySystemCount"
                     }
                 },
                 "totalCoins": {
@@ -16394,6 +16747,11 @@ const docTemplate = `{
                 "mintLocationId": {
                     "type": "integer"
                 },
+                "monetarySystem": {
+                    "description": "MonetarySystem is the currency system the coin belongs to, as Numista\nnames it (\"Escudo (1911-2001)\", \"Real (decimalizado, 1835-1910)\"); every\neuro coin, whatever its country, is \"Euro\".",
+                    "type": "string",
+                    "maxLength": 120
+                },
                 "name": {
                     "type": "string",
                     "maxLength": 200
@@ -16409,6 +16767,9 @@ const docTemplate = `{
                 "notes": {
                     "type": "string",
                     "maxLength": 5000
+                },
+                "numistaIssueId": {
+                    "type": "integer"
                 },
                 "obverseAnalysis": {
                     "type": "string"
@@ -16487,7 +16848,7 @@ const docTemplate = `{
                     "maxLength": 100
                 },
                 "series": {
-                    "description": "Banknote details (see Kind): the series or issue (\"Chapa 13\"), the\nnote's own serial number, its signatories, printer, size, watermark,\nwhether it is a replacement or specimen note, and a grading company's\ngrade (\"PMG 66 EPQ\") with its certificate.",
+                    "description": "Banknote details (see Kind): the series or issue (\"Chapa 13\"), the\nnote's own serial number, its signatories, printer, size, watermark,\nwhether it is a replacement or specimen note, and a grading company's\ngrade (\"PMG 66 EPQ\") with its certificate. NumistaIssueID is the issue of\nthe linked Numista type the item is (a banknote's printed date and\nsignatures), 0 when none was chosen; its market value is that issue's.",
                     "type": "string",
                     "maxLength": 200
                 },
@@ -16641,6 +17002,114 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "models.CoinNumistaFillChange": {
+            "type": "object",
+            "properties": {
+                "coinId": {
+                    "type": "integer"
+                },
+                "composition": {
+                    "type": "string"
+                },
+                "diameterMm": {
+                    "type": "number"
+                },
+                "isWishlist": {
+                    "type": "boolean"
+                },
+                "material": {
+                    "description": "Material is set from Composition, Numista's words for the metal.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.Material"
+                        }
+                    ]
+                },
+                "monetarySystem": {
+                    "description": "MonetarySystem is set from the type's currency (see MonetarySystemFromNumista).",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "presentation": {
+                    "type": "string"
+                },
+                "previousMaterial": {
+                    "description": "PreviousMaterial is the material a correction replaces.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.Material"
+                        }
+                    ]
+                },
+                "weightGrams": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.CoinNumistaFillResult": {
+            "type": "object",
+            "properties": {
+                "applied": {
+                    "description": "Applied is true once the changes were saved.",
+                    "type": "boolean"
+                },
+                "byMaterial": {
+                    "description": "ByMaterial counts the materials set, by material.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "changes": {
+                    "description": "Changes lists every coin the fill changes, by name.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CoinNumistaFillChange"
+                    }
+                },
+                "coins": {
+                    "description": "Coins is how many coins get at least one field.",
+                    "type": "integer"
+                },
+                "corrected": {
+                    "description": "Corrected is how many corrections were saved.",
+                    "type": "integer"
+                },
+                "corrections": {
+                    "description": "Corrections lists the coins whose material is set but is not what\nNumista's composition says (e.g. Silver for silver plated copper).\nThey change only when asked for.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CoinNumistaFillChange"
+                    }
+                },
+                "diameters": {
+                    "type": "integer"
+                },
+                "materials": {
+                    "type": "integer"
+                },
+                "monetarySystems": {
+                    "description": "MonetarySystems is how many coins and banknotes get a monetary system.",
+                    "type": "integer"
+                },
+                "notCached": {
+                    "description": "NotCached coins are linked to a Numista type whose details the app\nhas not cached yet; they are left as they are.",
+                    "type": "integer"
+                },
+                "presentations": {
+                    "type": "integer"
+                },
+                "unmatched": {
+                    "description": "Unmatched coins still have no material: Numista's composition fits\nnone of the app's (e.g. plain steel or iron).",
+                    "type": "integer"
+                },
+                "weights": {
+                    "type": "integer"
                 }
             }
         },
@@ -16855,7 +17324,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "source": {
-                    "description": "Source identifies the origin of this value entry: manual, ai_scheduled, or ai_estimate.\nLegacy rows with no source default to 'manual' via backfill in database.go.",
+                    "description": "Source identifies the origin of this value entry: manual, ai_scheduled, ai_estimate or numista.\nLegacy rows with no source default to 'manual' via backfill in database.go.",
                     "type": "string"
                 },
                 "userId": {
@@ -17033,7 +17502,19 @@ const docTemplate = `{
                 "Bronze",
                 "Copper",
                 "Electrum",
-                "Other"
+                "Other",
+                "Billon",
+                "Copper-nickel",
+                "Nickel brass",
+                "Nordic gold",
+                "Aluminium bronze",
+                "Brass",
+                "Nickel",
+                "Aluminium",
+                "Zinc",
+                "Stainless steel",
+                "Plated steel",
+                "Bimetallic"
             ],
             "x-enum-varnames": [
                 "MaterialGold",
@@ -17041,7 +17522,19 @@ const docTemplate = `{
                 "MaterialBronze",
                 "MaterialCopper",
                 "MaterialElectrum",
-                "MaterialOther"
+                "MaterialOther",
+                "MaterialBillon",
+                "MaterialCopperNickel",
+                "MaterialNickelBrass",
+                "MaterialNordicGold",
+                "MaterialAluminiumBronze",
+                "MaterialBrass",
+                "MaterialNickel",
+                "MaterialAluminium",
+                "MaterialZinc",
+                "MaterialStainlessSteel",
+                "MaterialPlatedSteel",
+                "MaterialBimetallic"
             ]
         },
         "models.MintLocation": {
@@ -17177,6 +17670,24 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.NumistaCatalogIssuer"
                     }
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.NumistaCatalogIssuesResult": {
+            "type": "object",
+            "properties": {
+                "issues": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaIssueSummary"
+                    }
+                },
+                "stale": {
+                    "description": "Stale is true when Numista could not be reached and stored issues are shown.",
+                    "type": "boolean"
                 },
                 "status": {
                     "type": "string"
@@ -17353,6 +17864,10 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "monetarySystem": {
+                    "description": "MonetarySystem is the type's currency system, as a coin stores it\n(see MonetarySystemFromNumista): \"Escudo (1911-2001)\", \"Euro\".",
+                    "type": "string"
                 },
                 "obverse": {
                     "$ref": "#/definitions/models.NumistaCatalogSide"
@@ -17583,11 +18098,28 @@ const docTemplate = `{
                 }
             }
         },
+        "models.NumistaIssueSignature": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "José da Silva Lopes"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Governor"
+                }
+            }
+        },
         "models.NumistaIssueSummary": {
             "type": "object",
             "properties": {
                 "comment": {
                     "type": "string"
+                },
+                "day": {
+                    "type": "integer",
+                    "example": 13
                 },
                 "id": {
                     "type": "integer"
@@ -17603,6 +18135,28 @@ const docTemplate = `{
                 },
                 "mintage": {
                     "type": "integer"
+                },
+                "month": {
+                    "description": "A banknote's issues are told apart by the date printed on the note\n(Month and Day with Year), its signatories, the issue's own Pick number\n(\"176a\") and whether its notes are replacement or specimen notes.",
+                    "type": "integer",
+                    "example": 9
+                },
+                "pick": {
+                    "type": "string",
+                    "example": "176a"
+                },
+                "signatures": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaIssueSignature"
+                    }
+                },
+                "variant": {
+                    "type": "string",
+                    "enum": [
+                        "replacement",
+                        "specimen"
+                    ]
                 },
                 "year": {
                     "description": "Year is the Gregorian year for dated issues (negative for BC).",
@@ -17782,6 +18336,119 @@ const docTemplate = `{
                 "requests": {
                     "type": "integer",
                     "example": 1234
+                }
+            }
+        },
+        "models.NumistaValueRun": {
+            "type": "object",
+            "properties": {
+                "budget": {
+                    "description": "Budget is how many Numista requests the run could make; Requests, how\nmany it made (prices Numista gave in the last days cost none).",
+                    "type": "integer"
+                },
+                "checked": {
+                    "description": "Checked coins had their price looked up: Updated got a new value,\nUnchanged kept theirs, NoPrice have none on Numista, Failed could not\nbe looked up and are tried again next time.",
+                    "type": "integer"
+                },
+                "completedAt": {
+                    "type": "string"
+                },
+                "failed": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "noPrice": {
+                    "type": "integer"
+                },
+                "requests": {
+                    "type": "integer"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "running",
+                        "completed",
+                        "budget_spent",
+                        "paused",
+                        "unconfigured",
+                        "failed"
+                    ]
+                },
+                "triggerType": {
+                    "type": "string",
+                    "enum": [
+                        "scheduled",
+                        "manual"
+                    ]
+                },
+                "unchanged": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.NumistaValueStatus": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string",
+                    "example": "EUR"
+                },
+                "dailyBudget": {
+                    "description": "DailyBudget is how many requests the next batch may make.",
+                    "type": "integer"
+                },
+                "due": {
+                    "type": "integer"
+                },
+                "eligible": {
+                    "description": "Eligible coins are linked to Numista and have a grade Numista prices;\nDue ones have not been checked in the last 30 days.",
+                    "type": "integer"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "isRunning": {
+                    "type": "boolean"
+                },
+                "nextRunIn": {
+                    "description": "NextRunIn is the time until the next scheduled batch (when enabled).",
+                    "type": "string",
+                    "example": "5h0m0s"
+                },
+                "quotaLevel": {
+                    "description": "QuotaLevel is ok, low (from 75% of the quota) or paused (from PauseAt).",
+                    "type": "string",
+                    "enum": [
+                        "ok",
+                        "low",
+                        "paused"
+                    ]
+                },
+                "resumesOn": {
+                    "description": "ResumesOn is the first day of next month (UTC), when the quota renews.",
+                    "type": "string",
+                    "example": "2026-11-01"
+                },
+                "runs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NumistaValueRun"
+                    }
+                },
+                "usage": {
+                    "$ref": "#/definitions/models.NumistaUsageSummary"
+                },
+                "withoutGrade": {
+                    "description": "WithoutGrade coins are linked to Numista but have no grade Numista\nprices (none, or a proof); they wait for one.",
+                    "type": "integer"
                 }
             }
         },
@@ -18540,6 +19207,10 @@ const docTemplate = `{
                     "description": "Title names the coin; a challenge's country slots leave it empty (the\ncountry says it).",
                     "type": "string"
                 },
+                "toYear": {
+                    "description": "ToYear is a type's last year, when it was struck over several.",
+                    "type": "integer"
+                },
                 "year": {
                     "type": "integer"
                 }
@@ -19085,6 +19756,48 @@ const docTemplate = `{
                 },
                 "ok": {
                     "type": "boolean"
+                }
+            }
+        },
+        "services.ShareListRequest": {
+            "type": "object",
+            "required": [
+                "format",
+                "list"
+            ],
+            "properties": {
+                "contact": {
+                    "description": "Contact, when given, is printed at the top (an e-mail, a phone); it is not stored.",
+                    "type": "string",
+                    "maxLength": 120
+                },
+                "format": {
+                    "description": "Format is \"pdf\" or \"csv\".",
+                    "type": "string",
+                    "enum": [
+                        "pdf",
+                        "csv"
+                    ]
+                },
+                "includeValues": {
+                    "description": "IncludeValues adds each coin's current value.",
+                    "type": "boolean"
+                },
+                "lang": {
+                    "description": "Lang is the language of the list: \"pt\" (European Portuguese) or \"en\".",
+                    "type": "string",
+                    "enum": [
+                        "pt",
+                        "en"
+                    ]
+                },
+                "list": {
+                    "type": "string",
+                    "enum": [
+                        "trades",
+                        "wishlist",
+                        "both"
+                    ]
                 }
             }
         },

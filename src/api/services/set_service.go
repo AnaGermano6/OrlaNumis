@@ -61,8 +61,7 @@ func (s *SetService) ChecklistSlots(ctx context.Context, setID, userID uint) (sl
 	if err != nil {
 		return nil, false, err
 	}
-	slots, err = s.checklist.Slots(ctx, userID, definition)
-	return slots, s.checklist.Complete(), err
+	return s.checklist.SlotsAndCompleteness(ctx, userID, definition)
 }
 
 // checklistSummary counts a checklist set's slots; nil when it cannot.

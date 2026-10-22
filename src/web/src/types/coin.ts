@@ -37,6 +37,8 @@ export interface Coin {
   /** A grading company's grade ("PMG 66 EPQ") and its certificate number. */
   certifiedGrade?: string
   certificationNumber?: string
+  /** The issue of the linked Numista type the item is (a banknote's date and signatures); 0 when none was chosen. */
+  numistaIssueId?: number
   obverseInscription: string
   reverseInscription: string
   obverseDescription: string
@@ -46,6 +48,8 @@ export interface Coin {
   year?: number | null
   /** Issuing country or authority. */
   country?: string
+  /** Monetary system, as Numista names it ("Escudo (1911-2001)"); every euro coin is "Euro". */
+  monetarySystem?: string
   /** How many of this coin or note the collector has (1 or more). */
   quantity: number
   /** How the coin is kept or was issued, e.g. "coincard" (see COIN_PRESENTATIONS). */
@@ -347,7 +351,12 @@ export interface CoinImage {
 export type Category = string
 
 // Coins are struck in metal; banknotes are printed on paper, polymer or both.
-export type Material = 'Gold' | 'Silver' | 'Bronze' | 'Copper' | 'Electrum' | 'Other' | 'Paper' | 'Polymer' | 'Hybrid'
+// A plated coin counts by its core (silver plated copper is Copper), except
+// plated steel; a coin of two metals, as Bimetallic.
+export type Material =
+  | 'Gold' | 'Silver' | 'Billon' | 'Electrum' | 'Copper' | 'Bronze' | 'Aluminium bronze' | 'Brass'
+  | 'Nickel brass' | 'Nordic gold' | 'Copper-nickel' | 'Nickel' | 'Bimetallic' | 'Aluminium' | 'Zinc'
+  | 'Stainless steel' | 'Plated steel' | 'Other' | 'Paper' | 'Polymer' | 'Hybrid'
 
 export type ImageType = 'obverse' | 'reverse' | 'detail' | 'other'
 
@@ -355,7 +364,10 @@ export type CoinEra = string
 
 export const CATEGORIES: Category[] = ['Modern', 'Other']
 
-export const MATERIALS: Material[] = ['Gold', 'Silver', 'Bronze', 'Copper', 'Electrum', 'Other']
+export const MATERIALS: Material[] = [
+  'Gold', 'Silver', 'Billon', 'Electrum', 'Copper', 'Bronze', 'Aluminium bronze', 'Brass', 'Nickel brass',
+  'Nordic gold', 'Copper-nickel', 'Nickel', 'Bimetallic', 'Aluminium', 'Zinc', 'Stainless steel', 'Plated steel', 'Other',
+]
 
 export const COIN_ERAS: CoinEra[] = ['ancient', 'medieval', 'modern']
 
@@ -400,7 +412,7 @@ export interface CoinValueHistory {
   confidence: string
   recordedAt: string
   /** Additive — absent on legacy rows; infer from confidence when missing. */
-  source?: 'ai_scheduled' | 'ai_estimate' | 'manual' | string
+  source?: 'ai_scheduled' | 'ai_estimate' | 'manual' | 'numista' | string
 }
 
 export interface CoinDetailMetadataRow {
