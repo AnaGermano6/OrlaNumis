@@ -17,6 +17,8 @@ type CoinListFilters struct {
 	Category string
 	Era      string
 	Country  string
+	// Period keeps the coins of one period ("República Portuguesa 1986–2001").
+	Period string
 	// Denomination keeps the coins of one face value, as written ("2 euro").
 	Denomination string
 	// Countries, when not nil, keeps only coins of these countries (none
@@ -238,6 +240,9 @@ func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Co
 	if filters.Country != "" {
 		query = query.Where("country = ?", filters.Country)
 	}
+	if filters.Period != "" {
+		query = query.Where("period = ?", filters.Period)
+	}
 	if denomination := strings.TrimSpace(filters.Denomination); denomination != "" {
 		query = query.Where("TRIM(denomination) = ?", denomination)
 	}
@@ -332,6 +337,17 @@ func (r *CoinRepository) FindByID(id uint, userID uint) (*models.Coin, error) {
 		return nil, err
 	}
 	return &coin, nil
+}
+
+// CoinsForPeriods lists every user's coins (not banknotes) with what their
+// period is worked out from: country, year, monetary system, notes and
+// catalogue references.
+func (r *CoinRepository) CoinsForPeriods() ([]models.Coin, error) {
+	var coins []models.Coin
+	err := r.db.Select("id", "user_id", "kind", "country", "year", "monetary_system", "notes", "period").
+		Where("kind <> ?", models.CoinKindBanknote).
+		Preload("References").Order("id").Find(&coins).Error
+	return coins, err
 }
 
 // FindOwnedByNameCandidates returns up to limit owned coins with name matches.
@@ -442,6 +458,8 @@ func (r *CoinRepository) Duplicate(id uint, userID uint) (*models.Coin, error) {
 		RarityRating:          source.RarityRating,
 		Year:                  source.Year,
 		Country:               source.Country,
+		MonetarySystem:        source.MonetarySystem,
+		Period:                source.Period,
 		Presentation:          source.Presentation,
 		Rarity:                source.Rarity,
 		Circulation:           source.Circulation,
@@ -896,6 +914,26 @@ func (r *CoinRepository) CountryCounts(userID uint, kind string) ([]CountryCount
 		Select("country, COUNT(*) AS count").
 		Where("country IS NOT NULL AND country <> '' AND is_wishlist = ?", false).
 		Group("country").Order("country").Scan(&counts).Error
+	return counts, err
+}
+
+// PeriodCount is a period of a country's coins, how many coins it has and
+// the years they span.
+type PeriodCount struct {
+	Period   string `json:"period" example:"República Portuguesa 1986–2001"`
+	Count    int64  `json:"count"`
+	FromYear *int   `json:"fromYear,omitempty"`
+	ToYear   *int   `json:"toYear,omitempty"`
+}
+
+// PeriodCounts lists the periods of a country's collection coins (not the
+// wishlist), with how many coins each has and the years they span.
+func (r *CoinRepository) PeriodCounts(userID uint, kind, country string) ([]PeriodCount, error) {
+	var counts []PeriodCount
+	err := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID), OfKind(kind)).
+		Select("period, COUNT(*) AS count, MIN(year) AS from_year, MAX(year) AS to_year").
+		Where("country = ? AND period <> '' AND is_wishlist = ?", country, false).
+		Group("period").Scan(&counts).Error
 	return counts, err
 }
 

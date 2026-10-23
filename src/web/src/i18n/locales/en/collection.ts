@@ -64,6 +64,7 @@ export default {
     groupNone: 'All coins',
     groupYear: 'Year',
     allCountries: 'All countries',
+    allPeriods: 'All periods',
     allPresentations: 'All presentations',
     allRarities: 'All rarities',
     layout: 'Layout',
@@ -117,6 +118,7 @@ export default {
   groups: {
     noCountry: 'No country',
     noMonetarySystem: 'No monetary system',
+    noPeriod: 'No period',
     noYear: 'No year',
     noRarity: 'No rarity',
     noPresentation: 'No presentation',

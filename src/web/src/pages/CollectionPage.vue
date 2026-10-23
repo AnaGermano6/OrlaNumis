@@ -50,10 +50,12 @@
           v-model:group-by="groupBy"
           v-model:layout="layout"
           v-model:country="selectedCountry"
+          v-model:period="selectedPeriod"
           v-model:classification="selectedClassification"
           v-model:presentation="selectedPresentation"
           v-model:rarity="selectedRarity"
           :country-options="countryOptions"
+          :period-options="periodOptions"
           :extinct-countries="summary?.extinctCountries ?? 0"
           :classifications="summary?.classifications ?? []"
           :show-layout="viewMode === 'grid'"
@@ -81,10 +83,12 @@
           v-model:group-by="groupBy"
           v-model:layout="layout"
           v-model:country="selectedCountry"
+          v-model:period="selectedPeriod"
           v-model:classification="selectedClassification"
           v-model:presentation="selectedPresentation"
           v-model:rarity="selectedRarity"
           :country-options="countryOptions"
+          :period-options="periodOptions"
           :extinct-countries="summary?.extinctCountries ?? 0"
           :classifications="summary?.classifications ?? []"
           :filling-countries="fillingCountries"
@@ -223,11 +227,11 @@ const router = useRouter()
 const {
   search, page, sortKey, selectedSet, userSets,
   selectedDenomination, denominationOptions,
-  selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated, groupBy, countryOptions, fillingCountries,
+  selectedCountry, selectedPeriod, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated, groupBy, countryOptions, periodOptions, fillingCountries,
   fetchUserSets, loadCoins, loadCountryOptions, fillCountriesOnce, listParams,
 } = useCollectionFilters()
 
-const hasFilters = computed(() => !!(search.value || selectedDenomination.value || selectedSet.value || selectedCountry.value || selectedPresentation.value || selectedRarity.value || selectedCirculation.value || selectedCommemorative.value || selectedClassification.value || selectedRepeated.value))
+const hasFilters = computed(() => !!(search.value || selectedDenomination.value || selectedSet.value || selectedCountry.value || selectedPeriod.value || selectedPresentation.value || selectedRarity.value || selectedCirculation.value || selectedCommemorative.value || selectedClassification.value || selectedRepeated.value))
 // The spreadsheet of the coins shown, or of the whole collection.
 const showExport = ref(false)
 

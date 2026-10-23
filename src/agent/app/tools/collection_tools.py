@@ -105,7 +105,7 @@ def build_collection_tools(tools_base_url: str, internal_token: str) -> list[Str
         metadata"; size means diameter_mm / diameterMm.
 
         Args:
-            query: Search query (e.g., "Roman silver", "Constantine", "denarius")
+            query: Search query (e.g., "escudos", "2 euro Portugal", "silver")
             limit: Maximum results to return (default 10)
 
         Returns:

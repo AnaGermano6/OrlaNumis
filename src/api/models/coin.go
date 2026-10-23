@@ -70,6 +70,10 @@ type Coin struct {
 	// names it ("Escudo (1911-2001)", "Real (decimalizado, 1835-1910)"); every
 	// euro coin, whatever its country, is "Euro".
 	MonetarySystem string `gorm:"type:varchar(120);default:'';index" json:"monetarySystem" binding:"max=120"`
+	// Period is the coin's period, as uCoin names a country's periods
+	// ("República Portuguesa 1986–2001", "Rainha Isabel II"), worked out by
+	// the app (see services.CoinPeriodService), never typed.
+	Period string `gorm:"type:varchar(120);default:''" json:"period"`
 	// Quantity is how many of this coin or note the collector has (1 or more).
 	Quantity int `gorm:"not null;default:1" json:"quantity" minimum:"1" maximum:"9999"`
 	// Presentation is how the coin is kept or was issued (see CoinPresentations).

@@ -61,8 +61,8 @@
               :key="idx"
               class="flex items-center justify-between gap-3 rounded-sm border border-border-subtle bg-input px-3 py-2"
             >
-              <span class="text-base font-medium text-text-primary">{{ field.key }}</span>
-              <span class="chip-sm">{{ t('common.coinCount', { count: field.count }) }}</span>
+              <span class="text-base font-medium text-text-primary">{{ healthItemLabel(field.key) }}</span>
+              <span class="chip-sm">{{ t('admin.health.items', { count: field.count }) }}</span>
             </div>
           </div>
         </div>
@@ -84,6 +84,7 @@ import { AlertCircle, Activity, AlertTriangle, FileWarning, FileQuestion } from 
 import * as api from '@/api/client'
 import type { AdminHealthSummaryResponse } from '@/types'
 import { t } from '@/i18n'
+import { healthItemLabel } from '@/utils/healthItems'
 
 const summary = ref<AdminHealthSummaryResponse | null>(null)
 const loading = ref(false)

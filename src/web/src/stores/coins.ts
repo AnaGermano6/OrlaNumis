@@ -18,6 +18,8 @@ export const useCoinsStore = defineStore('coins', () => {
   const activeSortKey = ref('')
   const galleryIndex = ref(0)
   const selectedCountry = ref('')
+  /** '' or one of the selected country's periods. */
+  const selectedPeriod = ref('')
   const selectedPresentation = ref('')
   const selectedRarity = ref('')
   /** '', 'current' or 'demonetized'. */
@@ -163,6 +165,7 @@ export const useCoinsStore = defineStore('coins', () => {
     activeSortKey,
     galleryIndex,
     selectedCountry,
+    selectedPeriod,
     selectedPresentation,
     selectedRarity,
     selectedCirculation,

@@ -4,18 +4,50 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/briandenicola/ancient-coins-api/models"
 	"github.com/briandenicola/ancient-coins-api/repository"
 )
 
 // HealthService orchestrates collection and coin health scoring workflows.
 type HealthService struct {
-	repo   *repository.HealthRepository
-	logger *Logger
+	repo     *repository.HealthRepository
+	logger   *Logger
+	settings *SettingsService
 }
 
 // NewHealthService creates a new HealthService.
 func NewHealthService(repo *repository.HealthRepository, logger *Logger) *HealthService {
 	return &HealthService{repo: repo, logger: logger}
+}
+
+// WithSettings lets the scores leave out the AI analyses while no AI
+// provider is configured.
+func (s *HealthService) WithSettings(settings *SettingsService) *HealthService {
+	s.settings = settings
+	return s
+}
+
+// aiConfigured tells whether AI analyses can be run; without settings they
+// are counted, as before.
+func (s *HealthService) aiConfigured() bool {
+	if s.settings == nil {
+		return true
+	}
+	_, err := s.settings.ResolveLLMConfig()
+	return err == nil
+}
+
+// weights are the score's weights: without an AI provider no item can have
+// an AI analysis, so that part is left out and the others share its weight.
+func (s *HealthService) weights() HealthWeights {
+	if s.aiConfigured() {
+		return DefaultHealthWeights()
+	}
+	return HealthWeights{
+		Metadata:           HealthWeightMetadataWithoutAI,
+		ImageCoverage:      HealthWeightImageCoverageWithoutAI,
+		ValuationFreshness: HealthWeightValuationFreshnessWithoutAI,
+	}
 }
 
 // GetCollectionHealthSummary returns collection-level scorecard data.
@@ -30,7 +62,7 @@ func (s *HealthService) GetCollectionHealthSummary(userID uint) (*CollectionHeal
 			Score:             0,
 			Grade:             HealthGradeF,
 			EligibleCoinCount: 0,
-			Weights:           DefaultHealthWeights(),
+			Weights:           s.weights(),
 			Dimensions:        HealthDimensionScores{},
 		}, nil
 	}
@@ -59,7 +91,7 @@ func (s *HealthService) GetCollectionHealthSummary(userID uint) (*CollectionHeal
 		Score:             collectionScore,
 		Grade:             HealthGradeFromScore(collectionScore),
 		EligibleCoinCount: int64(count),
-		Weights:           DefaultHealthWeights(),
+		Weights:           s.weights(),
 		Dimensions: HealthDimensionScores{
 			Metadata:           avgMetadata,
 			ImageCoverage:      avgImage,
@@ -260,16 +292,20 @@ func (s *HealthService) computeTopMissingFields(counts map[string]int, totalCoin
 	return topFields
 }
 
-// scoreCoinMetadata computes metadata completeness (0-100).
+// scoreCoinMetadata computes metadata completeness (0-100) from the fields
+// a modern coin or banknote has: face value, country, monetary system, mint
+// (coins only), category, material and grade.
 func (s *HealthService) scoreCoinMetadata(coin *repository.EligibleCoinRow) int {
 	fields := []string{
 		coin.Denomination,
-		coin.Ruler,
-		coin.Era,
-		coin.Mint,
+		coin.Country,
+		coin.MonetarySystem,
 		coin.Category,
 		coin.Material,
 		coin.Grade,
+	}
+	if coin.Kind != models.CoinKindBanknote {
+		fields = append(fields, coin.Mint)
 	}
 
 	present := 0
@@ -296,6 +332,10 @@ func (s *HealthService) scoreCoinImages(coin *repository.EligibleCoinRow) int {
 	return 0
 }
 
+// healthUndatedValueScore scores a value of unknown age (neither when it was
+// set nor a purchase date is known) as a value over six months old.
+const healthUndatedValueScore = 35
+
 // scoreCoinValuationFreshness computes valuation freshness (0-100).
 // Measures age from CurrentValueUpdatedAt when available; falls back to PurchaseDate for legacy coins.
 func (s *HealthService) scoreCoinValuationFreshness(coin *repository.EligibleCoinRow) int {
@@ -313,7 +353,7 @@ func (s *HealthService) scoreCoinValuationFreshness(coin *repository.EligibleCoi
 		// Fallback: for legacy coins valued before CurrentValueUpdatedAt existed, use PurchaseDate
 		referenceTime = coin.PurchaseDate
 	} else {
-		return 0
+		return healthUndatedValueScore
 	}
 
 	age := now.Sub(*referenceTime)
@@ -348,12 +388,13 @@ func (s *HealthService) scoreCoinAICoverage(coin *repository.EligibleCoinRow) in
 	return 0
 }
 
-// computeWeightedScore combines dimension scores using fixed weights.
+// computeWeightedScore combines dimension scores using the weights.
 func (s *HealthService) computeWeightedScore(metadata, image, valuation, ai int) int {
-	weighted := (metadata * HealthWeightMetadata) +
-		(image * HealthWeightImageCoverage) +
-		(valuation * HealthWeightValuationFreshness) +
-		(ai * HealthWeightAICoverage)
+	weights := s.weights()
+	weighted := (metadata * weights.Metadata) +
+		(image * weights.ImageCoverage) +
+		(valuation * weights.ValuationFreshness) +
+		(ai * weights.AICoverage)
 	score := weighted / 100
 	return ClampHealthScore(score)
 }
@@ -371,25 +412,26 @@ func (s *HealthService) generateCoinChecklist(coin *repository.EligibleCoinRow) 
 			ActionHint: HealthActionEditMetadata,
 		})
 	}
-	if coin.Ruler == "" {
+	if coin.Country == "" {
 		items = append(items, MissingChecklistItem{
-			Key:        "metadata.ruler",
+			Key:        "metadata.country",
 			Dimension:  ChecklistDimensionMetadata,
-			Label:      "Ruler",
+			Label:      "Country",
 			Severity:   ChecklistSeverityHigh,
 			ActionHint: HealthActionEditMetadata,
 		})
 	}
-	if coin.Era == "" {
+	if coin.MonetarySystem == "" {
 		items = append(items, MissingChecklistItem{
-			Key:        "metadata.era",
+			Key:        "metadata.monetarySystem",
 			Dimension:  ChecklistDimensionMetadata,
-			Label:      "Era",
+			Label:      "Monetary system",
 			Severity:   ChecklistSeverityMedium,
 			ActionHint: HealthActionEditMetadata,
 		})
 	}
-	if coin.Mint == "" {
+	// A banknote has a printer, not a mint.
+	if coin.Mint == "" && coin.Kind != models.CoinKindBanknote {
 		items = append(items, MissingChecklistItem{
 			Key:        "metadata.mint",
 			Dimension:  ChecklistDimensionMetadata,
@@ -444,7 +486,8 @@ func (s *HealthService) generateCoinChecklist(coin *repository.EligibleCoinRow) 
 		})
 	}
 
-	if coin.CurrentValue == nil || coin.PurchaseDate == nil {
+	// A value counts whatever is known of the purchase.
+	if coin.CurrentValue == nil {
 		items = append(items, MissingChecklistItem{
 			Key:        "valuation.value",
 			Dimension:  ChecklistDimensionValuation,
@@ -462,9 +505,8 @@ func (s *HealthService) generateCoinChecklist(coin *repository.EligibleCoinRow) 
 			referenceTime = coin.PurchaseDate
 		}
 
-		age := now.Sub(*referenceTime)
-		days := int(age.Hours() / 24)
-		if days > 180 {
+		// A value of unknown age is not known to be recent either.
+		if referenceTime == nil || int(now.Sub(*referenceTime).Hours()/24) > 180 {
 			items = append(items, MissingChecklistItem{
 				Key:        "valuation.freshness",
 				Dimension:  ChecklistDimensionValuation,
@@ -475,6 +517,10 @@ func (s *HealthService) generateCoinChecklist(coin *repository.EligibleCoinRow) 
 		}
 	}
 
+	// Without an AI provider no analysis can be run, so none is asked for.
+	if !s.aiConfigured() {
+		return items
+	}
 	hasObverse := coin.ObverseAnalysis != ""
 	hasReverse := coin.ReverseAnalysis != ""
 

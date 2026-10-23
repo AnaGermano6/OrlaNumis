@@ -171,8 +171,8 @@ var settingDefaults = map[string]string{
 	SettingAnthropicAPIKey:                    "",
 	SettingAnthropicModel:                     "claude-sonnet-5",
 	SettingCoinSearchPrompt:                   "",
-	SettingDealerSearchSources:                "vcoins.com\nma-shops.com\nforumancientcoins.com\ncatawiki.com\nhjbltd.com",
-	SettingAuctionSearchSources:               "numisbids.com\ncngcoins.com\nbiddr.com",
+	SettingDealerSearchSources:                "ma-shops.com\ncgb.fr\ndelcampe.net\ncatawiki.com\nvcoins.com",
+	SettingAuctionSearchSources:               "numisbids.com\nsixbid.com\nbiddr.com\ntauleryfau.com\nibercoin.com",
 	SettingCoinShowsPrompt:                    "",
 	SettingValuationPrompt:                    "",
 	SettingCollectionCurrency:                 "USD",
@@ -500,7 +500,12 @@ func (s *SettingsService) SetSetting(key, value string) error {
 		if err != nil {
 			return err
 		}
+		// Sources saved as they come are stored empty too, so that a later
+		// default list applies.
 		value = normalized
+		if normalized == settingDefaults[key] {
+			value = ""
+		}
 	}
 	if IsTimezoneSetting(key) {
 		value = strings.TrimSpace(value)

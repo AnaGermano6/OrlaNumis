@@ -38,12 +38,26 @@ The agent uses specialized teams for different tasks:
 - Fetches listing pages and extracts coin metadata
 - Returns: name, denomination, ruler, era, material, estimated price, source link
 
-**Direct dealer search.** For dealers with a site adapter (currently vCoins,
-MA-Shops and Harlan J. Berk, when they are in the configured dealer sources),
-Coin Copilot queries the dealer's own search instead of a web search engine.
-A dealer's search returns only what it currently has for sale, so old listing
-pages for coins that sold long ago no longer appear; Harlan J. Berk results are
-additionally limited to items with stock on hand. Requests are reduced to
+**Default sources.** The dealer and auction sources (Admin → System) are
+European sites of modern coins and banknotes:
+
+- **Dealers:** MA-Shops (Germany), CGB Numismatique (France), Delcampe
+  (Belgium), Catawiki (Netherlands) and vCoins, in its world coins.
+- **Auctions:** NumisBids, Sixbid and Biddr, which carry many European auction
+  houses, Tauler & Fau and Ibercoin (Spain).
+
+Until October 2026 they were sites of ancient coins (Forum Ancient Coins,
+Harlan J. Berk, CNG). A stored list that is still exactly the old default is
+replaced by the new one when the app starts; a list changed in Admin is kept.
+A list saved as it comes is stored as "the default", so it follows later
+defaults.
+
+**Direct dealer search.** For dealers with a site adapter (vCoins and MA-Shops,
+when they are in the configured dealer sources), Coin Copilot queries the
+dealer's own search instead of a web search engine. A dealer's search returns
+only what it currently has for sale, so old listing pages for coins that sold
+long ago no longer appear. vCoins is searched in its world coins only, not its
+ancient or US coins. Requests are reduced to
 keywords ("Find me any Caligula coins under $500" searches for "Caligula"), and
 a stated budget is enforced on the parsed listing price. Currencies are never
 converted: listings priced in a different currency from the budget are left
@@ -60,13 +74,18 @@ or the dealer's `Retry-After`, bounded to 1 minute to 6 hours), and the answer
 says the dealer was skipped. Identical dealer requests within 5 minutes are
 served from an in-memory cache.
 
-**Dealers searched directly today:** vCoins, MA-Shops and Harlan J. Berk. The
-remaining default dealer sources stay on web search by decision, not oversight:
+**Dealers searched directly today:** vCoins and MA-Shops. The remaining
+default dealer sources use web search restricted to their domains:
 
 | Dealer | Why it has no direct adapter |
 | --- | --- |
-| Forum Ancient Coins | Every automated request, including `robots.txt`, is answered with an AWS WAF browser challenge. We never work around a challenge. |
 | Catawiki | The site's edge protection refuses automated requests outright and its terms do not permit automated querying. |
+| CGB Numismatique, Delcampe | Not yet checked for a direct adapter (`robots.txt`, terms, a usable search). |
+
+Harlan J. Berk, a dealer of ancient coins, had a direct adapter until October
+2026, when it left the default sources. Forum Ancient Coins, also no longer a
+default, answers every automated request with an AWS WAF browser challenge,
+which is never worked around.
 
 Biddr was also reviewed. It is reachable and permitted by its `robots.txt`, but
 it sells through timed auction lots rather than dealer stock at an asking

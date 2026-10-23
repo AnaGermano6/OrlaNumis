@@ -66,6 +66,8 @@ export default {
   mintsUnavailable: 'Mint locations are unavailable',
   countryPlaceholder: 'e.g. Portugal',
   monetarySystemPlaceholder: 'e.g. Escudo (1911-2001) or Euro',
+  periodAuto: 'Worked out when the coin is saved',
+  periodHint: 'From the year its type began (Portugal) or the uCoin import (other countries).',
   notSpecified: 'Not specified',
   year: 'Year',
   yearPlaceholder: 'e.g. 1968',

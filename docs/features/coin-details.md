@@ -50,6 +50,25 @@ a modern collection does not:
   rest added up. The charts by category and by era, and their heat map, show
   only when the collection has more than one category or era.
 
+### Period
+
+The coin's period, as uCoin divides a country's coins, for **View by →
+Period** in the gallery (see [Collection Management](collection-management.md)).
+The app works it out; there is nothing to type, and the form shows it:
+
+- **Portugal** has the app's table, as uCoin lists it: União Europeia (Euro),
+  ECU, República Portuguesa 1986–2001, 1969–1986 and 1910–1969, and Reino de
+  Portugal 1836–1910, 1777–1835, 1706–1776, 1640–1706, 1495–1639 and
+  1415–1495. A coin belongs to the period in which its Numista type began, so
+  the escudo series that began in 1986 is in 1986–2001 and the one that ended
+  then in 1969–1986. Without a saved Numista type, the coin's own year counts.
+- **Other countries** take the period the uCoin import wrote in the notes
+  ("Rainha Isabel II", "Quinta República"), shown with the years of the
+  collection's coins.
+- **When:** as a coin is added or edited, when its catalogue references
+  change, and for every coin when the app starts (so coins saved before, or
+  changed elsewhere, follow). Banknotes have none.
+
 ### Physical Characteristics
 - **Material** — gold, silver, billon, electrum, copper, bronze, aluminium bronze, brass, nickel brass, nordic gold, copper-nickel, nickel, bimetallic, aluminium, zinc, stainless steel, plated steel, or other. Coins linked to Numista can get it from Numista's composition (see [Completing Records from Numista](numista-integration.md#completing-records-from-numista))
 - **Weight** — In grams
@@ -61,7 +80,7 @@ a modern collection does not:
 - **Mint Mark** — Mint location indicator
 - **Obverse Inscription** — Text on the front
 - **Reverse Inscription** — Text on the back
-- **Structured Catalog References** — Formal references (RIC, RPC, SNG, Numista, etc.) with catalog, volume, number, optional invoice number, and authority URI
+- **Structured Catalog References** — Formal references (KM, Y, Pick, Numista, etc.) with catalog, volume, number, optional invoice number, and authority URI
 
 ### Banknote Details
 
@@ -134,7 +153,7 @@ Includes identification, description, inscriptions, condition assessment, histor
 ## Structured Catalog References
 
 ### Reference Management
-- **Add Multiple References** — Track coins across different catalogs (RIC, RPC, SNG, Numista, etc.)
+- **Add Multiple References** — Track coins and banknotes across different catalogs (KM, Y, Pick, Numista, etc.)
 - **Reference Fields**:
   - Catalog (required): which reference catalog
   - Volume (required for some catalogs)
@@ -143,11 +162,18 @@ Includes identification, description, inscriptions, condition assessment, histor
   - Authority URI: optional link to the authoritative source
 
 ### Built-in Catalogs
-- **RIC** — Roman Imperial Coinage (requires volume)
-- **RPC** — Roman Provincial Coinage (requires volume)
-- **SNG** — Sylloge Nummorum Greacorum (requires volume)
+Registered at every start, for modern coins and banknotes:
+- **KM** — Krause-Mishler (Standard Catalog of World Coins)
+- **Y** — Y numbers
+- **Pick** — Standard Catalog of World Paper Money (banknotes)
 - **Numista** — Numista catalog ID
-- **Other** — Custom catalog references
+- **NGC** — NGC certification
+- **REDBOOK** — Red Book (US coins)
+
+Others can be added in Admin → Catalogs. Until October 2026 the app also
+registered catalogues of ancient and medieval coins (RIC, RPC, SNG, Sear,
+Crawford, Spink…); those no reference used were removed once, and one added
+again in Admin is kept.
 
 ### Numista Integration
 - Direct search from the coin detail page

@@ -185,6 +185,14 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		moeCoinPhotos := services.NewMoeCoinPhotoService(services.NewHTTPMOEShopClient(nil), numistaResponseCache)
 		numistaCatalogSvc := services.NewNumistaCatalogService(d.numistaClient, numistaResponseCache).WithECB(ecbCoinPhotos).WithMint(incmCoinPhotos).WithMint(mdpCoinPhotos).WithMint(moeCoinPhotos)
 		numistaMarketValueSvc := services.NewNumistaMarketValueService(d.numistaClient, numistaResponseCache).WithCatalog(numistaCatalogSvc)
+		// Every coin's period, worked out as it is saved, and once at start-up
+		// for the coins saved before (or whose data changed elsewhere).
+		coinPeriods := services.NewCoinPeriodService(d.coinRepo, numistaCatalogSvc, d.logger)
+		coinSvc.WithPeriods(coinPeriods)
+		coinReferenceHandler.WithPeriods(coinPeriods)
+		if changed := coinPeriods.RefreshAll(); changed > 0 {
+			d.logger.Info("coins", "Gave %d coins their period", changed)
+		}
 		coinMarketValueHandler := handlers.NewCoinMarketValueHandler(d.coinRepo, numistaMarketValueSvc)
 		protected.GET("/coins/:id/market-value", coinMarketValueHandler.MarketValue)
 		numistaCatalogHandler := handlers.NewNumistaCatalogHandler(numistaCatalogSvc, numistaMarketValueSvc)
@@ -207,6 +215,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		coinCountryHandler := handlers.NewCoinCountryHandler(d.coinRepo, services.NewCoinCountryService(d.coinRepo, numistaCatalogSvc))
 		protected.GET("/coins/countries", coinCountryHandler.Countries)
 		protected.GET("/coins/denominations", coinCountryHandler.Denominations)
+		protected.GET("/coins/periods", coinCountryHandler.Periods)
 		// Whether coins are still legal tender, from their cached Numista types.
 		coinCirculation := services.NewCoinCirculationService(d.coinRepo, numistaCatalogSvc)
 		coinHandler.WithCirculation(coinCirculation)

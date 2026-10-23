@@ -108,6 +108,12 @@
             <AutocompleteInput v-model="monetarySystemModel" field="monetarySystem" :placeholder="t('coinForm.monetarySystemPlaceholder')" />
           </div>
         </div>
+        <!-- Worked out by the app when the coin is saved; nothing to type. -->
+        <div class="form-group min-w-0" data-testid="coin-period">
+          <span class="form-label">{{ t('coinFields.period') }}</span>
+          <p class="m-0 text-body text-text-primary">{{ form.period || t('coinForm.periodAuto') }}</p>
+          <p class="mb-0 mt-1 text-chip text-text-muted">{{ t('coinForm.periodHint') }}</p>
+        </div>
         <div class="grid gap-3 md:grid-cols-2">
           <div class="form-group min-w-0">
             <label class="form-label" for="coin-presentation">{{ t('coinFields.presentation') }}</label>

@@ -68,6 +68,8 @@ const messages: Messages['coinForm'] = {
   mintsUnavailable: 'As casas da moeda não estão disponíveis',
   countryPlaceholder: 'ex.: Portugal',
   monetarySystemPlaceholder: 'ex.: Escudo (1911-2001) ou Euro',
+  periodAuto: 'Calculado quando a moeda é guardada',
+  periodHint: 'Pelo ano em que o seu tipo começou (Portugal) ou pela importação do uCoin (outros países).',
   notSpecified: 'Não indicada',
   year: 'Ano',
   yearPlaceholder: 'ex.: 1968',

@@ -233,6 +233,7 @@ func (h *CoinHandler) listFilters(c *gin.Context) (filters repository.CoinListFi
 		Category:     c.Query("category"),
 		Era:          c.Query("era"),
 		Country:      models.NormalizeCoinCountry(c.Query("country")),
+		Period:       strings.TrimSpace(c.Query("period")),
 		Denomination: c.Query("denomination"),
 		Presentation: strings.TrimSpace(c.Query("presentation")),
 		Repeated:     c.Query("repeated") == "true",
@@ -335,6 +336,7 @@ func (h *CoinHandler) listFilters(c *gin.Context) (filters repository.CoinListFi
 //	@Param			category	query		string	false	"Filter by category, one of the admin-configured categories (Modern and Other by default)"
 //	@Param			era			query		string	false	"Filter by era (ancient, medieval, modern)"
 //	@Param			country		query		string	false	"Filter by country (exact)"
+//	@Param			period		query		string	false	"Filter by period (exact, e.g. República Portuguesa 1986–2001)"
 //	@Param			denomination	query		string	false	"Filter by face value, as written (\"2 euro\")"
 //	@Param			presentation	query	string	false	"Filter by presentation"	Enums(loose, coincard, capsule, flip, proof_set, blister, slab)
 //	@Param			repeated		query	bool	false	"Only coins held more than once (a quantity above one), the copies there to trade"

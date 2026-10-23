@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/briandenicola/ancient-coins-api/models"
@@ -608,5 +609,57 @@ func TestBanknoteDuplicate_KeepsTheKindAndIssueDetails(t *testing.T) {
 		copied.Watermark != "Bartolomeu Dias" || copied.NoteVariant != "replacement" || copied.CertifiedGrade != "PMG 64 EPQ" ||
 		copied.NumistaIssueID != 513930 || copied.SerialNumber != "" || copied.CertificationNumber != "" {
 		t.Fatalf("copied = %+v", copied)
+	}
+}
+
+// A country's periods, the most recent first, with their coins' years; the
+// gallery filters by one.
+func TestCoinPeriods_ListAndFilter(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router, db := setupCoinHandlerRouter(t)
+	createTestUser(t, db, 1, "collector")
+	repo := repository.NewCoinRepository(db)
+	group := router.Group("/api/period-test")
+	group.Use(coinTestAuthMiddleware())
+	group.GET("/periods", NewCoinCountryHandler(repo, nil).Periods)
+	year := func(y int) *int { return &y }
+	for _, coin := range []models.Coin{
+		{Name: "50 Centavos 1945", Country: "Portugal", Year: year(1945), Period: "República Portuguesa 1910–1969"},
+		{Name: "100 Escudos 1990", Country: "Portugal", Year: year(1990), Period: "República Portuguesa 1986–2001"},
+		{Name: "2 Euro 2002", Country: "Portugal", Year: year(2002), Period: "União Europeia (Euro)"},
+		{Name: "2 Euro 2024", Country: "Portugal", Year: year(2024), Period: "União Europeia (Euro)"},
+		{Name: "Wanted", Country: "Portugal", Year: year(1930), Period: "República Portuguesa 1910–1969", IsWishlist: true},
+		{Name: "Penny", Country: "Reino Unido", Year: year(1971), Period: "Rainha Isabel II"},
+		{Name: "Undated", Country: "Portugal"},
+	} {
+		coin.UserID, coin.Category, coin.Material = 1, models.CategoryModern, models.MaterialOther
+		if err := db.Create(&coin).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	w := coinRequest(router, http.MethodGet, "/api/period-test/periods?country=Portugal&kind=coin", nil)
+	var periods []repository.PeriodCount
+	if err := json.Unmarshal(w.Body.Bytes(), &periods); err != nil || w.Code != http.StatusOK {
+		t.Fatalf("periods: %d %s", w.Code, w.Body.String())
+	}
+	got := []string{}
+	for _, period := range periods {
+		got = append(got, fmt.Sprintf("%s %d %d–%d", period.Period, period.Count, *period.FromYear, *period.ToYear))
+	}
+	want := "União Europeia (Euro) 2 2002–2024|República Portuguesa 1986–2001 1 1990–1990|República Portuguesa 1910–1969 1 1945–1945"
+	if strings.Join(got, "|") != want {
+		t.Fatalf("periods = %s", strings.Join(got, "|"))
+	}
+	if w := coinRequest(router, http.MethodGet, "/api/period-test/periods", nil); w.Code != http.StatusBadRequest {
+		t.Fatalf("without a country: %d", w.Code)
+	}
+
+	w = coinRequest(router, http.MethodGet, "/api/coins?country=Portugal&period=Uni%C3%A3o+Europeia+%28Euro%29&wishlist=false&sort=name&order=asc", nil)
+	var list struct {
+		Coins []models.Coin `json:"coins"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &list); err != nil || w.Code != http.StatusOK || len(list.Coins) != 2 || list.Coins[0].Name != "2 Euro 2002" {
+		t.Fatalf("filtered by period: %d %s", w.Code, w.Body.String())
 	}
 }

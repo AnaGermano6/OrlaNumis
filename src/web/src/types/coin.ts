@@ -50,6 +50,8 @@ export interface Coin {
   country?: string
   /** Monetary system, as Numista names it ("Escudo (1911-2001)"); every euro coin is "Euro". */
   monetarySystem?: string
+  /** The coin's period, as uCoin names a country's periods ("República Portuguesa 1986–2001"); worked out by the server. */
+  period?: string
   /** How many of this coin or note the collector has (1 or more). */
   quantity: number
   /** How the coin is kept or was issued, e.g. "coincard" (see COIN_PRESENTATIONS). */

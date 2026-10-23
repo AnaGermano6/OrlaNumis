@@ -32,6 +32,7 @@ const messages: Messages['coinFields'] = {
   rarityRating: 'Raridade',
   country: 'País',
   monetarySystem: 'Sistema monetário',
+  period: 'Período',
   presentation: 'Apresentação',
   rarity: 'Raridade',
   circulation: 'Circulação',
