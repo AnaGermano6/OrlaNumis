@@ -40,6 +40,7 @@ type appDeps struct {
 	numistaTelemetry       *services.NumistaTelemetry
 	numistaUsage           *services.NumistaUsageService
 	backupSvc              *services.BackupService
+	updateSvc              *services.UpdateService
 	backupScheduler        *services.BackupScheduler
 	numistaValueSvc        *services.NumistaValueService
 	numistaValueScheduler  *services.NumistaValueScheduler
@@ -225,6 +226,7 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 		numistaTelemetry:       numistaTelemetry,
 		numistaUsage:           numistaUsage,
 		backupSvc:              backupSvc,
+		updateSvc:              services.NewUpdateService(docs.SwaggerInfo.Version, settingsSvc, backupSvc, logger),
 		backupScheduler:        backupScheduler,
 		numistaValueSvc:        numistaValueSvc,
 		numistaValueScheduler:  numistaValueScheduler,

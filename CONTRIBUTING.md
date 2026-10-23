@@ -93,3 +93,20 @@ feat: add coin grading service
 fix: handle a missing purchase price in stats
 refactor: extract set rules to the service layer
 ```
+
+## Releasing a Version
+
+A version tag publishes Orla Numis (`.github/workflows/release.yml`): the image `anagermano/orlanumis` for amd64 and arm64 on Docker Hub (`1.2.3`, `1.2` and `latest`), and a GitHub release whose notes are the version's section of `CHANGELOG.md`. The running apps learn of it from that release, in **Admin → Updates**.
+
+1. Set the new version in `VERSION` and run `task openapi`, which copies it to the API.
+2. Add its section to `CHANGELOG.md`, `## [1.2.3] - YYYY-MM-DD`, written for the people who use the app: it is what **Admin → Updates** shows.
+3. Merge to `main`, then tag that commit and push the tag:
+
+   ```bash
+   git tag v1.2.3
+   git push origin v1.2.3
+   ```
+
+A tag that differs from `VERSION`, or a version without a changelog section, stops the workflow before anything is published. A version with a suffix (`1.3.0-rc.1`) is published as a pre-release: its own image tag only, never `latest`, and the apps do not offer it.
+
+The workflow needs the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (a Docker Hub access token with Read, Write and Delete access, which updating the Docker Hub description needs).

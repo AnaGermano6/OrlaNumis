@@ -1,0 +1,58 @@
+# Orla Numis with Docker Compose.
+#
+# Put this file in a folder of its own, then:
+#   docker compose up -d
+# and open http://<this computer>:8080. The first account registered becomes
+# the administrator. The data stays in the data, uploads and backups folders
+# next to this file; the secrets are made on the first start.
+#
+# Updating: Admin → Updates says when a new version is out, then
+#   docker compose pull && docker compose up -d
+# or, with the optional Watchtower below, the app updates itself.
+#
+# More: https://github.com/AnaGermano6/OrlaNumis/blob/main/docs/deployment.md
+# (building from the source is docker-compose.dev.yml).
+
+name: orlanumis
+
+services:
+  orlanumis:
+    image: anagermano/orlanumis:latest
+    container_name: orlanumis
+    restart: unless-stopped
+    ports:
+      # Behind a reverse proxy on this computer: "127.0.0.1:8080:8080".
+      - "8080:8080"
+    environment:
+      # The owner of the three folders: `id -u` and `id -g` on this computer.
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Lisbon
+      # off leaves the AI agent out, and with it the AI features.
+      AI_AGENT: "on"
+      # Behind a reverse proxy: its address, so sign-in protection sees the
+      # real client (see the deployment guide).
+      # TRUSTED_PROXIES: 172.18.0.1/32
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./backups:/app/backups
+
+  # Optional: lets Admin → Updates update the app with one click. Put
+  # WATCHTOWER_TOKEN=<a long random value> in a .env file next to this one
+  # (`openssl rand -hex 32` makes one), start it with
+  #   docker compose --profile watchtower up -d
+  # then, in Admin → Updates, set the address http://watchtower:8080 and the
+  # same token. It updates only when the app asks.
+  watchtower:
+    image: nickfedor/watchtower:1.23.0
+    container_name: orlanumis-watchtower
+    profiles: [watchtower]
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_HTTP_API_ENDPOINTS: update
+      WATCHTOWER_HTTP_API_TOKEN: ${WATCHTOWER_TOKEN:-}
+      WATCHTOWER_CLEANUP: "true"
+      TZ: Europe/Lisbon

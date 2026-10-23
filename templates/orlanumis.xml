@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Container version="2">
+  <Name>OrlaNumis</Name>
+  <Repository>anagermano/orlanumis:latest</Repository>
+  <Registry>https://hub.docker.com/r/anagermano/orlanumis</Registry>
+  <Network>bridge</Network>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Icon>https://raw.githubusercontent.com/AnaGermano6/OrlaNumis/main/docs/assets/orlanumis-icon.png</Icon>
+  <WebUI>http://[IP]:[PORT:8080]</WebUI>
+  <Overview>Orla Numis catalogues a personal collection of coins and banknotes: records with photos and catalogue references (KM, Pick, Numista), Numista lookups and values, sets and challenges such as the euro commemoratives, statistics, a wish list, duplicates to trade, PDF and Excel exports, a full backup every day, and optional AI tools (Anthropic Claude or a self-hosted Ollama). In English and European Portuguese. The first account registered becomes the administrator; Admin, Updates tells when a new version is out.</Overview>
+  <Support>https://github.com/AnaGermano6/OrlaNumis/issues</Support>
+  <Project>https://github.com/AnaGermano6/OrlaNumis</Project>
+  <TemplateURL>https://raw.githubusercontent.com/AnaGermano6/OrlaNumis/main/templates/orlanumis.xml</TemplateURL>
+  <ReadMe>https://raw.githubusercontent.com/AnaGermano6/OrlaNumis/main/README.md</ReadMe>
+  <Category>Productivity:</Category>
+  <ExtraSearchTerms>coins banknotes numismatics numista collection catalogue moedas notas</ExtraSearchTerms>
+  <Requires>Optional: a Numista API key for catalogue lookups, and an Anthropic API key or an Ollama server for the AI features.</Requires>
+  <Changes>The notes of each version are in the changelog: https://github.com/AnaGermano6/OrlaNumis/blob/main/CHANGELOG.md</Changes>
+  <License>MIT</License>
+  <Config Name="WebUI" Target="8080" Default="8080" Mode="tcp" Description="Port of the web interface." Type="Port" Display="always" Required="true" Mask="false"/>
+  <Config Name="Data" Target="/app/data" Default="/mnt/user/appdata/orlanumis/data" Mode="rw" Description="The database, settings and secrets." Type="Path" Display="always" Required="true" Mask="false"/>
+  <Config Name="Photos" Target="/app/uploads" Default="/mnt/user/appdata/orlanumis/uploads" Mode="rw" Description="The photos of the collection." Type="Path" Display="always" Required="true" Mask="false"/>
+  <Config Name="Backups" Target="/app/backups" Default="/mnt/user/appdata/orlanumis/backups" Mode="rw" Description="The full backups, made every day. A folder on another share keeps them apart from appdata." Type="Path" Display="always" Required="true" Mask="false"/>
+  <Config Name="PUID" Target="PUID" Default="99" Description="User that owns the files (99 is nobody)." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="PGID" Target="PGID" Default="100" Description="Group that owns the files (100 is users)." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="AI agent" Target="AI_AGENT" Default="on" Description="off leaves the AI agent out, and with it the AI features." Type="Variable" Display="advanced" Required="false" Mask="false">on</Config>
+  <Config Name="Trusted proxies" Target="TRUSTED_PROXIES" Default="none" Description="Behind a reverse proxy: its address (for example 172.18.0.1/32), so sign-in protection sees the real client. none without one." Type="Variable" Display="advanced" Required="false" Mask="false">none</Config>
+</Container>

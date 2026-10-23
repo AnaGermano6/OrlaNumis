@@ -3,6 +3,10 @@
 import type { NumistaSettings } from '@/types/numista'
 
 export interface AppSettings extends Partial<NumistaSettings> {
+  /** Updates: whether to look for new versions, and Watchtower's HTTP API address and token. */
+  UpdateCheckEnabled?: string
+  WatchtowerURL?: string
+  WatchtowerToken?: string
   AIProvider: string
   OllamaURL: string
   OllamaModel: string

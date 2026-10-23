@@ -57,8 +57,10 @@ src/web/.artifacts/ai-browser/
 .DS_Store
 Thumbs.db
 
-# Data
+# Data (and the folders of docker-compose.yml, when run from here)
 data/
+/uploads/
+/backups/
 !src/web/src/data/
 !src/web/src/data/ancientMints.ts
 

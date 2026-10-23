@@ -26,7 +26,7 @@ Coins you want to buy, a link to a dealer page turned into a wishlist coin, avai
 
 ## Sets
 
-Lists from the commemorative catalogue, ready-made challenges (a coin of each euro country, a joint issue, a year's series, coins of your year of birth), sets by filters, free sets, goals with a wish list, and AI proposals reviewed before they are created. The **Commemorative catalogue** lists each euro country's commemoratives and collector coins, with those you have; a coin can be hidden, or joined to another listed twice. → [Coin Sets](features/coin-sets.md)
+Lists from the commemorative catalogue, ready-made challenges (a coin of each euro country, a joint issue, a year's series, coins of your year of birth), sets by filters, free sets and goals with a wish list, with the completion by country. The **Commemorative catalogue** lists each euro country's commemoratives and collector coins, with those you have; a coin can be hidden, or joined to another listed twice. → [Coin Sets](features/coin-sets.md)
 
 ## Stats
 

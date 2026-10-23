@@ -158,6 +158,7 @@ export default {
         auto: 'Automatic',
         manual: 'Manual',
         'pre-restore': 'Before restoring',
+        'pre-update': 'Before updating',
         uploaded: 'Imported',
       },
       coins: { one: '{count} coin', other: '{count} coins' },

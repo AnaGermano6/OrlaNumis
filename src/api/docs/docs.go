@@ -1648,6 +1648,135 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/updates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the running version, the latest released version (from the project's GitHub releases, checked every few hours) with its notes, and whether Watchtower is set up to update the container. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get the update status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.UpdateStatus"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/updates/apply": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Makes a backup (kind pre-update), then asks Watchtower to pull the latest image and recreate the container; the app restarts on the new version a moment later and migrates its data. Needs Watchtower's address and token in the settings. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Update the app now",
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/updates/check": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Asks GitHub for the latest release now, instead of using the last check. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Check for a new version now",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.UpdateStatus"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/users": {
             "get": {
                 "security": [
@@ -19208,6 +19337,7 @@ const docTemplate = `{
                         "auto",
                         "manual",
                         "pre-restore",
+                        "pre-update",
                         "uploaded"
                     ]
                 },
@@ -20008,6 +20138,52 @@ const docTemplate = `{
                 }
             }
         },
+        "services.UpdateStatus": {
+            "type": "object",
+            "properties": {
+                "checkedAt": {
+                    "type": "string"
+                },
+                "current": {
+                    "type": "string",
+                    "example": "1.0.0"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "anagermano/orlanumis"
+                },
+                "latest": {
+                    "type": "string",
+                    "example": "1.1.0"
+                },
+                "notes": {
+                    "description": "Notes are the release's notes, in Markdown.",
+                    "type": "string"
+                },
+                "publishedAt": {
+                    "type": "string"
+                },
+                "releaseUrl": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "ok",
+                        "disabled",
+                        "unavailable"
+                    ]
+                },
+                "updateAvailable": {
+                    "description": "UpdateAvailable is true when the latest release is newer than the\nrunning version.",
+                    "type": "boolean"
+                },
+                "watchtower": {
+                    "description": "Watchtower is true when Watchtower's address and token are set, so\nthe update can be started from the app.",
+                    "type": "boolean"
+                }
+            }
+        },
         "services.ValueBasis": {
             "type": "object",
             "properties": {
@@ -20161,7 +20337,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "4.3.0",
+	Version:          "1.0.0",
 	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},

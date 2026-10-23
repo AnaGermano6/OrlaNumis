@@ -160,6 +160,7 @@ const messages: Messages['settings'] = {
         auto: 'Automática',
         manual: 'Manual',
         'pre-restore': 'Antes de restaurar',
+        'pre-update': 'Antes de atualizar',
         uploaded: 'Importada',
       },
       coins: { one: '{count} moeda', other: '{count} moedas' },
