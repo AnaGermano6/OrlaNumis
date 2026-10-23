@@ -9,6 +9,8 @@
 ![SQLite](https://img.shields.io/badge/SQLite-self--hosted-003b57?logo=sqlite)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0H729CST9)
+
 ## What is this?
 
 **Orla Numis** catalogues a personal collection of coins and banknotes on your own computer or server: records with photos and catalog references, Numista integration, sets and checklists, statistics, a wish list, backups, and optional AI tools. The interface is in English and European Portuguese.
