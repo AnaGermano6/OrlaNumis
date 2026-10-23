@@ -22,7 +22,7 @@ Orla Numis is based on [Aurearia](https://github.com/briandenicola/Aurearia) by 
 ## ✨ Feature Highlights
 
 ### 🏛️ Collection
-- **Coin gallery** with search and filters by face value, country (extinct countries included), coin type, presentation, rarity and set; grouping by country, year, rarity or presentation; grid or list.
+- **Coin gallery** with search and filters by face value, country (extinct countries included), period, coin type, presentation, rarity and set; grouping by country, period, year, rarity or presentation; grid or list.
 - **Banknotes** with their own form and gallery, and a **collection overview** with the totals, the new releases and the duplicates to trade.
 - **Coin details**: numismatic fields, quantity, images, structured catalog references, Numista market value, sets, activity journal and timeline.
 - **Official photos** from the ECB, INCM, Monnaie de Paris and Münze Österreich, for a coin added or from its page.
@@ -34,7 +34,7 @@ Orla Numis is based on [Aurearia](https://github.com/briandenicola/Aurearia) by 
 - **Import** from CSV, JSON or a uCoin.net export.
 
 ### 🗂️ Sets
-- Lists from the **commemorative catalogue** (each euro country's €2 commemoratives and collector coins), ready-made **challenges**, sets **by filters**, free sets, goals with a wish list, and AI proposals reviewed before they are created.
+- Lists from the **commemorative catalogue** (each euro country's €2 commemoratives and collector coins), ready-made **challenges**, sets **by filters**, free sets and goals with a wish list, with the completion by country.
 
 ### 📊 Stats
 - Summary cards, distributions, top coins, acquisition flow, a heat map, timeline, mint map, **collection health** with quick fixes, and a **Time Machine** that shows the collection on any past date.
@@ -58,7 +58,7 @@ Orla Numis is based on [Aurearia](https://github.com/briandenicola/Aurearia) by 
 
 ## Architecture
 
-Three services, two containers:
+Three services; the published image runs the API and the agent in one container, a source build in two:
 
 ```
 Browser ──► Vue 3 SPA  ──► Go API (Gin, GORM, SQLite) ──► Python LangGraph Agent
@@ -73,16 +73,26 @@ Browser ──► Vue 3 SPA  ──► Go API (Gin, GORM, SQLite) ──► Pyth
 
 The Go API serves the REST API (`/api/*`) and the compiled Vue SPA, and proxies AI requests (including SSE streams) to the Python agent. The agent is stateless: provider, keys, prompts and context come with each request. Details in **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)**.
 
-## Quick Start
+## Install
 
-With [Docker](https://docs.docker.com/get-docker/) and [Task](https://taskfile.dev/):
+The image is [`anagermano/orlanumis`](https://hub.docker.com/r/anagermano/orlanumis) on Docker Hub, for amd64 and arm64. With [Docker](https://docs.docker.com/get-docker/), put [`docker-compose.yml`](docker-compose.yml) in a folder of its own and run:
+
+```sh
+docker compose up -d
+```
+
+On **Unraid**, install **OrlaNumis** from Community Applications.
+
+Open `http://<this computer>:8080` and register: the first user becomes the admin, who can configure Numista and the AI providers in **Admin**. **Admin → Updates** tells when a new version is out, and can update the app through Watchtower. A walkthrough is in **[`docs/getting-started.md`](docs/getting-started.md)**; `docker run`, Unraid, updating and running on a server are in **[`docs/deployment.md`](docs/deployment.md)**. What each version brings is in [`CHANGELOG.md`](CHANGELOG.md).
+
+## Development
+
+To build from the source, with [Docker](https://docs.docker.com/get-docker/) and [Task](https://taskfile.dev/):
 
 ```sh
 task init                                                # .env with random secrets
 docker compose -f docker-compose.dev.yml up -d --build   # build and start both containers
 ```
-
-Open `http://localhost:8080` and register: the first user becomes the admin, who can configure Numista and the AI providers in **Admin**. A walkthrough is in **[`docs/getting-started.md`](docs/getting-started.md)**; running on a server is in **[`docs/deployment.md`](docs/deployment.md)**.
 
 For development without Docker ([Go 1.26.6](https://go.dev/dl/), [Node.js 24](https://nodejs.org/), Python 3.12 with [uv](https://docs.astral.sh/uv/)):
 
@@ -108,7 +118,8 @@ The same checks run on every pull request (`.github/workflows/ci.yml`). See **[`
 |---|---|
 | **Features overview** | [`docs/features.md`](docs/features.md), and each area in [`docs/features/`](docs/features/INDEX.md) |
 | **Getting started** | [`docs/getting-started.md`](docs/getting-started.md) |
-| **Installation and deployment** | [`docs/deployment.md`](docs/deployment.md) |
+| **Installation, updates and deployment** | [`docs/deployment.md`](docs/deployment.md) |
+| **Releases** | [`CHANGELOG.md`](CHANGELOG.md), and how to publish one in [`CONTRIBUTING.md`](CONTRIBUTING.md#releasing-a-version) |
 | **Installed app (PWA)** | [`docs/pwa-guide.md`](docs/pwa-guide.md) |
 | **Quick Capture** | [`docs/quick-capture.md`](docs/quick-capture.md) |
 | **Architecture** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |

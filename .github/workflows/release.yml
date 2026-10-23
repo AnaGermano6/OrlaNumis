@@ -1,0 +1,105 @@
+name: Release
+
+# A version tag (v1.2.3) publishes Orla Numis: the image, for amd64 and arm64,
+# to Docker Hub as anagermano/orlanumis:1.2.3, :1.2 and :latest, and a GitHub
+# release with that version's notes from CHANGELOG.md. The running apps learn
+# of it from the GitHub release (Admin → Updates).
+#
+# Needs the repository secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN (a
+# Docker Hub access token with Read, Write and Delete access: updating the
+# Docker Hub description needs Delete).
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: anagermano/orlanumis
+
+jobs:
+  release:
+    name: Publish the release
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check the tag is the VERSION
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [ "$(tr -d '[:space:]' < VERSION)" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match VERSION ($(cat VERSION))"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          case "$version" in *-*) echo "PRERELEASE=true" >> "$GITHUB_ENV" ;; *) echo "PRERELEASE=false" >> "$GITHUB_ENV" ;; esac
+
+      - name: Release notes from the changelog
+        run: |
+          awk -v version="$VERSION" '
+            $0 ~ "^## \\[" version "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for $VERSION"
+            exit 1
+          fi
+
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          # A pre-release (1.2.0-rc.1) gets its own tag only, never latest.
+          flavor: |
+            latest=auto
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: release
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            APP_VERSION=${{ env.VERSION }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flags=()
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "Orla Numis $VERSION" --notes-file release-notes.md "${flags[@]}"
+
+      - name: Docker Hub description
+        if: env.PRERELEASE == 'false'
+        uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5.0.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.IMAGE }}
+          readme-filepath: docker/README.md
+          short-description: Self-hosted catalogue for a coin and banknote collection, with Numista integration.

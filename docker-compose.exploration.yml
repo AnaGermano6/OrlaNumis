@@ -45,6 +45,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: app
     environment:
       PORT: "8080"
       DB_PATH: /app/data/exploration.db

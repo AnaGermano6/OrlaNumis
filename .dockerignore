@@ -17,3 +17,5 @@ src/web/test-results/
 src/web/playwright-report/
 .DS_Store
 Thumbs.db
+src/agent/.venv/
+**/__pycache__/

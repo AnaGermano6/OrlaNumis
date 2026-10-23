@@ -190,7 +190,12 @@ func validateProductionAgentConfig(cfg *config.Config, logger *services.Logger) 
 	}
 }
 
+// checkOllamaAtStartup says whether Ollama answers, when it is the AI
+// provider; a new install, with none chosen yet, is not warned about it.
 func checkOllamaAtStartup(settings *services.SettingsService, logger *services.Logger) {
+	if !strings.EqualFold(strings.TrimSpace(settings.GetSetting(services.SettingAIProvider)), "ollama") {
+		return
+	}
 	ollamaURL := settings.GetSetting(services.SettingOllamaURL)
 	ollamaModel := settings.GetSetting(services.SettingOllamaModel)
 	svc := services.NewOllamaService(ollamaURL, 10, logger)

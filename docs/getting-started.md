@@ -4,7 +4,26 @@ This guide walks you through setting up Orla Numis for the first time, adding yo
 
 ## First-Time Setup
 
-### Environment Variables
+### 1. Start the Application
+
+With the published image and Docker Compose: put the project's [`docker-compose.yml`](../docker-compose.yml) in a folder of its own, set `PUID`, `PGID` and `TZ` in it, and run:
+
+```sh
+docker compose up -d
+```
+
+The app is at `http://<this computer>:8080`. The data stays in the `data`, `uploads` and `backups` folders next to the file, and the secrets are made on the first start. On **Unraid**, install **OrlaNumis** from Community Applications. `docker run`, the image settings and updating are in the [Deployment Guide](deployment.md).
+
+#### Built from the source
+
+With Docker Compose (the app and the AI agent, built from this checkout):
+
+```sh
+task init
+docker compose -f docker-compose.dev.yml up -d --build
+```
+
+`task init` creates `.env` with a random `JWT_SECRET` and `AGENT_INTERNAL_SERVICE_TOKEN`. Data and uploads live in Docker volumes; full backups go to `~/Aurearia-backups/aurearia-dev`. Run `task --list` to see every Taskfile command.
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
@@ -14,19 +33,6 @@ This guide walks you through setting up Orla Numis for the first time, adding yo
 | `TRUSTED_PROXIES` | Release mode | — | Your reverse proxy's IP/CIDR, or `none` when there is no proxy |
 | `AGENT_SERVICE_URL` | No | `http://localhost:8081` | URL of the Python agent service |
 | `AUREARIA_BACKUP_DIR` | No | `~/Aurearia-backups/<compose project>` | Where the full backups are kept (Docker Compose) |
-
-`task init` creates `.env` with a random `JWT_SECRET` and `AGENT_INTERNAL_SERVICE_TOKEN`. Run `task --list` to see every Taskfile command.
-
-### 1. Start the Application
-
-With Docker Compose (the app and the AI agent, built from this checkout):
-
-```sh
-task init
-docker compose -f docker-compose.dev.yml up -d --build
-```
-
-The app is at `http://localhost:8080`. Data and uploads live in Docker volumes; full backups go to `~/Aurearia-backups/aurearia-dev`.
 
 For development without Docker:
 

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommunityApplications>
+  <Profile>
+    Orla Numis, a self-hosted catalogue for a personal collection of coins and banknotes, with Numista integration and optional AI tools. One container with everything it needs. Questions and problems: the project's GitHub issues.
+  </Profile>
+  <Icon>https://raw.githubusercontent.com/AnaGermano6/OrlaNumis/main/docs/assets/orlanumis-icon.png</Icon>
+  <WebPage>https://github.com/AnaGermano6/OrlaNumis</WebPage>
+</CommunityApplications>
