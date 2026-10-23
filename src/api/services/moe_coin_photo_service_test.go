@@ -30,8 +30,10 @@ func (f *fakeMOEShopClient) Page(_ context.Context, path string) ([]byte, error)
 func newTestMoeService(t *testing.T) (*MoeCoinPhotoService, *fakeMOEShopClient) {
 	t.Helper()
 	client := &fakeMOEShopClient{pages: map[string][]byte{}}
+	// The sitemap ends in .xml.txt: Unraid's Community Applications reads
+	// every .xml file of the repository as an app template.
 	for path, file := range map[string]string{
-		moeSitemapPath:                                       "moe_sitemap.xml",
+		moeSitemapPath:                                       "moe_sitemap.xml.txt",
 		fmt.Sprintf(moeCataloguePath, "5"):                   "moe_catalogue_5.html",
 		fmt.Sprintf(moeCataloguePath, "10"):                  "moe_catalogue_10.html",
 		"/produkte/5-euro-kupfermuenze-spring-ins-glueck-np": "moe_product.html",

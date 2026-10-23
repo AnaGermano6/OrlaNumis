@@ -39,8 +39,10 @@ func (f *fakeMDPShopClient) Image(_ context.Context, url string) ([]byte, error)
 func newTestMdpService(t *testing.T) (*MdpCoinPhotoService, *fakeMDPShopClient) {
 	t.Helper()
 	client := &fakeMDPShopClient{sitemaps: map[string][]byte{}, images: map[string][]byte{}}
+	// The sitemaps end in .xml.txt: Unraid's Community Applications reads
+	// every .xml file of the repository as an app template.
 	for _, lang := range []string{"en", "fr"} {
-		body, err := os.ReadFile("testdata/mdp_sitemap_" + lang + ".xml")
+		body, err := os.ReadFile("testdata/mdp_sitemap_" + lang + ".xml.txt")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -59,8 +61,8 @@ func newTestMdpService(t *testing.T) (*MdpCoinPhotoService, *fakeMDPShopClient) 
 const mdpPhotos = "https://www.monnaiedeparis.fr/media/catalog/product/"
 
 func TestParseMdpSitemaps(t *testing.T) {
-	en, _ := os.ReadFile("testdata/mdp_sitemap_en.xml")
-	fr, _ := os.ReadFile("testdata/mdp_sitemap_fr.xml")
+	en, _ := os.ReadFile("testdata/mdp_sitemap_en.xml.txt")
+	fr, _ := os.ReadFile("testdata/mdp_sitemap_fr.xml.txt")
 	coins, err := ParseMdpSitemaps(en, fr)
 	if err != nil {
 		t.Fatal(err)
