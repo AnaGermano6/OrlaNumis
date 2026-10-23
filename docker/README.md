@@ -6,6 +6,8 @@ One image with everything: the app and its AI agent, for `linux/amd64` and `linu
 
 Source, documentation and issues: [github.com/AnaGermano6/OrlaNumis](https://github.com/AnaGermano6/OrlaNumis).
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0H729CST9)
+
 ## Start
 
 ```sh
