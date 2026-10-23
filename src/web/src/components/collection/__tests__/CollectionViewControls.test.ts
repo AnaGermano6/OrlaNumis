@@ -34,6 +34,35 @@ describe('CollectionViewControls', () => {
     expect(wrapper.emitted('update:classification')).toEqual([['non-circulating']])
   })
 
+  it("offers the chosen country's periods, with the years of those that do not name them", async () => {
+    setLocale('pt-PT')
+    const wrapper = mount(CollectionViewControls, {
+      props: {
+        ...baseProps,
+        country: 'Portugal',
+        periodOptions: [
+          { period: 'União Europeia (Euro)', count: 55, fromYear: 2002, toYear: 2024 },
+          { period: 'República Portuguesa 1986–2001', count: 48, fromYear: 1986, toYear: 2001 },
+          { period: 'Reino de Portugal 1836–1910', count: 3, fromYear: 1880, toYear: 1900 },
+        ],
+      },
+    })
+    const select = wrapper.get('[data-testid="period-filter"]')
+    expect(select.findAll('option').map((option) => option.text())).toEqual([
+      'Todos os períodos',
+      'União Europeia (Euro) 2002–2024 (55)',
+      'República Portuguesa 1986–2001 (48)',
+      'Reino de Portugal 1836–1910 (3)',
+    ])
+    await select.setValue('República Portuguesa 1986–2001')
+    expect(wrapper.emitted('update:period')).toEqual([['República Portuguesa 1986–2001']])
+  })
+
+  it('has no period filter until a country with periods is chosen', () => {
+    const wrapper = mount(CollectionViewControls, { props: baseProps })
+    expect(wrapper.find('[data-testid="period-filter"]').exists()).toBe(false)
+  })
+
   it('hides the filter when Numista says nothing of the coins', () => {
     const wrapper = mount(CollectionViewControls, { props: baseProps })
     expect(wrapper.find('[data-testid="classification-filter"]').exists()).toBe(false)

@@ -120,6 +120,7 @@ function openGallery(filter: { circulation?: string; commemorative?: string; pre
   store.selectedCommemorative = filter.commemorative ?? ''
   store.selectedPresentation = filter.presentation ?? ''
   store.selectedCountry = filter.country ?? ''
+  store.selectedPeriod = ''
   store.selectedRepeated = filter.repeated ?? false
   void router.push('/')
 }

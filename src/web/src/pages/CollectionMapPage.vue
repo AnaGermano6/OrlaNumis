@@ -351,6 +351,7 @@ function resetView() {
 
 function showInGallery(country: string) {
   store.selectedCountry = country
+  store.selectedPeriod = ''
   void router.push('/')
 }
 

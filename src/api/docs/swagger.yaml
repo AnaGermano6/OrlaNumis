@@ -2703,6 +2703,12 @@ definitions:
       obverseInscription:
         maxLength: 1000
         type: string
+      period:
+        description: |-
+          Period is the coin's period, as uCoin names a country's periods
+          ("República Portuguesa 1986–2001", "Rainha Isabel II"), worked out by
+          the app (see services.CoinPeriodService), never typed.
+        type: string
       presentation:
         description: Presentation is how the coin is kept or was issued (see CoinPresentations).
         type: string
@@ -4334,6 +4340,18 @@ definitions:
         type: integer
       era:
         type: string
+    type: object
+  repository.PeriodCount:
+    properties:
+      count:
+        type: integer
+      fromYear:
+        type: integer
+      period:
+        example: República Portuguesa 1986–2001
+        type: string
+      toYear:
+        type: integer
     type: object
   services.AIJobSubmissionResponse:
     properties:
@@ -7628,6 +7646,10 @@ paths:
         in: query
         name: country
         type: string
+      - description: Filter by period (exact, e.g. República Portuguesa 1986–2001)
+        in: query
+        name: period
+        type: string
       - description: Filter by face value, as written (\
         in: query
         name: denomination
@@ -9249,6 +9271,10 @@ paths:
         in: query
         name: country
         type: string
+      - description: Filter by period (exact)
+        in: query
+        name: period
+        type: string
       - description: Filter by face value, as written
         in: query
         name: denomination
@@ -9615,6 +9641,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Fill coin records from Numista
+      tags:
+      - Coins
+  /coins/periods:
+    get:
+      description: Returns the periods of the user's collection coins (excluding the
+        wishlist) of one country, the most recent first, with how many coins each
+        has and the years they span.
+      parameters:
+      - description: Country, as the collection names it
+        in: query
+        name: country
+        required: true
+        type: string
+      - description: Only coins or only banknotes (every item when omitted)
+        enum:
+        - coin
+        - banknote
+        in: query
+        name: kind
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.PeriodCount'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List a country's periods
       tags:
       - Coins
   /coins/share-list:

@@ -1,7 +1,7 @@
 import { ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
 import { useCoinsStore } from '@/stores/coins'
-import { fillCountriesFromNumista, getCoinCountries, getCoinDenominations, getSets, type CoinCountryCount, type CoinDenominationCount } from '@/api/client'
+import { fillCountriesFromNumista, getCoinCountries, getCoinDenominations, getCoinPeriods, getSets, type CoinCountryCount, type CoinDenominationCount, type CoinPeriodCount } from '@/api/client'
 import { COIN_GROUPINGS, type CoinGroupBy } from '@/utils/coinAttributes'
 import { numistaLang } from '@/utils/numistaCatalog'
 import { loadCoinVocabulary } from '@/i18n/coinVocabulary'
@@ -53,6 +53,7 @@ export function useCollectionFilters() {
   const userSets = ref<CollectionSetOption[]>([])
   const denominationOptions = ref<CoinDenominationCount[]>([])
   const selectedCountry = ref(store.selectedCountry)
+  const selectedPeriod = ref(store.selectedPeriod)
   const selectedPresentation = ref(store.selectedPresentation)
   const selectedRarity = ref(store.selectedRarity)
   const selectedCirculation = ref(store.selectedCirculation)
@@ -61,6 +62,8 @@ export function useCollectionFilters() {
   const selectedRepeated = ref(store.selectedRepeated)
   const groupBy = ref<CoinGroupBy>(readGroupBy())
   const countryOptions = ref<CoinCountryCount[]>([])
+  /** The selected country's periods, the most recent first. */
+  const periodOptions = ref<CoinPeriodCount[]>([])
   const fillingCountries = ref(false)
 
   let debounceTimer: ReturnType<typeof setTimeout>
@@ -68,11 +71,26 @@ export function useCollectionFilters() {
 
   async function fetchUserSets() {
     try {
-      const [setRes] = await Promise.all([getSets(), loadCoinVocabulary(), loadCountryOptions(), loadDenominationOptions()])
+      const [setRes] = await Promise.all([getSets(), loadCoinVocabulary(), loadCountryOptions(), loadDenominationOptions(), loadPeriodOptions()])
       userSets.value = (setRes.data?.sets ?? [])
         .filter((set) => normalizeCoinSetType(set.setType) === 'standard')
         .map((set) => ({ id: set.id, name: set.name, color: set.color }))
     } catch { /* ignore */ }
+  }
+
+  // A country's periods are offered once it is chosen.
+  async function loadPeriodOptions() {
+    const country = selectedCountry.value
+    if (!country || country === EXTINCT_COUNTRIES) {
+      periodOptions.value = []
+      return
+    }
+    try {
+      const res = await getCoinPeriods(country)
+      if (country === selectedCountry.value) periodOptions.value = res.data ?? []
+    } catch {
+      periodOptions.value = []
+    }
   }
 
   async function loadDenominationOptions() {
@@ -145,6 +163,7 @@ export function useCollectionFilters() {
       denomination: selectedDenomination.value || undefined,
       country: selectedCountry.value && selectedCountry.value !== EXTINCT_COUNTRIES ? selectedCountry.value : undefined,
       extinct: selectedCountry.value === EXTINCT_COUNTRIES ? 'true' : undefined,
+      period: selectedCountry.value && selectedPeriod.value ? selectedPeriod.value : undefined,
       presentation: selectedPresentation.value || undefined,
       rarity: selectedRarity.value || undefined,
       circulation: selectedCirculation.value || undefined,
@@ -164,6 +183,7 @@ export function useCollectionFilters() {
   function loadCoins() {
     store.selectedDenomination = selectedDenomination.value
     store.selectedCountry = selectedCountry.value
+    store.selectedPeriod = selectedPeriod.value
     store.selectedPresentation = selectedPresentation.value
     store.selectedRarity = selectedRarity.value
     store.selectedCirculation = selectedCirculation.value
@@ -177,7 +197,13 @@ export function useCollectionFilters() {
     else void store.fetchCoins({ ...params, page: page.value })
   }
 
-  watch([selectedCountry, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated], () => {
+  // Another country has other periods: its choice starts again.
+  watch(selectedCountry, () => {
+    selectedPeriod.value = ''
+    void loadPeriodOptions()
+  })
+
+  watch([selectedCountry, selectedPeriod, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated], () => {
     page.value = 1
     loadCoins()
   })
@@ -264,6 +290,7 @@ export function useCollectionFilters() {
     userSets,
     denominationOptions,
     selectedCountry,
+    selectedPeriod,
     selectedPresentation,
     selectedCirculation,
     selectedCommemorative,
@@ -272,6 +299,7 @@ export function useCollectionFilters() {
     selectedRarity,
     groupBy,
     countryOptions,
+    periodOptions,
     fillingCountries,
     fetchUserSets,
     loadCoins,

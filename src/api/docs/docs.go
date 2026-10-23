@@ -3933,6 +3933,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Filter by period (exact, e.g. República Portuguesa 1986–2001)",
+                        "name": "period",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Filter by face value, as written (\\",
                         "name": "denomination",
                         "in": "query"
@@ -4412,6 +4418,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by country (exact)",
                         "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by period (exact)",
+                        "name": "period",
                         "in": "query"
                     },
                     {
@@ -4920,6 +4932,65 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.CoinNumistaFillResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/periods": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the periods of the user's collection coins (excluding the wishlist) of one country, the most recent first, with how many coins each has and the years they span.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "List a country's periods",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Country, as the collection names it",
+                        "name": "country",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "coin",
+                            "banknote"
+                        ],
+                        "type": "string",
+                        "description": "Only coins or only banknotes (every item when omitted)",
+                        "name": "kind",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.PeriodCount"
+                            }
                         }
                     },
                     "400": {
@@ -16782,6 +16853,10 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 1000
                 },
+                "period": {
+                    "description": "Period is the coin's period, as uCoin names a country's periods\n(\"República Portuguesa 1986–2001\", \"Rainha Isabel II\"), worked out by\nthe app (see services.CoinPeriodService), never typed.",
+                    "type": "string"
+                },
                 "presentation": {
                     "description": "Presentation is how the coin is kept or was issued (see CoinPresentations).",
                     "type": "string"
@@ -19059,6 +19134,24 @@ const docTemplate = `{
                 },
                 "era": {
                     "type": "string"
+                }
+            }
+        },
+        "repository.PeriodCount": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "fromYear": {
+                    "type": "integer"
+                },
+                "period": {
+                    "type": "string",
+                    "example": "República Portuguesa 1986–2001"
+                },
+                "toYear": {
+                    "type": "integer"
                 }
             }
         },

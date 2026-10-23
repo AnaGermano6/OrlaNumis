@@ -1,5 +1,6 @@
 import type { Coin } from '@/types'
 import { intlLocale, t, type MessageKey } from '@/i18n'
+import { periodYears } from '@/utils/coinPeriods'
 import { formatNumistaYear } from '@/utils/numistaCatalog'
 
 export const COIN_PRESENTATIONS = ['loose', 'coincard', 'capsule', 'flip', 'proof_set', 'blister', 'slab'] as const
@@ -115,13 +116,15 @@ export function monetarySystemShortName(system: string | null | undefined): stri
   return cut > 0 ? value.slice(0, cut) : value
 }
 
-export type CoinGroupBy = 'none' | 'country' | 'monetarySystem' | 'year' | 'rarity' | 'presentation'
-export const COIN_GROUPINGS: CoinGroupBy[] = ['none', 'country', 'monetarySystem', 'year', 'rarity', 'presentation']
+export type CoinGroupBy = 'none' | 'country' | 'period' | 'monetarySystem' | 'year' | 'rarity' | 'presentation'
+export const COIN_GROUPINGS: CoinGroupBy[] = ['none', 'country', 'period', 'monetarySystem', 'year', 'rarity', 'presentation']
 
 export interface CoinGroup {
   key: string
   label: string
   coins: Coin[]
+  /** The country a group by period belongs to, for its flag. */
+  country?: string
 }
 
 interface GroupKey {
@@ -132,7 +135,7 @@ interface GroupKey {
   missing: boolean
 }
 
-function groupKey(coin: Coin, by: Exclude<CoinGroupBy, 'none'>): GroupKey {
+function groupKey(coin: Coin, by: Exclude<CoinGroupBy, 'none' | 'period'>): GroupKey {
   switch (by) {
     case 'country': {
       const country = coin.country?.trim() ?? ''
@@ -167,9 +170,48 @@ function groupKey(coin: Coin, by: Exclude<CoinGroupBy, 'none'>): GroupKey {
   }
 }
 
+/**
+ * Coins by country and, within it, by period, most recent first, as uCoin
+ * lists a country's periods: "Portugal · República Portuguesa 1986–2001". A
+ * period whose name gives no years shows those of its coins; coins without
+ * a period come last in their country.
+ */
+function groupCoinsByPeriod(coins: Coin[]): CoinGroup[] {
+  const groups = new Map<string, { country: string; period: string; coins: Coin[] }>()
+  for (const coin of coins) {
+    const country = coin.country?.trim() ?? ''
+    const period = coin.period?.trim() ?? ''
+    const key = `${country}\n${period}`
+    const group = groups.get(key) ?? { country, period, coins: [] }
+    group.coins.push(coin)
+    groups.set(key, group)
+  }
+  const collator = new Intl.Collator(intlLocale(), { sensitivity: 'base', numeric: true })
+  const sections = [...groups.entries()].map(([key, group]) => {
+    const coinYears = group.coins.map((coin) => coin.year).filter((year): year is number => typeof year === 'number')
+    const named = periodYears(group.period)
+    const from = named?.from ?? (coinYears.length ? Math.min(...coinYears) : undefined)
+    const to = named?.to ?? (coinYears.length ? Math.max(...coinYears) : undefined)
+    const years = named || from === undefined ? '' : from === to ? ` ${formatNumistaYear(from)}` : ` ${formatNumistaYear(from)}–${formatNumistaYear(to!)}`
+    const period = group.period ? `${group.period}${years}` : t('collection.groups.noPeriod')
+    const label = group.country ? `${group.country} · ${period}` : period
+    return { key, label, country: group.country, coins: group.coins, missing: !group.period, start: from ?? 0 }
+  })
+  return sections
+    .sort((a, b) => {
+      if (!a.country !== !b.country) return a.country ? -1 : 1
+      const byCountry = collator.compare(a.country, b.country)
+      if (byCountry) return byCountry
+      if (a.missing !== b.missing) return a.missing ? 1 : -1
+      return b.start - a.start || collator.compare(a.label, b.label)
+    })
+    .map(({ key, label, country, coins: sectionCoins }) => ({ key, label, coins: sectionCoins, ...(country ? { country } : {}) }))
+}
+
 /** Splits coins into labelled sections, keeping each section's coins in their given order. */
 export function groupCoins(coins: Coin[], by: CoinGroupBy): CoinGroup[] {
   if (by === 'none') return [{ key: '', label: '', coins }]
+  if (by === 'period') return groupCoinsByPeriod(coins)
   const groups = new Map<string, GroupKey & { coins: Coin[] }>()
   for (const coin of coins) {
     const key = groupKey(coin, by)

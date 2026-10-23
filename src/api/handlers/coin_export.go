@@ -27,6 +27,7 @@ const maxExportCoins = 10000
 //	@Param			kind			query	string	false	"Only coins or only banknotes (every item when omitted)"	Enums(coin, banknote)
 //	@Param			wishlist		query	string	false	"Filter by wishlist status"	Enums(true, false)
 //	@Param			country			query	string	false	"Filter by country (exact)"
+//	@Param			period			query	string	false	"Filter by period (exact)"
 //	@Param			denomination	query	string	false	"Filter by face value, as written"
 //	@Param			presentation	query	string	false	"Filter by presentation"	Enums(loose, coincard, capsule, flip, proof_set, blister, slab)
 //	@Param			rarity			query	string	false	"Filter by rarity"	Enums(common, uncommon, scarce, rare, very_rare, extremely_rare)

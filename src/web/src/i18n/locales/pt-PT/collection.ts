@@ -66,6 +66,7 @@ const messages: Messages['collection'] = {
     groupNone: 'Todas as moedas',
     groupYear: 'Ano',
     allCountries: 'Todos os países',
+    allPeriods: 'Todos os períodos',
     allPresentations: 'Todas as apresentações',
     allRarities: 'Todas as raridades',
     layout: 'Vista',
@@ -119,6 +120,7 @@ const messages: Messages['collection'] = {
   groups: {
     noCountry: 'Sem país',
     noMonetarySystem: 'Sem sistema monetário',
+    noPeriod: 'Sem período',
     noYear: 'Sem ano',
     noRarity: 'Sem raridade',
     noPresentation: 'Sem apresentação',

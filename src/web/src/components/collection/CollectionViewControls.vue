@@ -14,6 +14,15 @@
       <CountrySelect :model-value="country" :options="countryChoices" :label="t('coinFields.country')" data-testid="country-filter" @update:model-value="$emit('update:country', $event)" />
     </div>
 
+    <!-- The chosen country's periods, the most recent first. -->
+    <label v-if="periodOptions.length || period" class="flex min-w-0 flex-col gap-1">
+      <span class="section-label mb-0">{{ t('coinFields.period') }}</span>
+      <select class="form-select h-10 w-full bg-card py-0 text-body" :value="period" data-testid="period-filter" @change="$emit('update:period', ($event.target as HTMLSelectElement).value)">
+        <option value="">{{ t('collection.view.allPeriods') }}</option>
+        <option v-for="option in periodOptions" :key="option.period" :value="option.period">{{ periodLabel(option) }} ({{ option.count }})</option>
+      </select>
+    </label>
+
     <label v-if="classifications.length || classification" class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('collection.view.classification') }}</span>
       <select class="form-select h-10 w-full bg-card py-0 text-body" :value="classification" data-testid="classification-filter" @change="$emit('update:classification', ($event.target as HTMLSelectElement).value)">
@@ -67,7 +76,9 @@ import { LayoutGrid, List } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
 import CountrySelect, { type CountrySelectOption } from '@/components/CountrySelect.vue'
-import type { CoinCountryCount, CollectionClassification } from '@/api/client'
+import type { CoinCountryCount, CoinPeriodCount, CollectionClassification } from '@/api/client'
+import { periodYears } from '@/utils/coinPeriods'
+import { formatNumistaYear } from '@/utils/numistaCatalog'
 import { t, type MessageKey } from '@/i18n'
 import {
   COIN_GROUPINGS,
@@ -89,6 +100,7 @@ const LAYOUTS: { value: CollectionLayout; label: MessageKey; icon: typeof Layout
 const GROUPING_KEYS: Record<CoinGroupBy, MessageKey> = {
   none: 'collection.view.groupNone',
   country: 'coinFields.country',
+  period: 'coinFields.period',
   monetarySystem: 'coinFields.monetarySystem',
   year: 'collection.view.groupYear',
   rarity: 'coinFields.rarity',
@@ -99,9 +111,13 @@ const props = withDefaults(defineProps<{
   groupBy: CoinGroupBy
   layout: CollectionLayout
   country: string
+  /** '' or one of the chosen country's periods. */
+  period?: string
   presentation: string
   rarity: string
   countryOptions: CoinCountryCount[]
+  /** The chosen country's periods; none until a country is chosen. */
+  periodOptions?: CoinPeriodCount[]
   /** Numista's kinds of coin in the collection, offered as a filter. */
   classifications?: CollectionClassification[]
   /** '' or the chosen kind's key. */
@@ -112,16 +128,25 @@ const props = withDefaults(defineProps<{
   fillingCountries?: boolean
   /** How many of the countries no longer exist; offered as one choice. */
   extinctCountries?: number
-}>(), { showLayout: true, stacked: false, fillingCountries: false, extinctCountries: 0, classifications: () => [], classification: '' })
+}>(), { showLayout: true, stacked: false, fillingCountries: false, extinctCountries: 0, classifications: () => [], classification: '', period: '', periodOptions: () => [] })
 
 defineEmits<{
   'update:groupBy': [value: CoinGroupBy]
   'update:layout': [value: CollectionLayout]
   'update:country': [value: string]
+  'update:period': [value: string]
   'update:classification': [value: string]
   'update:presentation': [value: string]
   'update:rarity': [value: string]
 }>()
+
+// A period whose name gives no years shows those of its coins.
+function periodLabel(option: CoinPeriodCount): string {
+  if (periodYears(option.period) || option.fromYear === undefined) return option.period
+  const to = option.toYear ?? option.fromYear
+  const years = option.fromYear === to ? formatNumistaYear(option.fromYear) : `${formatNumistaYear(option.fromYear)}–${formatNumistaYear(to)}`
+  return `${option.period} ${years}`
+}
 
 // "All countries", "Extinct countries" when there are any, then each country with its count.
 const countryChoices = computed((): CountrySelectOption[] => [

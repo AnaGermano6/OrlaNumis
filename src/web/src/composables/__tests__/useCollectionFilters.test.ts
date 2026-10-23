@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { getCoinDenominations, getCoinOptions, getCoins, getSets } from '@/api/client'
+import { getCoinDenominations, getCoinOptions, getCoinPeriods, getCoins, getSets } from '@/api/client'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
 import { resetCoinVocabulary } from '@/i18n/coinVocabulary'
 import { useCollectionFilters } from '../useCollectionFilters'
@@ -11,6 +11,7 @@ vi.mock('@/api/client', () => ({
   getCoins: vi.fn(),
   getCoinDenominations: vi.fn(),
   getCoinOptions: vi.fn(),
+  getCoinPeriods: vi.fn(),
   getSets: vi.fn(),
 }))
 
@@ -47,6 +48,32 @@ describe('useCollectionFilters', () => {
     expect(filters.userSets.value).toEqual([{ id: 2, name: 'Euro 2007', color: '#b08d57' }])
     filters.selectedSet.value = '2'
     await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ set: '2' }))
+    wrapper.unmount()
+  })
+
+  it("offers the chosen country's periods, filters by one, and starts again with another country", async () => {
+    vi.mocked(getCoins).mockResolvedValue({ data: { coins: [], total: 0 } } as unknown as Awaited<ReturnType<typeof getCoins>>)
+    vi.mocked(getCoinPeriods).mockResolvedValue({ data: [{ period: 'República Portuguesa 1986–2001', count: 48 }] } as unknown as Awaited<ReturnType<typeof getCoinPeriods>>)
+    let filters!: ReturnType<typeof useCollectionFilters>
+    const wrapper = mount(defineComponent({
+      setup() {
+        filters = useCollectionFilters()
+        return () => h('div')
+      },
+    }))
+
+    filters.selectedCountry.value = 'Portugal'
+    await vi.waitFor(() => expect(filters.periodOptions.value).toHaveLength(1))
+    expect(getCoinPeriods).toHaveBeenCalledWith('Portugal')
+    filters.selectedPeriod.value = 'República Portuguesa 1986–2001'
+    await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ country: 'Portugal', period: 'República Portuguesa 1986–2001' }))
+
+    vi.mocked(getCoinPeriods).mockResolvedValue({ data: [] } as unknown as Awaited<ReturnType<typeof getCoinPeriods>>)
+    filters.selectedCountry.value = 'Espanha'
+    await vi.waitFor(() => expect(filters.selectedPeriod.value).toBe(''))
+    await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ country: 'Espanha', period: undefined }))
+    filters.selectedCountry.value = ''
+    await vi.waitFor(() => expect(filters.periodOptions.value).toEqual([]))
     wrapper.unmount()
   })
 

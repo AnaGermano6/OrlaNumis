@@ -20,7 +20,7 @@
         :aria-label="groupBy === 'none' ? undefined : group.label"
       >
         <h2 v-if="groupBy !== 'none'" class="mb-3 flex items-baseline gap-2 border-b border-border-subtle pb-1 font-display text-lg font-medium text-heading">
-          <span v-if="groupBy === 'country' && hasCountryFlag(group.label)" class="font-sans" aria-hidden="true" data-testid="group-flag"><CountryFlag :country="group.label" /></span>
+          <span v-if="groupCountry(group) && hasCountryFlag(groupCountry(group))" class="font-sans" aria-hidden="true" data-testid="group-flag"><CountryFlag :country="groupCountry(group)" /></span>
           {{ group.label }}
           <span class="font-sans text-chip font-normal text-text-muted">{{ t('collection.groups.count', { count: group.coins.length }) }}</span>
         </h2>
@@ -62,7 +62,7 @@ import type { Coin, ImageType } from '@/types'
 import CoinCard from '@/components/CoinCard.vue'
 import SwipeGallery from '@/components/SwipeGallery.vue'
 import CoinListTable from '@/components/collection/CoinListTable.vue'
-import { groupCoins, type CoinGroupBy } from '@/utils/coinAttributes'
+import { groupCoins, type CoinGroup, type CoinGroupBy } from '@/utils/coinAttributes'
 import { rememberBrowseSequence } from '@/utils/browseSequence'
 import { t } from '@/i18n'
 import CountryFlag from '@/components/CountryFlag.vue'
@@ -88,6 +88,12 @@ const props = withDefaults(defineProps<{
 }>(), { groupBy: 'none', layout: 'grid', truncated: false })
 
 const groups = computed(() => groupCoins(props.coins, props.groupBy))
+
+// A country's group, or a period's within a country, shows the country's flag.
+function groupCountry(group: CoinGroup): string {
+  if (props.groupBy === 'country') return group.label
+  return props.groupBy === 'period' ? group.country ?? '' : ''
+}
 // A coin's page goes to the previous and the next coin in this order.
 watch(groups, (value) => {
   rememberBrowseSequence('gallery', value.flatMap((group) => group.coins.map((coin) => coin.id)))

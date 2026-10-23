@@ -18,8 +18,9 @@ The search takes the first row; below it, every field has the same size, in equa
 
 - **Face value** — the collection's face values, most common first, with how many coins of each
 - **Sort** — recently updated, newest or oldest first, value, random
-- **View by** — all coins, or grouped by country, monetary system, year, rarity or presentation. A monetary system is named as Numista names its currency, with its dates (**Escudo (1911-2001)**, **Real (decimalizado, 1835-1910)**, so the réis of Portugal and the real of Brazil stay apart); every euro coin, whatever its country, is in **Euro**. Coins without one come last
+- **View by** — all coins, or grouped by country, period, monetary system, year, rarity or presentation. **Period** groups each country's coins by period, most recent first, as uCoin lists them: **Portugal · República Portuguesa 1986–2001**, **Portugal · União Europeia (Euro) 2002–2024**, **Reino Unido · Rainha Isabel II 1971–2008**, with the country's flag; a period whose name gives no years shows those of its coins, and coins without a period come last in their country (see [Period](coin-details.md#period)). A monetary system is named as Numista names its currency, with its dates (**Escudo (1911-2001)**, **Real (decimalizado, 1835-1910)**, so the réis of Portugal and the real of Brazil stay apart); every euro coin, whatever its country, is in **Euro**. Coins without one come last
 - **Country** — each with its flag, including *Extinct countries* (USSR, Yugoslavia, Ottoman Empire…)
+- **Period** — once a country is chosen, its periods, the most recent first, with how many coins each has (**República Portuguesa 1986–2001 (48)**, **União Europeia (Euro) 2002–2024 (55)**); choosing another country starts the choice again. `GET /api/coins/periods?country=` lists them; `GET /api/coins?period=` filters by one
 - **Coin type** — standard circulation, circulating commemorative or non-circulating, as Numista classifies it
 - **Presentation** — loose, coincard, capsule…
 - **Rarity**

@@ -74,6 +74,7 @@ type CoinService struct {
 	refSvc              *CoinReferenceService
 	mintLocationRepo    *repository.MintLocationRepository
 	catalogRegistryRepo *repository.CatalogRegistryRepository
+	periods             *CoinPeriodService
 	settingsSvc         *SettingsService
 }
 
@@ -108,6 +109,12 @@ func (s *CoinService) WithReferenceSupport(
 // WithMintLocationSupport enables mint-location visibility validation during coin create/update workflows.
 func (s *CoinService) WithMintLocationSupport(mintLocationRepo *repository.MintLocationRepository) *CoinService {
 	s.mintLocationRepo = mintLocationRepo
+	return s
+}
+
+// WithPeriods gives coins their period as they are saved.
+func (s *CoinService) WithPeriods(periods *CoinPeriodService) *CoinService {
+	s.periods = periods
 	return s
 }
 
@@ -174,6 +181,9 @@ func (s *CoinService) prepareCoinForCreate(coin *models.Coin) error {
 	}
 	if !models.ValidCoinQuantity(coin.Quantity) {
 		return ErrCoinInvalidQuantity
+	}
+	if s.periods != nil {
+		coin.Period = s.periods.PeriodFor(coin)
 	}
 	return nil
 }
@@ -321,7 +331,7 @@ func (s *CoinService) updateCoin(existing *models.Coin, updates *models.Coin, up
 		}
 	}
 
-	return s.repo.DB().Transaction(func(tx *gorm.DB) error {
+	err := s.repo.DB().Transaction(func(tx *gorm.DB) error {
 		txRepo := s.repo.WithTx(tx)
 
 		if updateFields == nil || len(updateFields) > 0 {
@@ -394,6 +404,11 @@ func (s *CoinService) updateCoin(existing *models.Coin, updates *models.Coin, up
 
 		return nil
 	})
+	// The period follows what the coin now is (country, year, type, notes).
+	if err == nil && s.periods != nil {
+		s.periods.Refresh(existing.ID, userID)
+	}
+	return err
 }
 
 func containsString(values []string, needle string) bool {

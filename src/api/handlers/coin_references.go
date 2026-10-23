@@ -15,6 +15,20 @@ type CoinReferenceHandler struct {
 	repo         *repository.CoinReferenceRepository
 	svc          *services.CoinReferenceService
 	migrationSvc *services.ReferenceMigrationService
+	periods      *services.CoinPeriodService
+}
+
+// WithPeriods works out a coin's period again when its references change
+// (its Numista type tells when its series began).
+func (h *CoinReferenceHandler) WithPeriods(periods *services.CoinPeriodService) *CoinReferenceHandler {
+	h.periods = periods
+	return h
+}
+
+func (h *CoinReferenceHandler) refreshPeriod(coinID, userID uint) {
+	if h.periods != nil {
+		h.periods.Refresh(coinID, userID)
+	}
 }
 
 // NewCoinReferenceHandler creates a new CoinReferenceHandler.
@@ -75,6 +89,7 @@ func (h *CoinReferenceHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create reference"})
 		return
 	}
+	h.refreshPeriod(coinID, userID)
 	c.JSON(http.StatusCreated, normalized)
 }
 
@@ -143,6 +158,7 @@ func (h *CoinReferenceHandler) Update(c *gin.Context) {
 		return
 	}
 
+	h.refreshPeriod(coinID, userID)
 	c.JSON(http.StatusOK, existing)
 }
 
@@ -181,6 +197,7 @@ func (h *CoinReferenceHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Reference not found"})
 		return
 	}
+	h.refreshPeriod(coinID, userID)
 	c.JSON(http.StatusOK, gin.H{"message": "Reference deleted"})
 }
 

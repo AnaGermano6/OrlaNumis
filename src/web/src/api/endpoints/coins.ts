@@ -473,6 +473,14 @@ export interface CoinCountryCount {
   count: number
 }
 
+/** A period of a country's coins, how many it has and the years they span. */
+export interface CoinPeriodCount {
+  period: string
+  count: number
+  fromYear?: number
+  toYear?: number
+}
+
 export interface CoinDenominationCount {
   denomination: string
   count: number
@@ -483,6 +491,9 @@ export const getCoinDenominations = (kind?: CoinKind) => api.get<CoinDenominatio
 
 /** Countries of the collection (not the wishlist) with coin counts. */
 /** The collection's countries, of its coins or its banknotes (every item when kind is omitted). */
+/** A country's periods, the most recent first. */
+export const getCoinPeriods = (country: string, kind: CoinKind = 'coin') => api.get<CoinPeriodCount[]>('/coins/periods', { params: { country, kind } })
+
 export const getCoinCountries = (kind?: CoinKind) => api.get<CoinCountryCount[]>('/coins/countries', kind ? { params: { kind } } : undefined)
 
 export interface CoinCountryFillResult {

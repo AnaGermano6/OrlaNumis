@@ -30,6 +30,7 @@ export default {
   rarityRating: 'Rarity Rating',
   country: 'Country',
   monetarySystem: 'Monetary system',
+  period: 'Period',
   presentation: 'Presentation',
   rarity: 'Rarity',
   circulation: 'Circulation',

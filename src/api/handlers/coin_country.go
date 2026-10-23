@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/briandenicola/ancient-coins-api/models"
 	"github.com/briandenicola/ancient-coins-api/repository"
 	"github.com/briandenicola/ancient-coins-api/services"
 	"github.com/gin-gonic/gin"
@@ -47,6 +48,42 @@ func (h *CoinCountryHandler) Countries(c *gin.Context) {
 	if counts == nil {
 		counts = []repository.CountryCount{}
 	}
+	c.JSON(http.StatusOK, counts)
+}
+
+// Periods lists a country's periods with coin counts.
+//
+//	@Summary		List a country's periods
+//	@Description	Returns the periods of the user's collection coins (excluding the wishlist) of one country, the most recent first, with how many coins each has and the years they span.
+//	@Tags			Coins
+//	@Produce		json
+//	@Param			country	query		string	true	"Country, as the collection names it"
+//	@Param			kind	query		string	false	"Only coins or only banknotes (every item when omitted)"	Enums(coin, banknote)
+//	@Success		200		{array}		repository.PeriodCount
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/coins/periods [get]
+func (h *CoinCountryHandler) Periods(c *gin.Context) {
+	kind, ok := coinKindQuery(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "kind must be 'coin' or 'banknote'"})
+		return
+	}
+	country := models.NormalizeCoinCountry(c.Query("country"))
+	if country == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "country is required"})
+		return
+	}
+	counts, err := h.coins.PeriodCounts(c.GetUint("userId"), kind, country)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list periods"})
+		return
+	}
+	if counts == nil {
+		counts = []repository.PeriodCount{}
+	}
+	services.SortPeriodsMostRecentFirst(counts)
 	c.JSON(http.StatusOK, counts)
 }
 
