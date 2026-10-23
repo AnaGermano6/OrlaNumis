@@ -4391,6 +4391,7 @@ definitions:
         - auto
         - manual
         - pre-restore
+        - pre-update
         - uploaded
         type: string
       name:
@@ -4976,6 +4977,43 @@ definitions:
       valueFromHistory:
         type: boolean
     type: object
+  services.UpdateStatus:
+    properties:
+      checkedAt:
+        type: string
+      current:
+        example: 1.0.0
+        type: string
+      image:
+        example: anagermano/orlanumis
+        type: string
+      latest:
+        example: 1.1.0
+        type: string
+      notes:
+        description: Notes are the release's notes, in Markdown.
+        type: string
+      publishedAt:
+        type: string
+      releaseUrl:
+        type: string
+      status:
+        enum:
+        - ok
+        - disabled
+        - unavailable
+        type: string
+      updateAvailable:
+        description: |-
+          UpdateAvailable is true when the latest release is newer than the
+          running version.
+        type: boolean
+      watchtower:
+        description: |-
+          Watchtower is true when Watchtower's address and token are set, so
+          the update can be started from the app.
+        type: boolean
+    type: object
   services.ValueBasis:
     properties:
       fromPurchasePrice:
@@ -5073,7 +5111,7 @@ info:
   description: REST API for managing a personal coin collection. Supports coin CRUD,
     image uploads, AI-powered analysis, user management, and admin features.
   title: Orla Numis API
-  version: 4.3.0
+  version: 1.0.0
 paths:
   /admin/availability-cycles:
     get:
@@ -6155,6 +6193,93 @@ paths:
       security:
       - BearerAuth: []
       summary: Test SearXNG connection
+      tags:
+      - Admin
+  /admin/updates:
+    get:
+      description: Returns the running version, the latest released version (from
+        the project's GitHub releases, checked every few hours) with its notes, and
+        whether Watchtower is set up to update the container. Admin only.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.UpdateStatus'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get the update status
+      tags:
+      - Admin
+  /admin/updates/apply:
+    post:
+      description: Makes a backup (kind pre-update), then asks Watchtower to pull
+        the latest image and recreate the container; the app restarts on the new version
+        a moment later and migrates its data. Needs Watchtower's address and token
+        in the settings. Admin only.
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update the app now
+      tags:
+      - Admin
+  /admin/updates/check:
+    post:
+      description: Asks GitHub for the latest release now, instead of using the last
+        check. Admin only.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.UpdateStatus'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Check for a new version now
       tags:
       - Admin
   /admin/users:

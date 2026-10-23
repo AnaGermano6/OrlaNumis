@@ -8,6 +8,7 @@
 
     <p v-if="failed" class="text-body text-text-secondary" role="alert">{{ t('collectionOverview.failed') }}</p>
 
+    <UpdateNotice />
     <NumistaValuesNotice />
 
     <!-- The whole collection: coins and banknotes together -->
@@ -80,6 +81,7 @@ import CollectionRepeated from '@/components/collection/CollectionRepeated.vue'
 import CoinReleases from '@/components/collection/CoinReleases.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import NumistaValuesNotice from '@/components/collection/NumistaValuesNotice.vue'
+import UpdateNotice from '@/components/collection/UpdateNotice.vue'
 import ShareListDialog from '@/components/collection/ShareListDialog.vue'
 import { useCoinsStore } from '@/stores/coins'
 import { intlLocale, t } from '@/i18n'

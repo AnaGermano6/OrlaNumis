@@ -166,6 +166,7 @@
 
         <!-- Health Tab -->
         <AdminHealthSection v-if="activeTab === 'health'" />
+        <AdminUpdatesSection v-if="activeTab === 'updates'" />
 
         <!-- Logs Tab -->
         <AdminLogsSection
@@ -207,15 +208,16 @@ import AdminLogsSection from '@/components/admin/AdminLogsSection.vue'
 import AdminAISection from '@/components/admin/AdminAISection.vue'
 import AdminSchedulesSection from '@/components/admin/AdminSchedulesSection.vue'
 import AdminHealthSection from '@/components/admin/AdminHealthSection.vue'
+import AdminUpdatesSection from '@/components/admin/AdminUpdatesSection.vue'
 import AdminCatalogsSection from '@/components/admin/AdminCatalogsSection.vue'
 import AdminCoinPropertiesSection from '@/components/admin/AdminCoinPropertiesSection.vue'
 import AdminNumistaFillSection from '@/components/admin/AdminNumistaFillSection.vue'
 import AdminSecuritySection from '@/components/admin/AdminSecuritySection.vue'
-import { Users, Cpu, Wrench, ScrollText, CalendarClock, Activity, ChevronRight, BookMarked, Settings2, ShieldAlert } from 'lucide-vue-next'
+import { Users, Cpu, Wrench, ScrollText, CalendarClock, Activity, ChevronRight, BookMarked, Settings2, ShieldAlert, ArrowUpCircle } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { t, type MessageKey, intlLocale } from '@/i18n'
 
-type AdminTabId = 'users' | 'ai' | 'system' | 'properties' | 'catalogs' | 'security' | 'schedules' | 'health' | 'logs'
+type AdminTabId = 'users' | 'ai' | 'system' | 'properties' | 'catalogs' | 'security' | 'schedules' | 'health' | 'updates' | 'logs'
 type AdminGroupId = 'configuration' | 'operations'
 type AdminTab = {
   id: AdminTabId
@@ -233,6 +235,7 @@ const tabIcons: Record<AdminTabId, Component> = {
   security: ShieldAlert,
   schedules: CalendarClock,
   health: Activity,
+  updates: ArrowUpCircle,
   logs: ScrollText,
 }
 
@@ -245,6 +248,7 @@ const tabs: AdminTab[] = [
   { id: 'security', labelKey: 'admin.tabs.security', group: 'operations' },
   { id: 'schedules', labelKey: 'admin.tabs.schedules', group: 'operations', aliases: ['schedule'] },
   { id: 'health', labelKey: 'admin.tabs.health', group: 'operations' },
+  { id: 'updates', labelKey: 'admin.tabs.updates', group: 'operations', aliases: ['update'] },
   { id: 'logs', labelKey: 'admin.tabs.logs', group: 'operations', aliases: ['log'] },
 ]
 const DEFAULT_TAB: AdminTabId = 'users'

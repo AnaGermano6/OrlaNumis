@@ -62,11 +62,33 @@ export const getAppSettingDefaults = () => api.get<AppSettings>('/admin/settings
 export const updateAppSettings = (settings: { key: string; value: string }[]) =>
   api.put('/admin/settings', settings)
 
+/** Which version runs, the latest released one (with its Markdown notes) and whether Watchtower can update the container. */
+export interface UpdateStatus {
+  current: string
+  latest?: string
+  updateAvailable: boolean
+  notes?: string
+  releaseUrl?: string
+  publishedAt?: string
+  checkedAt?: string
+  status: 'ok' | 'disabled' | 'unavailable'
+  watchtower: boolean
+  image: string
+}
+
+export const getUpdateStatus = () => api.get<UpdateStatus>('/admin/updates')
+
+/** Asks GitHub now, instead of using the last check. */
+export const checkForUpdates = () => api.post<UpdateStatus>('/admin/updates/check')
+
+/** Backs up, then asks Watchtower to update the container. */
+export const applyUpdate = () => api.post<{ message: string }>('/admin/updates/apply')
+
 /** A full backup: the whole database and every upload, in one zip. */
 export interface BackupInfo {
   name: string
   /** Made by the schedule, by hand, of the data a restore replaced, or imported. */
-  kind: 'auto' | 'manual' | 'pre-restore' | 'uploaded'
+  kind: 'auto' | 'manual' | 'pre-restore' | 'pre-update' | 'uploaded'
   /** When its data was copied (an imported backup's own date). */
   createdAt: string
   size: number

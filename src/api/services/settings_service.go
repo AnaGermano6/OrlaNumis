@@ -189,6 +189,9 @@ var settingDefaults = map[string]string{
 	SettingNumistaValuesEnabled:               "false",
 	SettingNumistaValuesStartTime:             "05:00",
 	SettingNumistaValuesDailyRequests:         "40",
+	SettingUpdateCheckEnabled:                 "true",
+	SettingWatchtowerURL:                      "",
+	SettingWatchtowerToken:                    "",
 	SettingScheduleTimezone:                   "", // empty = server local time
 	SettingRegistrationMode:                   "closed",
 	SettingBackupStatus:                       "not_configured",

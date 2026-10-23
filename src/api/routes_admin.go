@@ -34,6 +34,11 @@ func registerAdminRoutes(api *gin.RouterGroup, d *appDeps) {
 		admin.GET("/backups/:name", backups.Download)
 		admin.DELETE("/backups/:name", backups.Delete)
 		admin.POST("/backups/:name/restore", backups.Restore)
+		// New versions, and the update through Watchtower.
+		updates := handlers.NewAdminUpdatesHandler(d.updateSvc)
+		admin.GET("/updates", updates.Status)
+		admin.POST("/updates/check", updates.Check)
+		admin.POST("/updates/apply", updates.Apply)
 		admin.GET("/settings/defaults", adminHandler.GetSettingDefaults)
 		admin.PUT("/settings", adminHandler.UpdateSettings)
 		admin.GET("/logs", adminHandler.GetLogs)

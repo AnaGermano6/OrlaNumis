@@ -28,6 +28,7 @@ const (
 	BackupKindAutomatic  = "auto"
 	BackupKindManual     = "manual"
 	BackupKindPreRestore = "pre-restore"
+	BackupKindPreUpdate  = "pre-update"
 	BackupKindUploaded   = "uploaded"
 )
 
@@ -50,7 +51,7 @@ const (
 )
 
 // Backups made before the app was named Orla Numis keep their "aurearia-" name.
-var backupNamePattern = regexp.MustCompile(`^(?:orla-numis|aurearia)-(\d{4}-\d{2}-\d{2}-\d{6})-(auto|manual|pre-restore|uploaded)\.zip$`)
+var backupNamePattern = regexp.MustCompile(`^(?:orla-numis|aurearia)-(\d{4}-\d{2}-\d{2}-\d{6})-(auto|manual|pre-restore|pre-update|uploaded)\.zip$`)
 
 // ErrBackupNotFound is a backup name that is not one of the folder's backups.
 var ErrBackupNotFound = errors.New("backup not found")
@@ -73,7 +74,7 @@ type BackupManifest struct {
 // BackupInfo is a backup of the folder.
 type BackupInfo struct {
 	Name string `json:"name" example:"orla-numis-2026-10-16-030000-auto.zip"`
-	Kind string `json:"kind" enums:"auto,manual,pre-restore,uploaded"`
+	Kind string `json:"kind" enums:"auto,manual,pre-restore,pre-update,uploaded"`
 	// CreatedAt is when its data was copied (for an imported backup, when it
 	// was made, not imported).
 	CreatedAt  time.Time `json:"createdAt"`

@@ -25,6 +25,10 @@ const messages: Messages['collectionOverview'] = {
     noYear: 'Ainda nenhuma nota tem ano.',
     noValue: 'Ainda nenhuma nota tem valor atual.',
   },
+  update: {
+    available: 'Já saiu o Orla Numis {version}.',
+    open: 'Ver as novidades',
+  },
   numistaValues: {
     low: 'A quota do Numista está a acabar ({requests} de {limit} pedidos): a atualização diária dos valores das moedas abranda e para aos {pauseAt}.',
     paused: 'A quota do Numista deste mês para pedidos em segundo plano acabou: os valores das moedas voltam a ser atualizados a partir de {date}.',
