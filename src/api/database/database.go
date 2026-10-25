@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -68,8 +69,15 @@ func Connect(dbPath string) {
 	// (it cannot import this package; see TestNoDirectDatabaseImports in
 	// architecture_test.go), so the two can never silently drift apart.
 	dsn := dbPath + "?" + models.SQLiteConcurrencyDSNParams
+	// GORM's default logger, but a lookup that finds nothing is not an
+	// error: the start looks up many rows before seeding them.
 	DB, err = gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
+		Logger: logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{
+			SlowThreshold:             200 * time.Millisecond,
+			LogLevel:                  logger.Warn,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  true,
+		}),
 	})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
