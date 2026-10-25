@@ -7,6 +7,15 @@
 # too and the container exits, so Docker restarts it.
 set -euo pipefail
 
+# A setting left empty (Unraid passes those as empty variables) would hide
+# the image's default: an empty one gets it back.
+export PORT="${PORT:-8080}"
+export DB_PATH="${DB_PATH:-/app/data/ancientcoins.db}"
+export UPLOAD_DIR="${UPLOAD_DIR:-/app/uploads}"
+export BACKUP_DIR="${BACKUP_DIR:-/app/backups}"
+export GIN_MODE="${GIN_MODE:-release}"
+export TRUSTED_PROXIES="${TRUSTED_PROXIES:-none}"
+
 DATA_DIR="$(dirname "${DB_PATH}")"
 mkdir -p "$DATA_DIR" "$UPLOAD_DIR" "$BACKUP_DIR"
 

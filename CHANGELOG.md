@@ -4,6 +4,15 @@ Each version's section is its release notes: the release workflow publishes
 it on GitHub, and **Admin → Updates** shows it to the apps that can update.
 Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.0.1] - 2026-10-25
+
+### Fixed
+- The container starts when a setting is left empty, as Unraid passes it:
+  an empty setting gets the image's default back. An empty trusted proxies
+  setting stopped the start.
+- The log no longer shows a "record not found" error, with its SQL, for
+  each row a new install looks up before creating it.
+
 ## [1.0.0] - 2026-10-23
 
 The first public release of Orla Numis, a self-hosted catalogue for a
