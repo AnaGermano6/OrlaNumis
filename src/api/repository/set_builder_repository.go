@@ -132,7 +132,7 @@ func (r *SetBuilderRepository) ListQueuedRunIDs() ([]uint, error) {
 	err := r.db.Model(&models.SetBuilderRun{}).
 		Where("status = ?", models.SetBuilderRunStatusQueued).
 		Order("created_at ASC").
-		Limit(100).
+		Limit(QueuedIDsPageSize).
 		Pluck("id", &ids).Error
 	return ids, err
 }

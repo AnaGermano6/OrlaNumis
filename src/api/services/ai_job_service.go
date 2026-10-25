@@ -194,7 +194,7 @@ func (s *AIJobService) enqueueID(jobID uint) {
 }
 
 func (s *AIJobService) worker() {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(queuePollInterval)
 	defer ticker.Stop()
 	for s.ctx.Err() == nil {
 		ids, err := s.repo.ListQueuedIDs()
@@ -207,6 +207,9 @@ func (s *AIJobService) worker() {
 				}
 				s.processJob(id)
 			}
+		}
+		if fullQueuePage(s.ctx, ids) {
+			continue
 		}
 		select {
 		case <-s.ctx.Done():

@@ -50,7 +50,7 @@ Losing the first two loses the collection. The container starts as root only to 
 |---|---|---|
 | `PUID`, `PGID` | `10001` | User and group that run the app and own the folders |
 | `TZ` | UTC | Time zone of the daily backup and the schedules |
-| `AI_AGENT` | `on` | `off` leaves the AI agent out, and with it the AI features |
+| `AI_AGENT` | `on` | `off` leaves the AI agent out, and with it the AI features; without AI set up, it saves the agent's memory and processor time |
 | `TRUSTED_PROXIES` | `none` | Behind a reverse proxy, its address; see [Trusted Proxy and Client IP Handling](#trusted-proxy-and-client-ip-handling) |
 | `JWT_SECRET`, `AGENT_INTERNAL_SERVICE_TOKEN` | made on the first start | Set them only to choose your own; the given ones win over the saved ones |
 
