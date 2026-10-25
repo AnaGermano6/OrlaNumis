@@ -98,8 +98,10 @@ ENV PORT=8080 \
     PYTHONUNBUFFERED=1
 VOLUME ["/app/data", "/app/uploads", "/app/backups"]
 EXPOSE 8080
+# The health check asks /healthz with bash alone: starting Python for it
+# every 30 seconds cost a small server more than the idle app itself.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=4)"]
+    CMD ["bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/${PORT:-8080} && printf 'GET /healthz HTTP/1.0\\r\\n\\r\\n' >&3 && head -n 1 <&3 | grep -q ' 200 '"]
 LABEL org.opencontainers.image.title="Orla Numis" \
       org.opencontainers.image.description="A self-hosted app for cataloguing a personal coin and banknote collection" \
       org.opencontainers.image.url="https://github.com/AnaGermano6/OrlaNumis" \

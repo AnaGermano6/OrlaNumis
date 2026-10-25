@@ -153,12 +153,16 @@ func (r *AIJobRepository) ReconcileInterruptedJobs() error {
 		}).Error
 }
 
+// QueuedIDsPageSize is how many queued IDs a background worker reads at a
+// time (AI jobs, set builder runs, search alert runs).
+const QueuedIDsPageSize = 100
+
 func (r *AIJobRepository) ListQueuedIDs() ([]uint, error) {
 	var ids []uint
 	err := r.db.Model(&models.AIJob{}).
 		Where("status = ?", models.AIJobStatusQueued).
 		Order("created_at ASC").
-		Limit(100).
+		Limit(QueuedIDsPageSize).
 		Pluck("id", &ids).Error
 	return ids, err
 }

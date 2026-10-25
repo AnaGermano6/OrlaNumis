@@ -42,7 +42,7 @@ Keep the first two together: the database points to the photos.
 |---|---|---|
 | `PUID`, `PGID` | `10001` | User and group that run the app and own the folders |
 | `TZ` | UTC | Time zone, for the daily backup and the schedules |
-| `AI_AGENT` | `on` | `off` leaves the AI agent out, and with it the AI features |
+| `AI_AGENT` | `on` | `off` leaves the AI agent out, and with it the AI features; without AI set up, it saves the agent's memory and processor time |
 | `TRUSTED_PROXIES` | `none` | Behind a reverse proxy, its address (`172.18.0.1/32`), so sign-in protection sees the real client |
 | `CORS_ORIGINS` | — | Other browser origins allowed to call the API, if any |
 | `JWT_SECRET`, `AGENT_INTERNAL_SERVICE_TOKEN` | made on the first start | Kept in `/app/data/.orlanumis-secrets`; set them only to choose your own |

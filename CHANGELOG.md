@@ -4,6 +4,18 @@ Each version's section is its release notes: the release workflow publishes
 it on GitHub, and **Admin → Updates** shows it to the apps that can update.
 Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.0.2] - 2026-10-25
+
+### Fixed
+- An idle app uses a fraction of the processor it did, which matters on a
+  small server:
+  - the background queues (Coin Copilot, AI jobs, the set builder, search
+    alerts) no longer query the database up to ten times a second; new work
+    still starts at once, and missed work is looked for every five seconds;
+  - the container's health check no longer starts Python every 30 seconds.
+- Without AI set up, `AI_AGENT=off` also saves the AI agent's memory and
+  processor time; the Unraid template says so.
+
 ## [1.0.1] - 2026-10-25
 
 ### Fixed

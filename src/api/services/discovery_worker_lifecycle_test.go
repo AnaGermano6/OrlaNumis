@@ -108,6 +108,9 @@ func TestSetBuilderWorkersRecoveryWakeAndCancellation(t *testing.T) {
 }
 
 func TestWishlistWorkersRecoveryWakeAndCancellation(t *testing.T) {
+	oldPoll := queuePollInterval
+	queuePollInterval = 100 * time.Millisecond
+	t.Cleanup(func() { queuePollInterval = oldPoll })
 	started := make(chan struct{})
 	var calls atomic.Int32
 	svc, db, closeServer := setupWishlistSearchAlertDiscoveryService(t, func(w http.ResponseWriter, r *http.Request) {

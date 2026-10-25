@@ -11,8 +11,6 @@ import (
 	"github.com/briandenicola/ancient-coins-api/models"
 )
 
-const copilotWorkerPollInterval = 100 * time.Millisecond
-
 var copilotHeartbeatInterval = 15 * time.Second
 
 func (s *CoinCopilotService) StartWorkers(ctx context.Context) {
@@ -25,18 +23,27 @@ func (s *CoinCopilotService) StartWorkers(ctx context.Context) {
 }
 
 func (s *CoinCopilotService) workerLoop(ctx context.Context, workerID string) {
-	ticker := time.NewTicker(copilotWorkerPollInterval)
+	ticker := time.NewTicker(queuePollInterval)
 	defer ticker.Stop()
+	// After a run, the next queued one is looked for at once; otherwise the
+	// worker waits to be woken, or for the next poll.
+	ran := false
 	for {
-		select {
-		case <-ctx.Done():
+		if ctx.Err() != nil {
 			return
-		case <-s.wake:
-		case <-ticker.C:
+		}
+		if !ran {
+			select {
+			case <-ctx.Done():
+				return
+			case <-s.wake:
+			case <-ticker.C:
+			}
 		}
 		executionID := newCopilotID("cce_")
 		run, claimed, err := s.repo.ClaimNextQueuedRun(workerID, executionID)
-		if err != nil || !claimed {
+		ran = err == nil && claimed
+		if !ran {
 			continue
 		}
 		s.runExecution(ctx, run)

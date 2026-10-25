@@ -204,7 +204,7 @@ func (r *WishlistSearchAlertRepository) ListQueuedRunIDs() ([]uint, error) {
 	err := r.db.Model(&models.AlertRun{}).
 		Where("status = ?", models.AlertRunStatusQueued).
 		Order("created_at ASC").
-		Limit(100).
+		Limit(QueuedIDsPageSize).
 		Pluck("id", &ids).Error
 	return ids, err
 }

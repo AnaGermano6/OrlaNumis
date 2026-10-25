@@ -313,7 +313,7 @@ func (s *WishlistSearchAlertService) enqueueRunID(runID uint) {
 }
 
 func (s *WishlistSearchAlertService) worker() {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(queuePollInterval)
 	defer ticker.Stop()
 	for s.ctx.Err() == nil {
 		ids, err := s.repo.ListQueuedRunIDs()
@@ -328,6 +328,9 @@ func (s *WishlistSearchAlertService) worker() {
 					log.Printf("wishlist-alerts: run %d failed: %v", id, err)
 				}
 			}
+		}
+		if fullQueuePage(s.ctx, ids) {
+			continue
 		}
 		select {
 		case <-s.ctx.Done():

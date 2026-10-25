@@ -28,7 +28,8 @@ services:
       PUID: "1000"
       PGID: "1000"
       TZ: Europe/Lisbon
-      # off leaves the AI agent out, and with it the AI features.
+      # off leaves the AI agent out, and with it the AI features; without AI
+      # set up, it saves the agent's memory and processor time.
       AI_AGENT: "on"
       # Behind a reverse proxy: its address, so sign-in protection sees the
       # real client (see the deployment guide).

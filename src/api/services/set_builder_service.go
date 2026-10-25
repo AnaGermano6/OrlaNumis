@@ -210,7 +210,7 @@ func (s *SetBuilderService) enqueueRunID(runID uint) {
 }
 
 func (s *SetBuilderService) worker() {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(queuePollInterval)
 	defer ticker.Stop()
 	for s.ctx.Err() == nil {
 		ids, err := s.repo.ListQueuedRunIDs()
@@ -223,6 +223,9 @@ func (s *SetBuilderService) worker() {
 				}
 				s.processRun(id)
 			}
+		}
+		if fullQueuePage(s.ctx, ids) {
+			continue
 		}
 		select {
 		case <-s.ctx.Done():
