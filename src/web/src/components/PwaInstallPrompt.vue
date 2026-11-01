@@ -5,7 +5,7 @@
     leave-active-class="transition-all duration-300 ease-in"
     leave-to-class="translate-y-full opacity-0"
   >
-    <div v-if="visible" class="fixed inset-x-0 bottom-0 z-[150] border-t border-border-subtle bg-card px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_var(--overlay-40)]">
+    <div v-if="visible && !overlayOpen" class="fixed inset-x-0 bottom-0 z-(--z-toast) border-t border-border-subtle bg-card px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_var(--overlay-40)]">
       <div class="mx-auto flex max-w-[480px] items-start gap-[0.85rem]">
         <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-gold-glow text-gold">
           <Download :size="24" />
@@ -60,6 +60,7 @@
 import { ref, onMounted } from 'vue'
 import { Download, X, Share, MoreVertical, MoreHorizontal } from 'lucide-vue-next'
 import { usePwa } from '@/composables/usePwa'
+import { overlayOpen } from '@/composables/useOverlayLayer'
 import I18nT from '@/components/I18nT.vue'
 import { t } from '@/i18n'
 

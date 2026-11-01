@@ -1,13 +1,13 @@
 <template>
   <div
-    class="card group flex cursor-pointer flex-col overflow-hidden p-0"
+    class="card group flex cursor-pointer flex-col overflow-hidden p-0 max-md:!p-0"
     :class="selectable && selected ? 'outline-2 outline-gold outline-offset-[-2px]' : ''"
     @click="handleClick"
   >
     <!-- A banknote is wide: a square frame would leave it small. -->
     <div
       class="relative flex w-full items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_center,var(--bg-secondary)_0%,var(--bg-primary)_100%)]"
-      :class="coin.kind === 'banknote' ? 'aspect-[3/2] p-2' : 'aspect-square [@media(display-mode:standalone)]:aspect-[5/6]'"
+      :class="coin.kind === 'banknote' ? 'aspect-[3/2] p-2' : 'aspect-square'"
     >
       <AuthenticatedImage v-if="primaryImage" :media-path="primaryImage" :alt="coin.name" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.02] group-hover:brightness-110" loading="lazy">
         <template #fallback>
@@ -26,7 +26,7 @@
       </button>
       <div
         v-if="selectable"
-        class="absolute top-2 left-2 z-[4] flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/70 bg-black/40 transition-all [@media(display-mode:standalone)]:h-9 [@media(display-mode:standalone)]:w-9"
+        class="absolute top-2 left-2 z-[4] flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/70 bg-black/40 transition-all max-md:h-9 max-md:w-9"
         :class="selected ? 'border-gold bg-gold text-black' : ''"
         @click.stop="emit('toggle-select', coin.id)"
       >
@@ -34,8 +34,9 @@
       </div>
       <div class="pointer-events-none absolute inset-0 z-[1] border-b border-gold-dim shadow-[inset_0_0_40px_var(--overlay-35)] transition-shadow duration-300 group-hover:shadow-[inset_0_0_25px_var(--overlay-20),0_0_20px_var(--accent-gold-glow)]"></div>
     </div>
-    <div class="flex flex-1 flex-col gap-1.5 p-4">
-      <h3 class="overflow-hidden text-md leading-[1.3] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+    <!-- Compact on a phone, two cards a row: the name (with its value and year) only. -->
+    <div class="flex flex-1 flex-col gap-1.5 p-4 max-md:gap-1 max-md:p-2.5">
+      <h3 class="overflow-hidden text-md leading-[1.3] max-md:font-sans max-md:font-medium max-md:text-body max-md:[-webkit-line-clamp:3] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
         <span
           v-if="wishlist && coin.listingStatus === 'available'"
           class="mr-1.5 inline-block h-2 w-2 shrink-0 align-middle rounded-full bg-gain"
@@ -49,8 +50,8 @@
         {{ coin.name }}
       </h3>
       <template v-if="!wishlist">
-        <p v-if="cardInscription" class="overflow-hidden text-chip italic text-text-secondary [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:1]">{{ cardInscription }}</p>
-        <div class="flex flex-wrap gap-2">
+        <p v-if="cardInscription" class="overflow-hidden text-chip italic max-md:hidden text-text-secondary [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:1]">{{ cardInscription }}</p>
+        <div class="flex flex-wrap gap-2 max-md:hidden">
           <span
             v-if="badge"
             class="badge"
@@ -62,8 +63,8 @@
             }"
             data-testid="coin-card-badge"
           >{{ badge.label }}</span>
-          <span v-if="coin.denomination" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary [@media(display-mode:standalone)]:px-3 [@media(display-mode:standalone)]:py-1 [@media(display-mode:standalone)]:text-body">{{ coin.denomination }}</span>
-          <span v-if="coin.material" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary [@media(display-mode:standalone)]:px-3 [@media(display-mode:standalone)]:py-1 [@media(display-mode:standalone)]:text-body">{{ materialLabel(coin.material) }}</span>
+          <span v-if="coin.denomination" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary">{{ coin.denomination }}</span>
+          <span v-if="coin.material" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary">{{ materialLabel(coin.material) }}</span>
         </div>
       </template>
       <div v-if="wishlist && (coin.currentValue || coin.purchasePrice)" class="mt-auto text-base font-semibold text-gold">

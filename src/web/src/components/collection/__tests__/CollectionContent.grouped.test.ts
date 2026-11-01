@@ -18,7 +18,7 @@ function mountContent(props: Record<string, unknown>) {
   return mount(CollectionContent, {
     props: {
       loading: false, coins: COINS, selectMode: false, selectedCoinIds: new Set<number>(), selectedCount: 0,
-      isPwa: false, viewMode: 'grid', gridSide: null, hasFilters: false, total: 3, page: 1, perPage: 50,
+      isMobile: false, viewMode: 'grid', gridSide: null, hasFilters: false, total: 3, page: 1, perPage: 50,
       ...props,
     },
     global: { stubs: { CoinCard: CoinCardStub, RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' }, AuthenticatedImage: true } },

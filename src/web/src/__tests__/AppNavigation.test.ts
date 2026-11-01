@@ -12,12 +12,13 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const appPath = path.resolve(__dirname, '../App.vue')
 
-const mockIsPwa = vi.hoisted(() => ({ value: false }))
+const mockIsMobile = vi.hoisted(() => ({ value: false }))
 const mockGetSets = vi.hoisted(() => vi.fn())
 
-vi.mock('@/composables/usePwa', () => ({
-  usePwa: () => ({ isPwa: mockIsPwa.value }),
-}))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(mockIsMobile.value) }) }
+})
 
 vi.mock('sortablejs', () => ({
   default: { create: vi.fn(() => ({ destroy: vi.fn(), toArray: () => [] })) },
@@ -207,7 +208,7 @@ describe('App sidebar', () => {
     localStorage.setItem('token', 'test-token')
     localStorage.setItem('user', JSON.stringify({ id: 1, username: 'tester', role: 'user' }))
     setActivePinia(createPinia())
-    mockIsPwa.value = false
+    mockIsMobile.value = false
     mockGetSets.mockReset()
   })
 

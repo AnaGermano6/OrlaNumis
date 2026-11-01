@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
-    <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm" @click.self="close" @keydown.esc="close">
-      <div class="flex max-h-[90vh] w-full max-w-[900px] flex-col overflow-hidden rounded-md border border-border-accent bg-card shadow-glow max-md:max-h-screen max-md:max-w-full max-md:rounded-none" role="dialog" :aria-label="t('lightbox.viewer', { type: formatImageType(imageType) })">
+    <div class="fixed inset-0 z-(--z-overlay) flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm max-md:p-0" @click.self="close">
+      <div class="flex max-h-[90vh] w-full max-w-[900px] flex-col overflow-hidden rounded-md border border-border-accent bg-card shadow-glow max-md:h-dvh max-md:max-h-dvh max-md:max-w-full max-md:rounded-none max-md:border-0" role="dialog" :aria-label="t('lightbox.viewer', { type: formatImageType(imageType) })">
         <div class="flex items-center justify-between border-b border-border-subtle bg-card px-5 py-4">
           <h2 class="m-0 font-display text-lg text-heading">{{ formatImageType(imageType) }}</h2>
           <button class="flex items-center justify-center rounded-sm p-1 text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary" @click="close" :title="t('lightbox.closeEsc')" :aria-label="t('common.close')">
@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { X, Eraser, RotateCcw, Save } from 'lucide-vue-next'
 import { uploadImage, deleteImage } from '@/api/client'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
@@ -77,6 +77,7 @@ import { removeCoinBackground } from '@/utils/backgroundRemoval'
 import { fetchPrivateMediaBlob } from '@/utils/media'
 import { imageTypeLabel } from '@/utils/format'
 import { t } from '@/i18n'
+import { useOverlayLayer } from '@/composables/useOverlayLayer'
 
 const props = defineProps<{
   coinId: number
@@ -152,20 +153,10 @@ function close() {
   emit('close')
 }
 
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
-    close()
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('keydown', handleKeydown)
-  document.body.style.overflow = 'hidden'
-})
+// Open while it is shown: the page behind stops scrolling, Escape closes it.
+useOverlayLayer(ref(true), close)
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
-  document.body.style.overflow = ''
   if (processedImageUrl.value) {
     URL.revokeObjectURL(processedImageUrl.value)
   }

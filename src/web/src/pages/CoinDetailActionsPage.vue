@@ -14,7 +14,7 @@
         :image-count="coin.images?.length ?? 0"
         :coin-has-obverse-image="coin.images?.some((img) => img.imageType === 'obverse') ?? false"
         :coin-has-reverse-image="coin.images?.some((img) => img.imageType === 'reverse') ?? false"
-        :is-pwa="isPwa"
+        :is-mobile="isMobile"
         @images-changed="refresh"
         @estimate-applied="handleEstimateApplied"
       />
@@ -26,13 +26,13 @@
 import { useRoute } from 'vue-router'
 import CoinDetailSectionPageShell from '@/components/coin/CoinDetailSectionPageShell.vue'
 import CoinActionsPanel from '@/components/coin/CoinActionsPanel.vue'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { getJournalEntries } from '@/api/client'
 import type { CoinJournal } from '@/types'
 import { ref } from 'vue'
 import { t } from '@/i18n'
 
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 const route = useRoute()
 
 const journalEntries = ref<CoinJournal[]>([])

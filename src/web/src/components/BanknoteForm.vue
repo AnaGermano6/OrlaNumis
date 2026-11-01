@@ -209,7 +209,7 @@
               </div>
               <div class="flex items-center gap-2">
                 <input :ref="(element) => setInput(side, element)" type="file" accept=".jpg,.jpeg,.png,.webp" class="form-input min-w-0 flex-1 text-base" :aria-label="t('banknoteForm.uploadImage', { side: sideName(side) })" @change="photos.pick(side, $event)" />
-                <label v-if="isPwa" class="btn btn-secondary btn-sm inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap">
+                <label v-if="isMobile" class="btn btn-secondary btn-sm inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap">
                   <Camera :size="14" /> {{ t('coinDetail.actions.photo') }}
                   <input type="file" accept="image/*" capture="environment" hidden @change="photos.pick(side, $event)" />
                 </label>
@@ -256,7 +256,7 @@ import AutocompleteInput from '@/components/AutocompleteInput.vue'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import BanknoteIssuePicker from '@/components/catalog/BanknoteIssuePicker.vue'
 import QuantityInput from '@/components/ui/QuantityInput.vue'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { useSidePhotoInputs, type PhotoSide } from '@/composables/useSidePhotoInputs'
 import { t } from '@/i18n'
 import {
@@ -287,7 +287,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ submit: [] }>()
 
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 const photos = useSidePhotoInputs(() => props.form)
 
 type TextField = 'country' | 'monetarySystem' | 'ruler' | 'denomination' | 'series' | 'rarity' | 'dateRange' | 'serialNumber' | 'noteVariant' | 'signatures' | 'grade'

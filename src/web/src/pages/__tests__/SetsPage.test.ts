@@ -24,9 +24,10 @@ vi.mock('vue-router', () => ({
   RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
 }))
 
-vi.mock('@/composables/usePwa', () => ({
-  usePwa: () => ({ isPwa: false }),
-}))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(false) }) }
+})
 
 vi.mock('@/composables/useDialog', () => ({
   useDialog: () => ({

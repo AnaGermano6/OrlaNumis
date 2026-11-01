@@ -35,10 +35,12 @@ describe('CollectionPage', () => {
     expect(source).toContain('@click="selectedRepeated = false"')
   })
 
-  it('is named as the banknotes page is: in the title bar, and above the filters in a browser', () => {
+  it('is named as the banknotes page is: in the title bar, and above the filters on a wider screen', () => {
     const source = fs.readFileSync(collectionPagePath, 'utf8')
 
     expect(source).toContain('<DesktopPageContext :title="t(\'nav.gallery\')">')
-    expect(source).toContain('<header v-if="!isPwa" class="page-header" data-testid="gallery-title">')
+    expect(source).toContain('<header v-if="!isMobile" class="page-header" data-testid="gallery-title">')
+    // On a phone the search and the filters button take its place.
+    expect(source).toContain('<MobileCollectionHeader')
   })
 })

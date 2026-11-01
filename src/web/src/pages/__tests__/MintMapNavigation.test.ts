@@ -46,25 +46,17 @@ describe('MintMap navigation entry points', () => {
   })
 
   it('sidebar and overlay z-index stack above Leaflet map controls (fixes #294)', () => {
-    // Leaflet controls sit at z-index ≤1000; MintCoinDrawer is at 1100.
-    // sidebar-overlay must exceed both; sidebar must exceed the overlay.
-    // Both elements are now styled with Tailwind arbitrary z-index classes
-    // directly in the template rather than named `.sidebar-overlay`/`.sidebar`
-    // scoped-style rules, so extract the values from their class attributes.
+    // Leaflet's map controls sit at z-index 1000 at most. The drawer and its
+    // backdrop are on the sidebar layer of the scale (the drawer later in the
+    // page, so above its backdrop), which must clear them.
     const appSource = fs.readFileSync(path.resolve(srcRoot, 'App.vue'), 'utf8')
+    const css = fs.readFileSync(path.resolve(srcRoot, 'assets', 'styles', 'main.css'), 'utf8')
 
-    const overlayMatch = appSource.match(/<div v-if="sidebarOpen" class="[^"]*z-\[(\d+)\][^"]*bg-black\/50"/)
-    const sidebarMatch = appSource.match(/<aside v-if="sidebarOpen" class="[^"]*z-\[(\d+)\][^"]*"/)
-
-    expect(overlayMatch).not.toBeNull()
-    expect(sidebarMatch).not.toBeNull()
-
-    const overlayZ = parseInt(overlayMatch![1], 10)
-    const sidebarZ = parseInt(sidebarMatch![1], 10)
-
-    // Must clear Leaflet controls (≤1000) and MintCoinDrawer (1100)
-    expect(overlayZ).toBeGreaterThan(1100)
-    // Sidebar must be above its own overlay
-    expect(sidebarZ).toBeGreaterThan(overlayZ)
+    expect(appSource).toMatch(/<div v-if="sidebarOpen" class="[^"]*z-\(--z-sidebar\)[^"]*bg-black\/50"/)
+    expect(appSource).toMatch(/<aside v-if="sidebarOpen" class="[^"]*z-\(--z-sidebar\)[^"]*"/)
+    const sidebarZ = Number(css.match(/--z-sidebar:\s*(\d+);/)?.[1])
+    const overlayZ = Number(css.match(/--z-overlay:\s*(\d+);/)?.[1])
+    expect(sidebarZ).toBeGreaterThan(1000)
+    expect(overlayZ).toBeGreaterThan(1000)
   })
 })

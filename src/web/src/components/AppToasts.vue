@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div class="fixed right-3 bottom-3 z-[1200] flex max-w-[calc(100vw-1.5rem)] flex-col gap-2 sm:right-4 sm:bottom-4 sm:max-w-[min(22rem,calc(100vw-2rem))]" aria-live="polite" aria-atomic="true">
+    <div class="fixed right-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-(--z-toast) flex max-w-[calc(100vw-1.5rem)] flex-col gap-2 sm:right-4 sm:bottom-4 sm:max-w-[min(22rem,calc(100vw-2rem))]" aria-live="polite" aria-atomic="true">
       <div
         v-for="toast in toasts"
         :key="toast.id"

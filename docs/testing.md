@@ -220,7 +220,31 @@ Pop-Location
 These commands document the expected validation path; passing results must not
 be claimed unless the commands were actually executed.
 
-## 9. Cross-references
+## 9. Phone-size browser checks
+
+`src/web/e2e/mobile/` checks the app on a phone in a real browser (Chromium,
+through Playwright), at 320 and 375 px wide: no page is wider than the screen,
+and the gallery opens its filters in a sheet that keeps the search in place,
+scrolls to its last option, fits the screen and closes. The unit tests cannot
+see this: jsdom has no layout. The design tests in
+`src/web/src/__tests__/design-tokens.test.ts` keep the rules behind it (every
+dialog through `BaseModal`, every layer from the scale in `main.css`).
+
+It is not part of CI: it needs a running app and an account of its own on it,
+never a real collection's. Sign-in happens once (`sign-in.setup.ts`) and both
+phones reuse the session, as the app limits sign-in attempts.
+
+```sh
+cd src/web
+npx playwright install chromium   # once
+MOBILE_BASE_URL=http://localhost:18080 MOBILE_USERNAME=<test account> MOBILE_PASSWORD=<its password> \
+  npx playwright test -c playwright.mobile.config.ts
+```
+
+Playwright's Chromium does not run on Alpine; on a Linux container use a Debian
+or Ubuntu image (`npx playwright install --with-deps chromium`).
+
+## 10. Cross-references
 
 - System architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md)
 - Go API README: [`../src/api/README.md`](../src/api/README.md)

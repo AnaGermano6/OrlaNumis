@@ -16,7 +16,10 @@ vi.mock('vue-router', async (importOriginal) => {
   return { ...actual, useRoute: () => ({ query: {} }), useRouter: () => ({ push: mocks.push }) }
 })
 vi.mock('@/stores/coins', () => ({ useCoinsStore: () => ({ addCoin: mocks.add }) }))
-vi.mock('@/composables/usePwa', () => ({ usePwa: () => ({ isPwa: false }) }))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(false) }) }
+})
 vi.mock('@/composables/useDialog', () => ({ useDialog: () => ({ showAlert: mocks.alert, showConfirm: vi.fn() }) }))
 vi.mock('@/api/client', () => ({
   listCatalogs: mocks.listCatalogs, importCoinImage: mocks.importCoinImage, uploadImage: mocks.upload, addOfficialCoinPhotos: mocks.official, updateCoin: vi.fn(), extractText: vi.fn(),

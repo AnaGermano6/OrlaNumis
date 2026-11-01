@@ -9,7 +9,7 @@
         </template>
         <div class="page-header">
           <h1>{{ t('quickCapture.title') }}</h1>
-          <div v-if="isPwa" class="pwa-actions">
+          <div v-if="isMobile" class="pwa-actions">
             <RouterLink class="pwa-icon-btn" to="/quick-capture" :title="t('quickCapture.newCapture')" :aria-label="t('quickCapture.newCapture')">
               <CirclePlus :size="22" />
             </RouterLink>
@@ -38,7 +38,7 @@ import { CirclePlus, Plus } from 'lucide-vue-next'
 import { getApiErrorMessage, listQuickCaptureDrafts } from '@/api/client'
 import type { QuickCaptureDraft } from '@/types'
 import QuickCaptureDraftCard from '@/components/quick-capture/QuickCaptureDraftCard.vue'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { t } from '@/i18n'
@@ -46,7 +46,7 @@ import { t } from '@/i18n'
 const drafts = ref<QuickCaptureDraft[]>([])
 const loading = ref(true)
 const error = ref('')
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 
 onMounted(async () => {
   try {

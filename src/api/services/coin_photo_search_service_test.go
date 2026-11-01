@@ -129,6 +129,8 @@ func TestCoinPhotoSearch_AddsTheECBImageOfACommemorative(t *testing.T) {
 func TestCommonsPhotoQueries(t *testing.T) {
 	coin := CoinPhotoQuery{Query: "200 liras 1995 – San Marino", Year: 1995, Country: "San Marino", Denomination: "200 liras"}
 	want := []string{
+		`deepcat:"Coins of San Marino" 200 lire 1995 filetype:bitmap`,
+		`deepcat:"Coins of San Marino" 200 lire filetype:bitmap`,
 		"200 lire San Marino 1995 coin filetype:bitmap",
 		"200 lire San Marino coin filetype:bitmap",
 		"200 liras 1995 – San Marino filetype:bitmap",
@@ -138,11 +140,50 @@ func TestCommonsPhotoQueries(t *testing.T) {
 		t.Fatalf("queries = %q", got)
 	}
 	banknote := CoinPhotoQuery{Query: "20 escudos", Country: "Angola", Denomination: "20 escudos", Banknote: true}
-	if got := commonsPhotoQueries(banknote); strings.Join(got, "|") != "20 escudos Angola banknote filetype:bitmap|20 escudos filetype:bitmap" {
+	if got := commonsPhotoQueries(banknote); strings.Join(got, "|") != `deepcat:"Banknotes of Angola" 20 escudos filetype:bitmap|20 escudos Angola banknote filetype:bitmap|20 escudos filetype:bitmap` {
 		t.Fatalf("banknote without a year = %q", got)
 	}
 	if got := commonsPhotoQueries(CoinPhotoQuery{Query: "Angola 1969 coin"}); strings.Join(got, "|") != "Angola 1969 coin filetype:bitmap" {
 		t.Fatalf("text only = %q", got)
+	}
+	// Commons names some countries' categories with "the".
+	uk := commonsPhotoQueries(CoinPhotoQuery{Country: "United Kingdom", Denomination: "20 pence"})
+	if uk[0] != `deepcat:"Coins of the United Kingdom" 20 pence filetype:bitmap` {
+		t.Fatalf("United Kingdom = %q", uk)
+	}
+}
+
+// A Commons photo is kept only when it shows a coin of the coin's country,
+// of its denomination or year; never one that shows a coin for scale.
+func TestCommonsRelevance(t *testing.T) {
+	southAfrica := CoinPhotoQuery{Query: "5 cêntimos 1984 – África do Sul", Year: 1984, Country: "South Africa", Denomination: "5 cêntimos"}
+	austria := CoinPhotoQuery{Query: "5 euro 2021 – Pequeno milagre", Year: 2021, Country: "Austria", Denomination: "5 euro"}
+	photo := func(title, categories string) models.CoinPhotoCandidate {
+		return models.CoinPhotoCandidate{Title: title, Categories: categories}
+	}
+	for _, c := range []struct {
+		coin  CoinPhotoQuery
+		photo models.CoinPhotoCandidate
+		keep  bool
+		score int
+	}{
+		{southAfrica, photo("Colosseum in Rome", "Colosseum|Ancient Roman amphitheatres"), false, 0},
+		{southAfrica, photo("South Africa 5 cents 1984 reverse", "Coins of South Africa"), true, 6},
+		{southAfrica, photo("1962 South African 10 Cent Coin", "Coins of South Africa"), false, 0},
+		{austria, photo("Drahtreifen-23-622", "Images with coins to indicate scale|Bicycle tires"), false, 0},
+		{austria, photo("5-Euro Karajan", "Commemorative coins of Austria|Silver coins"), true, 4},
+		{austria, photo("5€ Österreich 2021 Küken", "Euro coins of Austria"), true, 6},
+		{austria, photo("Neujahrsmünze 2018", "Commemorative Euro coins of Austria"), false, 0},
+		{CoinPhotoQuery{Query: "bicycle"}, photo("Drahtreifen", "Images with coins to indicate scale"), false, 0},
+		{CoinPhotoQuery{Query: "denarius"}, photo("Colosseum", "Colosseum"), true, 0},
+	} {
+		keep, score := commonsRelevance(c.coin, c.photo)
+		if keep != c.keep || score != c.score {
+			t.Errorf("%q: keep %v score %d, want %v %d", c.photo.Title, keep, score, c.keep, c.score)
+		}
+	}
+	if !denominationPattern("2.5 escudos").MatchString(foldASCII("Portugal 2,5 escudos 1969")) {
+		t.Error("2,5 escudos is 2.5 escudos")
 	}
 }
 
@@ -171,14 +212,32 @@ func TestEnglishDenomination(t *testing.T) {
 // search is unavailable only when Commons failed and nothing was found.
 func TestCoinPhotoSearch_SearchesCommonsInEnglishFirst(t *testing.T) {
 	svc, commons, _ := newPhotoSearchFixture()
-	commons.responses["5 kopiyok Ukraine 1992 coin filetype:bitmap"] = testCommonsResponse
-	commons.responses["5 kopiyok Ukraine coin filetype:bitmap"] = testCommonsResponse
+	commons.responses[`deepcat:"Coins of Ukraine" 5 kopiyok 1992 filetype:bitmap`] = ukraineCommonsResponse
+	commons.responses["5 kopiyok Ukraine coin filetype:bitmap"] = ukraineCommonsResponse
 
 	got := svc.SearchCoin(context.Background(), CoinPhotoQuery{Query: "5 kopiyok 1992 – Ucrânia", Year: 1992, Country: "Ukraine", Denomination: "5 kopiyok"})
-	if got.Status != models.NumistaDataStatusOK || len(got.Photos) != 2 || got.Photos[0].Title != "50 Escudos 1968 obverse" {
-		t.Fatalf("got %+v", got)
+	// The photo for scale is left out; the 5 kopiyok of 1992 comes before
+	// the 5 kopiyok of another year, and before the 25 kopiyok of 1992.
+	titles := []string{}
+	for _, photo := range got.Photos {
+		titles = append(titles, photo.Title)
 	}
-	if len(commons.queries) != 4 || commons.queries[0] != "5 kopiyok Ukraine 1992 coin filetype:bitmap" {
+	if got.Status != models.NumistaDataStatusOK || strings.Join(titles, "|") != "Ukraine 5 kopiyok 1992|5-kopiyok-Ukraine|Ukraine-25-kopiyok-1992" {
+		t.Fatalf("photos = %q", titles)
+	}
+	if len(commons.queries) != 6 || commons.queries[0] != `deepcat:"Coins of Ukraine" 5 kopiyok 1992 filetype:bitmap` {
 		t.Fatalf("queries = %q", commons.queries)
 	}
 }
+
+// Shaped like a real formatversion=2 response with categories; made up.
+const ukraineCommonsResponse = `{"query": {"pages": [
+	{"title": "File:Coin on a ruler.jpg", "index": 1, "imageinfo": [{"mime": "image/jpeg", "url": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Ruler.jpg",
+		"extmetadata": {"Categories": {"value": "Images with coins to indicate scale|Rulers"}}}]},
+	{"title": "File:5-kopiyok-Ukraine.jpg", "index": 2, "imageinfo": [{"mime": "image/jpeg", "url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/K5.jpg",
+		"extmetadata": {"Categories": {"value": "Coins of Ukraine"}}}]},
+	{"title": "File:Ukraine-25-kopiyok-1992.jpg", "index": 3, "imageinfo": [{"mime": "image/jpeg", "url": "https://upload.wikimedia.org/wikipedia/commons/c/c1/K25.jpg",
+		"extmetadata": {"Categories": {"value": "Coins of Ukraine"}}}]},
+	{"title": "File:Ukraine 5 kopiyok 1992.jpg", "index": 4, "imageinfo": [{"mime": "image/jpeg", "url": "https://upload.wikimedia.org/wikipedia/commons/d/d1/K5-1992.jpg",
+		"extmetadata": {"Categories": {"value": "Coins of Ukraine|1992 coins"}}}]}
+]}}`

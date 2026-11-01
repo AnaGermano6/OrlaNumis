@@ -153,6 +153,21 @@
   }
 }
 
+/* Layers: every element that overlaps others takes its layer from this
+   scale, by name (z-(--z-overlay)), never a number of its own; a test checks
+   it. From low to high: */
+:root {
+  --z-sticky: 40;     /* bars that stick inside a page */
+  --z-header: 100;    /* the app's top bar */
+  --z-fab: 150;       /* the agent's floating button */
+  --z-popover: 300;   /* menus and popovers opened from a button */
+  --z-overlay: 1200;  /* dialogs and sheets, above map controls (Leaflet: 1000) */
+  --z-sidebar: 1300;  /* the navigation drawer */
+  --z-chat: 1400;     /* the agent's chat */
+  --z-dialog: 2000;   /* confirmations, and dialogs opened over the others */
+  --z-toast: 3000;    /* toasts and banners */
+}
+
 /* ─── Global base overrides (applied after Tailwind preflight) ────────────── */
 @layer base {
   html {
@@ -167,6 +182,7 @@
     background: var(--bg-primary);
     color: var(--text-primary);
     min-height: 100vh;
+    min-height: 100dvh;
     line-height: 1.6;
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
@@ -509,11 +525,19 @@
 
 /* Layout */
 .container {
+  --container-pad: 2rem;
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
-  padding: 0 2rem;
+  padding: 0 var(--container-pad);
   width: 100%;
+}
+
+/* A bar that reaches the container's edges (a sticky search bar) without
+   making the page wider than the screen. */
+.container-bleed {
+  margin-inline: calc(-1 * var(--container-pad, 0px));
+  padding-inline: var(--container-pad, 0px);
 }
 
 .page-header {
@@ -612,10 +636,12 @@
 @media (max-width: 768px) {
   h1 { font-size: 1.5rem; }
   .container {
-    padding: 0 1rem;
+    --container-pad: 1rem;
   }
+  /* Two coins a row on a phone, with compact cards. */
   .coins-grid {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
   }
   .page-header {
     flex-direction: row;
@@ -625,10 +651,17 @@
 
 @media (max-width: 480px) {
   .container {
-    padding: 0 0.75rem;
+    --container-pad: 0.75rem;
   }
-  .coins-grid {
-    grid-template-columns: 1fr;
+}
+
+/* A phone (also turned sideways): iOS zooms into a field whose text is under
+   16px when it is focused, so fields keep 16px there. */
+@media (max-width: 767px), (pointer: coarse) and (max-height: 500px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    font-size: 16px;
   }
 }
 
@@ -637,6 +670,17 @@
   flex-direction: row;
   align-items: center;
   flex-wrap: nowrap;
+}
+
+/* On a phone a page title beside its icons takes two lines rather than
+   being cut short ("Lista de dese…"). */
+@media (max-width: 767px) {
+  .page-header:has(.pwa-actions) h1 {
+    font-size: 1.25rem;
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 .pwa-actions {
@@ -671,33 +715,6 @@
 .pwa-icon-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-/* PWA floating agent button — global because it is teleported to body. */
-.agent-fab {
-  position: fixed;
-  bottom: calc(24px + env(safe-area-inset-bottom));
-  right: calc(24px + env(safe-area-inset-right));
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-full);
-  background: var(--accent-gold);
-  color: var(--bg-primary);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-card);
-  z-index: 1250;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-  touch-action: none;
-  user-select: none;
-}
-
-.agent-fab:active {
-  transform: scale(0.92);
-  box-shadow: 0 2px 8px var(--overlay-dark);
 }
 
 /* T003: Coin detail page utilities for #219 */

@@ -4,6 +4,35 @@ Each version's section is its release notes: the release workflow publishes
 it on GitHub, and **Admin → Updates** shows it to the apps that can update.
 Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.1.0] - 2026-11-01
+
+### Changed
+- On a phone the app has one layout, the same in the browser and installed,
+  chosen by the size of the screen (also when the phone is turned sideways).
+- The gallery on a phone: only the search stays at the top; the filters, the
+  order and the view open in a sheet from a button that shows how many
+  filters are on; two coins a row, in compact cards; one choice of view
+  (grid, list or swipe).
+- After signing in, the app opens the collection overview.
+- Every dialog rises from the bottom on a phone, at most 90% of the screen
+  high and scrolling on its own, and is centred on a wider screen. The page
+  behind stays still, and Escape or a tap outside closes it.
+- The search for a coin's real photos offers only photos of a coin of its
+  country, of its face value or year, the same face value first. Wikimedia
+  Commons is searched within the categories of that country's coins first.
+  Photos where a coin only shows the size of something else, and unrelated
+  ones, are left out; when Commons has none of the coin, none is offered.
+
+### Fixed
+- Panels that went past the bottom of the screen and could not be reached,
+  such as the gallery's filters in the installed app.
+- The agent's button showing over dialogs; it hides while one is open.
+- Pages wider than the screen on a phone (the gallery, adding a coin).
+- iOS zooming into a field when it is tapped: fields are 16px on a phone.
+- Titles cut short beside their buttons (the wishlist, a coin's page).
+- Two prompts at once on the first start: the install prompt waits for the
+  getting-started one.
+
 ## [1.0.3] - 2026-11-01
 
 ### Fixed

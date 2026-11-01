@@ -37,6 +37,19 @@ describe('LoginPage', () => {
     })
   })
 
+  it('opens the collection overview after signing in', async () => {
+    mockDoLogin.mockResolvedValue(undefined)
+    const wrapper = mountLogin()
+
+    await wrapper.find('input[autocomplete="username"]').setValue('  collector ')
+    await wrapper.find('input[autocomplete="current-password"]').setValue('secret')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(mockDoLogin).toHaveBeenCalledWith('collector', 'secret')
+    expect(mockPush).toHaveBeenCalledWith({ name: 'collection-overview' })
+  })
+
   it('uses a generic message for failed password login', async () => {
     mockDoLogin.mockRejectedValue(new Error('invalid'))
     const wrapper = mountLogin()

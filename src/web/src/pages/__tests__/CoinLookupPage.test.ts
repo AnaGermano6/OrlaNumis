@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import CoinLookupPage from '../CoinLookupPage.vue'
 import VoiceDictationButton from '@/components/voice/VoiceDictationButton.vue'
 import { createDeepIdentificationJob, createQuickCaptureDraft, listDeepIdentificationJobs, lookupCoin, lookupNumista } from '@/api/client'
 import { makeNumistaCandidate, makeNumistaLookupOutcome } from '@/test/numista-fixtures'
 import { normalizeGalleryImage } from '@/utils/galleryImage'
+
+// The page with its dialogs, which open at the end of the document.
+const page = () => new DOMWrapper(document.body)
 
 const routerPush = vi.fn()
 const routerBack = vi.fn()
@@ -593,11 +596,11 @@ describe('CoinLookupPage', () => {
     await deepAnalysisButton!.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Using photos from Identify Coin')
-    expect(wrapper.find('[data-testid="reused-capture-summary"]').exists()).toBe(true)
-    expect(wrapper.findAll('.fixed input[type="file"]')).toHaveLength(0)
+    expect(page().text()).toContain('Using photos from Identify Coin')
+    expect(page().find('[data-testid="reused-capture-summary"]').exists()).toBe(true)
+    expect(page().findAll('.base-modal input[type="file"]')).toHaveLength(0)
 
-    const startButton = wrapper.findAll('button').find((button) => button.text().includes('Start Deep Analysis'))
+    const startButton = page().findAll('button').find((button) => button.text().includes('Start Deep Analysis'))
     await startButton!.trigger('click')
     await flushPromises()
 
@@ -655,20 +658,20 @@ describe('CoinLookupPage', () => {
     await deepAnalysisButton!.trigger('click')
     await flushPromises()
 
-    const startButton = wrapper.findAll('button').find((button) => button.text().includes('Start Deep Analysis'))
+    const startButton = page().findAll('button').find((button) => button.text().includes('Start Deep Analysis'))
     await startButton!.trigger('click')
     await flushPromises()
 
     // The submission never started: it must not look like success.
     expect(routerPush).not.toHaveBeenCalledWith(expect.stringContaining('/deep-analysis/'))
     // The user sees exactly what happened and what to do about it...
-    expect(wrapper.text()).toContain('An analysis is already running. Wait for it to finish or cancel it.')
+    expect(page().text()).toContain('An analysis is already running. Wait for it to finish or cancel it.')
     // ...with a concrete way to get to the job that's already running.
-    expect(wrapper.text()).toContain('View running analysis')
+    expect(page().text()).toContain('View running analysis')
     // The modal is still open and the submit button is no longer stuck loading -
     // a fresh submit attempt (e.g. after cancelling the other job) remains possible.
-    expect(wrapper.find('[data-testid="reused-capture-summary"]').exists()).toBe(true)
-    expect(wrapper.findAll('button').find((button) => button.text().includes('Start Deep Analysis'))!.attributes('disabled')).toBeUndefined()
+    expect(page().find('[data-testid="reused-capture-summary"]').exists()).toBe(true)
+    expect(page().findAll('button').find((button) => button.text().includes('Start Deep Analysis'))!.attributes('disabled')).toBeUndefined()
   })
 
   it('reveals an editable NGC Numista override by keyboard without an eager request', async () => {

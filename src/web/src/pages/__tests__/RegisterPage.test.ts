@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import RegisterPage from '@/pages/RegisterPage.vue'
 
@@ -31,6 +31,21 @@ function mountRegister() {
 describe('RegisterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('opens the collection overview after registering', async () => {
+    mockDoRegister.mockResolvedValue(undefined)
+    const wrapper = mountRegister()
+
+    await wrapper.find('input[autocomplete="username"]').setValue('collector')
+    await wrapper.find('input[type="email"]').setValue('collector@example.com')
+    const passwordInputs = wrapper.findAll('input[type="password"]')
+    await passwordInputs[0]!.setValue('password123')
+    await passwordInputs[1]!.setValue('password123')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(mockPush).toHaveBeenCalledWith({ name: 'collection-overview' })
   })
 
   it('shows backend registration closed errors instead of duplicate username fallback', async () => {

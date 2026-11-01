@@ -29,7 +29,7 @@ import {
 // Hoisted mocks (evaluated before imports are resolved)
 // ---------------------------------------------------------------------------
 
-const mockIsPwa = vi.hoisted(() => ({ value: true }))
+const mockIsMobile = vi.hoisted(() => ({ value: true }))
 
 const mockRouteState = vi.hoisted(() => ({
   path: '/coin/42',
@@ -40,9 +40,10 @@ const mockRouteState = vi.hoisted(() => ({
 
 const mockPush = vi.hoisted(() => vi.fn())
 
-vi.mock('@/composables/usePwa', () => ({
-  usePwa: () => ({ isPwa: mockIsPwa.value }),
-}))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(mockIsMobile.value) }) }
+})
 
 vi.mock('vue-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-router')>()
@@ -163,7 +164,7 @@ function mountHarness(options?: {
 
 beforeEach(() => {
   mockPush.mockClear()
-  mockIsPwa.value = true
+  mockIsMobile.value = true
   mockRouteState.path = `/coin/${COIN_ID}`
   mockRouteState.params = { id: String(COIN_ID) }
   mockRouteState.query = {}
@@ -802,19 +803,19 @@ describe('enabled gate -- modal suppression', () => {
 })
 
 // ===========================================================================
-// 14. PWA gate -- isPwa false registers no listeners (criterion 9)
+// 14. Phone gate -- isMobile false registers no listeners (criterion 9)
 // ===========================================================================
 
-describe('PWA gate -- isPwa false', () => {
+describe('Phone gate -- isMobile false', () => {
   beforeEach(() => {
-    mockIsPwa.value = false
+    mockIsMobile.value = false
   })
 
   afterEach(() => {
-    mockIsPwa.value = true
+    mockIsMobile.value = true
   })
 
-  it('does not navigate on left or right swipe when isPwa is false', () => {
+  it('does not navigate on left or right swipe when isMobile is false', () => {
     const wrapper = mountHarness()
     const container = wrapper.element as HTMLElement
     doLeftSwipe(container)
@@ -823,8 +824,8 @@ describe('PWA gate -- isPwa false', () => {
     wrapper.unmount()
   })
 
-  it('no listeners registered on the container when isPwa is false (behavioral)', () => {
-    // Behavioral proxy: when isPwa is false the composable is a no-op.
+  it('no listeners registered on the container when isMobile is false (behavioral)', () => {
+    // Behavioral proxy: when isMobile is false the composable is a no-op.
     // A qualifying swipe on the container does not navigate.
     const wrapper = mountHarness()
     const container = wrapper.element as HTMLElement
@@ -1093,8 +1094,8 @@ describe('preference gate -- pwaSwipeNavEnabled', () => {
     wrapper.unmount()
   })
 
-  it('browser inactive even with pwaSwipeNavEnabled=true: isPwa=false, no navigation', () => {
-    mockIsPwa.value = false
+  it('browser inactive even with pwaSwipeNavEnabled=true: isMobile=false, no navigation', () => {
+    mockIsMobile.value = false
     authStore.proxy.user = { pwaSwipeNavEnabled: true }
     const wrapper = mountHarness()
     doLeftSwipe(wrapper.element as HTMLElement)

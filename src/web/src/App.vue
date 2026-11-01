@@ -1,21 +1,21 @@
 <template>
   <div class="flex min-h-screen flex-col">
     <!-- Nav bar — brand + hamburger for both desktop and PWA -->
-    <nav v-if="auth.isAuthenticated && !immersive" class="fixed inset-x-0 top-0 z-[100] border-b border-border-subtle bg-surface/95 backdrop-blur-md">
+    <nav v-if="auth.isAuthenticated && !immersive" class="fixed inset-x-0 top-0 z-(--z-header) border-b border-border-subtle bg-surface/95 backdrop-blur-md">
       <div class="mx-auto flex h-[60px] max-w-[1200px] items-center justify-between gap-2 px-4">
         <div class="flex min-w-0 flex-1 items-center">
           <button class="flex shrink-0 cursor-pointer items-center gap-2 rounded-sm border-0 bg-transparent px-2.5 py-1.5 transition-colors hover:bg-gold-glow" @click="sidebarOpen = !sidebarOpen">
             <img src="/coin-logo.jpg" :alt="t('app.brandFull')" class="h-9 w-9 rounded-full border-2 border-gold-dim object-cover" />
             <span class="font-display text-lg font-semibold whitespace-nowrap text-gold">Orla Numis</span>
           </button>
-          <div v-if="!isPwa" class="desktop-page-title-group min-w-0 items-center gap-2">
+          <div v-if="!isMobile" class="desktop-page-title-group min-w-0 items-center gap-2">
             <span class="text-text-muted" aria-hidden="true">|</span>
             <div id="desktop-page-title" class="min-w-0 truncate font-display text-md font-medium text-text-primary"></div>
           </div>
         </div>
         <div class="flex shrink-0 items-center gap-1">
           <div
-            v-if="!isPwa"
+            v-if="!isMobile"
             class="desktop-page-actions-group items-center gap-1"
             :class="{ 'has-collection-actions': showCollectionActions }"
           >
@@ -36,7 +36,7 @@
             <div id="desktop-page-actions" class="flex items-center gap-1"></div>
             <span class="mx-1 h-6 w-px bg-border-subtle" aria-hidden="true"></span>
           </div>
-          <router-link v-if="isPwa" to="/add" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" :aria-label="t('nav.addCoin')">
+          <router-link v-if="isMobile" to="/add" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" :aria-label="t('nav.addCoin')">
             <Plus :size="20" />
           </router-link>
           <LanguageSwitcher class="mx-1" />
@@ -46,15 +46,15 @@
 
     <!-- Sidebar overlay -->
     <Transition name="sidebar-fade">
-      <div v-if="sidebarOpen" class="fixed inset-0 z-[1200] bg-black/50" @click="sidebarOpen = false"></div>
+      <div v-if="sidebarOpen" class="fixed inset-0 z-(--z-sidebar) bg-black/50" @click="sidebarOpen = false"></div>
     </Transition>
 
     <!-- Slide-in sidebar -->
     <Transition name="sidebar-slide">
-      <aside v-if="sidebarOpen" class="fixed inset-y-0 left-0 z-[1300] flex w-[280px] flex-col overflow-y-auto border-r border-border-subtle bg-card">
+      <aside v-if="sidebarOpen" class="fixed inset-y-0 left-0 z-(--z-sidebar) flex w-[280px] flex-col overflow-y-auto border-r border-border-subtle bg-card">
         <div class="flex items-center gap-3 border-b border-border-subtle px-5 pt-5 pb-4">
           <img src="/coin-logo.jpg" :alt="t('app.brandFull')" class="h-10 w-10 rounded-full border-2 border-gold-dim object-cover" />
-          <span class="flex-1 font-display text-base font-semibold text-gold">Orla Numis<span v-if="!isPwa" class="hidden sm:inline"> - {{ t('app.brandTagline') }}</span></span>
+          <span class="flex-1 font-display text-base font-semibold text-gold">Orla Numis<span v-if="!isMobile" class="hidden sm:inline"> - {{ t('app.brandTagline') }}</span></span>
           <button class="rounded-sm border-0 bg-transparent p-[0.3rem] text-text-secondary transition-colors hover:bg-gold-glow hover:text-text-primary" :class="{ 'bg-gold-glow text-gold': editMode }" @click="toggleEditMode" :title="editMode ? t('common.done') : t('app.sidebar.reorderMenu')">
             <GripVertical :size="18" />
           </button>
@@ -124,7 +124,7 @@
       </aside>
     </Transition>
 
-    <main class="flex-1" :class="{ 'pt-[76px]': auth.isAuthenticated && !immersive }">
+    <main class="flex-1 overflow-x-clip" :class="{ 'pt-[76px]': auth.isAuthenticated && !immersive }">
       <router-view />
     </main>
 
@@ -133,8 +133,8 @@
     <Teleport to="body">
       <!-- PWA floating agent button -->
       <button
-        v-if="isPwa && auth.isAuthenticated && !showChat && !bulkSelectActive && !immersive"
-        class="fixed z-[1100] flex h-[52px] w-[52px] touch-none items-center justify-center rounded-full border border-border-accent bg-card text-gold shadow-card bottom-[calc(24px+env(safe-area-inset-bottom))] right-[calc(24px+env(safe-area-inset-right))]"
+        v-if="isMobile && auth.isAuthenticated && !showChat && !bulkSelectActive && !immersive && !overlayOpen"
+        class="fixed z-(--z-fab) flex h-[52px] w-[52px] touch-none items-center justify-center rounded-full border border-border-accent bg-card text-gold shadow-card bottom-[calc(24px+env(safe-area-inset-bottom))] right-[calc(24px+env(safe-area-inset-right))]"
         :style="fabPositionStyle"
         @click="handleAgentFabClick"
         @pointerdown="startAgentFabDrag"
@@ -151,30 +151,26 @@
     <CoinSearchChat v-if="showChat" :initial-prompt="agentInitialPrompt" @close="closeAgentChat" />
 
     <!-- Email prompt modal for legacy users -->
-    <div v-if="showEmailPrompt" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70" @click.self="dismissEmailPrompt">
-      <div class="card w-[90%] max-w-[360px] p-8">
-        <h3 class="mb-2">{{ t('app.emailPrompt.title') }}</h3>
-        <p class="mb-0 text-base text-text-secondary">{{ t('app.emailPrompt.body') }}</p>
-        <div class="form-group my-4">
-          <input v-model="promptEmail" type="email" class="form-input" :placeholder="t('common.emailPlaceholder')" />
-        </div>
-        <div class="mt-6 flex justify-end gap-3">
-          <button class="btn btn-secondary" @click="dismissEmailPrompt">{{ t('common.later') }}</button>
-          <button class="btn btn-primary" @click="savePromptEmail" :disabled="!promptEmail">{{ t('common.save') }}</button>
-        </div>
+    <BaseModal :open="showEmailPrompt" :aria-label="t('app.emailPrompt.title')" max-width="md:max-w-[360px]" @close="dismissEmailPrompt">
+      <h3 class="mb-2">{{ t('app.emailPrompt.title') }}</h3>
+      <p class="mb-0 text-base text-text-secondary">{{ t('app.emailPrompt.body') }}</p>
+      <div class="form-group my-4">
+        <input v-model="promptEmail" type="email" class="form-input" :placeholder="t('common.emailPlaceholder')" />
       </div>
-    </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button class="btn btn-secondary" @click="dismissEmailPrompt">{{ t('common.later') }}</button>
+        <button class="btn btn-primary" @click="savePromptEmail" :disabled="!promptEmail">{{ t('common.save') }}</button>
+      </div>
+    </BaseModal>
 
-    <div v-if="showOnboardingPrompt" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70" @click.self="dismissOnboardingPrompt">
-      <div class="card w-[90%] max-w-[360px] p-8">
-        <h3 class="mb-2">{{ t('app.brandFull') }}</h3>
-        <p class="mb-0 text-base text-text-secondary">{{ t('app.onboarding.body') }}</p>
-        <div class="mt-6 flex justify-end gap-3">
-          <button class="btn btn-secondary" @click="dismissOnboardingPrompt">{{ t('common.notNow') }}</button>
-          <button class="btn btn-primary" @click="openOnboardingGuide">{{ t('app.onboarding.openGuide') }}</button>
-        </div>
+    <BaseModal :open="showOnboardingPrompt" :aria-label="t('app.brandFull')" max-width="md:max-w-[360px]" @close="dismissOnboardingPrompt">
+      <h3 class="mb-2">{{ t('app.brandFull') }}</h3>
+      <p class="mb-0 text-base text-text-secondary">{{ t('app.onboarding.body') }}</p>
+      <div class="mt-6 flex justify-end gap-3">
+        <button class="btn btn-secondary" @click="dismissOnboardingPrompt">{{ t('common.notNow') }}</button>
+        <button class="btn btn-primary" @click="openOnboardingGuide">{{ t('app.onboarding.openGuide') }}</button>
       </div>
-    </div>
+    </BaseModal>
 
     <AppDialog />
     <AppToasts />
@@ -190,7 +186,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { Landmark, Bookmark, BarChart3, CirclePlus, Settings, ShieldCheck, LogOut, Bot, X, Plus, GripVertical, Layers3, Search, ChevronRight, ChevronDown, CheckSquare } from 'lucide-vue-next'
 import { updateProfile, getMe } from '@/api/client'
 import { useBulkSelect } from '@/composables/useBulkSelect'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
+import { overlayOpen } from '@/composables/useOverlayLayer'
+import BaseModal from '@/components/ui/BaseModal.vue'
 import { useImmersiveShell } from '@/composables/useImmersiveShell'
 import CoinSearchChat from '@/components/CoinSearchChat.vue'
 import AppFooter from '@/components/AppFooter.vue'
@@ -231,7 +229,7 @@ type ResolvedNavItem = Omit<NavItem, 'children'> & { label: string; children?: N
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 // Full-bleed surfaces (PWA coin capture) take the whole viewport; the nav bar
 // and the floating agent button step aside while one is mounted.
 const { immersive } = useImmersiveShell()
@@ -268,7 +266,7 @@ interface OpenAgentChatEvent extends Event {
 }
 
 const isCollectionPage = computed(() => route.name === 'collection')
-const showCollectionActions = computed(() => isCollectionPage.value && !isPwa)
+const showCollectionActions = computed(() => isCollectionPage.value && !isMobile.value)
 
 const defaultNavItems: NavItem[] = [
   {
@@ -283,7 +281,7 @@ const defaultNavItems: NavItem[] = [
       { id: 'collection-banknotes', labelKey: 'nav.banknotes', to: '/banknotes' },
     ],
   },
-  { id: 'add-coin', labelKey: 'nav.addCoin', icon: markRaw(CirclePlus), to: '/add', visible: isPwa },
+  { id: 'add-coin', labelKey: 'nav.addCoin', icon: markRaw(CirclePlus), to: '/add', visible: true },
   {
     id: 'lookup',
     labelKey: 'nav.identifyCoin',
@@ -352,11 +350,16 @@ function applyOrder(order: string[]): NavItem[] {
   return ordered
 }
 
+// The add-coin entry is the phone's: a wider screen has it in the top bar.
+function isItemVisible(item: NavItem): boolean {
+  return item.id === 'add-coin' ? isMobile.value : item.visible
+}
+
 const navOrder = ref<string[]>(loadSavedOrder())
 const orderedNavItems = computed<ResolvedNavItem[]>(() => {
   const items = navOrder.value.length ? applyOrder(navOrder.value) : defaultNavItems
   return items
-    .filter(item => item.visible)
+    .filter(isItemVisible)
     .map(item => {
       const children = item.children?.map(child => ({ id: child.id, label: t(child.labelKey), to: child.to }))
       return { ...item, label: t(item.labelKey), children }
@@ -516,7 +519,7 @@ function initSortable() {
       let visIdx = 0
       for (const id of full) {
         const item = defaultNavItems.find(n => n.id === id)
-        if (item && !item.visible) {
+        if (item && !isItemVisible(item)) {
           newFull.push(id)
         } else if (visIdx < visibleIds.length) {
           newFull.push(visibleIds[visIdx]!)

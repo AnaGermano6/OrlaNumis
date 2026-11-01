@@ -5,7 +5,10 @@ import CoinLookupCaptureWizard from '../CoinLookupCaptureWizard.vue'
 import PwaCaptureShell from '../PwaCaptureShell.vue'
 
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }))
-vi.mock('@/composables/usePwa', () => ({ usePwa: () => ({ isPwa: false }) }))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(false) }) }
+})
 vi.mock('@/composables/useDialog', () => ({
   useDialog: () => ({ showConfirm: vi.fn().mockResolvedValue(true) }),
 }))

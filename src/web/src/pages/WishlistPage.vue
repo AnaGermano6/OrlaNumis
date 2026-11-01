@@ -32,7 +32,7 @@
       </template>
       <div class="page-header">
         <h1>{{ t('nav.wishlist') }}</h1>
-        <div v-if="isPwa" class="pwa-actions">
+        <div v-if="isMobile" class="pwa-actions">
           <button
             class="pwa-icon-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
             :disabled="checking"
@@ -168,58 +168,44 @@
       @confirm="handlePurchaseConfirm"
     />
 
-    <div
-      v-if="showAddDialog"
-      class="fixed inset-0 z-[1000] flex items-center justify-center bg-overlay p-4"
-      @click.self="closeAddDialog"
-      @keydown.esc="closeAddDialog"
-    >
-      <div
-        ref="addDialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="wishlist-add-title"
-        class="card max-h-[90vh] w-full max-w-2xl overflow-y-auto !p-6"
-        tabindex="-1"
-      >
-        <div class="mb-4 flex items-center justify-between gap-3">
-          <h2 id="wishlist-add-title" class="m-0 text-heading">{{ t('wishlist.addTo') }}</h2>
-          <button
-            type="button"
-            class="pwa-icon-btn"
-            :title="t('common.close')"
-            :aria-label="t('common.close')"
-            @click="closeAddDialog"
-          >
-            <X :size="18" />
-          </button>
-        </div>
-
-        <div v-if="addMethod === null" class="grid gap-3 sm:grid-cols-2">
-          <button type="button" class="add-method" @click="addMethod = 'url'">
-            <Link :size="24" />
-            <span>
-              <strong>{{ t('wishlist.add.fromUrl') }}</strong>
-              <small>{{ t('wishlist.add.fromUrlHint') }}</small>
-            </span>
-          </button>
-          <router-link to="/lookup" class="add-method" @click="closeAddDialog">
-            <ScanLine :size="24" />
-            <span>
-              <strong>{{ t('wishlist.add.fromImage') }}</strong>
-              <small>{{ t('wishlist.add.fromImageHint') }}</small>
-            </span>
-          </router-link>
-        </div>
-
-        <div v-else>
-          <button type="button" class="btn btn-ghost btn-xs mb-4" @click="addMethod = null">
-            <ChevronLeft :size="15" /> {{ t('wishlist.add.another') }}
-          </button>
-          <WishlistURLIntake embedded @created="handleURLCreated" />
-        </div>
+    <BaseModal :open="showAddDialog" aria-labelledby="wishlist-add-title" max-width="md:max-w-2xl" @close="closeAddDialog">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <h2 id="wishlist-add-title" class="m-0 text-heading">{{ t('wishlist.addTo') }}</h2>
+        <button
+          type="button"
+          class="pwa-icon-btn"
+          :title="t('common.close')"
+          :aria-label="t('common.close')"
+          @click="closeAddDialog"
+        >
+          <X :size="18" />
+        </button>
       </div>
-    </div>
+
+      <div v-if="addMethod === null" class="grid gap-3 sm:grid-cols-2">
+        <button type="button" class="add-method" @click="addMethod = 'url'">
+          <Link :size="24" />
+          <span>
+            <strong>{{ t('wishlist.add.fromUrl') }}</strong>
+            <small>{{ t('wishlist.add.fromUrlHint') }}</small>
+          </span>
+        </button>
+        <router-link to="/lookup" class="add-method" @click="closeAddDialog">
+          <ScanLine :size="24" />
+          <span>
+            <strong>{{ t('wishlist.add.fromImage') }}</strong>
+            <small>{{ t('wishlist.add.fromImageHint') }}</small>
+          </span>
+        </router-link>
+      </div>
+
+      <div v-else>
+        <button type="button" class="btn btn-ghost btn-xs mb-4" @click="addMethod = null">
+          <ChevronLeft :size="15" /> {{ t('wishlist.add.another') }}
+        </button>
+        <WishlistURLIntake embedded @created="handleURLCreated" />
+      </div>
+    </BaseModal>
 
     <CoinSearchChat v-if="showChat" @close="showChat = false" @added="loadCoins" />
     <ShareListDialog :open="showShareList" initial-list="wishlist" @close="showShareList = false" />
@@ -227,7 +213,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, watch, onBeforeUnmount } from 'vue'
+import { ref, watch, onBeforeUnmount } from 'vue'
 import { useCoinsStore } from '@/stores/coins'
 import CoinCard from '@/components/CoinCard.vue'
 import CoinSearchChat from '@/components/CoinSearchChat.vue'
@@ -239,21 +225,21 @@ import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { purchaseCoin, checkWishlistAvailability, updateListingStatus } from '@/api/client'
 import type { Coin, AvailabilityRunSummary } from '@/types'
 import { CirclePlus, Bot, ShieldCheck, CalendarClock, History, ChevronLeft, Link, ScanLine, Share2, X } from 'lucide-vue-next'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { rememberBrowseSequence } from '@/utils/browseSequence'
 import { t } from '@/i18n'
+import BaseModal from '@/components/ui/BaseModal.vue'
 
 const store = useCoinsStore()
 // A wished coin's page goes to the previous and the next one in this order.
 watch(() => store.coins, (coins) => {
   rememberBrowseSequence('wishlist', coins.filter((coin) => coin.isWishlist).map((coin) => coin.id))
 }, { immediate: true })
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 const showChat = ref(false)
 const showAddDialog = ref(false)
 const showShareList = ref(false)
 const addMethod = ref<'url' | null>(null)
-const addDialog = ref<HTMLElement | null>(null)
 const purchaseTarget = ref<Coin | null>(null)
 const checking = ref(false)
 const checkResult = ref<AvailabilityRunSummary | null>(null)
@@ -276,11 +262,6 @@ function handleURLCreated() {
 }
 
 watch(page, loadCoins)
-watch(showAddDialog, async (open) => {
-  if (!open) return
-  await nextTick()
-  addDialog.value?.focus()
-})
 
 function openPurchaseModal(coin: Coin) {
   purchaseTarget.value = coin

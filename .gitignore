@@ -35,6 +35,7 @@ src/web/playwright-report/
 .artifacts/ai-browser/
 src/web/.tmp/ai-browser/
 src/web/.artifacts/ai-browser/
+src/web/.artifacts/mobile/
 **/ai-browser/run-config*.json
 **/ai-browser/prompts/
 **/ai-browser/evidence/

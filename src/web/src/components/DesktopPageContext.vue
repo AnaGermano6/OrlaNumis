@@ -1,34 +1,36 @@
 <template>
-  <Teleport v-if="!isPwa" defer to="#desktop-page-title">
+  <Teleport v-if="!isMobile" defer to="#desktop-page-title">
     <span class="block truncate" :title="title">{{ title }}</span>
   </Teleport>
-  <Teleport v-if="!isPwa && $slots.actions" defer to="#desktop-page-actions">
+  <Teleport v-if="!isMobile && $slots.actions" defer to="#desktop-page-actions">
     <slot name="actions" />
   </Teleport>
   <div
     v-if="$slots.default"
     class="desktop-page-context-local"
-    :class="{ 'is-pwa': isPwa }"
+    :class="{ 'is-mobile': isMobile }"
   >
     <slot />
   </div>
   <div
     v-if="$slots.desktop"
     class="desktop-page-context-desktop"
-    :class="{ 'is-pwa': isPwa }"
+    :class="{ 'is-mobile': isMobile }"
   >
     <slot name="desktop" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { usePwa } from '@/composables/usePwa'
+// A page's title and actions: in the app's top bar on a wider screen, in the
+// page itself on a phone (the default slot), also a phone turned sideways.
+import { useLayout } from '@/composables/useLayout'
 
 defineProps<{
   title: string
 }>()
 
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 </script>
 
 <style scoped>
@@ -36,12 +38,12 @@ const { isPwa } = usePwa()
   display: none;
 }
 
-@media (min-width: 769px) {
-  .desktop-page-context-local:not(.is-pwa) {
+@media (min-width: 768px) {
+  .desktop-page-context-local:not(.is-mobile) {
     display: none;
   }
 
-  .desktop-page-context-desktop:not(.is-pwa) {
+  .desktop-page-context-desktop:not(.is-mobile) {
     display: block;
   }
 }

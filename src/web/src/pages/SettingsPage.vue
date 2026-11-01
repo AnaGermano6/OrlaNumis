@@ -4,7 +4,7 @@
       <DesktopPageContext :title="t('nav.settings')">
         <div class="page-header !flex-nowrap !items-center">
           <h1>{{ t('nav.settings') }}</h1>
-          <div v-if="isPwa" class="relative">
+          <div v-if="isMobile" class="relative">
             <button class="btn btn-secondary btn-sm gap-1.5 text-body" @click="settingsMenuOpen = !settingsMenuOpen">
               <component :is="tabIcons[activeTab]" :size="16" />
               {{ tabs.find(tab => tab.id === activeTab)?.label }}
@@ -35,7 +35,7 @@
 
       <div class="mx-auto flex max-w-[800px] flex-col gap-6">
         <!-- Rows of equal columns (2, then 4 on wide screens), so every tab has the same width and spacing. -->
-        <div v-if="!isPwa" class="grid grid-cols-2 gap-1 rounded-md border border-border-subtle bg-card p-[0.3rem] lg:grid-cols-4" data-testid="settings-tabs">
+        <div v-if="!isMobile" class="grid grid-cols-2 gap-1 rounded-md border border-border-subtle bg-card p-[0.3rem] lg:grid-cols-4" data-testid="settings-tabs">
           <button
             v-for="tab in tabs"
             :key="tab.id"
@@ -101,7 +101,7 @@ import PullToRefresh from '@/components/PullToRefresh.vue'
 import { listConversations, getConversation, deleteConversation } from '@/api/client'
 import type { ConversationSummary } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import type { Theme } from '@/types'
 import CoinSearchChat from '@/components/CoinSearchChat.vue'
 import HelpSection from '@/components/HelpSection.vue'
@@ -130,7 +130,7 @@ const tabIcons: Record<string, Component> = {
 const { showConfirm, showAlert } = useDialog()
 const activeTab = ref('account')
 const settingsMenuOpen = ref(false)
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 
 const route = useRoute()
 const router = useRouter()
@@ -153,7 +153,7 @@ const baseTabIds = ['account', 'appearance', 'data', 'tools', 'conversations', '
 const validTabIds = baseTabIds.concat('admin')
 // In the installed app, admins reach Admin through the settings menu, right after Account.
 const tabs = computed(() => {
-  const ids = isPwa && auth.isAdmin ? ['account', 'admin', ...baseTabIds.slice(1)] : baseTabIds
+  const ids = isMobile.value && auth.isAdmin ? ['account', 'admin', ...baseTabIds.slice(1)] : baseTabIds
   return ids.map((id) => ({ id, label: t(tabLabelKeys[id]!) }))
 })
 

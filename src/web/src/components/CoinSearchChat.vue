@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 z-[1400] flex h-dvh justify-end bg-black/50" @click.self="$emit('close')">
+  <div class="fixed inset-0 z-(--z-chat) flex h-dvh justify-end bg-black/50" @click.self="$emit('close')">
     <div class="flex h-full w-full max-w-full flex-col bg-surface shadow-[-4px_0_20px_var(--overlay-30)] sm:w-[480px]">
       <ChatHeader
         :has-messages="messages.length > 0 && !copilotBusy"
@@ -172,6 +172,7 @@ import I18nT from '@/components/I18nT.vue'
 import { t, intlLocale } from '@/i18n'
 import { useCoinSearchChat } from '@/composables/useCoinSearchChat'
 import { useDialog } from '@/composables/useDialog'
+import { useOverlayLayer } from '@/composables/useOverlayLayer'
 import ChatHeader from '@/components/chat/ChatHeader.vue'
 import ChatIntroPanel from '@/components/chat/ChatIntroPanel.vue'
 import ChatInputBar from '@/components/chat/ChatInputBar.vue'
@@ -195,6 +196,9 @@ const emit = defineEmits<{
   close: []
   added: []
 }>()
+
+// While open the page behind does not scroll; the chat keeps Escape to itself.
+useOverlayLayer(ref(true))
 
 const messagesEl = ref<HTMLElement>()
 const inputBarEl = ref<InstanceType<typeof ChatInputBar>>()

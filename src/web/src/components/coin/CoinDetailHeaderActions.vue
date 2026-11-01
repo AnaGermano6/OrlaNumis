@@ -46,7 +46,7 @@ import { ArrowLeft, Pencil, Share2, Trash2 } from 'lucide-vue-next'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import CoinDetailOverflowMenu from '@/components/coin/CoinDetailOverflowMenu.vue'
 import CoinBrowseNav from '@/components/coin/CoinBrowseNav.vue'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { t } from '@/i18n'
 
 const props = withDefaults(defineProps<{
@@ -73,8 +73,8 @@ const router = useRouter()
 const backTarget = computed(() => props.isWishlist ? '/wishlist' : props.isBanknote ? '/banknotes' : '/')
 // Named as the page it goes back to.
 const backLabel = computed(() => props.isWishlist ? t('coinDetail.backToWishlist') : props.isBanknote ? t('coinDetail.backToBanknotes') : t('coinDetail.backToGallery'))
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 // In the installed PWA the action row keeps only Edit/Delete inline; share moves into the
 // overflow menu. In the browser every action stays on the row.
-const collapseSecondaryActions = computed(() => isPwa)
+const collapseSecondaryActions = computed(() => isMobile.value)
 </script>

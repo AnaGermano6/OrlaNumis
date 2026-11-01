@@ -16,7 +16,7 @@
               <input type="file" accept="image/*" hidden @change="handleImageUpload" />
             </label>
             <button
-              v-if="isPwa"
+              v-if="isMobile"
               type="button"
               class="btn btn-secondary btn-sm action-btn inline-flex items-center gap-1 whitespace-nowrap"
               @click="showCameraModal = true"
@@ -121,27 +121,25 @@
       </div>
     </div>
 
-    <div v-if="showDeepAnalysisModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-overlay p-4" @click.self="showDeepAnalysisModal = false">
-      <div class="card max-h-[90vh] w-full max-w-[640px] overflow-y-auto p-6">
-        <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-lg text-heading">{{ t('coinDetail.actions.deepAnalysis') }}</h2>
-          <AppIconButton :title="t('common.close')" @click="showDeepAnalysisModal = false">
-            <X :size="18" />
-          </AppIconButton>
-        </div>
-        <DeepAnalysisStartPanel
-          :coin-id="coinId"
-          :has-existing-obverse="coinHasObverseImage"
-          :has-existing-reverse="coinHasReverseImage"
-          :eligible-providers="deepAnalysisProviders"
-          :submitting="deepIdentification.starting.value"
-          :submit-error="deepIdentification.error.value"
-          :conflict-job-id="launcher.capacityConflictJobId.value"
-          @submit="onDeepAnalysisSubmit"
-          @cancel="showDeepAnalysisModal = false"
-        />
+    <BaseModal :open="showDeepAnalysisModal" :aria-label="t('coinDetail.actions.deepAnalysis')" max-width="md:max-w-[640px]" @close="showDeepAnalysisModal = false">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg text-heading">{{ t('coinDetail.actions.deepAnalysis') }}</h2>
+        <AppIconButton :title="t('common.close')" @click="showDeepAnalysisModal = false">
+          <X :size="18" />
+        </AppIconButton>
       </div>
-    </div>
+      <DeepAnalysisStartPanel
+        :coin-id="coinId"
+        :has-existing-obverse="coinHasObverseImage"
+        :has-existing-reverse="coinHasReverseImage"
+        :eligible-providers="deepAnalysisProviders"
+        :submitting="deepIdentification.starting.value"
+        :submit-error="deepIdentification.error.value"
+        :conflict-job-id="launcher.capacityConflictJobId.value"
+        @submit="onDeepAnalysisSubmit"
+        @cancel="showDeepAnalysisModal = false"
+      />
+    </BaseModal>
 
     <CameraCaptureModal
       :is-open="showCameraModal"
@@ -167,6 +165,7 @@ import DeepAnalysisStartPanel from '@/components/deep-identification/DeepAnalysi
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import type { Coin, CreateDeepIdentificationJobInput } from '@/types'
 import { t } from '@/i18n'
+import BaseModal from '@/components/ui/BaseModal.vue'
 
 const props = defineProps<{
   coinId: number
@@ -181,7 +180,7 @@ const props = defineProps<{
   imageCount: number
   coinHasObverseImage?: boolean
   coinHasReverseImage?: boolean
-  isPwa: boolean
+  isMobile: boolean
 }>()
 
 const emit = defineEmits<{

@@ -1,16 +1,21 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { config, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { ref } from 'vue'
 import SetDetailPage from '@/pages/SetDetailPage.vue'
 import { buildRomanDenariusCore } from '@/test/fixtures/coins'
+
+// Dialogs (BaseModal) render in place, where the wrapper finds them.
+config.global.stubs = { ...config.global.stubs, teleport: true }
 
 const api = vi.hoisted(() => ({
   getSet: vi.fn(), getCoinsInSet: vi.fn(), getSetCompletion: vi.fn(), getCoins: vi.fn(),
   updateSet: vi.fn(), deleteSet: vi.fn(), addCoinToSet: vi.fn(), removeCoinFromSet: vi.fn(), reorderSetCoins: vi.fn(),
 }))
 vi.mock('@/api/client', () => api)
-vi.mock('@/composables/usePwa', () => ({ usePwa: () => ({ isPwa: ref(false) }) }))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(ref(false)) }) }
+})
 
 beforeEach(() => {
   vi.resetAllMocks()

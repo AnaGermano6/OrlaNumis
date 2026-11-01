@@ -1,7 +1,7 @@
 <template>
   <footer
     class="mt-12 border-t border-border-subtle bg-surface"
-    :class="isPwa ? 'pb-[calc(5.5rem+env(safe-area-inset-bottom))]' : 'pb-6'"
+    :class="isMobile ? 'pb-[calc(5.5rem+env(safe-area-inset-bottom))]' : 'pb-6'"
     :aria-label="t('app.footer.label')"
   >
     <div class="mx-auto flex max-w-[1200px] flex-col gap-2 px-4 pt-6 text-chip text-text-muted md:flex-row md:items-center md:justify-between md:gap-6">
@@ -27,12 +27,12 @@
 // assistant button.
 import I18nT from '@/components/I18nT.vue'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { t } from '@/i18n'
 
 /** Orla Numis is based on Aurearia, by Brian DeNicola, under the MIT license. */
 const ORIGINAL_PROJECT = 'https://github.com/briandenicola/Aurearia'
 
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 const year = new Date().getFullYear()
 </script>
