@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -62,7 +63,7 @@ func (c *HTTPCommonsClient) SearchFiles(ctx context.Context, query string, limit
 		"prop":                {"imageinfo"},
 		"iiprop":              {"url|mime|extmetadata"},
 		"iiurlwidth":          {"400"},
-		"iiextmetadatafilter": {"Artist|LicenseShortName"},
+		"iiextmetadatafilter": {"Artist|LicenseShortName|Categories"},
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"?"+values.Encode(), nil)
 	if err != nil {
@@ -214,22 +215,37 @@ func (s *CoinPhotoSearchService) SearchCoin(ctx context.Context, coin CoinPhotoQ
 		}
 	}
 
+	// Commons: the photos of each search that show this coin (see
+	// commonsRelevance), the best first, in their order otherwise.
+	type ranked struct {
+		photo models.CoinPhotoCandidate
+		score int
+	}
+	var kept []ranked
+	keptURLs := map[string]bool{}
 	queries := commonsPhotoQueries(coin)
-	found, failed := 0, 0
+	failed := 0
 	for _, commonsQuery := range queries {
+		if len(kept) >= commonsPhotoLimit {
+			break
+		}
 		photos, err := s.searchCommons(ctx, commonsQuery)
 		if err != nil {
 			failed++
 			continue
 		}
 		for _, photo := range photos {
-			if found >= commonsPhotoLimit {
-				break
+			keep, score := commonsRelevance(coin, photo)
+			if !keep || keptURLs[photo.ImageURL] || len(kept) >= commonsPhotoLimit {
+				continue
 			}
-			before := len(result.Photos)
-			add(photo)
-			found += len(result.Photos) - before
+			keptURLs[photo.ImageURL] = true
+			kept = append(kept, ranked{photo, score})
 		}
+	}
+	sort.SliceStable(kept, func(i, j int) bool { return kept[i].score > kept[j].score })
+	for _, entry := range kept {
+		add(entry.photo)
 	}
 	if len(queries) > 0 && failed == len(queries) && len(result.Photos) == 0 {
 		result.Status = models.NumistaDataStatusUnavailable
@@ -239,7 +255,8 @@ func (s *CoinPhotoSearchService) SearchCoin(ctx context.Context, coin CoinPhotoQ
 
 func (s *CoinPhotoSearchService) searchCommons(ctx context.Context, query string) ([]models.CoinPhotoCandidate, error) {
 	digest := sha256.Sum256([]byte(strings.ToLower(query)))
-	body, _, _, err := s.cache.Get(ctx, "commons:"+hex.EncodeToString(digest[:]), commonsSearchCacheTTL, func(ctx context.Context) ([]byte, error) {
+	// v2: the searches kept carry each file's categories.
+	body, _, _, err := s.cache.Get(ctx, "commons:v2:"+hex.EncodeToString(digest[:]), commonsSearchCacheTTL, func(ctx context.Context) ([]byte, error) {
 		return s.commons.SearchFiles(ctx, query, commonsSearchLimit)
 	})
 	if err != nil {
@@ -299,13 +316,14 @@ func parseCommonsPhotos(body []byte) ([]models.CoinPhotoCandidate, error) {
 			thumbnail = info.URL
 		}
 		photos = append(photos, models.CoinPhotoCandidate{
-			Source:    models.CoinPhotoSourceWikimedia,
-			Thumbnail: thumbnail,
-			ImageURL:  info.URL,
-			PageURL:   httpsURL(info.DescriptionURL),
-			Title:     commonsFileTitle(page.Title),
-			Author:    metadata("Artist"),
-			License:   metadata("LicenseShortName"),
+			Source:     models.CoinPhotoSourceWikimedia,
+			Thumbnail:  thumbnail,
+			ImageURL:   info.URL,
+			PageURL:    httpsURL(info.DescriptionURL),
+			Title:      commonsFileTitle(page.Title),
+			Author:     metadata("Artist"),
+			License:    metadata("LicenseShortName"),
+			Categories: rawMetadata(info.ExtMetadata["Categories"].Value),
 		})
 	}
 	return photos, nil
@@ -315,6 +333,16 @@ var (
 	htmlTag         = regexp.MustCompile(`<[^>]*>`)
 	photoQueryNoise = regexp.MustCompile(`[()\[\]{}"“”'’,;:/–—-]+`)
 )
+
+// rawMetadata reads an extmetadata string ("Coins of Austria|Self-published
+// work"), "" when absent.
+func rawMetadata(raw json.RawMessage) string {
+	var value string
+	if len(raw) == 0 || json.Unmarshal(raw, &value) != nil {
+		return ""
+	}
+	return value
+}
 
 // plainText turns Commons' HTML metadata ("<a href=…>Name</a>") into text.
 func plainText(value string, max int) string {

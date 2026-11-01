@@ -34,6 +34,9 @@ type CoinPhotoCandidate struct {
 	// Match is "exact" when the source identified this very coin, so the
 	// photo can be added without asking.
 	Match string `json:"match,omitempty" enums:"exact"`
+	// Categories are a Commons file's categories, to tell a photo of the
+	// coin from one that only shows a coin; not sent.
+	Categories string `json:"-"`
 }
 
 // CoinPhotoSearchResult lists real photos found for a coin.
