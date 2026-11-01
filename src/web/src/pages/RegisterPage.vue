@@ -61,7 +61,7 @@ async function handleRegister() {
   loading.value = true
   try {
     await auth.doRegister(username.value, password.value, email.value)
-    router.push('/')
+    router.push({ name: 'collection-overview' })
   } catch (e) {
     error.value = getApiErrorMessage(e) || t('auth.register.failed')
   } finally {

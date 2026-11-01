@@ -61,7 +61,8 @@ async function handleLogin() {
   const trimmedUsername = username.value.trim()
   try {
     await auth.doLogin(trimmedUsername, password.value)
-    router.push('/')
+    // The collection's overview is the first page after signing in.
+    router.push({ name: 'collection-overview' })
   } catch (err: unknown) {
     if (!handleRateLimitError(err)) {
       error.value = t('auth.login.invalidCredentials')
