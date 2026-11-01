@@ -33,7 +33,15 @@
           fluid
           @unavailable="markUnavailable(photo)"
         />
-        <div class="grid grid-cols-2 gap-1">
+        <!-- Numista refuses the app's download: the photo is opened to be saved by hand. -->
+        <a
+          v-if="photo.source === 'numista'"
+          :href="photo.imageUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-secondary btn-sm min-w-0 justify-center px-1"
+        >{{ t('photos.numistaOpen') }}</a>
+        <div v-else class="grid grid-cols-2 gap-1">
           <button
             v-for="side in SIDES"
             :key="side"
@@ -49,6 +57,7 @@
         <a v-if="photo.pageUrl" :href="photo.pageUrl" target="_blank" rel="noopener noreferrer" class="text-2xs text-gold underline">{{ t('photos.viewSource') }}</a>
       </li>
     </ul>
+    <p v-if="hasNumistaPhotos" class="m-0 text-chip text-text-muted">{{ kind === 'banknote' ? t('photos.banknote.numistaHint') : t('photos.numistaHint') }}</p>
     <p v-if="visiblePhotos.length" class="m-0 text-chip text-text-muted">{{ t('photos.licenseHint') }}</p>
   </div>
 </template>
@@ -95,6 +104,7 @@ const failed = ref(false)
 let searchSeq = 0
 
 const visiblePhotos = computed(() => photos.value.filter((photo) => !unavailable.has(photo.imageUrl)))
+const hasNumistaPhotos = computed(() => visiblePhotos.value.some((photo) => photo.source === 'numista'))
 
 function isChosen(side: PhotoSide, photo: CoinPhotoCandidate): boolean {
   return props.modelValue[side]?.imageUrl === photo.imageUrl
@@ -138,7 +148,10 @@ async function search() {
   searching.value = true
   failed.value = false
   try {
-    const res = await searchCoinPhotos({ q: text || undefined, numistaTypeId: props.numistaTypeId ?? undefined, lang: numistaLang(), ...props.details })
+    // The coin's details (for the ECB, the mints and Commons in English) go
+    // with its own search; a text typed instead is searched as it is.
+    const details = text === props.initialQuery.trim() ? props.details : {}
+    const res = await searchCoinPhotos({ q: text || undefined, numistaTypeId: props.numistaTypeId ?? undefined, lang: numistaLang(), kind: props.kind, ...details })
     if (seq !== searchSeq) return
     photos.value = res.data.photos
     failed.value = res.data.status !== 'ok' && !res.data.photos.length

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countryFlag, countryFlagCode, flagOfCode, hasCountryFlag, withCountryFlag, withFlagOfCode } from '@/utils/countryFlags'
+import { countryEnglishName, countryFlag, countryFlagCode, flagOfCode, hasCountryFlag, withCountryFlag, withFlagOfCode } from '@/utils/countryFlags'
 
 describe('country flags', () => {
   it('finds the flag of a country written in Portuguese or English, with or without accents', () => {
@@ -38,6 +38,20 @@ describe('country flags', () => {
   it('puts the flag before the name, or leaves the name alone', () => {
     expect(withCountryFlag('Portugal')).toBe('🇵🇹 Portugal')
     expect(withCountryFlag('Jugoslávia')).toBe('Jugoslávia')
+  })
+})
+
+describe('country names in English', () => {
+  it("writes a country's own name in English, and leaves any other name as it is", () => {
+    expect(countryEnglishName('Ucrânia')).toBe('Ukraine')
+    expect(countryEnglishName('Reino Unido')).toBe('United Kingdom')
+    expect(countryEnglishName('Estados Unidos da América')).toBe('United States')
+    expect(countryEnglishName('Alemanha, República Federal da')).toBe('Germany')
+    expect(countryEnglishName('San Marino')).toBe('San Marino')
+    // A colony flies its mother country's flag, but is not that country.
+    expect(countryEnglishName('Índia Portuguesa')).toBe('Índia Portuguesa')
+    expect(countryEnglishName('Jugoslávia')).toBe('Jugoslávia')
+    expect(countryEnglishName('  ')).toBeUndefined()
   })
 })
 

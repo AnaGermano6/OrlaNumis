@@ -5111,7 +5111,7 @@ info:
   description: REST API for managing a personal coin collection. Supports coin CRUD,
     image uploads, AI-powered analysis, user management, and admin features.
   title: Orla Numis API
-  version: 1.0.2
+  version: 1.0.3
 paths:
   /admin/availability-cycles:
     get:
@@ -7602,9 +7602,10 @@ paths:
       description: 'Returns real photos of a coin with their author and license: the
         ECB''s image of a €2 commemorative coin (when year is given and the coin is
         one; match=exact when the ECB lists exactly this coin), the Numista catalogue
-        photos of numistaTypeId, then Wikimedia Commons files matching q. Commons
-        searches are cached for a week, ECB pages for longer. Import a chosen photo
-        with POST /coins/{id}/images/import.'
+        photos of numistaTypeId, then Wikimedia Commons images: searched in English
+        from the denomination, country and year (as Commons names coin photos, e.g.
+        "200 lire San Marino 1995 coin"), then for q. Commons searches are cached
+        for a week, ECB pages for longer. Import a chosen photo with POST /coins/{id}/images/import.'
       parameters:
       - description: Search text, e.g. title and year (required unless numistaTypeId,
           or year and country, are set)
@@ -7620,21 +7621,31 @@ paths:
         in: query
         name: lang
         type: string
-      - description: Coin year, to look for a €2 commemorative on the ECB site
+      - description: 'Coin year: a €2 commemorative''s ECB image is looked up, and
+          Commons is searched with it'
         in: query
         name: year
         type: integer
-      - description: Coin country (English or Portuguese name)
+      - description: Coin country (English or Portuguese name; English finds more
+          on Commons)
         in: query
         name: country
         type: string
-      - description: Coin denomination, e.g. 2 euro
+      - description: Coin denomination, e.g. 2 euro or 200 liras
         in: query
         name: denomination
         type: string
       - description: Coin subject, for a coin not linked to Numista
         in: query
         name: subject
+        type: string
+      - default: coin
+        description: What the photos are of
+        enum:
+        - coin
+        - banknote
+        in: query
+        name: kind
         type: string
       produces:
       - application/json

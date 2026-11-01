@@ -1,6 +1,7 @@
 import type { CoinPhotoCandidate } from '@/api/client'
 import { t } from '@/i18n'
 import type { Coin } from '@/types'
+import { countryEnglishName } from '@/utils/countryFlags'
 
 export type PhotoSide = 'obverse' | 'reverse'
 
@@ -18,7 +19,7 @@ export function photoSourceName(photo: CoinPhotoCandidate): string {
   return photo.source === 'numista' ? 'Numista' : 'Wikimedia Commons'
 }
 
-/** What a photo search needs to find a coin's ECB image, besides its Numista type. */
+/** What a photo search needs to find a coin's ECB image and its photos on Commons, besides its Numista type. */
 export interface CoinPhotoDetails {
   year?: number
   country?: string
@@ -27,9 +28,10 @@ export interface CoinPhotoDetails {
 }
 
 /**
- * A coin's year, country, denomination and subject for a photo search. The
- * subject is what follows " – " in the name, unless that is just the country
- * ("2 euro 2026 D – Bremen, Casa do Clima" has one, "… 2022 – Portugal" not).
+ * A coin's year, country (in English when it can be, as Commons names coin
+ * photos), denomination and subject for a photo search. The subject is what
+ * follows " – " in the name, unless that is just the country ("2 euro 2026 D
+ * – Bremen, Casa do Clima" has one, "… 2022 – Portugal" not).
  */
 export function coinPhotoDetails(coin: Pick<Coin, 'name' | 'country' | 'year' | 'denomination'>): CoinPhotoDetails {
   const country = coin.country?.trim() ?? ''
@@ -37,7 +39,7 @@ export function coinPhotoDetails(coin: Pick<Coin, 'name' | 'country' | 'year' | 
   const detail = separator >= 0 ? coin.name.slice(separator + 3).trim() : ''
   return {
     year: coin.year ?? undefined,
-    country: country || undefined,
+    country: countryEnglishName(country),
     denomination: coin.denomination?.trim() || undefined,
     subject: detail && detail.toLowerCase() !== country.toLowerCase() ? detail : undefined,
   }

@@ -110,6 +110,9 @@ func (s *CoinPhotoSearchService) WithMint(mint MintPhotoSource) *CoinPhotoSearch
 	return s
 }
 
+// commonsPhotoLimit bounds the Commons photos of all the searches made.
+const commonsPhotoLimit = 24
+
 // CoinPhotoQuery describes the coin whose photos to find.
 type CoinPhotoQuery struct {
 	Query         string
@@ -123,6 +126,8 @@ type CoinPhotoQuery struct {
 	Subject      string
 	// Material helps tell a coin's silver version from its base-metal one.
 	Material string
+	// Banknote searches Commons for a banknote's photos, not a coin's.
+	Banknote bool
 	// CachedTypesOnly reads the Numista type from the cache only: no request
 	// is made to Numista, so looking at many coins spends none of its quota.
 	CachedTypesOnly bool
@@ -163,7 +168,8 @@ func (s *CoinPhotoSearchService) Search(ctx context.Context, query string, numis
 }
 
 // SearchCoin returns the ECB image of a €2 commemorative coin first, then the
-// Numista catalogue photos of its type and matching Wikimedia Commons files.
+// Numista catalogue photos of its type and Wikimedia Commons images, from the
+// searches of commonsPhotoQueries in their order.
 func (s *CoinPhotoSearchService) SearchCoin(ctx context.Context, coin CoinPhotoQuery) models.CoinPhotoSearchResult {
 	query, numistaTypeID, lang := strings.Join(strings.Fields(coin.Query), " "), coin.NumistaTypeID, coin.Lang
 	result := models.CoinPhotoSearchResult{Status: models.NumistaDataStatusOK, Query: query, Photos: []models.CoinPhotoCandidate{}}
@@ -208,21 +214,25 @@ func (s *CoinPhotoSearchService) SearchCoin(ctx context.Context, coin CoinPhotoQ
 		}
 	}
 
-	if query == "" {
-		return result
-	}
-	photos, err := s.searchCommons(ctx, query)
-	if err == nil && len(photos) == 0 {
-		if simpler := simplifyPhotoQuery(query); simpler != query {
-			photos, err = s.searchCommons(ctx, simpler)
+	queries := commonsPhotoQueries(coin)
+	found, failed := 0, 0
+	for _, commonsQuery := range queries {
+		photos, err := s.searchCommons(ctx, commonsQuery)
+		if err != nil {
+			failed++
+			continue
+		}
+		for _, photo := range photos {
+			if found >= commonsPhotoLimit {
+				break
+			}
+			before := len(result.Photos)
+			add(photo)
+			found += len(result.Photos) - before
 		}
 	}
-	if err != nil && len(result.Photos) == 0 {
+	if len(queries) > 0 && failed == len(queries) && len(result.Photos) == 0 {
 		result.Status = models.NumistaDataStatusUnavailable
-		return result
-	}
-	for _, photo := range photos {
-		add(photo)
 	}
 	return result
 }

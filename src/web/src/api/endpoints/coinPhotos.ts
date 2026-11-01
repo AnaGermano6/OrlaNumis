@@ -32,9 +32,12 @@ export interface CoinPhotoSearchParams {
   lang: string
   /** With a year, a €2 commemorative's ECB image is looked up too. */
   year?: number
+  /** In English when it can be: Wikimedia Commons names coin photos in English. */
   country?: string
   denomination?: string
   subject?: string
+  /** What the photos are of; a coin when not given. */
+  kind?: 'coin' | 'banknote'
 }
 
 export const searchCoinPhotos = (params: CoinPhotoSearchParams) =>
