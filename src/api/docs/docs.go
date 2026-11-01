@@ -3818,7 +3818,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns real photos of a coin with their author and license: the ECB's image of a €2 commemorative coin (when year is given and the coin is one; match=exact when the ECB lists exactly this coin), the Numista catalogue photos of numistaTypeId, then Wikimedia Commons files matching q. Commons searches are cached for a week, ECB pages for longer. Import a chosen photo with POST /coins/{id}/images/import.",
+                "description": "Returns real photos of a coin with their author and license: the ECB's image of a €2 commemorative coin (when year is given and the coin is one; match=exact when the ECB lists exactly this coin), the Numista catalogue photos of numistaTypeId, then Wikimedia Commons images: searched in English from the denomination, country and year (as Commons names coin photos, e.g. \"200 lire San Marino 1995 coin\"), then for q. Commons searches are cached for a week, ECB pages for longer. Import a chosen photo with POST /coins/{id}/images/import.",
                 "produces": [
                     "application/json"
                 ],
@@ -3848,19 +3848,19 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Coin year, to look for a €2 commemorative on the ECB site",
+                        "description": "Coin year: a €2 commemorative's ECB image is looked up, and Commons is searched with it",
                         "name": "year",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Coin country (English or Portuguese name)",
+                        "description": "Coin country (English or Portuguese name; English finds more on Commons)",
                         "name": "country",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Coin denomination, e.g. 2 euro",
+                        "description": "Coin denomination, e.g. 2 euro or 200 liras",
                         "name": "denomination",
                         "in": "query"
                     },
@@ -3868,6 +3868,17 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Coin subject, for a coin not linked to Numista",
                         "name": "subject",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "coin",
+                            "banknote"
+                        ],
+                        "type": "string",
+                        "default": "coin",
+                        "description": "What the photos are of",
+                        "name": "kind",
                         "in": "query"
                     }
                 ],
@@ -20337,7 +20348,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0.2",
+	Version:          "1.0.3",
 	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},

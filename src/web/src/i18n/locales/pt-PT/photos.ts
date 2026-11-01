@@ -11,6 +11,8 @@ const messages: Messages['photos'] = {
   results: 'Fotos encontradas',
   photo: 'Foto da moeda',
   viewSource: 'Ver origem',
+  numistaOpen: 'Abrir a foto',
+  numistaHint: 'O Numista não deixa a app guardar as fotos dele: abra a foto, guarde-a no computador e carregue-a ao editar a moeda.',
   licenseHint: 'As fotos do Wikimedia Commons e do Numista pertencem aos seus autores e mantêm a respetiva licença.',
   creditObverse: 'Foto do anverso: {credit}',
   creditReverse: 'Foto do reverso: {credit}',
@@ -28,6 +30,7 @@ const messages: Messages['photos'] = {
     title: 'Fotos reais da nota',
     chooseHint: 'Escolha uma foto para a frente e outra para o verso. Ficam guardadas na nota, com o crédito do autor no campo Notas.',
     photo: 'Foto da nota',
+    numistaHint: 'O Numista não deixa a app guardar as fotos dele: abra a foto, guarde-a no computador e carregue-a ao editar a nota.',
   },
 }
 

@@ -4,6 +4,20 @@ Each version's section is its release notes: the release workflow publishes
 it on GitHub, and **Admin → Updates** shows it to the apps that can update.
 Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.0.3] - 2026-11-01
+
+### Fixed
+- The search for a coin's real photos works for coins from before 1999: it
+  refused them, and said photos could not be searched right now.
+
+### Changed
+- Real photos are found on Wikimedia Commons more often: it is searched in
+  English, as Commons names coin photos ("200 lire San Marino 1995 coin"),
+  for images only, with the coin's year and then without it, before the
+  words typed. A text typed instead of the coin's name is searched as it is.
+- Numista does not let the app save its photos, so a Numista photo now opens
+  to be saved by hand, with a note saying so, instead of failing on saving.
+
 ## [1.0.2] - 2026-10-25
 
 ### Fixed

@@ -13,7 +13,7 @@ describe('coin photos', () => {
 
   it('reads a coin\'s year, country, denomination and subject for a photo search', () => {
     expect(coinPhotoDetails(coin({ name: '2 euro 2026 D – Bremen, Casa do Clima', country: 'Alemanha', denomination: '2 euro', year: 2026 })))
-      .toEqual({ year: 2026, country: 'Alemanha', denomination: '2 euro', subject: 'Bremen, Casa do Clima' })
+      .toEqual({ year: 2026, country: 'Germany', denomination: '2 euro', subject: 'Bremen, Casa do Clima' })
     // A name ending with the country has no subject.
     expect(coinPhotoDetails(coin({ name: '2 Euros (Rotary) 2026 – Portugal', country: 'Portugal', denomination: '2 Euros', year: 2026 })).subject).toBeUndefined()
     expect(coinPhotoDetails(coin({ name: 'Denarius', year: null }))).toEqual({ year: undefined, country: undefined, denomination: undefined, subject: undefined })

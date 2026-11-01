@@ -73,6 +73,33 @@ export function countryFlagCode(country: string | null | undefined): string | un
   return code && /^[A-Z]{2}$/.test(code) && !NO_FLAG.has(code) ? code : undefined
 }
 
+/**
+ * A country's name in English ("Ucrânia" → "Ukraine"), as sources searched in
+ * English write it. A name that is not the country's own (a former country, a
+ * colony that flies another's flag, a name not recognised) comes back as it is.
+ */
+export function countryEnglishName(country: string | null | undefined): string | undefined {
+  const name = country?.trim()
+  if (!name) return undefined
+  const code = countryFlagCode(name)
+  if (!code) return name
+  const own = new Set((EXTRA_COUNTRY_ALIASES[code] ?? []).map(foldCountryName))
+  let english: string | undefined
+  for (const language of ['pt-PT', 'pt', 'en']) {
+    try {
+      const display = new Intl.DisplayNames([language], { type: 'region' }).of(code)
+      if (!display || display === code) continue
+      own.add(foldCountryName(display))
+      own.add(foldCountryName(display.split(',')[0] ?? ''))
+      if (language === 'en') english = display
+    } catch {
+      // A browser without region names keeps the name as it is.
+    }
+  }
+  const candidates = [name, name.replace(/\([^)]*\)/g, ' '), name.split(',')[0] ?? '']
+  return english && candidates.some((candidate) => own.has(foldCountryName(candidate))) ? english : name
+}
+
 /** The flag emoji of an ISO country code ("HR" → 🇭🇷), or '' when it has none. */
 export function flagOfCode(code: string | null | undefined): string {
   const upper = code?.trim().toUpperCase() ?? ''

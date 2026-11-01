@@ -49,7 +49,8 @@ func TestCoinPhotoHandler_SearchesTheECBByYearAndCountry(t *testing.T) {
 		"/api/coin-photos/search",
 		"/api/coin-photos/search?year=2022",
 		"/api/coin-photos/search?country=Alemanha",
-		"/api/coin-photos/search?year=1700&country=Alemanha",
+		"/api/coin-photos/search?year=9999&country=Alemanha",
+		"/api/coin-photos/search?q=x&kind=medal",
 	} {
 		if w := coinRequest(router, http.MethodGet, path, nil); w.Code != http.StatusBadRequest {
 			t.Errorf("%s: expected 400, got %d", path, w.Code)
@@ -64,6 +65,16 @@ func TestCoinPhotoHandler_SearchesTheECBByYearAndCountry(t *testing.T) {
 	}
 	if len(got.Photos) != 1 || got.Photos[0].Source != models.CoinPhotoSourceECB || got.Photos[0].Match != models.CoinPhotoMatchExact {
 		t.Fatalf("photos = %+v", got.Photos)
+	}
+
+	// A coin from before the euro is searched too.
+	for _, path := range []string{
+		"/api/coin-photos/search?q=2.5+escudos+1969&year=1969&country=Angola&denomination=2.5+escudos",
+		"/api/coin-photos/search?q=20+escudos&kind=banknote",
+	} {
+		if w := coinRequest(router, http.MethodGet, path, nil); w.Code != http.StatusOK {
+			t.Errorf("%s: expected 200, got %d %s", path, w.Code, w.Body.String())
+		}
 	}
 }
 

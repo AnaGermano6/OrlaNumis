@@ -9,6 +9,8 @@ export default {
   results: 'Photos found',
   photo: 'Coin photo',
   viewSource: 'View source',
+  numistaOpen: 'Open the photo',
+  numistaHint: 'Numista does not let the app save its photos: open the photo, save it on your computer and upload it when editing the coin.',
   licenseHint: 'Photos from Wikimedia Commons and Numista belong to their authors and keep their license.',
   creditObverse: 'Obverse photo: {credit}',
   creditReverse: 'Reverse photo: {credit}',
@@ -26,5 +28,6 @@ export default {
     title: 'Real banknote photos',
     chooseHint: 'Pick one photo for the front and one for the back. They are saved on the banknote, with the author\'s credit in its notes.',
     photo: 'Banknote photo',
+    numistaHint: 'Numista does not let the app save its photos: open the photo, save it on your computer and upload it when editing the banknote.',
   },
 }

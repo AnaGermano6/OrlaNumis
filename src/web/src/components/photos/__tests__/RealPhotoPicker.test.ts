@@ -40,9 +40,14 @@ describe('RealPhotoPicker', () => {
     })
     await flushPromises()
 
-    expect(mocks.searchCoinPhotos).toHaveBeenCalledWith({ q: '50 Escudos 1968', numistaTypeId: 4930, lang: 'en' })
+    expect(mocks.searchCoinPhotos).toHaveBeenCalledWith({ q: '50 Escudos 1968', numistaTypeId: 4930, lang: 'en', kind: 'coin' })
     const cards = wrapper.findAll('li')
     expect(cards).toHaveLength(2)
+    // Numista refuses the app's download: its photo is opened, to be saved by hand.
+    expect(cards[0]!.findAll('button')).toHaveLength(0)
+    expect(cards[0]!.get('a').attributes('href')).toBe(NUMISTA.imageUrl)
+    expect(cards[0]!.text()).toContain('Open the photo')
+    expect(wrapper.text()).toContain('Numista does not let the app save its photos')
     expect(cards[1]!.text()).toContain('© Jane Doe · CC BY-SA 4.0 · Wikimedia Commons')
     expect(mocks.loadCatalogPhoto).toHaveBeenCalledWith(COMMONS.thumbnail)
 
@@ -97,8 +102,21 @@ describe('RealPhotoPicker', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(mocks.searchCoinPhotos).toHaveBeenLastCalledWith({ q: 'denarius augustus', numistaTypeId: undefined, lang: 'en' })
+    expect(mocks.searchCoinPhotos).toHaveBeenLastCalledWith({ q: 'denarius augustus', numistaTypeId: undefined, lang: 'en', kind: 'coin' })
     expect(wrapper.text()).toContain('Photos could not be searched right now.')
+  })
+
+  it("sends the coin's details with its own search only", async () => {
+    mocks.searchCoinPhotos.mockResolvedValue({ data: { status: 'ok', query: 'q', photos: [] } })
+    const details = { year: 1992, country: 'Ukraine', denomination: '5 kopiyok' }
+    const wrapper = mount(RealPhotoPicker, { props: { initialQuery: '5 kopiyok 1992 – Ucrânia', details, modelValue: {} } })
+    await flushPromises()
+    expect(mocks.searchCoinPhotos).toHaveBeenLastCalledWith({ q: '5 kopiyok 1992 – Ucrânia', numistaTypeId: undefined, lang: 'en', kind: 'coin', ...details })
+
+    await wrapper.get('input').setValue('Ukraine 5 kopiyok')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(mocks.searchCoinPhotos).toHaveBeenLastCalledWith({ q: 'Ukraine 5 kopiyok', numistaTypeId: undefined, lang: 'en', kind: 'coin' })
   })
 
   it("names a banknote's sides front and back, and its photos a banknote's", async () => {
