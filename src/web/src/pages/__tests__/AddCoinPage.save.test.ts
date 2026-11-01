@@ -7,7 +7,7 @@ import CoinLookupCaptureWizard from '@/components/coin-lookup/CoinLookupCaptureW
 
 const mocks = vi.hoisted(() => ({
   draft: vi.fn(), commit: vi.fn(), upload: vi.fn(), add: vi.fn(), alert: vi.fn(),
-  push: vi.fn(), update: vi.fn(), extract: vi.fn(), normalize: vi.fn(), stopCamera: vi.fn(), isPwa: true,
+  push: vi.fn(), update: vi.fn(), extract: vi.fn(), normalize: vi.fn(), stopCamera: vi.fn(), isMobile: true,
   confirm: vi.fn(), official: vi.fn(),
 }))
 vi.mock('vue-router', async (importOriginal) => {
@@ -19,7 +19,10 @@ vi.mock('vue-router', async (importOriginal) => {
   }
 })
 vi.mock('@/stores/coins', () => ({ useCoinsStore: () => ({ addCoin: mocks.add }) }))
-vi.mock('@/composables/usePwa', () => ({ usePwa: () => ({ isPwa: mocks.isPwa }) }))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(mocks.isMobile) }) }
+})
 vi.mock('@/utils/galleryImage', () => ({ normalizeGalleryImage: mocks.normalize }))
 vi.mock('@/composables/useDialog', () => ({ useDialog: () => ({ showAlert: mocks.alert, showConfirm: mocks.confirm }) }))
 vi.mock('@/api/client', () => ({
@@ -80,7 +83,7 @@ describe('Add Coin save workflow', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mocks.official.mockResolvedValue({ data: { images: [] } })
-    mocks.isPwa = true
+    mocks.isMobile = true
     mocks.normalize.mockImplementation(async (file: File) => file)
     mocks.draft.mockResolvedValue({ data: {
       draftId: 7, coin: { name: 'Denarius', category: 'Roman', material: 'Silver', era: 'Roman Imperial' },
@@ -107,7 +110,7 @@ describe('Add Coin save workflow', () => {
   })
 
   it('disables teleported mode actions while intake analysis is running', async () => {
-    mocks.isPwa = false
+    mocks.isMobile = false
     let resolveDraft!: (value: unknown) => void
     mocks.draft.mockReturnValueOnce(new Promise(resolve => {
       resolveDraft = resolve
@@ -220,7 +223,7 @@ describe('Add Coin save workflow', () => {
   })
 
   it('preserves the desktop manual default and provides the same assisted wizard', async () => {
-    mocks.isPwa = false
+    mocks.isMobile = false
     const wrapper = render()
     expect(wrapper.findComponent(CoinLookupCaptureWizard).exists()).toBe(false)
     expect(wrapper.text()).toContain('Save manual')

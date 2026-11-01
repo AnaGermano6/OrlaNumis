@@ -23,7 +23,7 @@
         ref="list"
         role="listbox"
         :aria-label="label"
-        class="fixed z-[500] m-0 max-h-72 list-none overflow-y-auto rounded-sm border border-border-subtle bg-card p-1 shadow-[0_8px_30px_var(--overlay-40)]"
+        class="fixed z-(--z-dialog) m-0 max-h-72 list-none overflow-y-auto rounded-sm border border-border-subtle bg-card p-1 shadow-[0_8px_30px_var(--overlay-40)]"
         :style="position"
         data-testid="country-select-list"
       >

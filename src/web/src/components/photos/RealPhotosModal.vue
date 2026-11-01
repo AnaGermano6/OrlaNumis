@@ -1,42 +1,34 @@
 <template>
-  <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-overlay p-4" @click.self="$emit('close')" @keydown.esc="$emit('close')">
-    <div
-      role="dialog"
-      :aria-labelledby="titleId"
-      aria-modal="true"
-      class="card flex max-h-[90vh] w-full max-w-[760px] flex-col !p-0"
-      tabindex="-1"
-    >
-      <div class="flex items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
-        <div class="min-w-0">
-          <h3 :id="titleId" class="m-0 font-display text-lg font-medium text-heading">{{ kind === 'banknote' ? t('photos.banknote.title') : t('photos.title') }}</h3>
-          <p class="m-0 truncate text-body text-gold">{{ coinName }}</p>
-        </div>
-        <button
-          type="button"
-          class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary"
-          :title="t('common.close')"
-          :aria-label="t('common.close')"
-          @click="$emit('close')"
-        >
-          <X :size="18" />
-        </button>
+  <BaseModal open :aria-labelledby="titleId" max-width="md:max-w-[760px]" :padded="false" @close="$emit('close')">
+    <div class="flex items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
+      <div class="min-w-0">
+        <h3 :id="titleId" class="m-0 font-display text-lg font-medium text-heading">{{ kind === 'banknote' ? t('photos.banknote.title') : t('photos.title') }}</h3>
+        <p class="m-0 truncate text-body text-gold">{{ coinName }}</p>
       </div>
-
-      <div class="min-h-0 overflow-y-auto px-5 py-4">
-        <p class="mb-3 mt-0 text-chip text-text-muted">{{ kind === 'banknote' ? t('photos.banknote.chooseHint') : t('photos.chooseHint') }}</p>
-        <RealPhotoPicker v-model="choice" :initial-query="coinName" :numista-type-id="numistaTypeId" :details="details" :kind="kind" />
-      </div>
-
-      <div class="flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle px-5 py-3">
-        <p v-if="error" class="m-0 mr-auto text-body text-byzantine" role="alert">{{ error }}</p>
-        <button type="button" class="btn btn-secondary" :disabled="saving" @click="$emit('close')">{{ t('common.cancel') }}</button>
-        <button type="button" class="btn btn-primary" :disabled="saving || !hasChoice" @click="save">
-          {{ saving ? t('common.saving') : t('photos.save') }}
-        </button>
-      </div>
+      <button
+        type="button"
+        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary"
+        :title="t('common.close')"
+        :aria-label="t('common.close')"
+        @click="$emit('close')"
+      >
+        <X :size="18" />
+      </button>
     </div>
-  </div>
+
+    <div class="min-h-0 overflow-y-auto px-5 py-4">
+      <p class="mb-3 mt-0 text-chip text-text-muted">{{ kind === 'banknote' ? t('photos.banknote.chooseHint') : t('photos.chooseHint') }}</p>
+      <RealPhotoPicker v-model="choice" :initial-query="coinName" :numista-type-id="numistaTypeId" :details="details" :kind="kind" />
+    </div>
+
+    <div class="flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle px-5 py-3">
+      <p v-if="error" class="m-0 mr-auto text-body text-byzantine" role="alert">{{ error }}</p>
+      <button type="button" class="btn btn-secondary" :disabled="saving" @click="$emit('close')">{{ t('common.cancel') }}</button>
+      <button type="button" class="btn btn-primary" :disabled="saving || !hasChoice" @click="save">
+        {{ saving ? t('common.saving') : t('photos.save') }}
+      </button>
+    </div>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
@@ -46,6 +38,7 @@ import { computed, ref, useId } from 'vue'
 import { X } from 'lucide-vue-next'
 import { importCoinImage } from '@/api/client'
 import { t } from '@/i18n'
+import BaseModal from '@/components/ui/BaseModal.vue'
 import RealPhotoPicker from '@/components/photos/RealPhotoPicker.vue'
 import { photoCreditLine, type CoinPhotoDetails, type PhotoSide, type RealPhotoChoice } from '@/utils/coinPhotos'
 

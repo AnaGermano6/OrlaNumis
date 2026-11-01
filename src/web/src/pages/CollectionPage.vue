@@ -1,7 +1,7 @@
 <template>
-  <div ref="pullContainer" class="container" :class="{ 'pwa-mode': isPwa }" :style="pullDistance > 0 ? `transform: translateY(${pullDistance}px); transition: none` : ''">
+  <div ref="pullContainer" class="container" :class="{ 'pwa-mode': isMobile }" :style="pullDistance > 0 ? `transform: translateY(${pullDistance}px); transition: none` : ''">
     <div
-      class="pointer-events-none fixed left-1/2 z-[100] flex -translate-x-1/2 items-center gap-2 rounded-full border border-border-subtle bg-card px-4 py-[0.4rem] opacity-0 shadow-[0_2px_12px_var(--overlay-30)] transition-opacity"
+      class="pointer-events-none fixed left-1/2 z-(--z-header) flex -translate-x-1/2 items-center gap-2 rounded-full border border-border-subtle bg-card px-4 py-[0.4rem] opacity-0 shadow-[0_2px_12px_var(--overlay-30)] transition-opacity"
       :class="{ 'pointer-events-auto': pullDistance > 0 || refreshing }"
       :style="`top: ${-50 + pullDistance * 0.6}px; opacity: ${Math.min(pullDistance / 60, 1)}`"
     >
@@ -13,15 +13,15 @@
       <span class="whitespace-nowrap text-sm text-text-secondary">{{ refreshing ? t('common.pull.refreshing') : pullDistance >= 60 ? t('common.pull.release') : t('common.pull.pull') }}</span>
     </div>
 
-    <!-- Its name, as the banknotes': in the title bar on a computer, above the
-         filters in a phone's browser (the installed app has its own header). -->
+    <!-- Its name, as the banknotes': in the title bar on a computer; a phone
+         has the search and the filters button instead. -->
     <DesktopPageContext :title="t('nav.gallery')">
       <template #actions>
         <AppIconButton :title="t('collection.export.button')" data-testid="gallery-export" @click="showExport = true">
           <FileSpreadsheet :size="20" />
         </AppIconButton>
       </template>
-      <header v-if="!isPwa" class="page-header" data-testid="gallery-title">
+      <header v-if="!isMobile" class="page-header" data-testid="gallery-title">
         <h1>{{ t('nav.gallery') }}</h1>
         <span class="ml-auto">
           <button type="button" class="btn btn-secondary btn-sm" @click="showExport = true">
@@ -31,18 +31,21 @@
       </header>
     </DesktopPageContext>
 
-    <PwaCollectionHeader
-      v-if="isPwa"
+    <MobileCollectionHeader
+      v-if="isMobile"
       v-model:search="search"
       v-model:menu-open="menuOpen"
       v-model:selected-denomination="selectedDenomination"
       v-model:selected-set="selectedSet"
       v-model:sort-key="sortKey"
       v-model:view-mode="viewMode"
+      v-model:layout="layout"
       v-model:grid-side="gridSide"
       :select-mode="selectMode"
       :user-sets="userSets"
       :denomination-options="denominationOptions"
+      :active-filters="activeFilterCount"
+      :total="store.total"
       @toggle-select-mode="toggleSelectMode"
     >
       <template #controls>
@@ -58,7 +61,7 @@
           :period-options="periodOptions"
           :extinct-countries="summary?.extinctCountries ?? 0"
           :classifications="summary?.classifications ?? []"
-          :show-layout="viewMode === 'grid'"
+          :show-layout="false"
           :filling-countries="fillingCountries"
           stacked
         />
@@ -66,10 +69,10 @@
           <FileSpreadsheet :size="14" aria-hidden="true" /> {{ t('collection.export.button') }}
         </button>
       </template>
-    </PwaCollectionHeader>
+    </MobileCollectionHeader>
 
     <DesktopCollectionHeader
-      v-if="!isPwa"
+      v-if="!isMobile"
       v-model:search="search"
       v-model:selected-denomination="selectedDenomination"
       v-model:selected-set="selectedSet"
@@ -150,7 +153,7 @@
       :select-mode="selectMode"
       :selected-coin-ids="selectedCoinIds"
       :selected-count="selectedCoinIds.size"
-      :is-pwa="isPwa"
+      :is-mobile="isMobile"
       :view-mode="viewMode"
       :grid-side="gridSide"
       :has-filters="hasFilters"
@@ -177,7 +180,7 @@
     />
 
     <!-- Room after the last coins (and the floating button in the app). -->
-    <div :class="isPwa ? 'h-24' : 'h-16'" aria-hidden="true" data-testid="collection-end-space"></div>
+    <div :class="isMobile ? 'h-24' : 'h-16'" aria-hidden="true" data-testid="collection-end-space"></div>
 
     <BulkActionBar
       :visible="selectMode && selectedCoinIds.size > 0"
@@ -205,10 +208,10 @@ import type { ImageType, HealthQuickAction } from '@/types'
 import { bulkAction, getCollectionSummary, type CollectionSummary } from '@/api/client'
 import { usePullToRefresh } from '@/composables/usePullToRefresh'
 import { useBulkSelect } from '@/composables/useBulkSelect'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { useCollectionFilters } from '@/composables/useCollectionFilters'
 import CollectionViewControls, { type CollectionLayout } from '@/components/collection/CollectionViewControls.vue'
-import PwaCollectionHeader from '@/components/collection/PwaCollectionHeader.vue'
+import MobileCollectionHeader from '@/components/collection/MobileCollectionHeader.vue'
 import DesktopCollectionHeader from '@/components/collection/DesktopCollectionHeader.vue'
 import CollectionContent from '@/components/collection/CollectionContent.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
@@ -231,6 +234,11 @@ const {
   fetchUserSets, loadCoins, loadCountryOptions, fillCountriesOnce, listParams,
 } = useCollectionFilters()
 
+// How many filters are on (not the search), shown on the phone's filter button.
+const activeFilterCount = computed(() => [
+  selectedDenomination.value, selectedSet.value, selectedCountry.value, selectedPeriod.value, selectedPresentation.value,
+  selectedRarity.value, selectedCirculation.value, selectedCommemorative.value, selectedClassification.value, selectedRepeated.value,
+].filter(Boolean).length)
 const hasFilters = computed(() => !!(search.value || selectedDenomination.value || selectedSet.value || selectedCountry.value || selectedPeriod.value || selectedPresentation.value || selectedRarity.value || selectedCirculation.value || selectedCommemorative.value || selectedClassification.value || selectedRepeated.value))
 // The spreadsheet of the coins shown, or of the whole collection.
 const showExport = ref(false)
@@ -331,8 +339,9 @@ function handleHealthQuickAction(coinId: number, action: HealthQuickAction) {
 }
 
 const savedView = localStorage.getItem('defaultView') as 'grid' | 'swipe' | null
-const { isPwa } = usePwa()
-const viewMode = ref<'grid' | 'swipe'>(isPwa ? (savedView || 'swipe') : 'grid')
+const { isMobile } = useLayout()
+// The grid by default (two coins a row on a phone); swipe when chosen on a phone.
+const viewMode = ref<'grid' | 'swipe'>(isMobile.value && savedView === 'swipe' ? 'swipe' : 'grid')
 const gridSide = ref<ImageType | null>(null)
 
 const pullContainer = ref<HTMLElement | null>(null)

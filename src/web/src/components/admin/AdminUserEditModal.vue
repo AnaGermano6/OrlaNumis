@@ -1,6 +1,6 @@
 <template>
-  <div v-if="user" class="fixed inset-0 z-[200] flex items-center justify-center bg-overlay-60 p-4" @click.self="$emit('close')">
-    <div class="card w-full max-w-[520px] p-6">
+  <BaseModal :open="Boolean(user)" :aria-label="user ? t('admin.users.editTitle', { name: user.username }) : ''" max-width="md:max-w-[520px]" @close="$emit('close')">
+    <template v-if="user">
       <h3 class="mb-4 text-lg font-medium text-heading">{{ t('admin.users.editTitle', { name: user.username }) }}</h3>
 
       <div class="mb-4">
@@ -47,8 +47,8 @@
       <div class="flex justify-end">
         <button type="button" class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="$emit('close')">{{ t('common.done') }}</button>
       </div>
-    </div>
-  </div>
+    </template>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
@@ -57,6 +57,7 @@ import type { UserInfo } from '@/types'
 import { deleteUser, resetUserPassword, updateUserRole } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
 import { t } from '@/i18n'
+import BaseModal from '@/components/ui/BaseModal.vue'
 
 const props = defineProps<{
   user: UserInfo | null

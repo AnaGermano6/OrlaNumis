@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { shallowMount } from '@vue/test-utils'
+import { DOMWrapper, shallowMount } from '@vue/test-utils'
 import type { Coin } from '@/types'
 import WishlistPage from '../WishlistPage.vue'
+
+// The page with its dialogs, which open at the end of the document.
+const page = () => new DOMWrapper(document.body)
 
 const mockStore = {
   loading: false,
@@ -9,17 +12,16 @@ const mockStore = {
   total: 0,
   fetchCoins: vi.fn(),
 }
-let mockIsPwa = false
+let mockIsMobile = false
 
 vi.mock('@/stores/coins', () => ({
   useCoinsStore: () => mockStore,
 }))
 
-vi.mock('@/composables/usePwa', () => ({
-  usePwa: () => ({
-    isPwa: mockIsPwa,
-  }),
-}))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(mockIsMobile) }) }
+})
 
 vi.mock('@/api/client', () => ({
   purchaseCoin: vi.fn(),
@@ -79,6 +81,7 @@ function mountPage() {
         DesktopPageContext: false,
         AppIconButton: false,
         Teleport: false,
+        BaseModal: false,
       },
     },
   })
@@ -90,7 +93,7 @@ describe('WishlistPage', () => {
     mockStore.coins = []
     mockStore.total = 0
     mockStore.fetchCoins.mockReset()
-    mockIsPwa = false
+    mockIsMobile = false
     document.body.innerHTML = `
       <div id="desktop-page-title"></div>
       <div id="desktop-page-actions"></div>
@@ -138,9 +141,9 @@ describe('WishlistPage', () => {
     addButton?.click()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[role="dialog"]').text()).toContain('Add from URL')
-    expect(wrapper.get('[role="dialog"]').text()).toContain('Add from image analysis')
-    expect(wrapper.get('a[href="/lookup"]').text()).toContain('Add from image analysis')
+    expect(page().get('[role="dialog"]').text()).toContain('Add from URL')
+    expect(page().get('[role="dialog"]').text()).toContain('Add from image analysis')
+    expect(page().get('a[href="/lookup"]').text()).toContain('Add from image analysis')
   })
 
   it('shows the desktop search alerts icon when wishlist coins are present', () => {
@@ -156,18 +159,18 @@ describe('WishlistPage', () => {
   })
 
   it('opens the add dialog from the PWA plus icon', async () => {
-    mockIsPwa = true
+    mockIsMobile = true
 
     const wrapper = mountPage()
 
     await wrapper.get('button[aria-label="Add to wishlist"]').trigger('click')
 
-    expect(wrapper.get('[role="dialog"]').text()).toContain('Add from URL')
-    expect(wrapper.get('[role="dialog"]').text()).toContain('Add from image analysis')
+    expect(page().get('[role="dialog"]').text()).toContain('Add from URL')
+    expect(page().get('[role="dialog"]').text()).toContain('Add from image analysis')
   })
 
   it('shows the finder agent icon in PWA mode when wishlist coins are present', () => {
-    mockIsPwa = true
+    mockIsMobile = true
     mockStore.coins = [createCoin(1)]
     mockStore.total = 1
 

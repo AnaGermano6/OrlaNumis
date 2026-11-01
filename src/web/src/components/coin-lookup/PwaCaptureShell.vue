@@ -437,8 +437,8 @@ defineExpose({ stopCamera })
 .capture-shell {
   position: fixed;
   inset: 0;
-  /* Above the app nav (z 100), below dialogs (z 2000) and toasts (z 1200). */
-  z-index: 500;
+  /* Above the app's top bar, below dialogs and toasts. */
+  z-index: var(--z-overlay);
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);

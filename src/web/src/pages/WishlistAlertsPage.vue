@@ -11,7 +11,7 @@
           <h1>{{ t('wishlistAlerts.title') }}</h1>
           <p class="mt-1 text-body text-text-muted">{{ t('wishlistAlerts.intro') }}</p>
         </div>
-        <div v-if="isPwa" class="pwa-actions">
+        <div v-if="isMobile" class="pwa-actions">
           <button class="pwa-icon-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" type="button" :title="t('wishlistAlerts.newAlert')" @click="startCreate">
             <Search :size="22" />
           </button>
@@ -170,7 +170,7 @@ import AlertCriteriaSummary from '@/components/wishlist-alerts/AlertCriteriaSumm
 import AlertForm from '@/components/wishlist-alerts/AlertForm.vue'
 import AlertRunHistory from '@/components/wishlist-alerts/AlertRunHistory.vue'
 import CandidateReviewCard from '@/components/wishlist-alerts/CandidateReviewCard.vue'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import {
   adjustWishlistSearchAlertCriteria,
   convertWishlistSearchAlertCandidate,
@@ -213,7 +213,7 @@ const candidateState = ref<AlertCandidateState | ''>('')
 const provenanceStatus = ref<CandidateProvenanceStatus | ''>('')
 const candidateBusyId = ref<number | null>(null)
 const duplicateWarnings = ref<Record<number, string[]>>({})
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 const RUN_POLL_INTERVAL_MS = 3000
 let runPollTimer: ReturnType<typeof setTimeout> | null = null
 

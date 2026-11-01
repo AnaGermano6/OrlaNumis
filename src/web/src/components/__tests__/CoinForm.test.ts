@@ -15,9 +15,10 @@ vi.mock('@/api/client', () => ({
   getMintLocations: apiMocks.getMintLocations,
 }))
 
-vi.mock('@/composables/usePwa', () => ({
-  usePwa: () => ({ isPwa: false }),
-}))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(false) }) }
+})
 
 vi.mock('@/composables/useCoinOptions', () => ({
   useCoinOptions: () => ({

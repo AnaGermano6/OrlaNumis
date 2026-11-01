@@ -5,7 +5,7 @@
     work with a mouse on a wide window.
   -->
   <PwaCaptureShell
-    v-if="isPwa"
+    v-if="isMobile"
     ref="pwaShell"
     v-bind="props"
     @captured="(role, file) => emit('captured', role, file)"
@@ -205,7 +205,7 @@ import { AlertCircle, Camera, Check, ChevronLeft, ChevronRight, Microscope, Sear
 import InlineCameraCapturePanel from '@/components/InlineCameraCapturePanel.vue'
 import PwaCaptureShell from '@/components/coin-lookup/PwaCaptureShell.vue'
 import VoiceDictationButton from '@/components/voice/VoiceDictationButton.vue'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { appendVoiceTranscript } from '@/composables/useVoiceDictation'
 import type { CoinLookupImageRole } from '@/types'
 import { t } from '@/i18n'
@@ -254,7 +254,7 @@ const emit = defineEmits<{
   'update:includePriceEstimate': [value: boolean]
 }>()
 
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 const pwaShell = ref<InstanceType<typeof PwaCaptureShell> | null>(null)
 
 const steps = computed(() => [

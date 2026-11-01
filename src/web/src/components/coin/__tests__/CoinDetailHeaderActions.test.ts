@@ -9,11 +9,12 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: pushMock }),
 }))
 
-const isPwa = ref(false)
+const isMobile = ref(false)
 
-vi.mock('@/composables/usePwa', () => ({
-  usePwa: () => ({ isPwa: isPwa.value }),
-}))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(isMobile.value) }) }
+})
 
 const routerLinkStub = {
   props: ['to'],
@@ -22,7 +23,7 @@ const routerLinkStub = {
 
 describe('CoinDetailHeaderActions', () => {
   beforeEach(() => {
-    isPwa.value = false
+    isMobile.value = false
   })
 
   it('routes back to wishlist gallery for wishlist items', async () => {
@@ -229,7 +230,7 @@ describe('CoinDetailHeaderActions', () => {
   })
 
   it.each([true, false])('moves share into the overflow menu in the PWA (isWishlist: %s)', async (isWishlist) => {
-    isPwa.value = true
+    isMobile.value = true
     const wrapper = mount(CoinDetailHeaderActions, {
       props: { isWishlist, coinId: 42 },
       global: {

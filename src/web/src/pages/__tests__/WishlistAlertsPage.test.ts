@@ -20,9 +20,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/api/client', () => mocks)
 
-vi.mock('@/composables/usePwa', () => ({
-  usePwa: () => ({ isPwa: false }),
-}))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(false) }) }
+})
 
 const alert = {
   id: 1,

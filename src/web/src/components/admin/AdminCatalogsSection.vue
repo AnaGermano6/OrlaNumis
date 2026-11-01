@@ -80,70 +80,68 @@
         </table>
       </div>
 
-      <div v-if="showForm" class="fixed inset-0 z-[200] flex items-center justify-center bg-overlay-60 p-4" @click.self="closeForm">
-        <div class="max-h-[90vh] w-full max-w-[500px] overflow-auto rounded-md border border-border-subtle bg-card shadow-[var(--shadow-card)]">
-          <div class="flex items-center justify-between gap-4 border-b border-border-subtle px-6 py-4">
-            <h3 class="m-0 text-lg font-medium text-heading">{{ editingCatalog ? t('admin.catalogs.editTitle') : t('admin.catalogs.addTitle') }}</h3>
-            <button
-              class="inline-flex h-[30px] w-[30px] items-center justify-center p-0 text-text-muted transition-colors hover:text-text-primary focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-              @click="closeForm"
-            >
-              ×
+      <BaseModal :open="showForm" :aria-label="editingCatalog ? t('admin.catalogs.editTitle') : t('admin.catalogs.addTitle')" max-width="md:max-w-[500px]" :padded="false" @close="closeForm">
+        <div class="flex items-center justify-between gap-4 border-b border-border-subtle px-6 py-4">
+          <h3 class="m-0 text-lg font-medium text-heading">{{ editingCatalog ? t('admin.catalogs.editTitle') : t('admin.catalogs.addTitle') }}</h3>
+          <button
+            class="inline-flex h-[30px] w-[30px] items-center justify-center p-0 text-text-muted transition-colors hover:text-text-primary focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
+            @click="closeForm"
+          >
+            ×
+          </button>
+        </div>
+        <form class="p-6" @submit.prevent="saveForm">
+          <div class="form-group">
+            <label class="form-label">{{ t('admin.catalogs.catalogCode') }}<span class="ml-[0.15rem] text-loss">*</span></label>
+            <input
+              v-model.trim="formData.catalog"
+              class="form-input"
+              :placeholder="t('admin.catalogs.codePlaceholder')"
+              required
+              :disabled="!!editingCatalog"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{ t('admin.catalogs.displayName') }}<span class="ml-[0.15rem] text-loss">*</span></label>
+            <input
+              v-model.trim="formData.displayName"
+              class="form-input"
+              :placeholder="t('admin.catalogs.namePlaceholder')"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{ t('admin.catalogs.era') }}<span class="ml-[0.15rem] text-loss">*</span></label>
+            <select v-model="formData.era" class="form-input" required>
+              <option value="" disabled>{{ t('admin.catalogs.selectEra') }}</option>
+              <option v-for="era in eraOptions" :key="era" :value="era">{{ eraLabel(era) }}</option>
+            </select>
+          </div>
+          <div class="form-group flex items-center justify-between gap-4">
+            <label class="form-label mb-0">{{ t('admin.catalogs.volumeRequired') }}</label>
+            <BaseToggle
+              v-model="formData.volumeRequired"
+              :label="t('admin.catalogs.volumeRequiredLabel')"
+            />
+          </div>
+          <div class="mt-6 flex flex-col gap-2 md:flex-row md:justify-end">
+            <button type="button" class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="closeForm">
+              {{ t('common.cancel') }}
+            </button>
+            <button type="submit" class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" :disabled="saving">
+              {{ saving ? t('common.saving') : t('common.save') }}
             </button>
           </div>
-          <form class="p-6" @submit.prevent="saveForm">
-            <div class="form-group">
-              <label class="form-label">{{ t('admin.catalogs.catalogCode') }}<span class="ml-[0.15rem] text-loss">*</span></label>
-              <input
-                v-model.trim="formData.catalog"
-                class="form-input"
-                :placeholder="t('admin.catalogs.codePlaceholder')"
-                required
-                :disabled="!!editingCatalog"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">{{ t('admin.catalogs.displayName') }}<span class="ml-[0.15rem] text-loss">*</span></label>
-              <input
-                v-model.trim="formData.displayName"
-                class="form-input"
-                :placeholder="t('admin.catalogs.namePlaceholder')"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">{{ t('admin.catalogs.era') }}<span class="ml-[0.15rem] text-loss">*</span></label>
-              <select v-model="formData.era" class="form-input" required>
-                <option value="" disabled>{{ t('admin.catalogs.selectEra') }}</option>
-                <option v-for="era in eraOptions" :key="era" :value="era">{{ eraLabel(era) }}</option>
-              </select>
-            </div>
-            <div class="form-group flex items-center justify-between gap-4">
-              <label class="form-label mb-0">{{ t('admin.catalogs.volumeRequired') }}</label>
-              <BaseToggle
-                v-model="formData.volumeRequired"
-                :label="t('admin.catalogs.volumeRequiredLabel')"
-              />
-            </div>
-            <div class="mt-6 flex flex-col gap-2 md:flex-row md:justify-end">
-              <button type="button" class="btn btn-secondary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" @click="closeForm">
-                {{ t('common.cancel') }}
-              </button>
-              <button type="submit" class="btn btn-primary btn-sm focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2" :disabled="saving">
-                {{ saving ? t('common.saving') : t('common.save') }}
-              </button>
-            </div>
-            <div
-              v-if="formError"
-              class="mt-4 flex items-center gap-2 rounded-sm border border-[color-mix(in_srgb,var(--color-negative)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-negative)_10%,transparent)] p-3 text-sm text-loss"
-              role="alert"
-            >
-              <AlertCircle :size="16" />
-              <span>{{ formError }}</span>
-            </div>
-          </form>
-        </div>
-      </div>
+          <div
+            v-if="formError"
+            class="mt-4 flex items-center gap-2 rounded-sm border border-[color-mix(in_srgb,var(--color-negative)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-negative)_10%,transparent)] p-3 text-sm text-loss"
+            role="alert"
+          >
+            <AlertCircle :size="16" />
+            <span>{{ formError }}</span>
+          </div>
+        </form>
+      </BaseModal>
     </template>
   </section>
 </template>
@@ -158,6 +156,7 @@ import { useDialog } from '@/composables/useDialog'
 import { useCoinOptions } from '@/composables/useCoinOptions'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import { t } from '@/i18n'
+import BaseModal from '@/components/ui/BaseModal.vue'
 import { eraLabel } from '@/i18n/coinVocabulary'
 
 const { showAlert, showConfirm } = useDialog()

@@ -1,6 +1,9 @@
-import { flushPromises, shallowMount } from '@vue/test-utils'
+import { config, flushPromises, shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CoinActionsPanel from '../CoinActionsPanel.vue'
+
+// Dialogs (BaseModal) render in place, where the wrapper finds them.
+config.global.stubs = { ...config.global.stubs, teleport: true }
 
 const routerPush = vi.fn()
 
@@ -47,7 +50,7 @@ describe('CoinActionsPanel Numista transition', () => {
         coinName: 'Trajan denarius',
         coinMaterial: 'Silver',
         imageCount: 0,
-        isPwa: false,
+        isMobile: false,
       },
       global: {
         stubs: {
@@ -85,11 +88,12 @@ describe('CoinActionsPanel Numista transition', () => {
         imageCount: 2,
         coinHasObverseImage: true,
         coinHasReverseImage: true,
-        isPwa: false,
+        isMobile: false,
       },
       global: {
         stubs: {
           CoinNumistaPanel: { template: '<section />' },
+          BaseModal: false,
           RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
         },
       },
@@ -121,11 +125,12 @@ describe('CoinActionsPanel Numista transition', () => {
         imageCount: 1,
         coinHasObverseImage: true,
         coinHasReverseImage: false,
-        isPwa: false,
+        isMobile: false,
       },
       global: {
         stubs: {
           CoinNumistaPanel: { template: '<section />' },
+          BaseModal: false,
           RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
         },
       },
@@ -155,11 +160,12 @@ describe('CoinActionsPanel Numista transition', () => {
         imageCount: 2,
         coinHasObverseImage: true,
         coinHasReverseImage: true,
-        isPwa: false,
+        isMobile: false,
       },
       global: {
         stubs: {
           CoinNumistaPanel: { template: '<section />' },
+          BaseModal: false,
           RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
         },
       },

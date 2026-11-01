@@ -262,6 +262,55 @@ describe('Design Token Enforcement (Constitution Principle VI)', () => {
       ).toEqual([])
     })
 
+    it('routes every dialog and sheet through BaseModal', () => {
+      // A full-screen backdrop made by hand misses what BaseModal gives every
+      // overlay: a sheet on a phone, its own scroll, the page held still
+      // behind it, Escape, and the agent's button hidden. These are not
+      // dialogs: the menu's drawer, a menu's tap-catcher, and full-screen
+      // views (image viewers, the chat, a loading screen) that register with
+      // useOverlayLayer themselves.
+      const allowed = new Set([
+        'components/ui/BaseModal.vue',
+        'App.vue',
+        'components/ui/AppOverflowMenu.vue',
+        'pages/SetDetailPage.vue',
+        'components/ImageLightbox.vue',
+        'components/numista/NumistaLookupPanel.vue',
+        'components/CoinSearchChat.vue',
+        'pages/AddCoinPage.vue',
+      ])
+      const violations = vueFiles
+        .map((file) => relative(SRC_DIR, file).split(sep).join('/'))
+        .filter((name) => !allowed.has(name))
+        .filter((name) => /\bfixed inset-0\b/.test(readFileSync(join(SRC_DIR, name), 'utf-8')))
+
+      expect(
+        violations,
+        `Dialogs and sheets must use BaseModal:\n  ${violations.join('\n  ')}`
+      ).toEqual([])
+    })
+
+    it('takes every overlapping layer from the scale in main.css', () => {
+      // z-(--z-overlay) and the like keep the order (header, agent button,
+      // dialogs, drawer, chat, confirmations, toasts) in one place. A number
+      // of its own is allowed only for stacking inside a component (10 at
+      // most).
+      const rawUtility = /\bz-\[(\d+)\]/g
+      const rawStyle = /z-index:\s*(\d+)/g
+      const violations = vueFiles.flatMap((file) => {
+        const content = readFileSync(file, 'utf-8')
+        const name = relative(SRC_DIR, file).split(sep).join('/')
+        return [...content.matchAll(rawUtility), ...content.matchAll(rawStyle)]
+          .filter((match) => Number(match[1]) > 10)
+          .map((match) => `${name}: ${match[0]}`)
+      })
+
+      expect(
+        violations,
+        `Layers must come from the scale (z-(--z-…), var(--z-…)):\n  ${violations.join('\n  ')}`
+      ).toEqual([])
+    })
+
     it('routes every run-status pill through BaseStatusBadge', () => {
       // A pill whose colour is chosen from a status expression must use the
       // primitive, regardless of how its utility classes are ordered.

@@ -42,7 +42,7 @@ describe('UI pattern recipes', () => {
 
     // The wizard picks the presentation; both pages keep passing through it.
     expect(wizard).toContain('<PwaCaptureShell')
-    expect(wizard).toContain("v-if=\"isPwa\"")
+    expect(wizard).toContain("v-if=\"isMobile\"")
     expect(wizard).toContain('v-else class="capture-wizard"')
 
     // Shell chrome: close, Add/Identify segments, Quick Capture, rail, stage,
@@ -146,7 +146,7 @@ describe('UI pattern recipes', () => {
     expect(app).toContain('@pointermove="moveAgentFabDrag"')
     expect(app).toContain('@pointerup="stopAgentFabDrag"')
 
-    const fabButtonMatch = app.match(/<button\s+v-if="isPwa[^>]*aria-label="t\('app\.openAgent'\)"/s)
+    const fabButtonMatch = app.match(/<button\s+v-if="isMobile[^>]*aria-label="t\('app\.openAgent'\)"/s)
     expect(fabButtonMatch).not.toBeNull()
     const fabButtonSource = fabButtonMatch![0]
     expect(fabButtonSource).toContain('fixed')

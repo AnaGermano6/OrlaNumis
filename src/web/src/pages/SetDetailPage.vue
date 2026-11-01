@@ -39,7 +39,7 @@
               <p v-if="set.description" class="mt-0.5 truncate text-base text-text-secondary">{{ set.description }}</p>
             </div>
           </div>
-          <div v-if="isPwa" class="pwa-actions">
+          <div v-if="isMobile" class="pwa-actions">
             <button class="pwa-icon-btn" :title="t('sets.backToSets')" @click="router.push({ name: 'sets' })"><ArrowLeft :size="22" /></button>
             <button class="pwa-icon-btn" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" :title="t('sets.detail.setActions')" :aria-label="t('sets.detail.setActions')" @click="menuOpen = !menuOpen"><Menu :size="22" /></button>
           </div>
@@ -164,66 +164,60 @@
       </div>
     </div>
 
-    <div v-if="showAddCoinModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4" @click.self="showAddCoinModal = false">
-      <div class="card w-[90%] max-w-[500px] p-8">
-        <h2 class="mt-0">{{ t('sets.detail.addCoinToSet') }}</h2>
-        <form @submit.prevent="addCoin">
-          <SetCoinPicker v-model="coinIdToAdd" :excluded-ids="coins.map(coin => coin.id)" :allow-wishlist="normalizedSetType === 'goal'" search-id="coinSearch" select-id="coinToAdd" />
-          <div class="mt-6 flex justify-end gap-2">
-            <button type="button" class="btn btn-secondary" @click="showAddCoinModal = false">{{ t('common.cancel') }}</button>
-            <button type="submit" class="btn btn-primary" :disabled="!coinIdToAdd">{{ t('nav.addCoin') }}</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <BaseModal :open="showAddCoinModal" :aria-label="t('sets.detail.addCoinToSet')" max-width="md:max-w-[500px]" @close="showAddCoinModal = false">
+      <h2 class="mt-0">{{ t('sets.detail.addCoinToSet') }}</h2>
+      <form @submit.prevent="addCoin">
+        <SetCoinPicker v-model="coinIdToAdd" :excluded-ids="coins.map(coin => coin.id)" :allow-wishlist="normalizedSetType === 'goal'" search-id="coinSearch" select-id="coinToAdd" />
+        <div class="mt-6 flex justify-end gap-2">
+          <button type="button" class="btn btn-secondary" @click="showAddCoinModal = false">{{ t('common.cancel') }}</button>
+          <button type="submit" class="btn btn-primary" :disabled="!coinIdToAdd">{{ t('nav.addCoin') }}</button>
+        </div>
+      </form>
+    </BaseModal>
 
-    <div v-if="showAssignSlotModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4" @click.self="showAssignSlotModal = false">
-      <div class="card w-[90%] max-w-[500px] p-8">
-        <h2 class="mt-0">{{ t('sets.detail.assignToSlot') }}</h2>
-        <p class="section-label mb-3">{{ slotTargetLabel }}</p>
-        <form @submit.prevent="assignCoinToSlot">
-          <SetCoinPicker v-model="slotCoinIdToAssign" :selected-coin="coins.find(coin => coin.id === currentSlotCoinId)" :excluded-ids="assignedToOtherSlots" :allow-wishlist="false" search-id="slotCoinSearch" select-id="slotCoinToAssign" />
-          <p v-if="slotAssignmentError" class="mt-2 text-chip text-error-bg" role="alert">{{ slotAssignmentError }}</p>
-          <div class="mt-6 flex justify-end gap-2">
-            <button type="button" class="btn btn-ghost" :disabled="slotAssignmentSaving" @click="showAssignSlotModal = false">{{ t('common.cancel') }}</button>
-            <button v-if="currentSlotCoinId" type="button" class="btn btn-danger" :disabled="slotAssignmentSaving" @click="clearSlotAssignment">{{ t('sets.detail.clearSlot') }}</button>
-            <button type="submit" class="btn btn-primary" :disabled="!slotCoinIdToAssign || slotAssignmentSaving">
-              {{ currentSlotCoinId ? t('sets.detail.replaceCoin') : t('sets.detail.assignCoin') }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <BaseModal :open="showAssignSlotModal" :aria-label="t('sets.detail.assignToSlot')" max-width="md:max-w-[500px]" :dismissible="!slotAssignmentSaving" @close="showAssignSlotModal = false">
+      <h2 class="mt-0">{{ t('sets.detail.assignToSlot') }}</h2>
+      <p class="section-label mb-3">{{ slotTargetLabel }}</p>
+      <form @submit.prevent="assignCoinToSlot">
+        <SetCoinPicker v-model="slotCoinIdToAssign" :selected-coin="coins.find(coin => coin.id === currentSlotCoinId)" :excluded-ids="assignedToOtherSlots" :allow-wishlist="false" search-id="slotCoinSearch" select-id="slotCoinToAssign" />
+        <p v-if="slotAssignmentError" class="mt-2 text-chip text-error-bg" role="alert">{{ slotAssignmentError }}</p>
+        <div class="mt-6 flex justify-end gap-2">
+          <button type="button" class="btn btn-ghost" :disabled="slotAssignmentSaving" @click="showAssignSlotModal = false">{{ t('common.cancel') }}</button>
+          <button v-if="currentSlotCoinId" type="button" class="btn btn-danger" :disabled="slotAssignmentSaving" @click="clearSlotAssignment">{{ t('sets.detail.clearSlot') }}</button>
+          <button type="submit" class="btn btn-primary" :disabled="!slotCoinIdToAssign || slotAssignmentSaving">
+            {{ currentSlotCoinId ? t('sets.detail.replaceCoin') : t('sets.detail.assignCoin') }}
+          </button>
+        </div>
+      </form>
+    </BaseModal>
 
-    <div v-if="showEditModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4" @click.self="showEditModal = false">
-      <div class="card max-h-[90vh] w-[90%] max-w-[560px] overflow-y-auto p-8">
-        <h2 class="mt-0">{{ t('sets.detail.editSet') }}</h2>
-        <form @submit.prevent="updateSet">
-          <div class="form-group">
-            <label for="editName" class="form-label">{{ t('common.name') }}</label>
-            <input id="editName" v-model="editForm.name" type="text" class="form-input" required maxlength="80" />
-          </div>
-          <div class="form-group">
-            <label for="editDescription" class="form-label">{{ t('common.description') }}</label>
-            <textarea id="editDescription" v-model="editForm.description" rows="3" class="form-input" maxlength="2000" />
-          </div>
-          <div class="form-group">
-            <label for="editColor" class="form-label">{{ t('common.color') }}</label>
-            <input id="editColor" v-model="editForm.color" type="color" class="form-input h-11 cursor-pointer p-1" />
-          </div>
-          <!-- A smart set's filters; rules the filters cannot show stay as they are. -->
-          <div v-if="editFilters" class="form-group">
-            <span class="form-label">{{ t('sets.filters.title') }}</span>
-            <SetSimpleFilters v-model="editFilters" />
-          </div>
-          <p v-else-if="normalizedSetType === 'smart'" class="text-chip text-text-muted" data-testid="edit-advanced-rules">{{ t('sets.filters.advanced') }}</p>
-          <div class="mt-6 flex justify-end gap-2">
-            <button type="button" class="btn btn-secondary" @click="showEditModal = false">{{ t('common.cancel') }}</button>
-            <button type="submit" class="btn btn-primary">{{ t('common.update') }}</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <BaseModal :open="showEditModal" :aria-label="t('sets.detail.editSet')" max-width="md:max-w-[560px]" @close="showEditModal = false">
+      <h2 class="mt-0">{{ t('sets.detail.editSet') }}</h2>
+      <form @submit.prevent="updateSet">
+        <div class="form-group">
+          <label for="editName" class="form-label">{{ t('common.name') }}</label>
+          <input id="editName" v-model="editForm.name" type="text" class="form-input" required maxlength="80" />
+        </div>
+        <div class="form-group">
+          <label for="editDescription" class="form-label">{{ t('common.description') }}</label>
+          <textarea id="editDescription" v-model="editForm.description" rows="3" class="form-input" maxlength="2000" />
+        </div>
+        <div class="form-group">
+          <label for="editColor" class="form-label">{{ t('common.color') }}</label>
+          <input id="editColor" v-model="editForm.color" type="color" class="form-input h-11 cursor-pointer p-1" />
+        </div>
+        <!-- A smart set's filters; rules the filters cannot show stay as they are. -->
+        <div v-if="editFilters" class="form-group">
+          <span class="form-label">{{ t('sets.filters.title') }}</span>
+          <SetSimpleFilters v-model="editFilters" />
+        </div>
+        <p v-else-if="normalizedSetType === 'smart'" class="text-chip text-text-muted" data-testid="edit-advanced-rules">{{ t('sets.filters.advanced') }}</p>
+        <div class="mt-6 flex justify-end gap-2">
+          <button type="button" class="btn btn-secondary" @click="showEditModal = false">{{ t('common.cancel') }}</button>
+          <button type="submit" class="btn btn-primary">{{ t('common.update') }}</button>
+        </div>
+      </form>
+    </BaseModal>
   </div>
 </template>
 
@@ -246,16 +240,17 @@ import SetCoinPicker from '@/components/sets/SetCoinPicker.vue'
 import SetSimpleFilters from '@/components/sets/SetSimpleFilters.vue'
 import { useSetDetails } from '@/composables/useSetDetails'
 import SetCompletionChecklist from '@/components/sets/SetCompletionChecklist.vue'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { agenticAlbumSlots, checklistAlbumSlot, checklistDescription, coinAlbumSlot, type AlbumSlot } from '@/utils/setAlbum'
 import { criteriaToFilters, filtersName, filtersToCriteria, type SimpleSetFilters } from '@/utils/setFilters'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { t } from '@/i18n'
+import BaseModal from '@/components/ui/BaseModal.vue'
 
 const router = useRouter()
 const route = useRoute()
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 const setId = computed(() => Number(route.params.id))
 const { loading, set, coins, completion, checklist, error: loadError, load: loadSetDetails, capture } = useSetDetails(setId)
 const savingOrder = ref(false)

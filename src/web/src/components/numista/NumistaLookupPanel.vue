@@ -232,7 +232,7 @@
     <Teleport to="body">
       <div
         v-if="activeCandidateImage"
-        class="fixed inset-0 z-[2000] flex items-center justify-center bg-overlay-full p-3"
+        class="fixed inset-0 z-(--z-dialog) flex items-center justify-center bg-overlay-full p-3"
         data-testid="numista-image-overlay"
         @click.self="closeCandidateImage"
       >
@@ -270,7 +270,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { X, ZoomIn } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import { enrichNumista, lookupNumista } from '@/api/client'
@@ -291,6 +291,7 @@ import type {
   NumistaQuerySource,
 } from '@/types'
 import { t } from '@/i18n'
+import { useOverlayLayer } from '@/composables/useOverlayLayer'
 
 const QUERY_GENERATION_VERSION = 'numista-query-v2' as const
 
@@ -649,17 +650,10 @@ function closeCandidateImage() {
   void nextTick(() => trigger?.focus())
 }
 
-function handleDocumentKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape' && activeCandidateImage.value) {
-    event.preventDefault()
-    closeCandidateImage()
-  }
-}
-
-onMounted(() => document.addEventListener('keydown', handleDocumentKeydown))
+// The enlarged photo is an overlay: Escape closes it, the page stays put.
+useOverlayLayer(computed(() => Boolean(activeCandidateImage.value)), closeCandidateImage)
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleDocumentKeydown)
   cancelEnrichment(false)
 })
 </script>

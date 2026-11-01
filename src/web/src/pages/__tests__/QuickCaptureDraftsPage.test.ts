@@ -16,9 +16,10 @@ vi.mock('@/api/client', () => ({
   listQuickCaptureDrafts: vi.fn(),
 }))
 
-vi.mock('@/composables/usePwa', () => ({
-  usePwa: () => ({ isPwa: false }),
-}))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(false) }) }
+})
 
 describe('QuickCaptureDraftsPage', () => {
   beforeEach(() => {

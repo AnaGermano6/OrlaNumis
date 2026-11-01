@@ -1,5 +1,5 @@
 <template>
-  <div class="sticky top-[60px] z-50 mx-[-2rem] bg-surface px-8 pb-2">
+  <div class="container-bleed sticky top-[60px] z-(--z-sticky) bg-surface pb-2">
     <div class="mb-4 flex flex-col gap-3 rounded-md border border-border-subtle bg-card p-4 shadow-card">
       <SearchBar
         class="!max-w-none"

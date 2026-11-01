@@ -198,7 +198,7 @@
             </div>
             <div class="flex items-center gap-2">
               <input type="file" accept=".jpg,.jpeg,.png" class="form-input min-w-0 flex-1 text-base" :aria-label="t('coinForm.uploadObverseImage')" @change="onObverseFile" ref="obverseInput" />
-              <label v-if="isPwa" class="btn btn-secondary btn-sm inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap">
+              <label v-if="isMobile" class="btn btn-secondary btn-sm inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap">
                 <Camera :size="14" /> {{ t('coinDetail.actions.photo') }}
                 <input type="file" accept="image/*" capture="environment" hidden @change="onObverseFile" />
               </label>
@@ -213,7 +213,7 @@
             </div>
             <div class="flex items-center gap-2">
               <input type="file" accept=".jpg,.jpeg,.png" class="form-input min-w-0 flex-1 text-base" :aria-label="t('coinForm.uploadReverseImage')" @change="onReverseFile" ref="reverseInput" />
-              <label v-if="isPwa" class="btn btn-secondary btn-sm inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap">
+              <label v-if="isMobile" class="btn btn-secondary btn-sm inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap">
                 <Camera :size="14" /> {{ t('coinDetail.actions.photo') }}
                 <input type="file" accept="image/*" capture="environment" hidden @change="onReverseFile" />
               </label>
@@ -320,7 +320,7 @@ import AutocompleteInput from '@/components/AutocompleteInput.vue'
 import QuantityInput from '@/components/ui/QuantityInput.vue'
 import CreateMintModal from '@/components/CreateMintModal.vue'
 import { X, Camera } from 'lucide-vue-next'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { useCoinOptions } from '@/composables/useCoinOptions'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import { materialLabel } from '@/utils/format'
@@ -334,7 +334,7 @@ function unwrapMintLocations(data: MintLocationsResponse): MintLocation[] {
   return Array.isArray(data) ? data : data.mintLocations ?? []
 }
 
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 const { categoryOptions, eraOptions, materialOptions, loadOptions } = useCoinOptions()
 
 const props = defineProps<{

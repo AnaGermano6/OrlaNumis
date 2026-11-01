@@ -1,7 +1,10 @@
-import { flushPromises, shallowMount } from '@vue/test-utils'
+import { config, flushPromises, shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SetDetailPage from '@/pages/SetDetailPage.vue'
 import { buildRomanDenariusCore } from '@/test/fixtures/coins'
+
+// Dialogs (BaseModal) render in place, where the wrapper finds them.
+config.global.stubs = { ...config.global.stubs, teleport: true }
 
 const mockAddCoinToSet = vi.fn()
 const mockDeleteSet = vi.fn()
@@ -33,11 +36,12 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
 }))
 
-const mockIsPwa = vi.hoisted(() => ({ value: false }))
+const mockIsMobile = vi.hoisted(() => ({ value: false }))
 
-vi.mock('@/composables/usePwa', () => ({
-  usePwa: () => ({ isPwa: mockIsPwa.value }),
-}))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(mockIsMobile.value) }) }
+})
 
 const defaultSet = {
   id: 7,
@@ -51,6 +55,7 @@ const defaultSet = {
 
 const defaultStubs = {
   SetCompletionChecklist: true,
+  BaseModal: false,
   DesktopPageContext: {
     props: ['title'],
     template: '<div><slot /><slot name="actions" /><slot name="desktop" /></div>',
@@ -77,7 +82,7 @@ function mockSetDetailLoad(coins = [
 describe('SetDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockIsPwa.value = false
+    mockIsMobile.value = false
     vi.stubGlobal('confirm', vi.fn(() => true))
     mockSetDetailLoad()
   })

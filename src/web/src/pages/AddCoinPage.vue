@@ -16,7 +16,7 @@
           </template>
           <header class="page-header">
             <h1>{{ t('nav.addCoin') }}</h1>
-            <div v-if="!isPwa" class="ml-auto flex shrink-0 gap-[0.35rem]">
+            <div v-if="!isMobile" class="ml-auto flex shrink-0 gap-[0.35rem]">
               <button type="button" class="chip border border-border-subtle" :class="{ 'border-gold': entryMode === 'manual' }" @click="entryMode = 'manual'">
                 {{ t('addCoin.manualMode') }}
               </button>
@@ -35,7 +35,7 @@
 
         <section v-if="entryMode === 'agentic'" class="relative grid gap-4">
           <!-- Loading overlay for AI analysis -->
-          <div v-if="intakeLoading" class="fixed inset-0 z-[1000] flex items-center justify-center bg-overlay-full backdrop-blur-[4px]">
+          <div v-if="intakeLoading" class="fixed inset-0 z-(--z-overlay) flex items-center justify-center bg-overlay-full backdrop-blur-[4px]">
             <div class="mx-4 flex max-w-[20rem] flex-col items-center gap-4 rounded-md border border-border-subtle bg-card p-8">
               <div class="flex h-12 w-12 items-center justify-center">
                 <div class="h-10 w-10 animate-spin rounded-full border-[3px] border-border-subtle border-t-gold"></div>
@@ -45,7 +45,7 @@
           </div>
 
           <CoinLookupCaptureWizard
-            v-if="!isPwa || !draft"
+            v-if="!isMobile || !draft"
             ref="captureWizard"
             purpose="intake"
             :obverse="captureImages.obverse"
@@ -281,7 +281,8 @@ import { photoCreditLine, type RealPhotoChoice } from '@/utils/coinPhotos'
 import { validQuantity } from '@/utils/coinAttributes'
 import type { CoinPhotoCandidate } from '@/api/client'
 import { useDialog } from '@/composables/useDialog'
-import { usePwa } from '@/composables/usePwa'
+import { useOverlayLayer } from '@/composables/useOverlayLayer'
+import { useLayout } from '@/composables/useLayout'
 import { useCoinOptions } from '@/composables/useCoinOptions'
 import { useWishlistLeave } from '@/composables/useWishlistLeave'
 import CoinLookupCaptureWizard from '@/components/coin-lookup/CoinLookupCaptureWizard.vue'
@@ -299,15 +300,17 @@ const route = useRoute()
 const router = useRouter()
 const store = useCoinsStore()
 const { showAlert } = useDialog()
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 const { categoryOptions, materialOptions, eraOptions, loadOptions } = useCoinOptions()
 const { offerToLeaveWishlist } = useWishlistLeave()
 
 const wishlistDefault = route.query.wishlist === 'true'
-const entryMode = ref<EntryMode>(isPwa ? 'agentic' : 'manual')
+const entryMode = ref<EntryMode>(isMobile.value ? 'agentic' : 'manual')
 
 const saving = ref(false)
 const intakeLoading = ref(false)
+// The page waits behind the loading overlay while the draft is prepared.
+useOverlayLayer(intakeLoading)
 const committingDraft = ref(false)
 const intakeError = ref('')
 const intakeWarning = ref('')

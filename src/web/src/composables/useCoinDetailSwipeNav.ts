@@ -7,7 +7,7 @@
 import { computed, type Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { COIN_DETAIL_SECTIONS, SECTION_ORDER } from '@/constants/coinDetailSections'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { useAuthStore } from '@/stores/auth'
 import { useSwipeGesture } from '@/composables/useSwipeGesture'
 
@@ -28,9 +28,9 @@ export function useCoinDetailSwipeNav(
   containerRef: Ref<HTMLElement | null>,
   options?: { enabled?: Ref<boolean> },
 ): void {
-  const { isPwa } = usePwa()
-  // Exit immediately for non-PWA; no lifecycle hooks registered, no overhead.
-  if (!isPwa) return
+  const { isMobile } = useLayout()
+  // A phone's gesture: elsewhere no lifecycle hooks are registered, no overhead.
+  if (!isMobile.value) return
 
   const auth = useAuthStore()
   const route = useRoute()

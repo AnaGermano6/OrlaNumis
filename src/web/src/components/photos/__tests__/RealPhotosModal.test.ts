@@ -1,8 +1,11 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { config, flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
 import RealPhotosModal from '../RealPhotosModal.vue'
 import type { CoinPhotoCandidate } from '@/api/client'
+
+// Dialogs (BaseModal) render in place, where the wrapper finds them.
+config.global.stubs = { ...config.global.stubs, teleport: true }
 
 const mocks = vi.hoisted(() => ({ importCoinImage: vi.fn() }))
 vi.mock('@/api/client', () => ({ importCoinImage: mocks.importCoinImage }))

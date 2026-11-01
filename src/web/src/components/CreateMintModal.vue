@@ -1,73 +1,69 @@
 <template>
-  <Teleport to="body">
-    <div v-if="open" class="fixed inset-0 z-[300] flex items-center justify-center bg-overlay-60 p-4" @click.self="handleClose">
-      <div class="flex max-h-[90vh] w-full max-w-[520px] flex-col overflow-hidden rounded-md border border-border-subtle bg-card shadow-[0_12px_40px_var(--overlay-50)]">
-        <div class="flex items-center justify-between gap-4 border-b border-border-subtle px-5 py-4">
-          <h3 class="m-0 text-lg font-medium text-heading">{{ t('mint.createTitle') }}</h3>
-          <button class="inline-flex h-[30px] w-[30px] items-center justify-center p-0 text-text-muted hover:text-text-primary" @click="handleClose">×</button>
-        </div>
+  <BaseModal :open="open" :aria-label="t('mint.createTitle')" max-width="md:max-w-[520px]" :padded="false" @close="handleClose">
+    <div class="flex items-center justify-between gap-4 border-b border-border-subtle px-5 py-4">
+      <h3 class="m-0 text-lg font-medium text-heading">{{ t('mint.createTitle') }}</h3>
+      <button class="inline-flex h-[30px] w-[30px] items-center justify-center p-0 text-text-muted hover:text-text-primary" @click="handleClose">×</button>
+    </div>
 
-        <div class="flex flex-1 flex-col gap-3 overflow-y-auto p-5">
-          <div class="form-group min-w-0">
-            <label class="form-label">{{ t('mint.name') }}</label>
-            <div class="flex gap-2">
-              <input
-                v-model="name"
-                class="form-input flex-1"
-                :placeholder="t('mint.namePlaceholder')"
-                @keydown.enter.prevent="search"
-              />
-              <button type="button" class="btn btn-secondary btn-sm" :disabled="searching || !name.trim()" @click="search">
-                {{ searching ? t('mint.searching') : t('mint.search') }}
-              </button>
-            </div>
-          </div>
-
-          <p v-if="searched && candidates.length === 0" class="text-body text-text-secondary">
-            {{ t('mint.noMatches', { name: lastSearchedName }) }}
-          </p>
-
-          <div v-if="candidates.length > 1" class="flex flex-wrap gap-[0.35rem]">
-            <button
-              v-for="(candidate, idx) in candidates"
-              :key="idx"
-              type="button"
-              class="chip chip-sm"
-              :class="{ active: selectedCandidateIdx === idx }"
-              @click="selectCandidate(idx)"
-            >
-              {{ candidate.displayName }}
-            </button>
-          </div>
-
-          <div ref="mapElement" class="mint-pin-picker" data-testid="create-mint-map"></div>
-
-          <p class="text-body text-text-secondary">
-            {{ pin ? t('mint.pinSet', { lat: pin.lat.toFixed(4), lng: pin.lng.toFixed(4) }) : t('mint.clickMap') }}
-          </p>
-
-          <div class="form-group min-w-0">
-            <label class="form-label">{{ t('mint.region') }}</label>
-            <input v-model="region" class="form-input" :placeholder="t('mint.regionPlaceholder')" />
-          </div>
-
-          <p v-if="error" class="text-body text-loss">{{ error }}</p>
-        </div>
-
-        <div class="flex justify-end gap-2 border-t border-border-subtle px-5 py-4">
-          <button type="button" class="btn btn-secondary btn-sm" @click="handleClose">{{ t('common.cancel') }}</button>
-          <button
-            type="button"
-            class="btn btn-primary btn-sm"
-            :disabled="!canSave || saving"
-            @click="save"
-          >
-            {{ saving ? t('mint.saving') : t('mint.save') }}
+    <div class="flex flex-1 flex-col gap-3 overflow-y-auto p-5">
+      <div class="form-group min-w-0">
+        <label class="form-label">{{ t('mint.name') }}</label>
+        <div class="flex gap-2">
+          <input
+            v-model="name"
+            class="form-input flex-1"
+            :placeholder="t('mint.namePlaceholder')"
+            @keydown.enter.prevent="search"
+          />
+          <button type="button" class="btn btn-secondary btn-sm" :disabled="searching || !name.trim()" @click="search">
+            {{ searching ? t('mint.searching') : t('mint.search') }}
           </button>
         </div>
       </div>
+
+      <p v-if="searched && candidates.length === 0" class="text-body text-text-secondary">
+        {{ t('mint.noMatches', { name: lastSearchedName }) }}
+      </p>
+
+      <div v-if="candidates.length > 1" class="flex flex-wrap gap-[0.35rem]">
+        <button
+          v-for="(candidate, idx) in candidates"
+          :key="idx"
+          type="button"
+          class="chip chip-sm"
+          :class="{ active: selectedCandidateIdx === idx }"
+          @click="selectCandidate(idx)"
+        >
+          {{ candidate.displayName }}
+        </button>
+      </div>
+
+      <div ref="mapElement" class="mint-pin-picker" data-testid="create-mint-map"></div>
+
+      <p class="text-body text-text-secondary">
+        {{ pin ? t('mint.pinSet', { lat: pin.lat.toFixed(4), lng: pin.lng.toFixed(4) }) : t('mint.clickMap') }}
+      </p>
+
+      <div class="form-group min-w-0">
+        <label class="form-label">{{ t('mint.region') }}</label>
+        <input v-model="region" class="form-input" :placeholder="t('mint.regionPlaceholder')" />
+      </div>
+
+      <p v-if="error" class="text-body text-loss">{{ error }}</p>
     </div>
-  </Teleport>
+
+    <div class="flex justify-end gap-2 border-t border-border-subtle px-5 py-4">
+      <button type="button" class="btn btn-secondary btn-sm" @click="handleClose">{{ t('common.cancel') }}</button>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        :disabled="!canSave || saving"
+        @click="save"
+      >
+        {{ saving ? t('mint.saving') : t('mint.save') }}
+      </button>
+    </div>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
@@ -78,6 +74,7 @@ import { createMintLocation, geocodeMintName } from '@/api/client'
 import type { GeocodeCandidate, MintLocation } from '@/types'
 import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, OSM_ATTRIBUTION, OSM_TILE_URL } from '@/utils/mintMap'
 import { t } from '@/i18n'
+import BaseModal from '@/components/ui/BaseModal.vue'
 
 const props = defineProps<{
   open: boolean

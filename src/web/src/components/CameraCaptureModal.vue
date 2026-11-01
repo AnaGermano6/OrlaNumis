@@ -60,6 +60,7 @@
 import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { Camera, X } from 'lucide-vue-next'
 import { t } from '@/i18n'
+import { useOverlayLayer } from '@/composables/useOverlayLayer'
 
 const props = withDefaults(
   defineProps<{
@@ -258,6 +259,9 @@ function handleBackdropClick() {
   handleClose()
 }
 
+// While open the page behind does not scroll; Escape closes the camera.
+useOverlayLayer(computed(() => props.isOpen), handleClose)
+
 // Watch for modal open state
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
@@ -291,7 +295,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   padding: 1rem;
 }
 

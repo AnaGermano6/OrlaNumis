@@ -10,7 +10,7 @@
       <button class="btn btn-sm btn-secondary" @click="$emit('deselect-all')">{{ t('collection.deselectAll') }}</button>
       <span class="ml-2 text-body text-text-secondary">{{ t('collection.selectedCount', { count: selectedCount }) }}</span>
     </div>
-    <SwipeGallery v-if="isPwa && viewMode === 'swipe' && !selectMode && groupBy === 'none'" :coins="coins" :total="total" :page="page" :per-page="perPage" @page-change="$emit('page-change', $event)" />
+    <SwipeGallery v-if="isMobile && viewMode === 'swipe' && !selectMode && groupBy === 'none'" :coins="coins" :total="total" :page="page" :per-page="perPage" @page-change="$emit('page-change', $event)" />
     <template v-else>
       <p v-if="truncated" class="mb-3 text-body text-text-secondary" role="status">{{ t('collection.groups.truncated', { shown: coins.length, total }) }}</p>
       <section
@@ -74,7 +74,7 @@ const props = withDefaults(defineProps<{
   selectMode: boolean
   selectedCoinIds: Set<number>
   selectedCount: number
-  isPwa: boolean
+  isMobile: boolean
   viewMode: 'grid' | 'swipe'
   gridSide: ImageType | null
   hasFilters: boolean

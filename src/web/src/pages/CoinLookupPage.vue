@@ -7,7 +7,7 @@
             <List :size="20" />
           </AppIconButton>
         </template>
-        <div v-if="!isPwa || state !== 'capture'" class="page-header">
+        <div v-if="!isMobile || state !== 'capture'" class="page-header">
           <h1>{{ t('nav.identifyCoin') }}</h1>
           <div class="pwa-actions">
             <RouterLink class="pwa-icon-btn" to="/quick-capture/drafts" :title="t('quickCapture.allDrafts')" :aria-label="t('quickCapture.allDrafts')">
@@ -42,29 +42,27 @@
         />
       </div>
 
-      <div v-if="showDeepAnalysisModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-overlay p-4" @click.self="showDeepAnalysisModal = false">
-        <div class="card max-h-[90vh] w-full max-w-[640px] overflow-y-auto p-6">
-          <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-lg text-heading">{{ t('deepAnalysis.title') }}</h2>
-            <AppIconButton :title="t('common.close')" @click="showDeepAnalysisModal = false">
-              <X :size="18" />
-            </AppIconButton>
-          </div>
-          <DeepAnalysisStartPanel
-            reuse-captured-evidence
-            :initial-obverse-image="obverseImage?.file ?? null"
-            :initial-reverse-image="reverseImage?.file ?? null"
-            :initial-hint-images="notesImage ? [notesImage.file] : []"
-            :initial-notes="captureNotes"
-            :eligible-providers="deepAnalysisProviders"
-            :submitting="deepIdentification.starting.value"
-            :submit-error="deepIdentification.error.value"
-            :conflict-job-id="launcher.capacityConflictJobId.value"
-            @submit="onDeepAnalysisSubmit"
-            @cancel="showDeepAnalysisModal = false"
-          />
+      <BaseModal :open="showDeepAnalysisModal" :aria-label="t('deepAnalysis.title')" max-width="md:max-w-[640px]" @close="showDeepAnalysisModal = false">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-lg text-heading">{{ t('deepAnalysis.title') }}</h2>
+          <AppIconButton :title="t('common.close')" @click="showDeepAnalysisModal = false">
+            <X :size="18" />
+          </AppIconButton>
         </div>
-      </div>
+        <DeepAnalysisStartPanel
+          reuse-captured-evidence
+          :initial-obverse-image="obverseImage?.file ?? null"
+          :initial-reverse-image="reverseImage?.file ?? null"
+          :initial-hint-images="notesImage ? [notesImage.file] : []"
+          :initial-notes="captureNotes"
+          :eligible-providers="deepAnalysisProviders"
+          :submitting="deepIdentification.starting.value"
+          :submit-error="deepIdentification.error.value"
+          :conflict-job-id="launcher.capacityConflictJobId.value"
+          @submit="onDeepAnalysisSubmit"
+          @cancel="showDeepAnalysisModal = false"
+        />
+      </BaseModal>
 
       <!-- Analyzing State -->
       <div v-if="state === 'analyzing'" class="flex flex-col items-center justify-center px-8 py-16 text-center">
@@ -325,8 +323,9 @@ import { useDeepAnalysisLauncher } from '@/composables/useDeepAnalysisLauncher'
 import { selectedNumistaReferenceFromCandidate } from '@/utils/numistaLookup'
 import { normalizeGalleryImage } from '@/utils/galleryImage'
 import { useAuthStore } from '@/stores/auth'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { t } from '@/i18n'
+import BaseModal from '@/components/ui/BaseModal.vue'
 
 interface CapturedImage {
   role: CoinLookupImageRole
@@ -338,7 +337,7 @@ type LookupState = 'capture' | 'analyzing' | 'results'
 
 const router = useRouter()
 const auth = useAuthStore()
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 
 const state = ref<LookupState>('capture')
 const capturedImages = ref<CapturedImage[]>([])

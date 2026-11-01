@@ -17,7 +17,10 @@ vi.mock('vue-router', async (importOriginal) => {
 })
 vi.mock('@/stores/coins', () => ({ useCoinsStore: () => ({ addCoin: mocks.add, removeCoin: mocks.remove }) }))
 vi.mock('@/composables/useToast', () => ({ useToast: () => ({ showToast: mocks.toast }) }))
-vi.mock('@/composables/usePwa', () => ({ usePwa: () => ({ isPwa: false }) }))
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(false) }) }
+})
 vi.mock('@/composables/useDialog', () => ({ useDialog: () => ({ showAlert: mocks.alert, showConfirm: mocks.confirm }) }))
 vi.mock('@/api/client', () => ({
   listCatalogs: mocks.listCatalogs, importCoinImage: mocks.importCoinImage, uploadImage: mocks.upload, addOfficialCoinPhotos: mocks.official, updateCoin: vi.fn(), extractText: vi.fn(),

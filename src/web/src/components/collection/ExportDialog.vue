@@ -1,58 +1,46 @@
 <template>
-  <Teleport to="body">
-    <div v-if="open" class="fixed inset-0 z-[300] flex items-center justify-center bg-overlay-60 px-4" @click="close">
-      <form
-        ref="dialog"
-        class="w-full max-w-[420px] rounded-md border border-border-subtle bg-card p-6 shadow-[0_12px_40px_var(--overlay-50)]"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="export-title"
-        data-testid="export-dialog"
-        @click.stop
-        @keydown.esc="close"
-        @submit.prevent="download"
-      >
-        <h3 id="export-title" class="mb-1 mt-0 text-lg font-medium text-heading">{{ t('collection.export.title') }}</h3>
-        <p class="mb-4 mt-0 text-body text-text-secondary">{{ t('collection.export.intro') }}</p>
+  <BaseModal :open="open" aria-labelledby="export-title" max-width="md:max-w-[420px]" testid="export-dialog" @close="close">
+    <form ref="dialog" @submit.prevent="download">
+      <h3 id="export-title" class="mb-1 mt-0 text-lg font-medium text-heading">{{ t('collection.export.title') }}</h3>
+      <p class="mb-4 mt-0 text-body text-text-secondary">{{ t('collection.export.intro') }}</p>
 
-        <fieldset class="mb-4 border-0 p-0">
-          <legend class="form-label mb-2">{{ t('collection.export.what') }}</legend>
-          <div class="flex flex-col gap-2">
-            <label class="flex cursor-pointer items-center gap-2 text-body text-text-primary">
-              <input v-model="scope" type="radio" name="export-scope" value="shown" class="accent-[var(--accent-gold)]" data-testid="export-scope-shown" />
-              {{ shownLabel }}
-            </label>
-            <label class="flex cursor-pointer items-center gap-2 text-body text-text-primary">
-              <input v-model="scope" type="radio" name="export-scope" value="all" class="accent-[var(--accent-gold)]" data-testid="export-scope-all" />
-              {{ t('collection.export.everything') }}
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset class="mb-4 border-0 p-0">
-          <legend class="form-label mb-2">{{ t('collection.export.format') }}</legend>
-          <div class="flex flex-col gap-2">
-            <label class="flex cursor-pointer items-center gap-2 text-body text-text-primary">
-              <input v-model="format" type="radio" name="export-format" value="xlsx" class="accent-[var(--accent-gold)]" data-testid="export-format-xlsx" />
-              {{ t('collection.export.xlsx') }}
-            </label>
-            <label class="flex cursor-pointer items-center gap-2 text-body text-text-primary">
-              <input v-model="format" type="radio" name="export-format" value="csv" class="accent-[var(--accent-gold)]" data-testid="export-format-csv" />
-              {{ t('collection.export.csv') }}
-            </label>
-          </div>
-        </fieldset>
-
-        <p v-if="failed" class="mb-3 mt-0 text-body text-loss" role="alert">{{ t('collection.export.failed') }}</p>
-        <div class="flex justify-end gap-2">
-          <button type="button" class="btn btn-secondary" @click="close">{{ t('common.cancel') }}</button>
-          <button type="submit" class="btn btn-primary" :disabled="downloading" data-testid="export-download">
-            <Download :size="16" aria-hidden="true" /> {{ downloading ? t('collection.export.downloading') : t('collection.export.download') }}
-          </button>
+      <fieldset class="mb-4 border-0 p-0">
+        <legend class="form-label mb-2">{{ t('collection.export.what') }}</legend>
+        <div class="flex flex-col gap-2">
+          <label class="flex cursor-pointer items-center gap-2 text-body text-text-primary">
+            <input v-model="scope" type="radio" name="export-scope" value="shown" class="accent-[var(--accent-gold)]" data-testid="export-scope-shown" />
+            {{ shownLabel }}
+          </label>
+          <label class="flex cursor-pointer items-center gap-2 text-body text-text-primary">
+            <input v-model="scope" type="radio" name="export-scope" value="all" class="accent-[var(--accent-gold)]" data-testid="export-scope-all" />
+            {{ t('collection.export.everything') }}
+          </label>
         </div>
-      </form>
-    </div>
-  </Teleport>
+      </fieldset>
+
+      <fieldset class="mb-4 border-0 p-0">
+        <legend class="form-label mb-2">{{ t('collection.export.format') }}</legend>
+        <div class="flex flex-col gap-2">
+          <label class="flex cursor-pointer items-center gap-2 text-body text-text-primary">
+            <input v-model="format" type="radio" name="export-format" value="xlsx" class="accent-[var(--accent-gold)]" data-testid="export-format-xlsx" />
+            {{ t('collection.export.xlsx') }}
+          </label>
+          <label class="flex cursor-pointer items-center gap-2 text-body text-text-primary">
+            <input v-model="format" type="radio" name="export-format" value="csv" class="accent-[var(--accent-gold)]" data-testid="export-format-csv" />
+            {{ t('collection.export.csv') }}
+          </label>
+        </div>
+      </fieldset>
+
+      <p v-if="failed" class="mb-3 mt-0 text-body text-loss" role="alert">{{ t('collection.export.failed') }}</p>
+      <div class="flex justify-end gap-2">
+        <button type="button" class="btn btn-secondary" @click="close">{{ t('common.cancel') }}</button>
+        <button type="submit" class="btn btn-primary" :disabled="downloading" data-testid="export-download">
+          <Download :size="16" aria-hidden="true" /> {{ downloading ? t('collection.export.downloading') : t('collection.export.download') }}
+        </button>
+      </div>
+    </form>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
@@ -60,6 +48,7 @@
 // whole collection, coins and banknotes, as an Excel workbook or a CSV.
 import { computed, nextTick, ref, watch } from 'vue'
 import { Download } from 'lucide-vue-next'
+import BaseModal from '@/components/ui/BaseModal.vue'
 import { exportCoins } from '@/api/client'
 import { locale, t } from '@/i18n'
 

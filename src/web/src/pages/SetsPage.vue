@@ -8,7 +8,7 @@
       </template>
       <div class="page-header">
         <h1>{{ t('nav.sets') }}</h1>
-        <div v-if="isPwa" class="pwa-actions">
+        <div v-if="isMobile" class="pwa-actions">
           <button class="pwa-icon-btn" :title="t('sets.list.create')" @click="openCreateModal">
             <CirclePlus :size="22" />
           </button>
@@ -76,24 +76,20 @@
       </div>
     </template>
 
-    <Teleport to="body">
-      <div v-if="showCreateModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 px-4 py-8" @click.self="showCreateModal = false">
-        <div class="card max-h-[85vh] w-full max-w-[520px] overflow-y-auto">
-          <div class="mb-6 flex items-center justify-between gap-4">
-            <h2 class="m-0 text-lg text-text-primary">{{ t('sets.list.createNew') }}</h2>
-            <button class="inline-flex rounded-sm p-1 text-text-secondary transition-colors hover:text-text-primary" @click="showCreateModal = false">
-              <X :size="20" />
-            </button>
-          </div>
-          <SetCreationWizard
-            :initial-value="newSet"
-            :submit-label="t('common.create')"
-            @submit="createSet"
-            @cancel="showCreateModal = false"
-          />
-        </div>
+    <BaseModal :open="showCreateModal" :aria-label="t('sets.list.createNew')" max-width="md:max-w-[520px]" @close="showCreateModal = false">
+      <div class="mb-6 flex items-center justify-between gap-4">
+        <h2 class="m-0 text-lg text-text-primary">{{ t('sets.list.createNew') }}</h2>
+        <button class="inline-flex rounded-sm p-1 text-text-secondary transition-colors hover:text-text-primary" @click="showCreateModal = false">
+          <X :size="20" />
+        </button>
       </div>
-    </Teleport>
+      <SetCreationWizard
+        :initial-value="newSet"
+        :submit-label="t('common.create')"
+        @submit="createSet"
+        @cancel="showCreateModal = false"
+      />
+    </BaseModal>
   </div>
 </template>
 
@@ -108,13 +104,14 @@ import type { CoinSetSummary, CreateCoinSetRequest } from '@/types'
 import SetDashboardCard from '@/components/sets/SetDashboardCard.vue'
 import SetsByCountry from '@/components/sets/SetsByCountry.vue'
 import SetCreationWizard from '@/components/sets/SetCreationWizard.vue'
-import { usePwa } from '@/composables/usePwa'
+import { useLayout } from '@/composables/useLayout'
 import { randomSetColor } from '@/utils/setColors'
 import { useDialog } from '@/composables/useDialog'
 import { t } from '@/i18n'
+import BaseModal from '@/components/ui/BaseModal.vue'
 
 const router = useRouter()
-const { isPwa } = usePwa()
+const { isMobile } = useLayout()
 const { showAlert } = useDialog()
 const loading = ref(true)
 const sets = ref<CoinSetSummary[]>([])
