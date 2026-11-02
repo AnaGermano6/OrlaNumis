@@ -12,7 +12,7 @@
           <CirclePlus :size="20" />
         </AppIconButton>
       </template>
-      <header class="page-header">
+      <header v-if="!isMobile" class="page-header">
         <h1>{{ t('banknotes.title') }}</h1>
         <span class="ml-auto flex flex-wrap gap-2">
           <button type="button" class="btn btn-secondary btn-sm" :aria-pressed="selectMode" data-testid="banknotes-select" @click="toggleSelectMode">{{ selectLabel }}</button>
@@ -24,68 +24,79 @@
       </header>
     </DesktopPageContext>
 
-
-    <div class="mb-4 flex flex-col gap-3 rounded-md border border-border-subtle bg-card p-4 shadow-card">
-      <SearchBar v-model="search" class="!max-w-none" :placeholder="t('banknotes.searchPlaceholder')" />
-      <!-- Every filter the same size, as in the coin gallery. -->
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2" :class="showClassification ? 'lg:grid-cols-5' : 'lg:grid-cols-4'" data-testid="banknotes-filters">
-        <label class="flex min-w-0 flex-col gap-1">
-          <span class="section-label mb-0">{{ t('collection.menu.sort') }}</span>
-          <select v-model="sortKey" class="form-select h-10 w-full bg-card py-0 text-body" data-testid="banknotes-sort">
-            <option value="updated_at_desc">{{ t('collection.sort.lastUpdated') }}</option>
-            <option value="created_at_desc">{{ t('collection.sort.newest') }}</option>
-            <option value="created_at_asc">{{ t('collection.sort.oldest') }}</option>
-            <option value="current_value_desc">{{ t('collection.sort.priceHighLow') }}</option>
-            <option value="current_value_asc">{{ t('collection.sort.priceLowHigh') }}</option>
-          </select>
-        </label>
-        <label class="flex min-w-0 flex-col gap-1">
-          <span class="section-label mb-0">{{ t('collection.view.groupBy') }}</span>
-          <select v-model="groupBy" class="form-select h-10 w-full bg-card py-0 text-body" data-testid="banknotes-group-by">
-            <option v-for="option in GROUPINGS" :key="option" :value="option">{{ t(GROUPING_LABELS[option]) }}</option>
-          </select>
-        </label>
-        <div class="flex min-w-0 flex-col gap-1">
-          <span class="section-label mb-0">{{ t('coinFields.country') }}</span>
-          <CountrySelect v-model="country" :options="countryChoices" :label="t('coinFields.country')" data-testid="banknotes-country" />
-        </div>
-        <!-- Numista's kinds of banknote in the collection, when it says any. -->
-        <label v-if="showClassification" class="flex min-w-0 flex-col gap-1">
-          <span class="section-label mb-0">{{ t('banknotes.classification') }}</span>
-          <select v-model="classification" class="form-select h-10 w-full bg-card py-0 text-body" data-testid="banknotes-classification">
-            <option value="">{{ t('collection.view.allClassifications') }}</option>
-            <option v-for="option in classifications" :key="option.key" :value="option.key">{{ collectionClassificationLabel(option) }} ({{ option.count }})</option>
-          </select>
-        </label>
-        <div class="flex min-w-0 flex-col gap-1">
-          <span class="section-label mb-0">{{ t('collection.view.layout') }}</span>
-          <div class="flex h-10 w-full rounded-sm border border-border-subtle bg-input p-[2px]" role="group" :aria-label="t('collection.view.layout')">
-            <button
-              v-for="option in LAYOUTS"
-              :key="option"
-              type="button"
-              class="min-w-0 flex-1 rounded-[6px] px-2 text-chip transition-all"
-              :class="layout === option ? 'bg-gold text-surface font-semibold' : 'bg-transparent font-medium text-text-secondary hover:bg-card-hover hover:text-text-primary'"
-              :aria-pressed="layout === option"
-              @click="layout = option"
-            >
-              {{ option === 'grid' ? t('collection.view.grid') : t('collection.view.list') }}
-            </button>
-          </div>
-        </div>
-      </div>
-      <!-- Opened from the Collection page's duplicates to trade. -->
-      <div v-if="repeated" class="flex flex-wrap items-center gap-2">
+    <!-- On a phone, as the coin gallery: the search, the filters in a sheet,
+         and adding a banknote at hand. -->
+    <MobileFilterBar
+      v-if="isMobile"
+      v-model:search="search"
+      v-model:menu-open="menuOpen"
+      :placeholder="t('banknotes.searchPlaceholder')"
+      :active-filters="activeFilterCount"
+      :done-label="t('banknotes.showResults', { count: total })"
+    >
+      <template #actions>
+        <router-link
+          to="/banknotes/add"
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-border-subtle bg-card text-text-secondary transition-all hover:border-gold hover:bg-[var(--accent-gold-dim)] hover:text-gold"
+          :aria-label="t('banknotes.add')"
+          :title="t('banknotes.add')"
+          data-testid="banknotes-add"
+        >
+          <CirclePlus :size="22" />
+        </router-link>
+      </template>
+      <div class="flex flex-col gap-[0.4rem]">
+        <span class="section-label mb-0">{{ t('collection.menu.selection') }}</span>
         <button
           type="button"
-          class="chip active inline-flex items-center gap-1"
-          :aria-label="t('collection.activeFilters.remove', { filter: t('banknotes.repeatedOnly') })"
-          data-testid="banknotes-filter-repeated"
-          @click="clearRepeated"
+          class="h-10 w-full rounded-sm border border-border-subtle bg-card px-[0.7rem] text-left text-body font-medium text-text-secondary transition-all hover:border-gold"
+          :class="selectMode ? 'border-gold bg-[var(--accent-gold-dim)] text-gold' : ''"
+          :aria-pressed="selectMode"
+          data-testid="banknotes-select"
+          @click="toggleSelectMode"
         >
-          {{ t('banknotes.repeatedOnly') }} <X :size="12" aria-hidden="true" />
+          {{ selectMode ? t('collection.menu.exitSelection') : t('collection.menu.enableSelection') }}
         </button>
       </div>
+      <BanknoteFilters
+        v-model:sort-key="sortKey"
+        v-model:group-by="groupBy"
+        v-model:country="country"
+        v-model:classification="classification"
+        v-model:layout="layout"
+        :country-choices="countryChoices"
+        :classifications="classifications"
+        stacked
+      />
+      <button type="button" class="btn btn-secondary btn-sm w-full justify-center" @click="showExport = true">
+        <FileSpreadsheet :size="14" aria-hidden="true" /> {{ t('collection.export.button') }}
+      </button>
+    </MobileFilterBar>
+
+    <div v-else class="mb-4 flex flex-col gap-3 rounded-md border border-border-subtle bg-card p-4 shadow-card">
+      <SearchBar v-model="search" class="!max-w-none" :placeholder="t('banknotes.searchPlaceholder')" />
+      <BanknoteFilters
+        v-model:sort-key="sortKey"
+        v-model:group-by="groupBy"
+        v-model:country="country"
+        v-model:classification="classification"
+        v-model:layout="layout"
+        :country-choices="countryChoices"
+        :classifications="classifications"
+      />
+    </div>
+
+    <!-- Opened from the Collection page's duplicates to trade. -->
+    <div v-if="repeated" class="mb-3 flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        class="chip active inline-flex items-center gap-1"
+        :aria-label="t('collection.activeFilters.remove', { filter: t('banknotes.repeatedOnly') })"
+        data-testid="banknotes-filter-repeated"
+        @click="clearRepeated"
+      >
+        {{ t('banknotes.repeatedOnly') }} <X :size="12" aria-hidden="true" />
+      </button>
     </div>
 
     <div v-if="loading" class="loading-overlay">
@@ -146,7 +157,8 @@
 // The banknotes of the collection, apart from its coins, country by country:
 // a search, a country filter, an order and a grid or list (their numbers are
 // on the Collection page). Their own filters, so the coin gallery's never
-// leak in.
+// leak in. On a phone it is laid out as the coin gallery: the search on top,
+// the filters in a sheet.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { bulkAction, getCoinCountries, getCoins, getCollectionSummary, getSets, type CoinCountryCount, type CollectionClassification } from '@/api/client'
@@ -157,15 +169,17 @@ import BulkSetPickerModal from '@/components/BulkSetPickerModal.vue'
 import CoinCard from '@/components/CoinCard.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
+import BanknoteFilters, { type BanknoteLayout } from '@/components/collection/BanknoteFilters.vue'
 import CoinListTable from '@/components/collection/CoinListTable.vue'
+import MobileFilterBar from '@/components/collection/MobileFilterBar.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import { t } from '@/i18n'
 import { useBulkSelect } from '@/composables/useBulkSelect'
 import { useDialog } from '@/composables/useDialog'
-import { collectionClassificationLabel, groupCoins, type CoinGroupBy } from '@/utils/coinAttributes'
-import type { MessageKey } from '@/i18n'
+import { useLayout } from '@/composables/useLayout'
+import { BANKNOTE_GROUPINGS, groupCoins, type BanknoteGrouping } from '@/utils/coinAttributes'
 import CountryFlag from '@/components/CountryFlag.vue'
-import CountrySelect, { type CountrySelectOption } from '@/components/CountrySelect.vue'
+import type { CountrySelectOption } from '@/components/CountrySelect.vue'
 import ExportDialog from '@/components/collection/ExportDialog.vue'
 import { rememberBrowseSequence } from '@/utils/browseSequence'
 import { hasCountryFlag } from '@/utils/countryFlags'
@@ -173,19 +187,7 @@ import { hasCountryFlag } from '@/utils/countryFlags'
 // Every banknote is loaded, to show each country's together: pages of 100, up to 2000.
 const PAGE_SIZE = 100
 const MAX_BANKNOTES = 2000
-const LAYOUTS = ['grid', 'list'] as const
 const LAYOUT_KEY = 'banknotes:layout'
-// The banknotes are shown all in one list, or in groups: by country (at
-// first), monetary system, year or rarity.
-const GROUPINGS = ['none', 'country', 'monetarySystem', 'year', 'rarity'] as const
-type BanknoteGrouping = (typeof GROUPINGS)[number] & CoinGroupBy
-const GROUPING_LABELS: Record<BanknoteGrouping, MessageKey> = {
-  none: 'banknotes.groupNone',
-  country: 'coinFields.country',
-  monetarySystem: 'coinFields.monetarySystem',
-  year: 'collection.view.groupYear',
-  rarity: 'coinFields.rarity',
-}
 const GROUP_BY_KEY = 'banknotes:groupBy'
 
 const banknotes = ref<Coin[]>([])
@@ -196,6 +198,9 @@ const countries = ref<CoinCountryCount[]>([])
 
 const route = useRoute()
 const router = useRouter()
+const { isMobile } = useLayout()
+// The phone's filters sheet.
+const menuOpen = ref(false)
 
 const search = ref('')
 const country = ref('')
@@ -203,10 +208,9 @@ const country = ref('')
 const repeated = ref(route.query.repeated === 'true')
 const classification = ref('')
 const classifications = ref<CollectionClassification[]>([])
-const showClassification = computed(() => classifications.value.length > 0 || classification.value !== '')
 const groupBy = ref<BanknoteGrouping>(readGroupBy())
 const sortKey = ref('updated_at_desc')
-const layout = ref<(typeof LAYOUTS)[number]>(readLayout())
+const layout = ref<BanknoteLayout>(readLayout())
 
 // "All countries", then each country with its flag and count.
 const countryChoices = computed((): CountrySelectOption[] => [
@@ -214,6 +218,8 @@ const countryChoices = computed((): CountrySelectOption[] => [
   ...countries.value.map((option) => ({ value: option.country, label: `${option.country} (${option.count})`, country: option.country })),
 ])
 const filtered = computed(() => Boolean(search.value.trim() || country.value || repeated.value || classification.value))
+// How many filters are on (not the search), shown on the phone's filter button.
+const activeFilterCount = computed(() => [country.value, repeated.value, classification.value].filter(Boolean).length)
 // The spreadsheet of the banknotes shown, or of the whole collection.
 const showExport = ref(false)
 // By country (by name), year (oldest first) or rarity, as the coin gallery; those without one last.
@@ -302,7 +308,7 @@ function clearRepeated() {
   void router.replace({ query })
 }
 
-function readLayout(): (typeof LAYOUTS)[number] {
+function readLayout(): BanknoteLayout {
   try {
     return localStorage.getItem(LAYOUT_KEY) === 'list' ? 'list' : 'grid'
   } catch {
@@ -321,7 +327,7 @@ watch(layout, (value) => {
 function readGroupBy(): BanknoteGrouping {
   try {
     const saved = localStorage.getItem(GROUP_BY_KEY)
-    return GROUPINGS.find((option) => option === saved) ?? 'country'
+    return BANKNOTE_GROUPINGS.find((option) => option === saved) ?? 'country'
   } catch {
     return 'country'
   }

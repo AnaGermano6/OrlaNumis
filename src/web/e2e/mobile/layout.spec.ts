@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
 // See playwright.mobile.config.ts: a running app, and the session signed in
 // by sign-in.setup.ts.
@@ -21,29 +21,37 @@ test.describe('on a phone', () => {
     })
   }
 
-  test('the gallery opens its filters in a sheet that scrolls to its end and closes', async ({ page }) => {
-    await page.goto('/')
-    await page.getByTestId('gallery-filters-button').click()
+  // The coin and the banknote galleries, each to its last option.
+  const SHEETS = [
+    { name: 'the gallery', path: '/', last: (sheet: Locator) => sheet.getByRole('group', { name: /face/i }) },
+    { name: 'the banknote gallery', path: '/banknotes', last: (sheet: Locator) => sheet.getByRole('button', { name: /export/i }) },
+  ]
 
-    const sheet = page.getByTestId('gallery-filters')
-    await expect(sheet).toBeVisible()
-    // The search bar stays where it sticks while the sheet is open.
-    await expect(page.getByTestId('gallery-filters-button')).toBeInViewport()
-    // The page behind holds still while the sheet is open.
-    expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('hidden')
+  for (const { name, path, last } of SHEETS) {
+    test(`${name} opens its filters in a sheet that scrolls to its end and closes`, async ({ page }) => {
+      await page.goto(path)
+      await page.getByTestId('gallery-filters-button').click()
 
-    // The last option can be reached, and the sheet fits the screen.
-    await sheet.evaluate((panel) => panel.scrollTo(0, panel.scrollHeight))
-    await expect(sheet.getByRole('group', { name: /face/i })).toBeInViewport()
-    // Measured once it has risen into place (it slides up as it opens).
-    const viewportHeight = page.viewportSize()!.height
-    await expect.poll(async () => {
-      const box = await sheet.boundingBox()
-      return box ? box.y + box.height : Number.POSITIVE_INFINITY
-    }).toBeLessThanOrEqual(viewportHeight + 1)
+      const sheet = page.getByTestId('gallery-filters')
+      await expect(sheet).toBeVisible()
+      // The search bar stays where it sticks while the sheet is open.
+      await expect(page.getByTestId('gallery-filters-button')).toBeInViewport()
+      // The page behind holds still while the sheet is open.
+      expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('hidden')
 
-    await page.getByTestId('gallery-filters-done').click()
-    await expect(sheet).toBeHidden()
-    expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('')
-  })
+      // The last option can be reached, and the sheet fits the screen.
+      await sheet.evaluate((panel) => panel.scrollTo(0, panel.scrollHeight))
+      await expect(last(sheet)).toBeInViewport()
+      // Measured once it has risen into place (it slides up as it opens).
+      const viewportHeight = page.viewportSize()!.height
+      await expect.poll(async () => {
+        const box = await sheet.boundingBox()
+        return box ? box.y + box.height : Number.POSITIVE_INFINITY
+      }).toBeLessThanOrEqual(viewportHeight + 1)
+
+      await page.getByTestId('gallery-filters-done').click()
+      await expect(sheet).toBeHidden()
+      expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('')
+    })
+  }
 })
