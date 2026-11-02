@@ -10,6 +10,7 @@ const messages: Messages['banknotes'] = {
   repeatedOnly: 'Só repetidas para troca',
   groupCount: { one: '{count} nota', other: '{count} notas' },
   groupNone: 'Todas as notas',
+  showResults: { one: 'Ver {count} nota', other: 'Ver {count} notas' },
   select: 'Selecionar notas',
   classification: 'Tipo de nota',
   bulk: {

@@ -8,6 +8,7 @@ export default {
   repeatedOnly: 'Only duplicates to trade',
   groupCount: { one: '{count} banknote', other: '{count} banknotes' },
   groupNone: 'All banknotes',
+  showResults: { one: 'Show {count} banknote', other: 'Show {count} banknotes' },
   select: 'Select banknotes',
   classification: 'Banknote type',
   bulk: {

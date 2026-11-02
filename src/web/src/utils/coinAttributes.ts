@@ -118,6 +118,10 @@ export function monetarySystemShortName(system: string | null | undefined): stri
 
 export type CoinGroupBy = 'none' | 'country' | 'period' | 'monetarySystem' | 'year' | 'rarity' | 'presentation'
 export const COIN_GROUPINGS: CoinGroupBy[] = ['none', 'country', 'period', 'monetarySystem', 'year', 'rarity', 'presentation']
+// The banknotes are shown all in one list, or in groups: by country (at
+// first), monetary system, year or rarity.
+export const BANKNOTE_GROUPINGS = ['none', 'country', 'monetarySystem', 'year', 'rarity'] as const satisfies readonly CoinGroupBy[]
+export type BanknoteGrouping = (typeof BANKNOTE_GROUPINGS)[number]
 
 export interface CoinGroup {
   key: string

@@ -15,7 +15,13 @@ const mocks = vi.hoisted(() => ({
   getCollectionSummary: vi.fn(),
   confirm: vi.fn(),
   alert: vi.fn(),
+  mobile: false,
 }))
+
+vi.mock('@/composables/useLayout', async () => {
+  const { ref } = await import('vue')
+  return { useLayout: () => ({ isMobile: ref(mocks.mobile) }) }
+})
 
 vi.mock('@/composables/useDialog', () => ({ useDialog: () => ({ showConfirm: mocks.confirm, showAlert: mocks.alert }) }))
 
@@ -58,8 +64,8 @@ function banknote(id: number, name: string, country = 'Portugal', extra: Partial
   return { id, name, kind: 'banknote', country, images: [], ...extra } as unknown as Coin
 }
 
-function mountPage() {
-  return mount(BanknotesPage, { global: { stubs: { RouterLink: RouterLinkStub, 'router-link': RouterLinkStub } } })
+function mountPage(stubs: Record<string, unknown> = {}) {
+  return mount(BanknotesPage, { global: { stubs: { RouterLink: RouterLinkStub, 'router-link': RouterLinkStub, ...stubs } } })
 }
 
 describe('BanknotesPage', () => {
@@ -75,6 +81,7 @@ describe('BanknotesPage', () => {
   afterEach(() => {
     vi.clearAllMocks()
     vi.useRealTimers()
+    mocks.mobile = false
   })
 
   it('lists only banknotes of the collection, without the numbers of the Collection page', async () => {
@@ -250,5 +257,35 @@ describe('BanknotesPage', () => {
     await select.setValue('standard')
     await flushPromises()
     expect(mocks.getCoins).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'banknote', classification: 'standard' }))
+  })
+
+  it('on a phone, is laid out as the coin gallery: the search on top, the filters in a sheet', async () => {
+    mocks.mobile = true
+    mocks.route.query = { repeated: 'true' }
+    // The sheet (BaseModal) renders in place, where the wrapper finds it.
+    const wrapper = mountPage({ teleport: true })
+    await flushPromises()
+
+    // No title nor filters card: the search, the filters button (one filter
+    // on) and adding a banknote, at hand.
+    expect(wrapper.find('h1').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="banknotes-filters"]').exists()).toBe(false)
+    expect(wrapper.get('input[type="text"]').attributes('placeholder')).toBe('Pesquisar notas por nome, país, inscrição…')
+    expect(wrapper.get('[data-testid="gallery-filters-count"]').text()).toBe('1')
+    expect(wrapper.get('[data-testid="banknotes-add"]').attributes('href')).toBe('/banknotes/add')
+    expect(wrapper.find('[data-testid="banknotes-filter-repeated"]').exists()).toBe(true)
+
+    await wrapper.get('[data-testid="gallery-filters-button"]').trigger('click')
+    const sheet = () => wrapper.get('[data-testid="gallery-filters"]')
+    expect(sheet().find('[data-testid="banknotes-filters"]').exists()).toBe(true)
+    expect(sheet().get('[data-testid="gallery-filters-done"]').text()).toBe('Ver 2 notas')
+
+    await sheet().get('[data-testid="banknotes-select"]').trigger('click')
+    expect(wrapper.findAll('[data-testid="card"]').map((card) => card.attributes('data-selectable'))).toEqual(['true', 'true'])
+    await sheet().findAll('button').find((button) => button.text() === 'Lista')!.trigger('click')
+    expect(wrapper.find('[data-testid="list"]').exists()).toBe(true)
+
+    await sheet().get('[data-testid="gallery-filters-done"]').trigger('click')
+    expect(wrapper.find('[data-testid="gallery-filters"]').exists()).toBe(false)
   })
 })
