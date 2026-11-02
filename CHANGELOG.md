@@ -4,6 +4,15 @@ Each version's section is its release notes: the release workflow publishes
 it on GitHub, and **Admin → Updates** shows it to the apps that can update.
 Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.1.1] - 2026-11-02
+
+### Changed
+- The banknote gallery on a phone is laid out as the coin gallery: only the
+  search stays at the top, with the filters button (showing how many filters
+  are on) and a button to add a banknote; the order, grouping, country, kind
+  of banknote, grid or list, selection and export open in a sheet; two
+  banknotes a row, in compact cards.
+
 ## [1.1.0] - 2026-11-01
 
 ### Changed
