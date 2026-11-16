@@ -175,7 +175,7 @@ describe('CoinReleases', () => {
     expect(text(cards[2]!)).toContain('7,50 €')
     // A base metal goes without saying.
     expect(text(cards[1]!)).toContain('Portugal · 2 €Rotary')
-    expect(wrapper.get('[data-testid="releases-note"]').text()).toContain('só com o ano')
+    expect(wrapper.get('[data-testid="releases-note"]').text()).toContain('Portugal, França e Áustria')
   })
 
   it('filters each list by country, and starts again with every country on another list', async () => {

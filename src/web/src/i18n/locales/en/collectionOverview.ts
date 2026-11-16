@@ -77,7 +77,7 @@ export default {
     noSpecialEditions: 'No special editions',
     noSpecialEditionsHint: 'Hides the gold coins and those in proof or FDC finish.',
     allCountries: 'All countries ({count})',
-    mintsNote: 'From the mints\' shops: Portugal\'s coins with the month they went on sale; France\'s and Austria\'s with their year.',
+    mintsNote: 'From the shops of the mints of Portugal, France and Austria, with the month they go on sale and their mintage when the shop says.',
     add: 'Add to collection',
     addShort: 'Add',
     saveWishlist: 'Save to wishlist',

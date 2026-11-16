@@ -1101,21 +1101,18 @@ func splitGoldAndSpecialFinish(coins []mintCoin) [3][]mintCoin {
 	return parts
 }
 
-var (
-	// "(Prata Proof)", "(Prata FDC)" in Portugal's titles.
-	mintSpecialFinishTitle = regexp.MustCompile(`\b(proof|fdc)\b`)
-	// "…-proof-quality-yeardate-2026" in France's addresses, "…-pp" (Polierte
-	// Platte) in Austria's.
-	mintSpecialFinishPage = regexp.MustCompile(`-proof-|-pp$`)
-)
+// "Proof" or "FDC" in a version's name: Portugal's titles ("(Prata Proof)"),
+// the variants worked out for France's and Austria's coins.
+var mintSpecialFinish = regexp.MustCompile(`\b(proof|fdc)\b`)
 
 // isSpecialFinishCoin tells a coin the mint sells in proof or "flor de
 // cunho" (FDC) finish.
 func isSpecialFinishCoin(coin mintCoin) bool {
-	return mintSpecialFinishTitle.MatchString(foldASCII(coin.Title)) || mintSpecialFinishPage.MatchString(strings.ToLower(coin.PageURL))
+	return mintSpecialFinish.MatchString(foldASCII(coin.Title + " " + coin.Variant))
 }
 
-var mintVariant = regexp.MustCompile(`\(([^)]*)\)\s*$`)
+// A version named at the end of a title: "Rotary (Prata Proof)".
+var mintTitleVariant = regexp.MustCompile(`\(([^)]*)\)\s*$`)
 
 // mintReleases groups a design's finishes, metals and face values ("Rotary",
 // "Rotary (BNC)", "Rotary (Proof)"; the Year of the Goat in gold and silver)
@@ -1138,8 +1135,8 @@ func mintReleases(coins []mintCoin, mint MintReleaseSource, now time.Time, recen
 		if recent && to < since {
 			continue
 		}
-		title, variant := coin.Title, ""
-		if match := mintVariant.FindStringSubmatchIndex(title); match != nil {
+		title, variant := coin.Title, coin.Variant
+		if match := mintTitleVariant.FindStringSubmatchIndex(title); match != nil {
 			variant = strings.TrimSpace(title[match[2]:match[3]])
 			title = strings.TrimSpace(title[:match[0]])
 		}

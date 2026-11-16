@@ -186,10 +186,10 @@ func TestIsSpecialFinishCoin(t *testing.T) {
 		{mintCoin{Title: "Amadeo de Souza-Cardoso (Prata Proof)"}, true},
 		{mintCoin{Title: "150 Anos da Caixa Geral de Depósitos (Prata FDC)"}, true},
 		{mintCoin{Title: "Multiculturalidade (BNC)"}, false},
-		{mintCoin{Title: "Hello Kitty", PageURL: "https://www.monnaiedeparis.fr/en/hello-kitty-10eur-silver-coin-proof-quality-yeardate-2026"}, true},
-		{mintCoin{Title: "Astrological signs", PageURL: "https://www.monnaiedeparis.fr/en/astrological-signs-aries-5eur-common-metal-coin-circulating-quality-yeardate-2025"}, false},
-		{mintCoin{Title: "Edaphon", PageURL: "https://www.muenzeoesterreich.at/produkte/25-euro-silber-niob-muenze-edaphon-pp"}, true},
-		{mintCoin{Title: "Edaphon", PageURL: "https://www.muenzeoesterreich.at/produkte/25-euro-silber-niob-muenze-edaphon-hgh"}, false},
+		{mintCoin{Title: "Hello Kitty", Variant: "Prata Proof"}, true},
+		{mintCoin{Title: "Astrological signs", Variant: ""}, false},
+		{mintCoin{Title: "Edaphon", Variant: "Prata BNC"}, false},
+		{mintCoin{Title: "Wrap roll", Variant: "FDC"}, true},
 	} {
 		if got := isSpecialFinishCoin(test.coin); got != test.want {
 			t.Errorf("isSpecialFinishCoin(%q, %q) = %v, want %v", test.coin.Title, test.coin.PageURL, got, test.want)

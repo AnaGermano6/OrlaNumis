@@ -79,7 +79,7 @@ const messages: Messages['collectionOverview'] = {
     noSpecialEditions: 'Sem edições especiais',
     noSpecialEditionsHint: 'Esconde as moedas de ouro e as de acabamento proof ou FDC.',
     allCountries: 'Todos os países ({count})',
-    mintsNote: 'Das lojas das casas da moeda: as de Portugal com o mês de lançamento; as de França e da Áustria só com o ano.',
+    mintsNote: 'Das lojas das casas da moeda de Portugal, França e Áustria, com o mês de lançamento e a tiragem quando a loja os diz.',
     add: 'Adicionar à coleção',
     addShort: 'Adicionar',
     saveWishlist: 'Guardar na lista de desejos',

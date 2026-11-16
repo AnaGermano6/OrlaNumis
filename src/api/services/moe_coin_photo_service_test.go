@@ -88,6 +88,21 @@ func TestParseMoeCatalogue(t *testing.T) {
 			t.Errorf("%s: coin = %+v (found %v)", page, coin, ok)
 		}
 	}
+	// The month of issue, and each version's finish and mintage.
+	for page, want := range map[string]struct {
+		released, variant string
+		volume            int64
+	}{
+		moeShopURL + "/produkte/5-euro-kupfermuenze-spring-ins-glueck-np":   {"2025-12", "", 200000},
+		moeShopURL + "/produkte/5-euro-silbermuenze-spring-ins-glueck-hgh":  {"2025-12", "Prata BNC", 50000},
+		moeShopURL + "/produkte/10-euro-kupfermuenze-aufdirndln-leinen-np":  {"2025-04", "", 130000},
+		moeShopURL + "/produkte/10-euro-silbermuenze-aufdirndln-leinen-hgh": {"2025-04", "Prata BNC", 30000},
+		moeShopURL + "/produkte/10-euro-silbermuenze-aufdirndln-leinen-pp":  {"2025-04", "Prata Proof", 30000},
+	} {
+		if coin := pages[page]; coin.Released != want.released || coin.Variant != want.variant || coin.Volume != want.volume {
+			t.Errorf("%s: released %q, variant %q, volume %d; want %+v", page, coin.Released, coin.Variant, coin.Volume, want)
+		}
+	}
 	// A coin no longer sold has no photo: the catalogue's picture shows both
 	// sides in two metals at once.
 	salzburg, ok := pages[moeShopURL+fmt.Sprintf(moeCataloguePath, "10")]
@@ -177,5 +192,20 @@ func TestMoeSlugAndProductPhotos(t *testing.T) {
 	if obverse != moeShopURL+"/var/storage/images/_aliases/product_full/4/5e_2021_ostermuenze_cu_vs.png.webp" ||
 		reverse != moeShopURL+"/var/storage/images/_aliases/product_full/3/5e_2021_ostermuenze_cu_rs.png.webp" {
 		t.Fatalf("obverse = %q, reverse = %q", obverse, reverse)
+	}
+}
+
+func TestMoeReleasedAndVolumes(t *testing.T) {
+	for date, want := range map[string]string{"9. April 2025": "2025-04", "25. März 2026": "2026-03", "12. Jänner 2027": "2027-01", "": "", "bald": ""} {
+		if got := moeReleased(date); got != want {
+			t.Errorf("moeReleased(%q) = %q, want %q", date, got, want)
+		}
+	}
+	byFinish, total := moeVolumes("30.000 Polierte Platte (Silber) 30.000 Handgehoben (Silber) 130.000 Normalprägung (Kupfer)")
+	if byFinish["pp"] != 30000 || byFinish["hgh"] != 30000 || byFinish["np"] != 130000 || total != 190000 {
+		t.Errorf("volumes = %v, %d", byFinish, total)
+	}
+	if byFinish, total := moeVolumes("50.000"); len(byFinish) != 0 || total != 50000 {
+		t.Errorf("one mintage = %v, %d", byFinish, total)
 	}
 }
