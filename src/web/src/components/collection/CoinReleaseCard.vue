@@ -39,7 +39,7 @@
     </div>
     <div class="flex min-w-0 flex-1 flex-col gap-1 p-3">
       <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">
-        <template v-if="showCountry">{{ releaseCountryName(release.country) }} · </template>{{ releaseFaceValues(release) }}
+        <template v-if="showCountry"><span v-if="flag" class="mr-1" aria-hidden="true" data-testid="release-flag">{{ flag }}</span>{{ releaseCountryName(release.country) }} · </template>{{ releaseFaceValues(release) }}<template v-if="preciousMetals"> · {{ preciousMetals }}</template>
       </span>
       <span class="line-clamp-3 text-body font-medium leading-snug text-text-primary" :title="release.title">{{ release.title }}</span>
       <span class="text-chip text-gold">{{ releasePeriod(release) }}</span>
@@ -82,15 +82,17 @@
 
 <script setup lang="ts">
 // A coin the ECB lists or a mint sells: its picture (opening the source's
-// page), country, face values, title, date, variants and mintage, marked when
-// it is to come, the collection has it or the wishlist; where asked, buttons
-// to add it to the collection, and to put it on the wishlist or take it off.
+// page), country with its flag, face values and precious metal, title, date,
+// variants and mintage, marked when it is to come, the collection has it or
+// the wishlist; where asked, buttons to add it to the collection, and to put
+// it on the wishlist or take it off.
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Check, Coins, Heart, MoreHorizontal, Plus } from 'lucide-vue-next'
 import type { CoinRelease } from '@/api/client'
 import { t } from '@/i18n'
-import { formatCount, releaseCountryName, releaseFaceValues, releasePeriod } from '@/utils/coinReleases'
+import { formatCount, JOINT_ISSUE, releaseCountryName, releaseFaceValues, releasePeriod } from '@/utils/coinReleases'
+import { flagOfCode } from '@/utils/countryFlags'
 import { releaseAddRoute } from '@/utils/releasePrefill'
 import { useReleaseWishlist } from '@/composables/useReleaseWishlist'
 import { useToast } from '@/composables/useToast'
@@ -120,6 +122,13 @@ watch(() => [props.release.wishlist, props.release.wishlistCoinId] as const, ([o
   wishlisted.value = onWishlist === true
   wishlistCoinId.value = coinId ?? null
 })
+
+// The country's flag; the euro area's for a joint issue.
+const flag = computed(() => flagOfCode(props.release.country || JOINT_ISSUE))
+
+// Gold or silver, said beside the face value; base metals go without saying.
+const preciousMetals = computed(() => (props.release.metals ?? []).filter((metal) => metal !== 'base')
+  .map((metal) => t(`collectionOverview.releases.metals.${metal}`)).join(' · '))
 
 const canAdd = computed(() => props.addable && !props.release.upcoming && !props.release.owned)
 // A coin the collection has may still be on the wishlist: the heart takes it off.

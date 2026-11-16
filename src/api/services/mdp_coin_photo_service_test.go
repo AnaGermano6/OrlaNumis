@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/briandenicola/ancient-coins-api/models"
 	"github.com/briandenicola/ancient-coins-api/repository"
@@ -15,9 +16,21 @@ import (
 
 type fakeMDPShopClient struct {
 	sitemaps map[string][]byte
+	products map[string][]byte
 	images   map[string][]byte
 	calls    int
-	err      error
+	// read are the product pages asked for.
+	read []string
+	err  error
+}
+
+func (f *fakeMDPShopClient) Product(_ context.Context, url string) ([]byte, error) {
+	f.calls++
+	f.read = append(f.read, url)
+	if page, ok := f.products[url]; ok {
+		return page, nil
+	}
+	return nil, errors.New("no such product")
 }
 
 func (f *fakeMDPShopClient) Sitemap(_ context.Context, lang string) ([]byte, error) {
@@ -38,7 +51,7 @@ func (f *fakeMDPShopClient) Image(_ context.Context, url string) ([]byte, error)
 
 func newTestMdpService(t *testing.T) (*MdpCoinPhotoService, *fakeMDPShopClient) {
 	t.Helper()
-	client := &fakeMDPShopClient{sitemaps: map[string][]byte{}, images: map[string][]byte{}}
+	client := &fakeMDPShopClient{sitemaps: map[string][]byte{}, products: map[string][]byte{}, images: map[string][]byte{}}
 	// The sitemaps end in .xml.txt: Unraid's Community Applications reads
 	// every .xml file of the repository as an app template.
 	for _, lang := range []string{"en", "fr"} {
@@ -88,6 +101,20 @@ func TestParseMdpSitemaps(t *testing.T) {
 	}
 	if england := byKey["rugby world cup france england"]; england.Value != 0.25 || england.Year != 2023 {
 		t.Fatalf("england = %+v", england)
+	}
+	// Each version's metal and finish, from its name.
+	variants := map[string]string{}
+	for _, coin := range coins {
+		variants[mdpSlug(coin.PageURL)] = coin.Variant
+	}
+	for slug, want := range map[string]string{
+		"astrological-signs-aries-5eur-common-metal-coin-circulating-quality-yeardate-2025": "",
+		"josephine-baker-10eur-silver-coin-historic-quality-yeardate-2025":                  "Prata",
+		"year-of-the-snake-10eur-silver-coin-proof-quality-yeardate-2025":                   "Prata Proof",
+	} {
+		if got, ok := variants[slug]; !ok || got != want {
+			t.Errorf("%s variant = %q (found %v), want %q", slug, got, ok, want)
+		}
 	}
 }
 
@@ -185,5 +212,77 @@ func TestMdpCoinPhotoService_ThumbnailAndCountry(t *testing.T) {
 	if service.Country() != "France" || service.Source() != models.CoinPhotoSourceMDP ||
 		service.Thumbnail(mdpPhotos+"a.jpg") != mdpPhotos+"a.jpg?optimize=medium&fit=bounds&height=400&width=400" {
 		t.Fatal("unexpected source description")
+	}
+}
+
+// A product page as the shop writes it: its own product among others in
+// the scripts, and its details table.
+const mdpTennisPage = `<script>{"handles":["catalog_product_view","catalog_product_view_sku_10041403240000"]}</script>
+<script type="text/x-magento-init">{"*":{"relatedProducts":[{"date_lancement":"2024-01-15 00:00:00","ean128":"10041400000000","tirage":"500"},
+{"date_lancement":"2026-02-24 00:00:00","designation_bou":"26 L'EQUIPE TENNIS 10\u20ac AG BE","ean128":"10041403240000","tirage":"3000"}]}}</script>
+<table><tr><th class="col label" scope="row">Metal</th><td class="col data" data-th="Metal">SILVER 999‰</td></tr>
+<tr><th class="col label" scope="row">Mintage</th><td class="col data" data-th="Mintage">3000</td></tr>
+<tr><th class="col label" scope="row">Millésime</th><td class="col data" data-th="Millésime">2026</td></tr></table>`
+
+// A coin still to come: its date in words, its year where its mintage goes.
+const mdpAquariusPage = `<script>{"handles":["catalog_product_view_sku_10041405320000"]}</script>
+<p class="available">Available on the 02/12/2026</p>
+<table><tr><th class="col label" scope="row">Mintage</th><td class="col data" data-th="Mintage">2027</td></tr>
+<tr><th class="col label" scope="row">Millésime</th><td class="col data" data-th="Millésime">2027</td></tr></table>`
+
+func TestParseMdpProduct(t *testing.T) {
+	for name, test := range map[string]struct {
+		page string
+		want mdpProductDetails
+	}{
+		"launched":   {mdpTennisPage, mdpProductDetails{Released: "2026-02", Volume: 3000}},
+		"to come":    {mdpAquariusPage, mdpProductDetails{Released: "2026-12"}},
+		"in French":  {`<p>Disponible le 15/03/2027</p><table><tr><th class="col label" scope="row">Tirage</th><td class="col data">1 000</td></tr></table>`, mdpProductDetails{Released: "2027-03", Volume: 1000}},
+		"not a page": {"", mdpProductDetails{}},
+	} {
+		if got := ParseMdpProduct([]byte(test.page)); got != test.want {
+			t.Errorf("%s: %+v, want %+v", name, got, test.want)
+		}
+	}
+}
+
+func TestMdpCoinPhotoService_ReadsProductPagesInTheBackground(t *testing.T) {
+	service, client := newTestMdpService(t)
+	service.now = func() time.Time { return time.Date(2025, 10, 1, 0, 0, 0, 0, time.UTC) }
+	service.productDelay = 0
+	snake := mdpShopURL + "/en/year-of-the-snake-10eur-silver-coin-proof-quality-yeardate-2025"
+	client.products[snake] = []byte(mdpTennisPage)
+
+	coins, err := service.Coins(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, coin := range coins {
+		if coin.Released != "" || coin.Volume != 0 {
+			t.Fatalf("%s read before its page: %+v", coin.Title, coin)
+		}
+	}
+	service.reads.Wait()
+	// Only this year's coins' pages are read.
+	if len(client.read) != 4 {
+		t.Fatalf("pages read = %v", client.read)
+	}
+
+	coins, err = service.Coins(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, coin := range coins {
+		want := mdpProductDetails{}
+		if coin.PageURL == snake {
+			want = mdpProductDetails{Released: "2026-02", Volume: 3000}
+		}
+		if got := (mdpProductDetails{Released: coin.Released, Volume: coin.Volume}); got != want {
+			t.Errorf("%s: %+v, want %+v", coin.PageURL, got, want)
+		}
+	}
+	// What the pages said is kept: they are not read again.
+	if service.reads.Wait(); len(client.read) != 4 {
+		t.Fatalf("pages read again: %v", client.read)
 	}
 }

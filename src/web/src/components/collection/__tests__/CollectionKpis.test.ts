@@ -14,7 +14,7 @@ describe('CollectionKpis', () => {
     setLocale('pt-PT')
     setCollectionCurrency('EUR')
     const wrapper = mount(CollectionKpis, {
-      props: { summary: { coins: 1310, uniqueCoins: 1250, currentCoins: 600, circulationUnknown: 40, commemorativeCoins: 210, commemorativeUnknown: 40, types: 830, countries: 42, withoutCountry: 3, coincards: 17, totalValue: 1250, unvaluedCoins: 0, totalValueEur: 1115.47, exchangeRate: { usdPerEur: 1.1206, date: '2026-10-09' } } },
+      props: { summary: { coins: 1310, uniqueCoins: 1250, currentCoins: 600, circulationUnknown: 40, commemorativeCoins: 210, commemorativeUnknown: 40, types: 830, countries: 42, withoutCountry: 3, coincards: 17, totalValue: 1250, unvaluedCoins: 0, totalValueEur: 1115.47, exchangeRate: { usdPerEur: 1.1206, date: '2026-10-09' }, faceValue: 450, withoutFaceValue: 12, valueOverFace: 177.8 } },
     })
 
     const cards = wrapper.findAll('section > *').map((card) => card.findAll('span').map((span) => span.text().replace(/\s/g, ' ')))
@@ -26,7 +26,12 @@ describe('CollectionKpis', () => {
       ['42', 'Países', '3 sem país'],
       ['17', 'Em coincard'],
       ['1250,00 €', 'Valor total'],
+      // The face value, of the coins in euros or escudos, and how much more they are worth.
+      ['450,00 €', 'Valor facial', '12 sem valor facial'],
+      ['+177,8%', 'Acima do facial'],
     ])
+    expect(wrapper.get('[data-testid="kpi-faceValue"]').attributes('title')).toContain('200,482 escudos por euro')
+    expect(wrapper.get('[data-testid="kpi-overFace"]').attributes('title')).toContain('que têm os dois')
     expect(wrapper.findAll('section > *')[6]!.attributes('title')).toBe('Soma do valor atual das moedas, contando as quantidades, em Euro (€).')
     // Coins count the quantities; unique coins count each once.
     expect(wrapper.findAll('section > *')[0]!.attributes('title')).toContain('contando as quantidades')
@@ -37,7 +42,7 @@ describe('CollectionKpis', () => {
 
   it('shows placeholders until the numbers load and hides the note when every coin has a country', async () => {
     const wrapper = mount(CollectionKpis, { props: { summary: null } })
-    expect(wrapper.findAll('section > *').map((card) => card.find('span').text())).toEqual(['—', '—', '—', '—', '—', '—', '—'])
+    expect(wrapper.findAll('section > *').map((card) => card.find('span').text())).toEqual(['—', '—', '—', '—', '—', '—', '—', '—', '—'])
 
     await wrapper.setProps({ summary: { coins: 2, types: 2, countries: 1, withoutCountry: 0, coincards: 0, totalValue: 0, unvaluedCoins: 0, totalValueEur: 0 } })
     expect(wrapper.text()).not.toContain('without a country')

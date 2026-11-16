@@ -116,6 +116,32 @@ describe('CommemorativeCataloguePage', () => {
     expect(cards(wrapper)).toEqual(['Sustainable development', 'Faróis', 'Mosteiro dos Jerónimos'])
   })
 
+  it('leaves out the special editions: gold coins, and those in proof or FDC only', async () => {
+    mocks.getCoinCatalogue.mockImplementation(async () => ({ data: { country: 'PT', complete: true, coins: [
+      coin({ source: 'incm', title: 'Rotary', metals: ['base'] }),
+      coin({ source: 'incm', title: 'FIFA World Cup', faceValue: 5, faceValues: [5, 7.5], metals: ['silver', 'base'], variants: ['Prata Proof'] }),
+      coin({ source: 'incm', title: 'Amadeo de Souza-Cardoso', faceValue: 10, metals: ['silver'], specialFinish: true, variants: ['Prata Proof'] }),
+      coin({ source: 'incm', title: 'Moeda Emblemática', faceValue: 8, metals: ['gold'] }),
+      coin({ source: 'numista', title: 'Mosteiro dos Jerónimos', faceValue: 10, imageUrl: '' }),
+    ] } }))
+    const wrapper = mount(CommemorativeCataloguePage)
+    await flushPromises()
+
+    const chip = wrapper.get('[data-testid="catalogue-no-special"]')
+    expect(chip.text()).toBe('Sem edições especiais')
+    await chip.trigger('click')
+    expect(chip.attributes('aria-pressed')).toBe('true')
+    // A design also struck otherwise stays, and so does one whose metal is not known.
+    expect(cards(wrapper)).toEqual(['Rotary', 'FIFA World Cup', 'Mosteiro dos Jerónimos'])
+
+    // A country without special editions has nothing to leave out.
+    mocks.getCoinCatalogue.mockImplementation(async (code: string) => ({ data: { country: code, complete: true, coins: [coin({ country: code, title: 'Notre-Dame', metals: ['base'] })] } }))
+    await wrapper.get('[data-testid="catalogue-country-FR"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="catalogue-no-special"]').exists()).toBe(false)
+    expect(cards(wrapper)).toEqual(['Notre-Dame'])
+  })
+
   it("shows Portugal's escudos on their own, with their face values in escudos", async () => {
     const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()

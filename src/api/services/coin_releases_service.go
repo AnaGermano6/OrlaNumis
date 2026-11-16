@@ -65,8 +65,15 @@ type CoinRelease struct {
 	FaceValues []float64 `json:"faceValues,omitempty"`
 	// Currency is the face value's, when not euros: "PTE" for escudos.
 	Currency string `json:"currency,omitempty"`
-	ImageURL string `json:"imageUrl"`
-	PageURL  string `json:"pageUrl"`
+	// Metals are the kinds of metal the design is struck in: gold, silver or
+	// a base metal (cupronickel, nickel brass, copper…); none when the mint
+	// does not say.
+	Metals []string `json:"metals,omitempty" enums:"gold,silver,base"`
+	// SpecialFinish is true when every coin of the release is in a
+	// collector's finish: proof or "flor de cunho" (FDC), as the mint says.
+	SpecialFinish bool   `json:"specialFinish,omitempty"`
+	ImageURL      string `json:"imageUrl"`
+	PageURL       string `json:"pageUrl"`
 	// From and To are the first and last month of the issue period ("2025-10"
 	// and "2025-12" for "Fourth quarter of 2025"); the same month when it is
 	// known; January to December when only the year is.
@@ -95,12 +102,14 @@ type CoinRelease struct {
 	SameAs string `json:"sameAs,omitempty"`
 }
 
-// CoinReleaseGroup is the ECB's releases, or the mints'.
+// CoinReleaseGroup is the €2 coins (source "ecb"), or the mints' collector coins.
 type CoinReleaseGroup struct {
 	Source string `json:"source" enums:"ecb,mints"`
-	// Year is the year of the ECB's list (the latest it has published). The
-	// mints' releases are those of the last twelve months (of this year for a
-	// mint that gives only the year) and to come.
+	// Year is the year of the ECB's latest list. The €2 coins are those of
+	// its lists of this year and the last, and the mints' €2 coins of a
+	// country and year it does not list yet. The mints' collector coins are
+	// those of the last twelve months (of this year for a mint that gives
+	// only the year) and to come.
 	Year     int           `json:"year"`
 	Releases []CoinRelease `json:"releases"`
 }
@@ -143,14 +152,16 @@ func NewCoinReleasesService(ecb *EcbCoinPhotoService, mints ...MintReleaseSource
 	return &CoinReleasesService{ecb: ecb, mints: mints, now: time.Now}
 }
 
-// Releases returns the ECB's latest €2 commemoratives and the mints'
+// Releases returns the €2 coins (the ECB's commemoratives of this year and
+// the last, and the mints' €2 coins it does not list yet) and the mints'
 // collector coins, those to come first (soonest first), then the newest. A
 // source that cannot be read adds nothing.
 func (s *CoinReleasesService) Releases(ctx context.Context) []CoinReleaseGroup {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.groups == nil || s.now().Sub(s.loadedAt) >= coinReleasesLifetime {
-		s.groups, s.loadedAt = []CoinReleaseGroup{s.ecbReleases(ctx), s.mintReleases(ctx)}, s.now()
+		twoEuro, collector := withMintTwoEuroCoins(s.ecbReleases(ctx), s.mintReleases(ctx))
+		s.groups, s.loadedAt = []CoinReleaseGroup{twoEuro, collector}, s.now()
 	}
 	// Callers mark the coins they own: each gets its own copy.
 	groups := make([]CoinReleaseGroup, len(s.groups))
@@ -288,19 +299,14 @@ func (s *CoinReleasesService) readCatalogue(ctx context.Context) []CoinRelease {
 			coins = append(coins, ecbCatalogue(photos, year, now)...)
 		}
 	}
-	// A mint's €2 coin is a commemorative's collector version (BNC, proof):
-	// the ECB's list has it already, when it has the country's year.
-	listed := map[string]bool{}
-	for _, coin := range coins {
-		listed[coin.Country+coin.From[:4]] = true
-	}
+	listed := ecbListedYears(coins)
 	for _, mint := range s.mints {
 		mintCoins, err := mint.Coins(ctx)
 		if err != nil {
 			continue
 		}
 		for _, coin := range mintReleases(mintCoins, mint, now, false) {
-			if coin.FaceValue == 2 && coin.FaceValues == nil && listed[coin.Country+coin.From[:4]] {
+			if isMintTwoEuroCoin(coin) && listed[coin.Country+coin.From[:4]] {
 				continue
 			}
 			coins = append(coins, coin)
@@ -805,6 +811,7 @@ func ecbCatalogue(photos []EcbCoinPhoto, year int, now time.Time) []CoinRelease 
 			Country:   country,
 			Title:     photo.Feature,
 			FaceValue: 2,
+			Metals:    []string{ReleaseMetalBase},
 			ImageURL:  photo.ImageURL,
 			PageURL:   page,
 			From:      from,
@@ -965,17 +972,54 @@ func (s *CoinReleasesService) ecbReleases(ctx context.Context) CoinReleaseGroup 
 		return group
 	}
 	now := s.now()
-	// The ECB opens the page of a year some time into it.
-	for year := now.Year(); year >= now.Year()-1; year-- {
+	// Last year's list and this year's, which the ECB opens some time into it.
+	for year := now.Year() - 1; year <= now.Year(); year++ {
 		photos, err := s.ecb.Commemoratives(ctx, year)
 		if err != nil || len(photos) == 0 {
 			continue
 		}
 		group.Year = year
-		group.Releases = ecbReleases(photos, year, now)
-		break
+		group.Releases = append(group.Releases, ecbReleases(photos, year, now)...)
 	}
+	sortReleases(group.Releases)
 	return group
+}
+
+// isMintTwoEuroCoin tells a mint's €2 coin: a commemorative's collector
+// version (BNC, proof), or a year's coin in a coincard.
+func isMintTwoEuroCoin(coin CoinRelease) bool {
+	return coin.Source != CoinReleaseSourceECB && coin.FaceValue == 2 && coin.FaceValues == nil && coin.Currency == ""
+}
+
+// ecbListedYears are the countries' years the ECB's €2 coins are of
+// ("PT2025"): a mint's €2 coin of one of them is one of those already.
+func ecbListedYears(coins []CoinRelease) map[string]bool {
+	listed := map[string]bool{}
+	for _, coin := range coins {
+		if coin.Source == CoinReleaseSourceECB {
+			listed[coin.Country+coin.From[:4]] = true
+		}
+	}
+	return listed
+}
+
+// withMintTwoEuroCoins moves the mints' €2 coins to the €2 coins: those of
+// a country and year the ECB does not list yet (its list has the others),
+// leaving the mints' collector coins.
+func withMintTwoEuroCoins(twoEuro, mints CoinReleaseGroup) (CoinReleaseGroup, CoinReleaseGroup) {
+	listed := ecbListedYears(twoEuro.Releases)
+	collector := []CoinRelease{}
+	for _, coin := range mints.Releases {
+		switch {
+		case !isMintTwoEuroCoin(coin):
+			collector = append(collector, coin)
+		case !listed[coin.Country+coin.From[:4]]:
+			twoEuro.Releases = append(twoEuro.Releases, coin)
+		}
+	}
+	mints.Releases = collector
+	sortReleases(twoEuro.Releases)
+	return twoEuro, mints
 }
 
 // ecbJointIssueCountries: a feature shared by more countries than this is a
@@ -1007,6 +1051,7 @@ func ecbReleases(photos []EcbCoinPhoto, year int, now time.Time) []CoinRelease {
 			Country:   ecbCountryCodes[photo.Country],
 			Title:     photo.Feature,
 			FaceValue: 2,
+			Metals:    []string{ReleaseMetalBase},
 			ImageURL:  photo.ImageURL,
 			PageURL:   page,
 			From:      from,
@@ -1029,13 +1074,45 @@ func (s *CoinReleasesService) mintReleases(ctx context.Context) CoinReleaseGroup
 		if err != nil {
 			continue
 		}
-		group.Releases = append(group.Releases, mintReleases(coins, mint, now, true)...)
+		// A design's gold coins, and its coins in proof or FDC, are releases
+		// of their own, to show or leave out apart from its others.
+		for _, part := range splitGoldAndSpecialFinish(coins) {
+			group.Releases = append(group.Releases, mintReleases(part, mint, now, true)...)
+		}
 	}
 	sortReleases(group.Releases)
 	return group
 }
 
-var mintVariant = regexp.MustCompile(`\(([^)]*)\)\s*$`)
+// splitGoldAndSpecialFinish parts a mint's coins: the others, those in
+// proof or FDC, and the gold ones.
+func splitGoldAndSpecialFinish(coins []mintCoin) [3][]mintCoin {
+	var parts [3][]mintCoin
+	for _, coin := range coins {
+		switch {
+		case releaseMetal(coin.Metal) == ReleaseMetalGold:
+			parts[2] = append(parts[2], coin)
+		case isSpecialFinishCoin(coin):
+			parts[1] = append(parts[1], coin)
+		default:
+			parts[0] = append(parts[0], coin)
+		}
+	}
+	return parts
+}
+
+// "Proof" or "FDC" in a version's name: Portugal's titles ("(Prata Proof)"),
+// the variants worked out for France's and Austria's coins.
+var mintSpecialFinish = regexp.MustCompile(`\b(proof|fdc)\b`)
+
+// isSpecialFinishCoin tells a coin the mint sells in proof or "flor de
+// cunho" (FDC) finish.
+func isSpecialFinishCoin(coin mintCoin) bool {
+	return mintSpecialFinish.MatchString(foldASCII(coin.Title + " " + coin.Variant))
+}
+
+// A version named at the end of a title: "Rotary (Prata Proof)".
+var mintTitleVariant = regexp.MustCompile(`\(([^)]*)\)\s*$`)
 
 // mintReleases groups a design's finishes, metals and face values ("Rotary",
 // "Rotary (BNC)", "Rotary (Proof)"; the Year of the Goat in gold and silver)
@@ -1058,8 +1135,8 @@ func mintReleases(coins []mintCoin, mint MintReleaseSource, now time.Time, recen
 		if recent && to < since {
 			continue
 		}
-		title, variant := coin.Title, ""
-		if match := mintVariant.FindStringSubmatchIndex(title); match != nil {
+		title, variant := coin.Title, coin.Variant
+		if match := mintTitleVariant.FindStringSubmatchIndex(title); match != nil {
 			variant = strings.TrimSpace(title[match[2]:match[3]])
 			title = strings.TrimSpace(title[:match[0]])
 		}
@@ -1075,18 +1152,20 @@ func mintReleases(coins []mintCoin, mint MintReleaseSource, now time.Time, recen
 			at = len(releases)
 			byDesign[key] = at
 			releases = append(releases, CoinRelease{
-				Source:    mint.Source(),
-				Kind:      CoinReleaseKindCollector,
-				Country:   ecbCountryCodes[mint.Country()],
-				Title:     title,
-				FaceValue: coin.Value,
-				ImageURL:  mint.Thumbnail(coin.Obverse),
-				PageURL:   coin.PageURL,
-				From:      from,
-				To:        to,
+				Source:        mint.Source(),
+				Kind:          CoinReleaseKindCollector,
+				Country:       ecbCountryCodes[mint.Country()],
+				Title:         title,
+				FaceValue:     coin.Value,
+				ImageURL:      mint.Thumbnail(coin.Obverse),
+				PageURL:       coin.PageURL,
+				From:          from,
+				To:            to,
+				SpecialFinish: true,
 			})
 		}
 		release := &releases[at]
+		release.SpecialFinish = release.SpecialFinish && isSpecialFinishCoin(coin)
 		if variant != "" {
 			release.Variants = append(release.Variants, variant)
 		} else {
@@ -1099,10 +1178,14 @@ func mintReleases(coins []mintCoin, mint MintReleaseSource, now time.Time, recen
 		release.Volume += coin.Volume
 		release.Keys = append(release.Keys, coin.PageURL)
 		release.FaceValues = append(release.FaceValues, coin.Value)
+		if metal := releaseMetal(coin.Metal); metal != "" {
+			release.Metals = append(release.Metals, metal)
+		}
 	}
 	for i := range releases {
 		releases[i].Upcoming = releaseUpcoming(releases[i].From, releases[i].To, current)
 		releases[i].Variants = uniqueStrings(releases[i].Variants)
+		releases[i].Metals = uniqueStrings(releases[i].Metals)
 		releases[i].FaceValues = sortedFaceValues(releases[i].FaceValues)
 		releases[i].FaceValue = releases[i].FaceValues[0]
 		if len(releases[i].FaceValues) == 1 {
@@ -1112,6 +1195,39 @@ func mintReleases(coins []mintCoin, mint MintReleaseSource, now time.Time, recen
 	sortReleases(releases)
 	return releases
 }
+
+// The kinds of metal of a release (see CoinRelease.Metals).
+const (
+	ReleaseMetalGold   = "gold"
+	ReleaseMetalSilver = "silver"
+	ReleaseMetalBase   = "base"
+)
+
+// releaseMetal is the kind of a mint's metal ("Prata 925‰", "Or", "Silber",
+// "common metal"); "" when the mint gives none. Gilded silver is silver and
+// Nordic gold a base metal.
+func releaseMetal(metal string) string {
+	folded := foldASCII(metal)
+	switch {
+	case folded == "":
+		return ""
+	case strings.Contains(folded, "nordic"):
+		return ReleaseMetalBase
+	case releaseGold.MatchString(folded):
+		return ReleaseMetalGold
+	case releaseSilver.MatchString(folded):
+		return ReleaseMetalSilver
+	default:
+		return ReleaseMetalBase
+	}
+}
+
+// Gold and silver as words, in the mints' languages: not "dourada" (gilded)
+// nor "vergoldet".
+var (
+	releaseGold   = regexp.MustCompile(`\b(ouro|gold|or)\b`)
+	releaseSilver = regexp.MustCompile(`\b(prata|silver|argent|silber)\b`)
+)
 
 // sortedFaceValues returns the face values once each, from the lowest.
 func sortedFaceValues(values []float64) []float64 {

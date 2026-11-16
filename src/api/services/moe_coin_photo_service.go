@@ -33,7 +33,7 @@ const (
 	moeSitemapPath      = "/sitemap.xml"
 	moePageLimit        = 8 << 20
 	moeTimeout          = 30 * time.Second
-	moeCoinsCacheKey    = "moe:coins:v2"
+	moeCoinsCacheKey    = "moe:coins:v3"
 	moeCoinsCacheTTL    = 7 * 24 * time.Hour
 	moeProductCacheKey  = "moe:product:v1:"
 	moeProductCacheTTL  = 30 * 24 * time.Hour
@@ -236,6 +236,50 @@ func ParseMoeSitemap(sitemap []byte) map[string]map[string][]moeProduct {
 	return products
 }
 
+var (
+	// A product's finish, at the end of its address: "…-pp".
+	moeFinish = regexp.MustCompile(`-(pp|hgh|bu|np)$`)
+	// "30.000 Polierte Platte (Silber)" in the catalogue's mintages.
+	moeVolume = regexp.MustCompile(`(\d{1,3}(?:\.\d{3})*|\d+)\s*(polierte platte|handgehoben|normalpragung)?`)
+	// "9. April 2025" (an Austrian January is "Jänner").
+	moeDate   = regexp.MustCompile(`(\d{1,2})\.\s*([a-z]+)\s+(\d{4})`)
+	moeMonths = map[string]int{"janner": 1, "januar": 1, "feber": 2, "februar": 2, "marz": 3, "april": 4, "mai": 5, "juni": 6,
+		"juli": 7, "august": 8, "september": 9, "oktober": 10, "november": 11, "dezember": 12}
+	// The finishes of the addresses: proof (Polierte Platte), brilliant
+	// uncirculated (handgehoben), and the usual one (Normalprägung).
+	moeFinishes = map[string]string{"pp": mintFinishProof, "hgh": mintFinishBNC, "bu": mintFinishBNC, "np": ""}
+	// The finishes of the catalogue's mintages, as the addresses name them.
+	moeFinishWords = map[string]string{"polierte platte": "pp", "handgehoben": "hgh", "normalpragung": "np"}
+)
+
+// moeReleased is the month of an issue date ("9. April 2025" → "2025-04"),
+// or "".
+func moeReleased(date string) string {
+	match := moeDate.FindStringSubmatch(foldASCII(date))
+	if match == nil || moeMonths[match[2]] == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s-%02d", match[3], moeMonths[match[2]])
+}
+
+// moeVolumes reads the catalogue's mintages ("30.000 Polierte Platte
+// (Silber) 130.000 Normalprägung (Kupfer)"): how many of each finish (by its
+// address's name: "pp", "hgh", "np"), and how many in all.
+func moeVolumes(text string) (byFinish map[string]int64, total int64) {
+	byFinish = map[string]int64{}
+	for _, match := range moeVolume.FindAllStringSubmatch(foldASCII(text), -1) {
+		volume, _ := strconv.ParseInt(strings.ReplaceAll(match[1], ".", ""), 10, 64)
+		if finish := moeFinishWords[match[2]]; finish != "" {
+			byFinish[finish] += volume
+			if finish == "hgh" {
+				byFinish["bu"] += volume
+			}
+		}
+		total += volume
+	}
+	return byFinish, total
+}
+
 func moeMetal(text string) string {
 	folded := foldASCII(text)
 	switch {
@@ -278,7 +322,9 @@ func ParseMoeCatalogue(value string, page []byte, products map[string]map[string
 			Value:     faceValue,
 			Year:      year,
 			Series:    moeField(body, "Serie"),
+			Released:  moeReleased(moeField(body, "Ausgabedatum")),
 		}
+		volumes, total := moeVolumes(moeField(body, "Auflage"))
 		if alt := moeImageAlt.FindStringSubmatch(body); alt != nil {
 			coin.Text = html.UnescapeString(alt[1])
 		}
@@ -295,13 +341,20 @@ func ParseMoeCatalogue(value string, page []byte, products map[string]map[string
 		}
 		if len(versions) == 0 {
 			// No longer sold: known, but without a photo.
-			coin.PageURL, coin.Metal = catalogueURL, moeMetal(moeField(body, "Legierung"))
+			coin.PageURL, coin.Metal, coin.Volume = catalogueURL, moeMetal(moeField(body, "Legierung")), total
 			coins = append(coins, coin)
 			continue
 		}
 		for _, version := range versions {
 			sold := coin
 			sold.PageURL, sold.Metal = moeShopURL+version.path, version.metal
+			finish := moeFinish.FindStringSubmatch(version.path)
+			if finish != nil {
+				sold.Variant, sold.Volume = mintVariant(version.metal, moeFinishes[finish[1]]), volumes[finish[1]]
+			}
+			if len(versions) == 1 && sold.Volume == 0 {
+				sold.Volume = total
+			}
 			coins = append(coins, sold)
 		}
 	}

@@ -1,10 +1,12 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"regexp"
@@ -21,15 +23,24 @@ import (
 // "<topic>-<value>eur-<metal>-coin-<quality>-yeardate-<year>". The first photo
 // shows the coin's design; the other side is the photo named "revers", or the
 // one taken right after it (checked to really show a coin, as it can also be
-// the packaging).
+// the packaging). Each product's page says when the coin goes on sale and
+// how many are struck: read in the background for this year's coins and
+// later ones, one page at a time.
 const (
-	mdpShopURL          = "https://www.monnaiedeparis.fr"
-	mdpSitemapPath      = "/media/sitemap/sitemap_mdp_%s.xml"
-	mdpSitemapLimit     = 32 << 20
-	mdpImageLimit       = 8 << 20
-	mdpTimeout          = 30 * time.Second
-	mdpCoinsCacheKey    = "mdp:coins:v2"
-	mdpCoinsCacheTTL    = 7 * 24 * time.Hour
+	mdpShopURL         = "https://www.monnaiedeparis.fr"
+	mdpSitemapPath     = "/media/sitemap/sitemap_mdp_%s.xml"
+	mdpSitemapLimit    = 32 << 20
+	mdpImageLimit      = 8 << 20
+	mdpTimeout         = 30 * time.Second
+	mdpCoinsCacheKey   = "mdp:coins:v3"
+	mdpCoinsCacheTTL   = 7 * 24 * time.Hour
+	mdpProductLimit    = 8 << 20
+	mdpProductCacheKey = "mdp:product:v1:"
+	mdpProductCacheTTL = 14 * 24 * time.Hour
+	// A page that could not be read is tried again the next day.
+	mdpProductRetryTTL = 24 * time.Hour
+	// The pause between two product pages read in the background.
+	mdpProductDelay     = 2 * time.Second
 	mdpShapeCacheKey    = "mdp:shape:v1:"
 	mdpShapeCacheTTL    = 365 * 24 * time.Hour
 	mdpMemoryLifetime   = time.Hour
@@ -43,9 +54,10 @@ const (
 	MdpImagePath = "/media/catalog/product/"
 )
 
-// MDPShopClient reads the Monnaie de Paris sitemaps and photos.
+// MDPShopClient reads the Monnaie de Paris sitemaps, product pages and photos.
 type MDPShopClient interface {
 	Sitemap(ctx context.Context, lang string) ([]byte, error)
+	Product(ctx context.Context, url string) ([]byte, error)
 	Image(ctx context.Context, url string) ([]byte, error)
 }
 
@@ -66,6 +78,14 @@ func NewHTTPMDPShopClient(client *http.Client) *HTTPMDPShopClient {
 // Sitemap returns the shop's sitemap in "fr" or "en".
 func (c *HTTPMDPShopClient) Sitemap(ctx context.Context, lang string) ([]byte, error) {
 	return c.get(ctx, c.baseURL+fmt.Sprintf(mdpSitemapPath, lang), mdpSitemapLimit)
+}
+
+// Product returns one of the shop's product pages.
+func (c *HTTPMDPShopClient) Product(ctx context.Context, url string) ([]byte, error) {
+	if !strings.HasPrefix(url, c.baseURL+"/en/") && !strings.HasPrefix(url, c.baseURL+"/fr/") {
+		return nil, fmt.Errorf("not a Monnaie de Paris product: %s", url)
+	}
+	return c.get(ctx, url, mdpProductLimit)
 }
 
 // Image returns one of the shop's photos.
@@ -98,16 +118,22 @@ type MdpCoinPhotoService struct {
 	client MDPShopClient
 	cache  *NumistaResponseCache
 	now    func() time.Time
+	// productDelay is the pause between two product pages read in the background.
+	productDelay time.Duration
 
 	mu       sync.Mutex
 	coins    []mintCoin
 	loadedAt time.Time
+	// reading is true while product pages are read in the background; reads
+	// waits for that.
+	reading bool
+	reads   sync.WaitGroup
 }
 
 // NewMdpCoinPhotoService creates the service; the shop's coins are kept in
-// the shared response cache for a week.
+// the shared response cache for a week, what each product page says for two.
 func NewMdpCoinPhotoService(client MDPShopClient, cache *NumistaResponseCache) *MdpCoinPhotoService {
-	return &MdpCoinPhotoService{client: client, cache: cache, now: time.Now}
+	return &MdpCoinPhotoService{client: client, cache: cache, now: time.Now, productDelay: mdpProductDelay}
 }
 
 // Country, Source and Credit describe the Monnaie de Paris as a MintPhotoSource.
@@ -149,9 +175,143 @@ func (s *MdpCoinPhotoService) Coins(ctx context.Context) ([]mintCoin, error) {
 		s.coins, s.loadedAt = []mintCoin{}, s.now().Add(mdpRetryDelay-mdpMemoryLifetime)
 		return nil, err
 	}
-	s.coins, s.loadedAt = coins, s.now()
-	return coins, nil
+	s.coins, s.loadedAt = s.withProductDetails(coins), s.now()
+	return s.coins, nil
 }
+
+// mdpProductDetails is what a product page says of its coin: the month it
+// goes on sale ("2026-12") and how many are struck; empty when unknown.
+type mdpProductDetails struct {
+	Released string `json:"released,omitempty"`
+	Volume   int64  `json:"volume,omitempty"`
+}
+
+// withProductDetails adds to this year's coins and later ones what their
+// product pages said when read; the pages not read yet, or read long ago,
+// are read in the background (the coins are read again once they are).
+func (s *MdpCoinPhotoService) withProductDetails(coins []mintCoin) []mintCoin {
+	var unread []string
+	for i := range coins {
+		if coins[i].Year < s.now().Year() {
+			continue
+		}
+		entry := s.cache.find(mdpProductCacheKey + mdpSlug(coins[i].PageURL))
+		var details mdpProductDetails
+		if entry == nil || json.Unmarshal([]byte(entry.Payload), &details) != nil || s.now().Sub(entry.FetchedAt) >= mdpProductTTL(details) {
+			unread = append(unread, coins[i].PageURL)
+		}
+		coins[i].Released, coins[i].Volume = details.Released, details.Volume
+	}
+	if len(unread) > 0 && !s.reading {
+		s.reading = true
+		s.reads.Add(1)
+		go s.readProductPages(unread)
+	}
+	return coins
+}
+
+// mdpProductTTL keeps what a page said for two weeks; a page that said
+// nothing is read again the next day.
+func mdpProductTTL(details mdpProductDetails) time.Duration {
+	if details == (mdpProductDetails{}) {
+		return mdpProductRetryTTL
+	}
+	return mdpProductCacheTTL
+}
+
+// readProductPages reads product pages one at a time, then has the coins
+// read again with them.
+func (s *MdpCoinPhotoService) readProductPages(pages []string) {
+	defer s.reads.Done()
+	for i, page := range pages {
+		if i > 0 {
+			time.Sleep(s.productDelay)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), mdpTimeout)
+		_, _, _, _ = s.cache.GetFor(ctx, mdpProductCacheKey+mdpSlug(page), func(payload []byte) time.Duration {
+			var details mdpProductDetails
+			_ = json.Unmarshal(payload, &details)
+			return mdpProductTTL(details)
+		}, func(ctx context.Context) ([]byte, error) {
+			// A page that cannot be read says nothing, till the next day.
+			body, _ := s.client.Product(ctx, page)
+			return json.Marshal(ParseMdpProduct(body))
+		})
+		cancel()
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.reading, s.loadedAt = false, time.Time{}
+}
+
+// mdpSlug is a product page's last part, the product's name.
+func mdpSlug(page string) string {
+	return page[strings.LastIndex(page, "/")+1:]
+}
+
+var (
+	// The page's own product, among the others it shows.
+	mdpProductSKU = regexp.MustCompile(`catalog_product_view_sku_(\d+)`)
+	mdpLaunch     = regexp.MustCompile(`^(\d{4})-(\d{2})-\d{2}`)
+	// A coin still to come: "Available on the 02/12/2026", "Disponible le 02/12/2026".
+	mdpAvailableOn = regexp.MustCompile(`(?:Available on the|Disponible le)\s+\d{2}/(\d{2})/(\d{4})`)
+	mdpTableRow    = regexp.MustCompile(`<th class="col label" scope="row">([^<]*)</th>\s*<td class="col data"[^>]*>([\s\S]*?)</td>`)
+	mdpNonDigits   = regexp.MustCompile(`\D`)
+)
+
+// ParseMdpProduct reads a product page: the month its coin went on sale (the
+// product's launch date) or goes on sale ("Available on the 02/12/2026"), and
+// its mintage. A coin still to come shows its year as its mintage: unknown.
+func ParseMdpProduct(page []byte) mdpProductDetails {
+	var details mdpProductDetails
+	rows := map[string]string{}
+	for _, row := range mdpTableRow.FindAllSubmatch(page, -1) {
+		rows[strings.ToLower(strings.TrimSpace(string(row[1])))] = strings.TrimSpace(html.UnescapeString(mdpTag.ReplaceAllString(string(row[2]), " ")))
+	}
+	product := mdpProductData(page)
+	launch, _ := product["date_lancement"].(string)
+	if match := mdpLaunch.FindStringSubmatch(launch); match != nil {
+		details.Released = match[1] + "-" + match[2]
+	} else if match := mdpAvailableOn.FindSubmatch(page); match != nil {
+		details.Released = string(match[2]) + "-" + string(match[1])
+	}
+	mintage, _ := product["tirage"].(string)
+	if mintage == "" {
+		mintage = rows["mintage"]
+		if mintage == "" {
+			mintage = rows["tirage"]
+		}
+	}
+	volume, _ := strconv.ParseInt(mdpNonDigits.ReplaceAllString(mintage, ""), 10, 64)
+	if year, _ := strconv.Atoi(rows["millésime"]); volume > 0 && int64(year) != volume {
+		details.Volume = volume
+	}
+	return details
+}
+
+// mdpProductData is the shop's data of the page's own product (named by its
+// code, "ean128"), from the page's scripts; nil when the page has none.
+func mdpProductData(page []byte) map[string]any {
+	sku := mdpProductSKU.FindSubmatch(page)
+	if sku == nil {
+		return nil
+	}
+	at := bytes.Index(page, []byte(`"ean128":"`+string(sku[1])+`"`))
+	// The object around it: the nearest opening brace before it that reads
+	// as an object naming that code.
+	for start := at; at >= 0 && start >= 0 && at-start < 64<<10; start-- {
+		if page[start] != '{' {
+			continue
+		}
+		var fields map[string]any
+		if json.NewDecoder(bytes.NewReader(page[start:])).Decode(&fields) == nil && fields["ean128"] == string(sku[1]) {
+			return fields
+		}
+	}
+	return nil
+}
+
+var mdpTag = regexp.MustCompile(`<[^>]*>`)
 
 // Match returns the shop's photos of the coin, or nil when no coin of the
 // shop is clearly it. The reverse is only given when the photo is named so;
@@ -252,6 +412,7 @@ func ParseMdpSitemaps(english, french []byte) ([]mintCoin, error) {
 			PageURL:   url.Loc,
 			Value:     value,
 			Metal:     mdpMetal(slug),
+			Variant:   mintVariant(mdpMetal(slug), mdpFinish(slug)),
 			Year:      year,
 			Obverse:   mdpPhotoURL(url.Images[0].Loc),
 		}
@@ -314,6 +475,20 @@ func mdpYearOf(slug string) int {
 	}
 	year, _ := strconv.Atoi(matches[len(matches)-1][1])
 	return year
+}
+
+// mdpFinish is a product's finish, from its name's quality: proof ("Belle
+// Épreuve"), brilliant uncirculated (BNC) or FDC; "" for the usual one.
+func mdpFinish(slug string) string {
+	switch {
+	case strings.Contains(slug, "proof-quality"):
+		return mintFinishProof
+	case strings.Contains(slug, "-bu-quality") || strings.Contains(slug, "brilliant-uncirculated"):
+		return mintFinishBNC
+	case strings.Contains(slug, "fdc-quality"):
+		return mintFinishFDC
+	}
+	return ""
 }
 
 func mdpMetal(slug string) string {

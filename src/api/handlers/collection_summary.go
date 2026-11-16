@@ -16,11 +16,19 @@ type CollectionSummaryHandler struct {
 	rates       *services.ExchangeRateService
 	settings    *services.SettingsService
 	circulation *services.CoinCirculationService
+	faceValues  *services.CollectionFaceValueService
 }
 
 // WithCirculation adds how many coins are still legal tender.
 func (h *CollectionSummaryHandler) WithCirculation(circulation *services.CoinCirculationService) *CollectionSummaryHandler {
 	h.circulation = circulation
+	return h
+}
+
+// WithFaceValues adds the collection's face value, and how much more its
+// items are worth.
+func (h *CollectionSummaryHandler) WithFaceValues(faceValues *services.CollectionFaceValueService) *CollectionSummaryHandler {
+	h.faceValues = faceValues
 	return h
 }
 
@@ -54,6 +62,16 @@ type CollectionSummaryResponse struct {
 	TotalValueEUR *float64 `json:"totalValueEur"`
 	// ExchangeRate is the latest ECB rate for the US dollar, when available.
 	ExchangeRate *services.ExchangeRate `json:"exchangeRate,omitempty"`
+	// FaceValue sums the items' face values, each times its quantity, in the
+	// collection currency: the face values in euros, and in escudos at their
+	// fixed rate of 200.482 to the euro; null when it cannot be converted to
+	// the collection currency. WithoutFaceValue counts the other items held.
+	FaceValue        *float64 `json:"faceValue"`
+	WithoutFaceValue int64    `json:"withoutFaceValue"`
+	// ValueOverFace is how much more the items with both a face value and a
+	// current value are worth than their face value, in percent (negative
+	// when less); null when no item has both.
+	ValueOverFace *float64 `json:"valueOverFace"`
 	// ExtinctCountries counts the collection's countries that no longer exist
 	// (USSR, Yugoslavia, Ottoman Empire…); they are among Countries.
 	ExtinctCountries int64 `json:"extinctCountries"`
@@ -88,7 +106,7 @@ type CollectionClassification struct {
 // the collection, its total value in euros and its notable coins.
 //
 //	@Summary		Get collection summary
-//	@Description	Counts the user's collection coins (excluding the wishlist), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many circulation coins are still legal tender (from their cached Numista types; collector coins and coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency) and gives the total in euros, converted with the ECB daily reference rates (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins.
+//	@Description	Counts the user's collection coins (excluding the wishlist), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many circulation coins are still legal tender (from their cached Numista types; collector coins and coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency) and gives the total in euros, converted with the ECB daily reference rates (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins. Sums the face values too (from the coins' Numista types as cached, else their denominations), in the collection currency: those in euros, and in escudos at their fixed rate of 200.482 to the euro; and says how much more, in percent, the coins with both a face value and a current value are worth than their face value.
 //	@Tags			Coins
 //	@Produce		json
 //	@Param			kind	query		string	false	"Only the coins or only the banknotes (every item when omitted)"	Enums(coin, banknote)
@@ -163,7 +181,9 @@ func (h *CollectionSummaryHandler) Summary(c *gin.Context) {
 			}
 		}
 	}
-	if response.Currency == services.CurrencyEUR {
+	// How much of the collection currency one euro buys.
+	perEUR, perEURKnown := 1.0, response.Currency == services.CurrencyEUR
+	if perEURKnown {
 		total := math.Round(summary.TotalValue*100) / 100
 		response.TotalValueEUR = &total
 	}
@@ -175,6 +195,23 @@ func (h *CollectionSummaryHandler) Summary(c *gin.Context) {
 			if rate, ok := rates.Rate(response.Currency); ok && response.TotalValueEUR == nil {
 				total := math.Round(summary.TotalValue/rate*100) / 100
 				response.TotalValueEUR = &total
+				perEUR, perEURKnown = rate, true
+			}
+		}
+	}
+	if h.faceValues != nil {
+		faces, err := h.faceValues.Summarise(c.GetUint("userId"), kind)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to summarise the collection"})
+			return
+		}
+		response.WithoutFaceValue = faces.Without
+		if perEURKnown {
+			total := math.Round(faces.EUR*perEUR*100) / 100
+			response.FaceValue = &total
+			if faces.ValuedEUR > 0 {
+				over := math.Round((faces.Value/(faces.ValuedEUR*perEUR)-1)*1000) / 10
+				response.ValueOverFace = &over
 			}
 		}
 	}

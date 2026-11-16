@@ -5241,7 +5241,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Counts the user's collection coins (excluding the wishlist), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many circulation coins are still legal tender (from their cached Numista types; collector coins and coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency) and gives the total in euros, converted with the ECB daily reference rates (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins.",
+                "description": "Counts the user's collection coins (excluding the wishlist), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many circulation coins are still legal tender (from their cached Numista types; collector coins and coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency) and gives the total in euros, converted with the ECB daily reference rates (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins. Sums the face values too (from the coins' Numista types as cached, else their denominations), in the collection currency: those in euros, and in escudos at their fixed rate of 200.482 to the euro; and says how much more, in percent, the coins with both a face value and a current value are worth than their face value.",
                 "produces": [
                     "application/json"
                 ],
@@ -14367,6 +14367,10 @@ const docTemplate = `{
                     "description": "ExtinctCountries counts the collection's countries that no longer exist\n(USSR, Yugoslavia, Ottoman Empire…); they are among Countries.",
                     "type": "integer"
                 },
+                "faceValue": {
+                    "description": "FaceValue sums the items' face values, each times its quantity, in the\ncollection currency: the face values in euros, and in escudos at their\nfixed rate of 200.482 to the euro; null when it cannot be converted to\nthe collection currency. WithoutFaceValue counts the other items held.",
+                    "type": "number"
+                },
                 "highlights": {
                     "$ref": "#/definitions/repository.CollectionHighlights"
                 },
@@ -14397,7 +14401,14 @@ const docTemplate = `{
                     "description": "UnvaluedCoins have no current value and are left out of TotalValue.",
                     "type": "integer"
                 },
+                "valueOverFace": {
+                    "description": "ValueOverFace is how much more the items with both a face value and a\ncurrent value are worth than their face value, in percent (negative\nwhen less); null when no item has both.",
+                    "type": "number"
+                },
                 "withoutCountry": {
+                    "type": "integer"
+                },
+                "withoutFaceValue": {
                     "type": "integer"
                 }
             }
@@ -19618,6 +19629,18 @@ const docTemplate = `{
                         "collector"
                     ]
                 },
+                "metals": {
+                    "description": "Metals are the kinds of metal the design is struck in: gold, silver or\na base metal (cupronickel, nickel brass, copper…); none when the mint\ndoes not say.",
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "gold",
+                            "silver",
+                            "base"
+                        ]
+                    }
+                },
                 "owned": {
                     "description": "Owned is true when a coin of the collection is this one.",
                     "type": "boolean"
@@ -19638,6 +19661,10 @@ const docTemplate = `{
                         "moe",
                         "numista"
                     ]
+                },
+                "specialFinish": {
+                    "description": "SpecialFinish is true when every coin of the release is in a\ncollector's finish: proof or \"flor de cunho\" (FDC), as the mint says.",
+                    "type": "boolean"
                 },
                 "title": {
                     "description": "Title is what the coin shows: the ECB's feature (in English) or the\nmint's name for the design.",
@@ -19688,7 +19715,7 @@ const docTemplate = `{
                     ]
                 },
                 "year": {
-                    "description": "Year is the year of the ECB's list (the latest it has published). The\nmints' releases are those of the last twelve months (of this year for a\nmint that gives only the year) and to come.",
+                    "description": "Year is the year of the ECB's latest list. The €2 coins are those of\nits lists of this year and the last, and the mints' €2 coins of a\ncountry and year it does not list yet. The mints' collector coins are\nthose of the last twelve months (of this year for a mint that gives\nonly the year) and to come.",
                     "type": "integer"
                 }
             }
@@ -20348,7 +20375,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.1.1",
+	Version:          "1.2.0",
 	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},

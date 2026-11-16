@@ -1,5 +1,6 @@
 <template>
-  <section class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7" :aria-label="t('collection.kpis.label')">
+  <section class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6" :aria-label="t('collection.kpis.label')">
+    <!-- The counts, then the amounts (a row of their own on a wide screen). -->
     <component
       :is="kpi.action ? 'button' : 'div'"
       v-for="kpi in kpis"
@@ -9,6 +10,7 @@
       :class="[
         kpi.action ? 'cursor-pointer transition-colors hover:border-gold focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2' : '',
         kpi.wide ? 'col-span-2 md:col-span-1' : '',
+        kpi.amount ? 'xl:col-span-2' : '',
         kpi.active ? 'border-gold' : '',
       ]"
       :title="kpi.hint"
@@ -16,7 +18,8 @@
       :data-testid="`kpi-${kpi.key}`"
       @click="kpi.action?.()"
     >
-      <span class="whitespace-nowrap font-display text-xl font-semibold text-text-primary md:text-2xl">{{ kpi.display }}</span>
+      <!-- A long amount in half the row gets a smaller size on phones. -->
+      <span class="whitespace-nowrap font-display font-semibold text-text-primary md:text-2xl" :class="!kpi.wide && kpi.display.length > 10 ? 'text-base' : 'text-xl'">{{ kpi.display }}</span>
       <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ kpi.label }}</span>
       <span v-if="kpi.note" class="text-chip text-text-muted">{{ kpi.note }}</span>
       <button
@@ -36,13 +39,15 @@
 <script setup lang="ts">
 // Headline numbers of the collection's coins: coins, different coins (each
 // once), coins still legal tender, commemorative coins, countries (and how
-// many no longer exist), coincards and total value in the currency every page
-// uses. Counts and value take each coin's quantity: three of a coin count
-// three. They cover the whole collection, not the current filters.
+// many no longer exist), coincards; then their total value and face value in
+// the currency every page uses, and how much more than their face value they
+// are worth. Counts and amounts take each coin's quantity: three of a coin
+// count three. They cover the whole collection, not the current filters.
 import { computed } from 'vue'
 import type { CollectionSummary } from '@/api/client'
 import { intlLocale, t } from '@/i18n'
 import { collectionCurrency, currencyName } from '@/utils/collectionCurrency'
+import { faceValueKpis } from '@/utils/faceValueKpis'
 import { formatCurrency } from '@/utils/format'
 
 const props = defineProps<{
@@ -75,6 +80,8 @@ interface Kpi {
   active?: boolean
   /** Takes the whole row on phones, for long amounts. */
   wide?: boolean
+  /** An amount: on a wide screen, the amounts share a row. */
+  amount?: boolean
 }
 
 
@@ -91,6 +98,7 @@ function valueKpi(summary: CollectionSummary | null): Kpi {
     hint: t('collection.kpis.valueHintIn', { currency: currencyName(collectionCurrency.value) }),
     note: summary?.unvaluedCoins ? t('collection.kpis.unvalued', { count: summary.unvaluedCoins }) : '',
     wide: true,
+    amount: true,
   }
 }
 
@@ -134,6 +142,7 @@ const kpis = computed<Kpi[]>(() => {
       action: () => emit('show-coincards'),
     },
     valueKpi(summary),
+    ...faceValueKpis(summary).map((kpi) => ({ ...kpi, amount: true })),
   ]
 })
 </script>

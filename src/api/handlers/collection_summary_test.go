@@ -663,3 +663,85 @@ func TestCoinPeriods_ListAndFilter(t *testing.T) {
 		t.Fatalf("filtered by period: %d %s", w.Code, w.Body.String())
 	}
 }
+
+func TestCollectionSummaryHandler_FaceValueAndGainOverIt(t *testing.T) {
+	for currency, wantFace := range map[string]float64{"EUR": 5, "USD": 6.25} {
+		gin.SetMode(gin.TestMode)
+		router, db := setupCoinHandlerRouter(t)
+		createTestUser(t, db, 1, "collector")
+		if err := db.AutoMigrate(&models.NumistaCacheEntry{}); err != nil {
+			t.Fatal(err)
+		}
+		value := func(v float64) *float64 { return &v }
+		for _, coin := range []models.Coin{
+			// Two worth 3 each, of a face value of 2: 6 against 4.
+			{Name: "2 euro", Denomination: "2 Euros", Quantity: 2, CurrentValue: value(3)},
+			// No current value: in the face value, not in the gain.
+			{Name: "1 euro", Denomination: "1 Euro"},
+			// No face value in euros.
+			{Name: "1 dollar", Denomination: "1 Dollar", MonetarySystem: "Dollar (1792-date)", CurrentValue: value(50)},
+		} {
+			coin.UserID, coin.Category, coin.Material = 1, models.CategoryModern, models.MaterialSilver
+			if err := db.Create(&coin).Error; err != nil {
+				t.Fatal(err)
+			}
+		}
+		rates := services.NewExchangeRateService(stubECBClient{}, services.NewNumistaResponseCache(repository.NewNumistaCacheRepository(db), nil, nil))
+		settingsRepo := repository.NewSettingsRepository(db)
+		if err := settingsRepo.Upsert(services.SettingCollectionCurrency, currency); err != nil {
+			t.Fatal(err)
+		}
+		coinRepo := repository.NewCoinRepository(db)
+		handler := NewCollectionSummaryHandler(coinRepo).WithExchangeRates(rates).WithSettings(services.NewSettingsService(settingsRepo)).
+			WithFaceValues(services.NewCollectionFaceValueService(coinRepo, nil))
+		group := router.Group("/api/summary-test")
+		group.Use(coinTestAuthMiddleware())
+		group.GET("", handler.Summary)
+
+		w := coinRequest(router, http.MethodGet, "/api/summary-test", nil)
+		var got struct {
+			FaceValue        *float64 `json:"faceValue"`
+			WithoutFaceValue int64    `json:"withoutFaceValue"`
+			ValueOverFace    *float64 `json:"valueOverFace"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || w.Code != http.StatusOK {
+			t.Fatalf("%s summary: %d %s", currency, w.Code, w.Body.String())
+		}
+		// The values are kept in the collection currency, the face values
+		// converted to it: 6 against 4 euros is +50% in euros, 6 against 5
+		// dollars +20% in dollars.
+		wantOver := map[string]float64{"EUR": 50, "USD": 20}[currency]
+		if got.FaceValue == nil || *got.FaceValue != wantFace || got.WithoutFaceValue != 1 || got.ValueOverFace == nil || *got.ValueOverFace != wantOver {
+			t.Errorf("%s: face %v, without %d, over %v; want %v, 1, %v", currency, got.FaceValue, got.WithoutFaceValue, got.ValueOverFace, wantFace, wantOver)
+		}
+	}
+}
+
+func TestCollectionSummaryHandler_NoFaceValueWithoutARate(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router, db := setupCoinHandlerRouter(t)
+	createTestUser(t, db, 1, "collector")
+	if err := db.AutoMigrate(&models.NumistaCacheEntry{}); err != nil {
+		t.Fatal(err)
+	}
+	coin := models.Coin{Name: "2 euro", Denomination: "2 Euros", UserID: 1, Category: models.CategoryModern, Material: models.MaterialSilver}
+	if err := db.Create(&coin).Error; err != nil {
+		t.Fatal(err)
+	}
+	rates := services.NewExchangeRateService(stubECBClient{err: errors.New("offline")}, services.NewNumistaResponseCache(repository.NewNumistaCacheRepository(db), nil, nil))
+	settingsRepo := repository.NewSettingsRepository(db)
+	if err := settingsRepo.Upsert(services.SettingCollectionCurrency, "USD"); err != nil {
+		t.Fatal(err)
+	}
+	coinRepo := repository.NewCoinRepository(db)
+	handler := NewCollectionSummaryHandler(coinRepo).WithExchangeRates(rates).WithSettings(services.NewSettingsService(settingsRepo)).
+		WithFaceValues(services.NewCollectionFaceValueService(coinRepo, nil))
+	group := router.Group("/api/summary-test")
+	group.Use(coinTestAuthMiddleware())
+	group.GET("", handler.Summary)
+
+	w := coinRequest(router, http.MethodGet, "/api/summary-test", nil)
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"faceValue":null`) || !strings.Contains(w.Body.String(), `"valueOverFace":null`) {
+		t.Fatalf("summary: %d %s", w.Code, w.Body.String())
+	}
+}

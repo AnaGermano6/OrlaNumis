@@ -4,6 +4,34 @@ Each version's section is its release notes: the release workflow publishes
 it on GitHub, and **Admin → Updates** shows it to the apps that can update.
 Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.2.0] - 2026-11-16
+
+### Added
+- The collection overview shows the face value of the whole collection, of
+  the coins and of the banknotes, and how much more than it they are worth
+  ("Acima do facial"). It counts the face values in euros, and in escudos at
+  their fixed rate of 200.482 escudos to the euro; the items in other
+  currencies are counted apart ("179 sem valor facial"), and the percentage
+  compares only the items that have both a face value and a value.
+- New releases: filters by metal (gold, silver, base metal) and "Sem
+  edições especiais", which hides the gold coins and those in proof or FDC
+  finish. A design's gold, proof and FDC versions have cards of their own,
+  so the filter keeps its others. The commemoratives catalogue has the same
+  filter, for the designs struck only in gold, proof or FDC.
+- The new releases' cards show the country's flag, and gold or silver beside
+  the face value; the country filter shows the flags too.
+
+### Changed
+- "Novos lançamentos" replaces "Lançamentos", without the line under it.
+- The €2 coins ("Moedas de 2 €") are the ECB's commemoratives of this year
+  and the last, and the mints' €2 coins of a country and year the ECB does
+  not list yet (it has not published its 2026 list); these were among the
+  collector coins.
+- France's and Austria's new coins say the month they go on sale, their
+  edition ("Prata Proof", "Prata BNC") and their mintage, as Portugal's do.
+  France's are read from each coin's page in the background: they fill in
+  over a few minutes after an update.
+
 ## [1.1.1] - 2026-11-02
 
 ### Changed

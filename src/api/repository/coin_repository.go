@@ -976,6 +976,31 @@ func (r *CoinRepository) CollectionNumistaTypes(userID uint) ([]CoinNumistaType,
 	return refs, err
 }
 
+// CoinFaceValueRow is what a collection coin's face value is worked out
+// from: its denomination and monetary system, or its Numista type's.
+type CoinFaceValueRow struct {
+	CoinID uint
+	// Quantity is how many are held (see coinQuantitySQL).
+	Quantity       int64
+	CurrentValue   *float64
+	Denomination   string
+	MonetarySystem string
+	NumistaTypeID  string
+}
+
+// CollectionFaceValueRows lists the user's collection coins (not the
+// wishlist's) of a kind ("" for all), for their face values.
+func (r *CoinRepository) CollectionFaceValueRows(userID uint, kind string) ([]CoinFaceValueRow, error) {
+	var rows []CoinFaceValueRow
+	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).
+		Select(`coins.id AS coin_id, ` + coinQuantitySQL + ` AS quantity, current_value,
+			COALESCE(denomination, '') AS denomination, COALESCE(monetary_system, '') AS monetary_system,
+			COALESCE((SELECT TRIM(r.number) FROM coin_references r
+				WHERE r.coin_id = coins.id AND LOWER(r.catalog) = 'numista' ORDER BY r.id LIMIT 1), '') AS numista_type_id`).
+		Order("coins.id").Scan(&rows).Error
+	return rows, err
+}
+
 // DistinctCountries lists the countries of the user's coins (any, wishlist
 // included), as written on the coins.
 func (r *CoinRepository) DistinctCountries(userID uint) ([]string, error) {

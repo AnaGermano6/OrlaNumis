@@ -1,9 +1,8 @@
 <template>
   <section class="mb-8" aria-labelledby="releases-title" data-testid="coin-releases">
-    <div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+    <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
       <h2 id="releases-title" class="m-0 font-display text-lg font-medium text-heading">{{ t('collectionOverview.releases.title') }}</h2>
     </div>
-    <p class="mb-3 mt-0 text-body text-text-secondary">{{ t('collectionOverview.releases.intro') }}</p>
 
     <p v-if="failed" class="m-0 text-body text-text-secondary" role="alert">{{ t('collectionOverview.releases.failed') }}</p>
     <p v-else-if="!groups.length" class="m-0 text-body text-text-muted">{{ t('common.loading') }}</p>
@@ -31,7 +30,7 @@
           @change="limit = PAGE"
         >
           <option value="">{{ t('collectionOverview.releases.allCountries', { count: current?.releases.length ?? 0 }) }}</option>
-          <option v-for="option in countries" :key="option.key" :value="option.key">{{ option.name }} ({{ option.count }})</option>
+          <option v-for="option in countries" :key="option.key" :value="option.key">{{ withFlagOfCode(option.key, option.name) }} ({{ option.count }})</option>
         </select>
         <button
           v-for="option in FILTERS"
@@ -45,6 +44,38 @@
         >
           {{ t(`collectionOverview.releases.filters.${option}`) }}
         </button>
+        <!-- By metal, when the list has more than one; and without the special editions. -->
+        <template v-if="metals.length > 1 || hasSpecialEditions">
+          <span class="mx-1 h-5 w-px bg-border-subtle" aria-hidden="true"></span>
+          <div class="flex flex-wrap items-center gap-2" role="group" :aria-label="t('collectionOverview.releases.metal')">
+            <template v-if="metals.length > 1">
+              <button
+                v-for="option in metals"
+                :key="option"
+                type="button"
+                class="chip border"
+                :class="option === metal ? 'border-gold text-gold' : 'border-border-subtle'"
+                :aria-pressed="option === metal"
+                :data-testid="`releases-metal-${option}`"
+                @click="chooseMetal(option)"
+              >
+                {{ t(`collectionOverview.releases.metals.${option}`) }}
+              </button>
+            </template>
+            <button
+              v-if="hasSpecialEditions"
+              type="button"
+              class="chip border"
+              :class="noSpecialEditions ? 'border-gold text-gold' : 'border-border-subtle'"
+              :aria-pressed="noSpecialEditions"
+              :title="t('collectionOverview.releases.noSpecialEditionsHint')"
+              data-testid="releases-no-special"
+              @click="toggleNoSpecialEditions"
+            >
+              {{ t('collectionOverview.releases.noSpecialEditions') }}
+            </button>
+          </div>
+        </template>
       </div>
 
       <p v-if="note" class="mb-3 mt-0 text-chip text-text-muted" data-testid="releases-note">{{ note }}</p>
@@ -67,17 +98,21 @@
 </template>
 
 <script setup lang="ts">
-// New and upcoming coins: the €2 commemoratives of the ECB's latest list and
-// the collector coins of the mints of Portugal, France and Austria, by
-// country, marked when the collection has them. Upcoming first, then the newest.
+// New and upcoming coins: the €2 coins (the ECB's commemoratives of this year
+// and the last, and the mints' €2 coins it does not list yet) and the
+// collector coins of the mints of Portugal, France and Austria, by country
+// and metal, marked when the collection has them. Upcoming first, then the
+// newest.
 import { computed, onMounted, ref } from 'vue'
-import { getCoinReleases, type CoinReleaseGroup } from '@/api/client'
+import { getCoinReleases, type CoinReleaseGroup, type CoinReleaseMetal } from '@/api/client'
 import CoinReleaseCard from '@/components/collection/CoinReleaseCard.vue'
 import { intlLocale, t } from '@/i18n'
-import { JOINT_ISSUE, releaseCountryName } from '@/utils/coinReleases'
+import { isSpecialEdition, JOINT_ISSUE, releaseCountryName } from '@/utils/coinReleases'
+import { withFlagOfCode } from '@/utils/countryFlags'
 
 const FILTERS = ['all', 'upcoming', 'missing'] as const
 type Filter = (typeof FILTERS)[number]
+const METALS: CoinReleaseMetal[] = ['gold', 'silver', 'base']
 /** Cards shown at first, and added by "Show more". */
 const PAGE = 8
 
@@ -87,14 +122,38 @@ const source = ref<CoinReleaseGroup['source']>('ecb')
 const filter = ref<Filter>('all')
 /** An ISO code, JOINT_ISSUE, or '' for every country. */
 const country = ref('')
+/** One metal, or '' for every one. */
+const metal = ref<CoinReleaseMetal | ''>('')
+/** Leaves out the special editions: gold coins, and coins in proof or FDC. */
+const noSpecialEditions = ref(false)
 const limit = ref(PAGE)
 
 const current = computed(() => groups.value.find((group) => group.source === source.value))
 const filtered = computed(() => (current.value?.releases ?? []).filter((release) =>
   (!country.value || (release.country || JOINT_ISSUE) === country.value)
-  && (filter.value === 'upcoming' ? release.upcoming : filter.value === 'missing' ? !release.owned : true)))
+  && (filter.value === 'upcoming' ? release.upcoming : filter.value === 'missing' ? !release.owned : true)
+  && (!metal.value || !!release.metals?.includes(metal.value))
+  && (!noSpecialEditions.value || !isSpecialEdition(release))))
 
-// The countries of the list shown, by name, with how many coins each has.
+// The metals of the list shown, in a fixed order.
+const metals = computed(() => METALS.filter((option) => (current.value?.releases ?? []).some((release) => release.metals?.includes(option))))
+
+const hasSpecialEditions = computed(() => (current.value?.releases ?? []).some(isSpecialEdition))
+
+// A second press shows every metal again; gold and "without special editions" exclude each other.
+function chooseMetal(option: CoinReleaseMetal) {
+  metal.value = metal.value === option ? '' : option
+  if (metal.value === 'gold') noSpecialEditions.value = false
+  limit.value = PAGE
+}
+
+function toggleNoSpecialEditions() {
+  noSpecialEditions.value = !noSpecialEditions.value
+  if (noSpecialEditions.value && metal.value === 'gold') metal.value = ''
+  limit.value = PAGE
+}
+
+// The countries of the list shown, by name, with their flags and how many coins each has.
 const countries = computed(() => {
   const counts = new Map<string, number>()
   for (const release of current.value?.releases ?? []) {
@@ -120,13 +179,12 @@ const note = computed(() => {
 function choose(next: CoinReleaseGroup['source']) {
   source.value = next
   country.value = ''
+  metal.value = ''
   limit.value = PAGE
 }
 
 function groupLabel(group: CoinReleaseGroup): string {
-  return group.source === 'ecb'
-    ? t('collectionOverview.releases.ecb', { year: group.year || '' })
-    : t('collectionOverview.releases.mints')
+  return group.source === 'ecb' ? t('collectionOverview.releases.ecb') : t('collectionOverview.releases.mints')
 }
 
 onMounted(async () => {

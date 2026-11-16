@@ -601,6 +601,11 @@ type NumistaTypeFacts struct {
 	CommemoratedTopic string
 	// Classification is Numista's kind of coin, as written in the cache.
 	Classification string
+	// FaceValue is the type's face value in its currency's main unit (0.5
+	// for 50 cents), 0 when Numista gives none; MonetarySystem is that
+	// currency, as a coin stores it ("Euro", "Escudo (1911-2001)").
+	FaceValue      float64
+	MonetarySystem string
 }
 
 // CachedTypeFacts tells what a type Numista already described (and the app
@@ -617,7 +622,16 @@ func (s *NumistaCatalogService) CachedTypeFacts(typeID int) (facts NumistaTypeFa
 		Commemorative:      strings.TrimSpace(detail.CommemoratedTopic) != "",
 		CommemoratedTopic:  strings.TrimSpace(detail.CommemoratedTopic),
 		Classification:     detail.Classification,
+		FaceValue:          faceValueOf(detail),
+		MonetarySystem:     detail.MonetarySystem,
 	}, true
+}
+
+func faceValueOf(detail *models.NumistaCatalogType) float64 {
+	if detail.FaceValue == nil {
+		return 0
+	}
+	return *detail.FaceValue
 }
 
 // mintPhoto returns the photos of a coin by the mint of its issuer, or nil.

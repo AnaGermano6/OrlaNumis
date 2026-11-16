@@ -31,6 +31,36 @@ type MintPhotoSource interface {
 	Confirm(ctx context.Context, photo *MintPhoto) *MintPhoto
 }
 
+// The finishes a version is struck in, as mintVariant names them.
+const (
+	mintFinishProof = "proof"
+	mintFinishBNC   = "bnc"
+	mintFinishFDC   = "fdc"
+)
+
+// mintVariant names a version by its metal (gold, silver; a base metal
+// goes without saying) and finish, in the words Portugal's mint uses: "Prata
+// Proof", "Ouro Proof", "Prata BNC", "BNC"; "" for a base metal coin of the
+// usual finish.
+func mintVariant(metal, finish string) string {
+	words := []string{}
+	switch releaseMetal(metal) {
+	case ReleaseMetalGold:
+		words = append(words, "Ouro")
+	case ReleaseMetalSilver:
+		words = append(words, "Prata")
+	}
+	switch finish {
+	case mintFinishProof:
+		words = append(words, "Proof")
+	case mintFinishBNC:
+		words = append(words, "BNC")
+	case mintFinishFDC:
+		words = append(words, "FDC")
+	}
+	return strings.Join(words, " ")
+}
+
 // mintCoin is a coin of a mint's catalogue, as kept in the cache.
 type mintCoin struct {
 	Title string `json:"title"`
@@ -49,9 +79,12 @@ type mintCoin struct {
 	// Volume how many it strikes, when the mint says.
 	Released string `json:"released,omitempty"`
 	Volume   int64  `json:"volume,omitempty"`
-	Text     string `json:"text,omitempty"`
-	Obverse  string `json:"obverse"`
-	Reverse  string `json:"reverse,omitempty"`
+	// Variant is the version's metal and finish ("Prata Proof"), worked out
+	// for a mint whose titles do not say it (Portugal's do: "(Prata Proof)").
+	Variant string `json:"variant,omitempty"`
+	Text    string `json:"text,omitempty"`
+	Obverse string `json:"obverse"`
+	Reverse string `json:"reverse,omitempty"`
 	// ReverseGuess is a photo that probably shows the reverse, to be checked.
 	ReverseGuess string `json:"reverseGuess,omitempty"`
 }
