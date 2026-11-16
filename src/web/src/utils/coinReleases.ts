@@ -44,3 +44,13 @@ export function releasePeriod(release: CoinRelease): string {
 export function formatCount(value: number): string {
   return new Intl.NumberFormat(intlLocale()).format(value)
 }
+
+/**
+ * A special edition: a coin struck in gold only, or in proof or FDC finish
+ * only ("Prata Proof", "Prata FDC"). A design also struck otherwise is not;
+ * neither is one whose metal and finish the source does not say.
+ */
+export function isSpecialEdition(release: CoinRelease): boolean {
+  const metals = release.metals ?? []
+  return !!release.specialFinish || (metals.length > 0 && metals.every((metal) => metal === 'gold'))
+}

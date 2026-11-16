@@ -104,10 +104,10 @@
 // and metal, marked when the collection has them. Upcoming first, then the
 // newest.
 import { computed, onMounted, ref } from 'vue'
-import { getCoinReleases, type CoinRelease, type CoinReleaseGroup, type CoinReleaseMetal } from '@/api/client'
+import { getCoinReleases, type CoinReleaseGroup, type CoinReleaseMetal } from '@/api/client'
 import CoinReleaseCard from '@/components/collection/CoinReleaseCard.vue'
 import { intlLocale, t } from '@/i18n'
-import { JOINT_ISSUE, releaseCountryName } from '@/utils/coinReleases'
+import { isSpecialEdition, JOINT_ISSUE, releaseCountryName } from '@/utils/coinReleases'
 import { withFlagOfCode } from '@/utils/countryFlags'
 
 const FILTERS = ['all', 'upcoming', 'missing'] as const
@@ -133,19 +133,12 @@ const filtered = computed(() => (current.value?.releases ?? []).filter((release)
   (!country.value || (release.country || JOINT_ISSUE) === country.value)
   && (filter.value === 'upcoming' ? release.upcoming : filter.value === 'missing' ? !release.owned : true)
   && (!metal.value || !!release.metals?.includes(metal.value))
-  && (!noSpecialEditions.value || !specialEdition(release))))
+  && (!noSpecialEditions.value || !isSpecialEdition(release))))
 
 // The metals of the list shown, in a fixed order.
 const metals = computed(() => METALS.filter((option) => (current.value?.releases ?? []).some((release) => release.metals?.includes(option))))
 
-// Gold coins, and coins in proof or FDC finish ("Prata Proof", "Prata FDC");
-// a design also struck otherwise is kept.
-function specialEdition(release: CoinRelease): boolean {
-  const metals = release.metals ?? []
-  return !!release.specialFinish || (metals.length > 0 && metals.every((option) => option === 'gold'))
-}
-
-const hasSpecialEditions = computed(() => (current.value?.releases ?? []).some(specialEdition))
+const hasSpecialEditions = computed(() => (current.value?.releases ?? []).some(isSpecialEdition))
 
 // A second press shows every metal again; gold and "without special editions" exclude each other.
 function chooseMetal(option: CoinReleaseMetal) {

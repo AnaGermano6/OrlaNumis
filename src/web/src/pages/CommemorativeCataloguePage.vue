@@ -118,6 +118,21 @@
           >
             {{ t(`sets.catalogue.ownedFilter.${option}`) }}
           </button>
+          <!-- As in the new releases: without the gold coins and those in proof or FDC. -->
+          <template v-if="hasSpecialEditions">
+            <span class="mx-1 h-5 w-px bg-border-subtle" aria-hidden="true"></span>
+            <button
+              type="button"
+              class="chip border"
+              :class="noSpecialEditions ? 'border-gold text-gold' : 'border-border-subtle'"
+              :aria-pressed="noSpecialEditions"
+              :title="t('collectionOverview.releases.noSpecialEditionsHint')"
+              data-testid="catalogue-no-special"
+              @click="noSpecialEditions = !noSpecialEditions; limit = PAGE"
+            >
+              {{ t('collectionOverview.releases.noSpecialEditions') }}
+            </button>
+          </template>
         </div>
 
         <p v-if="!loadingCountry && !complete" class="mb-4 mt-0 rounded-md border border-border-subtle bg-card p-3 text-body text-text-secondary" role="status" data-testid="catalogue-partial">
@@ -186,7 +201,8 @@
 // published, the €5, €10 and €20 coins and the other coins the mints of
 // Portugal, France and Austria sell. Other coins apart: Portugal's
 // commemorative and collector coins in escudos. The collection's own are
-// marked "In my collection"; a filter for each face value narrows the list.
+// marked "In my collection"; a filter for each face value narrows the list,
+// and another leaves out the special editions (gold, proof, FDC).
 // A coin can be hidden, or said to be the same as another (one coin listed
 // twice); those are listed apart, to show again. The country (and currency)
 // chosen is kept in the address.
@@ -201,7 +217,7 @@ import CatalogueCoinOptions from '@/components/collection/CatalogueCoinOptions.v
 import CoinReleaseCard from '@/components/collection/CoinReleaseCard.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { intlLocale, t } from '@/i18n'
-import { formatFaceValue, releaseCountryName, releaseFaceValues } from '@/utils/coinReleases'
+import { formatFaceValue, isSpecialEdition, releaseCountryName, releaseFaceValues } from '@/utils/coinReleases'
 import { flagOfCode, withFlagOfCode } from '@/utils/countryFlags'
 import { randomSetColor } from '@/utils/setColors'
 
@@ -224,6 +240,8 @@ const countryFailed = ref(false)
 /** The face value shown; null for every one. */
 const faceValue = ref<number | null>(null)
 const ownedFilter = ref<(typeof OWNED)[number]>('all')
+/** Leaves out the special editions, on every country. */
+const noSpecialEditions = ref(false)
 const limit = ref(PAGE)
 const creatingSet = ref(false)
 const createSetFailed = ref(false)
@@ -280,9 +298,12 @@ const selectedSummary = computed(() => countries.value.find((entry) => entryKey(
 // The face values the country's coins have, from the lowest.
 const faceValues = computed(() => [...new Set(coins.value.flatMap(coinValues))].sort((a, b) => a - b))
 
+const hasSpecialEditions = computed(() => coins.value.some(isSpecialEdition))
+
 const filtered = computed(() => coins.value.filter((coin) =>
   (faceValue.value === null || coinValues(coin).includes(faceValue.value))
-  && (ownedFilter.value === 'all' || (ownedFilter.value === 'owned') === coin.owned)))
+  && (ownedFilter.value === 'all' || (ownedFilter.value === 'owned') === coin.owned)
+  && (!noSpecialEditions.value || !isSpecialEdition(coin))))
 
 // The coins shown, by year, newest first, with how many of each year the collection has.
 const byYear = computed(() => {

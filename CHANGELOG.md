@@ -16,7 +16,8 @@ Versions follow [Semantic Versioning](https://semver.org).
 - New releases: filters by metal (gold, silver, base metal) and "Sem
   edições especiais", which hides the gold coins and those in proof or FDC
   finish. A design's gold, proof and FDC versions have cards of their own,
-  so the filter keeps its others.
+  so the filter keeps its others. The commemoratives catalogue has the same
+  filter, for the designs struck only in gold, proof or FDC.
 - The new releases' cards show the country's flag, and gold or silver beside
   the face value; the country filter shows the flags too.
 
