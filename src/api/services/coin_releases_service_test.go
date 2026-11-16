@@ -94,8 +94,8 @@ func TestMintReleases_GroupsVariantsOfTheLastYear(t *testing.T) {
 		{Title: "Rotary (BNC)", Value: 2, Year: 2026, Released: "2026-07", PageURL: "https://loja.incm.pt/products/rotary-bnc", Obverse: "https://cdn/rotary-bnc_A.jpg", Volume: 10000},
 		{Title: "Rotary", Value: 2, Year: 2026, Released: "2026-07", PageURL: "https://loja.incm.pt/products/rotary", Obverse: "https://cdn/rotary_A.jpg", Volume: 500000},
 		{Title: "Rotary (Proof)", Value: 2, Year: 2026, Released: "2026-07", PageURL: "https://loja.incm.pt/products/rotary-proof", Obverse: "https://cdn/rotary-proof_A.jpg", Volume: 5000},
-		{Title: "FIFA World Cup (Ouro Proof)", Value: 5, Year: 2026, Released: "2026-05", PageURL: "https://loja.incm.pt/products/fifa-ouro", Obverse: "https://cdn/fifa-ouro_A.jpg"},
-		{Title: "FIFA World Cup (Prata Proof)", Value: 7.5, Year: 2026, Released: "2026-05", PageURL: "https://loja.incm.pt/products/fifa-prata", Obverse: "https://cdn/fifa-prata_A.jpg"},
+		{Title: "FIFA World Cup (Ouro Proof)", Value: 5, Metal: "Ouro 999‰", Year: 2026, Released: "2026-05", PageURL: "https://loja.incm.pt/products/fifa-ouro", Obverse: "https://cdn/fifa-ouro_A.jpg"},
+		{Title: "FIFA World Cup (Prata Proof)", Value: 7.5, Metal: "Prata 925‰", Year: 2026, Released: "2026-05", PageURL: "https://loja.incm.pt/products/fifa-prata", Obverse: "https://cdn/fifa-prata_A.jpg"},
 		{Title: "Natal", Value: 5, Year: 2026, Released: "2026-12", PageURL: "https://loja.incm.pt/products/natal", Obverse: "https://cdn/natal_A.jpg"},
 		{Title: "O Conhecimento", Value: 5, Year: 2024, Released: "2024-11", PageURL: "https://loja.incm.pt/products/conhecimento", Obverse: "https://cdn/conhecimento_A.jpg"},
 	}
@@ -126,6 +126,132 @@ func TestMintReleases_GroupsVariantsOfTheLastYear(t *testing.T) {
 	if fifa.FaceValue != 5 || len(fifa.FaceValues) != 2 || fifa.FaceValues[1] != 7.5 || strings.Join(fifa.Variants, ",") != "Ouro Proof,Prata Proof" || len(fifa.Keys) != 2 {
 		t.Fatalf("FIFA = %+v", fifa)
 	}
+	// Its metals, once each; the Rotary's mint does not say.
+	if strings.Join(fifa.Metals, ",") != "gold,silver" || rotary.Metals != nil {
+		t.Fatalf("metals = %v, %v", fifa.Metals, rotary.Metals)
+	}
+}
+
+func TestReleaseMetal(t *testing.T) {
+	for metal, want := range map[string]string{
+		"Prata 925‰":       ReleaseMetalSilver,
+		"Ouro 999‰":        ReleaseMetalGold,
+		"Ouro nórdico":     ReleaseMetalBase,
+		"gold":             ReleaseMetalGold,
+		"silver":           ReleaseMetalSilver,
+		"Or 999":           ReleaseMetalGold,
+		"Argent":           ReleaseMetalSilver,
+		"common metal":     ReleaseMetalBase,
+		"copper":           ReleaseMetalBase,
+		"Cuproníquel":      ReleaseMetalBase,
+		"Cor-de-rosa":      ReleaseMetalBase,
+		"Prata dourada":    ReleaseMetalSilver,
+		"Silber vergoldet": ReleaseMetalSilver,
+		"":                 "",
+	} {
+		if got := releaseMetal(metal); got != want {
+			t.Errorf("releaseMetal(%q) = %q, want %q", metal, got, want)
+		}
+	}
+}
+
+func TestCoinReleases_GoldAndSpecialFinishCoinsApart(t *testing.T) {
+	portugal := fakeMint{country: "Portugal", source: "incm", coins: []mintCoin{
+		{Title: "FIFA World Cup (Ouro Proof)", Value: 5, Metal: "Ouro 999‰", Year: 2026, Released: "2026-05", PageURL: "https://loja.incm.pt/products/fifa-ouro", Obverse: "https://cdn/fifa-ouro_A.jpg"},
+		{Title: "FIFA World Cup (Prata Proof)", Value: 7.5, Metal: "Prata 925‰", Year: 2026, Released: "2026-05", PageURL: "https://loja.incm.pt/products/fifa-prata", Obverse: "https://cdn/fifa-prata_A.jpg"},
+		{Title: "FIFA World Cup (Prata FDC)", Value: 7.5, Metal: "Prata 500‰", Year: 2026, Released: "2026-05", PageURL: "https://loja.incm.pt/products/fifa-prata-fdc", Obverse: "https://cdn/fifa-prata-fdc_A.jpg"},
+		{Title: "FIFA World Cup (Prata)", Value: 7.5, Metal: "Prata 500‰", Year: 2026, Released: "2026-05", PageURL: "https://loja.incm.pt/products/fifa-prata-normal", Obverse: "https://cdn/fifa-prata-normal_A.jpg"},
+		{Title: "FIFA World Cup", Value: 7.5, Metal: "Cuproníquel", Year: 2026, Released: "2026-05", PageURL: "https://loja.incm.pt/products/fifa", Obverse: "https://cdn/fifa_A.jpg"},
+	}}
+	releases := NewCoinReleasesService(nil, portugal)
+	releases.now = func() time.Time { return time.Date(2026, 10, 13, 0, 0, 0, 0, time.UTC) }
+
+	got := []string{}
+	for _, release := range releases.Releases(context.Background())[1].Releases {
+		got = append(got, fmt.Sprintf("%s %v %g %v special=%v", release.Title, release.Metals, release.FaceValue, release.Variants, release.SpecialFinish))
+	}
+	// Its silver and base metal coins together; its proof and FDC coins
+	// apart, and its gold one apart too.
+	want := "FIFA World Cup [silver base] 7.5 [Prata] special=false | FIFA World Cup [silver] 7.5 [Prata Proof Prata FDC] special=true | FIFA World Cup [gold] 5 [Ouro Proof] special=true"
+	if strings.Join(got, " | ") != want {
+		t.Fatalf("releases = %s", strings.Join(got, " | "))
+	}
+}
+
+func TestIsSpecialFinishCoin(t *testing.T) {
+	for _, test := range []struct {
+		coin mintCoin
+		want bool
+	}{
+		{mintCoin{Title: "Amadeo de Souza-Cardoso (Prata Proof)"}, true},
+		{mintCoin{Title: "150 Anos da Caixa Geral de Depósitos (Prata FDC)"}, true},
+		{mintCoin{Title: "Multiculturalidade (BNC)"}, false},
+		{mintCoin{Title: "Hello Kitty", PageURL: "https://www.monnaiedeparis.fr/en/hello-kitty-10eur-silver-coin-proof-quality-yeardate-2026"}, true},
+		{mintCoin{Title: "Astrological signs", PageURL: "https://www.monnaiedeparis.fr/en/astrological-signs-aries-5eur-common-metal-coin-circulating-quality-yeardate-2025"}, false},
+		{mintCoin{Title: "Edaphon", PageURL: "https://www.muenzeoesterreich.at/produkte/25-euro-silber-niob-muenze-edaphon-pp"}, true},
+		{mintCoin{Title: "Edaphon", PageURL: "https://www.muenzeoesterreich.at/produkte/25-euro-silber-niob-muenze-edaphon-hgh"}, false},
+	} {
+		if got := isSpecialFinishCoin(test.coin); got != test.want {
+			t.Errorf("isSpecialFinishCoin(%q, %q) = %v, want %v", test.coin.Title, test.coin.PageURL, got, test.want)
+		}
+	}
+}
+
+func TestWithMintTwoEuroCoins(t *testing.T) {
+	release := func(source, country, title, from string, values ...float64) CoinRelease {
+		coin := CoinRelease{Source: source, Country: country, Title: title, From: from, To: from, FaceValue: values[0]}
+		if len(values) > 1 {
+			coin.FaceValues = values
+		}
+		return coin
+	}
+	twoEuro := CoinReleaseGroup{Source: CoinReleaseSourceECB, Year: 2025, Releases: []CoinRelease{
+		release("ecb", "PT", "World scouting", "2025-06", 2),
+	}}
+	mints := CoinReleaseGroup{Source: CoinReleaseGroupMints, Year: 2026, Releases: []CoinRelease{
+		release("incm", "PT", "Escutismo mundial", "2025-06", 2),
+		release("incm", "PT", "Rotary", "2026-07", 2),
+		release("mdp", "FR", "Tour de France", "2026-06", 2),
+		release("incm", "PT", "FIFA World Cup", "2026-05", 5, 7.5),
+		release("incm", "PT", "Natal", "2026-12", 2, 5),
+	}}
+	twoEuro, mints = withMintTwoEuroCoins(twoEuro, mints)
+
+	titles := func(group CoinReleaseGroup) string {
+		var names []string
+		for _, coin := range group.Releases {
+			names = append(names, coin.Title)
+		}
+		return strings.Join(names, " | ")
+	}
+	// The mints' €2 coins the ECB does not list yet join its own, newest first;
+	// Portugal's of 2025 is the ECB's already.
+	if got := titles(twoEuro); got != "Rotary | Tour de France | World scouting" {
+		t.Errorf("€2 coins = %s", got)
+	}
+	// A design of €2 and €5 is a collector coin; the collector coins keep their order.
+	if got := titles(mints); got != "FIFA World Cup | Natal" {
+		t.Errorf("collector coins = %s", got)
+	}
+}
+
+func TestCoinReleases_EcbListsOfThisYearAndTheLast(t *testing.T) {
+	ecb := newTestEcbService(t, ecbPagesByYear{2025: ecb2022Page(t), 2026: ecb2022Page(t)})
+	releases := NewCoinReleasesService(ecb)
+	releases.now = ecb.now
+	both := releases.Releases(context.Background())[0]
+
+	last := NewCoinReleasesService(newTestEcbService(t, ecbPagesByYear{2025: ecb2022Page(t)}))
+	last.now = ecb.now
+	one := last.Releases(context.Background())[0]
+	if both.Year != 2026 || one.Year != 2025 || len(one.Releases) == 0 || len(both.Releases) != 2*len(one.Releases) {
+		t.Fatalf("both lists: year %d, %d coins; last year's: year %d, %d coins", both.Year, len(both.Releases), one.Year, len(one.Releases))
+	}
+	for _, coin := range both.Releases {
+		if strings.Join(coin.Metals, ",") != ReleaseMetalBase {
+			t.Fatalf("%s metals = %v", coin.Title, coin.Metals)
+		}
+	}
 }
 
 type ecbPagesByYear map[int][]byte
@@ -155,6 +281,10 @@ func TestMintReleases_ByCountryAndYear(t *testing.T) {
 	if len(groups) != 2 || groups[1].Source != CoinReleaseGroupMints || groups[1].Year != 2026 {
 		t.Fatalf("groups = %+v", groups)
 	}
+	// The €2 coin is among the €2 coins, the ECB's list being unread.
+	if len(groups[0].Releases) != 1 || groups[0].Releases[0].Title != "Rotary" {
+		t.Fatalf("€2 coins = %+v", groups[0].Releases)
+	}
 	got := []string{}
 	for _, release := range groups[1].Releases {
 		got = append(got, fmt.Sprintf("%s %s %g %s-%s %v", release.Country, release.Title, release.FaceValue, release.From, release.To, release.Upcoming))
@@ -164,7 +294,6 @@ func TestMintReleases_ByCountryAndYear(t *testing.T) {
 	// coin and the unreadable Austrian catalogue add nothing.
 	want := []string{
 		"FR Year of the goat 20 2027-01-2027-12 true",
-		"PT Rotary 2 2026-07-2026-07 false",
 		"FR Year of the horse 20 2026-01-2026-12 false",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {

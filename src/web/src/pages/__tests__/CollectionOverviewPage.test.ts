@@ -34,8 +34,8 @@ describe('CollectionOverviewPage', () => {
     vi.clearAllMocks()
     mocks.getCollectionSummary.mockImplementation((kind?: string) => Promise.resolve(
       kind === 'coin' ? summary(452, 84, 3838.11, { currentCoins: 192, commemorativeCoins: 200, uniqueCoins: 440 })
-        : kind === 'banknote' ? summary(3, 1, 25, { uniqueCoins: 1, highlights: { rarest: null, oldest: { id: 1820, name: '2000 Escudos 1991', country: 'Portugal', year: 1991, dateRange: '1991', rarity: '', grade: '', currentValue: 25 }, mostValuable: null } })
-          : summary(455, 84, 3863.11, { uniqueCoins: 441 }),
+        : kind === 'banknote' ? summary(3, 1, 25, { uniqueCoins: 1, faceValue: 14.96, withoutFaceValue: 0, valueOverFace: 67.1, highlights: { rarest: null, oldest: { id: 1820, name: '2000 Escudos 1991', country: 'Portugal', year: 1991, dateRange: '1991', rarity: '', grade: '', currentValue: 25 }, mostValuable: null } })
+          : summary(455, 84, 3863.11, { uniqueCoins: 441, faceValue: 912.4, withoutFaceValue: 31, valueOverFace: -2.5 }),
     ))
   })
 
@@ -50,6 +50,13 @@ describe('CollectionOverviewPage', () => {
     expect(wrapper.get('[data-testid="overview-kpi-items"]').text()).toBe('455Moedas e notas')
     expect(wrapper.get('[data-testid="overview-kpi-unique"]').text()).toBe('441Moedas e notas únicas')
     expect(wrapper.get('[data-testid="overview-kpi-value"]').text()).toContain('3863,11')
+    // Their face value, and how much more (here less) than it they are worth.
+    const face = wrapper.get('[data-testid="overview-kpi-faceValue"]').text()
+    expect(face).toContain('912,40')
+    expect(face).toContain('Valor facial31 sem valor facial')
+    expect(wrapper.get('[data-testid="overview-kpi-overFace"]').text().replace(/\s/g, ' ')).toBe('-2,5%Acima do facial')
+    // A coin summary without them (an older server) shows none.
+    expect(wrapper.get('[data-testid="kpi-faceValue"]').find('span').text()).toBe('—')
     // The gallery's numbers and highlights for the coins…
     expect(wrapper.get('[data-testid="kpi-coins"]').text()).toContain('452')
     expect(wrapper.get('[data-testid="kpi-unique"]').text()).toContain('440')
@@ -59,6 +66,8 @@ describe('CollectionOverviewPage', () => {
     expect(wrapper.get('#overview-banknotes-title').text()).toBe('Notas')
     expect(wrapper.get('[data-testid="banknotes-kpi-banknotes"]').text()).toBe('3Notas')
     expect(wrapper.get('[data-testid="banknotes-kpi-unique"]').text()).toBe('1Notas únicas')
+    expect(wrapper.get('[data-testid="banknotes-kpi-faceValue"]').text()).toMatch(/^14,96.*Valor facial$/)
+    expect(wrapper.get('[data-testid="banknotes-kpi-overFace"]').text().replace(/\s/g, ' ')).toBe('+67,1%Acima do facial')
     expect(wrapper.text()).toContain('Destaques das notas')
     expect(wrapper.text()).toContain('2000 Escudos 1991')
     expect(wrapper.text()).toContain('Ainda nenhuma nota tem raridade.')

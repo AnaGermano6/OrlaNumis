@@ -630,6 +630,16 @@ export interface CollectionSummary {
   spareCoins?: number
   /** totalValue in euros (converted at the ECB rate for a dollar collection); null when no rate is available. */
   totalValueEur: number | null
+  /**
+   * Sum of the face values in the collection currency: those in euros, and
+   * in escudos at their fixed rate to the euro; null when it cannot be
+   * converted to the collection currency.
+   */
+  faceValue?: number | null
+  /** Items held whose face value is not in euros or escudos, left out of faceValue. */
+  withoutFaceValue?: number
+  /** How much more, in percent, the items with a face value and a value are worth than their face value; null when none has both. */
+  valueOverFace?: number | null
   exchangeRate?: { usdPerEur: number; date: string }
   highlights?: CollectionHighlights
 }
@@ -684,6 +694,10 @@ export interface CoinRelease {
   faceValues?: number[]
   /** The face value's currency when not euros: "PTE" for escudos. */
   currency?: string
+  /** The kinds of metal the design is struck in; none when the mint does not say. */
+  metals?: CoinReleaseMetal[]
+  /** Every coin of it is in a collector's finish: proof or "flor de cunho" (FDC). */
+  specialFinish?: boolean
   /** '' when there is no picture to show (Numista's are refused to the app). */
   imageUrl: string
   pageUrl: string
@@ -704,8 +718,11 @@ export interface CoinRelease {
   sameAs?: string
 }
 
+/** Gold, silver, or a base metal (cupronickel, nickel brass, copper…). */
+export type CoinReleaseMetal = 'gold' | 'silver' | 'base'
+
 export interface CoinReleaseGroup {
-  /** The ECB's €2 commemoratives, or the mints' collector coins. */
+  /** The €2 coins (the ECB's commemoratives, and the mints' €2 coins it does not list yet), or the mints' collector coins. */
   source: 'ecb' | 'mints'
   /** The year of the ECB's list (0 when it could not be read); for the mints, the current year. */
   year: number

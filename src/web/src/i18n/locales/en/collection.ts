@@ -157,6 +157,11 @@ export default {
     valueHintIn: 'Sum of the coins\' current values, counting quantities, in {currency}.',
     unique: 'Unique coins',
     uniqueHint: 'Different coins: each counts once, whatever its quantity.',
+    faceValue: 'Face value',
+    faceValueHint: 'Sum of the face values, counting quantities, in {currency}: those in euros, and those in escudos at their fixed rate of 200.482 escudos to the euro. Coins and banknotes of other currencies are left out.',
+    withoutFaceValue: { one: '{count} without a face value', other: '{count} without a face value' },
+    overFace: 'Over face value',
+    overFaceHint: 'How much more (or less) the total value is than the face value, counting only the coins and banknotes that have both.',
   },
   highlights: {
     title: 'Collection highlights',

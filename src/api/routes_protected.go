@@ -221,7 +221,9 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		coinHandler.WithCirculation(coinCirculation)
 		protected.GET("/coins/:id/status", coinHandler.Status)
 		protected.GET("/coins/statuses", coinHandler.StatusGroups)
-		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(d.exchangeRates).WithSettings(d.settingsSvc).WithCirculation(coinCirculation).Summary)
+		// The face values, from the cached Numista types or the denominations.
+		faceValues := services.NewCollectionFaceValueService(d.coinRepo, numistaCatalogSvc)
+		protected.GET("/coins/summary", handlers.NewCollectionSummaryHandler(d.coinRepo).WithExchangeRates(d.exchangeRates).WithSettings(d.settingsSvc).WithCirculation(coinCirculation).WithFaceValues(faceValues).Summary)
 		// New and upcoming coins: the ECB's €2 commemoratives and the mints' collector coins.
 		coinReleases := services.NewCoinReleasesService(ecbCoinPhotos, incmCoinPhotos, mdpCoinPhotos, moeCoinPhotos).WithNumista(numistaCatalogSvc)
 		coinReleasesHandler := handlers.NewCoinReleasesHandler(coinReleases, d.coinRepo, coinPhotoSearch)

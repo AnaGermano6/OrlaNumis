@@ -14,16 +14,19 @@
     <!-- The whole collection: coins and banknotes together -->
     <section class="mb-8" aria-labelledby="overview-all-title">
       <h2 id="overview-all-title" class="mb-3 font-display text-lg font-medium text-heading">{{ t('collectionOverview.all.title') }}</h2>
-      <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <!-- The counts, then the amounts. -->
+      <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
         <div
           v-for="kpi in totals"
           :key="kpi.key"
           class="flex min-w-0 flex-col items-center gap-1 rounded-md border border-border-subtle bg-card px-2 py-4 text-center md:px-4"
+          :title="kpi.hint || undefined"
           :data-testid="`overview-kpi-${kpi.key}`"
         >
           <!-- A long amount gets a smaller size on phones, to fit half the row. -->
           <span class="whitespace-nowrap font-display font-semibold text-text-primary md:text-2xl" :class="kpi.display.length > 10 ? 'text-base' : 'text-xl'">{{ kpi.display }}</span>
           <span class="text-label font-semibold uppercase tracking-[0.08em] text-text-muted">{{ kpi.label }}</span>
+          <span v-if="kpi.note" class="text-chip text-text-muted">{{ kpi.note }}</span>
         </div>
       </div>
     </section>
@@ -67,7 +70,8 @@
 
 <script setup lang="ts">
 // The collection at a glance: how many items (counting quantities, and each
-// different one once), countries and how much they are worth altogether, with
+// different one once), countries, how much they are worth altogether, their
+// face value and how much more than it they are worth, with
 // a coin and a banknote of the day; then the coins (the gallery's numbers and
 // highlights, whose cards open the gallery filtered) and the banknotes, each
 // with the ones held more than once; last, new and upcoming coins.
@@ -86,6 +90,7 @@ import ShareListDialog from '@/components/collection/ShareListDialog.vue'
 import { useCoinsStore } from '@/stores/coins'
 import { intlLocale, t } from '@/i18n'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
+import { faceValueKpis } from '@/utils/faceValueKpis'
 import { formatCurrency } from '@/utils/format'
 
 const router = useRouter()
@@ -102,14 +107,17 @@ function count(value: number | undefined): string {
 }
 
 const totals = computed(() => [
-  { key: 'items', display: count(all.value?.coins), label: t('collectionOverview.all.items') },
-  { key: 'unique', display: count(all.value ? all.value.uniqueCoins ?? all.value.coins : undefined), label: t('collectionOverview.all.unique') },
-  { key: 'countries', display: count(all.value?.countries), label: t('collectionOverview.all.countries') },
+  { key: 'items', display: count(all.value?.coins), label: t('collectionOverview.all.items'), hint: '', note: '' },
+  { key: 'unique', display: count(all.value ? all.value.uniqueCoins ?? all.value.coins : undefined), label: t('collectionOverview.all.unique'), hint: '', note: '' },
+  { key: 'countries', display: count(all.value?.countries), label: t('collectionOverview.all.countries'), hint: '', note: '' },
   {
     key: 'value',
     display: all.value ? formatCurrency(all.value.totalValue) : '—',
     label: t('collectionOverview.all.value'),
+    hint: '',
+    note: '',
   },
+  ...faceValueKpis(all.value),
 ])
 
 // A coin card opens the gallery with only that card's filter on.

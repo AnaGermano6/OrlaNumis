@@ -159,6 +159,11 @@ const messages: Messages['collection'] = {
     valueHintIn: 'Soma do valor atual das moedas, contando as quantidades, em {currency}.',
     unique: 'Moedas únicas',
     uniqueHint: 'Moedas diferentes: cada uma conta uma vez, seja qual for a quantidade.',
+    faceValue: 'Valor facial',
+    faceValueHint: 'Soma do valor facial, contando as quantidades, em {currency}: o que está em euros, e o que está em escudos ao câmbio fixo de 200,482 escudos por euro. As moedas e notas de outras moedas não contam.',
+    withoutFaceValue: { one: '{count} sem valor facial', other: '{count} sem valor facial' },
+    overFace: 'Acima do facial',
+    overFaceHint: 'Quanto o valor total está acima (ou abaixo) do valor facial, contando só as moedas e notas que têm os dois.',
   },
   highlights: {
     title: 'Destaques da coleção',
