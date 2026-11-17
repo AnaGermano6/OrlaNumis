@@ -35,6 +35,7 @@ describe('set filters', () => {
       { country: 'Portugal', denomination: '2 euro', yearFrom: 2002, yearTo: 2010, classification: 'commemorative' as const, presentation: 'coincard' },
       { ...emptyFilters(), yearFrom: 2002 },
       { ...emptyFilters(), yearFrom: 1990, yearTo: 1990 },
+      { ...emptyFilters(), country: 'Portugal', kind: 'banknote' as const },
     ]) {
       expect(criteriaToFilters(filtersToCriteria(filters))).toEqual(filters)
     }
@@ -51,5 +52,6 @@ describe('set filters', () => {
       .toBe('Portugal · 2 euro · 2002–2010 · Comemorativas · Coincard')
     expect(filtersName({ ...emptyFilters(), yearFrom: 2002 })).toBe('desde 2002')
     expect(filtersName({ ...emptyFilters(), yearTo: 2001 })).toBe('até 2001')
+    expect(filtersName({ ...emptyFilters(), country: 'Portugal', kind: 'banknote' })).toBe('Portugal · Notas')
   })
 })

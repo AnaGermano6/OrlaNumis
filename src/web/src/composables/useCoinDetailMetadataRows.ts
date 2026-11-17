@@ -27,6 +27,11 @@ function statusValue(status: CoinStatus | null | undefined): string {
   return parts.join(' · ')
 }
 
+// A measure in the language's numbers, with its unit apart: "8,5 g", "25,75 mm".
+function measure(value: number, unit: string): string {
+  return `${new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 2 }).format(value)} ${unit}`
+}
+
 function formatDemonetizationDate(value: string | undefined): string {
   if (!value) return ''
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
@@ -122,7 +127,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus
     // What sets a banknote apart: its issue, catalogue number and this note's own marks.
     if (banknote) {
       const pick = pickNumber(coin.references)
-      const dimensions = coin.widthMm != null && coin.heightMm != null ? `${coin.widthMm} × ${coin.heightMm} mm` : ''
+      const dimensions = coin.widthMm != null && coin.heightMm != null ? `${measure(coin.widthMm, '×')} ${measure(coin.heightMm, 'mm')}` : ''
       for (const [key, label, value] of [
         ['series', t('banknoteForm.series'), coin.series],
         ['pick', t('banknoteForm.pick'), pick ? `P${pick}` : ''],
@@ -167,7 +172,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus
       result.push({
         key: 'weight',
         label: t('coinFields.weight'),
-        value: `${coin.weightGrams}g`,
+        value: measure(coin.weightGrams, 'g'),
       })
     }
 
@@ -175,7 +180,7 @@ export function useCoinDetailMetadataRows(coin: Coin | null, status?: CoinStatus
       result.push({
         key: 'diameter',
         label: t('coinFields.diameter'),
-        value: `${coin.diameterMm}mm`,
+        value: measure(coin.diameterMm, 'mm'),
       })
     }
 

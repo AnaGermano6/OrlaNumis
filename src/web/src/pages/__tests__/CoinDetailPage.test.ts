@@ -11,7 +11,7 @@ const routerPush = vi.fn()
 const shareCoinCard = vi.fn()
 const sharing = ref(false)
 const showConfirm = vi.fn()
-const route = reactive({ name: 'coin-detail', params: { id: String(coin.id) } })
+const route = reactive<{ name: string; params: { id: string }; hash?: string }>({ name: 'coin-detail', params: { id: String(coin.id) } })
 
 vi.mock('@/stores/coins', () => ({
   useCoinsStore: () => ({
@@ -108,6 +108,75 @@ describe('CoinDetailPage', () => {
     expect(wrapper.find('.grid-cols-2').exists()).toBe(true)
     expect(wrapper.find('button[aria-label="Share"]').exists()).toBe(true)
     expect(fetchCoin).toHaveBeenCalledWith(coin.id)
+  })
+
+  it('shows both sides with their names, then the name, the key facts in a row and the notes', async () => {
+    const wrapper = mount(CoinDetailPage, { global: { stubs: pageStubs() } })
+    await flushPromises()
+
+    const summary = wrapper.get('[data-testid="coin-summary"]')
+    expect(summary.findAll('figcaption').map((caption) => caption.text())).toEqual(['Obverse', 'Reverse'])
+    expect(summary.get('h1').text()).toBe(coin.name)
+    const facts = summary.findAll('[data-testid="coin-key-facts"] > div').map((fact) => [fact.get('dt').text(), fact.get('dd').text()])
+    expect(facts).toEqual([['Material', 'Silver'], ['Weight', '3.35 g'], ['Diameter', '18 mm'], ['Grade', 'VF']])
+    expect(summary.get('[data-testid="coin-notes"]').text()).toBe(coin.notes)
+    // The details table has the others, not the key facts again.
+    const rows = wrapper.findComponent({ name: 'CoinDetailMetadataTable' }).props('rows') as Array<{ key: string }>
+    expect(rows.map((row) => row.key)).not.toContain('material')
+    expect(rows.map((row) => row.key)).not.toContain('grade')
+    expect(rows.map((row) => row.key)).toContain('quantity')
+  })
+
+  it('shows the details, inscriptions, history, references and sets one at a time, the details first', async () => {
+    const wrapper = mount(CoinDetailPage, { global: { stubs: pageStubs() } })
+    await flushPromises()
+
+    const tabs = () => wrapper.findAll('[role="tab"]')
+    expect(tabs().map((tab) => tab.text())).toEqual(['Details', 'Inscription', 'History', 'Catalog References', 'Sets'])
+    expect(tabs().map((tab) => tab.attributes('aria-selected'))).toEqual(['true', 'false', 'false', 'false', 'false'])
+    const shown = () => wrapper.findAll('[role="tabpanel"]').filter((panel) => (panel.element as HTMLElement).style.display !== 'none').map((panel) => panel.attributes('id'))
+    expect(shown()).toEqual(['coin-panel-details'])
+
+    await wrapper.get('[data-testid="coin-tab-history"]').trigger('click')
+    expect(shown()).toEqual(['coin-panel-history'])
+    // The arrow keys go to the next tab, and round.
+    await wrapper.get('[role="tablist"]').trigger('keydown', { key: 'ArrowRight' })
+    expect(shown()).toEqual(['coin-panel-references'])
+    // The market value goes with the references.
+    expect(wrapper.get('#coin-panel-references').findComponent({ name: 'CoinMarketValueSection' }).exists()).toBe(true)
+    await wrapper.get('[role="tablist"]').trigger('keydown', { key: 'ArrowRight' })
+    expect(shown()).toEqual(['coin-panel-sets'])
+    expect(wrapper.get('#coin-panel-sets').findComponent({ name: 'CoinSetsSection' }).exists()).toBe(true)
+    await wrapper.get('[role="tablist"]').trigger('keydown', { key: 'ArrowRight' })
+    expect(shown()).toEqual(['coin-panel-details'])
+  })
+
+  it('lays out a banknote the same way: its front and back, then its material, size and grade', async () => {
+    const saved = { kind: coin.kind, material: coin.material, widthMm: coin.widthMm, heightMm: coin.heightMm }
+    Object.assign(coin, { kind: 'banknote', material: 'Paper', widthMm: 160, heightMm: 75.5 })
+    try {
+      const wrapper = mount(CoinDetailPage, { global: { stubs: pageStubs() } })
+      await flushPromises()
+
+      const summary = wrapper.get('[data-testid="coin-summary"]')
+      expect(summary.get('[data-kind]').attributes('data-kind')).toBe('banknote')
+      expect(summary.findAll('figcaption').map((caption) => caption.text())).toEqual(['Front', 'Back'])
+      const facts = summary.findAll('[data-testid="coin-key-facts"] > div').map((fact) => fact.get('dt').text())
+      expect(facts).toEqual(['Material', 'Size', 'Condition'])
+      expect(summary.get('[data-testid="coin-key-facts"]').text()).toContain('160 × 75.5 mm')
+      expect(summary.findAll('[role="tab"]').map((tab) => tab.text())).toEqual(['Details', 'Inscription', 'History', 'Catalog References', 'Sets'])
+    } finally {
+      // The coin is shared with the other tests.
+      Object.assign(coin, saved)
+    }
+  })
+
+  it('opens the catalogue references when the address asks for them', async () => {
+    route.hash = '#catalog-references'
+    const wrapper = mount(CoinDetailPage, { global: { stubs: pageStubs() } })
+    await flushPromises()
+    expect(wrapper.get('[data-testid="coin-tab-references"]').attributes('aria-selected')).toBe('true')
+    route.hash = undefined
   })
 
   it('swaps the obverse and reverse images of a coin that has both', async () => {

@@ -1,5 +1,5 @@
-// Simple filters for a set: country, face value, years, kind of coin and
-// presentation. They are kept as the smart criteria the server matches
+// Simple filters for a set: country, face value, years, kind of coin,
+// presentation and whether coins or banknotes. They are kept as the smart criteria the server matches
 // coins with, so a set made of them fills by itself.
 import type { SmartCriteriaGroup, SmartCriteriaRule } from '@/types'
 import { t } from '@/i18n'
@@ -19,6 +19,8 @@ export interface SimpleSetFilters {
   classification: CoinClassification | ''
   /** One of COIN_PRESENTATIONS; '' for any. */
   presentation: string
+  /** Coins or banknotes only; both when unset. */
+  kind?: 'coin' | 'banknote'
 }
 
 export function emptyFilters(): SimpleSetFilters {
@@ -42,6 +44,7 @@ export function filtersToCriteria(filters: SimpleSetFilters): SmartCriteriaGroup
   else if (to) rules.push({ field: 'year', op: 'lte', value: to })
   if (filters.classification) rules.push({ field: 'classification', op: 'eq', value: filters.classification })
   if (filters.presentation) rules.push({ field: 'presentation', op: 'eq', value: filters.presentation })
+  if (filters.kind) rules.push({ field: 'kind', op: 'eq', value: filters.kind })
   return { operator: 'and', rules: [...rules, ...COLLECTION_RULES] }
 }
 
@@ -64,6 +67,7 @@ export function criteriaToFilters(criteria: SmartCriteriaGroup | null | undefine
     }
     else if (field === 'classification' && op === 'eq' && COIN_CLASSIFICATIONS.includes(value as CoinClassification)) filters.classification = value as CoinClassification
     else if (field === 'presentation' && op === 'eq' && typeof value === 'string') filters.presentation = value
+    else if (field === 'kind' && op === 'eq' && (value === 'coin' || value === 'banknote')) filters.kind = value
     else return null
   }
   return filters
@@ -85,6 +89,7 @@ function years(filters: SimpleSetFilters): string {
 export function filtersName(filters: SimpleSetFilters): string {
   const parts = [
     filters.country,
+    filters.kind ? t(`sets.filters.kinds.${filters.kind}`) : '',
     filters.denomination,
     years(filters),
     filters.classification ? classificationLabel(filters.classification) : '',

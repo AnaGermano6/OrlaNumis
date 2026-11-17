@@ -4,6 +4,34 @@ Each version's section is its release notes: the release workflow publishes
 it on GitHub, and **Admin → Updates** shows it to the apps that can update.
 Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.3.0] - 2026-11-17
+
+### Changed
+- The page of a coin (and of a banknote) reads as a museum label: its two
+  sides on top, side by side and named, then its name and badges, then tabs
+  so the page keeps one length: Detalhes, Inscrição, História, Referências
+  de catálogo and Conjuntos.
+- Detalhes opens first, with the material, weight, diameter and grade (a
+  banknote's material, size and condition) in a row, and the other details
+  under them. The tab chosen stays from coin to coin.
+- História shows the coin's notes; Referências de catálogo has the Numista
+  market value too.
+- Weights and sizes are written in the language's numbers: "8,5 g",
+  "25,75 mm".
+
+### Added
+- Conjuntos proposes up to three sets the coin could start, made in one
+  click or opened when they exist: the catalogue album it belongs to (its
+  country's €2 commemoratives or collector coins, its year's euro series,
+  Portugal's escudos or réis), and sets that fill themselves with the
+  collection's coins like it (its country's commemoratives, its year, its
+  country). A banknote's are of banknotes.
+- A set's filters can keep to coins or to banknotes.
+
+### Fixed
+- The suggested sets show only when there are some, without an empty
+  "Ainda não há sugestões".
+
 ## [1.2.0] - 2026-11-16
 
 ### Added

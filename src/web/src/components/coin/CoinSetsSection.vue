@@ -37,15 +37,46 @@
       <button class="btn btn-ghost btn-xs" type="button" @click="showSetPicker = false">{{ t('common.cancel') }}</button>
     </div>
 
-    <div class="mt-4 border-t border-border-subtle pt-4">
+    <!-- Sets this coin could start; each fills by itself. -->
+    <div v-if="proposals.length" class="mt-4 border-t border-border-subtle pt-4" data-testid="set-proposals">
+      <h4 class="mb-2 text-sm font-medium text-text-secondary">{{ isBanknote ? t('coinDetail.sets.proposals.titleBanknote') : t('coinDetail.sets.proposals.title') }}</h4>
+      <ul class="m-0 flex list-none flex-col gap-2 p-0">
+        <li
+          v-for="proposal in proposals"
+          :key="proposal.key"
+          class="flex items-center gap-3 rounded-sm border border-border-subtle bg-card px-3 py-2"
+          :data-testid="`set-proposal-${proposal.key}`"
+        >
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-body font-medium text-text-primary">{{ proposal.name }}</span>
+            <span class="block text-chip text-text-muted">{{ proposal.kind === 'album' ? t('coinDetail.sets.proposals.album') : isBanknote ? t('coinDetail.sets.proposals.smartBanknote') : t('coinDetail.sets.proposals.smart') }}</span>
+          </span>
+          <RouterLink
+            v-if="existing(proposal)"
+            :to="{ name: 'set-detail', params: { id: existing(proposal)!.id } }"
+            class="btn btn-ghost btn-xs shrink-0"
+            data-testid="set-proposal-open"
+          >
+            {{ t('coinDetail.sets.proposals.open') }}
+          </RouterLink>
+          <button
+            v-else
+            type="button"
+            class="btn btn-secondary btn-xs shrink-0"
+            :disabled="creating !== null"
+            data-testid="set-proposal-create"
+            @click="createProposal(proposal)"
+          >
+            {{ t('coinDetail.sets.proposals.create') }}
+          </button>
+        </li>
+      </ul>
+      <p v-if="createFailed" class="mb-0 mt-2 text-sm text-loss" role="alert">{{ t('coinDetail.sets.proposals.failed') }}</p>
+    </div>
+    <!-- The user's own sets this coin would fit, only when there are some. -->
+    <div v-if="recommendations.length" class="mt-4 border-t border-border-subtle pt-4" data-testid="set-suggestions">
       <h4 class="mb-2 text-sm font-medium text-text-secondary">{{ t('coinDetail.sets.suggested') }}</h4>
-      <div v-if="recommendationsLoading" class="text-sm text-text-muted">{{ t('coinDetail.sets.loadingSuggestions') }}</div>
-      <div v-else-if="recommendationsError" class="flex flex-col items-start gap-2">
-        <p class="text-sm text-loss">{{ recommendationsError }}</p>
-        <button class="btn btn-ghost btn-xs" type="button" @click="loadRecommendations">{{ t('common.retry') }}</button>
-      </div>
-      <div v-else-if="!recommendations.length" class="text-sm text-text-muted">{{ t('coinDetail.sets.noSuggestions') }}</div>
-      <div v-else class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2">
         <div
           v-for="recommendation in recommendations"
           :key="recommendation.id"
@@ -67,18 +98,26 @@
 </template>
 
 <script setup lang="ts">
-// The coin's sets: added to one, taken out of one, and the sets it would fit.
+// The coin's sets: added to one, taken out of one, the sets it would fit,
+// and the sets it could start (an album of the catalogue, sets that fill
+// themselves), each made at once or opened when it is already there.
 import { ref, computed, onMounted } from 'vue'
-import { getSets, addCoinToSet, removeCoinFromSet, getCoinRecommendations, acceptCoinRecommendation, rejectCoinRecommendation } from '@/api/client'
+import { RouterLink } from 'vue-router'
+import { getSets, addCoinToSet, removeCoinFromSet, getCoinRecommendations, acceptCoinRecommendation, rejectCoinRecommendation, createSet, type CoinStatus } from '@/api/client'
 import { normalizeCoinSetType } from '@/types'
-import type { CoinRecommendation, CoinSetSummary } from '@/types'
+import type { Coin, CoinRecommendation, CoinSetSummary } from '@/types'
 import { t } from '@/i18n'
+import { coinSetProposals, type CoinSetProposal } from '@/utils/coinSetProposals'
+import { randomSetColor } from '@/utils/setColors'
 
 type SetChip = Pick<CoinSetSummary, 'id' | 'name' | 'color' | 'setType'>
 
 const props = defineProps<{
   sets: SetChip[]
   coinId: number
+  /** The coin, and what is known of it, for the sets it could start. */
+  coin?: Coin | null
+  status?: CoinStatus | null
 }>()
 
 const emit = defineEmits<{
@@ -87,8 +126,6 @@ const emit = defineEmits<{
 
 const userSets = ref<CoinSetSummary[]>([])
 const recommendations = ref<CoinRecommendation[]>([])
-const recommendationsLoading = ref(false)
-const recommendationsError = ref('')
 const showSetPicker = ref(false)
 const setToAdd = ref('')
 
@@ -96,6 +133,30 @@ const availableSets = computed(() => {
   const coinSetIds = new Set(props.sets.map(s => s.id))
   return userSets.value.filter(s => canManageSetMembership(s.setType) && !coinSetIds.has(s.id))
 })
+
+const proposals = computed(() => (props.coin ? coinSetProposals(props.coin, props.status) : []))
+const isBanknote = computed(() => props.coin?.kind === 'banknote')
+const creating = ref<string | null>(null)
+const createFailed = ref(false)
+
+// A set's name is the user's own: one of that name is the proposal, made before.
+function existing(proposal: CoinSetProposal): CoinSetSummary | undefined {
+  return userSets.value.find((set) => set.name === proposal.name)
+}
+
+async function createProposal(proposal: CoinSetProposal) {
+  if (creating.value) return
+  creating.value = proposal.key
+  createFailed.value = false
+  try {
+    await createSet({ ...proposal.request, color: randomSetColor() })
+    await loadSets()
+  } catch {
+    createFailed.value = true
+  } finally {
+    creating.value = null
+  }
+}
 
 function canManageSetMembership(setType: CoinSetSummary['setType']): boolean {
   const normalizedType = normalizeCoinSetType(setType)
@@ -112,17 +173,13 @@ async function loadSets() {
   } catch { /* ignore */ }
 }
 
+// Without them, nothing is suggested: the section is left out.
 async function loadRecommendations() {
-  recommendationsLoading.value = true
-  recommendationsError.value = ''
   try {
     const response = await getCoinRecommendations(props.coinId)
     recommendations.value = response.data?.recommendations ?? []
   } catch {
-    recommendationsError.value = t('coinDetail.sets.loadFailed')
     recommendations.value = []
-  } finally {
-    recommendationsLoading.value = false
   }
 }
 
