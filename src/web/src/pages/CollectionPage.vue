@@ -17,8 +17,19 @@
          has the search and the filters button instead. -->
     <DesktopPageContext :title="t('nav.gallery')">
       <template #actions>
+        <AppIconButton
+          :title="selectMode ? t('app.header.cancelSelection') : t('app.header.selectCoins')"
+          :active="selectMode"
+          data-testid="gallery-select"
+          @click="toggleSelectMode"
+        >
+          <CheckSquare :size="20" />
+        </AppIconButton>
         <AppIconButton :title="t('collection.export.button')" data-testid="gallery-export" @click="showExport = true">
           <FileSpreadsheet :size="20" />
+        </AppIconButton>
+        <AppIconButton to="/add" :title="t('nav.addCoin')" data-testid="gallery-add">
+          <CirclePlus :size="20" />
         </AppIconButton>
       </template>
       <header v-if="!isMobile" class="page-header" data-testid="gallery-title">
@@ -113,7 +124,17 @@
     </div>
 
     <!-- Filters the Collection page's cards turn on; the gallery has no other control for them. -->
-    <div v-if="selectedCirculation || selectedCommemorative || selectedRepeated" class="mb-3 flex flex-wrap items-center gap-2" data-testid="gallery-active-filters">
+    <div v-if="selectedCirculation || selectedCommemorative || selectedRepeated || selectedUngraded" class="mb-3 flex flex-wrap items-center gap-2" data-testid="gallery-active-filters">
+      <button
+        v-if="selectedUngraded"
+        type="button"
+        class="chip active inline-flex items-center gap-1"
+        :aria-label="t('collection.activeFilters.remove', { filter: t('collection.activeFilters.ungraded') })"
+        data-testid="gallery-filter-ungraded"
+        @click="selectedUngraded = false"
+      >
+        {{ t('collection.activeFilters.ungraded') }} <X :size="12" aria-hidden="true" />
+      </button>
       <button
         v-if="selectedRepeated"
         type="button"
@@ -222,7 +243,7 @@ import NeedsAttentionQueue from '@/components/collection/NeedsAttentionQueue.vue
 import ExportDialog from '@/components/collection/ExportDialog.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { t } from '@/i18n'
-import { FileSpreadsheet, X } from 'lucide-vue-next'
+import { CheckSquare, CirclePlus, FileSpreadsheet, X } from 'lucide-vue-next'
 
 const store = useCoinsStore()
 const router = useRouter()
@@ -230,16 +251,16 @@ const router = useRouter()
 const {
   search, page, sortKey, selectedSet, userSets,
   selectedDenomination, denominationOptions,
-  selectedCountry, selectedPeriod, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated, groupBy, countryOptions, periodOptions, fillingCountries,
+  selectedCountry, selectedPeriod, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated, selectedUngraded, groupBy, countryOptions, periodOptions, fillingCountries,
   fetchUserSets, loadCoins, loadCountryOptions, fillCountriesOnce, listParams,
 } = useCollectionFilters()
 
 // How many filters are on (not the search), shown on the phone's filter button.
 const activeFilterCount = computed(() => [
   selectedDenomination.value, selectedSet.value, selectedCountry.value, selectedPeriod.value, selectedPresentation.value,
-  selectedRarity.value, selectedCirculation.value, selectedCommemorative.value, selectedClassification.value, selectedRepeated.value,
+  selectedRarity.value, selectedCirculation.value, selectedCommemorative.value, selectedClassification.value, selectedRepeated.value, selectedUngraded.value,
 ].filter(Boolean).length)
-const hasFilters = computed(() => !!(search.value || selectedDenomination.value || selectedSet.value || selectedCountry.value || selectedPeriod.value || selectedPresentation.value || selectedRarity.value || selectedCirculation.value || selectedCommemorative.value || selectedClassification.value || selectedRepeated.value))
+const hasFilters = computed(() => !!(search.value || selectedDenomination.value || selectedSet.value || selectedCountry.value || selectedPeriod.value || selectedPresentation.value || selectedRarity.value || selectedCirculation.value || selectedCommemorative.value || selectedClassification.value || selectedRepeated.value || selectedUngraded.value))
 // The spreadsheet of the coins shown, or of the whole collection.
 const showExport = ref(false)
 

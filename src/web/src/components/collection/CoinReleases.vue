@@ -1,98 +1,93 @@
 <template>
-  <section class="mb-8" aria-labelledby="releases-title" data-testid="coin-releases">
-    <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-      <h2 id="releases-title" class="m-0 font-display text-lg font-medium text-heading">{{ t('collectionOverview.releases.title') }}</h2>
-    </div>
-
+  <!-- The page's title names it ("New releases"). -->
+  <section class="mb-8" data-testid="coin-releases">
     <p v-if="failed" class="m-0 text-body text-text-secondary" role="alert">{{ t('collectionOverview.releases.failed') }}</p>
     <p v-else-if="!groups.length" class="m-0 text-body text-text-muted">{{ t('common.loading') }}</p>
     <template v-else>
-      <div class="mb-3 flex flex-wrap items-center gap-2" role="tablist" :aria-label="t('collectionOverview.releases.sources')">
-        <button
-          v-for="group in groups"
-          :key="group.source"
-          type="button"
-          role="tab"
-          class="chip border"
-          :class="group.source === source ? 'border-gold text-gold' : 'border-border-subtle'"
-          :aria-selected="group.source === source"
-          :data-testid="`releases-tab-${group.source}`"
-          @click="choose(group.source)"
-        >
-          {{ groupLabel(group) }}
-        </button>
-        <span class="mx-1 h-5 w-px bg-border-subtle" aria-hidden="true"></span>
-        <select
-          v-model="country"
-          class="form-select w-auto"
-          :aria-label="t('collectionOverview.releases.country')"
-          data-testid="releases-country"
-          @change="limit = PAGE"
-        >
-          <option value="">{{ t('collectionOverview.releases.allCountries', { count: current?.releases.length ?? 0 }) }}</option>
-          <option v-for="option in countries" :key="option.key" :value="option.key">{{ withFlagOfCode(option.key, option.name) }} ({{ option.count }})</option>
-        </select>
-        <button
-          v-for="option in FILTERS"
-          :key="option"
-          type="button"
-          class="chip border"
-          :class="option === filter ? 'border-gold text-gold' : 'border-border-subtle'"
-          :aria-pressed="option === filter"
-          :data-testid="`releases-filter-${option}`"
-          @click="filter = option; limit = PAGE"
-        >
-          {{ t(`collectionOverview.releases.filters.${option}`) }}
-        </button>
-        <!-- By metal, when the list has more than one; and without the special editions. -->
-        <template v-if="metals.length > 1 || hasSpecialEditions">
-          <span class="mx-1 h-5 w-px bg-border-subtle" aria-hidden="true"></span>
-          <div class="flex flex-wrap items-center gap-2" role="group" :aria-label="t('collectionOverview.releases.metal')">
-            <template v-if="metals.length > 1">
-              <button
-                v-for="option in metals"
-                :key="option"
-                type="button"
-                class="chip border"
-                :class="option === metal ? 'border-gold text-gold' : 'border-border-subtle'"
-                :aria-pressed="option === metal"
-                :data-testid="`releases-metal-${option}`"
-                @click="chooseMetal(option)"
-              >
-                {{ t(`collectionOverview.releases.metals.${option}`) }}
-              </button>
-            </template>
-            <button
-              v-if="hasSpecialEditions"
-              type="button"
-              class="chip border"
-              :class="noSpecialEditions ? 'border-gold text-gold' : 'border-border-subtle'"
-              :aria-pressed="noSpecialEditions"
-              :title="t('collectionOverview.releases.noSpecialEditionsHint')"
-              data-testid="releases-no-special"
-              @click="toggleNoSpecialEditions"
-            >
-              {{ t('collectionOverview.releases.noSpecialEditions') }}
-            </button>
-          </div>
-        </template>
+      <!-- The lists as tabs, their filters beside them, and a rule under both. -->
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-border-subtle pb-3">
+        <AppTabs :model-value="source" :tabs="tabItems" id-prefix="releases" :label="t('collectionOverview.releases.sources')" @update:model-value="choose" />
+        <div class="flex flex-wrap items-center gap-2">
+          <select
+            v-model="country"
+            class="form-select !w-auto"
+            :aria-label="t('collectionOverview.releases.country')"
+            data-testid="releases-country"
+            @change="limit = PAGE"
+          >
+            <option value="">{{ t('collectionOverview.releases.allCountries', { count: current?.releases.length ?? 0 }) }}</option>
+            <option v-for="option in countries" :key="option.key" :value="option.key">{{ withFlagOfCode(option.key, option.name) }} ({{ option.count }})</option>
+          </select>
+          <select
+            v-model="filter"
+            class="form-select !w-auto"
+            :aria-label="t('collectionOverview.releases.status')"
+            data-testid="releases-status"
+            @change="limit = PAGE"
+          >
+            <option v-for="option in FILTERS" :key="option" :value="option">
+              {{ t('collectionOverview.releases.statusOption', { status: t(`collectionOverview.releases.filters.${option}`) }) }}
+            </option>
+          </select>
+          <!-- By metal, on both lists alike; and without the special editions. -->
+          <select
+            v-if="metals.length"
+            :value="metal"
+            class="form-select !w-auto"
+            :aria-label="t('collectionOverview.releases.metal')"
+            data-testid="releases-metal"
+            @change="chooseMetal(($event.target as HTMLSelectElement).value as CoinReleaseMetal | '')"
+          >
+            <option value="">{{ metalLabel('') }}</option>
+            <option v-for="option in metals" :key="option" :value="option">{{ metalLabel(option) }}</option>
+          </select>
+          <select
+            v-if="hasSpecialEditions"
+            :value="noSpecialEditions ? 'none' : ''"
+            class="form-select !w-auto"
+            :aria-label="t('collectionOverview.releases.editions')"
+            :title="t('collectionOverview.releases.noSpecialEditionsHint')"
+            data-testid="releases-editions"
+            @change="setNoSpecialEditions(($event.target as HTMLSelectElement).value === 'none')"
+          >
+            <option value="">{{ t('collectionOverview.releases.allEditions') }}</option>
+            <option value="none">{{ t('collectionOverview.releases.noSpecialEditions') }}</option>
+          </select>
+          <!-- Where the list comes from, on demand. -->
+          <button
+            v-if="note"
+            type="button"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:text-gold focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
+            :class="showNote ? 'text-gold' : ''"
+            :aria-label="t('collectionOverview.releases.about')"
+            :title="note"
+            :aria-expanded="showNote"
+            aria-controls="releases-note"
+            data-testid="releases-info"
+            @click="showNote = !showNote"
+          >
+            <Info :size="20" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
-      <p v-if="note" class="mb-3 mt-0 text-chip text-text-muted" data-testid="releases-note">{{ note }}</p>
-      <p v-if="current && !current.releases.length" class="m-0 text-body text-text-secondary">{{ t('collectionOverview.releases.unavailable') }}</p>
-      <p v-else-if="!filtered.length" class="m-0 text-body text-text-secondary" data-testid="releases-empty">{{ t('collectionOverview.releases.empty') }}</p>
-      <ul v-else class="m-0 grid list-none grid-cols-2 gap-3 p-0 md:grid-cols-3 xl:grid-cols-4">
-        <CoinReleaseCard v-for="release in filtered.slice(0, limit)" :key="release.source + release.imageUrl" :release="release" addable wishlistable />
-      </ul>
-      <button
-        v-if="filtered.length > limit"
-        type="button"
-        class="mt-3 rounded-sm text-body text-gold underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-        data-testid="releases-more"
-        @click="limit += PAGE"
-      >
-        {{ t('collectionOverview.releases.more', { count: filtered.length - limit }) }}
-      </button>
+      <div :id="`releases-panel-${source}`" role="tabpanel" :aria-labelledby="`releases-tab-${source}`">
+        <p v-if="note && showNote" id="releases-note" class="mb-3 mt-0 text-chip text-text-muted" data-testid="releases-note">{{ note }}</p>
+        <p v-if="current && !current.releases.length" class="m-0 text-body text-text-secondary">{{ t('collectionOverview.releases.unavailable') }}</p>
+        <p v-else-if="!filtered.length" class="m-0 text-body text-text-secondary" data-testid="releases-empty">{{ t('collectionOverview.releases.empty') }}</p>
+        <ul v-else class="m-0 grid list-none grid-cols-2 gap-3 p-0 md:grid-cols-3 xl:grid-cols-4">
+          <CoinReleaseCard v-for="release in filtered.slice(0, limit)" :key="release.source + release.imageUrl" :release="release" addable wishlistable />
+        </ul>
+        <button
+          v-if="filtered.length > limit"
+          type="button"
+          class="mt-3 rounded-sm text-body text-gold underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
+          data-testid="releases-more"
+          @click="limit += PAGE"
+        >
+          {{ t('collectionOverview.releases.more', { count: filtered.length - limit }) }}
+        </button>
+      </div>
     </template>
   </section>
 </template>
@@ -104,7 +99,9 @@
 // and metal, marked when the collection has them. Upcoming first, then the
 // newest.
 import { computed, onMounted, ref } from 'vue'
+import { Info } from 'lucide-vue-next'
 import { getCoinReleases, type CoinReleaseGroup, type CoinReleaseMetal } from '@/api/client'
+import AppTabs from '@/components/AppTabs.vue'
 import CoinReleaseCard from '@/components/collection/CoinReleaseCard.vue'
 import { intlLocale, t } from '@/i18n'
 import { isSpecialEdition, JOINT_ISSUE, releaseCountryName } from '@/utils/coinReleases'
@@ -127,6 +124,8 @@ const metal = ref<CoinReleaseMetal | ''>('')
 /** Leaves out the special editions: gold coins, and coins in proof or FDC. */
 const noSpecialEditions = ref(false)
 const limit = ref(PAGE)
+/** Where the list comes from, shown under the filters on demand. */
+const showNote = ref(false)
 
 const current = computed(() => groups.value.find((group) => group.source === source.value))
 const filtered = computed(() => (current.value?.releases ?? []).filter((release) =>
@@ -140,16 +139,20 @@ const metals = computed(() => METALS.filter((option) => (current.value?.releases
 
 const hasSpecialEditions = computed(() => (current.value?.releases ?? []).some(isSpecialEdition))
 
-// A second press shows every metal again; gold and "without special editions" exclude each other.
-function chooseMetal(option: CoinReleaseMetal) {
-  metal.value = metal.value === option ? '' : option
-  if (metal.value === 'gold') noSpecialEditions.value = false
+function metalLabel(option: CoinReleaseMetal | ''): string {
+  return t('collectionOverview.releases.metalOption', { metal: t(`collectionOverview.releases.metals.${option || 'all'}`) })
+}
+
+// Gold and "without special editions" exclude each other.
+function chooseMetal(option: CoinReleaseMetal | '') {
+  metal.value = option
+  if (option === 'gold') noSpecialEditions.value = false
   limit.value = PAGE
 }
 
-function toggleNoSpecialEditions() {
-  noSpecialEditions.value = !noSpecialEditions.value
-  if (noSpecialEditions.value && metal.value === 'gold') metal.value = ''
+function setNoSpecialEditions(value: boolean) {
+  noSpecialEditions.value = value
+  if (value && metal.value === 'gold') metal.value = ''
   limit.value = PAGE
 }
 
@@ -182,6 +185,8 @@ function choose(next: CoinReleaseGroup['source']) {
   metal.value = ''
   limit.value = PAGE
 }
+
+const tabItems = computed(() => groups.value.map((group) => ({ id: group.source, label: groupLabel(group) })))
 
 function groupLabel(group: CoinReleaseGroup): string {
   return group.source === 'ecb' ? t('collectionOverview.releases.ecb') : t('collectionOverview.releases.mints')

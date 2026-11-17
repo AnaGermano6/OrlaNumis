@@ -13,7 +13,6 @@
 | Timeline | `/stats/timeline` | When each coin joined the collection |
 | Map | `/stats/mint-map` | Mint geography for coins with a mapped mint |
 | Health | `/stats/health` | Collection health score and what to fix |
-| Time Machine | `/stats/time-machine` | The collection as it stood on any past date — see [Time Machine](time-machine.md) |
 
 ## Summary
 
@@ -21,7 +20,6 @@
 - **Distributions** — by coin type, era, category, material and grade, plus the top rulers
 - **Price ranges** — how many coins fall in each value band, in the collection currency
 - **Top coins** — the most valuable coins
-- **Acquisition flow** — coins bought by purchase period, ruler, era and type (only coins with a purchase date)
 
 ## Health
 
@@ -54,12 +52,9 @@ Mints with coordinates appear on the map with the coins struck there. Global min
 GET    /api/stats                     # Summary statistics
 GET    /api/stats/distribution        # Distribution by era and category
 GET    /api/stats/health              # Collection health
-GET    /api/stats/time-machine        # The collection as of a date
-GET    /api/stats/time-machine/bounds # The time machine's date range
 ```
 
 ## Related Features
 
-- [Collection Time Machine](time-machine.md)
 - [Coin Sets](coin-sets.md) — Per-set analytics and value trend
 - [Collection Management](collection-management.md)

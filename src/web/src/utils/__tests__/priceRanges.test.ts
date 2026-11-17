@@ -13,7 +13,7 @@ describe('priceRangeLabel', () => {
     setLocale('pt-PT')
     setCollectionCurrency('EUR')
     const labels = ['Under $50', '$50 - $200', '$1K+', 'Unknown'].map((range) => priceRangeLabel(range).replace(/\s/g, ' '))
-    expect(labels).toEqual(['Menos de 50 €', '50 € – 200 €', '1000 € ou mais', 'Unknown'])
+    expect(labels).toEqual(['Menos de 50 €', '50 € – 200 €', '1 000 € ou mais', 'Unknown'])
 
     setLocale('en')
     setCollectionCurrency('USD')

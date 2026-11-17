@@ -7,6 +7,13 @@ export default {
     conversations: 'Conversations',
     backups: 'Backups',
     help: 'Help',
+    about: 'About',
+  },
+  about: {
+    version: 'Version {version}',
+    catalogue: 'Catalogue data: {source}',
+    photos: 'Official photos: ECB, INCM, Monnaie de Paris and Münze Österreich',
+    basedOn: 'Based on the {project} project, by Brian DeNicola (MIT license)',
   },
   conversations: {
     loadFailed: 'Failed to load conversation',

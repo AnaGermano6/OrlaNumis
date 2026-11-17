@@ -12,4 +12,5 @@ export default {
   banknotes: 'Banknotes',
   banknoteCount: { one: '{count} banknote', other: '{count} banknotes' },
   yearSpan: 'Year Span',
+  invested: 'Invested',
 }

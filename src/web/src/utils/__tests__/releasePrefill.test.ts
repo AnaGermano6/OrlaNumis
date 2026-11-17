@@ -43,7 +43,7 @@ describe('release prefill', () => {
       rarity: 'very_rare',
       referenceUrl: 'https://loja.incm.pt/products/farois',
       referenceText: 'INCM',
-      notes: 'Versões: Ouro Proof\nTiragem: 2500',
+      notes: 'Versões: Ouro Proof\nTiragem: 2\u00a0500',
       isWishlist: false,
     })
     expect(references).toEqual([])
@@ -102,7 +102,7 @@ describe('release prefill', () => {
         name: '5 Euros (Lighthouses) 2025 – Portugal', country: 'Portugal', denomination: '5 Euros', year: 2025, era: 'modern', ruler: '',
         mint: 'Imprensa Nacional-Casa da Moeda', material: 'Silver', weightGrams: 14, diameterMm: 30, rarity: 'scarce', presentation: 'coincard',
         obverseInscription: 'PORTUGAL', reverseInscription: 'CABO DE SÃO VICENTE', obverseDescription: 'Coat of arms', reverseDescription: 'The lighthouse',
-        notes: 'Numista: Lighthouses (Portugal) – https://pt.numista.com/catalogue/pieces601.html\nComposição: Prata 0,925\nTiragem: 3000',
+        notes: 'Numista: Lighthouses (Portugal) – https://pt.numista.com/catalogue/pieces601.html\nComposição: Prata 0,925\nTiragem: 3\u00a0000',
         isWishlist: false,
       },
       references: [{ catalog: 'Numista', number: '601', uri: 'https://pt.numista.com/catalogue/pieces601.html' }, { catalog: 'KM', number: '999' }],
@@ -117,7 +117,7 @@ describe('release prefill', () => {
       obverseInscription: 'PORTUGAL', reverseInscription: 'CABO DE SÃO VICENTE', obverseDescription: 'Coat of arms', reverseDescription: 'The lighthouse',
     })
     // The release's mintage, not Numista's.
-    expect(fields.notes).toBe('Versões: Prata Proof, BNC\nTiragem: 2500\nNumista: Lighthouses (Portugal) – https://pt.numista.com/catalogue/pieces601.html\nComposição: Prata 0,925')
+    expect(fields.notes).toBe('Versões: Prata Proof, BNC\nTiragem: 2\u00a0500\nNumista: Lighthouses (Portugal) – https://pt.numista.com/catalogue/pieces601.html\nComposição: Prata 0,925')
     expect(references).toEqual(numista.references)
 
     // The metal a release says is kept; a Numista coin's own reference is not repeated.

@@ -92,26 +92,8 @@
           </div>
 
           <!-- Its details, inscriptions, history, catalogue references (with its
-               market value) and sets, one at a time, so the page keeps one length. The rule under the tabs
-               is a shadow: a border would make the bar scroll by a pixel. -->
-          <div class="mt-6 flex overflow-x-auto shadow-[inset_0_-1px_0_var(--border-subtle)]" role="tablist" :aria-label="t('coinDetail.tabs.label')" @keydown="onTabKeydown">
-            <button
-              v-for="item in tabs"
-              :id="`coin-tab-${item}`"
-              :key="item"
-              type="button"
-              role="tab"
-              class="shrink-0 whitespace-nowrap border-b-2 px-4 py-3 text-base transition-colors md:flex-1"
-              :class="item === activeTab ? 'border-gold font-medium text-text-primary' : 'border-transparent text-text-secondary hover:text-text-primary'"
-              :aria-selected="item === activeTab"
-              :aria-controls="`coin-panel-${item}`"
-              :tabindex="item === activeTab ? 0 : -1"
-              :data-testid="`coin-tab-${item}`"
-              @click="tab = item"
-            >
-              {{ tabLabel(item) }}
-            </button>
-          </div>
+               market value) and sets, one at a time, so the page keeps one length. -->
+          <AppTabs :model-value="activeTab" class="mt-6" :tabs="tabItems" id-prefix="coin" :label="t('coinDetail.tabs.label')" stretch @update:model-value="tab = $event" />
           <div class="min-h-[14rem] pt-5">
             <div v-if="hasInscription" v-show="activeTab === 'inscription'" id="coin-panel-inscription" role="tabpanel" aria-labelledby="coin-tab-inscription">
               <div class="grid gap-6 md:grid-cols-2">
@@ -228,6 +210,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCoinsStore } from '@/stores/coins'
 import PurchaseModal from '@/components/PurchaseModal.vue'
 import ImageLightbox from '@/components/ImageLightbox.vue'
+import AppTabs from '@/components/AppTabs.vue'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
 import CoinDetailHeaderActions from '@/components/coin/CoinDetailHeaderActions.vue'
 import CoinSetsSection from '@/components/coin/CoinSetsSection.vue'
@@ -322,6 +305,8 @@ watch(() => route.hash, (hash) => {
   if (hash === '#catalog-references') tab.value = 'references'
 }, { immediate: true })
 
+const tabItems = computed(() => tabs.value.map((id) => ({ id, label: tabLabel(id) })))
+
 function tabLabel(item: CoinTab): string {
   switch (item) {
     case 'inscription': return t('coinFields.inscription')
@@ -330,17 +315,6 @@ function tabLabel(item: CoinTab): string {
     case 'references': return t('coinDetail.references.title')
     default: return t('coinDetail.sets.title')
   }
-}
-
-// The arrow keys go from tab to tab.
-function onTabKeydown(event: KeyboardEvent) {
-  const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
-  if (!step) return
-  event.preventDefault()
-  const list = tabs.value
-  const next = list[(list.indexOf(activeTab.value) + step + list.length) % list.length]!
-  tab.value = next
-  document.getElementById(`coin-tab-${next}`)?.focus()
 }
 
 // The key facts, in a row at the top of the details; the table has the others.

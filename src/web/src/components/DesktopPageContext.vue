@@ -1,10 +1,12 @@
 <template>
-  <Teleport v-if="!isMobile" defer to="#desktop-page-title">
-    <span class="block truncate" :title="title">{{ title }}</span>
-  </Teleport>
-  <Teleport v-if="!isMobile && $slots.actions" defer to="#desktop-page-actions">
-    <slot name="actions" />
-  </Teleport>
+  <!-- On a wider screen: the page's title and its actions at its top (the
+       bar above holds the menu); then what only a wider screen shows. -->
+  <header v-if="!isMobile" class="page-header" data-testid="page-context">
+    <h1 class="min-w-0 truncate" :title="title">{{ title }}</h1>
+    <div v-if="$slots.actions" class="flex shrink-0 items-center gap-1">
+      <slot name="actions" />
+    </div>
+  </header>
   <div
     v-if="$slots.default"
     class="desktop-page-context-local"
@@ -22,8 +24,9 @@
 </template>
 
 <script setup lang="ts">
-// A page's title and actions: in the app's top bar on a wider screen, in the
-// page itself on a phone (the default slot), also a phone turned sideways.
+// A page's title and actions: at the top of the page on a wider screen (the
+// title, the actions slot, then the desktop slot), and the page's own header
+// on a phone (the default slot), also a phone turned sideways.
 import { useLayout } from '@/composables/useLayout'
 
 defineProps<{

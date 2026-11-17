@@ -94,7 +94,8 @@ import {
   type CoinMarketValue,
   type NumistaCatalogTypeResult,
 } from '@/api/client'
-import { intlLocale, t } from '@/i18n'
+import { t } from '@/i18n'
+import { numberFormat } from '@/utils/numberFormat'
 import CatalogPhoto from '@/components/catalog/CatalogPhoto.vue'
 import NumistaPriceGrid from '@/components/coin/NumistaPriceGrid.vue'
 import RealPhotoPicker from '@/components/photos/RealPhotoPicker.vue'
@@ -162,7 +163,7 @@ const photoDetails = computed(() => ({
 }))
 
 function measure(value: number | undefined, unit: string): string {
-  return value ? `${new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 2 }).format(value)} ${unit}` : ''
+  return value ? `${numberFormat({ maximumFractionDigits: 2 }).format(value)} ${unit}` : ''
 }
 
 function side(description?: string, lettering?: string): string {

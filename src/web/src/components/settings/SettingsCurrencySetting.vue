@@ -34,6 +34,7 @@ import { changeCollectionCurrency } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { intlLocale, t } from '@/i18n'
 import { COLLECTION_CURRENCIES, collectionCurrency, currencyName, setCollectionCurrency, type CollectionCurrency } from '@/utils/collectionCurrency'
+import { numberFormat } from '@/utils/numberFormat'
 
 const auth = useAuthStore()
 
@@ -64,7 +65,7 @@ async function apply() {
   try {
     const { data } = await changeCollectionCurrency(selected.value)
     setCollectionCurrency(data.currency)
-    const factor = data.factor ? new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 4 }).format(data.factor) : ''
+    const factor = data.factor ? numberFormat({ maximumFractionDigits: 4 }).format(data.factor) : ''
     const date = data.rateDate ? new Date(`${data.rateDate}T00:00:00Z`).toLocaleDateString(intlLocale(), { timeZone: 'UTC' }) : ''
     message.value = factor
       ? t('settings.currency.done', { count: data.coinsConverted, from: data.previous, to: data.currency, factor, date })

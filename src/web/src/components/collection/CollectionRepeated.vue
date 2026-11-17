@@ -1,7 +1,7 @@
 <template>
-  <section class="mb-4 rounded-md border border-border-subtle bg-card p-4" :aria-labelledby="titleId" :data-testid="`repeated-${kind}`">
+  <section class="rounded-md border border-border-subtle bg-card p-4" :aria-labelledby="titleId" :data-testid="`repeated-${kind}`">
     <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-      <h3 :id="titleId" class="m-0 font-display text-lg font-medium text-heading">{{ t('collectionOverview.repeated.title') }}</h3>
+      <h3 :id="titleId" class="m-0 font-display text-lg font-medium text-heading">{{ title ?? t('collectionOverview.repeated.title') }}</h3>
       <span class="flex flex-wrap items-center gap-3">
         <span v-if="repeatedCount > 0" class="text-body text-text-secondary" data-testid="repeated-counts">
           {{ countLine }}
@@ -68,6 +68,8 @@ import { formatNumistaYear } from '@/utils/numistaCatalog'
 const props = defineProps<{
   kind: 'coin' | 'banknote'
   summary: CollectionSummary | null
+  /** Its title, when not "Duplicates to trade" (under a heading that says so). */
+  title?: string
 }>()
 
 const emit = defineEmits<{ open: []; share: [] }>()

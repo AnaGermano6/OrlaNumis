@@ -82,6 +82,8 @@
 
         <HelpSection v-if="activeTab === 'help'" />
 
+        <SettingsAboutSection v-if="activeTab === 'about'" />
+
         <CoinSearchChat
           v-if="showChat"
           :load-conversation="chatConversation"
@@ -105,6 +107,7 @@ import { useLayout } from '@/composables/useLayout'
 import type { Theme } from '@/types'
 import CoinSearchChat from '@/components/CoinSearchChat.vue'
 import HelpSection from '@/components/HelpSection.vue'
+import SettingsAboutSection from '@/components/settings/SettingsAboutSection.vue'
 import SettingsAccountSection from '@/components/settings/SettingsAccountSection.vue'
 import SettingsAppearanceSection from '@/components/settings/SettingsAppearanceSection.vue'
 import SettingsDataSection from '@/components/settings/SettingsDataSection.vue'
@@ -112,7 +115,7 @@ import SettingsBackupsSection from '@/components/settings/SettingsBackupsSection
 import SettingsFullBackup from '@/components/settings/SettingsFullBackup.vue'
 import SavedConversationsSection from '@/components/settings/SavedConversationsSection.vue'
 import SettingsToolsSection from '@/components/settings/SettingsToolsSection.vue'
-import { User, Palette, Database, MessageSquare, HelpCircle, Wrench, Menu, ShieldCheck, Archive } from 'lucide-vue-next'
+import { User, Palette, Database, MessageSquare, HelpCircle, Wrench, Menu, ShieldCheck, Archive, Info } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { t, type MessageKey } from '@/i18n'
 
@@ -124,6 +127,7 @@ const tabIcons: Record<string, Component> = {
   tools: Wrench,
   conversations: MessageSquare,
   help: HelpCircle,
+  about: Info,
   admin: ShieldCheck,
 }
 
@@ -147,9 +151,10 @@ const tabLabelKeys: Record<string, MessageKey> = {
   conversations: 'settings.tabs.conversations',
   backups: 'settings.tabs.backups',
   help: 'settings.tabs.help',
+  about: 'settings.tabs.about',
   admin: 'nav.admin',
 }
-const baseTabIds = ['account', 'appearance', 'data', 'tools', 'conversations', 'backups', 'help']
+const baseTabIds = ['account', 'appearance', 'data', 'tools', 'conversations', 'backups', 'help', 'about']
 const validTabIds = baseTabIds.concat('admin')
 // In the installed app, admins reach Admin through the settings menu, right after Account.
 const tabs = computed(() => {

@@ -3,28 +3,28 @@
     <div class="container flex flex-col gap-6">
       <DesktopPageContext :title="t('nav.stats')">
         <header class="page-header mb-0">
-          <div>
-            <p class="section-label">{{ t('stats.insights') }}</p>
-            <h1>{{ t('nav.stats') }}</h1>
-            <p class="mt-[0.35rem] text-base text-text-secondary">{{ t('stats.summaryAtGlance') }}</p>
-          </div>
+          <h1>{{ t('nav.stats') }}</h1>
         </header>
-        <template #desktop>
-          <div>
-            <p class="section-label">{{ t('stats.insights') }}</p>
-            <p class="mt-[0.35rem] text-base text-text-secondary">{{ t('stats.summaryAtGlance') }}</p>
-          </div>
-        </template>
       </DesktopPageContext>
+
+      <!-- First the collection at a glance: the whole of it, its coins, its banknotes. -->
+      <CollectionOverviewTabs ref="overviewRef" />
 
       <div v-if="!stats" class="loading-overlay">
         <div class="spinner"></div>
       </div>
 
       <template v-else>
-        <section id="summary" :aria-label="t('stats.summaryMetrics')">
-          <StatsSummaryCards :stats="stats" />
-        </section>
+        <!-- How much of the catalogue the collection has; under it, its pieces' condition. -->
+        <StatsProgress :catalogue="catalogue" />
+        <StatsConservation :by-grade="stats.byGrade" :total="stats.totalCoins" />
+
+        <!-- Its gold and silver; then, side by side and as tall as each other, the countries it has most of and its decades. -->
+        <StatsPreciousMetals :metals="stats.preciousMetals" :by-material="stats.byMaterial" />
+        <div class="grid gap-6 lg:grid-cols-2">
+          <StatsCountryLeaders class="min-w-0" :countries="catalogue?.countries ?? []" />
+          <StatsDecades class="min-w-0" :by-decade="stats.byDecade" />
+        </div>
 
         <StatsBarChart
           v-if="monetarySystems.bars.length"
@@ -76,8 +76,6 @@
         />
 
         <StatsHeatMap v-if="categoryItems.length > 1 || eraItems.length > 1" ref="heatMapRef" />
-
-        <StatsCoinFlowChart />
       </template>
     </div>
   </PullToRefresh>
@@ -87,11 +85,16 @@
 import { computed, onMounted, ref } from 'vue'
 import { useCoinsStore } from '@/stores/coins'
 import PullToRefresh from '@/components/PullToRefresh.vue'
-import StatsSummaryCards from '@/components/stats/StatsSummaryCards.vue'
+import CollectionOverviewTabs from '@/components/collection/CollectionOverviewTabs.vue'
+import StatsConservation from '@/components/stats/StatsConservation.vue'
+import StatsCountryLeaders from '@/components/stats/StatsCountryLeaders.vue'
+import StatsDecades from '@/components/stats/StatsDecades.vue'
+import StatsPreciousMetals from '@/components/stats/StatsPreciousMetals.vue'
+import StatsProgress from '@/components/stats/StatsProgress.vue'
+import { getCoinCatalogueCountries, type CatalogueCountry, type CatalogueYear } from '@/api/client'
 import StatsBarChart from '@/components/stats/StatsBarChart.vue'
 import type { BarItem } from '@/components/stats/StatsBarChart.vue'
 import StatsHeatMap from '@/components/stats/StatsHeatMap.vue'
-import StatsCoinFlowChart from '@/components/stats/StatsCoinFlowChart.vue'
 import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import { t } from '@/i18n'
@@ -101,6 +104,17 @@ import { monetarySystemBarLabel, monetarySystemBars } from '@/utils/monetarySyst
 const store = useCoinsStore()
 const stats = computed(() => store.stats)
 const heatMapRef = ref<InstanceType<typeof StatsHeatMap>>()
+const overviewRef = ref<InstanceType<typeof CollectionOverviewTabs>>()
+// The catalogue's countries and years, for the progress and the countries' cards.
+const catalogue = ref<{ countries: CatalogueCountry[]; commemorativeYears?: CatalogueYear[]; circulation?: { country: string; years: CatalogueYear[] }[] } | null>(null)
+
+async function loadCatalogue() {
+  try {
+    catalogue.value = (await getCoinCatalogueCountries()).data
+  } catch {
+    // Without the catalogue, its cards stay out of the way.
+  }
+}
 
 const categoryItems = computed<BarItem[]>(() =>
   stats.value?.byCategory.map((c) => ({ label: c.category, count: c.count })) ?? [],
@@ -117,10 +131,13 @@ async function handleRefresh() {
   await Promise.all([
     store.fetchStats(),
     heatMapRef.value?.fetchDistribution(),
+    overviewRef.value?.load(),
+    loadCatalogue(),
   ])
 }
 
 onMounted(() => {
   store.fetchStats()
+  void loadCatalogue()
 })
 </script>

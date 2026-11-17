@@ -7,6 +7,10 @@ const messages: Messages['app'] = {
     selectCoins: 'Selecionar moedas',
     cancelSelection: 'Cancelar modo de seleção',
   },
+  nav: {
+    label: 'Menu',
+    account: 'Conta',
+  },
   sidebar: {
     reorderMenu: 'Reordenar menu',
     submenuLabel: 'Vistas de {label}',
@@ -19,12 +23,6 @@ const messages: Messages['app'] = {
   onboarding: {
     body: 'Comece pelo guia Primeiros passos para importar um CSV, experimentar a Captura rápida ou a Identificação de moedas e rever as definições que ativam alertas, imagens e ferramentas de IA.',
     openGuide: 'Abrir guia',
-  },
-  footer: {
-    label: 'Rodapé',
-    catalogue: 'Dados do catálogo: Numista',
-    photos: 'Fotos oficiais: BCE, INCM, Monnaie de Paris e Münze Österreich',
-    basedOn: 'Baseada no projeto {project}, de Brian DeNicola (licença MIT)',
   },
 }
 

@@ -190,10 +190,28 @@ definitions:
         example: ""
         type: string
     type: object
+  handlers.CatalogueCirculation:
+    properties:
+      country:
+        example: PT
+        type: string
+      years:
+        items:
+          $ref: '#/definitions/services.EuroCirculationYear'
+        type: array
+    type: object
   handlers.CatalogueCountry:
     properties:
       collector:
         type: integer
+      commemorativeYears:
+        description: |-
+          CommemorativeYears are the country's €2 commemoratives year by year,
+          oldest first, with how many of each year the collection has (euro
+          countries only).
+        items:
+          $ref: '#/definitions/handlers.CatalogueYear'
+        type: array
       commemoratives:
         type: integer
       country:
@@ -222,6 +240,16 @@ definitions:
     required:
     - id
     type: object
+  handlers.CatalogueYear:
+    properties:
+      owned:
+        type: integer
+      total:
+        type: integer
+      year:
+        example: 2025
+        type: integer
+    type: object
   handlers.CategoryCount:
     properties:
       category:
@@ -246,6 +274,18 @@ definitions:
     type: object
   handlers.CoinCatalogueCountriesResponse:
     properties:
+      circulation:
+        description: |-
+          Circulation is each euro country's circulation coins year by year
+          (the eight of each year, 1 cent to 2 euro), by country code, with how
+          many of them the collection has.
+        items:
+          $ref: '#/definitions/handlers.CatalogueCirculation'
+        type: array
+      commemorativeYears:
+        items:
+          $ref: '#/definitions/handlers.CatalogueYear'
+        type: array
       countries:
         items:
           $ref: '#/definitions/handlers.CatalogueCountry'
@@ -825,6 +865,17 @@ definitions:
         minimum: -5000
         type: integer
     type: object
+  handlers.CollectionCirculation:
+    properties:
+      current:
+        type: integer
+      demonetized:
+        type: integer
+      nonCirculating:
+        type: integer
+      unknown:
+        type: integer
+    type: object
   handlers.CollectionClassification:
     properties:
       count:
@@ -851,6 +902,12 @@ definitions:
     type: object
   handlers.CollectionSummaryResponse:
     properties:
+      circulation:
+        allOf:
+        - $ref: '#/definitions/handlers.CollectionCirculation'
+        description: |-
+          Circulation sorts the items as the list's circulation filter does,
+          each counted once, as the gallery lists it.
       circulationUnknown:
         type: integer
       classifications:
@@ -906,6 +963,14 @@ definitions:
         type: number
       highlights:
         $ref: '#/definitions/repository.CollectionHighlights'
+      invested:
+        description: |-
+          Invested sums the purchase prices times their quantities, in the
+          collection currency; InvestedPieces counts the pieces held that have a
+          purchase price (the others are left out).
+        type: number
+      investedPieces:
+        type: integer
       repeatedCoins:
         description: |-
           RepeatedCoins are the different coins held more than once; SpareCoins
@@ -1587,6 +1652,12 @@ definitions:
         items:
           $ref: '#/definitions/handlers.CategoryCount'
         type: array
+      byDecade:
+        description: ByDecade counts the coins of each decade they were issued in,
+          oldest first.
+        items:
+          $ref: '#/definitions/repository.DecadeCount'
+        type: array
       byMaterial:
         items:
           $ref: '#/definitions/handlers.MaterialCount'
@@ -1597,6 +1668,11 @@ definitions:
         items:
           $ref: '#/definitions/handlers.MonetarySystemCount'
         type: array
+      preciousMetals:
+        allOf:
+        - $ref: '#/definitions/services.PreciousMetals'
+        description: PreciousMetals is the collection's gold and silver; absent when
+          the server cannot work it out.
       totalCoins:
         example: 25
         type: integer
@@ -4340,6 +4416,15 @@ definitions:
       country:
         type: string
     type: object
+  repository.DecadeCount:
+    properties:
+      count:
+        example: 75
+        type: integer
+      decade:
+        example: 1990
+        type: integer
+    type: object
   repository.DenominationCount:
     properties:
       count:
@@ -4418,15 +4503,6 @@ definitions:
         description: Users, Coins (coins and banknotes) and Files (photos and other
           uploads) it holds.
         type: integer
-    type: object
-  services.BreakdownEntry:
-    properties:
-      count:
-        type: integer
-      label:
-        type: string
-      value:
-        type: number
     type: object
   services.CancelCollectionProposalResult:
     properties:
@@ -4768,6 +4844,18 @@ definitions:
       status:
         type: string
     type: object
+  services.EuroCirculationYear:
+    properties:
+      owned:
+        example: 3
+        type: integer
+      total:
+        example: 8
+        type: integer
+      year:
+        example: 2024
+        type: integer
+    type: object
   services.ExchangeRate:
     properties:
       date:
@@ -4868,6 +4956,20 @@ definitions:
       imageUrl:
         type: string
     type: object
+  services.MetalTotal:
+    properties:
+      fineGrams:
+        type: number
+      grossGrams:
+        type: number
+      pieces:
+        type: integer
+      unknownFineness:
+        description: |-
+          UnknownFineness counts the pieces whose fineness nobody says: their
+          weight is in Gross, not in Fine.
+        type: integer
+    type: object
   services.MissingChecklistItem:
     properties:
       actionHint:
@@ -4889,6 +4991,13 @@ definitions:
         type: string
       percentage:
         type: number
+    type: object
+  services.PreciousMetals:
+    properties:
+      gold:
+        $ref: '#/definitions/services.MetalTotal'
+      silver:
+        $ref: '#/definitions/services.MetalTotal'
     type: object
   services.ReleaseNumistaType:
     properties:
@@ -4952,65 +5061,6 @@ definitions:
     - format
     - list
     type: object
-  services.TimeMachineBounds:
-    properties:
-      earliestDate:
-        type: string
-      hasData:
-        type: boolean
-      latestDate:
-        type: string
-    type: object
-  services.TimeMachineSnapshot:
-    properties:
-      acquiredInYear:
-        type: integer
-      asOfDate:
-        type: string
-      byCategory:
-        items:
-          $ref: '#/definitions/services.BreakdownEntry'
-        type: array
-      byEra:
-        items:
-          $ref: '#/definitions/services.BreakdownEntry'
-        type: array
-      byMaterial:
-        items:
-          $ref: '#/definitions/services.BreakdownEntry'
-        type: array
-      coinCount:
-        type: integer
-      topCoins:
-        items:
-          $ref: '#/definitions/services.TopCoin'
-        type: array
-      totalInvested:
-        type: number
-      totalValue:
-        type: number
-      undatedCoinCount:
-        description: |-
-          UndatedCoinCount is how many owned coins have no purchase date and so
-          appear at no point on the timeline. Surfaced rather than hidden: a
-          non-zero value means the numbers below understate the collection.
-        type: integer
-      unrealizedGain:
-        type: number
-      valueBasis:
-        $ref: '#/definitions/services.ValueBasis'
-    type: object
-  services.TopCoin:
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-      value:
-        type: number
-      valueFromHistory:
-        type: boolean
-    type: object
   services.UpdateStatus:
     properties:
       checkedAt:
@@ -5047,13 +5097,6 @@ definitions:
           Watchtower is true when Watchtower's address and token are set, so
           the update can be started from the app.
         type: boolean
-    type: object
-  services.ValueBasis:
-    properties:
-      fromPurchasePrice:
-        type: integer
-      fromValuationHistory:
-        type: integer
     type: object
   services.WishlistURLAnalysis:
     properties:
@@ -7508,7 +7551,11 @@ paths:
         €20 coins, and the collector coins the mints of Portugal, France and Austria
         sell) and Portugal''s escudo (its commemorative and collector coins, 1911–2001).
         Each says how many commemorative and collector coins it lists, and how many
-        of them the user has.'
+        of them the user has; a euro country, its €2 commemoratives year by year too.
+        Then, year by year, the euro area''s €2 commemoratives, with how many of each
+        year the collection has; and each euro country''s circulation coins, the eight
+        of each year since its first euro coins, with how many of them the collection
+        has.'
       produces:
       - application/json
       responses:
@@ -7840,6 +7887,10 @@ paths:
           there to trade
         in: query
         name: repeated
+        type: boolean
+      - description: Only coins without a grade
+        in: query
+        name: ungraded
         type: boolean
       - description: Only coins of countries that no longer exist (USSR, Yugoslavia,
           Ottoman Empire…)
@@ -12804,7 +12855,8 @@ paths:
   /stats:
     get:
       description: Returns counts by category/material, total/average values, and
-        wishlist count.
+        wishlist count; the coins by decade of issue, and the gold and silver of the
+        collection (fine, from the Numista types' composition, and gross).
       produces:
       - application/json
       responses:
@@ -12862,66 +12914,6 @@ paths:
       summary: Get collection health summary
       tags:
       - Health
-  /stats/time-machine:
-    get:
-      description: Reconstructs the collection as it stood on the requested date from
-        purchase dates and recorded valuation history. Coins without a purchase date
-        cannot be placed on the timeline and are reported separately in undatedCoinCount.
-      parameters:
-      - description: Target date (YYYY-MM-DD)
-        in: query
-        name: date
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/services.TimeMachineSnapshot'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get the collection as of a past date
-      tags:
-      - Stats
-  /stats/time-machine/bounds:
-    get:
-      description: Returns the earliest acquisition on record and today, defining
-        the range the timeline scrubber can span. hasData is false when no coin has
-        a purchase date.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/services.TimeMachineBounds'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get the time machine's date range
-      tags:
-      - Stats
   /suggestions:
     get:
       description: Returns distinct values for the specified field, optionally filtered

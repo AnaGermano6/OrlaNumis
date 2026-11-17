@@ -163,7 +163,8 @@ import { FileUp } from 'lucide-vue-next'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import UcoinNotFoundCoin from '@/components/ucoin/UcoinNotFoundCoin.vue'
 import { useUcoinImport } from '@/composables/useUcoinImport'
-import { intlLocale, t } from '@/i18n'
+import { t } from '@/i18n'
+import { numberFormat } from '@/utils/numberFormat'
 
 const importer = useUcoinImport()
 const withNumista = ref(true)
@@ -192,7 +193,7 @@ const progressText = computed(() => (importer.phase.value === 'updating'
   : t(progressKey.value, { done: progressDone.value, total: progressTotal.value })))
 
 function formatCount(value: number): string {
-  return new Intl.NumberFormat(intlLocale()).format(value)
+  return numberFormat().format(value)
 }
 
 async function onFile(event: Event) {

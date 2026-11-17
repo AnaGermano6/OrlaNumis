@@ -237,9 +237,16 @@ func TestCollectionSummaryAndList_CurrentCoins(t *testing.T) {
 		CommemorativeCoins   int64                      `json:"commemorativeCoins"`
 		CommemorativeUnknown int64                      `json:"commemorativeUnknown"`
 		Classifications      []CollectionClassification `json:"classifications"`
+		Circulation          CollectionCirculation      `json:"circulation"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || w.Code != http.StatusOK {
 		t.Fatalf("summary: %d %s", w.Code, w.Body.String())
+	}
+	// Each coin once, as the list's circulation filter lists them: the 2 euro
+	// is current; the escudo and the Yugoslav dinar are demonetized; Numista
+	// says nothing of the hand-made coin.
+	if got.Circulation != (CollectionCirculation{Current: 1, Demonetized: 2, Unknown: 1}) {
+		t.Fatalf("circulation = %+v", got.Circulation)
 	}
 	// The wishlist coin does not count; the Yugoslav coin is not current.
 	// Only the 2 euro type commemorates something; Numista says nothing of

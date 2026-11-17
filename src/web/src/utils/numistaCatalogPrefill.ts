@@ -1,13 +1,14 @@
 // Turns a coin type picked in the Numista catalogue into Add Coin form values.
 // Only catalogue facts are filled in; what belongs to the user's own coin
 // (price, date, place, storage) stays for them to complete.
-import { intlLocale, t } from '@/i18n'
+import { t } from '@/i18n'
 import type { NumistaCatalogType, NumistaIssueSummary } from '@/api/client'
 import type { CatalogRegistry, Category, Coin, CoinReferenceInput, Material } from '@/types'
 import { formatNumistaYear, numistaYearRange } from '@/utils/numistaCatalog'
 import { numistaGradeShort, type NumistaGrade } from '@/utils/numistaGrades'
 import type { RealPhotoChoice } from '@/utils/coinPhotos'
 import { rarityFromMintage } from '@/utils/coinAttributes'
+import { numberFormat } from '@/utils/numberFormat'
 
 export interface CatalogSelection {
   type: NumistaCatalogType
@@ -113,7 +114,7 @@ function lettering(value: string | undefined): string {
 }
 
 function decimal(value: number): string {
-  return new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 2 }).format(value)
+  return numberFormat({ maximumFractionDigits: 2 }).format(value)
 }
 
 export function buildCatalogPrefill(selection: CatalogSelection, options: CatalogPrefillOptions): CatalogPrefill {
@@ -143,7 +144,7 @@ export function buildCatalogPrefill(selection: CatalogSelection, options: Catalo
     type.thicknessMm ? t('catalog.notes.thickness', { value: decimal(type.thicknessMm) }) : '',
     type.shape ? t('catalog.notes.shape', { value: type.shape }) : '',
     type.edge.description ? t('catalog.notes.edge', { value: type.edge.description }) : '',
-    issue?.mintage ? t('catalog.notes.mintage', { value: new Intl.NumberFormat(intlLocale()).format(issue.mintage) }) : '',
+    issue?.mintage ? t('catalog.notes.mintage', { value: numberFormat().format(issue.mintage) }) : '',
     otherReferences.length ? t('catalog.notes.otherReferences', { value: otherReferences.join(', ') }) : '',
   ].filter(Boolean).join('\n')
 

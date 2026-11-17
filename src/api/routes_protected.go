@@ -131,9 +131,6 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/stats/health", healthHandler.CollectionSummary)
 		protected.GET("/coins/health", healthHandler.ListCoinHealth)
 		protected.GET("/coins/:id/health", healthHandler.GetCoinHealth)
-		timeMachineHandler := handlers.NewTimeMachineHandler(d.timeMachineSvc)
-		protected.GET("/stats/time-machine", timeMachineHandler.GetSnapshot)
-		protected.GET("/stats/time-machine/bounds", timeMachineHandler.GetBounds)
 		protected.GET("/stats/distribution", coinHandler.Distribution)
 		protected.GET("/coins/:id/value-history", coinHandler.CoinValueHistory)
 		protected.GET("/suggestions", coinHandler.Suggestions)
@@ -218,7 +215,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/coins/periods", coinCountryHandler.Periods)
 		// Whether coins are still legal tender, from their cached Numista types.
 		coinCirculation := services.NewCoinCirculationService(d.coinRepo, numistaCatalogSvc)
-		coinHandler.WithCirculation(coinCirculation)
+		coinHandler.WithCirculation(coinCirculation).WithPreciousMetals(services.NewPreciousMetalsService(d.coinRepo, numistaCatalogSvc))
 		protected.GET("/coins/:id/status", coinHandler.Status)
 		protected.GET("/coins/statuses", coinHandler.StatusGroups)
 		// The face values, from the cached Numista types or the denominations.

@@ -60,6 +60,8 @@ export const getCoins = (params?: {
   presentation?: string
   /** "true": only coins held more than once (to trade). */
   repeated?: string
+  /** "true": only coins without a grade. */
+  ungraded?: string
   rarity?: string
   search?: string
   wishlist?: string
@@ -616,6 +618,12 @@ export interface CollectionSummary {
   commemorativeUnknown?: number
   /** Numista's kinds of coin found in the collection, the usual ones first. */
   classifications?: CollectionClassification[]
+  /**
+   * The items by circulation, each once (as the gallery lists them): still
+   * legal tender, no longer (with those of extinct countries), collector
+   * items, and those Numista says nothing of.
+   */
+  circulation?: { current: number; demonetized: number; nonCirculating: number; unknown: number }
   withoutCountry: number
   /** Coins whose presentation is "coincard". */
   coincards: number
@@ -625,6 +633,10 @@ export interface CollectionSummary {
   totalValue: number
   /** Coins without a current value, left out of totalValue. */
   unvaluedCoins: number
+  /** What the pieces with a purchase price cost, each times its quantity, in the collection currency. */
+  invested?: number
+  /** The pieces held that have a purchase price (the others are left out of invested). */
+  investedPieces?: number
   /** Different coins held more than once, and the copies beyond the first (to trade). */
   repeatedCoins?: number
   spareCoins?: number
@@ -742,6 +754,8 @@ export interface CatalogueCountry {
   collector: number
   ownedCommemoratives: number
   ownedCollector: number
+  /** A euro country's €2 commemoratives year by year, oldest first, and how many of each the collection has. */
+  commemorativeYears?: CatalogueYear[]
 }
 
 /** A €2 coin the euro area's countries issued together (the Treaty of Rome in 2007…), with each country's version. */
@@ -756,8 +770,21 @@ export interface JointIssue {
 /** The euro area's joint issues, newest first. */
 export const getJointIssues = () => api.get<{ issues: JointIssue[] }>('/coin-catalogue/joint-issues')
 
-/** The countries of the catalogue of commemorative and collector coins, each in its currency (the euro, or Portugal's escudo). */
-export const getCoinCatalogueCountries = () => api.get<{ countries: CatalogueCountry[] }>('/coin-catalogue/countries')
+/** How many coins of one year a part of the catalogue has, and how many of them the collection has. */
+export interface CatalogueYear {
+  year: number
+  total: number
+  owned: number
+}
+
+/**
+ * The countries of the catalogue of commemorative and collector coins, each in
+ * its currency (the euro, or Portugal's escudo); and year by year, oldest
+ * first, the euro area's €2 commemoratives and each euro country's
+ * circulation coins (the eight of each year).
+ */
+export const getCoinCatalogueCountries = () =>
+  api.get<{ countries: CatalogueCountry[]; commemorativeYears?: CatalogueYear[]; circulation?: { country: string; years: CatalogueYear[] }[] }>('/coin-catalogue/countries')
 
 /** A country's coins in euros, or in another currency ("PTE": Portugal's escudos), newest first; complete is false while coins from Numista are partly listed. Hidden are the coins the user hid, or joined to another (sameAs). */
 export const getCoinCatalogue = (country: string, currency?: string) =>

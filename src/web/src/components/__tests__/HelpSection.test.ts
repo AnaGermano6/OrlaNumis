@@ -113,12 +113,12 @@ describe('HelpSection', () => {
     expect(app).not.toContain("to: '/quick-capture'")
     expect(text).toContain('Both intake flows live under Identify Coin')
 
-    for (const view of ['Time Machine', 'Analysis History']) {
+    for (const view of ['Analysis History']) {
       expect(Object.values(en.nav)).toContain(view)
       expect(text).toContain(view)
     }
-    // Showcases, followers and storage locations were removed.
-    for (const removed of ['Showcases', 'Followers', 'Storage locations']) expect(text).not.toContain(removed)
+    // Showcases, followers, storage locations and the time machine were removed.
+    for (const removed of ['Showcases', 'Followers', 'Storage locations', 'Time Machine']) expect(text).not.toContain(removed)
   })
 
   it('lists every settings tab in its orientation table', () => {

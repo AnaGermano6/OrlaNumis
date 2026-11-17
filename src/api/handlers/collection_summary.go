@@ -89,6 +89,20 @@ type CollectionSummaryResponse struct {
 	// the usual ones first; coins Numista says nothing of are in none. Each
 	// coin counts once, as the gallery lists it.
 	Classifications []CollectionClassification `json:"classifications"`
+	// Circulation sorts the items as the list's circulation filter does,
+	// each counted once, as the gallery lists it.
+	Circulation CollectionCirculation `json:"circulation"`
+}
+
+// CollectionCirculation counts the collection's items (each once, whatever
+// its quantity) by what Numista says of their types: still legal tender, no
+// longer (with those of countries that no longer exist), issued for
+// collectors rather than for circulation, and those it says nothing of.
+type CollectionCirculation struct {
+	Current        int64 `json:"current"`
+	Demonetized    int64 `json:"demonetized"`
+	NonCirculating int64 `json:"nonCirculating"`
+	Unknown        int64 `json:"unknown"`
 }
 
 // CollectionClassification is one Numista kind of coin and how many of the
@@ -175,6 +189,10 @@ func (h *CollectionSummaryHandler) Summary(c *gin.Context) {
 		}
 		response.CurrentCoins, response.CirculationUnknown = held(sorted.Current), held(sorted.Unknown)
 		response.CommemorativeCoins, response.CommemorativeUnknown = held(sorted.Commemorative), held(sorted.CommemorativeUnknown)
+		response.Circulation = CollectionCirculation{
+			Current: listed(sorted.Current), Demonetized: listed(sorted.Demonetized),
+			NonCirculating: listed(sorted.NonCirculating), Unknown: listed(sorted.Unknown),
+		}
 		for _, group := range sorted.SortedClassifications() {
 			if n := listed(group.CoinIDs); n > 0 {
 				response.Classifications = append(response.Classifications, CollectionClassification{Key: group.Key, Label: group.Label, Count: n})

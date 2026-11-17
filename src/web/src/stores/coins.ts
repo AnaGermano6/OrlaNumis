@@ -30,6 +30,8 @@ export const useCoinsStore = defineStore('coins', () => {
   const selectedClassification = ref('')
   /** Only the coins held more than once (to trade). */
   const selectedRepeated = ref(false)
+  /** Only the coins without a grade (from the statistics' condition card). */
+  const selectedUngraded = ref(false)
   /** True when a grouped view hit ALL_COINS_LIMIT and shows only part of the collection. */
   const truncated = ref(false)
   let allCoinsGeneration = 0
@@ -172,6 +174,7 @@ export const useCoinsStore = defineStore('coins', () => {
     selectedCommemorative,
     selectedClassification,
     selectedRepeated,
+    selectedUngraded,
     truncated,
     fetchAllCoins,
     collectionHealth,

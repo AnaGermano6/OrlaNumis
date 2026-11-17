@@ -5,6 +5,10 @@ export default {
     selectCoins: 'Select coins',
     cancelSelection: 'Cancel selection mode',
   },
+  nav: {
+    label: 'Menu',
+    account: 'Account',
+  },
   sidebar: {
     reorderMenu: 'Reorder menu',
     submenuLabel: '{label} views',
@@ -17,11 +21,5 @@ export default {
   onboarding: {
     body: 'Start with the Getting Started guide to import a CSV, try Quick Capture or Coin Lookup, and review settings that unlock alerts, images, and AI tools.',
     openGuide: 'Open Guide',
-  },
-  footer: {
-    label: 'Footer',
-    catalogue: 'Catalogue data: Numista',
-    photos: 'Official photos: ECB, INCM, Monnaie de Paris and Münze Österreich',
-    basedOn: 'Based on the {project} project, by Brian DeNicola (MIT license)',
   },
 }

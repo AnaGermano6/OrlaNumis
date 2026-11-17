@@ -132,7 +132,6 @@
           <li><strong>Summary</strong> — Collection totals, rankings, distribution charts, and portfolio overview.</li>
           <li><strong>Timeline and Map</strong> — Chronological collection history plus mint geography for mapped coins.</li>
           <li><strong>Health</strong> — Scorecards for missing images, metadata gaps, AI analysis gaps, stale valuations, and cleanup suggestions.</li>
-          <li><strong>Time Machine</strong> — Scrub back through time to see the collection as it stood on any date.</li>
         </ul>
 
         <h4>AI Assistants</h4>

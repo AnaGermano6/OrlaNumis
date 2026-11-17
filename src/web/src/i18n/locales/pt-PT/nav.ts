@@ -12,14 +12,13 @@ const messages: Messages['nav'] = {
   timeline: 'Cronologia',
   map: 'Mapa',
   health: 'Saúde',
-  timeMachine: 'Máquina do tempo',
   sets: 'Conjuntos',
   mySets: 'Os meus conjuntos',
   settings: 'Definições',
   admin: 'Administração',
   logout: 'Terminar sessão',
   banknotes: 'Galeria de notas',
-  collectionOverview: 'Visão geral',
+  collectionOverview: 'Novos lançamentos',
   commemorativeCatalogue: 'Catálogo de comemorativas',
 }
 

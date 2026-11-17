@@ -34,4 +34,9 @@ export default {
     done: { one: 'Taken off the wishlist.', other: '{count} coins taken off the wishlist.' },
     failed: 'The coin could not be taken off the wishlist. Delete it from its page on the wishlist.',
   },
+  trades: {
+    title: 'Duplicates to trade',
+    coins: 'Coins',
+    banknotes: 'Banknotes',
+  },
 }

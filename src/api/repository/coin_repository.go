@@ -28,7 +28,9 @@ type CoinListFilters struct {
 	// ones still legal tender.
 	IDs []uint
 	// Repeated keeps the coins held more than once (a quantity above one).
-	Repeated     bool
+	Repeated bool
+	// Ungraded keeps the coins without a grade.
+	Ungraded     bool
 	Presentation string
 	Rarity       string
 	Search       string
@@ -115,6 +117,15 @@ type CollectionStats struct {
 	ByRuler          []RulerCount          `json:"byRuler"`
 	ByPriceRange     []PriceRange          `json:"byPriceRange"`
 	Values           ValueSummary          `json:"values"`
+	// ByDecade counts the coins of each decade they were issued in (1990
+	// for 1990–1999; negative before Christ), oldest first.
+	ByDecade []DecadeCount `json:"byDecade"`
+}
+
+// DecadeCount holds a decade and how many coins were issued in it.
+type DecadeCount struct {
+	Decade int   `json:"decade" example:"1990"`
+	Count  int64 `json:"count" example:"75"`
 }
 
 // DistributionCell holds a single cell in the era × category heat map.
@@ -251,6 +262,9 @@ func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Co
 	}
 	if filters.Repeated {
 		query = query.Where("quantity > 1")
+	}
+	if filters.Ungraded {
+		query = query.Where("TRIM(COALESCE(grade, '')) = ''")
 	}
 	if filters.Rarity != "" {
 		query = query.Where("rarity = ?", filters.Rarity)
@@ -697,7 +711,38 @@ func (r *CoinRepository) GetStats(userID uint) (*CollectionStats, error) {
 		Scopes(active).
 		Scan(&stats.Values)
 
+	// Integer division rounds toward zero: 1995 → 1990, -45 → -40.
+	r.db.Model(&models.Coin{}).
+		Select("(year / 10) * 10 AS decade, count(*) AS count").
+		Scopes(active).Where("year IS NOT NULL").
+		Group("decade").Order("decade").
+		Scan(&stats.ByDecade)
+
 	return stats, nil
+}
+
+// CoinMetalRow is a collection coin that may be of a precious metal: its
+// material, weight and quantity, and its Numista type, whose composition
+// may say how fine the metal is.
+type CoinMetalRow struct {
+	CoinID        uint
+	Material      string
+	WeightGrams   float64
+	Quantity      int64
+	NumistaTypeID string
+}
+
+// CollectionMetalRows lists the user's collection coins (not the
+// wishlist's) of gold, silver or billon whose weight is known.
+func (r *CoinRepository) CollectionMetalRows(userID uint) ([]CoinMetalRow, error) {
+	var rows []CoinMetalRow
+	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID)).
+		Select(`coins.id AS coin_id, material, weight_grams, `+coinQuantitySQL+` AS quantity,
+			COALESCE((SELECT TRIM(r.number) FROM coin_references r
+				WHERE r.coin_id = coins.id AND LOWER(r.catalog) = 'numista' ORDER BY r.id LIMIT 1), '') AS numista_type_id`).
+		Where("material IN ? AND weight_grams > 0", []string{string(models.MaterialGold), string(models.MaterialSilver), string(models.MaterialBillon)}).
+		Order("coins.id").Scan(&rows).Error
+	return rows, err
 }
 
 // GetDistribution returns era × category cross-tabulation counts for the heat map.
@@ -1032,6 +1077,11 @@ type CollectionSummary struct {
 	TotalValue float64 `json:"totalValue"`
 	// UnvaluedCoins have no current value and are left out of TotalValue.
 	UnvaluedCoins int64 `json:"unvaluedCoins"`
+	// Invested sums the purchase prices times their quantities, in the
+	// collection currency; InvestedPieces counts the pieces held that have a
+	// purchase price (the others are left out).
+	Invested       float64 `json:"invested"`
+	InvestedPieces int64   `json:"investedPieces"`
 	// RepeatedCoins are the different coins held more than once; SpareCoins
 	// the copies beyond the first, there to trade.
 	RepeatedCoins int64 `json:"repeatedCoins"`
@@ -1103,6 +1153,8 @@ func (r *CoinRepository) CollectionSummary(userID uint, kind string) (Collection
 		COALESCE(SUM(CASE WHEN presentation = 'coincard' THEN {q} ELSE 0 END), 0) AS coincards,
 		COALESCE(SUM(current_value * {q}), 0) AS total_value,
 		COALESCE(SUM(CASE WHEN current_value IS NULL THEN {q} ELSE 0 END), 0) AS unvalued_coins,
+		COALESCE(SUM(purchase_price * {q}), 0) AS invested,
+		COALESCE(SUM(CASE WHEN purchase_price IS NOT NULL THEN {q} ELSE 0 END), 0) AS invested_pieces,
 		COALESCE(SUM(CASE WHEN {q} > 1 THEN 1 ELSE 0 END), 0) AS repeated_coins,
 		COALESCE(SUM({q} - 1), 0) AS spare_coins`, "{q}", coinQuantitySQL)).
 		Scan(&summary).Error

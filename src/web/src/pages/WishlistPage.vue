@@ -23,7 +23,7 @@
         <AppIconButton to="/wishlist/availability-runs" :title="t('wishlist.runHistory')">
           <History :size="20" />
         </AppIconButton>
-        <AppIconButton :title="t('wishlist.share')" data-testid="wishlist-share" @click="showShareList = true">
+        <AppIconButton :title="t('wishlist.share')" data-testid="wishlist-share" @click="openShare('wishlist')">
           <Share2 :size="20" />
         </AppIconButton>
         <AppIconButton :title="t('wishlist.addTo')" @click="showAddDialog = true">
@@ -67,7 +67,7 @@
             class="pwa-icon-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]"
             :title="t('wishlist.share')"
             :aria-label="t('wishlist.share')"
-            @click="showShareList = true"
+            @click="openShare('wishlist')"
           >
             <Share2 :size="22" />
           </button>
@@ -88,7 +88,7 @@
           <router-link v-if="store.coins.length" to="/wishlist/search-alerts" class="btn btn-secondary">
             <CalendarClock :size="16" /> {{ t('wishlist.searchAlerts') }}
           </router-link>
-          <button type="button" class="btn btn-secondary" @click="showShareList = true">
+          <button type="button" class="btn btn-secondary" @click="openShare('wishlist')">
             <Share2 :size="16" /> {{ t('wishlist.share') }}
           </button>
           <router-link to="/wishlist/availability-runs" class="btn btn-secondary">
@@ -161,6 +161,13 @@
       <button class="btn btn-secondary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" :disabled="page * pageSize >= store.total" @click="page++">{{ t('common.next') }} →</button>
     </div>
 
+    <!-- What the collection has to trade: the coins and banknotes held more than once. -->
+    <section class="mt-10 flex flex-col gap-4" aria-labelledby="wishlist-trades-title" data-testid="wishlist-trades">
+      <h2 id="wishlist-trades-title" class="m-0 font-display text-xl font-semibold text-heading md:text-2xl">{{ t('wishlist.trades.title') }}</h2>
+      <CollectionRepeated kind="coin" :summary="null" :title="t('wishlist.trades.coins')" @open="openGallery({ repeated: true })" @share="openShare('trades')" />
+      <CollectionRepeated kind="banknote" :summary="null" :title="t('wishlist.trades.banknotes')" @open="openRepeatedBanknotes" @share="openShare('trades')" />
+    </section>
+
     <PurchaseModal
       v-if="purchaseTarget"
       :coin="purchaseTarget"
@@ -208,17 +215,19 @@
     </BaseModal>
 
     <CoinSearchChat v-if="showChat" @close="showChat = false" @added="loadCoins" />
-    <ShareListDialog :open="showShareList" initial-list="wishlist" @close="showShareList = false" />
+    <ShareListDialog :open="showShareList" :initial-list="shareList" @close="showShareList = false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCoinsStore } from '@/stores/coins'
 import CoinCard from '@/components/CoinCard.vue'
 import CoinSearchChat from '@/components/CoinSearchChat.vue'
 import PurchaseModal from '@/components/PurchaseModal.vue'
 import WishlistURLIntake from '@/components/wishlist/WishlistURLIntake.vue'
+import CollectionRepeated from '@/components/collection/CollectionRepeated.vue'
 import ShareListDialog from '@/components/collection/ShareListDialog.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
@@ -226,6 +235,7 @@ import { purchaseCoin, checkWishlistAvailability, updateListingStatus } from '@/
 import type { Coin, AvailabilityRunSummary } from '@/types'
 import { CirclePlus, Bot, ShieldCheck, CalendarClock, History, ChevronLeft, Link, ScanLine, Share2, X } from 'lucide-vue-next'
 import { useLayout } from '@/composables/useLayout'
+import { useOpenGallery } from '@/composables/useOpenGallery'
 import { rememberBrowseSequence } from '@/utils/browseSequence'
 import { t } from '@/i18n'
 import BaseModal from '@/components/ui/BaseModal.vue'
@@ -239,6 +249,20 @@ const { isMobile } = useLayout()
 const showChat = ref(false)
 const showAddDialog = ref(false)
 const showShareList = ref(false)
+/** The list the share dialog starts on: the wishlist, or the duplicates to trade. */
+const shareList = ref<'wishlist' | 'trades'>('wishlist')
+const openGallery = useOpenGallery()
+const router = useRouter()
+
+function openShare(list: 'wishlist' | 'trades') {
+  shareList.value = list
+  showShareList.value = true
+}
+
+// The banknotes held more than once, in their own gallery.
+function openRepeatedBanknotes() {
+  void router.push({ name: 'banknotes', query: { repeated: 'true' } })
+}
 const addMethod = ref<'url' | null>(null)
 const purchaseTarget = ref<Coin | null>(null)
 const checking = ref(false)

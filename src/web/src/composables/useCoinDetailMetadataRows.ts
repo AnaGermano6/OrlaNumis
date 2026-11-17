@@ -10,6 +10,7 @@ import { intlLocale, t } from '@/i18n'
 import { eraLabel } from '@/i18n/coinVocabulary'
 import { presentationLabel, rarityLabel } from '@/utils/coinAttributes'
 import { banknoteGradeLabel, banknoteMaterialLabel, noteVariantLabel, pickNumber } from '@/utils/banknoteAttributes'
+import { numberFormat } from '@/utils/numberFormat'
 
 // "Corrente · Comemorativa", "Não circulante · Comemorativa", "Desmonetizada
 // em 28/02/2002"…; '' when nothing is known.
@@ -29,7 +30,7 @@ function statusValue(status: CoinStatus | null | undefined): string {
 
 // A measure in the language's numbers, with its unit apart: "8,5 g", "25,75 mm".
 function measure(value: number, unit: string): string {
-  return `${new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 2 }).format(value)} ${unit}`
+  return `${numberFormat({ maximumFractionDigits: 2 }).format(value)} ${unit}`
 }
 
 function formatDemonetizationDate(value: string | undefined): string {

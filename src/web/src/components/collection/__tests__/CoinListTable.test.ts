@@ -31,6 +31,16 @@ describe('CoinListTable', () => {
     expect(sublines[1]).toBe('🇿🇦África do Sul · 1984')
   })
 
+  it('scrolls its rows in a box of their own, under a header that stays, when asked', () => {
+    const stubs = { RouterLink: RouterLinkStub }
+    const plain = mount(CoinListTable, { props: { coins: [coin(1, 1)] }, global: { stubs } })
+    expect(plain.get('[data-testid="coin-list-scroller"]').classes()).not.toContain('md:overflow-y-auto')
+
+    const scrolling = mount(CoinListTable, { props: { coins: [coin(1, 1)], scroll: true }, global: { stubs } })
+    expect(scrolling.get('[data-testid="coin-list-scroller"]').classes()).toEqual(expect.arrayContaining(['md:max-h-[520px]', 'md:overflow-y-auto']))
+    expect(scrolling.get('table').classes()).toContain('md:[&_th]:sticky')
+  })
+
   it('leaves out the presentation where it means nothing, as for banknotes', () => {
     const wrapper = mount(CoinListTable, {
       props: { coins: [coin(1, 1)], showPresentation: false },

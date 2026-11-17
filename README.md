@@ -39,7 +39,7 @@ Orla Numis is based on [Aurearia](https://github.com/briandenicola/Aurearia) by 
 - Lists from the **commemorative catalogue** (each euro country's €2 commemoratives and collector coins), ready-made **challenges**, sets **by filters**, free sets and goals with a wish list, with the completion by country.
 
 ### 📊 Stats
-- Summary cards, distributions, top coins, acquisition flow, a heat map, timeline, mint map, **collection health** with quick fixes, and a **Time Machine** that shows the collection on any past date.
+- Summary cards, distributions, top coins, a heat map, timeline, mint map and **collection health** with quick fixes.
 
 ### 🎯 Wish list
 - Dealer pages turned into wishlist coins, availability checks, saved search alerts with a review queue, and **Mark as purchased**.

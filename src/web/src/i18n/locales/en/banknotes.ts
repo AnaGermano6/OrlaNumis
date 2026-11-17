@@ -5,6 +5,8 @@ export default {
   badge: 'Banknote',
   searchPlaceholder: 'Search banknotes by name, country, inscription…',
   failed: 'The banknotes could not be loaded. Try again in a moment.',
+  currentOnly: 'Only legal tender banknotes',
+  demonetizedOnly: 'Only demonetized banknotes',
   repeatedOnly: 'Only duplicates to trade',
   groupCount: { one: '{count} banknote', other: '{count} banknotes' },
   groupNone: 'All banknotes',
@@ -15,13 +17,6 @@ export default {
     selected: { one: '{count} banknote selected', other: '{count} banknotes selected' },
     confirmDelete: { one: 'Delete {count} banknote? This cannot be undone.', other: 'Delete {count} banknotes? This cannot be undone.' },
     deleteFailed: 'The banknotes could not be deleted',
-  },
-  kpis: {
-    label: 'Banknote figures',
-    banknotes: 'Banknotes',
-    countries: 'Countries',
-    value: 'Total value',
-    unique: 'Unique notes',
   },
   empty: {
     title: 'No banknotes yet',

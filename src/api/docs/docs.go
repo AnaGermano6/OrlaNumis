@@ -3630,7 +3630,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "The countries of the catalogue, each in its currency: the euro (every €2 commemorative the ECB has published since 2004, the €5, €10 and €20 coins, and the collector coins the mints of Portugal, France and Austria sell) and Portugal's escudo (its commemorative and collector coins, 1911–2001). Each says how many commemorative and collector coins it lists, and how many of them the user has.",
+                "description": "The countries of the catalogue, each in its currency: the euro (every €2 commemorative the ECB has published since 2004, the €5, €10 and €20 coins, and the collector coins the mints of Portugal, France and Austria sell) and Portugal's escudo (its commemorative and collector coins, 1911–2001). Each says how many commemorative and collector coins it lists, and how many of them the user has; a euro country, its €2 commemoratives year by year too. Then, year by year, the euro area's €2 commemoratives, with how many of each year the collection has; and each euro country's circulation coins, the eight of each year since its first euro coins, with how many of them the collection has.",
                 "produces": [
                     "application/json"
                 ],
@@ -4102,6 +4102,12 @@ const docTemplate = `{
                         "type": "boolean",
                         "description": "Only coins held more than once (a quantity above one), the copies there to trade",
                         "name": "repeated",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Only coins without a grade",
+                        "name": "ungraded",
                         "in": "query"
                     },
                     {
@@ -11565,7 +11571,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns counts by category/material, total/average values, and wishlist count.",
+                "description": "Returns counts by category/material, total/average values, and wishlist count; the coins by decade of issue, and the gold and silver of the collection (fine, from the Numista types' composition, and gross).",
                 "produces": [
                     "application/json"
                 ],
@@ -11643,95 +11649,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/services.CollectionHealthSummary"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/stats/time-machine": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Reconstructs the collection as it stood on the requested date from purchase dates and recorded valuation history. Coins without a purchase date cannot be placed on the timeline and are reported separately in undatedCoinCount.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Stats"
-                ],
-                "summary": "Get the collection as of a past date",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Target date (YYYY-MM-DD)",
-                        "name": "date",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/services.TimeMachineSnapshot"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/stats/time-machine/bounds": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns the earliest acquisition on record and today, defining the range the timeline scrubber can span. hasData is false when no coin has a purchase date.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Stats"
-                ],
-                "summary": "Get the time machine's date range",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/services.TimeMachineBounds"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
@@ -13409,11 +13326,33 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CatalogueCirculation": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "type": "string",
+                    "example": "PT"
+                },
+                "years": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.EuroCirculationYear"
+                    }
+                }
+            }
+        },
         "handlers.CatalogueCountry": {
             "type": "object",
             "properties": {
                 "collector": {
                     "type": "integer"
+                },
+                "commemorativeYears": {
+                    "description": "CommemorativeYears are the country's €2 commemoratives year by year,\noldest first, with how many of each year the collection has (euro\ncountries only).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CatalogueYear"
+                    }
                 },
                 "commemoratives": {
                     "type": "integer"
@@ -13454,6 +13393,21 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CatalogueYear": {
+            "type": "object",
+            "properties": {
+                "owned": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer",
+                    "example": 2025
+                }
+            }
+        },
         "handlers.CategoryCount": {
             "type": "object",
             "properties": {
@@ -13488,6 +13442,19 @@ const docTemplate = `{
         "handlers.CoinCatalogueCountriesResponse": {
             "type": "object",
             "properties": {
+                "circulation": {
+                    "description": "Circulation is each euro country's circulation coins year by year\n(the eight of each year, 1 cent to 2 euro), by country code, with how\nmany of them the collection has.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CatalogueCirculation"
+                    }
+                },
+                "commemorativeYears": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CatalogueYear"
+                    }
+                },
                 "countries": {
                     "type": "array",
                     "items": {
@@ -14287,6 +14254,23 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CollectionCirculation": {
+            "type": "object",
+            "properties": {
+                "current": {
+                    "type": "integer"
+                },
+                "demonetized": {
+                    "type": "integer"
+                },
+                "nonCirculating": {
+                    "type": "integer"
+                },
+                "unknown": {
+                    "type": "integer"
+                }
+            }
+        },
         "handlers.CollectionClassification": {
             "type": "object",
             "properties": {
@@ -14319,6 +14303,14 @@ const docTemplate = `{
         "handlers.CollectionSummaryResponse": {
             "type": "object",
             "properties": {
+                "circulation": {
+                    "description": "Circulation sorts the items as the list's circulation filter does,\neach counted once, as the gallery lists it.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.CollectionCirculation"
+                        }
+                    ]
+                },
                 "circulationUnknown": {
                     "type": "integer"
                 },
@@ -14373,6 +14365,13 @@ const docTemplate = `{
                 },
                 "highlights": {
                     "$ref": "#/definitions/repository.CollectionHighlights"
+                },
+                "invested": {
+                    "description": "Invested sums the purchase prices times their quantities, in the\ncollection currency; InvestedPieces counts the pieces held that have a\npurchase price (the others are left out).",
+                    "type": "number"
+                },
+                "investedPieces": {
+                    "type": "integer"
                 },
                 "repeatedCoins": {
                     "description": "RepeatedCoins are the different coins held more than once; SpareCoins\nthe copies beyond the first, there to trade.",
@@ -15352,6 +15351,13 @@ const docTemplate = `{
                         "$ref": "#/definitions/handlers.CategoryCount"
                     }
                 },
+                "byDecade": {
+                    "description": "ByDecade counts the coins of each decade they were issued in, oldest first.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.DecadeCount"
+                    }
+                },
                 "byMaterial": {
                     "type": "array",
                     "items": {
@@ -15364,6 +15370,14 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/handlers.MonetarySystemCount"
                     }
+                },
+                "preciousMetals": {
+                    "description": "PreciousMetals is the collection's gold and silver; absent when the server cannot work it out.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/services.PreciousMetals"
+                        }
+                    ]
                 },
                 "totalCoins": {
                     "type": "integer",
@@ -19263,6 +19277,19 @@ const docTemplate = `{
                 }
             }
         },
+        "repository.DecadeCount": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 75
+                },
+                "decade": {
+                    "type": "integer",
+                    "example": 1990
+                }
+            }
+        },
         "repository.DenominationCount": {
             "type": "object",
             "properties": {
@@ -19373,20 +19400,6 @@ const docTemplate = `{
                 "users": {
                     "description": "Users, Coins (coins and banknotes) and Files (photos and other uploads) it holds.",
                     "type": "integer"
-                }
-            }
-        },
-        "services.BreakdownEntry": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "number"
                 }
             }
         },
@@ -19830,6 +19843,23 @@ const docTemplate = `{
                 }
             }
         },
+        "services.EuroCirculationYear": {
+            "type": "object",
+            "properties": {
+                "owned": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "year": {
+                    "type": "integer",
+                    "example": 2024
+                }
+            }
+        },
         "services.ExchangeRate": {
             "type": "object",
             "properties": {
@@ -19973,6 +20003,24 @@ const docTemplate = `{
                 }
             }
         },
+        "services.MetalTotal": {
+            "type": "object",
+            "properties": {
+                "fineGrams": {
+                    "type": "number"
+                },
+                "grossGrams": {
+                    "type": "number"
+                },
+                "pieces": {
+                    "type": "integer"
+                },
+                "unknownFineness": {
+                    "description": "UnknownFineness counts the pieces whose fineness nobody says: their\nweight is in Gross, not in Fine.",
+                    "type": "integer"
+                }
+            }
+        },
         "services.MissingChecklistItem": {
             "type": "object",
             "properties": {
@@ -20004,6 +20052,17 @@ const docTemplate = `{
                 },
                 "percentage": {
                     "type": "number"
+                }
+            }
+        },
+        "services.PreciousMetals": {
+            "type": "object",
+            "properties": {
+                "gold": {
+                    "$ref": "#/definitions/services.MetalTotal"
+                },
+                "silver": {
+                    "$ref": "#/definitions/services.MetalTotal"
                 }
             }
         },
@@ -20091,91 +20150,6 @@ const docTemplate = `{
                 }
             }
         },
-        "services.TimeMachineBounds": {
-            "type": "object",
-            "properties": {
-                "earliestDate": {
-                    "type": "string"
-                },
-                "hasData": {
-                    "type": "boolean"
-                },
-                "latestDate": {
-                    "type": "string"
-                }
-            }
-        },
-        "services.TimeMachineSnapshot": {
-            "type": "object",
-            "properties": {
-                "acquiredInYear": {
-                    "type": "integer"
-                },
-                "asOfDate": {
-                    "type": "string"
-                },
-                "byCategory": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/services.BreakdownEntry"
-                    }
-                },
-                "byEra": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/services.BreakdownEntry"
-                    }
-                },
-                "byMaterial": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/services.BreakdownEntry"
-                    }
-                },
-                "coinCount": {
-                    "type": "integer"
-                },
-                "topCoins": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/services.TopCoin"
-                    }
-                },
-                "totalInvested": {
-                    "type": "number"
-                },
-                "totalValue": {
-                    "type": "number"
-                },
-                "undatedCoinCount": {
-                    "description": "UndatedCoinCount is how many owned coins have no purchase date and so\nappear at no point on the timeline. Surfaced rather than hidden: a\nnon-zero value means the numbers below understate the collection.",
-                    "type": "integer"
-                },
-                "unrealizedGain": {
-                    "type": "number"
-                },
-                "valueBasis": {
-                    "$ref": "#/definitions/services.ValueBasis"
-                }
-            }
-        },
-        "services.TopCoin": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "number"
-                },
-                "valueFromHistory": {
-                    "type": "boolean"
-                }
-            }
-        },
         "services.UpdateStatus": {
             "type": "object",
             "properties": {
@@ -20219,17 +20193,6 @@ const docTemplate = `{
                 "watchtower": {
                     "description": "Watchtower is true when Watchtower's address and token are set, so\nthe update can be started from the app.",
                     "type": "boolean"
-                }
-            }
-        },
-        "services.ValueBasis": {
-            "type": "object",
-            "properties": {
-                "fromPurchasePrice": {
-                    "type": "integer"
-                },
-                "fromValuationHistory": {
-                    "type": "integer"
                 }
             }
         },

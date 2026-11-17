@@ -1,5 +1,5 @@
 <template>
-  <section v-if="summary && summary.coins > 0" class="mb-4 rounded-md border border-border-subtle bg-card p-4" :aria-labelledby="titleId">
+  <section v-if="summary && summary.coins > 0" class="rounded-md border border-border-subtle bg-card p-4" :aria-labelledby="titleId">
     <h2 :id="titleId" class="mb-3 mt-0 font-display text-lg font-medium text-heading">{{ title ?? t('collection.highlights.title') }}</h2>
     <ul class="m-0 grid list-none gap-3 p-0 md:grid-cols-3">
       <li v-for="item in items" :key="item.key" class="flex min-w-0 items-center gap-3 rounded-sm border border-border-subtle bg-input p-3">

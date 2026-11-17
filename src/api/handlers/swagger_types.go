@@ -1,6 +1,10 @@
 package handlers
 
-import "github.com/briandenicola/ancient-coins-api/models"
+import (
+	"github.com/briandenicola/ancient-coins-api/models"
+	"github.com/briandenicola/ancient-coins-api/repository"
+	"github.com/briandenicola/ancient-coins-api/services"
+)
 
 // Swagger response types for documentation
 
@@ -158,6 +162,10 @@ type StatsResponse struct {
 	// ByMonetarySystem counts the coins of each monetary system, most first.
 	ByMonetarySystem []MonetarySystemCount `json:"byMonetarySystem"`
 	Values           ValueSummary          `json:"values"`
+	// ByDecade counts the coins of each decade they were issued in, oldest first.
+	ByDecade []repository.DecadeCount `json:"byDecade"`
+	// PreciousMetals is the collection's gold and silver; absent when the server cannot work it out.
+	PreciousMetals *services.PreciousMetals `json:"preciousMetals,omitempty"`
 }
 
 type MonetarySystemCount struct {
