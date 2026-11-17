@@ -258,6 +258,10 @@ const messages: Messages['sets'] = {
     presentation: 'Apresentação',
     classification: 'Tipo de moeda',
     allKinds: 'Todas',
+    kinds: {
+      coin: 'Moedas',
+      banknote: 'Notas',
+    },
     classifications: {
       circulation: 'Circulação',
       commemorative: 'Comemorativas',

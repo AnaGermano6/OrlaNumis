@@ -256,6 +256,10 @@ export default {
     presentation: 'Presentation',
     classification: 'Kind of coin',
     allKinds: 'All',
+    kinds: {
+      coin: 'Coins',
+      banknote: 'Banknotes',
+    },
     classifications: {
       circulation: 'Circulation',
       commemorative: 'Commemorative',
