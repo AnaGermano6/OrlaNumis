@@ -4,6 +4,44 @@ Each version's section is its release notes: the release workflow publishes
 it on GitHub, and **Admin → Updates** shows it to the apps that can update.
 Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.4.0] - 2026-11-17
+
+### Changed
+- On a wider screen the menu is in the top bar, each page with the pages
+  under it in a list (Coleção, Identificar moeda, Agente, Estatísticas,
+  Conjuntos); the account and the language are on the right. The wishlist
+  is under Coleção; Estatísticas opens its own page first.
+- The footer is gone: its credits are in Settings › Sobre, with the version.
+- The collection's page is now Novos lançamentos: the €2 coins and the
+  collector coins as tabs, with country, status, metal and edition filters
+  beside them and an ⓘ that says where the list comes from.
+- The statistics start with the collection at a glance, in tabs (Toda a
+  coleção, Moedas, Notas): the pieces, the estimated value against the face
+  value, the amount invested and the countries; the coins' tab adds the
+  wishlist. The coins by Numista's kind of coin and the banknotes by
+  circulation open their galleries filtered.
+- The duplicates to trade are on the wishlist's page, for coins and for
+  banknotes.
+- Numbers always group their thousands: 3 874,51 € rather than 3874,51 €.
+  A share that would round to 0% or 100% shows a decimal (0,3%).
+- On the map, a country's coins scroll in a box as tall as the list of
+  countries, under a header that stays.
+
+### Added
+- Completion progress: how many of the €2 commemoratives and of the euro
+  circulation coins (the eight of each year) the collection has, year by
+  year, of every country or of one.
+- Condition: every grade, best first, with its pieces and share, and those
+  without a grade, which open the gallery to grade them.
+- Completion by country, precious metals (the fine gold and silver, from
+  the fineness Numista gives, plated coins left out) with the other
+  materials, and the coins by decade.
+- The gallery can show only the coins without a grade.
+
+### Removed
+- The time machine, the acquisition flow and the old summary cards of the
+  statistics.
+
 ## [1.3.0] - 2026-11-17
 
 ### Changed
