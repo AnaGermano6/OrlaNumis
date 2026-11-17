@@ -2,6 +2,8 @@ package services
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/briandenicola/ancient-coins-api/models"
@@ -109,30 +111,8 @@ func (s *HealthService) ListCoinHealth(userID uint, page, limit int, scope strin
 	}
 
 	items := make([]CoinHealthItem, 0, len(rows))
-	for _, row := range rows {
-		metadataScore := s.scoreCoinMetadata(&row)
-		imageScore := s.scoreCoinImages(&row)
-		valuationScore := s.scoreCoinValuationFreshness(&row)
-		aiScore := s.scoreCoinAICoverage(&row)
-		totalScore := s.computeWeightedScore(metadataScore, imageScore, valuationScore, aiScore)
-
-		checklist := s.generateCoinChecklist(&row)
-		quickActions := s.extractQuickActions(checklist)
-
-		items = append(items, CoinHealthItem{
-			CoinID: row.CoinID,
-			Title:  row.Title,
-			Score:  totalScore,
-			Grade:  HealthGradeFromScore(totalScore),
-			Dimensions: HealthDimensionScores{
-				Metadata:           metadataScore,
-				ImageCoverage:      imageScore,
-				ValuationFreshness: valuationScore,
-				AICoverage:         aiScore,
-			},
-			MissingItems: checklist,
-			QuickActions: quickActions,
-		})
+	for i := range rows {
+		items = append(items, s.coinHealthItem(&rows[i]))
 	}
 
 	return &CoinHealthListResponse{
@@ -143,6 +123,189 @@ func (s *HealthService) ListCoinHealth(userID uint, page, limit int, scope strin
 			Total: total,
 		},
 	}, nil
+}
+
+// coinHealthItem scores a coin and lists what it misses.
+func (s *HealthService) coinHealthItem(row *repository.EligibleCoinRow) CoinHealthItem {
+	metadataScore := s.scoreCoinMetadata(row)
+	imageScore := s.scoreCoinImages(row)
+	valuationScore := s.scoreCoinValuationFreshness(row)
+	aiScore := s.scoreCoinAICoverage(row)
+	totalScore := s.computeWeightedScore(metadataScore, imageScore, valuationScore, aiScore)
+	checklist := s.generateCoinChecklist(row)
+	return CoinHealthItem{
+		CoinID: row.CoinID,
+		Title:  row.Title,
+		Score:  totalScore,
+		Grade:  HealthGradeFromScore(totalScore),
+		Dimensions: HealthDimensionScores{
+			Metadata:           metadataScore,
+			ImageCoverage:      imageScore,
+			ValuationFreshness: valuationScore,
+			AICoverage:         aiScore,
+		},
+		MissingItems: checklist,
+		QuickActions: s.extractQuickActions(checklist),
+		ImagePath:    row.ImagePath,
+	}
+}
+
+// severityRank orders what a coin misses: the most urgent first.
+func severityRank(severity ChecklistSeverity) int {
+	switch severity {
+	case ChecklistSeverityHigh:
+		return 0
+	case ChecklistSeverityMedium:
+		return 1
+	default:
+		return 2
+	}
+}
+
+// HealthPriorityFilter narrows the priority list: to what the coins miss of
+// one dimension, to the coins of one country (as written on them, "" for
+// any), or to those that miss one item (its key, "" for any).
+type HealthPriorityFilter struct {
+	Dimension string
+	Country   string
+	Missing   string
+}
+
+// ListPriorityCoinHealth lists the coins that miss something, the most
+// urgent first: by what they miss most urgently, then by score (lowest
+// first), then by name. With a dimension, only what they miss of it counts,
+// first in each coin's list; with a missing item, that item comes first.
+// What scores nothing (the AI analyses, without an AI provider) is left out.
+// The facets count the coins by country and by missing item.
+func (s *HealthService) ListPriorityCoinHealth(userID uint, page, limit int, filter HealthPriorityFilter) (*CoinHealthListResponse, error) {
+	dimension := filter.Dimension
+	rows, err := s.repo.ListEligibleCoins(userID)
+	if err != nil {
+		return nil, err
+	}
+	aiCounts := s.weights().AICoverage > 0
+	type ranked struct {
+		item    CoinHealthItem
+		rank    int
+		country string
+	}
+	candidates := []ranked{}
+	for i := range rows {
+		item := s.coinHealthItem(&rows[i])
+		missing := []MissingChecklistItem{}
+		for _, entry := range item.MissingItems {
+			if entry.Dimension == ChecklistDimensionAI && !aiCounts {
+				continue
+			}
+			missing = append(missing, entry)
+		}
+		if dimension != "" {
+			// Its items of the dimension first, the others after them.
+			sort.SliceStable(missing, func(a, b int) bool {
+				return string(missing[a].Dimension) == dimension && string(missing[b].Dimension) != dimension
+			})
+			if len(missing) == 0 || string(missing[0].Dimension) != dimension {
+				continue
+			}
+		}
+		if len(missing) == 0 {
+			continue
+		}
+		rank := 3
+		for _, entry := range missing {
+			if dimension != "" && string(entry.Dimension) != dimension {
+				break
+			}
+			if r := severityRank(entry.Severity); r < rank {
+				rank = r
+			}
+		}
+		if dimension == "" {
+			sort.SliceStable(missing, func(a, b int) bool { return severityRank(missing[a].Severity) < severityRank(missing[b].Severity) })
+		}
+		item.MissingItems = missing
+		item.QuickActions = s.extractQuickActions(missing)
+		candidates = append(candidates, ranked{item: item, rank: rank, country: strings.TrimSpace(rows[i].Country)})
+	}
+
+	ofCountry := func(entry ranked) bool {
+		return filter.Country == "" || strings.EqualFold(entry.country, strings.TrimSpace(filter.Country))
+	}
+	misses := func(entry ranked) bool {
+		if filter.Missing == "" {
+			return true
+		}
+		for _, item := range entry.item.MissingItems {
+			if item.Key == filter.Missing {
+				return true
+			}
+		}
+		return false
+	}
+	// Each facet with the other filter on: what each choice would show.
+	countries, missingKeys := map[string]int{}, map[string]int{}
+	list := []ranked{}
+	for _, entry := range candidates {
+		if misses(entry) {
+			countries[entry.country]++
+		}
+		if ofCountry(entry) {
+			for _, item := range entry.item.MissingItems {
+				missingKeys[item.Key]++
+			}
+		}
+		if !ofCountry(entry) || !misses(entry) {
+			continue
+		}
+		if filter.Missing != "" {
+			// The item asked for first.
+			sort.SliceStable(entry.item.MissingItems, func(a, b int) bool {
+				return entry.item.MissingItems[a].Key == filter.Missing && entry.item.MissingItems[b].Key != filter.Missing
+			})
+		}
+		list = append(list, entry)
+	}
+	sort.SliceStable(list, func(a, b int) bool {
+		if list[a].rank != list[b].rank {
+			return list[a].rank < list[b].rank
+		}
+		if list[a].item.Score != list[b].item.Score {
+			return list[a].item.Score < list[b].item.Score
+		}
+		return list[a].item.Title < list[b].item.Title
+	})
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 25
+	}
+	start := min((page-1)*limit, len(list))
+	end := min(start+limit, len(list))
+	items := make([]CoinHealthItem, 0, end-start)
+	for _, entry := range list[start:end] {
+		items = append(items, entry.item)
+	}
+	return &CoinHealthListResponse{
+		Coins:      items,
+		Pagination: HealthPagination{Page: page, Limit: limit, Total: int64(len(list))},
+		Facets:     &HealthFacets{Countries: sortedFacets(countries), Missing: sortedFacets(missingKeys)},
+	}, nil
+}
+
+// sortedFacets lists a facet's values, the most coins first.
+func sortedFacets(counts map[string]int) []HealthFacet {
+	facets := make([]HealthFacet, 0, len(counts))
+	for value, count := range counts {
+		facets = append(facets, HealthFacet{Value: value, Count: count})
+	}
+	sort.Slice(facets, func(a, b int) bool {
+		if facets[a].Count != facets[b].Count {
+			return facets[a].Count > facets[b].Count
+		}
+		return facets[a].Value < facets[b].Value
+	})
+	return facets
 }
 
 // GetCoinHealth returns health data for a single coin.

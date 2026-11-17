@@ -8,6 +8,7 @@ import type {
   Coin,
   CoinHealthItem,
   CoinHealthListResponse,
+  HealthChecklistDimension,
   CoinImage,
   CoinJournal,
   CoinKind,
@@ -450,7 +451,20 @@ export const extractText = (file: File) => {
   return api.post<{ text: string }>('/extract-text', formData)
 }
 
-export const getCoinHealthList = (params?: { scope?: 'all' | 'needs_attention'; page?: number; limit?: number }) =>
+/**
+ * The coins' health. "priority" lists only the coins that miss something, the
+ * most urgent first, and with a dimension only what they miss of it.
+ */
+export const getCoinHealthList = (params?: {
+  scope?: 'all' | 'needs_attention' | 'priority'
+  dimension?: HealthChecklistDimension
+  /** With the priority scope: only the coins of one country, as written on them. */
+  country?: string
+  /** With the priority scope: only the coins that miss one item (its key, e.g. "images.any"). */
+  missing?: string
+  page?: number
+  limit?: number
+}) =>
   api.get<CoinHealthListResponse>('/coins/health', { params })
 
 export const getCoinHealth = (coinId: number) =>

@@ -26,6 +26,10 @@ Versions follow [Semantic Versioning](https://semver.org).
   A share that would round to 0% or 100% shows a decimal (0,3%).
 - On the map, a country's coins scroll in a box as tall as the list of
   countries, under a header that stays.
+- Saúde opens with a general diagnosis: the score as a gauge out of 100
+  with its grade, each part as a bar (details, images, valuations, and AI
+  analyses when an AI provider counts them), what each weighs, and a way to
+  the coins that miss something of each part.
 
 ### Added
 - Completion progress: how many of the €2 commemoratives and of the euro
@@ -37,6 +41,11 @@ Versions follow [Semantic Versioning](https://semver.org).
   the fineness Numista gives, plated coins left out) with the other
   materials, and the coins by decade.
 - The gallery can show only the coins without a grade.
+- Priority actions in Saúde: the coins to fix first, the most urgent
+  first, each with its photo, what it misses most and the button that fixes
+  it; of one country or of one thing missing, each choice with how many
+  coins it would show. A quick review goes through them one coin at a time,
+  with everything each one misses.
 
 ### Removed
 - The time machine, the acquisition flow and the old summary cards of the

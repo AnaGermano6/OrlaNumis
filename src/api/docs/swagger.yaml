@@ -4596,6 +4596,10 @@ definitions:
         $ref: '#/definitions/services.HealthDimensionScores'
       grade:
         $ref: '#/definitions/services.HealthGrade'
+      imagePath:
+        description: ImagePath is the coin's primary (or obverse, or first) image,
+          if any.
+        type: string
       missingItems:
         items:
           $ref: '#/definitions/services.MissingChecklistItem'
@@ -4615,6 +4619,12 @@ definitions:
         items:
           $ref: '#/definitions/services.CoinHealthItem'
         type: array
+      facets:
+        allOf:
+        - $ref: '#/definitions/services.HealthFacets'
+        description: |-
+          Facets, for the priority list, count its coins by country and by what
+          they miss, each with the other filter on: what each choice would show.
       pagination:
         $ref: '#/definitions/services.HealthPagination'
     type: object
@@ -4896,6 +4906,24 @@ definitions:
         type: integer
       valuationFreshness:
         type: integer
+    type: object
+  services.HealthFacet:
+    properties:
+      count:
+        type: integer
+      value:
+        type: string
+    type: object
+  services.HealthFacets:
+    properties:
+      countries:
+        items:
+          $ref: '#/definitions/services.HealthFacet'
+        type: array
+      missing:
+        items:
+          $ref: '#/definitions/services.HealthFacet'
+        type: array
     type: object
   services.HealthGrade:
     enum:
@@ -9601,12 +9629,33 @@ paths:
         user's active collection.
       parameters:
       - default: all
-        description: Scope filter
+        description: 'Scope filter: priority lists only the coins that miss something,
+          the most urgent first'
         enum:
         - all
         - needs_attention
+        - priority
         in: query
         name: scope
+        type: string
+      - description: With scope=priority, only what the coins miss of one dimension
+        enum:
+        - metadata
+        - images
+        - valuation
+        - ai
+        in: query
+        name: dimension
+        type: string
+      - description: With scope=priority, only the coins of one country, as written
+          on them
+        in: query
+        name: country
+        type: string
+      - description: With scope=priority, only the coins that miss one item (its key,
+          e.g. images.any)
+        in: query
+        name: missing
         type: string
       - default: 1
         description: Page number

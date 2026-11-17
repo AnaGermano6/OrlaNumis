@@ -4719,12 +4719,37 @@ const docTemplate = `{
                     {
                         "enum": [
                             "all",
-                            "needs_attention"
+                            "needs_attention",
+                            "priority"
                         ],
                         "type": "string",
                         "default": "all",
-                        "description": "Scope filter",
+                        "description": "Scope filter: priority lists only the coins that miss something, the most urgent first",
                         "name": "scope",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "metadata",
+                            "images",
+                            "valuation",
+                            "ai"
+                        ],
+                        "type": "string",
+                        "description": "With scope=priority, only what the coins miss of one dimension",
+                        "name": "dimension",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "With scope=priority, only the coins of one country, as written on them",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "With scope=priority, only the coins that miss one item (its key, e.g. images.any)",
+                        "name": "missing",
                         "in": "query"
                     },
                     {
@@ -19532,6 +19557,10 @@ const docTemplate = `{
                 "grade": {
                     "$ref": "#/definitions/services.HealthGrade"
                 },
+                "imagePath": {
+                    "description": "ImagePath is the coin's primary (or obverse, or first) image, if any.",
+                    "type": "string"
+                },
                 "missingItems": {
                     "type": "array",
                     "items": {
@@ -19560,6 +19589,14 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/services.CoinHealthItem"
                     }
+                },
+                "facets": {
+                    "description": "Facets, for the priority list, count its coins by country and by what\nthey miss, each with the other filter on: what each choice would show.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/services.HealthFacets"
+                        }
+                    ]
                 },
                 "pagination": {
                     "$ref": "#/definitions/services.HealthPagination"
@@ -19916,6 +19953,34 @@ const docTemplate = `{
                 },
                 "valuationFreshness": {
                     "type": "integer"
+                }
+            }
+        },
+        "services.HealthFacet": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.HealthFacets": {
+            "type": "object",
+            "properties": {
+                "countries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.HealthFacet"
+                    }
+                },
+                "missing": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.HealthFacet"
+                    }
                 }
             }
         },

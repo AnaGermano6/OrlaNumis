@@ -79,6 +79,8 @@ export interface CoinHealthItem {
   dimensions: HealthDimensions
   missingItems: MissingChecklistItem[]
   quickActions: HealthQuickAction[]
+  /** The coin's primary (or obverse, or first) image, if any. */
+  imagePath?: string
 }
 
 export interface CoinHealthListResponse {
@@ -87,6 +89,14 @@ export interface CoinHealthListResponse {
     page: number
     limit: number
     total: number
+  }
+  /**
+   * For the priority list: its coins by country ("" for none) and by missing
+   * item's key, each counted with the other filter on.
+   */
+  facets?: {
+    countries: { value: string; count: number }[]
+    missing: { value: string; count: number }[]
   }
 }
 
