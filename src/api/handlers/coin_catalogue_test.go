@@ -94,6 +94,30 @@ func TestCoinCatalogue_CountryAndCountries(t *testing.T) {
 	if pt == nil || pt.Commemoratives != 2 || pt.OwnedCommemoratives != 1 || pt.Collector != 0 || len(countries.Countries) < 10 {
 		t.Fatalf("countries = %+v", countries.Countries)
 	}
+	// The year's €2 commemoratives, of every country, and the one the collection has.
+	commemoratives := 0
+	for _, country := range countries.Countries {
+		if country.Currency == "" {
+			commemoratives += country.Commemoratives
+		}
+	}
+	if len(countries.CommemorativeYears) != 1 || countries.CommemorativeYears[0] != (CatalogueYear{Year: 2022, Total: commemoratives, Owned: 1}) {
+		t.Fatalf("years = %+v", countries.CommemorativeYears)
+	}
+	// Portugal's circulation coins: the 1 euro of 2022 is one of that year's eight.
+	var circulation []services.EuroCirculationYear
+	for _, entry := range countries.Circulation {
+		if entry.Country == "PT" {
+			circulation = entry.Years
+		}
+	}
+	if len(circulation) < 20 || circulation[0].Year != 2002 || circulation[20] != (services.EuroCirculationYear{Year: 2022, Total: 8, Owned: 1}) {
+		t.Fatalf("Portugal's circulation = %+v", circulation)
+	}
+	// And each country's: Portugal's two of 2022, one of them the collection's.
+	if len(pt.CommemorativeYears) != 1 || pt.CommemorativeYears[0] != (CatalogueYear{Year: 2022, Total: 2, Owned: 1}) {
+		t.Fatalf("Portugal's years = %+v", pt.CommemorativeYears)
+	}
 
 	if w := coinRequest(router, http.MethodGet, "/api/catalogue-test?country=GB", nil); w.Code != http.StatusBadRequest {
 		t.Fatalf("a country outside the catalogue: %d", w.Code)

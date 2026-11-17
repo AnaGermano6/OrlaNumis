@@ -308,6 +308,7 @@ import CoinSuggestionGrid from '@/components/chat/CoinSuggestionGrid.vue'
 import { t, intlLocale, type MessageKey } from '@/i18n'
 import { eraLabel } from '@/i18n/coinVocabulary'
 import { deepJobStatusLabel } from '@/utils/format'
+import { numberFormat } from '@/utils/numberFormat'
 
 const props = defineProps<{
   run: CoinCopilotRun | null
@@ -532,7 +533,7 @@ function formatDate(value: string) {
 
 function formatAmount(value: number, currency: string | null) {
   if (!currency) return String(value)
-  return new Intl.NumberFormat(intlLocale(), {
+  return numberFormat({
     style: 'currency',
     currency,
     maximumFractionDigits: 2,

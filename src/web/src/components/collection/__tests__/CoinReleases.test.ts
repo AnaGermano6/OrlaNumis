@@ -21,9 +21,9 @@ function release(fields: Partial<CoinRelease>): CoinRelease {
 
 const GROUPS = [
   { source: 'ecb', year: 2025, releases: [
-    release({ title: 'Lithuanian Minor', country: 'LT', from: '2025-10', to: '2025-12', upcoming: true, imageUrl: 'https://www.ecb.europa.eu/lt.jpg', volume: 500000 }),
-    release({ title: 'World scouting', country: 'PT', owned: true, imageUrl: 'https://www.ecb.europa.eu/pt.jpg' }),
-    release({ title: '35 years of the Erasmus programme', country: '', from: '2025-01', to: '2025-12', imageUrl: 'https://www.ecb.europa.eu/eu.jpg' }),
+    release({ title: 'Lithuanian Minor', metals: ['base'], country: 'LT', from: '2025-10', to: '2025-12', upcoming: true, imageUrl: 'https://www.ecb.europa.eu/lt.jpg', volume: 500000 }),
+    release({ title: 'World scouting', metals: ['base'], country: 'PT', owned: true, imageUrl: 'https://www.ecb.europa.eu/pt.jpg' }),
+    release({ title: '35 years of the Erasmus programme', metals: ['base'], country: '', from: '2025-01', to: '2025-12', imageUrl: 'https://www.ecb.europa.eu/eu.jpg' }),
   ] },
   { source: 'mints', year: 2026, releases: [
     release({ source: 'mdp', country: 'FR', title: 'Year of the goat', faceValue: 10, faceValues: [10, 200], metals: ['silver', 'gold'], from: '2027-01', to: '2027-12', upcoming: true, imageUrl: 'https://mdp/goat.jpg' }),
@@ -45,7 +45,6 @@ describe('CoinReleases', () => {
     const wrapper = mount(CoinReleases, { global: { stubs: { RouterLink: RouterLinkStub } } })
     await flushPromises()
 
-    expect(wrapper.get('#releases-title').text()).toBe('Novos lançamentos')
     expect(wrapper.get('[data-testid="releases-tab-ecb"]').text()).toBe('Moedas de 2 €')
     const cards = wrapper.findAll('[data-testid="release"]')
     expect(cards).toHaveLength(3)
@@ -61,7 +60,12 @@ describe('CoinReleases', () => {
     // A joint issue of the whole year.
     expect(text(cards[2]!)).toContain('Área do euro')
     expect(text(cards[2]!)).toContain('2025')
-    // The list is last year's while the ECB has not published this year's.
+    // The list is last year's while the ECB has not published this year's: the ⓘ says so.
+    const info = wrapper.get('[data-testid="releases-info"]')
+    expect(info.attributes('title')).toContain('2025')
+    expect(wrapper.find('[data-testid="releases-note"]').exists()).toBe(false)
+    await info.trigger('click')
+    expect(info.attributes('aria-expanded')).toBe('true')
     expect(wrapper.get('[data-testid="releases-note"]').text()).toContain('2025')
     expect(cards[0]!.get('a').attributes()).toMatchObject({ href: 'https://www.ecb.europa.eu/p', target: '_blank', rel: 'noopener noreferrer' })
   })
@@ -155,13 +159,16 @@ describe('CoinReleases', () => {
     const wrapper = mount(CoinReleases, { global: { stubs: { RouterLink: RouterLinkStub } } })
     await flushPromises()
 
-    await wrapper.get('[data-testid="releases-filter-upcoming"]').trigger('click')
+    const status = wrapper.get('[data-testid="releases-status"]')
+    expect(status.findAll('option').map((option) => text(option))).toEqual(['Estado: Todas', 'Estado: Em breve', 'Estado: Ainda não tenho'])
+    await status.setValue('upcoming')
     expect(wrapper.findAll('[data-testid="release"]').map((card) => card.find('.line-clamp-3').text())).toEqual(['Lithuanian Minor'])
-    await wrapper.get('[data-testid="releases-filter-missing"]').trigger('click')
+    await status.setValue('missing')
     expect(wrapper.findAll('[data-testid="release"]')).toHaveLength(2)
 
-    await wrapper.get('[data-testid="releases-filter-all"]').trigger('click')
+    await status.setValue('all')
     await wrapper.get('[data-testid="releases-tab-mints"]').trigger('click')
+    expect(wrapper.get('[data-testid="releases-tab-mints"]').attributes('aria-selected')).toBe('true')
     expect(wrapper.get('[data-testid="releases-tab-mints"]').text()).toBe('Moedas de coleção')
     const cards = wrapper.findAll('[data-testid="release"]')
     expect(cards).toHaveLength(5)
@@ -175,7 +182,7 @@ describe('CoinReleases', () => {
     expect(text(cards[2]!)).toContain('7,50 €')
     // A base metal goes without saying.
     expect(text(cards[1]!)).toContain('Portugal · 2 €Rotary')
-    expect(wrapper.get('[data-testid="releases-note"]').text()).toContain('Portugal, França e Áustria')
+    expect(wrapper.get('[data-testid="releases-info"]').attributes('title')).toContain('Portugal, França e Áustria')
   })
 
   it('filters each list by country, and starts again with every country on another list', async () => {
@@ -205,30 +212,29 @@ describe('CoinReleases', () => {
     await flushPromises()
     const titles = () => wrapper.findAll('[data-testid="release"]').map((card) => card.find('.line-clamp-3').text())
 
-    // The €2 coins are all of a base metal: nothing to choose.
-    expect(wrapper.find('[data-testid="releases-metal-base"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="releases-no-special"]').exists()).toBe(false)
+    // Both lists have the metal filter, with the metals each has: the €2 coins are all of a base metal.
+    expect(wrapper.get('[data-testid="releases-metal"]').findAll('option').map((option) => text(option))).toEqual(['Metal: Todos', 'Metal: Metal comum'])
+    expect(wrapper.find('[data-testid="releases-editions"]').exists()).toBe(false)
 
     await wrapper.get('[data-testid="releases-tab-mints"]').trigger('click')
-    expect(wrapper.findAll('[data-testid^="releases-metal-"]').map((chip) => chip.text())).toEqual(['Ouro', 'Prata', 'Metal comum'])
-    await wrapper.get('[data-testid="releases-metal-gold"]').trigger('click')
+    const metal = () => wrapper.get('[data-testid="releases-metal"]')
+    expect(metal().findAll('option').map((option) => text(option))).toEqual(['Metal: Todos', 'Metal: Ouro', 'Metal: Prata', 'Metal: Metal comum'])
+    await metal().setValue('gold')
     expect(titles()).toEqual(['Year of the goat', 'Notre-Dame'])
-    await wrapper.get('[data-testid="releases-metal-silver"]').trigger('click')
+    await metal().setValue('silver')
     expect(titles()).toEqual(['Year of the goat', 'Caixa Geral de Depósitos'])
-    // A second press shows every metal again.
-    await wrapper.get('[data-testid="releases-metal-silver"]').trigger('click')
+    await metal().setValue('')
     expect(titles()).toHaveLength(5)
 
     // Without special editions: the gold coin and the proof and FDC ones go;
     // the design also struck in silver stays, and so does a coin whose metal
     // the mint does not say.
-    await wrapper.get('[data-testid="releases-metal-gold"]').trigger('click')
-    const chip = wrapper.get('[data-testid="releases-no-special"]')
-    expect(chip.text()).toBe('Sem edições especiais')
-    expect(chip.attributes('title')).toBe('Esconde as moedas de ouro e as de acabamento proof ou FDC.')
-    await chip.trigger('click')
-    expect(wrapper.get('[data-testid="releases-no-special"]').attributes('aria-pressed')).toBe('true')
-    expect(wrapper.get('[data-testid="releases-metal-gold"]').attributes('aria-pressed')).toBe('false')
+    await metal().setValue('gold')
+    const editions = wrapper.get('[data-testid="releases-editions"]')
+    expect(editions.findAll('option').map((option) => text(option))).toEqual(['Edições: todas', 'Sem edições especiais'])
+    expect(editions.attributes('title')).toBe('Esconde as moedas de ouro e as de acabamento proof ou FDC.')
+    await editions.setValue('none')
+    expect((metal().element as HTMLSelectElement).value).toBe('')
     expect(titles()).toEqual(['Year of the goat', 'Rotary', 'FIFA World Cup'])
   })
 

@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/briandenicola/ancient-coins-api/services"
 	"github.com/gin-gonic/gin"
@@ -45,7 +46,10 @@ func (h *HealthHandler) CollectionSummary(c *gin.Context) {
 //	@Description	Returns paginated per-coin metadata health scores for the authenticated user's active collection.
 //	@Tags			Health
 //	@Produce		json
-//	@Param			scope	query		string	false	"Scope filter" Enums(all, needs_attention) default(all)
+//	@Param			scope		query		string	false	"Scope filter: priority lists only the coins that miss something, the most urgent first" Enums(all, needs_attention, priority) default(all)
+//	@Param			dimension	query		string	false	"With scope=priority, only what the coins miss of one dimension" Enums(metadata, images, valuation, ai)
+//	@Param			country		query		string	false	"With scope=priority, only the coins of one country, as written on them"
+//	@Param			missing		query		string	false	"With scope=priority, only the coins that miss one item (its key, e.g. images.any)"
 //	@Param			page	query		int		false	"Page number" default(1)
 //	@Param			limit	query		int		false	"Page size" default(25)
 //	@Success		200		{object}	services.CoinHealthListResponse
@@ -57,8 +61,18 @@ func (h *HealthHandler) ListCoinHealth(c *gin.Context) {
 	userID := c.GetUint("userId")
 
 	scope := c.DefaultQuery("scope", "all")
-	if scope != "all" && scope != "needs_attention" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "scope must be one of: all, needs_attention"})
+	if scope != "all" && scope != "needs_attention" && scope != "priority" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "scope must be one of: all, needs_attention, priority"})
+		return
+	}
+	dimension := c.Query("dimension")
+	if dimension != "" && (scope != "priority" || (dimension != "metadata" && dimension != "images" && dimension != "valuation" && dimension != "ai")) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "dimension must be one of metadata, images, valuation, ai, with scope=priority"})
+		return
+	}
+	country, missing := strings.TrimSpace(c.Query("country")), strings.TrimSpace(c.Query("missing"))
+	if (country != "" || missing != "") && scope != "priority" || len(country) > 120 || len(missing) > 60 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "country and missing go with scope=priority"})
 		return
 	}
 
@@ -82,7 +96,13 @@ func (h *HealthHandler) ListCoinHealth(c *gin.Context) {
 		limit = l
 	}
 
-	list, err := h.svc.ListCoinHealth(userID, page, limit, scope)
+	var list *services.CoinHealthListResponse
+	var err error
+	if scope == "priority" {
+		list, err = h.svc.ListPriorityCoinHealth(userID, page, limit, services.HealthPriorityFilter{Dimension: dimension, Country: country, Missing: missing})
+	} else {
+		list, err = h.svc.ListCoinHealth(userID, page, limit, scope)
+	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch coin health list"})
 		return

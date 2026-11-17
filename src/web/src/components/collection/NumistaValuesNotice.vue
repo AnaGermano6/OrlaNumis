@@ -21,6 +21,7 @@ import { getNumistaValuesStatus } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import type { NumistaValueStatus } from '@/types'
 import { intlLocale, t } from '@/i18n'
+import { formatNumber } from '@/utils/numberFormat'
 
 const auth = useAuthStore()
 const status = ref<NumistaValueStatus | null>(null)
@@ -28,7 +29,7 @@ const status = ref<NumistaValueStatus | null>(null)
 const message = computed(() => {
   const value = status.value
   if (!value?.enabled || value.quotaLevel === 'ok') return ''
-  const count = (n: number) => n.toLocaleString(intlLocale())
+  const count = (n: number) => formatNumber(n)
   if (value.quotaLevel === 'paused') {
     const date = new Date(`${value.resumesOn}T00:00:00`).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long' })
     return t('collectionOverview.numistaValues.paused', { date })

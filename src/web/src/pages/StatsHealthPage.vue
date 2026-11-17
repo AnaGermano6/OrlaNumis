@@ -24,8 +24,10 @@
         <div class="spinner"></div>
       </div>
 
+      <!-- The diagnosis, then the coins to fix first (of the part it points to, when one). -->
       <section v-else-if="collectionHealth" class="flex flex-col gap-6">
-        <CollectionHealthScorecard :summary="collectionHealth" />
+        <HealthDiagnosis :summary="collectionHealth" :focused="focused" @focus="focused = $event" />
+        <HealthPriorities ref="prioritiesRef" :dimension="focused" @clear-dimension="focused = null" />
       </section>
 
       <CollectionHealthEmptyState v-else />
@@ -34,22 +36,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ArrowLeft } from 'lucide-vue-next'
 import { useCoinsStore } from '@/stores/coins'
 import PullToRefresh from '@/components/PullToRefresh.vue'
-import CollectionHealthScorecard from '@/components/stats/CollectionHealthScorecard.vue'
+import HealthDiagnosis from '@/components/stats/HealthDiagnosis.vue'
+import HealthPriorities from '@/components/stats/HealthPriorities.vue'
 import CollectionHealthEmptyState from '@/components/stats/CollectionHealthEmptyState.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { t } from '@/i18n'
+import type { HealthChecklistDimension } from '@/types'
 
 const store = useCoinsStore()
 const collectionHealth = computed(() => store.collectionHealth)
 const healthLoading = computed(() => store.healthLoading)
+/** The part of the score the priority list keeps to, if one. */
+const focused = ref<HealthChecklistDimension | null>(null)
+const prioritiesRef = ref<InstanceType<typeof HealthPriorities> | null>(null)
 
 async function handleRefresh() {
-  await store.fetchCollectionHealth().catch(() => {})
+  await Promise.all([store.fetchCollectionHealth().catch(() => {}), prioritiesRef.value?.load()])
 }
 
 onMounted(() => {

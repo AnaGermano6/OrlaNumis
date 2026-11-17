@@ -56,7 +56,6 @@ All AI features are optional and need an AI provider configured by an administra
 
 - **[Coin Sets](coin-sets.md)** — Standard, goal, smart and checklist sets, with completion tracking
 - **[Collection Statistics](statistics.md)** — Distributions, top coins, timeline, mint map and collection health
-- **[Collection Time Machine](time-machine.md)** — The collection as it stood on any past date
 
 ## Administration & Configuration
 

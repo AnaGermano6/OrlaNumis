@@ -39,6 +39,8 @@ type EligibleCoinRow struct {
 	UpdatedAt             time.Time
 	PrimaryImageCount     int64
 	ImageCount            int64
+	// ImagePath is the coin's primary (or obverse, or first) image, if any.
+	ImagePath string
 }
 
 // ListEligibleCoins returns active collection coins for a user.
@@ -49,7 +51,8 @@ func (r *HealthRepository) ListEligibleCoins(userID uint) ([]EligibleCoinRow, er
 		Select(
 			"id AS coin_id, name AS title, kind, category, denomination, country, monetary_system, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
 				"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id AND is_primary = true) AS primary_image_count, " +
-				"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id) AS image_count",
+				"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id) AS image_count, " +
+				"(SELECT file_path FROM coin_images WHERE coin_id = coins.id ORDER BY is_primary DESC, CASE WHEN image_type = 'obverse' THEN 0 ELSE 1 END, id LIMIT 1) AS image_path",
 		).
 		Order("updated_at DESC").
 		Scan(&rows).Error
@@ -80,7 +83,8 @@ func (r *HealthRepository) ListEligibleCoinsPaged(userID uint, page, limit int, 
 
 	selectClause := "id AS coin_id, name AS title, kind, category, denomination, country, monetary_system, mint, material, grade, reference_url, purchase_date, current_value, current_value_updated_at, ai_analysis, obverse_analysis, reverse_analysis, updated_at, " +
 		"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id AND is_primary = true) AS primary_image_count, " +
-		"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id) AS image_count"
+		"(SELECT COUNT(*) FROM coin_images WHERE coin_id = coins.id) AS image_count, " +
+		"(SELECT file_path FROM coin_images WHERE coin_id = coins.id ORDER BY is_primary DESC, CASE WHEN image_type = 'obverse' THEN 0 ELSE 1 END, id LIMIT 1) AS image_path"
 
 	orderClause := "updated_at DESC, id ASC"
 	if scope == "needs_attention" {

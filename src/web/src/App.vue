@@ -1,45 +1,45 @@
 <template>
   <div class="flex min-h-screen flex-col">
-    <!-- Nav bar — brand + hamburger for both desktop and PWA -->
+    <!-- The top bar: on a phone the brand opens the side menu; on a wider
+         screen the menu is in the bar, with the account's menu on the right. -->
     <nav v-if="auth.isAuthenticated && !immersive" class="fixed inset-x-0 top-0 z-(--z-header) border-b border-border-subtle bg-surface/95 backdrop-blur-md">
       <div class="mx-auto flex h-[60px] max-w-[1200px] items-center justify-between gap-2 px-4">
-        <div class="flex min-w-0 flex-1 items-center">
-          <button class="flex shrink-0 cursor-pointer items-center gap-2 rounded-sm border-0 bg-transparent px-2.5 py-1.5 transition-colors hover:bg-gold-glow" @click="sidebarOpen = !sidebarOpen">
+        <div class="flex min-w-0 flex-1 items-center gap-2">
+          <button v-if="isMobile" class="flex shrink-0 cursor-pointer items-center gap-2 rounded-sm border-0 bg-transparent px-2.5 py-1.5 transition-colors hover:bg-gold-glow" @click="sidebarOpen = !sidebarOpen">
             <img src="/coin-logo.jpg" :alt="t('app.brandFull')" class="h-9 w-9 rounded-full border-2 border-gold-dim object-cover" />
             <span class="font-display text-lg font-semibold whitespace-nowrap text-gold">Orla Numis</span>
           </button>
-          <div v-if="!isMobile" class="desktop-page-title-group min-w-0 items-center gap-2">
-            <span class="text-text-muted" aria-hidden="true">|</span>
-            <div id="desktop-page-title" class="min-w-0 truncate font-display text-md font-medium text-text-primary"></div>
-          </div>
+          <template v-else>
+            <router-link to="/collection" class="flex shrink-0 items-center gap-2 rounded-sm px-1.5 py-1.5 no-underline transition-colors hover:bg-gold-glow" :title="t('nav.collectionOverview')" data-testid="brand-home">
+              <img src="/coin-logo.jpg" :alt="t('app.brandFull')" class="h-9 w-9 rounded-full border-2 border-gold-dim object-cover" />
+              <span class="hidden font-display text-lg font-semibold whitespace-nowrap text-gold xl:inline">Orla Numis</span>
+            </router-link>
+            <DesktopNavMenu :items="orderedNavItems" class="min-w-0" @action="(item) => item.action?.()" />
+          </template>
         </div>
         <div class="flex shrink-0 items-center gap-1">
-          <div
-            v-if="!isMobile"
-            class="desktop-page-actions-group items-center gap-1"
-            :class="{ 'has-collection-actions': showCollectionActions }"
-          >
-            <template v-if="showCollectionActions">
-              <button
-                class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary transition-colors hover:bg-gold-glow hover:text-gold"
-                :class="{ 'bg-gold-glow text-gold': bulkSelectActive }"
-                :aria-label="bulkSelectActive ? t('app.header.cancelSelection') : t('app.header.selectCoins')"
-                :title="bulkSelectActive ? t('app.header.cancelSelection') : t('app.header.selectCoins')"
-                @click="toggleCollectionSelectMode"
-              >
-                <CheckSquare :size="20" />
-              </button>
-              <router-link to="/add" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" :aria-label="t('nav.addCoin')" :title="t('nav.addCoin')">
-                <CirclePlus :size="20" />
-              </router-link>
-            </template>
-            <div id="desktop-page-actions" class="flex items-center gap-1"></div>
-            <span class="mx-1 h-6 w-px bg-border-subtle" aria-hidden="true"></span>
-          </div>
           <router-link v-if="isMobile" to="/add" class="relative flex items-center justify-center rounded-sm p-1.5 text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold" :aria-label="t('nav.addCoin')">
             <Plus :size="20" />
           </router-link>
           <LanguageSwitcher class="mx-1" />
+          <NavDropdown
+            v-if="!isMobile"
+            :label="t('app.nav.account')"
+            align="right"
+            button-class="flex items-center justify-center rounded-sm border-0 bg-transparent p-1.5 text-text-secondary transition-colors hover:bg-gold-glow hover:text-gold cursor-pointer"
+            data-testid="account-menu"
+          >
+            <template #button><CircleUserRound :size="22" /></template>
+            <router-link to="/settings" :class="ACCOUNT_ITEM">
+              <Settings :size="16" aria-hidden="true" /> {{ t('nav.settings') }}
+            </router-link>
+            <router-link v-if="auth.isAdmin" to="/admin" :class="ACCOUNT_ITEM">
+              <ShieldCheck :size="16" aria-hidden="true" /> {{ t('nav.admin') }}
+            </router-link>
+            <button type="button" :class="[ACCOUNT_ITEM, 'w-full hover:!bg-red-400/10 hover:!text-red-400']" @click="handleLogout">
+              <LogOut :size="16" aria-hidden="true" /> {{ t('nav.logout') }}
+            </button>
+          </NavDropdown>
         </div>
       </div>
     </nav>
@@ -124,11 +124,17 @@
       </aside>
     </Transition>
 
-    <main class="flex-1 overflow-x-clip" :class="{ 'pt-[76px]': auth.isAuthenticated && !immersive }">
+    <!-- Room at the end of the page: on a phone, above the floating assistant button. -->
+    <main
+      class="flex-1 overflow-x-clip"
+      :class="{
+        'pt-[76px]': auth.isAuthenticated && !immersive,
+        'pb-[calc(5.5rem+env(safe-area-inset-bottom))]': isMobile && !immersive,
+        'pb-8': !isMobile && !immersive,
+      }"
+    >
       <router-view />
     </main>
-
-    <AppFooter v-if="!immersive" />
 
     <Teleport to="body">
       <!-- PWA floating agent button -->
@@ -182,8 +188,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted, markRaw, type Component } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter, useRoute } from 'vue-router'
-import { Landmark, Bookmark, BarChart3, CirclePlus, Settings, ShieldCheck, LogOut, Bot, X, Plus, GripVertical, Layers3, Search, ChevronRight, ChevronDown, CheckSquare } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { Landmark, BarChart3, CirclePlus, CircleUserRound, Settings, ShieldCheck, LogOut, Bot, X, Plus, GripVertical, Layers3, Search, ChevronRight, ChevronDown } from 'lucide-vue-next'
 import { updateProfile, getMe } from '@/api/client'
 import { useBulkSelect } from '@/composables/useBulkSelect'
 import { useLayout } from '@/composables/useLayout'
@@ -191,12 +197,13 @@ import { overlayOpen } from '@/composables/useOverlayLayer'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import { useImmersiveShell } from '@/composables/useImmersiveShell'
 import CoinSearchChat from '@/components/CoinSearchChat.vue'
-import AppFooter from '@/components/AppFooter.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import AppToasts from '@/components/AppToasts.vue'
 import PwaInstallPrompt from '@/components/PwaInstallPrompt.vue'
 import PwaUpdateBanner from '@/components/PwaUpdateBanner.vue'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import DesktopNavMenu from '@/components/nav/DesktopNavMenu.vue'
+import NavDropdown from '@/components/nav/NavDropdown.vue'
 import { t, type MessageKey } from '@/i18n'
 import { loadCoinVocabulary, resetCoinVocabulary } from '@/i18n/coinVocabulary'
 import Sortable from 'sortablejs'
@@ -228,7 +235,6 @@ type ResolvedNavItem = Omit<NavItem, 'children'> & { label: string; children?: N
 
 const auth = useAuthStore()
 const router = useRouter()
-const route = useRoute()
 const { isMobile } = useLayout()
 // Full-bleed surfaces (PWA coin capture) take the whole viewport; the nav bar
 // and the floating agent button step aside while one is mounted.
@@ -265,8 +271,8 @@ interface OpenAgentChatEvent extends Event {
   }
 }
 
-const isCollectionPage = computed(() => route.name === 'collection')
-const showCollectionActions = computed(() => isCollectionPage.value && !isMobile.value)
+// The account menu's items, in the top bar on a wider screen.
+const ACCOUNT_ITEM = 'flex items-center gap-2 border-0 bg-transparent px-4 py-2 text-left text-body text-text-secondary no-underline transition-colors hover:bg-gold-glow hover:text-gold cursor-pointer'
 
 const defaultNavItems: NavItem[] = [
   {
@@ -279,6 +285,7 @@ const defaultNavItems: NavItem[] = [
       { id: 'collection-overview', labelKey: 'nav.collectionOverview', to: '/collection' },
       { id: 'collection-gallery', labelKey: 'nav.gallery', to: '/' },
       { id: 'collection-banknotes', labelKey: 'nav.banknotes', to: '/banknotes' },
+      { id: 'collection-wishlist', labelKey: 'nav.wishlist', to: '/wishlist' },
     ],
   },
   { id: 'add-coin', labelKey: 'nav.addCoin', icon: markRaw(CirclePlus), to: '/add', visible: true },
@@ -293,7 +300,6 @@ const defaultNavItems: NavItem[] = [
       { id: 'lookup-history', labelKey: 'nav.analysisHistory', to: '/deep-analysis/history' },
     ],
   },
-  { id: 'wishlist', labelKey: 'nav.wishlist', icon: markRaw(Bookmark), to: '/wishlist', visible: true },
   { id: 'agent', labelKey: 'nav.agent', icon: markRaw(Bot), action: () => { showChat.value = true; sidebarOpen.value = false }, visible: true },
   {
     id: 'stats',
@@ -302,10 +308,10 @@ const defaultNavItems: NavItem[] = [
     to: '/stats',
     visible: true,
     children: [
+      { id: 'stats-overview', labelKey: 'nav.stats', to: '/stats' },
       { id: 'stats-timeline', labelKey: 'nav.timeline', to: '/stats/timeline' },
       { id: 'stats-map', labelKey: 'nav.map', to: '/stats/mint-map' },
       { id: 'stats-health', labelKey: 'nav.health', to: '/stats/health' },
-      { id: 'stats-time-machine', labelKey: 'nav.timeMachine', to: '/stats/time-machine' },
     ],
   },
   {
@@ -417,10 +423,6 @@ function handleNavClick(item: ResolvedNavItem) {
 
 function toggleEditMode() {
   editMode.value = !editMode.value
-}
-
-function toggleCollectionSelectMode() {
-  bulkSelectActive.value = !bulkSelectActive.value
 }
 
 function clampAgentFabPosition(x: number, y: number): { x: number; y: number } {
@@ -652,30 +654,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.desktop-page-title-group,
-.desktop-page-actions-group {
-  display: none;
-}
-
-.desktop-page-title-group:has(#desktop-page-title:not(:empty)) {
-  display: flex;
-}
-
-.desktop-page-actions-group.has-collection-actions,
-.desktop-page-actions-group:has(#desktop-page-actions:not(:empty)) {
-  display: flex;
-}
-
-@media (max-width: 768px) {
-  .desktop-page-title-group,
-  .desktop-page-title-group:has(#desktop-page-title:not(:empty)),
-  .desktop-page-actions-group,
-  .desktop-page-actions-group.has-collection-actions,
-  .desktop-page-actions-group:has(#desktop-page-actions:not(:empty)) {
-    display: none;
-  }
-}
-
 .sortable-ghost {
   background: var(--accent-gold-glow);
   border-right: 3px solid var(--accent-gold);

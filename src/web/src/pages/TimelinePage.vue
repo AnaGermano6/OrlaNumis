@@ -47,7 +47,7 @@
           </div>
           <div class="flex flex-col items-center gap-1">
             <span class="font-display text-lg font-bold text-gold">{{ formatCurrency(totalInvested) }}</span>
-            <span class="section-label">{{ t('stats.timeMachine.invested') }}</span>
+            <span class="section-label">{{ t('timeline.invested') }}</span>
           </div>
           <div class="flex flex-col items-center gap-1">
             <span class="font-display text-lg font-bold text-gold">{{ formatCurrency(totalValue) }}</span>

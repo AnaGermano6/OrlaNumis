@@ -50,7 +50,7 @@ describe('NumistaValuesNotice', () => {
     signIn('admin')
     const wrapper = mountNotice()
     await flushPromises()
-    expect(wrapper.get('[data-testid="numista-values-notice"]').text()).toContain('A quota do Numista está a acabar (1600 de 2000 pedidos)')
+    expect(wrapper.get('[data-testid="numista-values-notice"]').text()).toContain('A quota do Numista está a acabar (1\u00a0600 de 2\u00a0000 pedidos)')
     expect(wrapper.text()).toContain('Ver o agendamento')
   })
 

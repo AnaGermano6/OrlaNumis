@@ -24,7 +24,7 @@ vi.mock('@/stores/coins', () => ({
 }))
 
 describe('StatsHealthPage', () => {
-  it('renders health scorecard when data is available', () => {
+  it('renders the diagnosis and the priority actions when data is available', () => {
     store.collectionHealth = mockHealth
     store.healthLoading = false
 
@@ -32,13 +32,15 @@ describe('StatsHealthPage', () => {
       global: {
         stubs: {
           PullToRefresh: { template: '<div><slot /></div>' },
+          HealthPriorities: { template: '<section class="stub-priorities" />', methods: { load: () => {} } },
           RouterLink: { template: '<a><slot /></a>' },
         },
       },
     })
 
     expect(wrapper.text()).toContain('Health')
-    expect(wrapper.findComponent({ name: 'CollectionHealthScorecard' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'HealthDiagnosis' }).exists()).toBe(true)
+    expect(wrapper.find('.stub-priorities').exists()).toBe(true)
   })
 
   it('shows empty state when no health data exists', () => {
@@ -49,6 +51,7 @@ describe('StatsHealthPage', () => {
       global: {
         stubs: {
           PullToRefresh: { template: '<div><slot /></div>' },
+          HealthPriorities: { template: '<section class="stub-priorities" />', methods: { load: () => {} } },
           RouterLink: { template: '<a><slot /></a>' },
         },
       },
@@ -65,6 +68,7 @@ describe('StatsHealthPage', () => {
       global: {
         stubs: {
           PullToRefresh: { template: '<div><slot /></div>' },
+          HealthPriorities: { template: '<section class="stub-priorities" />', methods: { load: () => {} } },
           RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
         },
       },

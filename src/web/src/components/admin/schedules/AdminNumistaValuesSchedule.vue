@@ -138,6 +138,7 @@ import { getNumistaValuesStatus, runNumistaValuesNow } from '@/api/client'
 import type { AppSettings, NumistaValueStatus } from '@/types'
 import { intlLocale, t, type MessageKey } from '@/i18n'
 import { runTriggerLabel } from '@/utils/format'
+import { formatNumber } from '@/utils/numberFormat'
 
 defineProps<{
   settings: AppSettings
@@ -156,7 +157,7 @@ const messageError = ref(false)
 let pollTimer: ReturnType<typeof setInterval> | undefined
 
 function formatCount(value: number): string {
-  return value.toLocaleString(intlLocale())
+  return formatNumber(value)
 }
 
 function formatDateTime(value: string): string {

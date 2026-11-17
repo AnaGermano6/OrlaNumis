@@ -234,13 +234,6 @@ and update the tables below from `docs/openapi.json`.
 | `POST` | `/sets/{id}/snapshot` | Create set snapshot |
 | `GET` | `/sets/{id}/trends` | Get set trends |
 
-## Stats
-
-| Method | Path | Summary |
-|---|---|---|
-| `GET` | `/stats/time-machine` | Get the collection as of a past date |
-| `GET` | `/stats/time-machine/bounds` | Get the time machine's date range |
-
 ## Deep Identification
 
 | Method | Path | Summary |

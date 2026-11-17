@@ -19,7 +19,7 @@ describe('set album', () => {
     expect({ ...slot, detail: nbsp(slot.detail ?? '') }).toEqual({
       key: 'incm:farois', title: 'Faróis', detail: '5 € · 10 €', year: 2025, owned: true, coinId: 3, coinImage: 'coins/farois.jpg', imageUrl: undefined, pageUrl: 'https://incm',
     })
-    expect(checklistAlbumSlot({ key: 'numista:1', title: 'Expo 98', faceValue: 1000, currency: 'PTE', owned: false }, { source: 'catalogue', country: 'PT', currency: 'PTE' }).detail).toBe('1000 escudos')
+    expect(checklistAlbumSlot({ key: 'numista:1', title: 'Expo 98', faceValue: 1000, currency: 'PTE', owned: false }, { source: 'catalogue', country: 'PT', currency: 'PTE' }).detail).toBe('1\u00a0000 escudos')
   })
 
   it("shows a type set's slot by the type and the years it was struck in", () => {

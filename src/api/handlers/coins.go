@@ -59,6 +59,13 @@ type CoinHandler struct {
 	logger      *services.Logger
 	settingsSvc *services.SettingsService
 	circulation *services.CoinCirculationService
+	metals      *services.PreciousMetalsService
+}
+
+// WithPreciousMetals adds the gold and silver of the collection to its statistics.
+func (h *CoinHandler) WithPreciousMetals(metals *services.PreciousMetalsService) *CoinHandler {
+	h.metals = metals
+	return h
 }
 
 // WithCirculation lets the coin list keep only coins still legal tender (or
@@ -237,6 +244,7 @@ func (h *CoinHandler) listFilters(c *gin.Context) (filters repository.CoinListFi
 		Denomination: c.Query("denomination"),
 		Presentation: strings.TrimSpace(c.Query("presentation")),
 		Repeated:     c.Query("repeated") == "true",
+		Ungraded:     c.Query("ungraded") == "true",
 		Rarity:       strings.TrimSpace(c.Query("rarity")),
 		Search:       c.Query("search"),
 		SortField:    sortField,
@@ -340,6 +348,7 @@ func (h *CoinHandler) listFilters(c *gin.Context) (filters repository.CoinListFi
 //	@Param			denomination	query		string	false	"Filter by face value, as written (\"2 euro\")"
 //	@Param			presentation	query	string	false	"Filter by presentation"	Enums(loose, coincard, capsule, flip, proof_set, blister, slab)
 //	@Param			repeated		query	bool	false	"Only coins held more than once (a quantity above one), the copies there to trade"
+//	@Param			ungraded		query	bool	false	"Only coins without a grade"
 //	@Param			extinct			query	bool	false	"Only coins of countries that no longer exist (USSR, Yugoslavia, Ottoman Empire…)"
 //	@Param			circulation		query	string	false	"Only collection coins issued for circulation and still legal tender (current), or no longer legal tender (demonetized), as Numista says of their types; collector (non-circulating) coins are not current"	Enums(current, demonetized)
 //	@Param			commemorative	query	bool	false	"Only collection coins of commemorative types (true) or of regular ones (false), as Numista says"
@@ -750,7 +759,7 @@ func (h *CoinHandler) Delete(c *gin.Context) {
 // Stats returns aggregate statistics for the authenticated user's collection.
 //
 //	@Summary		Get collection statistics
-//	@Description	Returns counts by category/material, total/average values, and wishlist count.
+//	@Description	Returns counts by category/material, total/average values, and wishlist count; the coins by decade of issue, and the gold and silver of the collection (fine, from the Numista types' composition, and gross).
 //	@Tags			Coins
 //	@Produce		json
 //	@Success		200	{object}	StatsResponse
@@ -765,6 +774,15 @@ func (h *CoinHandler) Stats(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch stats"})
 		return
 	}
+	var metals *services.PreciousMetals
+	if h.metals != nil {
+		summary, err := h.metals.Summarise(userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch stats"})
+			return
+		}
+		metals = &summary
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"totalCoins":       stats.TotalCoins,
@@ -777,6 +795,8 @@ func (h *CoinHandler) Stats(c *gin.Context) {
 		"byRuler":          stats.ByRuler,
 		"byPriceRange":     stats.ByPriceRange,
 		"values":           stats.Values,
+		"byDecade":         stats.ByDecade,
+		"preciousMetals":   metals,
 	})
 }
 

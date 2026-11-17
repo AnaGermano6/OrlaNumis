@@ -30,7 +30,7 @@ Lists from the commemorative catalogue, ready-made challenges (a coin of each eu
 
 ## Stats
 
-Summary cards, distributions, top coins, acquisition flow, distribution heat map, timeline, mint map, collection health with quick fixes, and the **Time Machine**, which shows the collection as it stood on any past date. → [Collection Statistics](features/statistics.md), [Time Machine](features/time-machine.md)
+Summary cards, distributions, top coins, distribution heat map, timeline, mint map and collection health with quick fixes. → [Collection Statistics](features/statistics.md)
 
 ## AI (optional)
 

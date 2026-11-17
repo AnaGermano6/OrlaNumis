@@ -30,6 +30,11 @@ vi.mock('@/stores/coins', () => ({
   useCoinsStore: () => store,
 }))
 
+// The catalogue the progress and countries' cards read.
+vi.mock('@/api/client', () => ({
+  getCoinCatalogueCountries: vi.fn().mockResolvedValue({ data: { countries: [] } }),
+}))
+
 describe('StatsPage', () => {
   beforeEach(() => {
     document.body.innerHTML = `
@@ -42,7 +47,7 @@ describe('StatsPage', () => {
     document.body.innerHTML = ''
   })
 
-  it('renders summary metrics and distribution charts; excludes value detail block', () => {
+  it('starts with the collection at a glance, then the distribution charts; no counts of its own', () => {
     store.stats = stats
 
     const wrapper = mount(StatsPage, {
@@ -50,15 +55,18 @@ describe('StatsPage', () => {
         stubs: {
           PullToRefresh: { template: '<div><slot /></div>' },
           StatsHeatMap: { template: '<div class="stub-heatmap" />', methods: { fetchDistribution: () => {} } },
-          StatsCoinFlowChart: { template: '<div class="stub-coin-flow" />' },
+          CollectionOverviewTabs: { template: '<section class="stub-overview" />', methods: { load: () => {} } },
         },
       },
     })
 
-    expect(wrapper.text()).toContain('Coins Owned')
-    expect(wrapper.text()).toContain('On Wishlist')
-    expect(wrapper.text()).toContain('42')
-    expect(wrapper.text()).toContain('7')
+    // First the collection at a glance (its tabs), then the statistics.
+    const overview = wrapper.find('.stub-overview')
+    expect(overview.exists()).toBe(true)
+    expect(overview.element.compareDocumentPosition(wrapper.get('[data-testid="stats-monetary-systems"]').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // The coins owned and on the wishlist are in its tabs, not counted again here.
+    expect(wrapper.text()).not.toContain('Coins Owned')
+    expect(wrapper.text()).not.toContain('On Wishlist')
 
     // The Stats page has no value detail block
     expect(wrapper.text()).not.toContain('Value Summary')
@@ -89,7 +97,7 @@ describe('StatsPage', () => {
         stubs: {
           PullToRefresh: { template: '<div><slot /></div>' },
           StatsHeatMap: { template: '<div class="stub-heatmap" />', methods: { fetchDistribution: () => {} } },
-          StatsCoinFlowChart: { template: '<div class="stub-coin-flow" />' },
+          CollectionOverviewTabs: { template: '<section class="stub-overview" />', methods: { load: () => {} } },
         },
       },
     })
@@ -112,7 +120,7 @@ describe('StatsPage', () => {
         stubs: {
           PullToRefresh: { template: '<div><slot /></div>' },
           StatsHeatMap: { template: '<div />', methods: { fetchDistribution: () => {} } },
-          StatsCoinFlowChart: { template: '<div />' },
+          CollectionOverviewTabs: { template: '<section />', methods: { load: () => {} } },
         },
       },
     })

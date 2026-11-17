@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,11 +24,67 @@ type CatalogueCountry struct {
 	Collector           int    `json:"collector"`
 	OwnedCommemoratives int    `json:"ownedCommemoratives"`
 	OwnedCollector      int    `json:"ownedCollector"`
+	// CommemorativeYears are the country's €2 commemoratives year by year,
+	// oldest first, with how many of each year the collection has (euro
+	// countries only).
+	CommemorativeYears []CatalogueYear `json:"commemorativeYears,omitempty"`
 }
 
-// CoinCatalogueCountriesResponse lists the catalogue's countries.
+// CoinCatalogueCountriesResponse lists the catalogue's countries, and year by
+// year (oldest first) the euro area's €2 commemoratives, with how many of
+// each year the collection has.
 type CoinCatalogueCountriesResponse struct {
-	Countries []CatalogueCountry `json:"countries"`
+	Countries          []CatalogueCountry `json:"countries"`
+	CommemorativeYears []CatalogueYear    `json:"commemorativeYears"`
+	// Circulation is each euro country's circulation coins year by year
+	// (the eight of each year, 1 cent to 2 euro), by country code, with how
+	// many of them the collection has.
+	Circulation []CatalogueCirculation `json:"circulation"`
+}
+
+// CatalogueCirculation is a euro country's circulation coins, year by year
+// from its first euro coins to this year.
+type CatalogueCirculation struct {
+	Country string                         `json:"country" example:"PT"`
+	Years   []services.EuroCirculationYear `json:"years"`
+}
+
+// CatalogueYear is how many coins of one year a part of the catalogue has,
+// and how many of them the collection has.
+type CatalogueYear struct {
+	Year  int `json:"year" example:"2025"`
+	Total int `json:"total"`
+	Owned int `json:"owned"`
+}
+
+// catalogueYears adds a coin to its year's count, by the year it was first issued.
+func catalogueYears(years map[int]*CatalogueYear, coin services.CoinRelease) {
+	if len(coin.From) < 4 {
+		return
+	}
+	year, err := strconv.Atoi(coin.From[:4])
+	if err != nil {
+		return
+	}
+	entry := years[year]
+	if entry == nil {
+		entry = &CatalogueYear{Year: year}
+		years[year] = entry
+	}
+	entry.Total++
+	if coin.Owned {
+		entry.Owned++
+	}
+}
+
+// sortedYears lists the years' counts, oldest first.
+func sortedYears(years map[int]*CatalogueYear) []CatalogueYear {
+	list := make([]CatalogueYear, 0, len(years))
+	for _, entry := range years {
+		list = append(list, *entry)
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].Year < list[j].Year })
+	return list
 }
 
 // CoinCatalogueResponse is one country's catalogue in one currency, newest first. Complete
@@ -112,6 +169,12 @@ func (h *CoinCatalogueHandler) ownedKeys(c *gin.Context, country string) (map[st
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read the catalogue"})
 		return nil, false
 	}
+	return h.ownedKeysOf(c, coins, country), true
+}
+
+// ownedKeysOf finds the catalogue keys of some of the user's coins, of a
+// country ("" for every country of the catalogue).
+func (h *CoinCatalogueHandler) ownedKeysOf(c *gin.Context, coins []models.Coin, country string) map[string]uint {
 	queries := []services.CoinPhotoQuery{}
 	for i := range coins {
 		code := services.CatalogueCountryCode(coins[i].Country)
@@ -123,13 +186,13 @@ func (h *CoinCatalogueHandler) ownedKeys(c *gin.Context, country string) (map[st
 		query.CachedTypesOnly = true
 		queries = append(queries, query)
 	}
-	return h.releases.OwnedKeys(c.Request.Context(), queries, h.photos), true
+	return h.releases.OwnedKeys(c.Request.Context(), queries, h.photos)
 }
 
 // Countries godoc
 //
 //	@Summary		Countries of the coin catalogue
-//	@Description	The countries of the catalogue, each in its currency: the euro (every €2 commemorative the ECB has published since 2004, the €5, €10 and €20 coins, and the collector coins the mints of Portugal, France and Austria sell) and Portugal's escudo (its commemorative and collector coins, 1911–2001). Each says how many commemorative and collector coins it lists, and how many of them the user has.
+//	@Description	The countries of the catalogue, each in its currency: the euro (every €2 commemorative the ECB has published since 2004, the €5, €10 and €20 coins, and the collector coins the mints of Portugal, France and Austria sell) and Portugal's escudo (its commemorative and collector coins, 1911–2001). Each says how many commemorative and collector coins it lists, and how many of them the user has; a euro country, its €2 commemoratives year by year too. Then, year by year, the euro area's €2 commemoratives, with how many of each year the collection has; and each euro country's circulation coins, the eight of each year since its first euro coins, with how many of them the collection has.
 //	@Tags			Coins
 //	@Produce		json
 //	@Success		200	{object}	CoinCatalogueCountriesResponse
@@ -142,18 +205,26 @@ func (h *CoinCatalogueHandler) Countries(c *gin.Context) {
 	if !ok {
 		return
 	}
-	owned, ok := h.ownedKeys(c, "")
-	if !ok {
+	coins, err := h.coins.CollectionCoinsWithReferences(c.GetUint("userId"), models.CoinKindCoin)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read the catalogue"})
 		return
 	}
-	services.MarkOwnedReleases(catalogue, owned)
+	services.MarkOwnedReleases(catalogue, h.ownedKeysOf(c, coins, ""))
 	byCountry := map[string]*CatalogueCountry{}
+	countryYears := map[string]map[int]*CatalogueYear{}
+	commemorativeYears := map[int]*CatalogueYear{}
 	for _, coin := range catalogue {
 		key := coin.Country + "|" + coin.Currency
 		country := byCountry[key]
 		if country == nil {
 			country = &CatalogueCountry{Country: coin.Country, Currency: coin.Currency}
 			byCountry[key] = country
+			countryYears[key] = map[int]*CatalogueYear{}
+		}
+		if coin.Currency == "" && coin.Kind == services.CoinReleaseKindCommemorative {
+			catalogueYears(commemorativeYears, coin)
+			catalogueYears(countryYears[key], coin)
 		}
 		if coin.Kind == services.CoinReleaseKindCommemorative {
 			country.Commemoratives++
@@ -167,8 +238,19 @@ func (h *CoinCatalogueHandler) Countries(c *gin.Context) {
 			}
 		}
 	}
-	response := CoinCatalogueCountriesResponse{Countries: make([]CatalogueCountry, 0, len(byCountry))}
-	for _, country := range byCountry {
+	response := CoinCatalogueCountriesResponse{
+		Countries:          make([]CatalogueCountry, 0, len(byCountry)),
+		CommemorativeYears: sortedYears(commemorativeYears),
+		Circulation:        []CatalogueCirculation{},
+	}
+	for country, years := range services.EuroCirculationYears(coins, time.Now().Year()) {
+		response.Circulation = append(response.Circulation, CatalogueCirculation{Country: country, Years: years})
+	}
+	sort.Slice(response.Circulation, func(i, j int) bool { return response.Circulation[i].Country < response.Circulation[j].Country })
+	for key, country := range byCountry {
+		if years := countryYears[key]; len(years) > 0 {
+			country.CommemorativeYears = sortedYears(years)
+		}
 		response.Countries = append(response.Countries, *country)
 	}
 	sort.Slice(response.Countries, func(i, j int) bool {

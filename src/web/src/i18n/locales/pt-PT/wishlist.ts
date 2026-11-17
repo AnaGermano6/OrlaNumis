@@ -36,6 +36,11 @@ const messages: Messages['wishlist'] = {
     done: { one: 'Retirada da lista de desejos.', other: '{count} moedas retiradas da lista de desejos.' },
     failed: 'Não foi possível retirar a moeda da lista de desejos. Apague-a na página dela, na lista de desejos.',
   },
+  trades: {
+    title: 'Repetidas para troca',
+    coins: 'Moedas',
+    banknotes: 'Notas',
+  },
 }
 
 export default messages

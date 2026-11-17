@@ -25,7 +25,8 @@
             <option value="value">{{ t('map.country.sortValue') }}</option>
           </select>
         </label>
-        <CoinListTable :coins="sorted" />
+        <!-- Its own scroll, so the page stays the height of the list of countries beside it. -->
+        <CoinListTable :coins="sorted" scroll />
       </template>
       <p v-else-if="emptyText" class="m-0 text-body text-text-secondary">{{ emptyText }}</p>
     </template>

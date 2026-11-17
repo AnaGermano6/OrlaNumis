@@ -132,7 +132,6 @@
           <li><strong>Resumo</strong> — Totais da coleção, classificações, gráficos de distribuição e visão geral do portefólio.</li>
           <li><strong>Cronologia e Mapa</strong> — Histórico cronológico da coleção e geografia das casas da moeda das moedas mapeadas.</li>
           <li><strong>Saúde</strong> — Indicadores de imagens em falta, lacunas de metadados, lacunas de análise por IA, avaliações desatualizadas e sugestões de arrumação.</li>
-          <li><strong>Máquina do tempo</strong> — Recue no tempo para ver a coleção tal como estava em qualquer data.</li>
         </ul>
 
         <h4>Assistentes de IA</h4>

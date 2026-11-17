@@ -6,10 +6,11 @@ import type { RouteLocationRaw } from 'vue-router'
 import type { CoinRelease } from '@/api/client'
 import type { CatalogPrefill } from '@/utils/numistaCatalogPrefill'
 import type { Coin, CoinMutationPayload, CoinReferenceInput } from '@/types'
-import { intlLocale, t } from '@/i18n'
+import { t } from '@/i18n'
 import { rarityFromMintage } from '@/utils/coinAttributes'
 import { JOINT_ISSUE, releaseCountryName } from '@/utils/coinReleases'
 import { materialFromComposition } from '@/utils/numistaCatalogPrefill'
+import { numberFormat } from '@/utils/numberFormat'
 
 export interface ReleasePrefillOptions {
   categories: string[]
@@ -41,7 +42,7 @@ export function releaseDenomination(value: number, currency?: string): string {
   const whole = Math.trunc(value)
   const number = Math.abs(value - whole - 0.5) < 1e-9
     ? `${whole || ''}½`
-    : new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 2, useGrouping: false }).format(value)
+    : numberFormat({ maximumFractionDigits: 2, useGrouping: false }).format(value)
   if (currency === 'PTE') return `${number} ${value === 1 ? 'escudo' : 'escudos'}`
   return `${number} euro`
 }
@@ -71,7 +72,7 @@ export function buildReleasePrefill(release: CoinRelease, options: ReleasePrefil
   const country = release.country && release.country !== JOINT_ISSUE ? releaseCountryName(release.country) : ''
   const notes = [
     release.variants?.length ? t('addCoin.release.variants', { value: release.variants.join(', ') }) : '',
-    release.volume ? t('catalog.notes.mintage', { value: new Intl.NumberFormat(intlLocale()).format(release.volume) }) : '',
+    release.volume ? t('catalog.notes.mintage', { value: numberFormat().format(release.volume) }) : '',
   ].filter(Boolean).join('\n')
   const numista = release.source === 'numista' ? /pieces(\d+)\.html/.exec(release.pageUrl)?.[1] : undefined
   return {

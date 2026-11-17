@@ -137,6 +137,7 @@ import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import { candidateStateLabel, provenanceStatusLabel } from '@/utils/format'
 import { t, intlLocale } from '@/i18n'
 import { MATERIALS, type AlertCandidate, type CandidateDismissalReason, type CoinMutationPayload, type Material } from '@/types'
+import { formatNumber } from '@/utils/numberFormat'
 
 const props = defineProps<{ candidate: AlertCandidate; busy?: boolean; duplicateWarnings?: string[] }>()
 const emit = defineEmits<{
@@ -152,7 +153,7 @@ const coin = reactive<CoinMutationPayload>({})
 
 const provenanceLabel = computed(() => provenanceStatusLabel(props.candidate.provenanceStatus).toLowerCase())
 const stateLabel = computed(() => candidateStateLabel(props.candidate.lifecycleState).toLowerCase())
-const priceLabel = computed(() => props.candidate.observedPrice == null ? t('common.unknown') : `${props.candidate.observedPrice.toLocaleString(intlLocale())} ${props.candidate.observedCurrency || 'USD'}`)
+const priceLabel = computed(() => props.candidate.observedPrice == null ? t('common.unknown') : `${formatNumber(props.candidate.observedPrice)} ${props.candidate.observedCurrency || 'USD'}`)
 const sourceFields = computed(() => Object.entries(props.candidate.fields ?? {}).filter(([, value]) => String(value ?? '').trim()))
 const showDuplicateAck = computed(() => !!props.candidate.matchingWishlistCoinId || !!props.duplicateWarnings?.length)
 const convertError = computed(() => {

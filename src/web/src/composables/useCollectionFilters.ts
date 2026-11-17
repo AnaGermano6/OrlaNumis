@@ -60,6 +60,7 @@ export function useCollectionFilters() {
   const selectedCommemorative = ref(store.selectedCommemorative)
   const selectedClassification = ref(store.selectedClassification)
   const selectedRepeated = ref(store.selectedRepeated)
+  const selectedUngraded = ref(store.selectedUngraded)
   const groupBy = ref<CoinGroupBy>(readGroupBy())
   const countryOptions = ref<CoinCountryCount[]>([])
   /** The selected country's periods, the most recent first. */
@@ -170,6 +171,7 @@ export function useCollectionFilters() {
       commemorative: selectedCommemorative.value || undefined,
       classification: selectedClassification.value || undefined,
       repeated: selectedRepeated.value ? 'true' : undefined,
+      ungraded: selectedUngraded.value ? 'true' : undefined,
       search: search.value || undefined,
       set: selectedSet.value || undefined,
       wishlist: 'false',
@@ -190,6 +192,7 @@ export function useCollectionFilters() {
     store.selectedCommemorative = selectedCommemorative.value
     store.selectedClassification = selectedClassification.value
     store.selectedRepeated = selectedRepeated.value
+    store.selectedUngraded = selectedUngraded.value
     store.searchQuery = search.value
     const params = listParams()
     // Grouped views show every matching coin in sections, so they load all pages.
@@ -203,7 +206,7 @@ export function useCollectionFilters() {
     void loadPeriodOptions()
   })
 
-  watch([selectedCountry, selectedPeriod, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated], () => {
+  watch([selectedCountry, selectedPeriod, selectedPresentation, selectedRarity, selectedCirculation, selectedCommemorative, selectedClassification, selectedRepeated, selectedUngraded], () => {
     page.value = 1
     loadCoins()
   })
@@ -296,6 +299,7 @@ export function useCollectionFilters() {
     selectedCommemorative,
     selectedClassification,
     selectedRepeated,
+    selectedUngraded,
     selectedRarity,
     groupBy,
     countryOptions,

@@ -412,6 +412,7 @@ import type { DeepIdentificationObservabilitySummary, NumistaHealthSummary, Numi
 import I18nT from '@/components/I18nT.vue'
 import { t, intlLocale, type MessageKey } from '@/i18n'
 import { deepProviderStatusLabel } from '@/utils/format'
+import { numberFormat } from '@/utils/numberFormat'
 
 const props = withDefaults(defineProps<{
   numistaApiKey: string
@@ -745,7 +746,7 @@ const usageKinds = computed(() => {
 })
 
 function formatCount(value: number) {
-  return new Intl.NumberFormat(intlLocale()).format(value)
+  return numberFormat().format(value)
 }
 
 function formatPercent(value: number) {

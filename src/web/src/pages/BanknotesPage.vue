@@ -86,9 +86,20 @@
       />
     </div>
 
-    <!-- Opened from the Collection page's duplicates to trade. -->
-    <div v-if="repeated" class="mb-3 flex flex-wrap items-center gap-2">
+    <!-- Opened from the Collection page's duplicates to trade, or its banknotes by circulation. -->
+    <div v-if="repeated || circulation" class="mb-3 flex flex-wrap items-center gap-2">
       <button
+        v-if="circulation"
+        type="button"
+        class="chip active inline-flex items-center gap-1"
+        :aria-label="t('collection.activeFilters.remove', { filter: circulationLabel })"
+        data-testid="banknotes-filter-circulation"
+        @click="clearCirculation"
+      >
+        {{ circulationLabel }} <X :size="12" aria-hidden="true" />
+      </button>
+      <button
+        v-if="repeated"
         type="button"
         class="chip active inline-flex items-center gap-1"
         :aria-label="t('collection.activeFilters.remove', { filter: t('banknotes.repeatedOnly') })"
@@ -206,6 +217,9 @@ const search = ref('')
 const country = ref('')
 // Only the banknotes held more than once: "?repeated=true".
 const repeated = ref(route.query.repeated === 'true')
+// Only those still legal tender, or no longer: "?circulation=current" or "demonetized".
+const circulation = ref<'' | 'current' | 'demonetized'>(route.query.circulation === 'current' || route.query.circulation === 'demonetized' ? route.query.circulation : '')
+const circulationLabel = computed(() => (circulation.value === 'demonetized' ? t('banknotes.demonetizedOnly') : t('banknotes.currentOnly')))
 const classification = ref('')
 const classifications = ref<CollectionClassification[]>([])
 const groupBy = ref<BanknoteGrouping>(readGroupBy())
@@ -217,9 +231,9 @@ const countryChoices = computed((): CountrySelectOption[] => [
   { value: '', label: t('collection.view.allCountries') },
   ...countries.value.map((option) => ({ value: option.country, label: `${option.country} (${option.count})`, country: option.country })),
 ])
-const filtered = computed(() => Boolean(search.value.trim() || country.value || repeated.value || classification.value))
+const filtered = computed(() => Boolean(search.value.trim() || country.value || repeated.value || circulation.value || classification.value))
 // How many filters are on (not the search), shown on the phone's filter button.
-const activeFilterCount = computed(() => [country.value, repeated.value, classification.value].filter(Boolean).length)
+const activeFilterCount = computed(() => [country.value, repeated.value, circulation.value, classification.value].filter(Boolean).length)
 // The spreadsheet of the banknotes shown, or of the whole collection.
 const showExport = ref(false)
 // By country (by name), year (oldest first) or rarity, as the coin gallery; those without one last.
@@ -301,6 +315,13 @@ async function addSelectedToSet(setId: number) {
   }
 }
 
+function clearCirculation() {
+  circulation.value = ''
+  const query = { ...route.query }
+  delete query.circulation
+  void router.replace({ query })
+}
+
 function clearRepeated() {
   repeated.value = false
   const query = { ...route.query }
@@ -350,6 +371,7 @@ function listParams() {
     search: search.value.trim() || undefined,
     country: country.value || undefined,
     repeated: repeated.value ? 'true' : undefined,
+    circulation: circulation.value || undefined,
     classification: classification.value || undefined,
     sort,
     order,
@@ -408,7 +430,7 @@ watch(search, () => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => void load(), 300)
 })
-watch([country, sortKey, repeated, classification], () => void load())
+watch([country, sortKey, repeated, circulation, classification], () => void load())
 
 onMounted(() => {
   void load()

@@ -1,6 +1,7 @@
 <template>
-  <div class="overflow-x-auto rounded-md border border-border-subtle bg-card">
-    <table class="data-table text-body">
+  <!-- With scroll, on a wider screen the rows scroll in a box of their own, under a header that stays. -->
+  <div class="overflow-x-auto rounded-md border border-border-subtle bg-card" :class="scroll ? 'md:max-h-[520px] md:overflow-y-auto' : ''" data-testid="coin-list-scroller">
+    <table class="data-table text-body" :class="scroll ? 'md:[&_th]:sticky md:[&_th]:top-0 md:[&_th]:z-10 md:[&_th]:bg-card' : ''">
       <thead>
         <tr>
           <th v-if="selectable" class="w-10 px-3 py-2"><span class="sr-only">{{ t('collection.list.select') }}</span></th>
@@ -80,7 +81,9 @@ const props = withDefaults(defineProps<{
   selectedIds?: Set<number>
   /** Off for banknotes, which come in no coin card or capsule. */
   showPresentation?: boolean
-}>(), { imageSide: null, selectable: false, selectedIds: () => new Set<number>(), showPresentation: true })
+  /** The rows scroll in a box as tall as the map's list of countries (on a wider screen). */
+  scroll?: boolean
+}>(), { imageSide: null, selectable: false, selectedIds: () => new Set<number>(), showPresentation: true, scroll: false })
 
 defineEmits<{
   'toggle-select': [coinId: number]

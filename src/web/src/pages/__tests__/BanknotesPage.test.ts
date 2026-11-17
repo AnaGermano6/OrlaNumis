@@ -144,6 +144,21 @@ describe('BanknotesPage', () => {
     expect(wrapper.find('[data-testid="banknotes-filter-repeated"]').exists()).toBe(false)
   })
 
+  it("shows only those still legal tender, or no longer, when opened from the overview's, until the filter is removed", async () => {
+    mocks.route.query = { circulation: 'demonetized' }
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(mocks.getCoins).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'banknote', circulation: 'demonetized' }))
+    const chip = wrapper.get('[data-testid="banknotes-filter-circulation"]')
+    expect(chip.text()).toBe('Só notas desmonetizadas')
+    await chip.trigger('click')
+    await flushPromises()
+    expect(mocks.replace).toHaveBeenCalledWith({ query: {} })
+    expect(mocks.getCoins).toHaveBeenLastCalledWith(expect.objectContaining({ circulation: undefined }))
+    expect(wrapper.find('[data-testid="banknotes-filter-circulation"]').exists()).toBe(false)
+  })
+
   it('shows the banknotes country by country, every page of them, and the list without presentation', async () => {
     const first = Array.from({ length: 100 }, (_, index) => banknote(index + 1, `Nota ${index + 1}`, index % 2 ? 'Angola' : 'Portugal'))
     mocks.getCoins

@@ -1,6 +1,7 @@
 import { intlLocale, locale, t } from '@/i18n'
 import type { NumistaCatalogPhoto, NumistaIssueSummary } from '@/api/client'
 import { noteVariantLabel } from '@/utils/banknoteAttributes'
+import { numberFormat } from '@/utils/numberFormat'
 
 /** Numista language for catalogue data in the current UI locale. */
 export function numistaLang(): string {
@@ -66,7 +67,7 @@ export function numistaIssueLabel(issue: NumistaIssueSummary): string {
   if (issue.pick) parts.push(`P${issue.pick}`)
   if (issue.signatures?.length) parts.push(issue.signatures.map((signature) => signerSurname(signature.name)).join(' / '))
   if (issue.variant) parts.push(noteVariantLabel(issue.variant))
-  if (issue.mintage) parts.push(t('coinDetail.marketValue.mintage', { count: new Intl.NumberFormat(intlLocale()).format(issue.mintage) }))
+  if (issue.mintage) parts.push(t('coinDetail.marketValue.mintage', { count: numberFormat().format(issue.mintage) }))
   // A banknote issue's comment repeats its Pick number and signatories.
   if (issue.comment && !issue.pick && !issue.signatures?.length) parts.push(issue.comment.length > 40 ? `${issue.comment.slice(0, 39)}…` : issue.comment)
   return parts.join(' · ')

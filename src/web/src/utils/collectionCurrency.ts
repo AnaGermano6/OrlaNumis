@@ -3,6 +3,7 @@
 // Appearance). Loaded with the coin options at sign-in.
 import { ref } from 'vue'
 import { intlLocale } from '@/i18n'
+import { numberFormat } from '@/utils/numberFormat'
 
 /** The euro and the currencies the ECB publishes a daily euro rate for. */
 export const COLLECTION_CURRENCIES = [
@@ -25,7 +26,7 @@ export function setCollectionCurrency(code: string | null | undefined) {
 /** A currency's symbol in the app's language: "€", "$", "£", "CHF". */
 export function currencySymbol(code: string): string {
   try {
-    return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol' })
+    return numberFormat({ style: 'currency', currency: code, currencyDisplay: 'narrowSymbol' })
       .formatToParts(0).find((part) => part.type === 'currency')?.value ?? code
   } catch {
     return code

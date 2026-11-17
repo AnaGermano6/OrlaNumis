@@ -2,6 +2,7 @@
 // catalogue of commemorative and collector coins).
 import type { CoinRelease } from '@/api/client'
 import { intlLocale, t } from '@/i18n'
+import { numberFormat } from '@/utils/numberFormat'
 
 /** The country key of the euro area's joint issues. */
 export const JOINT_ISSUE = 'EU'
@@ -18,8 +19,8 @@ export function releaseCountryName(code: string): string {
 
 /** A face value in euros (whatever the collection currency), or in escudos ("PTE"). */
 export function formatFaceValue(value: number, currency = 'EUR'): string {
-  if (currency === 'PTE') return t('sets.catalogue.escudos', { value: new Intl.NumberFormat(intlLocale()).format(value) })
-  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency, minimumFractionDigits: Number.isInteger(value) ? 0 : 2 }).format(value)
+  if (currency === 'PTE') return t('sets.catalogue.escudos', { value: numberFormat().format(value) })
+  return numberFormat({ style: 'currency', currency, minimumFractionDigits: Number.isInteger(value) ? 0 : 2 }).format(value)
 }
 
 /** "2 €", "200 escudos", or every face value of a design: "10 € · 200 €". */
@@ -42,7 +43,7 @@ export function releasePeriod(release: CoinRelease): string {
 }
 
 export function formatCount(value: number): string {
-  return new Intl.NumberFormat(intlLocale()).format(value)
+  return numberFormat().format(value)
 }
 
 /**

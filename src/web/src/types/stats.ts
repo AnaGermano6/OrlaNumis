@@ -18,6 +18,19 @@ export interface StatsResponse {
     avgPurchasePrice: number
     avgCurrentValue: number
   }
+  /** Coins of each decade of issue (1990 for 1990–1999, negative before Christ), oldest first. */
+  byDecade?: { decade: number; count: number }[]
+  /** The collection's gold and silver: fine (where the fineness is known) and gross. */
+  preciousMetals?: { gold: MetalTotal; silver: MetalTotal }
+}
+
+/** How much of a precious metal a collection holds, in grams. */
+export interface MetalTotal {
+  fineGrams: number
+  grossGrams: number
+  pieces: number
+  /** Pieces whose fineness nobody says: in the gross weight, not the fine. */
+  unknownFineness: number
 }
 
 export type HealthGrade = 'A' | 'B' | 'C' | 'D' | 'F'
@@ -66,6 +79,8 @@ export interface CoinHealthItem {
   dimensions: HealthDimensions
   missingItems: MissingChecklistItem[]
   quickActions: HealthQuickAction[]
+  /** The coin's primary (or obverse, or first) image, if any. */
+  imagePath?: string
 }
 
 export interface CoinHealthListResponse {
@@ -74,6 +89,14 @@ export interface CoinHealthListResponse {
     page: number
     limit: number
     total: number
+  }
+  /**
+   * For the priority list: its coins by country ("" for none) and by missing
+   * item's key, each counted with the other filter on.
+   */
+  facets?: {
+    countries: { value: string; count: number }[]
+    missing: { value: string; count: number }[]
   }
 }
 
@@ -101,49 +124,4 @@ export interface PortfolioSummary {
   rulers: { ruler: string; count: number }[]
   topCoins: { name: string; category: string; currentValue: number | null; ruler: string; era: string }[]
   missingFields?: Record<string, number>
-}
-
-// Collection Time Machine — the collection reconstructed as it stood on a past
-// date. Mirrors services.TimeMachineSnapshot / services.TimeMachineBounds in
-// the Go API.
-
-export interface TimeMachineBreakdownEntry {
-  label: string
-  count: number
-  value: number
-}
-
-export interface TimeMachineTopCoin {
-  id: number
-  name: string
-  value: number
-  /** false means the figure is the purchase price, not a recorded valuation. */
-  valueFromHistory: boolean
-}
-
-export interface TimeMachineValueBasis {
-  fromValuationHistory: number
-  fromPurchasePrice: number
-}
-
-export interface TimeMachineSnapshot {
-  asOfDate: string
-  coinCount: number
-  totalValue: number
-  totalInvested: number
-  unrealizedGain: number
-  byCategory: TimeMachineBreakdownEntry[]
-  byMaterial: TimeMachineBreakdownEntry[]
-  byEra: TimeMachineBreakdownEntry[]
-  topCoins: TimeMachineTopCoin[]
-  acquiredInYear: number
-  valueBasis: TimeMachineValueBasis
-  /** Owned coins with no purchase date, which appear at no point on the timeline. */
-  undatedCoinCount: number
-}
-
-export interface TimeMachineBounds {
-  earliestDate: string
-  latestDate: string
-  hasData: boolean
 }

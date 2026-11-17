@@ -151,9 +151,6 @@ describe('App sidebar', () => {
   let wrapper: VueWrapper | null = null
 
   async function mountApp(initialPath = '/') {
-    document.getElementById('desktop-page-title')?.remove()
-    document.getElementById('desktop-page-actions')?.remove()
-
     const DesktopPageContext = (await import('../components/DesktopPageContext.vue')).default
     const ContextPage = {
       components: { DesktopPageContext },
@@ -218,20 +215,65 @@ describe('App sidebar', () => {
     document.body.innerHTML = ''
   })
 
-  it('renders page-owned desktop context and clears it on navigation', async () => {
+  it("shows a page's title and actions at its top, and the next page's own", async () => {
     await mountApp('/context')
 
-    expect(wrapper!.get('#desktop-page-title').text()).toBe('Wishlist')
-    expect(wrapper!.get('#desktop-page-actions [aria-label="Add to wishlist"]').text()).toBe('Add')
+    const context = wrapper!.get('main [data-testid="page-context"]')
+    expect(context.get('h1').text()).toBe('Wishlist')
+    expect(context.get('[aria-label="Add to wishlist"]').text()).toBe('Add')
 
     await router.push('/plain')
     await flushPromises()
+    expect(wrapper!.find('[data-testid="page-context"]').exists()).toBe(false)
+  })
 
-    expect(wrapper!.get('#desktop-page-title').text()).toBe('')
-    expect(wrapper!.get('#desktop-page-actions').text()).toBe('')
+  it('has the menu in the top bar on a wider screen, its pages in lists, and the account on the right', async () => {
+    await mountApp('/sets/7')
+
+    const menu = wrapper!.get('nav [data-testid="desktop-nav"]')
+    expect(menu.findAll(':scope > ul > li').map((item) => item.attributes('data-id'))).toEqual(['collection', 'lookup', 'agent', 'stats', 'sets'])
+    expect(wrapper!.find('aside').exists()).toBe(false)
+    expect(wrapper!.get('[data-testid="brand-home"]').attributes('href')).toBe('/collection')
+
+    // The wishlist is under the collection.
+    await menu.get('li[data-id="collection"] button').trigger('click')
+    const collection = menu.findAll('li[data-id="collection"] a')
+    expect(collection.map((link) => link.attributes('href'))).toEqual(['/collection', '/', '/banknotes', '/wishlist'])
+    await menu.get('li[data-id="collection"] button').trigger('click')
+
+    // The statistics' own page comes first in their list.
+    await menu.get('li[data-id="stats"] button').trigger('click')
+    expect(menu.findAll('li[data-id="stats"] a').map((link) => link.attributes('href'))).toEqual(['/stats', '/stats/timeline', '/stats/mint-map', '/stats/health'])
+    await menu.get('li[data-id="stats"] button').trigger('click')
+
+    // The page open is under Sets.
+    const sets = menu.get('li[data-id="sets"] button')
+    expect(sets.classes()).toContain('text-gold')
+    await sets.trigger('click')
+    const links = menu.findAll('li[data-id="sets"] a')
+    expect(links.map((link) => link.text())).toEqual(['My Sets', 'Commemorative catalogue'])
+    expect(links.map((link) => link.attributes('href'))).toEqual(['/sets', '/sets/commemoratives'])
+
+    // The account's menu: settings and signing out.
+    await wrapper!.get('[data-testid="account-menu"] button').trigger('click')
+    const account = wrapper!.get('[data-testid="account-menu"]')
+    expect(account.findAll('a').map((link) => link.attributes('href'))).toEqual(['/settings'])
+    await account.findAll('button').find((button) => button.text() === 'Logout')!.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/login')
+  })
+
+  it('marks only the most specific page open in a menu list', async () => {
+    await mountApp('/stats/timeline')
+
+    const menu = wrapper!.get('nav [data-testid="desktop-nav"]')
+    await menu.get('li[data-id="stats"] button').trigger('click')
+    const current = menu.findAll('li[data-id="stats"] a').filter((link) => link.classes().includes('text-gold'))
+    expect(current.map((link) => link.attributes('href'))).toEqual(['/stats/timeline'])
   })
 
   it('keeps the Sets parent collapsed on load and lists its views once opened', async () => {
+    mockIsMobile.value = true
     await mountApp()
     await openSidebar()
 
@@ -256,6 +298,7 @@ describe('App sidebar', () => {
   })
 
   it('signs out to the login page from the sidebar', async () => {
+    mockIsMobile.value = true
     await mountApp()
     await openSidebar()
 

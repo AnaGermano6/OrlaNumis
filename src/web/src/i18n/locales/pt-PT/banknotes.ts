@@ -7,6 +7,8 @@ const messages: Messages['banknotes'] = {
   badge: 'Nota de banco',
   searchPlaceholder: 'Pesquisar notas por nome, país, inscrição…',
   failed: 'Não foi possível carregar as notas. Tente de novo daqui a pouco.',
+  currentOnly: 'Só notas com curso legal',
+  demonetizedOnly: 'Só notas desmonetizadas',
   repeatedOnly: 'Só repetidas para troca',
   groupCount: { one: '{count} nota', other: '{count} notas' },
   groupNone: 'Todas as notas',
@@ -17,13 +19,6 @@ const messages: Messages['banknotes'] = {
     selected: { one: '{count} nota selecionada', other: '{count} notas selecionadas' },
     confirmDelete: { one: 'Eliminar {count} nota? Esta ação não pode ser anulada.', other: 'Eliminar {count} notas? Esta ação não pode ser anulada.' },
     deleteFailed: 'Não foi possível eliminar as notas',
-  },
-  kpis: {
-    label: 'Números das notas',
-    banknotes: 'Notas',
-    countries: 'Países',
-    value: 'Valor total',
-    unique: 'Notas únicas',
   },
   empty: {
     title: 'Ainda não tem notas de banco',

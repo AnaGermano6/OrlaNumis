@@ -14,6 +14,7 @@ const messages: Messages['timeline'] = {
   banknotes: 'Notas',
   banknoteCount: { one: '{count} nota', other: '{count} notas' },
   yearSpan: 'Intervalo de anos',
+  invested: 'Investido',
 }
 
 export default messages

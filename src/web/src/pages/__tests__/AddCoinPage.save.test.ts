@@ -117,7 +117,7 @@ describe('Add Coin save workflow', () => {
     }))
     const wrapper = render()
 
-    const assistedMode = document.querySelector<HTMLButtonElement>('#desktop-page-actions [aria-label="AI Assist Mode"]')
+    const assistedMode = wrapper.get('[data-testid="page-context"] [aria-label="AI Assist Mode"]').element as HTMLButtonElement
     assistedMode?.click()
     await nextTick()
     wrapper.findComponent({ name: 'InlineCameraCapturePanel' }).vm.$emit('captured', photo, 'obverse')
@@ -127,7 +127,7 @@ describe('Add Coin save workflow', () => {
     await analyze!.trigger('click')
     await nextTick()
 
-    const manualMode = document.querySelector<HTMLButtonElement>('#desktop-page-actions [aria-label="Manual Mode"]')
+    const manualMode = wrapper.get('[data-testid="page-context"] [aria-label="Manual Mode"]').element as HTMLButtonElement
     expect(manualMode?.disabled).toBe(true)
     expect(assistedMode?.disabled).toBe(true)
 
@@ -227,7 +227,7 @@ describe('Add Coin save workflow', () => {
     const wrapper = render()
     expect(wrapper.findComponent(CoinLookupCaptureWizard).exists()).toBe(false)
     expect(wrapper.text()).toContain('Save manual')
-    expect(wrapper.get('header.page-header').findAll('button').map(button => button.text()))
+    expect(wrapper.get('.desktop-page-context-local header.page-header').findAll('button').map(button => button.text()))
       .toEqual(['Manual Mode', 'AI Assist Mode', 'Catalog'])
 
     await click(wrapper, 'AI Assist Mode')

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 
@@ -9,53 +9,30 @@ vi.mock('@/composables/useLayout', async () => {
   return { useLayout: () => ({ isMobile: ref(isMobile) }) }
 })
 
+const SLOTS = {
+  default: '<h1>Local title</h1>',
+  actions: '<button aria-label="Add to wishlist">Add</button>',
+  desktop: '<p>Desktop only</p>',
+}
+
 describe('DesktopPageContext', () => {
-  beforeEach(() => {
+  it('shows the page title and actions at the top of the page on a wider screen', () => {
     isMobile = false
-    document.body.innerHTML = `
-      <div id="desktop-page-title"></div>
-      <div id="desktop-page-actions"></div>
-    `
-  })
+    const wrapper = mount(DesktopPageContext, { props: { title: 'Wishlist' }, slots: SLOTS })
 
-  afterEach(() => {
-    document.body.innerHTML = ''
-  })
-
-  it('teleports the page title and actions into the desktop shell', () => {
-    const wrapper = mount(DesktopPageContext, {
-      props: { title: 'Wishlist' },
-      slots: {
-        default: '<h1>Local title</h1>',
-        actions: '<button aria-label="Add to wishlist">Add</button>',
-        desktop: '<p>Desktop only</p>',
-      },
-    })
-
-    expect(document.querySelector('#desktop-page-title')?.textContent).toBe('Wishlist')
-    expect(document.querySelector('#desktop-page-actions button')?.getAttribute('aria-label')).toBe('Add to wishlist')
+    const header = wrapper.get('[data-testid="page-context"]')
+    expect(header.get('h1').text()).toBe('Wishlist')
+    expect(header.get('button').attributes('aria-label')).toBe('Add to wishlist')
+    expect(wrapper.text()).toContain('Desktop only')
+    // The page's own header is the phone's.
     expect(wrapper.find('.desktop-page-context-local').classes()).not.toContain('is-mobile')
-
-    wrapper.unmount()
-
-    expect(document.querySelector('#desktop-page-title')?.textContent).toBe('')
-    expect(document.querySelector('#desktop-page-actions')?.textContent).toBe('')
   })
 
-  it('keeps the title in the page on a phone', () => {
+  it('keeps the page its own header on a phone', () => {
     isMobile = true
+    const wrapper = mount(DesktopPageContext, { props: { title: 'Wishlist' }, slots: SLOTS })
 
-    const wrapper = mount(DesktopPageContext, {
-      props: { title: 'Wishlist' },
-      slots: {
-        default: '<h1>Local title</h1>',
-        actions: '<button>Add</button>',
-        desktop: '<p>Desktop only</p>',
-      },
-    })
-
-    expect(document.querySelector('#desktop-page-title')?.textContent).toBe('')
-    expect(document.querySelector('#desktop-page-actions')?.textContent).toBe('')
+    expect(wrapper.find('[data-testid="page-context"]').exists()).toBe(false)
     expect(wrapper.find('.desktop-page-context-local').classes()).toContain('is-mobile')
     expect(wrapper.text()).toContain('Local title')
   })

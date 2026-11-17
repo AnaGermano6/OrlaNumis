@@ -497,8 +497,8 @@ describe('CoinLookupPage', () => {
       },
     })
 
-    expect(document.querySelector('#desktop-page-title')?.textContent).toContain('Identify Coin')
-    expect(document.querySelector('#desktop-page-actions [aria-label="All drafts"]')).not.toBeNull()
+    expect(wrapper.get('[data-testid="page-context"] h1').text()).toContain('Identify Coin')
+    expect(wrapper.find('[data-testid="page-context"] [aria-label="All drafts"]').exists()).toBe(true)
     expect(wrapper.find('.desktop-page-context-local .pwa-icon-btn').exists()).toBe(true)
   })
 

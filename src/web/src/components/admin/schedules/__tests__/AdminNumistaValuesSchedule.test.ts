@@ -55,8 +55,8 @@ describe('AdminNumistaValuesSchedule', () => {
     await flushPromises()
 
     const box = wrapper.get('[data-testid="numista-values-status"]').text()
-    expect(box).toContain('400 de 2000 pedidos')
-    expect(box).toContain('Os lotes param sozinhos aos 1800 pedidos')
+    expect(box).toContain('400 de 2\u00a0000 pedidos')
+    expect(box).toContain('Os lotes param sozinhos aos 1\u00a0800 pedidos')
     expect(box).toContain('Próximo lote: até 40 pedidos · daqui a 5 h 12 min')
     expect(box).toContain('192 moedas abrangidas · 150 por verificar')
     expect(box).toContain('269 moedas ligadas ao Numista não têm um grau com preço')
@@ -70,7 +70,7 @@ describe('AdminNumistaValuesSchedule', () => {
     mocks.getNumistaValuesStatus.mockResolvedValue({ data: status({ quotaLevel: 'low', usage: { month: '2026-11', requests: 1600, limit: 2000, pauseAt: 1800, backgroundPaused: false } }) })
     const low = mountCard()
     await flushPromises()
-    expect(low.get('[data-testid="numista-values-quota-message"]').text()).toBe('A quota está a acabar: os lotes ficam mais pequenos e param aos 1800 pedidos.')
+    expect(low.get('[data-testid="numista-values-quota-message"]').text()).toBe('A quota está a acabar: os lotes ficam mais pequenos e param aos 1\u00a0800 pedidos.')
 
     mocks.getNumistaValuesStatus.mockResolvedValue({
       data: status({ quotaLevel: 'paused', dailyBudget: 0, usage: { month: '2026-11', requests: 1810, limit: 2000, pauseAt: 1800, backgroundPaused: true } }),

@@ -70,7 +70,6 @@ type appDeps struct {
 	healthSvc              *services.HealthService
 	wishlistSearchAlertSvc *services.WishlistSearchAlertService
 	schedulerRegistry      *SchedulerRegistry
-	timeMachineSvc         *services.TimeMachineService
 	numistaClient          *services.HTTPNumistaClient
 	deepProviderBudgets    *services.DeepProviderBudgetTracker
 }
@@ -172,8 +171,6 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 	backgroundCtx, cancelBackground := context.WithCancel(context.Background())
 	deepIdentificationSvc.StartWorkers(backgroundCtx)
 	deepIdentificationSvc.StartJanitor(backgroundCtx)
-	timeMachineRepo := repository.NewTimeMachineRepository(database.DB)
-	timeMachineSvc := services.NewTimeMachineService(timeMachineRepo)
 	healthRepo := repository.NewHealthRepository(database.DB)
 	healthSvc := services.NewHealthService(healthRepo, logger).WithSettings(settingsSvc)
 
@@ -255,7 +252,6 @@ func buildDeps(cfg *config.Config) (*appDeps, context.CancelFunc) {
 		healthSvc:              healthSvc,
 		wishlistSearchAlertSvc: wishlistSearchAlertSvc,
 		schedulerRegistry:      schedulerRegistry,
-		timeMachineSvc:         timeMachineSvc,
 		numistaClient:          numistaClient,
 		deepProviderBudgets:    deepProviderBudgets,
 	}, cancelBackground

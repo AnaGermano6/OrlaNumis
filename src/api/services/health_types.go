@@ -109,6 +109,8 @@ type CoinHealthItem struct {
 	Dimensions   HealthDimensionScores  `json:"dimensions"`
 	MissingItems []MissingChecklistItem `json:"missingItems"`
 	QuickActions []HealthActionHint     `json:"quickActions"`
+	// ImagePath is the coin's primary (or obverse, or first) image, if any.
+	ImagePath string `json:"imagePath,omitempty"`
 }
 
 // HealthPagination is the paging metadata for coin health lists.
@@ -122,6 +124,22 @@ type HealthPagination struct {
 type CoinHealthListResponse struct {
 	Coins      []CoinHealthItem `json:"coins"`
 	Pagination HealthPagination `json:"pagination"`
+	// Facets, for the priority list, count its coins by country and by what
+	// they miss, each with the other filter on: what each choice would show.
+	Facets *HealthFacets `json:"facets,omitempty"`
+}
+
+// HealthFacets count the priority list's coins by country and by missing item.
+type HealthFacets struct {
+	Countries []HealthFacet `json:"countries"`
+	Missing   []HealthFacet `json:"missing"`
+}
+
+// HealthFacet is one country ("" for none), or one missing item's key, and
+// how many coins of the list have it.
+type HealthFacet struct {
+	Value string `json:"value"`
+	Count int    `json:"count"`
 }
 
 // MissingFieldStat captures top aggregate missing fields for admin views.

@@ -83,6 +83,7 @@ import {
 import { useDialog } from '@/composables/useDialog'
 import { intlLocale, t } from '@/i18n'
 import { reloadPage, waitForRestart } from '@/utils/appRestart'
+import { formatNumber } from '@/utils/numberFormat'
 
 const { showConfirm } = useDialog()
 
@@ -107,7 +108,7 @@ function nextRun(response: BackupsResponse): string {
 }
 
 function formatSize(bytes: number): string {
-  return `${(bytes / 1_000_000).toLocaleString(intlLocale(), { maximumFractionDigits: 1 })} MB`
+  return `${formatNumber(bytes / 1_000_000, { maximumFractionDigits: 1 })} MB`
 }
 
 function say(text: string, error = false) {

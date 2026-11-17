@@ -11,6 +11,7 @@ const mockStore = {
   coins: [] as Coin[],
   total: 0,
   fetchCoins: vi.fn(),
+  selectedRepeated: false,
 }
 let mockIsMobile = false
 
@@ -22,6 +23,12 @@ vi.mock('@/composables/useLayout', async () => {
   const { ref } = await import('vue')
   return { useLayout: () => ({ isMobile: ref(mockIsMobile) }) }
 })
+
+const mockPush = vi.hoisted(() => vi.fn())
+vi.mock('vue-router', async (importOriginal) => ({
+  ...await importOriginal<typeof import('vue-router')>(),
+  useRouter: () => ({ push: mockPush }),
+}))
 
 vi.mock('@/api/client', () => ({
   purchaseCoin: vi.fn(),
@@ -136,9 +143,9 @@ describe('WishlistPage', () => {
   it('opens the desktop add dialog with URL and image-analysis choices', async () => {
     const wrapper = mountPage()
 
-    const addButton = document.querySelector<HTMLButtonElement>('#desktop-page-actions button[title="Add to wishlist"]')
-    expect(addButton).not.toBeNull()
-    addButton?.click()
+    const addButton = wrapper.find('[data-testid="page-context"] button[title="Add to wishlist"]')
+    expect(addButton.exists()).toBe(true)
+    await addButton.trigger('click')
     await wrapper.vm.$nextTick()
 
     expect(page().get('[role="dialog"]').text()).toContain('Add from URL')
@@ -150,12 +157,11 @@ describe('WishlistPage', () => {
     mockStore.coins = [createCoin(1)]
     mockStore.total = 1
 
-    mountPage()
+    const wrapper = mountPage()
 
-    const finderLink = document.querySelector<HTMLAnchorElement>('#desktop-page-actions a[href="/wishlist/search-alerts"]')
-    expect(finderLink).not.toBeNull()
-    expect(finderLink?.getAttribute('href')).toBe('/wishlist/search-alerts')
-    expect(finderLink?.getAttribute('title')).toBe('Search Alerts')
+    const finderLink = wrapper.find('[data-testid="page-context"] a[href="/wishlist/search-alerts"]')
+    expect(finderLink.exists()).toBe(true)
+    expect(finderLink.attributes('title')).toBe('Search Alerts')
   })
 
   it('opens the add dialog from the PWA plus icon', async () => {
@@ -182,4 +188,25 @@ describe('WishlistPage', () => {
     expect(finderLink.text()).not.toContain('Search Alerts')
   })
 
+
+  it('has a section for the coins and banknotes held more than once, which opens them and shares them', async () => {
+    const wrapper = mountPage()
+
+    const section = wrapper.get('[data-testid="wishlist-trades"]')
+    expect(section.get('h2').text()).toBe('Duplicates to trade')
+    const lists = section.findAllComponents({ name: 'CollectionRepeated' })
+    expect(lists.map((list) => [list.props('kind'), list.props('title')])).toEqual([['coin', 'Coins'], ['banknote', 'Banknotes']])
+
+    // The coins in the gallery with only the duplicates; the banknotes in theirs.
+    lists[0]!.vm.$emit('open')
+    expect(mockStore.selectedRepeated).toBe(true)
+    expect(mockPush).toHaveBeenLastCalledWith('/')
+    lists[1]!.vm.$emit('open')
+    expect(mockPush).toHaveBeenLastCalledWith({ name: 'banknotes', query: { repeated: 'true' } })
+
+    // Sharing them starts on the duplicates; the page's own share, on the wishlist.
+    lists[0]!.vm.$emit('share')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findComponent({ name: 'ShareListDialog' }).props()).toMatchObject({ open: true, initialList: 'trades' })
+  })
 })

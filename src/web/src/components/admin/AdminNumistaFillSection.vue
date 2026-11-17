@@ -115,6 +115,7 @@ import { useDialog } from '@/composables/useDialog'
 import { intlLocale, t } from '@/i18n'
 import { presentationLabel } from '@/utils/coinAttributes'
 import { materialLabel } from '@/utils/format'
+import { formatNumber } from '@/utils/numberFormat'
 
 const { showConfirm } = useDialog()
 
@@ -154,7 +155,7 @@ const toSave = computed(() => {
 })
 
 function number(value: number): string {
-  return value.toLocaleString(intlLocale(), { maximumFractionDigits: 2 })
+  return formatNumber(value, { maximumFractionDigits: 2 })
 }
 
 function changeSummary(change: CoinNumistaFillChange): string {

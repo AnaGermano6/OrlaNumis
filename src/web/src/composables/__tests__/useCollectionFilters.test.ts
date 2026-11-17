@@ -110,6 +110,11 @@ describe('useCollectionFilters', () => {
     expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ repeated: undefined })
     filters.selectedRepeated.value = true
     await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ repeated: 'true', classification: 'non-circulating' }))
+
+    // And only the coins without a grade, off when not asked for.
+    expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ ungraded: undefined })
+    filters.selectedUngraded.value = true
+    await vi.waitFor(() => expect(vi.mocked(getCoins).mock.lastCall?.[0]).toMatchObject({ ungraded: 'true', repeated: 'true' }))
     wrapper.unmount()
   })
 

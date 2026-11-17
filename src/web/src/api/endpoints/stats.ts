@@ -2,8 +2,6 @@
 // re-exported from '@/api/client' so existing imports keep working.
 import { api } from '@/api/http'
 import type {
-  TimeMachineBounds,
-  TimeMachineSnapshot,
   CollectionHealthSummary,
   StatsResponse,
 } from '@/types'
@@ -16,10 +14,3 @@ export const getDistribution = () => api.get<{ cells: { era: string; category: s
 export const getCollectionHealthSummary = () => api.get<CollectionHealthSummary>('/stats/health')
 
 // Coin of the Day
-
-// Collection Time Machine
-export const getTimeMachineSnapshot = (date: string) =>
-  api.get<TimeMachineSnapshot>('/stats/time-machine', { params: { date } })
-
-export const getTimeMachineBounds = () =>
-  api.get<TimeMachineBounds>('/stats/time-machine/bounds')

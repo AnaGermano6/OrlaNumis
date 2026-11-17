@@ -9,6 +9,13 @@ const messages: Messages['settings'] = {
     conversations: 'Conversas',
     backups: 'Cópias de segurança',
     help: 'Ajuda',
+    about: 'Sobre',
+  },
+  about: {
+    version: 'Versão {version}',
+    catalogue: 'Dados do catálogo: {source}',
+    photos: 'Fotos oficiais: BCE, INCM, Monnaie de Paris e Münze Österreich',
+    basedOn: 'Baseada no projeto {project}, de Brian DeNicola (licença MIT)',
   },
   conversations: {
     loadFailed: 'Não foi possível carregar a conversa',
