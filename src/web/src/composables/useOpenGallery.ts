@@ -12,6 +12,8 @@ export interface GalleryFilter {
   repeated?: boolean
   /** Only the coins without a grade. */
   ungraded?: boolean
+  /** The gallery's search ("Terceira República"). */
+  search?: string
 }
 
 /**
@@ -22,7 +24,7 @@ export function useOpenGallery() {
   const router = useRouter()
   const store = useCoinsStore()
   return (filter: GalleryFilter = {}) => {
-    store.searchQuery = ''
+    store.searchQuery = filter.search ?? ''
     store.selectedDenomination = ''
     store.selectedRarity = ''
     store.selectedClassification = filter.classification ?? ''

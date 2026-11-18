@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DOMWrapper, shallowMount } from '@vue/test-utils'
+import { DOMWrapper, flushPromises, shallowMount } from '@vue/test-utils'
 import type { Coin } from '@/types'
 import WishlistPage from '../WishlistPage.vue'
+import WishlistCard from '@/components/wishlist/WishlistCard.vue'
 
 // The page with its dialogs, which open at the end of the document.
 const page = () => new DOMWrapper(document.body)
@@ -11,8 +12,13 @@ const mockStore = {
   coins: [] as Coin[],
   total: 0,
   fetchCoins: vi.fn(),
+  removeCoin: vi.fn(),
   selectedRepeated: false,
 }
+const mockConfirm = vi.hoisted(() => vi.fn())
+const mockToast = vi.hoisted(() => vi.fn())
+vi.mock('@/composables/useDialog', () => ({ useDialog: () => ({ showConfirm: mockConfirm }) }))
+vi.mock('@/composables/useToast', () => ({ useToast: () => ({ showToast: mockToast }) }))
 let mockIsMobile = false
 
 vi.mock('@/stores/coins', () => ({
@@ -30,10 +36,12 @@ vi.mock('vue-router', async (importOriginal) => ({
   useRouter: () => ({ push: mockPush }),
 }))
 
+const mockGetWishlistFilters = vi.hoisted(() => vi.fn())
 vi.mock('@/api/client', () => ({
   purchaseCoin: vi.fn(),
   checkWishlistAvailability: vi.fn(),
   updateListingStatus: vi.fn(),
+  getWishlistFilters: mockGetWishlistFilters,
 }))
 
 function createCoin(id: number): Coin {
@@ -100,6 +108,7 @@ describe('WishlistPage', () => {
     mockStore.coins = []
     mockStore.total = 0
     mockStore.fetchCoins.mockReset()
+    mockGetWishlistFilters.mockReset().mockResolvedValue({ data: { total: 0, countries: [], years: [] } })
     mockIsMobile = false
     document.body.innerHTML = `
       <div id="desktop-page-title"></div>
@@ -118,9 +127,79 @@ describe('WishlistPage', () => {
     const wrapper = mountPage()
 
     expect(mockStore.fetchCoins).toHaveBeenCalledWith({ wishlist: 'true', sort: 'updated_at', order: 'desc', page: 1 })
-    expect(wrapper.find('.coins-grid').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="wishlist-cards"]').exists()).toBe(true)
+    expect(wrapper.findAllComponents(WishlistCard)).toHaveLength(1)
     expect(wrapper.find('.empty-state').exists()).toBe(false)
     expect(wrapper.find('.pagination').exists()).toBe(false)
+  })
+
+  it('takes a coin off the wishlist once confirmed, and keeps it when not', async () => {
+    mockStore.coins = [createCoin(1), createCoin(2)]
+    mockStore.total = 2
+    mockStore.removeCoin.mockReset().mockResolvedValue(undefined)
+    const wrapper = mountPage()
+    mockStore.fetchCoins.mockClear()
+
+    mockConfirm.mockResolvedValueOnce(false)
+    wrapper.findAllComponents(WishlistCard)[1]!.vm.$emit('remove', mockStore.coins[1])
+    await flushPromises()
+    expect(mockConfirm).toHaveBeenLastCalledWith('Remove «Coin 2» from the wishlist? This cannot be undone.', expect.objectContaining({ variant: 'danger' }))
+    expect(mockStore.removeCoin).not.toHaveBeenCalled()
+
+    mockConfirm.mockResolvedValueOnce(true)
+    wrapper.findAllComponents(WishlistCard)[1]!.vm.$emit('remove', mockStore.coins[1])
+    await flushPromises()
+    expect(mockStore.removeCoin).toHaveBeenCalledWith(2)
+    expect(mockStore.fetchCoins).toHaveBeenCalledWith(expect.objectContaining({ wishlist: 'true' }))
+
+    // When it fails, the user is told.
+    mockStore.removeCoin.mockRejectedValueOnce(new Error('offline'))
+    mockConfirm.mockResolvedValueOnce(true)
+    wrapper.findAllComponents(WishlistCard)[0]!.vm.$emit('remove', mockStore.coins[0])
+    await flushPromises()
+    expect(mockToast).toHaveBeenCalledWith('Could not remove it from the wishlist. Try again in a moment.', 'error')
+  })
+
+  it('offers to filter by country and / or year once the wishlist has more than six coins', async () => {
+    mockStore.coins = [createCoin(1)]
+    mockStore.total = 1
+    mockGetWishlistFilters.mockResolvedValue({ data: { total: 6, countries: [{ country: 'Portugal', count: 4 }], years: [{ year: 2024, count: 6 }] } })
+    const few = mountPage()
+    await flushPromises()
+    expect(few.find('[data-testid="wishlist-filters"]').exists()).toBe(false)
+    few.unmount()
+
+    mockGetWishlistFilters.mockResolvedValue({ data: {
+      total: 7,
+      countries: [{ country: 'France', count: 2 }, { country: 'Portugal', count: 5 }],
+      years: [{ year: 2024, count: 4 }, { year: -44, count: 1 }],
+    } })
+    const wrapper = mountPage()
+    await flushPromises()
+    const countries = wrapper.get('[data-testid="wishlist-filter-country"]')
+    expect(countries.findAll('option').map((option) => option.text())).toEqual(['All countries', '🇫🇷 France (2)', '🇵🇹 Portugal (5)'])
+    const years = wrapper.get('[data-testid="wishlist-filter-year"]')
+    expect(years.findAll('option').map((option) => option.text())).toEqual(['All years', '2024 (4)', '44 BC (1)'])
+
+    // One country, then one of its years too: from the first page.
+    mockStore.fetchCoins.mockClear()
+    await countries.setValue('Portugal')
+    await flushPromises()
+    expect(mockStore.fetchCoins).toHaveBeenLastCalledWith({ wishlist: 'true', sort: 'updated_at', order: 'desc', page: 1, country: 'Portugal' })
+    await years.setValue('2024')
+    await flushPromises()
+    expect(mockStore.fetchCoins).toHaveBeenLastCalledWith({ wishlist: 'true', sort: 'updated_at', order: 'desc', page: 1, country: 'Portugal', year: 2024 })
+
+    // Nothing matches: said so, and the filters cleared from there.
+    mockStore.coins = []
+    mockStore.total = 0
+    await wrapper.vm.$forceUpdate()
+    const noMatch = wrapper.get('[data-testid="wishlist-no-match"]')
+    expect(noMatch.text()).toContain('No coin of the wishlist matches these filters')
+    await noMatch.get('button').trigger('click')
+    await flushPromises()
+    expect(mockStore.fetchCoins).toHaveBeenLastCalledWith({ wishlist: 'true', sort: 'updated_at', order: 'desc', page: 1 })
+    expect(wrapper.find('[data-testid="wishlist-filters-clear"]').exists()).toBe(false)
   })
 
   it('continues to fetch only wishlist coins and never quick-capture drafts', () => {
@@ -194,6 +273,9 @@ describe('WishlistPage', () => {
 
     const section = wrapper.get('[data-testid="wishlist-trades"]')
     expect(section.get('h2').text()).toBe('Duplicates to trade')
+    // A line right under its title.
+    expect(section.get('h2').element.nextElementSibling).toBe(section.get('[data-testid="wishlist-trades-divider"]').element)
+    expect(section.get('[data-testid="wishlist-trades-divider"]').element.tagName).toBe('HR')
     const lists = section.findAllComponents({ name: 'CollectionRepeated' })
     expect(lists.map((list) => [list.props('kind'), list.props('title')])).toEqual([['coin', 'Coins'], ['banknote', 'Banknotes']])
 

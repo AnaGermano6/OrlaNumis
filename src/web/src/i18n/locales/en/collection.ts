@@ -65,6 +65,9 @@ export default {
     noSets: 'No sets available. Create sets first.',
   },
   view: {
+    moreFilters: 'More filters',
+    moreFiltersOn: 'More filters ({count})',
+    fewerFilters: 'Fewer filters',
     groupBy: 'View by',
     groupNone: 'All coins',
     groupYear: 'Year',

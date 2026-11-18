@@ -50,6 +50,16 @@ export interface CoinSetSummary {
   countries?: SetCountryCount[]
   /** True while a checklist set's list is partly known. */
   partial?: boolean
+  /** A checklist set's slots, filled or not. */
+  total?: number
+  /** A joint issue's or an annual series' year. */
+  year?: number
+  /** Pictures of up to three different coins of it: the catalogue's, of a checklist's coins… */
+  coverImageUrls?: string[]
+  /** …or photos of its coins (media paths). */
+  coverImages?: string[]
+  /** True for a joint issue: one coin, struck by every country. */
+  oneCoin?: boolean
 }
 
 /** How many of a checklist set's slots of one country (an ISO code) the collection fills. */

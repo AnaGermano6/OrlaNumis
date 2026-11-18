@@ -34,6 +34,23 @@ export default {
     done: { one: 'Taken off the wishlist.', other: '{count} coins taken off the wishlist.' },
     failed: 'The coin could not be taken off the wishlist. Delete it from its page on the wishlist.',
   },
+  filters: {
+    country: 'Country',
+    allCountries: 'All countries',
+    year: 'Year',
+    allYears: 'All years',
+    clear: 'Clear filters',
+    noMatch: 'No coin of the wishlist matches these filters',
+  },
+  card: {
+    markPurchased: 'Mark as bought',
+    remove: 'Remove from the wishlist',
+    about: '~ {price}',
+    faceValue: 'About its face value ({denomination}): no price saved',
+    confirmRemove: 'Remove «{name}» from the wishlist? This cannot be undone.',
+    confirmRemoveButton: 'Remove',
+    removeFailed: 'Could not remove it from the wishlist. Try again in a moment.',
+  },
   trades: {
     title: 'Duplicates to trade',
     coins: 'Coins',

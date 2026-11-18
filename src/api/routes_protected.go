@@ -213,6 +213,7 @@ func registerProtectedRoutes(api *gin.RouterGroup, d *appDeps) {
 		protected.GET("/coins/countries", coinCountryHandler.Countries)
 		protected.GET("/coins/denominations", coinCountryHandler.Denominations)
 		protected.GET("/coins/periods", coinCountryHandler.Periods)
+		protected.GET("/coins/wishlist-filters", coinCountryHandler.WishlistFilters)
 		// Whether coins are still legal tender, from their cached Numista types.
 		coinCirculation := services.NewCoinCirculationService(d.coinRepo, numistaCatalogSvc)
 		coinHandler.WithCirculation(coinCirculation).WithPreciousMetals(services.NewPreciousMetalsService(d.coinRepo, numistaCatalogSvc))

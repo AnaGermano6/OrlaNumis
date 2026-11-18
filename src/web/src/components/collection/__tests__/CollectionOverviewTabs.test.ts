@@ -178,6 +178,47 @@ describe('CollectionOverviewTabs', () => {
     expect(store.selectedRepeated).toBe(false)
   })
 
+  it('shows the condition of the whole collection, of its coins and of its banknotes, each in its tab', async () => {
+    const grades: Record<string, { coins: number; byGrade: { grade: string; count: number }[] }> = {
+      all: { coins: 22, byGrade: [{ grade: 'UNC', count: 9 }, { grade: 'VF', count: 6 }] },
+      coin: { coins: 16, byGrade: [{ grade: 'UNC', count: 8 }, { grade: 'VF', count: 6 }] },
+      banknote: { coins: 6, byGrade: [{ grade: 'UNC', count: 1 }] },
+    }
+    mocks.getCollectionSummary.mockImplementation((kind?: string) => Promise.resolve(summary(grades[kind ?? 'all']!.coins, 1, 0, { byGrade: grades[kind ?? 'all']!.byGrade })))
+    const store = useCoinsStore()
+    const wrapper = mountPage()
+    await flushPromises()
+
+    const conservation = (panel: string) => wrapper.get(`#overview-panel-${panel} [data-testid="stats-conservation"]`)
+    expect(conservation('all').get('[data-testid="conservation-UNC"]').text()).toContain('9 peças')
+    expect(conservation('coins').get('[data-testid="conservation-UNC"]').text()).toContain('8 peças')
+    expect(conservation('banknotes').get('[data-testid="conservation-UNC"]').text()).toContain('1 peça')
+    expect(conservation('banknotes').find('[data-testid="conservation-VF"]').exists()).toBe(false)
+    expect(conservation('banknotes').get('[data-testid="conservation-ungraded"]').text()).toContain('5 peças sem estado registado')
+    // Each title has an id of its own.
+    expect(new Set(wrapper.findAll('[data-testid="stats-conservation"] h2').map((title) => title.attributes('id'))).size).toBe(3)
+
+    // The coins without a grade open in the coin gallery; the banknotes', in theirs.
+    await conservation('coins').get('[data-testid="conservation-grade-now"]').trigger('click')
+    expect(store.selectedUngraded).toBe(true)
+    expect(mocks.push).toHaveBeenLastCalledWith('/')
+    await conservation('banknotes').get('[data-testid="conservation-grade-now"]').trigger('click')
+    expect(mocks.push).toHaveBeenLastCalledWith({ name: 'banknotes', query: { ungraded: 'true' } })
+  })
+
+  it("opens the whole collection's pieces without a grade where they are: the coins first, else the banknotes", async () => {
+    mocks.getCollectionSummary.mockImplementation((kind?: string) => Promise.resolve(
+      kind === 'coin' ? summary(4, 1, 0, { byGrade: [{ grade: 'UNC', count: 4 }] })
+        : kind === 'banknote' ? summary(2, 1, 0, { byGrade: [] })
+          : summary(6, 1, 0, { byGrade: [{ grade: 'UNC', count: 4 }] }),
+    ))
+    const wrapper = mountPage()
+    await flushPromises()
+
+    await wrapper.get('#overview-panel-all [data-testid="conservation-grade-now"]').trigger('click')
+    expect(mocks.push).toHaveBeenLastCalledWith({ name: 'banknotes', query: { ungraded: 'true' } })
+  })
+
   it('invites to add a banknote when there is none', async () => {
     mocks.getCollectionSummary.mockImplementation((kind?: string) => Promise.resolve(kind === 'banknote' ? summary(0, 0, 0) : summary(452, 84, 3838.11)))
     const wrapper = mountPage()

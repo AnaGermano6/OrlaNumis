@@ -123,19 +123,40 @@
       </button>
     </div>
 
+    <!-- Once the wishlist grows, its coins of one country and / or one year. -->
+    <div v-if="showFilters" class="mb-4 flex flex-wrap items-center gap-3" data-testid="wishlist-filters">
+      <select v-model="country" class="form-select !w-auto max-w-full" :aria-label="t('wishlist.filters.country')" data-testid="wishlist-filter-country">
+        <option value="">{{ t('wishlist.filters.allCountries') }}</option>
+        <option v-for="option in filterOptions.countries" :key="option.country" :value="option.country">{{ withCountryFlag(option.country) }} ({{ formatNumber(option.count) }})</option>
+      </select>
+      <select v-model="year" class="form-select !w-auto max-w-full" :aria-label="t('wishlist.filters.year')" data-testid="wishlist-filter-year">
+        <option value="">{{ t('wishlist.filters.allYears') }}</option>
+        <option v-for="option in filterOptions.years" :key="option.year" :value="String(option.year)">{{ formatNumistaYear(option.year) }} ({{ formatNumber(option.count) }})</option>
+      </select>
+      <button v-if="filtered" type="button" class="btn btn-ghost btn-sm" data-testid="wishlist-filters-clear" @click="clearFilters">
+        <X :size="14" aria-hidden="true" /> {{ t('wishlist.filters.clear') }}
+      </button>
+    </div>
+
     <div v-if="store.loading" class="loading-overlay">
       <div class="spinner"></div>
     </div>
 
-    <div v-else-if="store.coins.length" class="coins-grid">
-      <CoinCard
+    <!-- Each wished coin side by side with its photo, two in a row on a wide screen. -->
+    <div v-else-if="store.coins.length" class="grid gap-4 xl:grid-cols-2" data-testid="wishlist-cards">
+      <WishlistCard
         v-for="coin in store.coins"
         :key="coin.id"
         :coin="coin"
-        wishlist
         @purchase="openPurchaseModal"
+        @remove="handleRemove"
         @dismiss-status="handleDismissStatus"
       />
+    </div>
+
+    <div v-else-if="filtered" class="empty-state" data-testid="wishlist-no-match">
+      <h3>{{ t('wishlist.filters.noMatch') }}</h3>
+      <button type="button" class="btn btn-secondary mt-3" @click="clearFilters">{{ t('wishlist.filters.clear') }}</button>
     </div>
 
     <div v-else class="empty-state">
@@ -164,6 +185,7 @@
     <!-- What the collection has to trade: the coins and banknotes held more than once. -->
     <section class="mt-10 flex flex-col gap-4" aria-labelledby="wishlist-trades-title" data-testid="wishlist-trades">
       <h2 id="wishlist-trades-title" class="m-0 font-display text-xl font-semibold text-heading md:text-2xl">{{ t('wishlist.trades.title') }}</h2>
+      <hr class="m-0 border-0 border-t border-border-accent" data-testid="wishlist-trades-divider" />
       <CollectionRepeated kind="coin" :summary="null" :title="t('wishlist.trades.coins')" @open="openGallery({ repeated: true })" @share="openShare('trades')" />
       <CollectionRepeated kind="banknote" :summary="null" :title="t('wishlist.trades.banknotes')" @open="openRepeatedBanknotes" @share="openShare('trades')" />
     </section>
@@ -220,10 +242,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCoinsStore } from '@/stores/coins'
-import CoinCard from '@/components/CoinCard.vue'
+import WishlistCard from '@/components/wishlist/WishlistCard.vue'
 import CoinSearchChat from '@/components/CoinSearchChat.vue'
 import PurchaseModal from '@/components/PurchaseModal.vue'
 import WishlistURLIntake from '@/components/wishlist/WishlistURLIntake.vue'
@@ -231,12 +253,17 @@ import CollectionRepeated from '@/components/collection/CollectionRepeated.vue'
 import ShareListDialog from '@/components/collection/ShareListDialog.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
-import { purchaseCoin, checkWishlistAvailability, updateListingStatus } from '@/api/client'
+import { purchaseCoin, checkWishlistAvailability, getWishlistFilters, updateListingStatus, type WishlistFilters } from '@/api/client'
 import type { Coin, AvailabilityRunSummary } from '@/types'
 import { CirclePlus, Bot, ShieldCheck, CalendarClock, History, ChevronLeft, Link, ScanLine, Share2, X } from 'lucide-vue-next'
+import { useDialog } from '@/composables/useDialog'
 import { useLayout } from '@/composables/useLayout'
+import { useToast } from '@/composables/useToast'
 import { useOpenGallery } from '@/composables/useOpenGallery'
 import { rememberBrowseSequence } from '@/utils/browseSequence'
+import { withCountryFlag } from '@/utils/countryFlags'
+import { formatNumber } from '@/utils/numberFormat'
+import { formatNumistaYear } from '@/utils/numistaCatalog'
 import { t } from '@/i18n'
 import BaseModal from '@/components/ui/BaseModal.vue'
 
@@ -246,6 +273,8 @@ watch(() => store.coins, (coins) => {
   rememberBrowseSequence('wishlist', coins.filter((coin) => coin.isWishlist).map((coin) => coin.id))
 }, { immediate: true })
 const { isMobile } = useLayout()
+const { showConfirm } = useDialog()
+const { showToast } = useToast()
 const showChat = ref(false)
 const showAddDialog = ref(false)
 const showShareList = ref(false)
@@ -271,9 +300,42 @@ let dismissTimer: ReturnType<typeof setTimeout> | null = null
 const page = ref(1)
 const pageSize = 50
 
-function loadCoins() {
-  store.fetchCoins({ wishlist: 'true', sort: 'updated_at', order: 'desc', page: page.value })
+// Once the wishlist has more than six items, it can be filtered by country and / or year.
+const FILTERS_FROM = 7
+const filterOptions = ref<WishlistFilters>({ total: 0, countries: [], years: [] })
+const country = ref('')
+const year = ref('')
+const filtered = computed(() => Boolean(country.value || year.value))
+const showFilters = computed(() => filtered.value || filterOptions.value.total >= FILTERS_FROM)
+
+// The wishlist's countries and years; without them, no filters.
+async function loadFilterOptions() {
+  try {
+    filterOptions.value = (await getWishlistFilters()).data
+  } catch {
+    // The list still shows, unfiltered.
+  }
 }
+
+function loadCoins() {
+  store.fetchCoins({
+    wishlist: 'true', sort: 'updated_at', order: 'desc', page: page.value,
+    ...(country.value ? { country: country.value } : {}),
+    ...(year.value ? { year: Number(year.value) } : {}),
+  })
+  void loadFilterOptions()
+}
+
+function clearFilters() {
+  country.value = ''
+  year.value = ''
+}
+
+// Another filter starts again from the first page.
+watch([country, year], () => {
+  if (page.value !== 1) page.value = 1
+  else loadCoins()
+})
 
 function closeAddDialog() {
   showAddDialog.value = false
@@ -313,6 +375,22 @@ async function handleDismissStatus(coinId: number) {
     loadCoins()
   } catch {
     // silently fail
+  }
+}
+
+// Takes a coin off the wishlist (it is deleted), once confirmed.
+async function handleRemove(coin: Coin) {
+  const confirmed = await showConfirm(t('wishlist.card.confirmRemove', { name: coin.name }), {
+    title: t('wishlist.card.remove'),
+    confirmLabel: t('wishlist.card.confirmRemoveButton'),
+    variant: 'danger',
+  })
+  if (!confirmed) return
+  try {
+    await store.removeCoin(coin.id)
+    loadCoins()
+  } catch {
+    showToast(t('wishlist.card.removeFailed'), 'error')
   }
 }
 

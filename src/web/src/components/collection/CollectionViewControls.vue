@@ -1,21 +1,21 @@
 <template>
   <!-- Its fields join the header's grid of equal columns; stacked, one per line. -->
   <div :class="stacked ? 'flex flex-col gap-3' : 'contents'">
-    <label class="flex min-w-0 flex-col gap-1">
+    <label v-if="shows('main')" class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('collection.view.groupBy') }}</span>
       <select class="form-select h-10 w-full bg-card py-0 text-body" :value="groupBy" @change="$emit('update:groupBy', ($event.target as HTMLSelectElement).value as CoinGroupBy)">
         <option v-for="grouping in COIN_GROUPINGS" :key="grouping" :value="grouping">{{ groupingLabel(grouping) }}</option>
       </select>
     </label>
 
-    <div class="flex min-w-0 flex-col gap-1">
+    <div v-if="shows('main')" class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('coinFields.country') }}</span>
       <!-- Its own menu, so every country shows its flag (drawn ones too). -->
       <CountrySelect :model-value="country" :options="countryChoices" :label="t('coinFields.country')" data-testid="country-filter" @update:model-value="$emit('update:country', $event)" />
     </div>
 
     <!-- The chosen country's periods, the most recent first. -->
-    <label v-if="periodOptions.length || period" class="flex min-w-0 flex-col gap-1">
+    <label v-if="shows('more') && (periodOptions.length || period)" class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('coinFields.period') }}</span>
       <select class="form-select h-10 w-full bg-card py-0 text-body" :value="period" data-testid="period-filter" @change="$emit('update:period', ($event.target as HTMLSelectElement).value)">
         <option value="">{{ t('collection.view.allPeriods') }}</option>
@@ -23,7 +23,7 @@
       </select>
     </label>
 
-    <label v-if="classifications.length || classification" class="flex min-w-0 flex-col gap-1">
+    <label v-if="shows('more') && (classifications.length || classification)" class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('collection.view.classification') }}</span>
       <select class="form-select h-10 w-full bg-card py-0 text-body" :value="classification" data-testid="classification-filter" @change="$emit('update:classification', ($event.target as HTMLSelectElement).value)">
         <option value="">{{ t('collection.view.allClassifications') }}</option>
@@ -31,7 +31,7 @@
       </select>
     </label>
 
-    <label class="flex min-w-0 flex-col gap-1">
+    <label v-if="shows('more')" class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('coinFields.presentation') }}</span>
       <select class="form-select h-10 w-full bg-card py-0 text-body" :value="presentation" @change="$emit('update:presentation', ($event.target as HTMLSelectElement).value)">
         <option value="">{{ t('collection.view.allPresentations') }}</option>
@@ -39,7 +39,7 @@
       </select>
     </label>
 
-    <label class="flex min-w-0 flex-col gap-1">
+    <label v-if="shows('more')" class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('coinFields.rarity') }}</span>
       <select class="form-select h-10 w-full bg-card py-0 text-body" :value="rarity" @change="$emit('update:rarity', ($event.target as HTMLSelectElement).value)">
         <option value="">{{ t('collection.view.allRarities') }}</option>
@@ -47,7 +47,7 @@
       </select>
     </label>
 
-    <div v-if="showLayout" class="flex min-w-0 flex-col gap-1">
+    <div v-if="showLayout && shows('more')" class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('collection.view.layout') }}</span>
       <div class="flex h-10 w-full rounded-sm border border-border-subtle bg-input p-[2px]" role="group" :aria-label="t('collection.view.layout')">
         <button
@@ -65,7 +65,7 @@
       </div>
     </div>
 
-    <p v-if="fillingCountries" class="col-span-full m-0 text-chip text-text-muted" role="status">{{ t('collection.view.fillingCountries') }}</p>
+    <p v-if="fillingCountries && shows('main')" class="col-span-full m-0 text-chip text-text-muted" role="status">{{ t('collection.view.fillingCountries') }}</p>
   </div>
 </template>
 
@@ -128,7 +128,13 @@ const props = withDefaults(defineProps<{
   fillingCountries?: boolean
   /** How many of the countries no longer exist; offered as one choice. */
   extinctCountries?: number
-}>(), { showLayout: true, stacked: false, fillingCountries: false, extinctCountries: 0, classifications: () => [], classification: '', period: '', periodOptions: () => [] })
+  /** Only the usual controls (grouping, country) or only the others; every one when not given. */
+  only?: 'main' | 'more'
+}>(), { showLayout: true, stacked: false, fillingCountries: false, extinctCountries: 0, classifications: () => [], classification: '', period: '', periodOptions: () => [], only: undefined })
+
+function shows(part: 'main' | 'more'): boolean {
+  return !props.only || props.only === part
+}
 
 defineEmits<{
   'update:groupBy': [value: CoinGroupBy]

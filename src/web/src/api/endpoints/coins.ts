@@ -63,6 +63,8 @@ export const getCoins = (params?: {
   repeated?: string
   /** "true": only coins without a grade. */
   ungraded?: string
+  /** Only coins of one year (negative before Christ). */
+  year?: number
   rarity?: string
   search?: string
   wishlist?: string
@@ -512,6 +514,17 @@ export const getCoinPeriods = (country: string, kind: CoinKind = 'coin') => api.
 
 export const getCoinCountries = (kind?: CoinKind) => api.get<CoinCountryCount[]>('/coins/countries', kind ? { params: { kind } } : undefined)
 
+/** What the wishlist can be filtered by: its countries and years, each with its items, and how many items it has. */
+export interface WishlistFilters {
+  total: number
+  /** Alphabetically. */
+  countries: CoinCountryCount[]
+  /** The most recent first. */
+  years: { year: number; count: number }[]
+}
+
+export const getWishlistFilters = () => api.get<WishlistFilters>('/coins/wishlist-filters')
+
 export interface CoinCountryFillResult {
   status: NumistaDataStatus
   updated: number
@@ -638,6 +651,8 @@ export interface CollectionSummary {
    * items, and those Numista says nothing of.
    */
   circulation?: { current: number; demonetized: number; nonCirculating: number; unknown: number }
+  /** The pieces held of each grade, with their quantities; those without one are the rest of coins. */
+  byGrade?: { grade: string; count: number }[]
   withoutCountry: number
   /** Coins whose presentation is "coincard". */
   coincards: number

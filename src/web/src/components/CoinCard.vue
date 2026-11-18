@@ -1,20 +1,30 @@
 <template>
   <div
-    class="card group flex cursor-pointer flex-col overflow-hidden p-0 max-md:!p-0"
+    class="card group flex cursor-pointer flex-col gap-3 overflow-hidden !p-3 max-md:gap-2 max-md:!p-2"
     :class="selectable && selected ? 'outline-2 outline-gold outline-offset-[-2px]' : ''"
     @click="handleClick"
   >
-    <!-- A banknote is wide: a square frame would leave it small. -->
+    <!-- The photo in a light box (a banknote's wider), its grade in the corner. -->
     <div
-      class="relative flex w-full items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_center,var(--bg-secondary)_0%,var(--bg-primary)_100%)]"
-      :class="coin.kind === 'banknote' ? 'aspect-[3/2] p-2' : 'aspect-square'"
+      class="relative flex w-full items-center justify-center overflow-hidden rounded-md bg-input"
+      :class="coin.kind === 'banknote' ? 'aspect-[3/2] p-2' : 'aspect-square p-[6%]'"
     >
-      <AuthenticatedImage v-if="primaryImage" :media-path="primaryImage" :alt="coin.name" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.02] group-hover:brightness-110" loading="lazy">
+      <AuthenticatedImage v-if="primaryImage" :media-path="primaryImage" :alt="coin.name" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.02]" loading="lazy">
         <template #fallback>
-          <div class="text-text-primary/30"><component :is="coin.kind === 'banknote' ? Banknote : Coins" :size="48" :stroke-width="1" /></div>
+          <span class="flex aspect-square w-3/5 items-center justify-center rounded-full border-2 border-gold-dim text-gold-dim" data-testid="coin-card-placeholder">
+            <component :is="coin.kind === 'banknote' ? Banknote : Coins" :size="32" :stroke-width="1.25" />
+          </span>
         </template>
       </AuthenticatedImage>
-      <div v-else class="text-text-primary/30"><component :is="coin.kind === 'banknote' ? Banknote : Coins" :size="48" :stroke-width="1" /></div>
+      <span v-else class="flex aspect-square w-3/5 items-center justify-center rounded-full border-2 border-gold-dim text-gold-dim" data-testid="coin-card-placeholder">
+        <component :is="coin.kind === 'banknote' ? Banknote : Coins" :size="32" :stroke-width="1.25" />
+      </span>
+      <span
+        v-if="gradeBadge && !wishlist"
+        class="absolute top-2 right-2 z-[2] flex h-9 min-w-9 items-center justify-center rounded-full border border-border-subtle bg-card px-1.5 text-chip font-semibold text-text-secondary max-md:h-7 max-md:min-w-7 max-md:text-micro"
+        :title="gradeTitle"
+        data-testid="coin-card-grade"
+      >{{ gradeBadge }}</span>
       <div v-if="wishlist && coin.listingStatus === 'unavailable'" class="pointer-events-none absolute inset-0 z-[2] bg-black/50"></div>
       <span v-if="wishlist && coin.listingStatus === 'unavailable'" class="absolute top-2 right-2 z-[3] rounded-full bg-red-600/85 px-2 py-[0.2rem] text-label font-semibold uppercase tracking-[0.08em] text-white">{{ t('coinCard.unavailable') }}</span>
       <button
@@ -32,11 +42,11 @@
       >
         <Check v-if="selected" :size="16" :stroke-width="3" />
       </div>
-      <div class="pointer-events-none absolute inset-0 z-[1] border-b border-gold-dim shadow-[inset_0_0_40px_var(--overlay-35)] transition-shadow duration-300 group-hover:shadow-[inset_0_0_25px_var(--overlay-20),0_0_20px_var(--accent-gold-glow)]"></div>
     </div>
-    <!-- Compact on a phone, two cards a row: the name (with its value and year) only. -->
-    <div class="flex flex-1 flex-col gap-1.5 p-4 max-md:gap-1 max-md:p-2.5">
-      <h3 class="overflow-hidden text-md leading-[1.3] max-md:font-sans max-md:font-medium max-md:text-body max-md:[-webkit-line-clamp:3] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+
+    <!-- Its name, then its year, material and kind. -->
+    <div class="flex flex-1 flex-col gap-1 px-1">
+      <h3 class="m-0 overflow-hidden font-display text-md uppercase leading-[1.3] tracking-[0.02em] text-text-primary max-md:text-body max-md:[-webkit-line-clamp:3] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
         <span
           v-if="wishlist && coin.listingStatus === 'available'"
           class="mr-1.5 inline-block h-2 w-2 shrink-0 align-middle rounded-full bg-gain"
@@ -49,27 +59,10 @@
         ></span>
         {{ coin.name }}
       </h3>
-      <template v-if="!wishlist">
-        <p v-if="cardInscription" class="overflow-hidden text-chip italic max-md:hidden text-text-secondary [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:1]">{{ cardInscription }}</p>
-        <div class="flex flex-wrap gap-2 max-md:hidden">
-          <span
-            v-if="badge"
-            class="badge"
-            :title="coin.monetarySystem?.trim() || undefined"
-            :style="{
-              backgroundColor: colorForLabelBackground(badge.color),
-              color: colorForLabel(badge.color),
-              border: `1px solid ${colorForLabelBackground(badge.color, 30)}`,
-            }"
-            data-testid="coin-card-badge"
-          >{{ badge.label }}</span>
-          <span v-if="coin.denomination" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary">{{ coin.denomination }}</span>
-          <span v-if="coin.material" class="rounded-full border border-border-subtle bg-surface px-[0.65rem] py-[0.2rem] text-chip text-text-secondary">{{ materialLabel(coin.material) }}</span>
-        </div>
-      </template>
-      <div v-if="wishlist && (coin.currentValue || coin.purchasePrice)" class="mt-auto text-base font-semibold text-gold">
-        {{ formatCurrency(coin.currentValue || coin.purchasePrice || 0) }}
-      </div>
+      <p v-if="details.length || badge" class="m-0 truncate text-chip text-text-secondary max-md:text-micro" data-testid="coin-card-details">
+        <template v-for="detail in details" :key="detail">{{ detail }} · </template>
+        <span v-if="badge" :title="coin.monetarySystem?.trim() || undefined" data-testid="coin-card-badge">{{ badge }}</span>
+      </p>
       <SafeExternalLink
         v-if="wishlist && coin.referenceUrl"
         :href="coin.referenceUrl"
@@ -80,14 +73,21 @@
       >
         {{ coin.referenceText || coin.referenceUrl }}
       </SafeExternalLink>
-      <button
-        v-if="wishlist"
-        class="btn btn-primary btn-sm mt-2 flex w-full justify-center gap-[0.35rem] text-chip"
-        @click.stop="emit('purchase', coin)"
-      >
-        <ShoppingCart :size="14" /> {{ t('coinCard.purchased') }}
-      </button>
     </div>
+
+    <!-- How many, and what it is worth. -->
+    <div class="flex items-center justify-between gap-2 border-t border-border-subtle px-1 pt-2.5 max-md:pt-1.5">
+      <span class="text-body text-text-secondary max-md:text-chip" data-testid="coin-card-quantity">{{ wishlist ? '' : t('coinCard.quantity', { count: coin.quantity || 1 }) }}</span>
+      <span v-if="value != null" class="text-base font-semibold text-gold max-md:text-body" data-testid="coin-card-value">{{ formatCurrency(value) }}</span>
+      <span v-else class="text-body text-text-muted" aria-hidden="true">—</span>
+    </div>
+    <button
+      v-if="wishlist"
+      class="btn btn-primary btn-sm flex w-full justify-center gap-[0.35rem] text-chip"
+      @click.stop="emit('purchase', coin)"
+    >
+      <ShoppingCart :size="14" /> {{ t('coinCard.purchased') }}
+    </button>
   </div>
 </template>
 
@@ -99,10 +99,11 @@ import { Banknote, Check, Coins, ShoppingCart } from 'lucide-vue-next'
 import { formatCurrency, materialLabel } from '@/utils/format'
 import SafeExternalLink from '@/components/SafeExternalLink.vue'
 import AuthenticatedImage from '@/components/AuthenticatedImage.vue'
-import { colorForLabel, colorForLabelBackground } from '@/utils/categoryColor'
 import { t } from '@/i18n'
 import { categoryLabel } from '@/i18n/coinVocabulary'
-import { monetarySystemShortName } from '@/utils/coinAttributes'
+import { coinGradeLabel, monetarySystemShortName } from '@/utils/coinAttributes'
+import { numistaGradeForCoinGrade } from '@/utils/numistaGrades'
+import { formatNumistaYear } from '@/utils/numistaCatalog'
 
 const router = useRouter()
 
@@ -136,8 +137,8 @@ function handleClick() {
 // The coin's monetary system, without its dates ("Escudo"), or else its category.
 const badge = computed(() => {
   const system = props.coin.monetarySystem?.trim()
-  if (system) return { label: monetarySystemShortName(system), color: monetarySystemShortName(system) }
-  return props.coin.category ? { label: categoryLabel(props.coin.category), color: props.coin.category } : null
+  if (system) return monetarySystemShortName(system)
+  return props.coin.category ? categoryLabel(props.coin.category) : ''
 })
 
 const primaryImage = computed(() => {
@@ -151,13 +152,21 @@ const primaryImage = computed(() => {
   return img ? img.filePath : null
 })
 
-const cardInscription = computed(() => {
-  if (props.imageSide === 'reverse' && props.coin.reverseInscription) {
-    return props.coin.reverseInscription
-  }
-  if (props.imageSide === 'obverse' && props.coin.obverseInscription) {
-    return props.coin.obverseInscription
-  }
-  return props.coin.obverseInscription || props.coin.reverseInscription || ''
+// "1924 · Bronze": its year (or dates) and material, before its kind.
+const details = computed(() => [
+  props.coin.year != null ? formatNumistaYear(props.coin.year) : props.coin.dateRange?.trim() ?? '',
+  props.coin.material && props.coin.material !== 'Other' ? materialLabel(props.coin.material) : '',
+].filter(Boolean))
+
+// Its grade in short ("UNC", "VF"): as written when short, else on Numista's scale.
+const gradeBadge = computed(() => {
+  const grade = props.coin.grade?.trim()
+  if (!grade) return ''
+  if (grade.length <= 4) return grade.toUpperCase()
+  return numistaGradeForCoinGrade(grade)?.toUpperCase() ?? ''
 })
+const gradeTitle = computed(() => (props.coin.grade?.trim() ? coinGradeLabel(props.coin.grade.trim()) : undefined))
+
+// Its current value; on the wishlist, the price asked when it has none.
+const value = computed(() => props.coin.currentValue ?? (props.wishlist ? props.coin.purchasePrice ?? null : null))
 </script>

@@ -1,7 +1,7 @@
 <template>
   <!-- Every filter the same size, as in the coin gallery; one under another in a phone's sheet. -->
   <div
-    :class="stacked ? 'flex flex-col gap-4' : ['grid grid-cols-1 gap-3 sm:grid-cols-2', showClassification ? 'lg:grid-cols-5' : 'lg:grid-cols-4']"
+    :class="stacked ? 'flex flex-col gap-4' : ['grid grid-cols-1 gap-3 sm:grid-cols-2', columns]"
     data-testid="banknotes-filters"
   >
     <label class="flex min-w-0 flex-col gap-1">
@@ -32,7 +32,7 @@
         <option v-for="option in classifications" :key="option.key" :value="option.key">{{ collectionClassificationLabel(option) }} ({{ option.count }})</option>
       </select>
     </label>
-    <div class="flex min-w-0 flex-col gap-1">
+    <div v-if="props.showLayout" class="flex min-w-0 flex-col gap-1">
       <span class="section-label mb-0">{{ t('collection.view.layout') }}</span>
       <div class="flex h-10 w-full rounded-sm border border-border-subtle bg-input p-[2px]" role="group" :aria-label="t('collection.view.layout')">
         <button
@@ -64,7 +64,7 @@ import { BANKNOTE_GROUPINGS, collectionClassificationLabel, type BanknoteGroupin
 
 export type BanknoteLayout = 'grid' | 'list'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   sortKey: string
   groupBy: BanknoteGrouping
   country: string
@@ -74,7 +74,9 @@ const props = defineProps<{
   classifications: CollectionClassification[]
   /** One under another, as in a phone's sheet. */
   stacked?: boolean
-}>()
+  /** The grid or list choice among them (a wider screen has it beside the search). */
+  showLayout?: boolean
+}>(), { stacked: false, showLayout: true })
 
 defineEmits<{
   'update:sortKey': [value: string]
@@ -97,4 +99,6 @@ const LAYOUTS: { id: BanknoteLayout, label: MessageKey, icon: typeof LayoutGrid 
 ]
 
 const showClassification = computed(() => props.classifications.length > 0 || props.classification !== '')
+// A column per field on a wide screen.
+const columns = computed(() => ['lg:grid-cols-3', 'lg:grid-cols-4', 'lg:grid-cols-5'][Number(showClassification.value) + Number(props.showLayout)])
 </script>

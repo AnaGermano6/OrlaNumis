@@ -362,7 +362,6 @@ describe('Design Token Enforcement (Constitution Principle VI)', () => {
       // and the white 0.04 lift has no themed equivalent (the overlay tokens
       // are black scrims).
       const COLOR_BUDGET = new Map([
-        ['components/stats/CollectionHealthScorecard.vue', 12],
         ['components/collection/NeedsAttentionQueue.vue', 10],
         ['pages/SetDetailPage.vue', 1],
       ])

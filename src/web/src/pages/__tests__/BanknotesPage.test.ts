@@ -119,6 +119,32 @@ describe('BanknotesPage', () => {
     expect(localStorage.getItem('banknotes:layout')).toBe('list')
   })
 
+  it('keeps the search and filters in sight under the top bar while the banknotes scroll, as the coin gallery', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    const card = wrapper.get('[data-testid="banknotes-search-card"]')
+    expect(card.classes()).toEqual(expect.arrayContaining(['sticky', 'top-[60px]', 'bg-surface']))
+    expect(card.find('input[type="text"]').exists()).toBe(true)
+    expect(card.find('[data-testid="banknotes-country"]').exists()).toBe(true)
+  })
+
+  it("shows only those without a grade when opened from the statistics', until the filter is removed", async () => {
+    mocks.route.query = { ungraded: 'true' }
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(mocks.getCoins).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'banknote', ungraded: 'true' }))
+    const chip = wrapper.get('[data-testid="banknotes-filter-ungraded"]')
+    expect(chip.text()).toBe('Só sem estado de conservação')
+
+    await chip.trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="banknotes-filter-ungraded"]').exists()).toBe(false)
+    expect(mocks.getCoins).toHaveBeenLastCalledWith(expect.not.objectContaining({ ungraded: 'true' }))
+    expect(mocks.replace).toHaveBeenLastCalledWith({ query: {} })
+  })
+
   it('invites to add the first banknote when there is none', async () => {
     mocks.getCoins.mockResolvedValue({ data: { coins: [], total: 0 } })
     const wrapper = mountPage()

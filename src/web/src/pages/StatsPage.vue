@@ -15,9 +15,10 @@
       </div>
 
       <template v-else>
-        <!-- How much of the catalogue the collection has; under it, its pieces' condition. -->
+        <!-- A line between the tabs above (each ending with its pieces' condition)
+             and the rest: how much of the catalogue the collection has, and on. -->
+        <hr class="m-0 border-0 border-t border-border-accent" data-testid="stats-divider" />
         <StatsProgress :catalogue="catalogue" />
-        <StatsConservation :by-grade="stats.byGrade" :total="stats.totalCoins" />
 
         <!-- Its gold and silver; then, side by side and as tall as each other, the countries it has most of and its decades. -->
         <StatsPreciousMetals :metals="stats.preciousMetals" :by-material="stats.byMaterial" />
@@ -67,13 +68,7 @@
           <template #label="{ item }">{{ eraLabel(item.label) }}</template>
         </StatsBarChart>
 
-        <StatsBarChart
-          v-if="rulerItems.length"
-          :title="t('stats.charts.topRulers')"
-          :items="rulerItems"
-          :fill-class="() => 'fill-ruler'"
-          :wide="true"
-        />
+        <StatsRulers :rulers="rulers" :total="stats.totalCoins" />
 
         <StatsHeatMap v-if="categoryItems.length > 1 || eraItems.length > 1" ref="heatMapRef" />
       </template>
@@ -86,11 +81,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useCoinsStore } from '@/stores/coins'
 import PullToRefresh from '@/components/PullToRefresh.vue'
 import CollectionOverviewTabs from '@/components/collection/CollectionOverviewTabs.vue'
-import StatsConservation from '@/components/stats/StatsConservation.vue'
 import StatsCountryLeaders from '@/components/stats/StatsCountryLeaders.vue'
 import StatsDecades from '@/components/stats/StatsDecades.vue'
 import StatsPreciousMetals from '@/components/stats/StatsPreciousMetals.vue'
 import StatsProgress from '@/components/stats/StatsProgress.vue'
+import StatsRulers from '@/components/stats/StatsRulers.vue'
 import { getCoinCatalogueCountries, type CatalogueCountry, type CatalogueYear } from '@/api/client'
 import StatsBarChart from '@/components/stats/StatsBarChart.vue'
 import type { BarItem } from '@/components/stats/StatsBarChart.vue'
@@ -123,9 +118,8 @@ const monetarySystems = computed(() => monetarySystemBars(stats.value?.byMonetar
 const eraItems = computed<BarItem[]>(() =>
   stats.value?.byEra?.map((e) => ({ label: e.era, count: e.count })) ?? [],
 )
-const rulerItems = computed<BarItem[]>(() =>
-  stats.value?.byRuler?.map((r) => ({ label: r.ruler, count: r.count })) ?? [],
-)
+// Every ruler with its country; from an older server, its first ten without.
+const rulers = computed(() => stats.value?.rulers ?? stats.value?.byRuler?.map((entry) => ({ ...entry, country: '' })) ?? [])
 
 async function handleRefresh() {
   await Promise.all([

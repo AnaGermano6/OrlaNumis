@@ -22,9 +22,7 @@ export default {
     noActiveTitle: 'No Active Coins to Score',
     noActiveBody: 'Collection health scoring requires active coins (not wishlist items).',
     noActiveHint: 'Add coins to your collection or mark wishlist items as acquired to start tracking collection health metrics.',
-    title: 'Collection Health',
     grade: 'Grade {grade}',
-    weights: 'Scoring Weights',
     diagnosis: 'Overall diagnosis',
     weightsHint: 'The 0 to 100 score adds up the parts, each with its weight: {weights}.',
     outOf: '{score} / 100',
@@ -130,6 +128,18 @@ export default {
     beforeShort: '<{year}',
     beforeHint: 'Before {year}: {count}',
     hint: '{from}–{to}: {count}',
+  },
+  rulers: {
+    kind: 'Kind of ruler',
+    kinds: {
+      all: 'All',
+      monarchs: 'Monarchs',
+      regimes: 'Regimes',
+    },
+    showAll: 'See all {count} rulers',
+    showLess: 'Show less',
+    open: 'See the coins of {ruler} in the gallery',
+    none: 'No ruler of this kind.',
   },
   priceRanges: {
     under: 'Under {amount}',

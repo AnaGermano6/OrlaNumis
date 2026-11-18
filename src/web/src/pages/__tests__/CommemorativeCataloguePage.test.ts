@@ -25,7 +25,11 @@ vi.mock('@/api/client', () => ({
   joinCatalogueCoin: mocks.joinCatalogueCoin,
   showCatalogueCoin: mocks.showCatalogueCoin,
 }))
-vi.mock('vue-router', () => ({ useRoute: () => mocks.route, useRouter: () => ({ replace: mocks.replace, push: mocks.push }) }))
+vi.mock('vue-router', () => ({
+  useRoute: () => mocks.route,
+  useRouter: () => ({ replace: mocks.replace, push: mocks.push }),
+  RouterLink: { props: ['to'], template: '<a href="#"><slot /></a>' },
+}))
 vi.mock('@/composables/useReleaseWishlist', () => ({ useReleaseWishlist: () => ({ saveToWishlist: mocks.saveToWishlist, removeFromWishlist: mocks.removeFromWishlist }) }))
 vi.mock('@/composables/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }))
 
@@ -74,45 +78,67 @@ describe('CommemorativeCataloguePage', () => {
     } }))
   })
 
-  it('puts the euro coins and the other coins apart, and opens the country the collection has most of', async () => {
+  it('lists the euro countries beside, the escudos apart, and opens the country the collection has most of', async () => {
     const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()
 
-    // Only the sources above: no introduction.
+    // The sources, under the coins.
     expect(wrapper.text()).toContain('Fontes:')
-    expect(wrapper.text()).not.toContain('Todas as moedas de 2 € comemorativas publicadas')
-    const euro = wrapper.get('[data-testid="catalogue-group-euro"]')
-    expect(euro.get('h2').text()).toBe('Moedas do euro')
-    expect(euro.findAll('button').map((button) => button.find('span').text())).toEqual(['🇩🇪Alemanha', '🇫🇷França', '🇵🇹Portugal'])
-    expect(euro.findAll('[data-testid="catalogue-flag"]').every((flag) => flag.attributes('aria-hidden') === 'true')).toBe(true)
-    const other = wrapper.get('[data-testid="catalogue-group-other"]')
-    expect(other.get('h2').text()).toBe('Outras moedas')
-    expect(text(other.get('[data-testid="catalogue-country-PT-PTE"]'))).toContain('Escudos · 1 de 46')
+    const list = wrapper.get('[data-testid="catalogue-countries"]')
+    expect(list.get('h1').text()).toBe('Catálogo de comemorativas')
+    const names = () => list.findAll('[data-testid^="catalogue-country-"]').map((button) => button.find('.truncate').text())
+    expect(names()).toEqual(['Alemanha', 'França', 'Portugal'])
+    expect(list.findAll('[data-testid="catalogue-flag"]').every((flag) => flag.attributes('aria-hidden') === 'true')).toBe(true)
+    // The country chosen says how many of its coins the collection has; the others, a bar.
+    const parts = (code: string) => list.get(`[data-testid="catalogue-country-${code}"]`).findAll(':scope > span').map((part) => part.text())
+    expect(parts('PT')).toEqual(['🇵🇹', 'Portugal', '60%', '3/5'])
+    expect(parts('FR')).toEqual(['🇫🇷', 'França', '1%', ''])
+    // The euro coins, or the escudos.
+    expect(list.findAll('[data-testid^="catalogue-group-"]').map((button) => button.text())).toEqual(['Moedas do euro', 'Escudos'])
+    await list.get('[data-testid="catalogue-group-other"]').trigger('click')
+    expect(names()).toEqual(['Portugal'])
+    expect(list.find('[data-testid="catalogue-country-PT-PTE"]').exists()).toBe(true)
+    await list.get('[data-testid="catalogue-group-euro"]').trigger('click')
+    // A country searched for, without accents.
+    await list.get('[data-testid="catalogue-search"] input').setValue('franca')
+    expect(names()).toEqual(['França'])
+    await list.get('[data-testid="catalogue-search"] input').setValue('narnia')
+    expect(list.get('[data-testid="catalogue-search-none"]').text()).toBe('Nenhum país corresponde à pesquisa.')
 
     // Portugal in euros has the most coins of the collection: its euro coins only.
     expect(mocks.getCoinCatalogue).toHaveBeenCalledWith('PT', undefined)
     expect(mocks.replace).toHaveBeenCalledWith({ query: { country: 'PT' } })
+    // Its flag beside its name, as in the coin gallery.
     expect(wrapper.get('#catalogue-country-title').text()).toBe('🇵🇹Portugal')
-    expect(wrapper.get('[data-testid="catalogue-owned"]').text()).toBe('Tem 3 de 5')
-    // In the server's order: the newest first.
+    expect(wrapper.get('[data-testid="catalogue-title-flag"]').attributes('aria-hidden')).toBe('true')
+    expect(wrapper.get('[data-testid="catalogue-owned"]').text()).toBe('3 / 5 moedas (60%)')
+    // In the server's order: the newest first, two in a row on a wide screen.
     expect(cards(wrapper)).toEqual(['Rotary', 'World scouting', 'Sustainable development', 'Faróis', 'Mosteiro dos Jerónimos'])
-    expect(wrapper.findAll('[data-testid="catalogue-year"]').map((heading) => text(heading))).toEqual(['2026 · 1 de 1', '2025 · 1 de 3', '2004 · 0 de 1'])
+    expect(wrapper.get('[data-testid="catalogue-coins"]').classes()).toContain('xl:grid-cols-2')
     expect(wrapper.get('[data-testid="catalogue-partial"]').text()).toContain('quota mensal')
   })
 
-  it('filters by each face value the country has, and by what the collection has', async () => {
+  it('filters by year, by each face value the country has, and by what the collection has', async () => {
     const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()
 
-    expect(wrapper.findAll('[data-testid^="catalogue-value-"]').map((chip) => text(chip))).toEqual(['Todos os valores', '2 €', '5 €', '10 €'])
-    await wrapper.get('[data-testid="catalogue-value-10"]').trigger('click')
+    const year = wrapper.get('[data-testid="catalogue-year-filter"]')
+    expect(year.findAll('option').map((option) => option.text())).toEqual(['Ano: Todos', 'Ano: 2026', 'Ano: 2025', 'Ano: 2004'])
+    await year.setValue('2025')
+    expect(cards(wrapper)).toEqual(['World scouting', 'Sustainable development', 'Faróis'])
+    await year.setValue('')
+
+    const value = wrapper.get('[data-testid="catalogue-value-filter"]')
+    expect(value.findAll('option').map((option) => text(option))).toEqual(['Valor: Todos', 'Valor: 2 €', 'Valor: 5 €', 'Valor: 10 €'])
+    await value.setValue('10')
     // A design in several face values counts for each.
     expect(cards(wrapper)).toEqual(['Faróis', 'Mosteiro dos Jerónimos'])
-    await wrapper.get('[data-testid="catalogue-value-2"]').trigger('click')
+    await value.setValue('2')
     expect(cards(wrapper)).toEqual(['Rotary', 'World scouting', 'Sustainable development'])
     await wrapper.get('[data-testid="catalogue-owned-missing"]').trigger('click')
+    expect(wrapper.get('[data-testid="catalogue-owned-missing"]').attributes('aria-pressed')).toBe('true')
     expect(cards(wrapper)).toEqual(['Sustainable development'])
-    await wrapper.get('[data-testid="catalogue-value-all"]').trigger('click')
+    await value.setValue('')
     expect(cards(wrapper)).toEqual(['Sustainable development', 'Faróis', 'Mosteiro dos Jerónimos'])
   })
 
@@ -133,6 +159,9 @@ describe('CommemorativeCataloguePage', () => {
     expect(chip.attributes('aria-pressed')).toBe('true')
     // A design also struck otherwise stays, and so does one whose metal is not known.
     expect(cards(wrapper)).toEqual(['Rotary', 'FIFA World Cup', 'Mosteiro dos Jerónimos'])
+    // Its face values and precious metal in a pill.
+    const fifa = wrapper.findAll('[data-testid="release"]').find((node) => node.find('.line-clamp-3').text() === 'FIFA World Cup')!
+    expect(text(fifa.get('[data-testid="release-values"]'))).toBe('5 € · 7,50 € · Prata')
 
     // A country without special editions has nothing to leave out.
     mocks.getCoinCatalogue.mockImplementation(async (code: string) => ({ data: { country: code, complete: true, coins: [coin({ country: code, title: 'Notre-Dame', metals: ['base'] })] } }))
@@ -146,34 +175,39 @@ describe('CommemorativeCataloguePage', () => {
     const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()
 
+    await wrapper.get('[data-testid="catalogue-group-other"]').trigger('click')
     await wrapper.get('[data-testid="catalogue-country-PT-PTE"]').trigger('click')
     await flushPromises()
     expect(mocks.getCoinCatalogue).toHaveBeenLastCalledWith('PT', 'PTE')
     expect(mocks.replace).toHaveBeenLastCalledWith({ query: { country: 'PT', currency: 'PTE' } })
     expect(wrapper.get('#catalogue-country-title').text()).toBe('🇵🇹Portugal · Escudos')
     expect(cards(wrapper)).toEqual(['Colombo e Portugal', 'Discovery of Azores'])
-    expect(wrapper.findAll('[data-testid^="catalogue-value-"]').map((chip) => text(chip))).toEqual(['Todos os valores', '100 escudos', '200 escudos'])
-    await wrapper.get('[data-testid="catalogue-value-100"]').trigger('click')
+    expect(wrapper.get('[data-testid="catalogue-value-filter"]').findAll('option').map((option) => text(option))).toEqual(['Valor: Todos', 'Valor: 100 escudos', 'Valor: 200 escudos'])
+    await wrapper.get('[data-testid="catalogue-value-filter"]').setValue('100')
     expect(cards(wrapper)).toEqual(['Discovery of Azores'])
     expect(wrapper.find('[data-testid="release-no-image"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="catalogue-partial"]').exists()).toBe(false)
   })
 
-  it('opens the country and currency in the address, and the phone list chooses the same way', async () => {
+  it('opens the country and currency in the address, its list beside, and the phone list chooses the same way', async () => {
     mocks.route.query = { country: 'pt', currency: 'pte' }
     const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()
     expect(mocks.getCoinCatalogue).toHaveBeenCalledWith('PT', 'PTE')
+    // The escudos' list is the one beside.
+    expect(wrapper.get('[data-testid="catalogue-group-other"]').attributes('aria-pressed')).toBe('true')
 
     const select = wrapper.get('[data-testid="catalogue-country-select"]')
-    expect(select.findAll('optgroup').map((group) => group.attributes('label'))).toEqual(['Moedas do euro', 'Outras moedas'])
+    expect(select.findAll('optgroup').map((group) => group.attributes('label'))).toEqual(['Moedas do euro', 'Escudos'])
     expect(select.findAll('option').map((option) => option.text())).toEqual(['🇩🇪 Alemanha — 0 de 30', '🇫🇷 França — 1 de 70', '🇵🇹 Portugal — 3 de 5', '🇵🇹 Portugal · Escudos — 1 de 46'])
     await select.setValue('FR')
     await flushPromises()
     expect(mocks.getCoinCatalogue).toHaveBeenLastCalledWith('FR', undefined)
     expect(cards(wrapper)).toEqual(['Notre-Dame'])
-    // One face value: no value filter.
-    expect(wrapper.find('[data-testid="catalogue-value-all"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="catalogue-group-euro"]').attributes('aria-pressed')).toBe('true')
+    // One face value and one year: no filters of them.
+    expect(wrapper.find('[data-testid="catalogue-value-filter"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="catalogue-year-filter"]').exists()).toBe(false)
   })
 
   it("makes a set of the country's coins, of the face value chosen, and opens it", async () => {
@@ -188,7 +222,8 @@ describe('CommemorativeCataloguePage', () => {
     }))
     expect(mocks.push).toHaveBeenLastCalledWith({ name: 'set-detail', params: { id: 31 } })
 
-    await wrapper.get('[data-testid="catalogue-value-10"]').trigger('click')
+    expect(wrapper.get('[data-testid="catalogue-create-set"]').text()).toBe('Adicionar conjunto')
+    await wrapper.get('[data-testid="catalogue-value-filter"]').setValue('10')
     await wrapper.get('[data-testid="catalogue-create-set"]').trigger('click')
     await flushPromises()
     expect(mocks.createSet).toHaveBeenLastCalledWith(expect.objectContaining({
@@ -197,6 +232,7 @@ describe('CommemorativeCataloguePage', () => {
     }))
 
     // The escudos: their currency goes with them.
+    await wrapper.get('[data-testid="catalogue-group-other"]').trigger('click')
     await wrapper.get('[data-testid="catalogue-country-PT-PTE"]').trigger('click')
     await flushPromises()
     await wrapper.get('[data-testid="catalogue-create-set"]').trigger('click')
@@ -211,26 +247,31 @@ describe('CommemorativeCataloguePage', () => {
     expect(wrapper.get('[role="alert"]').text()).toBe('Não foi possível criar o conjunto. Tente novamente.')
   })
 
-  it('saves a coin the collection does not have to the wishlist', async () => {
+  it('marks the collection\'s coins, offers to add the others, and saves one to the wishlist with its heart', async () => {
     mocks.saveToWishlist.mockResolvedValue({ result: 'saved', coinId: 5 })
     const wrapper = mount(CommemorativeCataloguePage)
     await flushPromises()
 
     const card = (title: string) => wrapper.findAll('[data-testid="release"]').find((node) => node.find('.line-clamp-3').text() === title)!
-    // Had: nothing to save. On the wishlist already: marked.
+    // Had: in the collection, nothing to add or save, and its card in gold.
+    expect(card('Rotary').get('[data-testid="release-owned"]').text()).toBe('Na coleção')
+    expect(card('Rotary').classes()).toContain('border-gold')
+    expect(card('Rotary').find('[data-testid="release-add"]').exists()).toBe(false)
     expect(card('Rotary').find('[data-testid="release-wishlist"]').exists()).toBe(false)
-    expect(card('Sustainable development').get('[data-testid="release-on-wishlist"]').text()).toBe('Na lista de desejos')
-    expect(card('Sustainable development').get('[data-testid="release-wishlist"]').attributes('disabled')).toBeDefined()
-    // No other button here: the wishlist's has its words.
+    // On the wishlist already: its heart is full.
+    const wished = card('Sustainable development').get('[data-testid="release-wishlist"]')
+    expect(wished.attributes('aria-pressed')).toBe('true')
+    expect(wished.attributes('disabled')).toBeDefined()
+    // The others: a button to add it, and a heart.
+    expect(card('Faróis').get('[data-testid="release-add"]').text()).toBe('Adicionar')
     const faróis = card('Faróis').get('[data-testid="release-wishlist"]')
-    expect(faróis.text()).toBe('Lista de desejos')
+    expect(faróis.text()).toBe('')
     expect(faróis.attributes('aria-label')).toBe('Guardar na lista de desejos')
-    expect(card('Faróis').find('[data-testid="release-add"]').exists()).toBe(false)
 
     await faróis.trigger('click')
     await flushPromises()
     expect(mocks.saveToWishlist).toHaveBeenCalledWith(expect.objectContaining({ title: 'Faróis' }))
-    expect(card('Faróis').get('[data-testid="release-wishlist"]').text()).toBe('Na lista de desejos')
+    expect(card('Faróis').get('[data-testid="release-wishlist"]').attributes('aria-pressed')).toBe('true')
   })
 
   it('hides a coin, or joins it to another, and shows it again', async () => {

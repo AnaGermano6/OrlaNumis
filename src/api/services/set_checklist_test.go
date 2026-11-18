@@ -357,6 +357,10 @@ func TestSetService_ChecklistSets(t *testing.T) {
 	if fmt.Sprint(sets[0]["countries"]) != "[{PT 1 3}]" || sets[0]["partial"] != false {
 		t.Fatalf("countries = %v, partial = %v", sets[0]["countries"], sets[0]["partial"])
 	}
+	// Its slots in all, and the catalogue's pictures of three of its coins, different ones; a country's catalogue has no year.
+	if urls, _ := sets[0]["coverImageUrls"].([]string); sets[0]["total"] != 3 || len(urls) != 3 || urls[0] == urls[1] || sets[0]["oneCoin"] != false || sets[0]["year"] != nil {
+		t.Fatalf("total = %v, covers = %v, one coin = %v, year = %v", sets[0]["total"], sets[0]["coverImageUrls"], sets[0]["oneCoin"], sets[0]["year"])
+	}
 	detail, err := svc.GetSetDetail(set.ID, 1)
 	if err != nil || detail["coinCount"] != 1 || detail["checklist"] == nil || fmt.Sprintf("%.1f", detail["completionPercentage"]) != "33.3" {
 		t.Fatalf("detail = %+v, %v", detail, err)

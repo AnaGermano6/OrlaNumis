@@ -89,6 +89,9 @@ type CollectionSummaryResponse struct {
 	// the usual ones first; coins Numista says nothing of are in none. Each
 	// coin counts once, as the gallery lists it.
 	Classifications []CollectionClassification `json:"classifications"`
+	// ByGrade counts the pieces held of each grade, each with its quantity;
+	// those without a grade are the others of Coins.
+	ByGrade []repository.GradeCount `json:"byGrade"`
 	// Circulation sorts the items as the list's circulation filter does,
 	// each counted once, as the gallery lists it.
 	Circulation CollectionCirculation `json:"circulation"`
@@ -120,7 +123,7 @@ type CollectionClassification struct {
 // the collection, its total value in euros and its notable coins.
 //
 //	@Summary		Get collection summary
-//	@Description	Counts the user's collection coins (excluding the wishlist), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many circulation coins are still legal tender (from their cached Numista types; collector coins and coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency) and gives the total in euros, converted with the ECB daily reference rates (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins. Sums the face values too (from the coins' Numista types as cached, else their denominations), in the collection currency: those in euros, and in escudos at their fixed rate of 200.482 to the euro; and says how much more, in percent, the coins with both a face value and a current value are worth than their face value.
+//	@Description	Counts the user's collection coins (excluding the wishlist), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many circulation coins are still legal tender (from their cached Numista types; collector coins and coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, how many coins are in a coincard and how many pieces are of each grade (with their quantities). Also sums the coins' current values (kept in the collection currency) and gives the total in euros, converted with the ECB daily reference rates (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins. Sums the face values too (from the coins' Numista types as cached, else their denominations), in the collection currency: those in euros, and in escudos at their fixed rate of 200.482 to the euro; and says how much more, in percent, the coins with both a face value and a current value are worth than their face value.
 //	@Tags			Coins
 //	@Produce		json
 //	@Param			kind	query		string	false	"Only the coins or only the banknotes (every item when omitted)"	Enums(coin, banknote)
@@ -150,7 +153,12 @@ func (h *CollectionSummaryHandler) Summary(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to summarise the collection"})
 		return
 	}
-	response := CollectionSummaryResponse{CollectionSummary: summary, Highlights: highlights, Currency: h.settings.CollectionCurrency(), Classifications: []CollectionClassification{}}
+	byGrade, err := h.coins.GradeCounts(c.GetUint("userId"), kind)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to summarise the collection"})
+		return
+	}
+	response := CollectionSummaryResponse{CollectionSummary: summary, Highlights: highlights, Currency: h.settings.CollectionCurrency(), Classifications: []CollectionClassification{}, ByGrade: byGrade}
 	extinct := map[string]bool{}
 	for _, country := range countries {
 		if name := strings.TrimSpace(country.Country); services.IsExtinctCountry(name) {

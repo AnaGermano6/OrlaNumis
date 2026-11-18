@@ -3,7 +3,8 @@
     <Search class="pointer-events-none absolute left-3 text-text-muted" :size="16" />
     <input
       type="text"
-      class="form-input h-10 rounded-full !py-2 !pr-10 !pl-10 text-body placeholder:text-text-muted"
+      class="form-input !py-2 !pr-10 !pl-10 text-body placeholder:text-text-muted"
+      :class="box ? 'h-11 !rounded-md' : 'h-10 rounded-full'"
       :value="modelValue"
       @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       :placeholder="placeholder ?? t('collection.searchPlaceholder')"
@@ -15,6 +16,11 @@
 <script setup lang="ts">
 import { Search, X } from 'lucide-vue-next'
 import { t } from '@/i18n'
-defineProps<{ modelValue: string; placeholder?: string }>()
+defineProps<{
+  modelValue: string
+  placeholder?: string
+  /** A box with rounded corners, as tall as the toggles beside it, rather than a pill. */
+  box?: boolean
+}>()
 defineEmits<{ 'update:modelValue': [value: string] }>()
 </script>

@@ -4,11 +4,18 @@
 import { intlLocale } from '@/i18n'
 import type { CoinSetSummary } from '@/types'
 import { releaseCountryName } from '@/utils/coinReleases'
+import { setDisplayTitle } from '@/utils/setTitle'
 
 export interface CountrySetCompletion {
   id: number
   name: string
+  /** Its name without the year it says apart ("50th anniversary of the Treaty of Rome"). */
+  title: string
+  /** A joint issue's or an annual series' year. */
+  year?: number
   color: string
+  /** A picture of its coins: the catalogue's (url) or the collection's (a media path). */
+  cover?: { url?: string; path?: string }
   owned: number
   total: number
   partial: boolean
@@ -40,7 +47,13 @@ export function setsByCountry(sets: CoinSetSummary[]): CountryCompletion[] {
       entry.total += count.total
       entry.missing += count.total - count.owned
       entry.partial ||= Boolean(set.partial)
-      entry.sets.push({ id: set.id, name: set.name, color: set.color, owned: count.owned, total: count.total, partial: Boolean(set.partial) })
+      const url = set.coverImageUrls?.[0]
+      const path = set.coverImages?.[0]
+      entry.sets.push({
+        id: set.id, name: set.name, title: setDisplayTitle(set.name, set.oneCoin ? set.year : undefined), year: set.year, color: set.color,
+        cover: url ? { url } : path ? { path } : undefined,
+        owned: count.owned, total: count.total, partial: Boolean(set.partial),
+      })
     }
   }
   const collator = new Intl.Collator(intlLocale())

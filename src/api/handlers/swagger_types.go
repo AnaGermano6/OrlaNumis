@@ -164,6 +164,8 @@ type StatsResponse struct {
 	Values           ValueSummary          `json:"values"`
 	// ByDecade counts the coins of each decade they were issued in, oldest first.
 	ByDecade []repository.DecadeCount `json:"byDecade"`
+	// Rulers counts the coins of every ruler, each of its country, most first.
+	Rulers []repository.RulerCountryCount `json:"rulers"`
 	// PreciousMetals is the collection's gold and silver; absent when the server cannot work it out.
 	PreciousMetals *services.PreciousMetals `json:"preciousMetals,omitempty"`
 }

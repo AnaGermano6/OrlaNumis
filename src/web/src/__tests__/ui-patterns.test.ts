@@ -103,17 +103,14 @@ describe('UI pattern recipes', () => {
   it('keeps Sets list cards refined and count-forward', () => {
     const setCard = readRepoFile(join('components', 'sets', 'SetDashboardCard.vue'))
 
-    // These CSS values now come from Tailwind utilities: `min-h-20` = 5rem,
-    // `h-16` = 4rem (Tailwind's default 0.25rem spacing scale), `items-end` =
-    // align-items: flex-end, `text-4xl` is the 3rem top step of the app's
-    // typography scale, and `rounded-md` resolves to the app's `--radius-md`
-    // theme token.
+    // A round picture of its coins, its count in the app's `text-4xl` top
+    // step (smaller on a phone), and a progress bar in the theme's gold.
     expect(setCard).toContain("t('sets.card.standard')")
-    expect(setCard).toContain('min-[561px]:min-h-20')
-    expect(setCard).toContain('min-[561px]:h-16')
-    expect(setCard).toContain('items-end')
-    expect(setCard).toContain('min-[561px]:text-4xl')
-    expect(setCard).toContain('rounded-md')
+    expect(setCard).toContain('rounded-full')
+    expect(setCard).toContain('object-cover')
+    expect(setCard).toContain('text-4xl')
+    expect(setCard).toContain('max-sm:text-2xl')
+    expect(setCard).toContain('bg-gold')
     expect(setCard).not.toContain('completion-meter')
     expect(setCard).not.toContain('Completion set')
   })

@@ -8,9 +8,9 @@
         <AppIconButton :title="t('collection.export.button')" data-testid="banknotes-export" @click="showExport = true">
           <FileSpreadsheet :size="20" />
         </AppIconButton>
-        <AppIconButton to="/banknotes/add" :title="t('banknotes.add')">
-          <CirclePlus :size="20" />
-        </AppIconButton>
+        <router-link to="/banknotes/add" class="btn btn-primary" data-testid="banknotes-add-desktop">
+          <Plus :size="18" aria-hidden="true" /> {{ t('banknotes.add') }}
+        </router-link>
       </template>
       <header v-if="!isMobile" class="page-header">
         <h1>{{ t('banknotes.title') }}</h1>
@@ -73,21 +73,36 @@
       </button>
     </MobileFilterBar>
 
-    <div v-else class="mb-4 flex flex-col gap-3 rounded-md border border-border-subtle bg-card p-4 shadow-card">
-      <SearchBar v-model="search" class="!max-w-none" :placeholder="t('banknotes.searchPlaceholder')" />
-      <BanknoteFilters
-        v-model:sort-key="sortKey"
-        v-model:group-by="groupBy"
-        v-model:country="country"
-        v-model:classification="classification"
-        v-model:layout="layout"
-        :country-choices="countryChoices"
-        :classifications="classifications"
-      />
+    <!-- As the coin gallery's: the search with grid or list, then the filters,
+         kept in sight under the top bar while the banknotes scroll. -->
+    <div v-else class="container-bleed sticky top-[60px] z-(--z-sticky) bg-surface pb-2" data-testid="banknotes-search-card">
+      <div class="mb-4 flex flex-col gap-4 rounded-md border border-border-subtle bg-card p-4 shadow-card">
+        <div class="flex flex-wrap items-center gap-3">
+          <SearchBar v-model="search" class="!max-w-none min-w-64 flex-1" box :placeholder="t('banknotes.searchPlaceholder')" />
+          <ViewToggle
+            :model-value="layout"
+            :options="layoutOptions"
+            :label="t('collection.view.layout')"
+            test-id-prefix="banknotes-layout"
+            @update:model-value="layout = $event ?? 'grid'"
+          />
+        </div>
+        <BanknoteFilters
+          v-model:sort-key="sortKey"
+          v-model:group-by="groupBy"
+          v-model:country="country"
+          v-model:classification="classification"
+          v-model:layout="layout"
+          :country-choices="countryChoices"
+          :classifications="classifications"
+          :show-layout="false"
+        />
+      </div>
     </div>
 
-    <!-- Opened from the Collection page's duplicates to trade, or its banknotes by circulation. -->
-    <div v-if="repeated || circulation" class="mb-3 flex flex-wrap items-center gap-2">
+    <!-- Opened from the Collection page's duplicates to trade, its banknotes by
+         circulation, or the statistics' banknotes without a grade. -->
+    <div v-if="repeated || circulation || ungraded" class="mb-3 flex flex-wrap items-center gap-2">
       <button
         v-if="circulation"
         type="button"
@@ -107,6 +122,16 @@
         @click="clearRepeated"
       >
         {{ t('banknotes.repeatedOnly') }} <X :size="12" aria-hidden="true" />
+      </button>
+      <button
+        v-if="ungraded"
+        type="button"
+        class="chip active inline-flex items-center gap-1"
+        :aria-label="t('collection.activeFilters.remove', { filter: t('collection.activeFilters.ungraded') })"
+        data-testid="banknotes-filter-ungraded"
+        @click="clearUngraded"
+      >
+        {{ t('collection.activeFilters.ungraded') }} <X :size="12" aria-hidden="true" />
       </button>
     </div>
 
@@ -174,7 +199,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { bulkAction, getCoinCountries, getCoins, getCollectionSummary, getSets, type CoinCountryCount, type CollectionClassification } from '@/api/client'
 import { normalizeCoinSetType, type Coin, type CollectionSetOption } from '@/types'
-import { CheckSquare, CirclePlus, FileSpreadsheet, X } from 'lucide-vue-next'
+import { CheckSquare, CirclePlus, FileSpreadsheet, LayoutGrid, List, Plus, X } from 'lucide-vue-next'
 import BulkActionBar from '@/components/BulkActionBar.vue'
 import BulkSetPickerModal from '@/components/BulkSetPickerModal.vue'
 import CoinCard from '@/components/CoinCard.vue'
@@ -184,6 +209,7 @@ import BanknoteFilters, { type BanknoteLayout } from '@/components/collection/Ba
 import CoinListTable from '@/components/collection/CoinListTable.vue'
 import MobileFilterBar from '@/components/collection/MobileFilterBar.vue'
 import SearchBar from '@/components/SearchBar.vue'
+import ViewToggle from '@/components/collection/ViewToggle.vue'
 import { t } from '@/i18n'
 import { useBulkSelect } from '@/composables/useBulkSelect'
 import { useDialog } from '@/composables/useDialog'
@@ -219,21 +245,27 @@ const country = ref('')
 const repeated = ref(route.query.repeated === 'true')
 // Only those still legal tender, or no longer: "?circulation=current" or "demonetized".
 const circulation = ref<'' | 'current' | 'demonetized'>(route.query.circulation === 'current' || route.query.circulation === 'demonetized' ? route.query.circulation : '')
+// Only those without a grade, to grade them: "?ungraded=true".
+const ungraded = ref(route.query.ungraded === 'true')
 const circulationLabel = computed(() => (circulation.value === 'demonetized' ? t('banknotes.demonetizedOnly') : t('banknotes.currentOnly')))
 const classification = ref('')
 const classifications = ref<CollectionClassification[]>([])
 const groupBy = ref<BanknoteGrouping>(readGroupBy())
 const sortKey = ref('updated_at_desc')
 const layout = ref<BanknoteLayout>(readLayout())
+const layoutOptions = computed(() => [
+  { value: 'grid' as const, label: t('collection.view.grid'), icon: LayoutGrid },
+  { value: 'list' as const, label: t('collection.view.list'), icon: List },
+])
 
 // "All countries", then each country with its flag and count.
 const countryChoices = computed((): CountrySelectOption[] => [
   { value: '', label: t('collection.view.allCountries') },
   ...countries.value.map((option) => ({ value: option.country, label: `${option.country} (${option.count})`, country: option.country })),
 ])
-const filtered = computed(() => Boolean(search.value.trim() || country.value || repeated.value || circulation.value || classification.value))
+const filtered = computed(() => Boolean(search.value.trim() || country.value || repeated.value || circulation.value || ungraded.value || classification.value))
 // How many filters are on (not the search), shown on the phone's filter button.
-const activeFilterCount = computed(() => [country.value, repeated.value, circulation.value, classification.value].filter(Boolean).length)
+const activeFilterCount = computed(() => [country.value, repeated.value, circulation.value, ungraded.value, classification.value].filter(Boolean).length)
 // The spreadsheet of the banknotes shown, or of the whole collection.
 const showExport = ref(false)
 // By country (by name), year (oldest first) or rarity, as the coin gallery; those without one last.
@@ -322,6 +354,13 @@ function clearCirculation() {
   void router.replace({ query })
 }
 
+function clearUngraded() {
+  ungraded.value = false
+  const query = { ...route.query }
+  delete query.ungraded
+  void router.replace({ query })
+}
+
 function clearRepeated() {
   repeated.value = false
   const query = { ...route.query }
@@ -372,6 +411,7 @@ function listParams() {
     country: country.value || undefined,
     repeated: repeated.value ? 'true' : undefined,
     circulation: circulation.value || undefined,
+    ungraded: ungraded.value ? 'true' : undefined,
     classification: classification.value || undefined,
     sort,
     order,
@@ -430,7 +470,7 @@ watch(search, () => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => void load(), 300)
 })
-watch([country, sortKey, repeated, circulation, classification], () => void load())
+watch([country, sortKey, repeated, circulation, ungraded, classification], () => void load())
 
 onMounted(() => {
   void load()

@@ -2,7 +2,11 @@
   <!-- On a wider screen: the page's title and its actions at its top (the
        bar above holds the menu); then what only a wider screen shows. -->
   <header v-if="!isMobile" class="page-header" data-testid="page-context">
-    <h1 class="min-w-0 truncate" :title="title">{{ title }}</h1>
+    <!-- Its title, or the page's own (a title with a pill beside it). -->
+    <div v-if="$slots.title" class="flex min-w-0 flex-1 items-center gap-3">
+      <slot name="title" />
+    </div>
+    <h1 v-else class="min-w-0 truncate" :title="title">{{ title }}</h1>
     <div v-if="$slots.actions" class="flex shrink-0 items-center gap-1">
       <slot name="actions" />
     </div>

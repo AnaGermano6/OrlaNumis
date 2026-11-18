@@ -56,6 +56,7 @@ describe('StatsPage', () => {
           PullToRefresh: { template: '<div><slot /></div>' },
           StatsHeatMap: { template: '<div class="stub-heatmap" />', methods: { fetchDistribution: () => {} } },
           CollectionOverviewTabs: { template: '<section class="stub-overview" />', methods: { load: () => {} } },
+          StatsProgress: { template: '<section class="stub-progress" />' },
         },
       },
     })
@@ -64,6 +65,11 @@ describe('StatsPage', () => {
     const overview = wrapper.find('.stub-overview')
     expect(overview.exists()).toBe(true)
     expect(overview.element.compareDocumentPosition(wrapper.get('[data-testid="stats-monetary-systems"]').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // A line between the tabs (each ending with its pieces' condition) and the rest, the completion progress first.
+    const divider = wrapper.get('[data-testid="stats-divider"]')
+    expect(divider.element.tagName).toBe('HR')
+    expect(overview.element.compareDocumentPosition(divider.element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(divider.element.nextElementSibling?.classList.contains('stub-progress')).toBe(true)
     // The coins owned and on the wishlist are in its tabs, not counted again here.
     expect(wrapper.text()).not.toContain('Coins Owned')
     expect(wrapper.text()).not.toContain('On Wishlist')

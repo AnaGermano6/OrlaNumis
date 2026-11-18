@@ -28,9 +28,9 @@
         <AppIconButton :title="t('collection.export.button')" data-testid="gallery-export" @click="showExport = true">
           <FileSpreadsheet :size="20" />
         </AppIconButton>
-        <AppIconButton to="/add" :title="t('nav.addCoin')" data-testid="gallery-add">
-          <CirclePlus :size="20" />
-        </AppIconButton>
+        <router-link to="/add" class="btn btn-primary" data-testid="gallery-add">
+          <Plus :size="18" aria-hidden="true" /> {{ t('nav.addCoin') }}
+        </router-link>
       </template>
       <header v-if="!isMobile" class="page-header" data-testid="gallery-title">
         <h1>{{ t('nav.gallery') }}</h1>
@@ -89,10 +89,26 @@
       v-model:selected-set="selectedSet"
       v-model:sort-key="sortKey"
       v-model:grid-side="gridSide"
+      v-model:layout="layout"
       :user-sets="userSets"
       :denomination-options="denominationOptions"
+      :more-active="moreFilterCount"
     >
-      <template #controls>
+      <template #main>
+        <CollectionViewControls
+          v-model:group-by="groupBy"
+          v-model:layout="layout"
+          v-model:country="selectedCountry"
+          v-model:presentation="selectedPresentation"
+          v-model:rarity="selectedRarity"
+          :country-options="countryOptions"
+          :extinct-countries="summary?.extinctCountries ?? 0"
+          :filling-countries="fillingCountries"
+          :show-layout="false"
+          only="main"
+        />
+      </template>
+      <template #more>
         <CollectionViewControls
           v-model:group-by="groupBy"
           v-model:layout="layout"
@@ -103,9 +119,9 @@
           v-model:rarity="selectedRarity"
           :country-options="countryOptions"
           :period-options="periodOptions"
-          :extinct-countries="summary?.extinctCountries ?? 0"
           :classifications="summary?.classifications ?? []"
-          :filling-countries="fillingCountries"
+          :show-layout="false"
+          only="more"
         />
       </template>
     </DesktopCollectionHeader>
@@ -243,7 +259,7 @@ import NeedsAttentionQueue from '@/components/collection/NeedsAttentionQueue.vue
 import ExportDialog from '@/components/collection/ExportDialog.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { t } from '@/i18n'
-import { CheckSquare, CirclePlus, FileSpreadsheet, X } from 'lucide-vue-next'
+import { CheckSquare, FileSpreadsheet, Plus, X } from 'lucide-vue-next'
 
 const store = useCoinsStore()
 const router = useRouter()
@@ -260,6 +276,8 @@ const activeFilterCount = computed(() => [
   selectedDenomination.value, selectedSet.value, selectedCountry.value, selectedPeriod.value, selectedPresentation.value,
   selectedRarity.value, selectedCirculation.value, selectedCommemorative.value, selectedClassification.value, selectedRepeated.value, selectedUngraded.value,
 ].filter(Boolean).length)
+// The filters a click away on a wider screen, and how many of them are on.
+const moreFilterCount = computed(() => [selectedSet.value, selectedPeriod.value, selectedClassification.value, selectedPresentation.value, selectedRarity.value].filter(Boolean).length)
 const hasFilters = computed(() => !!(search.value || selectedDenomination.value || selectedSet.value || selectedCountry.value || selectedPeriod.value || selectedPresentation.value || selectedRarity.value || selectedCirculation.value || selectedCommemorative.value || selectedClassification.value || selectedRepeated.value || selectedUngraded.value))
 // The spreadsheet of the coins shown, or of the whole collection.
 const showExport = ref(false)

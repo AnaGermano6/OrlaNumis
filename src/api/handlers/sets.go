@@ -35,7 +35,7 @@ func (h *SetHandler) WithSettingsSupport(settingsSvc *services.SettingsService) 
 // List returns all sets for the authenticated user with summary data.
 //
 //	@Summary		List user sets
-//	@Description	Get all sets for the authenticated user with aggregate summaries. A checklist set also has countries (its slots counted country by country: country, owned, total) and partial (true while its list is partly known).
+//	@Description	Get all sets for the authenticated user with aggregate summaries. A checklist set also has countries (its slots counted country by country: country, owned, total), total (its slots), partial (true while its list is partly known) oneCoin (true for a joint issue: one coin, struck by every country) and, for a joint issue or an annual series, year. A set may have covers, up to three pictures of different coins of it (one for a joint issue): coverImageUrls, the catalogue's pictures of a checklist's coins, or coverImages, the media paths of photos of its coins (smart sets have none).
 //	@Tags			sets
 //	@Produce		json
 //	@Security		BearerAuth
