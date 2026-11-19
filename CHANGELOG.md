@@ -47,6 +47,10 @@ Versions follow [Semantic Versioning](https://semver.org).
   from Numista, without a picture. The commemorative catalogue lists the
   year's €2 coins too.
 
+### Fixed
+- Austria's new coins have their picture among the new releases (the shop's
+  photo of their design): they had none.
+
 ## [1.4.0] - 2026-11-17
 
 ### Changed

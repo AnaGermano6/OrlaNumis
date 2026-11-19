@@ -1301,6 +1301,22 @@ func ecbReleases(photos []EcbCoinPhoto, year int, now time.Time) []CoinRelease {
 	return releases
 }
 
+// releasePicture is the photo a mint's coin is shown with among the
+// releases: the one the mint chooses (see mintReleasePictures), else its
+// value side's.
+func releasePicture(mint MintReleaseSource, coin mintCoin) string {
+	if chooser, ok := mint.(mintReleasePictures); ok {
+		return chooser.ReleasePicture(coin)
+	}
+	return coin.Obverse
+}
+
+// mintReleasePictures is a mint whose coins are better shown by another
+// side than their value side's.
+type mintReleasePictures interface {
+	ReleasePicture(coin mintCoin) string
+}
+
 func (s *CoinReleasesService) mintReleases(ctx context.Context) CoinReleaseGroup {
 	now := s.now()
 	group := CoinReleaseGroup{Source: CoinReleaseGroupMints, Year: now.Year(), Releases: []CoinRelease{}}
@@ -1392,7 +1408,7 @@ func mintReleases(coins []mintCoin, mint MintReleaseSource, now time.Time, recen
 				Country:       ecbCountryCodes[mint.Country()],
 				Title:         title,
 				FaceValue:     coin.Value,
-				ImageURL:      mint.Thumbnail(coin.Obverse),
+				ImageURL:      mint.Thumbnail(releasePicture(mint, coin)),
 				PageURL:       coin.PageURL,
 				From:          from,
 				To:            to,
@@ -1405,7 +1421,7 @@ func mintReleases(coins []mintCoin, mint MintReleaseSource, now time.Time, recen
 			release.Variants = append(release.Variants, variant)
 		} else {
 			// The plain edition is the one to show and open.
-			release.Title, release.ImageURL, release.PageURL = title, mint.Thumbnail(coin.Obverse), coin.PageURL
+			release.Title, release.ImageURL, release.PageURL = title, mint.Thumbnail(releasePicture(mint, coin)), coin.PageURL
 		}
 		if from < release.From {
 			release.From, release.To = from, to
