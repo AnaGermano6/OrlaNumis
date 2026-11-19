@@ -286,6 +286,7 @@ const defaultNavItems: NavItem[] = [
       { id: 'collection-gallery', labelKey: 'nav.gallery', to: '/' },
       { id: 'collection-banknotes', labelKey: 'nav.banknotes', to: '/banknotes' },
       { id: 'collection-wishlist', labelKey: 'nav.wishlist', to: '/wishlist' },
+      { id: 'collection-trades', labelKey: 'nav.trades', to: '/trades' },
     ],
   },
   { id: 'add-coin', labelKey: 'nav.addCoin', icon: markRaw(CirclePlus), to: '/add', visible: true },

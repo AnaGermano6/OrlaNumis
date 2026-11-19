@@ -268,27 +268,10 @@ describe('WishlistPage', () => {
   })
 
 
-  it('has a section for the coins and banknotes held more than once, which opens them and shares them', async () => {
+  it('leaves the trade list to a page of its own', () => {
     const wrapper = mountPage()
 
-    const section = wrapper.get('[data-testid="wishlist-trades"]')
-    expect(section.get('h2').text()).toBe('Duplicates to trade')
-    // A line right under its title.
-    expect(section.get('h2').element.nextElementSibling).toBe(section.get('[data-testid="wishlist-trades-divider"]').element)
-    expect(section.get('[data-testid="wishlist-trades-divider"]').element.tagName).toBe('HR')
-    const lists = section.findAllComponents({ name: 'CollectionRepeated' })
-    expect(lists.map((list) => [list.props('kind'), list.props('title')])).toEqual([['coin', 'Coins'], ['banknote', 'Banknotes']])
-
-    // The coins in the gallery with only the duplicates; the banknotes in theirs.
-    lists[0]!.vm.$emit('open')
-    expect(mockStore.selectedRepeated).toBe(true)
-    expect(mockPush).toHaveBeenLastCalledWith('/')
-    lists[1]!.vm.$emit('open')
-    expect(mockPush).toHaveBeenLastCalledWith({ name: 'banknotes', query: { repeated: 'true' } })
-
-    // Sharing them starts on the duplicates; the page's own share, on the wishlist.
-    lists[0]!.vm.$emit('share')
-    await wrapper.vm.$nextTick()
-    expect(wrapper.findComponent({ name: 'ShareListDialog' }).props()).toMatchObject({ open: true, initialList: 'trades' })
+    expect(wrapper.find('[data-testid="wishlist-trades"]').exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'CollectionRepeated' }).exists()).toBe(false)
   })
 })

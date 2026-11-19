@@ -51,6 +51,11 @@ describe('App sidebar navigation', () => {
     expect(source).toContain("labelKey: 'nav.collectionOverview', to: '/collection'")
     expect(source).toContain("labelKey: 'nav.gallery', to: '/'")
     expect(source).toContain("labelKey: 'nav.banknotes', to: '/banknotes'")
+    // The trade list, on a page of its own, after the wishlist.
+    expect(source).toContain("{ id: 'collection-wishlist', labelKey: 'nav.wishlist', to: '/wishlist' },\n      { id: 'collection-trades', labelKey: 'nav.trades', to: '/trades' },")
+    expect(routerSource).toContain("path: '/trades'")
+    // The installed app opens on the new releases.
+    expect(fs.readFileSync(path.resolve(__dirname, '../../vite.config.ts'), 'utf8')).toContain("start_url: '/collection'")
     expect(routerSource).toContain("path: '/collection'")
     expect(source).not.toContain("to: '/tray'")
     expect(source).not.toContain("to: '/storage-trays'")
@@ -238,7 +243,7 @@ describe('App sidebar', () => {
     // The wishlist is under the collection.
     await menu.get('li[data-id="collection"] button').trigger('click')
     const collection = menu.findAll('li[data-id="collection"] a')
-    expect(collection.map((link) => link.attributes('href'))).toEqual(['/collection', '/', '/banknotes', '/wishlist'])
+    expect(collection.map((link) => link.attributes('href'))).toEqual(['/collection', '/', '/banknotes', '/wishlist', '/trades'])
     await menu.get('li[data-id="collection"] button').trigger('click')
 
     // The statistics' own page comes first in their list.

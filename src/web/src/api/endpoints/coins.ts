@@ -99,6 +99,9 @@ function sanitizeCoin(coin: CoinMutationPayload): CoinMutationPayload {
 
 export const getCoin = (id: number) => api.get<Coin>(`/coins/${id}`)
 
+/** Changes how many of a coin the collection has, and nothing else of it. */
+export const updateCoinQuantity = (id: number, quantity: number) => api.put<Coin>(`/coins/${id}`, { quantity })
+
 /** Whether a coin is still legal tender and whether it is commemorative; null when nobody knows. */
 export interface CoinStatus {
   /** Still legal tender (a collector coin can be, while not "current" in the KPI). */

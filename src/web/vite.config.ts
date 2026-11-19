@@ -57,7 +57,8 @@ export default defineConfig({
         background_color: '#0f0f1a',
         display: 'standalone',
         scope: '/',
-        start_url: '/',
+        // The installed app opens on the new releases.
+        start_url: '/collection',
         icons: [
           {
             src: 'pwa-192x192.png',

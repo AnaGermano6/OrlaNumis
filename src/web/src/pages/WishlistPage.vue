@@ -182,14 +182,6 @@
       <button class="btn btn-secondary btn-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]" :disabled="page * pageSize >= store.total" @click="page++">{{ t('common.next') }} →</button>
     </div>
 
-    <!-- What the collection has to trade: the coins and banknotes held more than once. -->
-    <section class="mt-10 flex flex-col gap-4" aria-labelledby="wishlist-trades-title" data-testid="wishlist-trades">
-      <h2 id="wishlist-trades-title" class="m-0 font-display text-xl font-semibold text-heading md:text-2xl">{{ t('wishlist.trades.title') }}</h2>
-      <hr class="m-0 border-0 border-t border-border-accent" data-testid="wishlist-trades-divider" />
-      <CollectionRepeated kind="coin" :summary="null" :title="t('wishlist.trades.coins')" @open="openGallery({ repeated: true })" @share="openShare('trades')" />
-      <CollectionRepeated kind="banknote" :summary="null" :title="t('wishlist.trades.banknotes')" @open="openRepeatedBanknotes" @share="openShare('trades')" />
-    </section>
-
     <PurchaseModal
       v-if="purchaseTarget"
       :coin="purchaseTarget"
@@ -243,13 +235,11 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
 import { useCoinsStore } from '@/stores/coins'
 import WishlistCard from '@/components/wishlist/WishlistCard.vue'
 import CoinSearchChat from '@/components/CoinSearchChat.vue'
 import PurchaseModal from '@/components/PurchaseModal.vue'
 import WishlistURLIntake from '@/components/wishlist/WishlistURLIntake.vue'
-import CollectionRepeated from '@/components/collection/CollectionRepeated.vue'
 import ShareListDialog from '@/components/collection/ShareListDialog.vue'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
@@ -259,7 +249,6 @@ import { CirclePlus, Bot, ShieldCheck, CalendarClock, History, ChevronLeft, Link
 import { useDialog } from '@/composables/useDialog'
 import { useLayout } from '@/composables/useLayout'
 import { useToast } from '@/composables/useToast'
-import { useOpenGallery } from '@/composables/useOpenGallery'
 import { rememberBrowseSequence } from '@/utils/browseSequence'
 import { withCountryFlag } from '@/utils/countryFlags'
 import { formatNumber } from '@/utils/numberFormat'
@@ -278,20 +267,14 @@ const { showToast } = useToast()
 const showChat = ref(false)
 const showAddDialog = ref(false)
 const showShareList = ref(false)
-/** The list the share dialog starts on: the wishlist, or the duplicates to trade. */
+/** The list the share dialog starts on (the trade list has a page of its own). */
 const shareList = ref<'wishlist' | 'trades'>('wishlist')
-const openGallery = useOpenGallery()
-const router = useRouter()
 
 function openShare(list: 'wishlist' | 'trades') {
   shareList.value = list
   showShareList.value = true
 }
 
-// The banknotes held more than once, in their own gallery.
-function openRepeatedBanknotes() {
-  void router.push({ name: 'banknotes', query: { repeated: 'true' } })
-}
 const addMethod = ref<'url' | null>(null)
 const purchaseTarget = ref<Coin | null>(null)
 const checking = ref(false)

@@ -54,9 +54,7 @@ const messages: Messages['wishlist'] = {
     removeFailed: 'Não foi possível remover da lista de desejos. Tente de novo daqui a pouco.',
   },
   trades: {
-    title: 'Repetidas para troca',
-    coins: 'Moedas',
-    banknotes: 'Notas',
+    title: 'Lista de Trocas',
   },
 }
 

@@ -327,6 +327,18 @@ func (s *NumistaCatalogService) IssuerEuroTypes(ctx context.Context, issuer stri
 	return s.searchEveryPage(ctx, fmt.Sprintf("issuer-euro:v1:%s:%d:%s", issuer, value, lang), search, issuerValueCacheTTL)
 }
 
+// issuerThisYearCacheTTL keeps this year's search of an issuer's coins a
+// week: new coins of the year come out every few weeks.
+const issuerThisYearCacheTTL = 7 * 24 * time.Hour
+
+// IssuerThisYearTypes lists the coin types Numista has of an issuer for this
+// year, every page of them, kept a week (IssuerYearTypes keeps a past year's
+// a year).
+func (s *NumistaCatalogService) IssuerThisYearTypes(ctx context.Context, issuer string, year int, lang string) ([]models.NumistaCatalogSearchItem, error) {
+	search := NumistaTypeSearch{Issuer: issuer, Year: year, Lang: lang}
+	return s.searchEveryPage(ctx, fmt.Sprintf("issuer-this-year:v1:%s:%d:%s", issuer, year, lang), search, issuerThisYearCacheTTL)
+}
+
 // searchEveryPage reads every page of a catalogue search, each page kept
 // under key and its number for ttl.
 func (s *NumistaCatalogService) searchEveryPage(ctx context.Context, key string, search NumistaTypeSearch, ttl time.Duration) ([]models.NumistaCatalogSearchItem, error) {

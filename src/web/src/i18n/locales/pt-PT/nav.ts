@@ -7,6 +7,7 @@ const messages: Messages['nav'] = {
   identifyCoin: 'Identificar moeda',
   analysisHistory: 'Histórico de análises',
   wishlist: 'Lista de desejos',
+  trades: 'Lista de Trocas',
   agent: 'Agente',
   stats: 'Estatísticas',
   timeline: 'Cronologia',

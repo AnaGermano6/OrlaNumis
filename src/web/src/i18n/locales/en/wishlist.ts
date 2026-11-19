@@ -52,8 +52,6 @@ export default {
     removeFailed: 'Could not remove it from the wishlist. Try again in a moment.',
   },
   trades: {
-    title: 'Duplicates to trade',
-    coins: 'Coins',
-    banknotes: 'Banknotes',
+    title: 'Trade list',
   },
 }
