@@ -73,11 +73,14 @@ func (s *SetService) checklistSummary(set *models.CoinSet) *ChecklistSummary {
 }
 
 // checklistOverview is a checklist set's slots counted, in all and country
-// by country; complete is false while its list is partly known.
+// by country; complete is false while its list is partly known. Its covers
+// are pictures of its coins (see ChecklistCovers).
 type checklistOverview struct {
-	summary   ChecklistSummary
-	countries []ChecklistCountry
-	complete  bool
+	summary         ChecklistSummary
+	countries       []ChecklistCountry
+	complete        bool
+	coverImageURLs  []string
+	coverCoinImages []string
 }
 
 func (s *SetService) checklistOverview(set *models.CoinSet) *checklistOverview {
@@ -85,7 +88,61 @@ func (s *SetService) checklistOverview(set *models.CoinSet) *checklistOverview {
 	if err != nil {
 		return nil
 	}
-	return &checklistOverview{summary: Summarize(slots), countries: SummarizeByCountry(slots), complete: complete}
+	overview := &checklistOverview{summary: Summarize(slots), countries: SummarizeByCountry(slots), complete: complete}
+	overview.coverImageURLs, overview.coverCoinImages = ChecklistCovers(slots, checklistOf(set).Challenge == ChallengeJointIssue)
+	return overview
+}
+
+// setCoverCount is how many pictures a set's cover shows at most: three of
+// its coins, piled up, for a set of different coins.
+const setCoverCount = 3
+
+// ChecklistCovers picks a checklist's covers: the catalogue's pictures of
+// its coins (Portugal's first), else the photos of the collection's coins
+// filling its slots. A joint issue is one coin, struck by every country: it
+// has one picture, Portugal's or else the first.
+func ChecklistCovers(slots []ChecklistSlot, oneCoin bool) (imageURLs, coinImages []string) {
+	limit := setCoverCount
+	if oneCoin {
+		limit = 1
+	}
+	pick := func(of func(ChecklistSlot) string, portugalFirst bool) []string {
+		picked := []string{}
+		seen := map[string]bool{}
+		add := func(slot ChecklistSlot) {
+			if value := of(slot); value != "" && !seen[value] && len(picked) < limit {
+				seen[value] = true
+				picked = append(picked, value)
+			}
+		}
+		if portugalFirst {
+			for _, slot := range slots {
+				if slot.Country == "PT" {
+					add(slot)
+				}
+			}
+		}
+		for _, slot := range slots {
+			add(slot)
+		}
+		return picked
+	}
+	if imageURLs = pick(func(slot ChecklistSlot) string { return slot.ImageURL }, true); len(imageURLs) > 0 {
+		return imageURLs, nil
+	}
+	return nil, pick(func(slot ChecklistSlot) string { return slot.CoinImage }, false)
+}
+
+// checklistOf is a checklist set's definition; empty for another set.
+func checklistOf(set *models.CoinSet) ChecklistDefinition {
+	if set.SetType != models.CoinSetTypeChecklist || set.Checklist == nil {
+		return ChecklistDefinition{}
+	}
+	definition, err := ParseChecklistDefinition(map[string]interface{}(*set.Checklist))
+	if err != nil {
+		return ChecklistDefinition{}
+	}
+	return definition
 }
 
 // NewSetService creates a new SetService.
@@ -107,6 +164,8 @@ func (s *SetService) ListSets(userID uint) ([]map[string]interface{}, error) {
 	// fall back to the per-set path below.
 	batchableIDs := make([]uint, 0, len(sets))
 	goalIDs := make([]uint, 0, len(sets))
+	// The sets whose coins are its members, for a photo of one of them.
+	memberIDs := make([]uint, 0, len(sets))
 	for _, set := range sets {
 		switch set.SetType {
 		case models.CoinSetTypeStandard:
@@ -115,6 +174,13 @@ func (s *SetService) ListSets(userID uint) ([]map[string]interface{}, error) {
 			batchableIDs = append(batchableIDs, set.ID)
 			goalIDs = append(goalIDs, set.ID)
 		}
+		if set.SetType == models.CoinSetTypeStandard || set.SetType == models.CoinSetTypeGoal || set.SetType == models.CoinSetTypeAgentic {
+			memberIDs = append(memberIDs, set.ID)
+		}
+	}
+	covers, err := s.repo.SetCoverImages(memberIDs, userID, setCoverCount)
+	if err != nil {
+		return nil, err
 	}
 
 	batchedSummaries, err := s.repo.GetSetSummaries(batchableIDs, userID)
@@ -178,10 +244,25 @@ func (s *SetService) ListSets(userID uint) ([]map[string]interface{}, error) {
 			"valueChangePercent":   nil, // Will be populated in US3
 			"agenticStatus":        set.AgenticStatus,
 		}
+		if cover := covers[set.ID]; len(cover) > 0 {
+			setData["coverImages"] = cover
+		}
+		definition := checklistOf(&set)
+		if definition.Year != 0 {
+			setData["year"] = definition.Year
+		}
 		if checklist != nil {
 			// Its slots country by country, for the sets' completion by country.
 			setData["countries"] = checklist.countries
 			setData["partial"] = !checklist.complete
+			setData["total"] = checklist.summary.Total
+			// A joint issue is one coin, struck by every country.
+			setData["oneCoin"] = definition.Challenge == ChallengeJointIssue
+			if len(checklist.coverImageURLs) > 0 {
+				setData["coverImageUrls"] = checklist.coverImageURLs
+			} else if len(checklist.coverCoinImages) > 0 {
+				setData["coverImages"] = checklist.coverCoinImages
+			}
 		}
 		result = append(result, setData)
 	}

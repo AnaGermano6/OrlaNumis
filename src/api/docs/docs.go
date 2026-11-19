@@ -4111,6 +4111,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "Only coins of one year (negative before Christ)",
+                        "name": "year",
+                        "in": "query"
+                    },
+                    {
                         "type": "boolean",
                         "description": "Only coins of countries that no longer exist (USSR, Yugoslavia, Ottoman Empire…)",
                         "name": "extinct",
@@ -5272,7 +5278,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Counts the user's collection coins (excluding the wishlist), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many circulation coins are still legal tender (from their cached Numista types; collector coins and coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, and how many coins are in a coincard. Also sums the coins' current values (kept in the collection currency) and gives the total in euros, converted with the ECB daily reference rates (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins. Sums the face values too (from the coins' Numista types as cached, else their denominations), in the collection currency: those in euros, and in escudos at their fixed rate of 200.482 to the euro; and says how much more, in percent, the coins with both a face value and a current value are worth than their face value.",
+                "description": "Counts the user's collection coins (excluding the wishlist), their distinct types (coins linked to the same Numista type count once; other coins once per distinct name), their distinct countries (and how many of them no longer exist), how many circulation coins are still legal tender (from their cached Numista types; collector coins and coins of extinct countries are not) how many are commemorative and how many are of each Numista kind of coin (standard circulation, circulating commemorative, non-circulating…), how many coins have no country, how many coins are in a coincard and how many pieces are of each grade (with their quantities). Also sums the coins' current values (kept in the collection currency) and gives the total in euros, converted with the ECB daily reference rates (cached; null when unavailable), and names the rarest (fixed rarity scale; ties go to the more valuable), oldest (lowest year) and most valuable (current value) coins. Sums the face values too (from the coins' Numista types as cached, else their denominations), in the collection currency: those in euros, and in escudos at their fixed rate of 200.482 to the euro; and says how much more, in percent, the coins with both a face value and a current value are worth than their face value.",
                 "produces": [
                     "application/json"
                 ],
@@ -5303,6 +5309,37 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coins/wishlist-filters": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the countries of the user's wishlist items (alphabetically) and their years (the most recent first), each with how many items it has, and how many items the wishlist has; the list filters by them with country and year.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "List the wishlist's countries and years",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/repository.WishlistFilters"
                         }
                     },
                     "500": {
@@ -10468,7 +10505,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all sets for the authenticated user with aggregate summaries. A checklist set also has countries (its slots counted country by country: country, owned, total) and partial (true while its list is partly known).",
+                "description": "Get all sets for the authenticated user with aggregate summaries. A checklist set also has countries (its slots counted country by country: country, owned, total), total (its slots), partial (true while its list is partly known) oneCoin (true for a joint issue: one coin, struck by every country) and, for a joint issue or an annual series, year. A set may have covers, up to three pictures of different coins of it (one for a joint issue): coverImageUrls, the catalogue's pictures of a checklist's coins, or coverImages, the media paths of photos of its coins (smart sets have none).",
                 "produces": [
                     "application/json"
                 ],
@@ -14328,6 +14365,13 @@ const docTemplate = `{
         "handlers.CollectionSummaryResponse": {
             "type": "object",
             "properties": {
+                "byGrade": {
+                    "description": "ByGrade counts the pieces held of each grade, each with its quantity;\nthose without a grade are the others of Coins.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.GradeCount"
+                    }
+                },
                 "circulation": {
                     "description": "Circulation sorts the items as the list's circulation filter does,\neach counted once, as the gallery lists it.",
                     "allOf": [
@@ -15403,6 +15447,13 @@ const docTemplate = `{
                             "$ref": "#/definitions/services.PreciousMetals"
                         }
                     ]
+                },
+                "rulers": {
+                    "description": "Rulers counts the coins of every ruler, each of its country, most first.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.RulerCountryCount"
+                    }
                 },
                 "totalCoins": {
                     "type": "integer",
@@ -19340,6 +19391,17 @@ const docTemplate = `{
                 }
             }
         },
+        "repository.GradeCount": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "grade": {
+                    "type": "string"
+                }
+            }
+        },
         "repository.PeriodCount": {
             "type": "object",
             "properties": {
@@ -19355,6 +19417,57 @@ const docTemplate = `{
                 },
                 "toYear": {
                     "type": "integer"
+                }
+            }
+        },
+        "repository.RulerCountryCount": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 119
+                },
+                "country": {
+                    "type": "string",
+                    "example": "Portugal"
+                },
+                "ruler": {
+                    "type": "string",
+                    "example": "Terceira República"
+                }
+            }
+        },
+        "repository.WishlistFilters": {
+            "type": "object",
+            "properties": {
+                "countries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.CountryCount"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "years": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.YearCount"
+                    }
+                }
+            }
+        },
+        "repository.YearCount": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "year": {
+                    "type": "integer",
+                    "example": 2024
                 }
             }
         },
@@ -20403,7 +20516,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.4.0",
+	Version:          "1.5.0",
 	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},

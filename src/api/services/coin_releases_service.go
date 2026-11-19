@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"slices"
@@ -18,10 +19,13 @@ import (
 // New and upcoming coins, from the lists the app already reads for official
 // photos: the ECB's €2 commemorative coins of the year and the collector
 // coins the mints of Portugal (INCM), France (Monnaie de Paris) and Austria
-// (Münze Österreich) sell.
+// (Münze Österreich) sell; and the year's coins Numista knows of: the €2
+// coins until the ECB lists them, the other countries' collector coins.
 const (
 	CoinReleaseSourceECB = "ecb"
-	// CoinReleaseSourceNumista is Numista's catalogue: Portugal's coins in escudos.
+	// CoinReleaseSourceNumista is Numista's catalogue: Portugal's coins in
+	// escudos, every euro country's €5, €10 and €20, and the year's €2 coins
+	// the ECB has not listed yet.
 	CoinReleaseSourceNumista = "numista"
 	// A coin is a commemorative (circulating) one, or a collector
 	// (non-circulating) one.
@@ -36,6 +40,11 @@ const (
 	mintReleaseWindowMonths = 12
 	// The catalogue of every coin is read again after six hours.
 	coinCatalogueLifetime = 6 * time.Hour
+	// The year's coins from Numista are read again (in the background)
+	// after a day, or after a quarter of an hour when a search failed; its
+	// searches are kept a week.
+	numistaYearCoinsLifetime = 24 * time.Hour
+	numistaYearCoinsRetry    = 15 * time.Minute
 )
 
 // MintReleaseSource is a mint's catalogue of the coins it sells.
@@ -119,6 +128,7 @@ type CoinReleasesService struct {
 	ecb     *EcbCoinPhotoService
 	mints   []MintReleaseSource
 	numista *NumistaCatalogService
+	logger  *Logger
 	now     func() time.Time
 
 	mu       sync.Mutex
@@ -138,6 +148,21 @@ type CoinReleasesService struct {
 	topicsMu      sync.Mutex
 	topicsRunning bool
 	topics        sync.WaitGroup
+
+	// The coins first struck this year that Numista lists, every euro
+	// country's (see numistaYearCoins), read in the background; version
+	// counts the readings, so that the lists built before are built again.
+	yearCoinsMu       sync.Mutex
+	yearCoinsYear     int
+	yearTwoEuro       []CoinRelease
+	yearCollector     []CoinRelease
+	yearCoinsLoadedAt time.Time
+	yearCoinsLoading  bool
+	yearCoinsVersion  int
+	yearCoinsLoads    sync.WaitGroup
+	// The version of Numista's coins of the year the releases and the catalogue were built with.
+	groupsYearCoinsVersion    int
+	catalogueYearCoinsVersion int
 }
 
 // WithNumista adds Portugal's coins in escudos, from Numista's catalogue, to
@@ -147,21 +172,41 @@ func (s *CoinReleasesService) WithNumista(numista *NumistaCatalogService) *CoinR
 	return s
 }
 
+// WithLogger notes the searches of the year's coins Numista did not answer.
+func (s *CoinReleasesService) WithLogger(logger *Logger) *CoinReleasesService {
+	s.logger = logger
+	return s
+}
+
 // NewCoinReleasesService creates the service; ecb may be nil.
 func NewCoinReleasesService(ecb *EcbCoinPhotoService, mints ...MintReleaseSource) *CoinReleasesService {
 	return &CoinReleasesService{ecb: ecb, mints: mints, now: time.Now}
 }
 
 // Releases returns the €2 coins (the ECB's commemoratives of this year and
-// the last, and the mints' €2 coins it does not list yet) and the mints'
-// collector coins, those to come first (soonest first), then the newest. A
-// source that cannot be read adds nothing.
+// the last, the mints' €2 coins it does not list yet, and Numista's of this
+// year for the countries neither lists) and the collector coins (the mints',
+// and Numista's of this year for the other countries), those to come first
+// (soonest first), then the newest. A source that cannot be read adds nothing.
+// Numista's coins of the year are read (in the background) for the page that
+// shows them.
 func (s *CoinReleasesService) Releases(ctx context.Context) []CoinReleaseGroup {
+	return s.releases(ctx, true)
+}
+
+// releases is Releases; readYearCoins starts reading Numista's coins of the
+// year when they are due, where it is false they are taken as last read.
+func (s *CoinReleasesService) releases(ctx context.Context, readYearCoins bool) []CoinReleaseGroup {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.groups == nil || s.now().Sub(s.loadedAt) >= coinReleasesLifetime {
+	numistaTwoEuro, numistaCollector, version := s.numistaYearCoins(readYearCoins)
+	if s.groups == nil || s.now().Sub(s.loadedAt) >= coinReleasesLifetime || version != s.groupsYearCoinsVersion {
 		twoEuro, collector := withMintTwoEuroCoins(s.ecbReleases(ctx), s.mintReleases(ctx))
-		s.groups, s.loadedAt = []CoinReleaseGroup{twoEuro, collector}, s.now()
+		twoEuro.Releases = withNumistaTwoEuroCoins(twoEuro.Releases, numistaTwoEuro)
+		sortReleases(twoEuro.Releases)
+		collector.Releases = s.withNumistaCollectorCoins(collector.Releases, numistaCollector)
+		sortReleases(collector.Releases)
+		s.groups, s.loadedAt, s.groupsYearCoinsVersion = []CoinReleaseGroup{twoEuro, collector}, s.now(), version
 	}
 	// Callers mark the coins they own: each gets its own copy.
 	groups := make([]CoinReleaseGroup, len(s.groups))
@@ -262,10 +307,12 @@ func (s *CoinReleasesService) OwnedKeys(ctx context.Context, coins []CoinPhotoQu
 // collector coin the mints sell, newest first. It is read at most every six
 // hours; each call gets its own copy.
 func (s *CoinReleasesService) Catalogue(ctx context.Context) []CoinRelease {
+	// The year's €2 coins as the new releases last read them (the app opens on them).
+	numista, _, version := s.numistaYearCoins(false)
 	s.catalogueMu.Lock()
 	defer s.catalogueMu.Unlock()
-	if s.catalogue == nil || s.now().Sub(s.catalogueLoadedAt) >= coinCatalogueLifetime {
-		s.catalogue, s.catalogueLoadedAt = s.readCatalogue(ctx), s.now()
+	if s.catalogue == nil || s.now().Sub(s.catalogueLoadedAt) >= coinCatalogueLifetime || version != s.catalogueYearCoinsVersion {
+		s.catalogue, s.catalogueLoadedAt, s.catalogueYearCoinsVersion = s.readCatalogue(ctx, numista), s.now(), version
 	}
 	return append([]CoinRelease{}, s.catalogue...)
 }
@@ -284,7 +331,7 @@ func (s *CoinReleasesService) CatalogueComplete() bool {
 	return s.numistaComplete
 }
 
-func (s *CoinReleasesService) readCatalogue(ctx context.Context) []CoinRelease {
+func (s *CoinReleasesService) readCatalogue(ctx context.Context, numistaTwoEuro []CoinRelease) []CoinRelease {
 	// Nobody waits for the catalogue's Numista searches: they stop when the
 	// month's quota runs low.
 	ctx = WithNumistaBackground(ctx)
@@ -312,6 +359,7 @@ func (s *CoinReleasesService) readCatalogue(ctx context.Context) []CoinRelease {
 			coins = append(coins, coin)
 		}
 	}
+	coins = withNumistaTwoEuroCoins(coins, numistaTwoEuro)
 	escudos, complete := s.escudoCoins(ctx)
 	coins = append(coins, escudos...)
 	if complete {
@@ -322,6 +370,203 @@ func (s *CoinReleasesService) readCatalogue(ctx context.Context) []CoinRelease {
 	sortReleases(coins)
 	for i := range coins {
 		coins[i].ID = coins[i].Keys[0]
+	}
+	return coins
+}
+
+// numistaYearCoins is the coins first struck this year that Numista lists,
+// every euro country's: its €2 coins and its collector coins, and the
+// version of those lists. The year's €2 commemoratives are known before the
+// ECB publishes its list of them (in November 2026 it had not; San Marino,
+// Slovakia and Germany had issued theirs months before), and the collector
+// coins of the countries whose mint the app does not read (San Marino's
+// €5 in silver, its €3…). They are read in the background, at most once a
+// day, so that nobody waits for Numista's searches, when read asks for
+// them (the new releases do; the catalogue takes what they read); until
+// then, and when there is no Numista, the lists are empty.
+func (s *CoinReleasesService) numistaYearCoins(read bool) (twoEuro, collector []CoinRelease, version int) {
+	if s.numista == nil {
+		return nil, nil, 0
+	}
+	year := s.now().Year()
+	s.yearCoinsMu.Lock()
+	start := read && !s.yearCoinsLoading && (s.yearCoinsYear != year || s.now().Sub(s.yearCoinsLoadedAt) >= numistaYearCoinsLifetime)
+	if start {
+		s.yearCoinsLoading = true
+		s.yearCoinsLoads.Add(1)
+	}
+	twoEuro, collector, version = append([]CoinRelease{}, s.yearTwoEuro...), append([]CoinRelease{}, s.yearCollector...), s.yearCoinsVersion
+	s.yearCoinsMu.Unlock()
+	if start {
+		go s.loadNumistaYearCoins(year)
+	}
+	return twoEuro, collector, version
+}
+
+// loadNumistaYearCoins asks Numista for every euro country's coins of the
+// year, one search each (kept a week). A country it does not answer for (a
+// search too slow) keeps the coins found before, and all are asked for
+// again after a quarter of an hour; when it refuses (its quota, no key),
+// no other country is asked.
+func (s *CoinReleasesService) loadNumistaYearCoins(year int) {
+	defer s.yearCoinsLoads.Done()
+	ctx := WithNumistaBackground(context.Background())
+	countries := make([]string, 0, len(numistaEuroIssuers))
+	for country := range numistaEuroIssuers {
+		countries = append(countries, country)
+	}
+	sort.Strings(countries)
+	// The coins found before, by country: kept for those not answered for now.
+	s.yearCoinsMu.Lock()
+	before := map[string][]CoinRelease{}
+	if s.yearCoinsYear == year {
+		for _, coin := range append(append([]CoinRelease{}, s.yearTwoEuro...), s.yearCollector...) {
+			before[coin.Country] = append(before[coin.Country], coin)
+		}
+	}
+	s.yearCoinsMu.Unlock()
+
+	twoEuro, collector := []CoinRelease{}, []CoinRelease{}
+	add := func(coin CoinRelease) {
+		if coin.FaceValue == 2 {
+			twoEuro = append(twoEuro, coin)
+		} else {
+			collector = append(collector, coin)
+		}
+	}
+	failed, refused := false, false
+	for _, country := range countries {
+		if refused {
+			for _, coin := range before[country] {
+				add(coin)
+			}
+			continue
+		}
+		types, err := s.numista.IssuerThisYearTypes(ctx, numistaEuroIssuers[country], year, "en")
+		if err != nil {
+			failed, refused = true, numistaRefuses(err)
+			if s.logger != nil {
+				s.logger.Warn("coin-releases", "Numista did not list %s's coins of %d: %v", country, year, err)
+			}
+			for _, coin := range before[country] {
+				add(coin)
+			}
+			continue
+		}
+		for _, item := range types {
+			if coin, ok := numistaTwoEuroRelease(item, country, year); ok {
+				add(coin)
+			} else if coin, ok := numistaCollectorRelease(item, country, year); ok {
+				add(coin)
+			}
+		}
+	}
+	loadedAt := s.now()
+	if failed {
+		loadedAt = loadedAt.Add(numistaYearCoinsRetry - numistaYearCoinsLifetime)
+	}
+	s.yearCoinsMu.Lock()
+	defer s.yearCoinsMu.Unlock()
+	s.yearCoinsYear, s.yearTwoEuro, s.yearCollector, s.yearCoinsLoadedAt, s.yearCoinsLoading = year, twoEuro, collector, loadedAt, false
+	s.yearCoinsVersion++
+}
+
+// numistaRefuses tells an error after which no other search is worth
+// making now: Numista's quota used up, or no key (or a wrong one).
+func numistaRefuses(err error) bool {
+	var numistaErr *NumistaError
+	if !errors.As(err, &numistaErr) {
+		return false
+	}
+	switch numistaErr.Kind {
+	case NumistaErrorQuotaLimited, NumistaErrorUnconfigured, NumistaErrorUnauthorized:
+		return true
+	}
+	return false
+}
+
+// numistaTwoEuroRelease describes a Numista €2 type first struck in the
+// year ("2 Euros (450th Anniversary of the Death of Titian)") as one of the
+// year's €2 coins, without its picture (Numista refuses its pictures to the
+// app). A type struck since before (a country's usual €2 coin) is not one.
+func numistaTwoEuroRelease(item models.NumistaCatalogSearchItem, country string, year int) (CoinRelease, bool) {
+	coin, ok := euroCollectorRelease(item, country, 2)
+	if !ok || *item.MinYear != year {
+		return CoinRelease{}, false
+	}
+	coin.Kind = CoinReleaseKindCommemorative
+	coin.Metals = []string{ReleaseMetalBase}
+	return coin, true
+}
+
+var (
+	// "5 Euros (Peregrine Falcon)", "0.75 Euro (Canticle of the Creatures)".
+	numistaEuroValue = regexp.MustCompile(`(?i)^\s*(\d+(?:[.,]\d+)?)\s+euros?\b`)
+	// The face values of the coins for circulation: their new types (a
+	// country's first euro coins, as Bulgaria's in 2026) are not collector coins.
+	circulationEuroValues = map[float64]bool{0.01: true, 0.02: true, 0.05: true, 0.1: true, 0.2: true, 0.5: true, 1: true, 2: true}
+)
+
+// numistaCollectorRelease describes a Numista type first struck in the year
+// of a face value not for circulation ("5 Euros (Peregrine Falcon)", "3
+// Euros (Visit of Pope Leo XIV)") as one of the year's collector coins,
+// without its picture; not a cent coin, a pattern or a coin of before.
+func numistaCollectorRelease(item models.NumistaCatalogSearchItem, country string, year int) (CoinRelease, bool) {
+	match := numistaEuroValue.FindStringSubmatch(item.Title)
+	if match == nil || euroCents.MatchString(item.Title) || escudoPattern.MatchString(item.Title) || item.MinYear == nil || *item.MinYear != year {
+		return CoinRelease{}, false
+	}
+	value, err := strconv.ParseFloat(strings.Replace(match[1], ",", ".", 1), 64)
+	if err != nil || value <= 0 || circulationEuroValues[value] {
+		return CoinRelease{}, false
+	}
+	name := item.Title
+	if topic := escudoTopic.FindStringSubmatch(item.Title); topic != nil {
+		name = strings.TrimSpace(topic[1])
+	}
+	return CoinRelease{
+		Source:    CoinReleaseSourceNumista,
+		Kind:      CoinReleaseKindCollector,
+		Country:   country,
+		Title:     name,
+		FaceValue: value,
+		PageURL:   fmt.Sprintf("https://pt.numista.com/catalogue/pieces%d.html", item.ID),
+		From:      fmt.Sprintf("%04d-01", year),
+		To:        fmt.Sprintf("%04d-12", year),
+		Keys:      []string{numistaReleaseKey(item.ID)},
+	}, true
+}
+
+// withNumistaTwoEuroCoins adds to coins Numista's €2 coins of the countries
+// and years coins has no €2 coin of (the ECB's list and the mints' have the
+// others, with their pictures).
+func withNumistaTwoEuroCoins(coins, numista []CoinRelease) []CoinRelease {
+	listed := map[string]bool{}
+	for _, coin := range coins {
+		if coin.FaceValue == 2 && coin.FaceValues == nil && coin.Currency == "" {
+			listed[coin.Country+coin.From[:4]] = true
+		}
+	}
+	for _, coin := range numista {
+		if !listed[coin.Country+coin.From[:4]] {
+			coins = append(coins, coin)
+		}
+	}
+	return coins
+}
+
+// withNumistaCollectorCoins adds to coins Numista's collector coins of the
+// countries whose mint the app does not read (the mints' have theirs, with
+// their pictures).
+func (s *CoinReleasesService) withNumistaCollectorCoins(coins, numista []CoinRelease) []CoinRelease {
+	read := map[string]bool{}
+	for _, mint := range s.mints {
+		read[ecbCountryCodes[EcbCountryName(mint.Country())]] = true
+	}
+	for _, coin := range numista {
+		if !read[coin.Country] {
+			coins = append(coins, coin)
+		}
 	}
 	return coins
 }
@@ -1066,6 +1311,22 @@ func ecbReleases(photos []EcbCoinPhoto, year int, now time.Time) []CoinRelease {
 	return releases
 }
 
+// releasePicture is the photo a mint's coin is shown with among the
+// releases: the one the mint chooses (see mintReleasePictures), else its
+// value side's.
+func releasePicture(mint MintReleaseSource, coin mintCoin) string {
+	if chooser, ok := mint.(mintReleasePictures); ok {
+		return chooser.ReleasePicture(coin)
+	}
+	return coin.Obverse
+}
+
+// mintReleasePictures is a mint whose coins are better shown by another
+// side than their value side's.
+type mintReleasePictures interface {
+	ReleasePicture(coin mintCoin) string
+}
+
 func (s *CoinReleasesService) mintReleases(ctx context.Context) CoinReleaseGroup {
 	now := s.now()
 	group := CoinReleaseGroup{Source: CoinReleaseGroupMints, Year: now.Year(), Releases: []CoinRelease{}}
@@ -1157,7 +1418,7 @@ func mintReleases(coins []mintCoin, mint MintReleaseSource, now time.Time, recen
 				Country:       ecbCountryCodes[mint.Country()],
 				Title:         title,
 				FaceValue:     coin.Value,
-				ImageURL:      mint.Thumbnail(coin.Obverse),
+				ImageURL:      mint.Thumbnail(releasePicture(mint, coin)),
 				PageURL:       coin.PageURL,
 				From:          from,
 				To:            to,
@@ -1170,7 +1431,7 @@ func mintReleases(coins []mintCoin, mint MintReleaseSource, now time.Time, recen
 			release.Variants = append(release.Variants, variant)
 		} else {
 			// The plain edition is the one to show and open.
-			release.Title, release.ImageURL, release.PageURL = title, mint.Thumbnail(coin.Obverse), coin.PageURL
+			release.Title, release.ImageURL, release.PageURL = title, mint.Thumbnail(releasePicture(mint, coin)), coin.PageURL
 		}
 		if from < release.From {
 			release.From, release.To = from, to

@@ -24,9 +24,7 @@ const messages: Messages['stats'] = {
     noActiveTitle: 'Não há moedas ativas para pontuar',
     noActiveBody: 'A pontuação de saúde da coleção requer moedas ativas (não itens da lista de desejos).',
     noActiveHint: 'Adicione moedas à sua coleção ou marque itens da lista de desejos como adquiridos para começar a acompanhar as métricas de saúde da coleção.',
-    title: 'Saúde da coleção',
     grade: 'Nota {grade}',
-    weights: 'Pesos da pontuação',
     diagnosis: 'Diagnóstico geral',
     weightsHint: 'A nota de 0 a 100 junta as partes, cada uma com o seu peso: {weights}.',
     outOf: '{score} / 100',
@@ -132,6 +130,18 @@ const messages: Messages['stats'] = {
     beforeShort: '<{year}',
     beforeHint: 'Antes de {year}: {count}',
     hint: '{from}–{to}: {count}',
+  },
+  rulers: {
+    kind: 'Tipo de governante',
+    kinds: {
+      all: 'Todos',
+      monarchs: 'Monarcas',
+      regimes: 'Regimes',
+    },
+    showAll: 'Ver todos os {count} governantes',
+    showLess: 'Mostrar menos',
+    open: 'Ver as moedas de {ruler} na galeria',
+    none: 'Nenhum governante deste tipo.',
   },
   priceRanges: {
     under: 'Menos de {amount}',

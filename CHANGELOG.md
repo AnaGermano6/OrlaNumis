@@ -4,6 +4,53 @@ Each version's section is its release notes: the release workflow publishes
 it on GitHub, and **Admin → Updates** shows it to the apps that can update.
 Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.5.0] - 2026-11-19
+
+### Changed
+- The app opens on Novos lançamentos: the installed app starts there, and so
+  does the server's address alone; the gallery opens from the Coleção menu.
+- The coin card: the photo in a light box with its grade in a circle, the
+  name in capitals over "year · material · kind", and the quantity and value
+  at the bottom; four coins in a row.
+- The gallery's and the banknotes' search: the search, grid or list and the
+  side in a card with the filters under them ("Mais filtros" for the rest),
+  kept in sight while the coins scroll.
+- The statistics: the condition of the pieces in each tab (the whole
+  collection, the coins, the banknotes), "Classificar agora" opening the
+  coins or the banknotes without a grade; the rulers by country, as
+  monarchs or regimes; a line between the tabs and the rest.
+- The wishlist: each coin side by side with its photo, its country and
+  shop, its price (about its face value when none is saved), "Marcar como
+  comprada" and a button to remove it; a filter by country and by year once
+  it has more than six coins.
+- The sets: each with a picture of its coins (three piled up for a set of
+  different coins), a joint issue's year apart from its name, how many of
+  its coins the collection has and a progress bar, two in a row, with a
+  filter by status. By country: a card per country with its flag, sets,
+  coins and progress, to search and sort, its sets listed when opened.
+- A set's page: its short name with its year and kind, and one card with
+  what it lists beside how far it is.
+- The commemorative catalogue: the countries listed beside (to search; the
+  euro's or the escudos), the country's progress, filters by year, value and
+  status, and the coins in rows with a button to add them and a heart for
+  the wishlist. The sets page no longer links to it (the menu does).
+- Flags look the same everywhere, as in the coin gallery.
+
+### Added
+- Lista de Trocas, a page of its own under Coleção: the coins and banknotes
+  held more than once, to search or narrow to a country, each with its
+  total and "− 1 para troca +" to change how many there are; the list can
+  be copied as text or shared as a file.
+- Novos lançamentos lists the year's coins the ECB has not published yet:
+  every euro country's €2 coins, and the collector coins of the countries
+  whose mint the app does not read (San Marino's, Slovakia's, Germany's…),
+  from Numista, without a picture. The commemorative catalogue lists the
+  year's €2 coins too.
+
+### Fixed
+- Austria's new coins have their picture among the new releases (the shop's
+  photo of their design): they had none.
+
 ## [1.4.0] - 2026-11-17
 
 ### Changed

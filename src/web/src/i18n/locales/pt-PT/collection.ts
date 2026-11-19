@@ -67,6 +67,9 @@ const messages: Messages['collection'] = {
     noSets: 'Não há conjuntos disponíveis. Crie primeiro um conjunto.',
   },
   view: {
+    moreFilters: 'Mais filtros',
+    moreFiltersOn: 'Mais filtros ({count})',
+    fewerFilters: 'Menos filtros',
     groupBy: 'Ver por',
     groupNone: 'Todas as moedas',
     groupYear: 'Ano',

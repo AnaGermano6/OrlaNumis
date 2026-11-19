@@ -36,10 +36,25 @@ const messages: Messages['wishlist'] = {
     done: { one: 'Retirada da lista de desejos.', other: '{count} moedas retiradas da lista de desejos.' },
     failed: 'Não foi possível retirar a moeda da lista de desejos. Apague-a na página dela, na lista de desejos.',
   },
+  filters: {
+    country: 'País',
+    allCountries: 'Todos os países',
+    year: 'Ano',
+    allYears: 'Todos os anos',
+    clear: 'Limpar filtros',
+    noMatch: 'Nenhuma moeda da lista de desejos corresponde a estes filtros',
+  },
+  card: {
+    markPurchased: 'Marcar como comprada',
+    remove: 'Remover da lista de desejos',
+    about: '~ {price}',
+    faceValue: 'Aproximadamente o valor facial ({denomination}): sem preço guardado',
+    confirmRemove: 'Remover «{name}» da lista de desejos? Esta ação não pode ser anulada.',
+    confirmRemoveButton: 'Remover',
+    removeFailed: 'Não foi possível remover da lista de desejos. Tente de novo daqui a pouco.',
+  },
   trades: {
-    title: 'Repetidas para troca',
-    coins: 'Moedas',
-    banknotes: 'Notas',
+    title: 'Lista de Trocas',
   },
 }
 

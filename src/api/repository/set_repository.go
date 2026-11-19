@@ -977,6 +977,41 @@ type setSummaryRow struct {
 //
 // Sets with no members produce no row; callers should treat a missing entry as
 // an empty summary, which is what GetSetSummary returns for them today.
+// SetCoverImages picks photos for each of these sets from its coins, one
+// per coin (its primary photo, else its first), of the coins added earliest,
+// at most limit; a set whose coins have none is left out.
+func (r *SetRepository) SetCoverImages(setIDs []uint, userID uint, limit int) (map[uint][]string, error) {
+	covers := make(map[uint][]string, len(setIDs))
+	if len(setIDs) == 0 {
+		return covers, nil
+	}
+	var rows []struct {
+		SetID    uint
+		CoinID   uint
+		FilePath string
+	}
+	err := r.db.Raw(`
+		SELECT coin_set_memberships.set_id AS set_id, coins.id AS coin_id, coin_images.file_path AS file_path
+		FROM coin_set_memberships
+		JOIN coins ON coins.id = coin_set_memberships.coin_id
+		JOIN coin_images ON coin_images.coin_id = coins.id
+		WHERE coin_set_memberships.set_id IN (?) AND coins.user_id = ?
+		ORDER BY coin_set_memberships.set_id, coin_set_memberships.added_at, coins.id, coin_images.is_primary DESC, coin_images.id
+	`, setIDs, userID).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	pictured := map[[2]uint]bool{}
+	for _, row := range rows {
+		if pictured[[2]uint{row.SetID, row.CoinID}] || len(covers[row.SetID]) >= limit {
+			continue
+		}
+		pictured[[2]uint{row.SetID, row.CoinID}] = true
+		covers[row.SetID] = append(covers[row.SetID], row.FilePath)
+	}
+	return covers, nil
+}
+
 func (r *SetRepository) GetSetSummaries(setIDs []uint, userID uint) (map[uint]map[string]interface{}, error) {
 	summaries := make(map[uint]map[string]interface{}, len(setIDs))
 	if len(setIDs) == 0 {

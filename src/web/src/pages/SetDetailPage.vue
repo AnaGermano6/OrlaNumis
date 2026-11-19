@@ -9,56 +9,74 @@
       <button class="btn btn-secondary" @click="loadSetDetails">{{ t('common.retry') }}</button>
     </div>
     <div v-else-if="set" class="space-y-6">
-      <DesktopPageContext :title="set.name">
-        <template #actions>
-          <AppIconButton :title="t('sets.backToSets')" @click="router.push({ name: 'sets' })"><ArrowLeft :size="20" /></AppIconButton>
-          <div class="relative">
-            <AppIconButton :active="menuOpen" :title="t('sets.detail.setActions')" @click="menuOpen = !menuOpen"><Menu :size="20" /></AppIconButton>
-            <div v-if="menuOpen" class="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-[260px] rounded-md border border-border-subtle bg-card p-2 shadow-[0_10px_26px_var(--overlay-45)]" role="menu">
-              <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openSetInfoPage">
-                <span class="inline-flex items-center gap-2"><Info :size="15" /> {{ t('sets.detail.analytics') }}</span>
-              </button>
-              <button v-if="canManageMembership" class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openAddCoinModal">
-                <span class="inline-flex items-center gap-2"><CirclePlus :size="15" /> {{ t('nav.addCoin') }}</span>
-              </button>
-              <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openEditModal">
-                <span class="inline-flex items-center gap-2"><Pencil :size="15" /> {{ t('sets.detail.editSet') }}</span>
-              </button>
-              <button class="w-full rounded-sm px-3 py-2 text-left text-body text-error-bg transition-all hover:bg-card-hover" role="menuitem" @click="deleteSet">
-                <span class="inline-flex items-center gap-2"><Trash2 :size="15" /> {{ t('sets.detail.deleteSet') }}</span>
-              </button>
+      <div>
+        <!-- Back to the sets (an arrow), above its title. -->
+        <button
+          type="button"
+          class="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-transparent p-0 text-gold transition-colors hover:bg-gold-glow focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
+          :title="t('sets.backToSets')"
+          :aria-label="t('sets.backToSets')"
+          data-testid="set-back"
+          @click="router.push({ name: 'sets' })"
+        >
+          <ArrowLeft :size="20" aria-hidden="true" />
+        </button>
+        <DesktopPageContext :title="displayTitle">
+          <!-- Its name and, for a joint issue or an annual series, its year and kind. -->
+          <template #title>
+            <h1 class="min-w-0 truncate" :title="set.name">{{ displayTitle }}</h1>
+            <span v-if="kindPill" class="shrink-0 rounded-full bg-gold px-3.5 py-1 text-base font-semibold text-surface" data-testid="set-kind">{{ kindPill }}</span>
+          </template>
+          <template #actions>
+            <div class="relative">
+              <AppIconButton :active="menuOpen" :title="t('sets.detail.setActions')" @click="menuOpen = !menuOpen"><Menu :size="20" /></AppIconButton>
+              <div v-if="menuOpen" class="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-[260px] rounded-md border border-border-subtle bg-card p-2 shadow-[0_10px_26px_var(--overlay-45)]" role="menu">
+                <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openSetInfoPage">
+                  <span class="inline-flex items-center gap-2"><Info :size="15" /> {{ t('sets.detail.analytics') }}</span>
+                </button>
+                <button v-if="canManageMembership" class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openAddCoinModal">
+                  <span class="inline-flex items-center gap-2"><CirclePlus :size="15" /> {{ t('nav.addCoin') }}</span>
+                </button>
+                <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openEditModal">
+                  <span class="inline-flex items-center gap-2"><Pencil :size="15" /> {{ t('sets.detail.editSet') }}</span>
+                </button>
+                <button class="w-full rounded-sm px-3 py-2 text-left text-body text-error-bg transition-all hover:bg-card-hover" role="menuitem" @click="deleteSet">
+                  <span class="inline-flex items-center gap-2"><Trash2 :size="15" /> {{ t('sets.detail.deleteSet') }}</span>
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <div class="page-header relative items-start">
+            <div class="flex min-w-0 flex-1 items-start gap-3 md:items-center">
+              <span class="h-11 w-1 shrink-0 rounded-full shadow-[0_0_16px_var(--accent-gold-glow)]" :style="{ backgroundColor: set.color }" aria-hidden="true"></span>
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h1>{{ displayTitle }}</h1>
+                  <span v-if="kindPill" class="rounded-full bg-gold px-3 py-0.5 text-body font-semibold text-surface">{{ kindPill }}</span>
+                </div>
+                <p v-if="set.description" class="mt-0.5 truncate text-base text-text-secondary">{{ set.description }}</p>
+              </div>
+            </div>
+            <div v-if="isMobile" class="pwa-actions">
+              <button class="pwa-icon-btn" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" :title="t('sets.detail.setActions')" :aria-label="t('sets.detail.setActions')" @click="menuOpen = !menuOpen"><Menu :size="22" /></button>
+            </div>
+            <div v-else class="header-actions">
+              <button class="btn btn-secondary" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" aria-haspopup="menu" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen"><Menu :size="16" /> {{ t('common.actions') }}</button>
+            </div>
+            <div v-if="menuOpen" class="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-full max-w-[260px] rounded-md border border-border-subtle bg-card p-2 shadow-[0_10px_26px_var(--overlay-45)]" role="menu">
+              <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openSetInfoPage"><span class="inline-flex items-center gap-2"><Info :size="15" /> {{ t('sets.detail.analytics') }}</span></button>
+              <button v-if="canManageMembership" class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openAddCoinModal"><span class="inline-flex items-center gap-2"><CirclePlus :size="15" /> {{ t('nav.addCoin') }}</span></button>
+              <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openEditModal"><span class="inline-flex items-center gap-2"><Pencil :size="15" /> {{ t('sets.detail.editSet') }}</span></button>
+              <button class="w-full rounded-sm px-3 py-2 text-left text-body text-error-bg transition-all hover:bg-card-hover" role="menuitem" @click="deleteSet"><span class="inline-flex items-center gap-2"><Trash2 :size="15" /> {{ t('sets.detail.deleteSet') }}</span></button>
             </div>
           </div>
-        </template>
 
-        <div class="page-header relative items-start">
-          <div class="flex min-w-0 flex-1 items-start gap-3 md:items-center">
-            <span class="h-11 w-1 shrink-0 rounded-full shadow-[0_0_16px_var(--accent-gold-glow)]" :style="{ backgroundColor: set.color }" aria-hidden="true"></span>
-            <div class="min-w-0">
-              <h1>{{ set.name }}</h1>
-              <p v-if="set.description" class="mt-0.5 truncate text-base text-text-secondary">{{ set.description }}</p>
-            </div>
-          </div>
-          <div v-if="isMobile" class="pwa-actions">
-            <button class="pwa-icon-btn" :title="t('sets.backToSets')" @click="router.push({ name: 'sets' })"><ArrowLeft :size="22" /></button>
-            <button class="pwa-icon-btn" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" :title="t('sets.detail.setActions')" :aria-label="t('sets.detail.setActions')" @click="menuOpen = !menuOpen"><Menu :size="22" /></button>
-          </div>
-          <div v-else class="header-actions">
-            <button class="btn btn-ghost" @click="router.push({ name: 'sets' })"><ArrowLeft :size="16" /> {{ t('common.back') }}</button>
-            <button class="btn btn-secondary" :class="menuOpen ? 'border-border-accent bg-gold-glow text-gold' : ''" aria-haspopup="menu" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen"><Menu :size="16" /> {{ t('common.actions') }}</button>
-          </div>
-          <div v-if="menuOpen" class="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-full max-w-[260px] rounded-md border border-border-subtle bg-card p-2 shadow-[0_10px_26px_var(--overlay-45)]" role="menu">
-            <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openSetInfoPage"><span class="inline-flex items-center gap-2"><Info :size="15" /> {{ t('sets.detail.analytics') }}</span></button>
-            <button v-if="canManageMembership" class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openAddCoinModal"><span class="inline-flex items-center gap-2"><CirclePlus :size="15" /> {{ t('nav.addCoin') }}</span></button>
-            <button class="w-full rounded-sm px-3 py-2 text-left text-body text-text-secondary transition-all hover:bg-card-hover hover:text-text-primary" role="menuitem" @click="openEditModal"><span class="inline-flex items-center gap-2"><Pencil :size="15" /> {{ t('sets.detail.editSet') }}</span></button>
-            <button class="w-full rounded-sm px-3 py-2 text-left text-body text-error-bg transition-all hover:bg-card-hover" role="menuitem" @click="deleteSet"><span class="inline-flex items-center gap-2"><Trash2 :size="15" /> {{ t('sets.detail.deleteSet') }}</span></button>
-          </div>
-        </div>
-
-        <template v-if="set.description" #desktop>
-          <p class="text-base text-text-secondary">{{ set.description }}</p>
-        </template>
-      </DesktopPageContext>
+          <template v-if="set.description" #desktop>
+            <p class="text-base text-text-secondary">{{ set.description }}</p>
+          </template>
+        </DesktopPageContext>
+      </div>
       <button v-if="menuOpen" class="fixed inset-0 z-10 bg-transparent" :aria-label="t('common.closeMenu')" @click="menuOpen = false"></button>
 
       <SetCompletionChecklist
@@ -66,13 +84,13 @@
         :completion="completion"
       />
 
-      <!-- A checklist set: what it lists, kept up to date by itself. -->
-      <div v-if="checklistDefinition" class="rounded-md border border-border-subtle bg-card p-4" data-testid="set-checklist-info">
+      <!-- A checklist or smart set without places yet: what it lists, kept up to date by itself (with places, the album says it). -->
+      <div v-if="checklistDefinition && !albumSlots.length" class="rounded-md border border-border-subtle bg-card p-4" data-testid="set-checklist-info">
         <p class="m-0 text-base font-medium text-text-primary">{{ checklistDescription(checklistDefinition) }}</p>
         <p class="mb-0 mt-1 text-body text-text-secondary">{{ t('sets.album.checklistUpdates') }}</p>
         <p v-if="checklist && !checklist.complete" class="mb-0 mt-2 text-chip text-text-muted" data-testid="set-checklist-partial">{{ t('sets.catalogue.partialNumista') }}</p>
       </div>
-      <div v-else-if="normalizedSetType === 'smart'" class="rounded-md border border-border-subtle bg-card p-4" data-testid="set-smart-info">
+      <div v-else-if="normalizedSetType === 'smart' && !albumSlots.length" class="rounded-md border border-border-subtle bg-card p-4" data-testid="set-smart-info">
         <p v-if="smartFilters" class="m-0 text-base font-medium text-text-primary">{{ filtersName(smartFilters) }}</p>
         <p class="mb-0 mt-1 text-body text-text-secondary">{{ t('sets.album.smartUpdates') }}</p>
       </div>
@@ -92,7 +110,28 @@
             :default-group="albumGroup"
             :selectable="normalizedSetType === 'agentic'"
             @select="selectSlot"
-          />
+          >
+            <!-- What it lists, kept up to date by itself, beside how far it is. -->
+            <template v-if="checklistDefinition" #about>
+              <div class="flex items-start gap-4" data-testid="set-checklist-info">
+                <BookOpenCheck :size="28" class="mt-0.5 shrink-0 text-gold" aria-hidden="true" />
+                <div class="min-w-0">
+                  <p class="m-0 text-base font-medium text-text-primary">{{ checklistDescription(checklistDefinition) }}</p>
+                  <p class="mb-0 mt-1 text-body text-text-secondary">{{ t('sets.album.checklistUpdates') }}</p>
+                  <p v-if="checklist && !checklist.complete" class="mb-0 mt-2 text-chip text-text-muted" data-testid="set-checklist-partial">{{ t('sets.catalogue.partialNumista') }}</p>
+                </div>
+              </div>
+            </template>
+            <template v-else-if="normalizedSetType === 'smart'" #about>
+              <div class="flex items-start gap-4" data-testid="set-smart-info">
+                <ListFilter :size="28" class="mt-0.5 shrink-0 text-gold" aria-hidden="true" />
+                <div class="min-w-0">
+                  <p v-if="smartFilters" class="m-0 text-base font-medium text-text-primary">{{ filtersName(smartFilters) }}</p>
+                  <p class="mb-0 mt-1 text-body text-text-secondary">{{ t('sets.album.smartUpdates') }}</p>
+                </div>
+              </div>
+            </template>
+          </SetAlbum>
           <div
             v-if="canManageMembership"
             class="mt-4 flex flex-col gap-2"
@@ -225,7 +264,7 @@
 import { formatCurrency } from '@/utils/format'
 import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeft, ChevronDown, ChevronUp, CirclePlus, Info, Menu, Pencil, Trash2, X } from 'lucide-vue-next'
+import { ArrowLeft, BookOpenCheck, ChevronDown, ChevronUp, CirclePlus, Info, ListFilter, Menu, Pencil, Trash2, X } from 'lucide-vue-next'
 import {
   addCoinToSet,
   deleteSet as deleteSetApi,
@@ -243,6 +282,7 @@ import SetCompletionChecklist from '@/components/sets/SetCompletionChecklist.vue
 import { useLayout } from '@/composables/useLayout'
 import { agenticAlbumSlots, checklistAlbumSlot, checklistDescription, coinAlbumSlot, type AlbumSlot } from '@/utils/setAlbum'
 import { criteriaToFilters, filtersName, filtersToCriteria, type SimpleSetFilters } from '@/utils/setFilters'
+import { setDisplayTitle } from '@/utils/setTitle'
 import DesktopPageContext from '@/components/DesktopPageContext.vue'
 import AppIconButton from '@/components/ui/AppIconButton.vue'
 import { t } from '@/i18n'
@@ -291,6 +331,20 @@ const albumSlots = computed((): AlbumSlot[] => {
   if (definition) return (checklist.value?.slots ?? []).map((slot) => checklistAlbumSlot(slot, definition))
   if (normalizedSetType.value === 'agentic') return agenticAlbumSlots(completion.value)
   return coins.value.map((coin) => coinAlbumSlot(coin, normalizedSetType.value === 'goal'))
+})
+// A joint issue's name says its year apart: its title is what comes after it.
+const displayTitle = computed(() => {
+  if (!set.value) return ''
+  const definition = checklistDefinition.value
+  return setDisplayTitle(set.value.name, definition?.challenge === 'joint-issue' ? definition.year : undefined)
+})
+// "2007 · Emissão comum", "2010 · Série anual".
+const kindPill = computed(() => {
+  const definition = checklistDefinition.value
+  if (!definition?.year) return ''
+  if (definition.challenge === 'joint-issue') return `${definition.year} · ${t('sets.challenges.jointIssue.title')}`
+  if (definition.challenge === 'annual-series') return `${definition.year} · ${t('sets.challenges.annualSeries.title')}`
+  return ''
 })
 // A country's catalogue goes by year; a challenge's places are its countries or coins.
 const albumGroup = computed(() => checklistDefinition.value?.source === 'catalogue' ? 'year' : 'none')

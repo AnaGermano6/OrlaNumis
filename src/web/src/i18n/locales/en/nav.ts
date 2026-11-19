@@ -5,6 +5,7 @@ export default {
   identifyCoin: 'Identify Coin',
   analysisHistory: 'Analysis History',
   wishlist: 'Wishlist',
+  trades: 'Trade list',
   agent: 'Agent',
   stats: 'Stats',
   timeline: 'Timeline',

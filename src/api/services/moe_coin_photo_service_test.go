@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/briandenicola/ancient-coins-api/models"
 	"github.com/briandenicola/ancient-coins-api/repository"
@@ -71,20 +72,23 @@ func TestParseMoeCatalogue(t *testing.T) {
 	}
 	// Each version the shop sells, found by the entry's name ("‘s Glück is a
 	// Vogerl" has no link of its own) or its link.
+	// Only a recent coin whose shop page can be read has a photo (the fake
+	// shop has Spring ins Glück's copper page).
 	for page, want := range map[string]struct {
 		title, metal string
 		year         int
 		value        float64
+		photo        bool
 	}{
-		moeShopURL + "/produkte/5-euro-kupfermuenze-spring-ins-glueck-np":    {"Spring ins Glück", "copper", 2026, 5},
-		moeShopURL + "/produkte/5-euro-silbermuenze-spring-ins-glueck-hgh":   {"Spring ins Glück", "silver", 2026, 5},
-		moeShopURL + "/produkte/5-euro-kupfermuenze-weltmeister-np":          {"Weltmeister", "copper", 2024, 5},
-		moeShopURL + "/produkte/5-euro-kupfermuenze-s-glueck-is-a-vogerl-np": {"‘s Glück is a Vogerl", "copper", 2022, 5},
-		moeShopURL + "/produkte/5-euro-kupfermuenze-osterkueken-np":          {"Osterküken", "copper", 2021, 5},
-		moeShopURL + "/produkte/10-euro-kupfermuenze-aufdirndln-leinen-np":   {"Aufdirndln - Leinen", "copper", 2025, 10},
+		moeShopURL + "/produkte/5-euro-kupfermuenze-spring-ins-glueck-np":    {"Spring ins Glück", "copper", 2026, 5, true},
+		moeShopURL + "/produkte/5-euro-silbermuenze-spring-ins-glueck-hgh":   {"Spring ins Glück", "silver", 2026, 5, false},
+		moeShopURL + "/produkte/5-euro-kupfermuenze-weltmeister-np":          {"Weltmeister", "copper", 2024, 5, false},
+		moeShopURL + "/produkte/5-euro-kupfermuenze-s-glueck-is-a-vogerl-np": {"‘s Glück is a Vogerl", "copper", 2022, 5, false},
+		moeShopURL + "/produkte/5-euro-kupfermuenze-osterkueken-np":          {"Osterküken", "copper", 2021, 5, false},
+		moeShopURL + "/produkte/10-euro-kupfermuenze-aufdirndln-leinen-np":   {"Aufdirndln - Leinen", "copper", 2025, 10, false},
 	} {
 		coin, ok := pages[page]
-		if !ok || coin.Title != want.title || coin.Metal != want.metal || coin.Year != want.year || coin.Value != want.value || coin.Obverse != "" {
+		if !ok || coin.Title != want.title || coin.Metal != want.metal || coin.Year != want.year || coin.Value != want.value || (coin.Obverse != "") != want.photo {
 			t.Errorf("%s: coin = %+v (found %v)", page, coin, ok)
 		}
 	}
@@ -171,6 +175,52 @@ func TestMoeCoinPhotoService_MatchAndConfirm(t *testing.T) {
 		service.Thumbnail(confirmed.Obverse) != strings.Replace(confirmed.Obverse, "/product_full/", "/product_preview/", 1) {
 		t.Fatal("unexpected source description")
 	}
+}
+
+func TestMoeCoinPhotoService_RecentCoinsWithTheirShopPhotos(t *testing.T) {
+	service, client := newTestMoeService(t)
+	service.now = func() time.Time { return time.Date(2026, 11, 19, 9, 0, 0, 0, time.UTC) }
+
+	coins, err := service.Coins(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	byPage := map[string]mintCoin{}
+	for _, coin := range coins {
+		byPage[strings.TrimPrefix(coin.PageURL, moeShopURL)] = coin
+	}
+	// A coin of this year the shop sells: the photos of its page, the value side first.
+	spring := byPage["/produkte/5-euro-kupfermuenze-spring-ins-glueck-np"]
+	if !strings.HasSuffix(spring.Obverse, "Spring_ins_Glueck_Cu_NP_VS_2D.png.webp") || !strings.HasSuffix(spring.Reverse, "Spring_ins_Glueck_Cu_NP_RS_2D.png.webp") {
+		t.Fatalf("spring = %+v", spring)
+	}
+	// Among the releases, by its design.
+	if service.ReleasePicture(spring) != spring.Reverse || service.ReleasePicture(mintCoin{Obverse: "vs.png"}) != "vs.png" {
+		t.Fatalf("release picture = %q", service.ReleasePicture(spring))
+	}
+	// Older ones are not read: no photo.
+	if weltmeister := byPage["/produkte/5-euro-kupfermuenze-weltmeister-np"]; weltmeister.Year >= 2025 || weltmeister.Obverse != "" {
+		t.Fatalf("weltmeister = %+v", weltmeister)
+	}
+	// Each page read once, kept for the next readings of the list.
+	calls := client.calls
+	service.coins = nil
+	if _, err := service.Coins(context.Background()); err != nil || client.calls > calls+countUnreadable(client, coins, service) {
+		t.Fatalf("read again: %d calls after %d", client.calls, calls)
+	}
+}
+
+// countUnreadable counts the recent coins whose shop page the fake does not
+// have: those are asked for again (a page that failed is not kept).
+func countUnreadable(client *fakeMOEShopClient, coins []mintCoin, service *MoeCoinPhotoService) int {
+	count := 0
+	for _, coin := range coins {
+		path := strings.TrimPrefix(coin.PageURL, moeShopURL)
+		if coin.Year >= service.now().Year()-1 && strings.HasPrefix(path, "/produkte/") && client.pages[path] == nil {
+			count++
+		}
+	}
+	return count
 }
 
 func TestMoeSlugAndProductPhotos(t *testing.T) {

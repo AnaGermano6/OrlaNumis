@@ -31,10 +31,11 @@ describe('DesktopCollectionHeader', () => {
     expect(source).toContain("$emit('update:gridSide'")
   })
 
-  it('lays the filters out in equal columns that wrap inside the desktop header panel', () => {
+  it('lays the usual filters out in equal columns, the others a click away', () => {
     const source = fs.readFileSync(headerPath, 'utf8')
 
-    expect(source).toContain('grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5')
+    expect(source).toContain('grid grid-cols-2 items-end gap-3 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto]')
+    expect(source).toContain('data-testid="collection-more-filters"')
     expect(source).not.toContain('flex flex-nowrap items-center gap-3')
   })
 })

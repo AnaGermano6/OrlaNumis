@@ -51,6 +51,25 @@ func (h *CoinCountryHandler) Countries(c *gin.Context) {
 	c.JSON(http.StatusOK, counts)
 }
 
+// WishlistFilters lists what the wishlist can be filtered by.
+//
+//	@Summary		List the wishlist's countries and years
+//	@Description	Returns the countries of the user's wishlist items (alphabetically) and their years (the most recent first), each with how many items it has, and how many items the wishlist has; the list filters by them with country and year.
+//	@Tags			Coins
+//	@Produce		json
+//	@Success		200	{object}	repository.WishlistFilters
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/coins/wishlist-filters [get]
+func (h *CoinCountryHandler) WishlistFilters(c *gin.Context) {
+	filters, err := h.coins.WishlistFilters(c.GetUint("userId"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list the wishlist's filters"})
+		return
+	}
+	c.JSON(http.StatusOK, filters)
+}
+
 // Periods lists a country's periods with coin counts.
 //
 //	@Summary		List a country's periods

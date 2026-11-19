@@ -7,11 +7,13 @@
 
     <div v-show="tab === 'all'" id="overview-panel-all" class="flex flex-col gap-4" role="tabpanel" aria-labelledby="overview-tab-all">
       <OverviewKpis :summary="all" kind="all" />
+      <StatsConservation id="overview-all" :by-grade="all?.byGrade" :total="all?.coins ?? 0" @grade-now="gradeNow('all')" />
     </div>
 
     <div v-show="tab === 'coins'" id="overview-panel-coins" class="flex flex-col gap-4" role="tabpanel" aria-labelledby="overview-tab-coins">
       <OverviewKpis :summary="coins" kind="coin" extinct-link :wishlist="coinWishlist" @show-extinct="openGallery({ country: EXTINCT_COUNTRIES })" />
       <CollectionDistribution :summary="coins" @open="openGallery" />
+      <StatsConservation id="overview-coins" :by-grade="coins?.byGrade" :total="coins?.coins ?? 0" @grade-now="gradeNow('coins')" />
       <CollectionHighlights :summary="coins" :title="t('collectionOverview.coins.highlights')" />
     </div>
 
@@ -19,6 +21,7 @@
       <OverviewKpis :summary="banknotes" kind="banknote" />
       <template v-if="banknotes && banknotes.coins > 0">
         <CollectionDistribution kind="banknote" :summary="banknotes" @open="openBanknotes" />
+        <StatsConservation id="overview-banknotes" :by-grade="banknotes.byGrade" :total="banknotes.coins" @grade-now="gradeNow('banknotes')" />
         <CollectionHighlights :summary="banknotes" kind="banknote" :title="t('collectionOverview.banknotes.highlights')" />
       </template>
       <p v-else-if="banknotes" class="m-0 text-body text-text-secondary" data-testid="overview-no-banknotes">
@@ -35,9 +38,9 @@
 // many different ones, what they are worth against their face value, how
 // many countries); then the coins by kind of coin and the banknotes by
 // circulation, whose parts open the coin gallery or the banknotes filtered,
-// and their highlights (those held more than once are on the wishlist's
-// page). The tab chosen is kept for the next visit. At the top of the
-// statistics.
+// their condition (in each tab, the whole collection's too) and their
+// highlights (those held more than once are on the wishlist's page). The tab
+// chosen is kept for the next visit. At the top of the statistics.
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCoins, getCollectionSummary, type CollectionSummary } from '@/api/client'
@@ -45,6 +48,7 @@ import AppTabs from '@/components/AppTabs.vue'
 import CollectionDistribution, { type DistributionFilter } from '@/components/collection/CollectionDistribution.vue'
 import CollectionHighlights from '@/components/collection/CollectionHighlights.vue'
 import OverviewKpis from '@/components/collection/OverviewKpis.vue'
+import StatsConservation from '@/components/stats/StatsConservation.vue'
 import { useOpenGallery } from '@/composables/useOpenGallery'
 import { t } from '@/i18n'
 import { EXTINCT_COUNTRIES } from '@/utils/countryFilter'
@@ -91,6 +95,20 @@ const openGallery = useOpenGallery()
 // A part of the banknotes' card opens those still legal tender, or no longer.
 function openBanknotes(filter: DistributionFilter) {
   void router.push({ name: 'banknotes', query: filter.circulation ? { circulation: filter.circulation } : {} })
+}
+
+// The pieces without a grade, shown to grade them: the coins in the coin
+// gallery, the banknotes in theirs; of the whole collection, the coins while
+// any has none, else the banknotes.
+function ungradedOf(summary: CollectionSummary | null): number {
+  return summary ? summary.coins - (summary.byGrade ?? []).reduce((sum, entry) => sum + entry.count, 0) : 0
+}
+function gradeNow(of: OverviewTab) {
+  if (of === 'coins' || (of === 'all' && (ungradedOf(coins.value) > 0 || ungradedOf(banknotes.value) === 0))) {
+    openGallery({ ungraded: true })
+  } else {
+    void router.push({ name: 'banknotes', query: { ungraded: 'true' } })
+  }
 }
 
 // Loads the three summaries again (the statistics' pull to refresh).

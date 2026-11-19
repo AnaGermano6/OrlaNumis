@@ -42,13 +42,13 @@ describe('SetsPage', () => {
     mockGetSets.mockResolvedValue({ data: { sets: [] } })
   })
 
-  it('links to the catalogue of commemorative coins', async () => {
+  it('has no card for the catalogue of commemorative coins (the menu and the statistics open it)', async () => {
     const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
     await flushPromises()
 
-    const link = wrapper.get('[data-testid="sets-catalogue-link"]')
-    expect(link.attributes('href')).toBe('/sets/commemoratives')
-    expect(link.text()).toContain('Commemorative catalogue')
+    expect(wrapper.find('[data-testid="sets-catalogue-link"]').exists()).toBe(false)
+    expect(wrapper.find('a[href="/sets/commemoratives"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Commemorative catalogue')
   })
 
   it('shows how far a checklist set is on its card', async () => {
@@ -58,8 +58,34 @@ describe('SetsPage', () => {
     const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Checklist · 33% complete')
-    expect(wrapper.text()).toContain('12')
+    expect(wrapper.get('[data-testid="set-card-progress"]').text()).toContain('33%')
+    expect(wrapper.get('[data-testid="set-card-count"]').text()).toContain('12')
+  })
+
+  it('shows all the sets, two in a row on a wide screen, or those to complete, or the complete ones', async () => {
+    mockGetSets.mockResolvedValue({ data: { sets: [
+      { id: 1, name: 'Done', color: '#c9a84c', setType: 'checklist', coinCount: 3, total: 3, totalValue: 6, completionPercentage: 100 },
+      { id: 2, name: 'Halfway', color: '#c9a84c', setType: 'checklist', coinCount: 1, total: 2, totalValue: 2, completionPercentage: 50 },
+      { id: 3, name: 'Mine', color: '#c9a84c', setType: 'standard', coinCount: 4, totalValue: 8 },
+    ] } })
+    const wrapper = mount(SetsPage, { global: { stubs: { Teleport: true } } })
+    await flushPromises()
+
+    const titles = () => wrapper.findAll('[data-testid="set-card-title"]').map((title) => title.text())
+    expect(wrapper.get('[data-testid="sets-cards"]').classes()).toContain('lg:grid-cols-2')
+    const status = wrapper.get('[data-testid="sets-status"]')
+    expect(status.findAll('option').map((option) => option.text())).toEqual(['All', 'To complete', 'Complete'])
+    expect(titles()).toEqual(['Done', 'Halfway', 'Mine'])
+    await status.setValue('incomplete')
+    expect(titles()).toEqual(['Halfway', 'Mine'])
+    await status.setValue('complete')
+    expect(titles()).toEqual(['Done'])
+
+    mockGetSets.mockResolvedValue({ data: { sets: [{ id: 3, name: 'Mine', color: '#c9a84c', setType: 'standard', coinCount: 4, totalValue: 8 }] } })
+    const none = mount(SetsPage, { global: { stubs: { Teleport: true } } })
+    await flushPromises()
+    await none.get('[data-testid="sets-status"]').setValue('complete')
+    expect(none.get('[data-testid="sets-status-none"]').text()).toBe('No set matches this choice.')
   })
 
   it('shows the places of the sets country by country, and remembers the choice', async () => {
@@ -73,9 +99,16 @@ describe('SetsPage', () => {
 
     expect(wrapper.get('[data-testid="sets-view-sets"]').attributes('aria-pressed')).toBe('true')
     expect(wrapper.find('[data-testid="sets-by-country"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="sets-country-search"]').exists()).toBe(false)
     await wrapper.get('[data-testid="sets-view-countries"]').trigger('click')
     expect(wrapper.get('[data-testid="sets-country-PT"]').text()).toContain('24 missing')
     expect(localStorage.getItem('sets:view')).toBe('countries')
+    // By country: a country searched for and their order, in place of the sets' choice.
+    expect(wrapper.find('[data-testid="sets-status"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="sets-country-sort"]').findAll('option').map((option) => option.text())).toEqual(['Most progress', 'Least progress', 'Most missing', 'Name'])
+    await wrapper.get('[data-testid="sets-country-search"] input').setValue('spain')
+    expect(wrapper.find('[data-testid="sets-country-PT"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="sets-by-country-no-match"]').text()).toBe('No country matches the search.')
 
     const again = mount(SetsPage, { global: { stubs: { Teleport: true } } })
     await flushPromises()

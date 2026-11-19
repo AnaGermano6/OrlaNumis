@@ -1,6 +1,6 @@
 <template>
-  <section v-if="graded > 0" class="card" aria-labelledby="stats-conservation-title" data-testid="stats-conservation">
-    <h2 id="stats-conservation-title" class="mb-5 text-lg">{{ t('stats.conservation.title') }}</h2>
+  <section v-if="graded > 0" class="card" :aria-labelledby="`${id}-conservation-title`" data-testid="stats-conservation">
+    <h2 :id="`${id}-conservation-title`" class="mb-5 text-lg">{{ t('stats.conservation.title') }}</h2>
     <StackedBar :parts="parts" :total="graded" :legend="false" separated />
 
     <!-- Every grade the collection has, best first: its pieces, their share and what it means. -->
@@ -20,14 +20,14 @@
       </li>
     </ul>
 
-    <!-- Those without a grade, and the gallery showing only them, to grade them. -->
+    <!-- Those without a grade, and a way to the gallery showing only them, to grade them. -->
     <p v-if="ungraded > 0" class="m-0 mt-5 border-t border-border-subtle pt-4 text-body text-text-secondary" data-testid="conservation-ungraded">
       {{ t('stats.conservation.ungraded', { count: ungraded }) }} —
       <button
         type="button"
         class="cursor-pointer rounded-sm text-gold underline underline-offset-4 hover:no-underline focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
         data-testid="conservation-grade-now"
-        @click="openGallery({ ungraded: true })"
+        @click="emit('grade-now')"
       >
         {{ t('stats.conservation.gradeNow') }}
       </button>
@@ -36,22 +36,26 @@
 </template>
 
 <script setup lang="ts">
-// The collection's pieces by grade, best first: a bar of every grade it has,
-// then each grade with its pieces, their share of those that have a grade and
-// what the grade means; then how many have none, and a way to the gallery
-// showing only them, to grade them.
+// The pieces (of the whole collection, its coins or its banknotes) by grade,
+// best first: a bar of every grade they have, then each grade with its
+// pieces, their share of those that have a grade and what the grade means;
+// then how many have none, and a button asking for the gallery showing only
+// them, to grade them (which gallery is the parent's to say).
 import { computed } from 'vue'
 import StackedBar, { type StackedBarPart } from '@/components/collection/StackedBar.vue'
-import { useOpenGallery } from '@/composables/useOpenGallery'
 import { t } from '@/i18n'
 import { formatShare } from '@/utils/numberFormat'
 import { COIN_FINISHES, COIN_GRADES } from '@/utils/coinAttributes'
 
 const props = defineProps<{
+  /** Unique on the page: its title's id starts with it. */
+  id: string
   byGrade: { grade: string; count: number }[] | undefined
-  /** Every piece of the collection, graded or not. */
+  /** Every piece, graded or not. */
   total: number
 }>()
+
+const emit = defineEmits<{ 'grade-now': [] }>()
 
 /** Best first: the finishes, then the circulation grades from uncirculated down. */
 const ORDER = [...[...COIN_FINISHES].reverse(), ...COIN_GRADES]
@@ -60,8 +64,6 @@ const COLORS = [
   'var(--accent-gold)', 'var(--cat-modern)', 'var(--accent-bronze)', 'var(--cat-extra-1)', 'var(--cat-extra-2)',
   'var(--cat-extra-3)', 'var(--cat-extra-4)', 'var(--cat-extra-5)', 'var(--cat-extra-6)',
 ]
-
-const openGallery = useOpenGallery()
 
 const grades = computed(() => (props.byGrade ?? []).filter((entry) => entry.count > 0))
 const graded = computed(() => grades.value.reduce((sum, entry) => sum + entry.count, 0))

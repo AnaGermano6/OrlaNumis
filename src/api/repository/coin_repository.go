@@ -30,7 +30,9 @@ type CoinListFilters struct {
 	// Repeated keeps the coins held more than once (a quantity above one).
 	Repeated bool
 	// Ungraded keeps the coins without a grade.
-	Ungraded     bool
+	Ungraded bool
+	// Year, when not nil, keeps the coins of that year.
+	Year         *int
 	Presentation string
 	Rarity       string
 	Search       string
@@ -90,6 +92,14 @@ type RulerCount struct {
 	Count int64  `json:"count"`
 }
 
+// RulerCountryCount is a ruler (or regime) of one country, as written on the
+// coins, and how many coins of the collection are of it.
+type RulerCountryCount struct {
+	Ruler   string `json:"ruler" example:"Terceira República"`
+	Country string `json:"country" example:"Portugal"`
+	Count   int64  `json:"count" example:"119"`
+}
+
 // PriceRange holds a price range label and its coin count.
 type PriceRange struct {
 	Range string `json:"range"`
@@ -120,6 +130,9 @@ type CollectionStats struct {
 	// ByDecade counts the coins of each decade they were issued in (1990
 	// for 1990–1999; negative before Christ), oldest first.
 	ByDecade []DecadeCount `json:"byDecade"`
+	// Rulers counts the coins of every ruler, each of its country (the same
+	// name in two countries is two rulers), most first.
+	Rulers []RulerCountryCount `json:"rulers"`
 }
 
 // DecadeCount holds a decade and how many coins were issued in it.
@@ -265,6 +278,9 @@ func (r *CoinRepository) List(userID uint, filters CoinListFilters) ([]models.Co
 	}
 	if filters.Ungraded {
 		query = query.Where("TRIM(COALESCE(grade, '')) = ''")
+	}
+	if filters.Year != nil {
+		query = query.Where("year = ?", *filters.Year)
 	}
 	if filters.Rarity != "" {
 		query = query.Where("rarity = ?", filters.Rarity)
@@ -695,6 +711,12 @@ func (r *CoinRepository) GetStats(userID uint) (*CollectionStats, error) {
 		Scan(&stats.ByRuler)
 
 	r.db.Model(&models.Coin{}).
+		Select("ruler, COALESCE(TRIM(country), '') AS country, count(*) AS count").
+		Where("user_id = ? AND is_wishlist = ? AND ruler != ''", userID, false).
+		Group("ruler, COALESCE(TRIM(country), '')").Order("count DESC, ruler, country").
+		Scan(&stats.Rulers)
+
+	r.db.Model(&models.Coin{}).
 		Select(`CASE
 			WHEN purchase_price < 50 THEN 'Under $50'
 			WHEN purchase_price >= 50 AND purchase_price < 200 THEN '$50 - $200'
@@ -962,6 +984,39 @@ func (r *CoinRepository) CountryCounts(userID uint, kind string) ([]CountryCount
 	return counts, err
 }
 
+// YearCount is a year and how many items are of it.
+type YearCount struct {
+	Year  int   `json:"year" example:"2024"`
+	Count int64 `json:"count" example:"3"`
+}
+
+// WishlistFilters are what the wishlist can be filtered by: the countries
+// of its items (alphabetically) and their years (the most recent first),
+// each with how many items it has; and how many items it has in all.
+type WishlistFilters struct {
+	Total     int64          `json:"total" example:"12"`
+	Countries []CountryCount `json:"countries"`
+	Years     []YearCount    `json:"years"`
+}
+
+// WishlistFilters lists the countries and years of the user's wishlist items.
+func (r *CoinRepository) WishlistFilters(userID uint) (WishlistFilters, error) {
+	filters := WishlistFilters{Countries: []CountryCount{}, Years: []YearCount{}}
+	wishlist := r.db.Model(&models.Coin{}).Scopes(OwnedBy(userID)).Where("is_wishlist = ?", true)
+	if err := wishlist.Session(&gorm.Session{}).Count(&filters.Total).Error; err != nil {
+		return filters, err
+	}
+	if err := wishlist.Session(&gorm.Session{}).Select("country, COUNT(*) AS count").
+		Where("country IS NOT NULL AND country <> ''").Group("country").Order("country").
+		Scan(&filters.Countries).Error; err != nil {
+		return filters, err
+	}
+	err := wishlist.Session(&gorm.Session{}).Select("year, COUNT(*) AS count").
+		Where("year IS NOT NULL").Group("year").Order("year DESC").
+		Scan(&filters.Years).Error
+	return filters, err
+}
+
 // PeriodCount is a period of a country's coins, how many coins it has and
 // the years they span.
 type PeriodCount struct {
@@ -1159,6 +1214,19 @@ func (r *CoinRepository) CollectionSummary(userID uint, kind string) (Collection
 		COALESCE(SUM({q} - 1), 0) AS spare_coins`, "{q}", coinQuantitySQL)).
 		Scan(&summary).Error
 	return summary, err
+}
+
+// GradeCounts counts the pieces held of each grade, each with its quantity,
+// of the collection's items (not the wishlist's) of a kind ("" for all); the
+// items without a grade are left out.
+func (r *CoinRepository) GradeCounts(userID uint, kind string) ([]GradeCount, error) {
+	counts := []GradeCount{}
+	err := r.db.Model(&models.Coin{}).Scopes(ActiveCollection(userID), OfKind(kind)).
+		Select("TRIM(grade) AS grade, SUM(" + coinQuantitySQL + ") AS count").
+		Where("TRIM(COALESCE(grade, '')) <> ''").
+		Group("TRIM(grade)").Order("count DESC, grade").
+		Scan(&counts).Error
+	return counts, err
 }
 
 // CoinHighlight is a short description of a notable coin of the collection.

@@ -1,13 +1,18 @@
 <template>
   <section class="space-y-4" :aria-label="t('sets.album.title')" data-testid="set-album">
-    <!-- How far the set is. -->
-    <div class="rounded-md border border-border-subtle bg-card p-4">
-      <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <span class="text-base font-medium text-text-primary" data-testid="album-progress">{{ t('sets.album.progress', { owned: ownedCount, total: slots.length }) }}</span>
-        <span class="text-xl font-semibold text-gold">{{ percent }}%</span>
+    <!-- What the set is (the page's), and beside it how far it is. -->
+    <div class="grid items-center gap-5 rounded-md border border-border-subtle bg-card p-5 shadow-card" :class="$slots.about ? 'md:grid-cols-[minmax(0,1fr)_minmax(15rem,24rem)]' : ''" data-testid="album-summary">
+      <div v-if="$slots.about" class="min-w-0">
+        <slot name="about" />
       </div>
-      <div class="h-2 overflow-hidden rounded-full bg-input" role="progressbar" :aria-valuenow="percent" aria-valuemin="0" aria-valuemax="100" :aria-label="t('sets.album.title')">
-        <div class="h-full rounded-full bg-gold transition-[width] duration-300" :style="{ width: `${percent}%` }"></div>
+      <div class="min-w-0">
+        <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <span class="text-base text-text-primary" data-testid="album-progress"><strong class="text-xl font-bold">{{ formatNumber(ownedCount) }}</strong> / {{ formatNumber(slots.length) }} {{ t('sets.album.coins', { count: slots.length }) }}</span>
+          <span class="text-2xl font-bold text-gold" data-testid="album-percent">{{ formatShare(slots.length ? ownedCount / slots.length : 0) }}</span>
+        </div>
+        <div class="h-2 overflow-hidden rounded-full bg-input" role="progressbar" :aria-valuenow="percent" aria-valuemin="0" aria-valuemax="100" :aria-label="t('sets.album.title')">
+          <div class="h-full rounded-full bg-gold transition-[width] duration-300" :style="{ width: `${percent}%` }"></div>
+        </div>
       </div>
     </div>
 
@@ -18,7 +23,7 @@
           :key="option"
           type="button"
           class="chip border"
-          :class="option === show ? 'border-gold text-gold' : 'border-border-subtle'"
+          :class="option === show ? '!border-gold !bg-gold !font-semibold !text-surface' : '!text-text-primary'"
           :aria-pressed="option === show"
           :data-testid="`album-show-${option}`"
           @click="show = option"
@@ -33,7 +38,7 @@
           :key="option"
           type="button"
           class="chip border"
-          :class="option === group ? 'border-gold text-gold' : 'border-border-subtle'"
+          :class="option === group ? '!border-gold !bg-gold !font-semibold !text-surface' : '!text-text-primary'"
           :aria-pressed="option === group"
           :data-testid="`album-group-${option}`"
           @click="group = option"
@@ -112,6 +117,7 @@ import { intlLocale, t } from '@/i18n'
 import CountryFlag from '@/components/CountryFlag.vue'
 import { hasCountryFlag } from '@/utils/countryFlags'
 import type { AlbumSlot } from '@/utils/setAlbum'
+import { formatNumber, formatShare } from '@/utils/numberFormat'
 
 const SHOW = ['all', 'owned', 'missing'] as const
 type Grouping = 'none' | 'year' | 'country'

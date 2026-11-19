@@ -26,6 +26,7 @@ func setupSetServiceTestWithDB(t *testing.T) (*SetService, *gorm.DB) {
 	if err := db.AutoMigrate(
 		&models.User{},
 		&models.Coin{},
+		&models.CoinImage{},
 		&models.CoinSet{},
 		&models.CoinSetMembership{},
 		&models.CoinSetTarget{},

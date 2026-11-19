@@ -1,5 +1,77 @@
 <template>
-  <li class="flex min-w-0 flex-col overflow-hidden rounded-md border border-border-subtle bg-card" data-testid="release">
+  <!-- In a row (a country's catalogue): its picture, round as a coin, and beside it the rest. -->
+  <li
+    v-if="layout === 'row'"
+    class="flex min-w-0 items-center gap-4 rounded-md border bg-card p-4 shadow-card max-sm:gap-3 max-sm:p-3"
+    :class="release.owned ? 'border-gold' : 'border-border-subtle'"
+    data-testid="release"
+  >
+    <a
+      :href="release.pageUrl"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full bg-input max-sm:h-20 max-sm:w-20"
+      :title="t('collectionOverview.releases.open')"
+    >
+      <img v-if="release.imageUrl" :src="release.imageUrl" :alt="release.title" loading="lazy" class="h-full w-full object-cover" />
+      <span v-else class="flex h-full w-full items-center justify-center text-text-primary/30" data-testid="release-no-image">
+        <Coins :size="36" :stroke-width="1" />
+      </span>
+    </a>
+    <div class="flex min-w-0 flex-1 flex-col gap-1.5 self-stretch">
+      <div class="flex items-start justify-between gap-2">
+        <span class="line-clamp-3 font-sans text-md font-bold leading-snug text-text-primary max-sm:text-base" :title="release.title">{{ release.title }}</span>
+        <button
+          v-if="manageable"
+          type="button"
+          class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:text-gold focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
+          :aria-label="t('sets.catalogue.manage.open', { title: release.title })"
+          :title="t('sets.catalogue.manage.open', { title: release.title })"
+          data-testid="release-manage"
+          @click="emit('manage')"
+        >
+          <MoreHorizontal :size="16" />
+        </button>
+      </div>
+      <span class="flex flex-wrap items-center gap-2">
+        <span class="rounded-full bg-gold-dim px-2.5 py-0.5 text-chip font-semibold text-gold" data-testid="release-values">{{ releaseFaceValues(release) }}<template v-if="preciousMetals"> · {{ preciousMetals }}</template></span>
+        <span v-if="release.upcoming" class="rounded-full bg-gold px-2.5 py-0.5 text-chip font-semibold text-surface" data-testid="release-upcoming">{{ t('collectionOverview.releases.upcoming') }}</span>
+      </span>
+      <span class="text-chip text-text-secondary">{{ releasePeriod(release) }}<template v-if="release.volume"> · {{ t('collectionOverview.releases.volume', { volume: formatCount(release.volume) }) }}</template></span>
+      <span v-if="release.variants?.length" class="truncate text-chip text-text-muted" :title="release.variants.join(' · ')">{{ release.variants.join(' · ') }}</span>
+      <!-- In the collection, or a button to add it; and the wishlist's heart. -->
+      <span class="mt-auto flex items-center justify-between gap-2 pt-1">
+        <span v-if="release.owned" class="inline-flex items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-chip font-semibold text-surface" data-testid="release-owned">
+          <Check :size="14" /> {{ t('collectionOverview.releases.owned') }}
+        </span>
+        <RouterLink
+          v-else-if="canAdd"
+          :to="releaseAddRoute(release)"
+          class="inline-flex items-center gap-1.5 rounded-full border border-gold px-3 py-1 text-chip font-semibold text-gold no-underline transition-colors hover:bg-gold hover:text-surface"
+          :title="t('collectionOverview.releases.add')"
+          data-testid="release-add"
+        >
+          <Plus :size="14" /> {{ t('collectionOverview.releases.addShort') }}
+        </RouterLink>
+        <span v-else></span>
+        <button
+          v-if="canWish"
+          type="button"
+          class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-loss focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2 disabled:opacity-50"
+          :disabled="saving || (wishlisted && !wishlistCoinId)"
+          :aria-pressed="wishlisted"
+          :aria-label="wishlistLabel"
+          :title="wishlistLabel"
+          data-testid="release-wishlist"
+          @click="toggleWishlist"
+        >
+          <Heart :size="20" :class="wishlisted ? 'fill-current text-loss' : ''" />
+        </button>
+      </span>
+    </div>
+  </li>
+
+  <li v-else class="flex min-w-0 flex-col overflow-hidden rounded-md border border-border-subtle bg-card" data-testid="release">
     <!-- Without a picture, a lower space keeps the list easy to scan. -->
     <div class="relative">
       <a
@@ -85,7 +157,7 @@
 // page), country with its flag, face values and precious metal, title, date,
 // variants and mintage, marked when it is to come, the collection has it or
 // the wishlist; where asked, buttons to add it to the collection, and to put
-// it on the wishlist or take it off.
+// it on the wishlist or take it off. A tile, or a row (a country's catalogue).
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Check, Coins, Heart, MoreHorizontal, Plus } from 'lucide-vue-next'
@@ -107,7 +179,9 @@ const props = withDefaults(defineProps<{
   wishlistable?: boolean
   /** Offers the catalogue's options for the coin: hide it, join it to another. */
   manageable?: boolean
-}>(), { showCountry: true, addable: false, wishlistable: false, manageable: false })
+  /** A tile (picture above), or a row (a round picture beside the rest). */
+  layout?: 'tile' | 'row'
+}>(), { showCountry: true, addable: false, wishlistable: false, manageable: false, layout: 'tile' })
 
 const emit = defineEmits<{ manage: [] }>()
 

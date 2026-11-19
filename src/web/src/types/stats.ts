@@ -11,6 +11,8 @@ export interface StatsResponse {
   /** Coins of each monetary system, most first. */
   byMonetarySystem?: { monetarySystem: string; count: number }[]
   byRuler: { ruler: string; count: number }[]
+  /** Every ruler, each of its country (the same name in two countries is two), most first. */
+  rulers?: { ruler: string; country: string; count: number }[]
   byPriceRange: { range: string; count: number }[]
   values: {
     totalPurchasePrice: number

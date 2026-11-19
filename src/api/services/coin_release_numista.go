@@ -89,7 +89,8 @@ func (s *CoinReleasesService) releaseKeys(ctx context.Context, release CoinRelea
 		}
 	}
 	keys := append([]string{}, own...)
-	for _, group := range s.Releases(ctx) {
+	// The releases as listed; Numista's coins of the year as last read.
+	for _, group := range s.releases(ctx, false) {
 		for _, listed := range group.Releases {
 			if sameRelease(listed, release) || sharesKey(listed.Keys, own) {
 				keys = append(keys, listed.Keys...)

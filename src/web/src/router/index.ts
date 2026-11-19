@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, START_LOCATION } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -146,6 +146,13 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      // The coins and banknotes held more than once, to trade.
+      path: '/trades',
+      name: 'trades',
+      component: () => import('@/pages/TradeListPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/wishlist/search-alerts',
       name: 'wishlist-search-alerts',
       component: () => import('@/pages/WishlistAlertsPage.vue'),
@@ -250,10 +257,15 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach((to, from) => {
   const auth = useAuthStore()
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login' }
+  }
+  // The app opens on the new releases: its address alone (as the installed
+  // app opens it) goes there; the gallery opens from within.
+  if (from === START_LOCATION && to.name === 'collection' && !Object.keys(to.query).length && !to.hash) {
+    return { name: 'collection-overview' }
   }
   if (to.meta.requiresAdmin && !auth.isAdmin) {
     return { name: 'collection' }

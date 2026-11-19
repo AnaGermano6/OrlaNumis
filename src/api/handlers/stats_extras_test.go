@@ -31,10 +31,10 @@ func TestStats_DecadesAndPreciousMetals(t *testing.T) {
 	ptr := func(v float64) *float64 { return &v }
 	year := func(v int) *int { return &v }
 	coins := []models.Coin{
-		{Name: "1000 escudos", Material: models.MaterialSilver, WeightGrams: ptr(10), Quantity: 2, Year: year(1995), PurchasePrice: ptr(20), CurrentValue: ptr(30)},
-		{Name: "Libra", Material: models.MaterialGold, WeightGrams: ptr(7.98), Year: year(1912), PurchasePrice: ptr(300)},
+		{Name: "1000 escudos", Material: models.MaterialSilver, WeightGrams: ptr(10), Quantity: 2, Year: year(1995), PurchasePrice: ptr(20), CurrentValue: ptr(30), Ruler: "Segunda República", Country: "Portugal"},
+		{Name: "Libra", Material: models.MaterialGold, WeightGrams: ptr(7.98), Year: year(1912), PurchasePrice: ptr(300), Ruler: "Segunda República", Country: "Espanha"},
 		{Name: "Plated", Material: models.MaterialSilver, WeightGrams: ptr(5), Year: year(-45), CurrentValue: ptr(5)},
-		{Name: "Billon", Material: models.MaterialBillon, WeightGrams: ptr(3), Year: year(1998), PurchasePrice: ptr(1), CurrentValue: ptr(2)},
+		{Name: "Billon", Material: models.MaterialBillon, WeightGrams: ptr(3), Year: year(1998), PurchasePrice: ptr(1), CurrentValue: ptr(2), Ruler: "Segunda República", Country: "Portugal"},
 		{Name: "Wanted", Material: models.MaterialSilver, WeightGrams: ptr(100), Year: year(2001), IsWishlist: true, PurchasePrice: ptr(99)},
 	}
 	for i := range coins {
@@ -58,8 +58,9 @@ func TestStats_DecadesAndPreciousMetals(t *testing.T) {
 
 	w := coinRequest(router, http.MethodGet, "/api/stats-test", nil)
 	var got struct {
-		ByDecade       []repository.DecadeCount `json:"byDecade"`
-		PreciousMetals services.PreciousMetals  `json:"preciousMetals"`
+		ByDecade       []repository.DecadeCount       `json:"byDecade"`
+		Rulers         []repository.RulerCountryCount `json:"rulers"`
+		PreciousMetals services.PreciousMetals        `json:"preciousMetals"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || w.Code != http.StatusOK {
 		t.Fatalf("stats: %d %s", w.Code, w.Body.String())
@@ -73,6 +74,11 @@ func TestStats_DecadesAndPreciousMetals(t *testing.T) {
 		if got.ByDecade[i] != want[i] {
 			t.Fatalf("decades = %+v", got.ByDecade)
 		}
+	}
+	// Every ruler, each of its country: the same name in two countries is two.
+	if len(got.Rulers) != 2 || got.Rulers[0] != (repository.RulerCountryCount{Ruler: "Segunda República", Country: "Portugal", Count: 2}) ||
+		got.Rulers[1] != (repository.RulerCountryCount{Ruler: "Segunda República", Country: "Espanha", Count: 1}) {
+		t.Fatalf("rulers = %+v", got.Rulers)
 	}
 	// Gold: the sovereign, 916.66‰. Silver: the two escudos at 925‰, and the
 	// billon coin, whose fineness nobody says; the plated coin is none.

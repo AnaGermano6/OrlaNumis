@@ -254,6 +254,14 @@ func (h *CoinHandler) listFilters(c *gin.Context) (filters repository.CoinListFi
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unknown presentation or rarity"})
 		return repository.CoinListFilters{}, false
 	}
+	if text := strings.TrimSpace(c.Query("year")); text != "" {
+		year, err := strconv.Atoi(text)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "year must be a whole number"})
+			return repository.CoinListFilters{}, false
+		}
+		filters.Year = &year
+	}
 	// Parse optional seed for deterministic random sort.
 	// Use strconv.Atoi to ensure it's a real integer (defense against SQL injection).
 	if sortField == "random" {
@@ -349,6 +357,7 @@ func (h *CoinHandler) listFilters(c *gin.Context) (filters repository.CoinListFi
 //	@Param			presentation	query	string	false	"Filter by presentation"	Enums(loose, coincard, capsule, flip, proof_set, blister, slab)
 //	@Param			repeated		query	bool	false	"Only coins held more than once (a quantity above one), the copies there to trade"
 //	@Param			ungraded		query	bool	false	"Only coins without a grade"
+//	@Param			year			query	int		false	"Only coins of one year (negative before Christ)"
 //	@Param			extinct			query	bool	false	"Only coins of countries that no longer exist (USSR, Yugoslavia, Ottoman Empire…)"
 //	@Param			circulation		query	string	false	"Only collection coins issued for circulation and still legal tender (current), or no longer legal tender (demonetized), as Numista says of their types; collector (non-circulating) coins are not current"	Enums(current, demonetized)
 //	@Param			commemorative	query	bool	false	"Only collection coins of commemorative types (true) or of regular ones (false), as Numista says"
@@ -796,6 +805,7 @@ func (h *CoinHandler) Stats(c *gin.Context) {
 		"byPriceRange":     stats.ByPriceRange,
 		"values":           stats.Values,
 		"byDecade":         stats.ByDecade,
+		"rulers":           stats.Rulers,
 		"preciousMetals":   metals,
 	})
 }

@@ -58,7 +58,13 @@ const defaultStubs = {
   BaseModal: false,
   DesktopPageContext: {
     props: ['title'],
-    template: '<div><slot /><slot name="actions" /><slot name="desktop" /></div>',
+    template: '<div><slot name="title" /><slot /><slot name="actions" /><slot name="desktop" /></div>',
+  },
+  // The album with what the page says beside its progress.
+  SetAlbum: {
+    name: 'SetAlbum',
+    props: ['slots', 'defaultGroup', 'selectable'],
+    template: '<section><slot name="about" /></section>',
   },
   AppIconButton: {
     props: ['active', 'disabled', 'title'],
@@ -141,13 +147,40 @@ describe('SetDetailPage', () => {
       expect.objectContaining({ key: 'ecb:rotary', title: 'Rotary', detail: '€2', year: 2026, owned: false, imageUrl: 'https://ecb/rotary.jpg', pageUrl: 'https://ecb/page' }),
       expect.objectContaining({ key: 'ecb:gago', title: 'Gago Coutinho', owned: true, coinId: 5, coinImage: 'coins/gago.jpg' }),
     ])
-    const info = wrapper.get('[data-testid="set-checklist-info"]').text()
+    // What it lists, beside the album's progress (one card).
+    const info = album.get('[data-testid="set-checklist-info"]').text()
     expect(info).toContain('Catalogue · 🇵🇹 Portugal · €2')
     expect(info).toContain('Kept up to date by itself')
+    expect(wrapper.findAll('[data-testid="set-checklist-info"]')).toHaveLength(1)
     expect(wrapper.find('[data-testid="set-checklist-partial"]').exists()).toBe(true)
+    // A country's catalogue has no year: its whole name, without a pill.
+    expect(wrapper.find('[data-testid="set-kind"]').exists()).toBe(false)
     // Its coins are the catalogue's: none are added by hand.
     await wrapper.findAll('button').find((node) => node.text().includes('Actions'))!.trigger('click')
     expect(wrapper.findAll('button').some((node) => node.text().includes('Add Coin'))).toBe(false)
+  })
+
+  it("shows a joint issue's name after its year, the year and its kind in a pill, and a way back to the sets", async () => {
+    mockSetDetailLoad([], { name: 'Emissão comum de 2007: 50th anniversary of the Treaty of Rome', setType: 'checklist', checklist: { source: 'challenge', challenge: 'joint-issue', year: 2007 } })
+    mockGetSetChecklist.mockResolvedValue({ data: { complete: true, slots: [
+      { key: 'joint:PT', title: 'Treaty of Rome', country: 'PT', year: 2007, faceValue: 2, owned: true, coinId: 5 },
+      { key: 'joint:AT', title: 'Treaty of Rome', country: 'AT', year: 2007, faceValue: 2, owned: false },
+    ] } })
+
+    const wrapper = shallowMount(SetDetailPage, {
+      global: { stubs: defaultStubs },
+    })
+    await flushPromises()
+
+    expect(wrapper.findAll('h1').map((title) => title.text())).toContain('50th anniversary of the Treaty of Rome')
+    expect(wrapper.get('[data-testid="set-kind"]').text()).toBe('2007 · Joint issue')
+    expect(wrapper.get('[data-testid="set-checklist-info"]').text()).toContain('2007 joint issue: the same coin')
+    // Back to the sets: an arrow, named for those who cannot see it.
+    const back = wrapper.get('[data-testid="set-back"]')
+    expect(back.text()).toBe('')
+    expect(back.attributes('aria-label')).toBe('Back to Sets')
+    await back.trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({ name: 'sets' })
   })
 
   it("edits a smart set's filters", async () => {

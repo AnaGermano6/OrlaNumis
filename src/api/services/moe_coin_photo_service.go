@@ -26,7 +26,8 @@ import (
 // catalogue's picture often shows both sides, or several versions, at once
 // (cut off in a coin's frame), so it is never used: coins the shop no longer
 // sells have no photo, but stay in the list so their words still tell the
-// other designs apart.
+// other designs apart. The coins of this year and the last that it sells
+// get the photos of their shop page in the list, for the new releases.
 const (
 	moeShopURL          = "https://www.muenzeoesterreich.at"
 	moeCataloguePath    = "/sammeln/fuer-sammler/muenzkatalog/%s-euro-muenzen"
@@ -151,8 +152,37 @@ func (s *MoeCoinPhotoService) Coins(ctx context.Context) ([]mintCoin, error) {
 		s.coins, s.loadedAt = []mintCoin{}, s.now().Add(moeRetryDelay-moeMemoryLifetime)
 		return nil, err
 	}
+	coins = s.withProductPhotos(ctx, coins)
 	s.coins, s.loadedAt = coins, s.now()
 	return coins, nil
+}
+
+// ReleasePicture shows an Austrian coin by its design (the shop's "RS"):
+// its value side is often the same for a whole series, its photo even
+// shared between the shop's pages (the €3 coins' is the Troll's).
+func (s *MoeCoinPhotoService) ReleasePicture(coin mintCoin) string {
+	if coin.Reverse != "" {
+		return coin.Reverse
+	}
+	return coin.Obverse
+}
+
+// withProductPhotos gives the coins of this year and the last that the shop
+// sells the photos of each side from their page (each page kept a month),
+// so that the new releases show them. A page that cannot be read leaves its
+// coin without a photo, until the list is read again.
+func (s *MoeCoinPhotoService) withProductPhotos(ctx context.Context, coins []mintCoin) []mintCoin {
+	since := s.now().Year() - 1
+	for i := range coins {
+		coin := &coins[i]
+		if coin.Obverse != "" || coin.Year < since || !strings.HasPrefix(coin.PageURL, moeShopURL+"/produkte/") {
+			continue
+		}
+		if photo := s.Confirm(ctx, &MintPhoto{Title: coin.Title, PageURL: coin.PageURL}); photo != nil && photo.Obverse != "" {
+			coin.Obverse, coin.Reverse = photo.Obverse, photo.Reverse
+		}
+	}
+	return coins
 }
 
 // Match returns the catalogue's coin that is clearly the one described, or

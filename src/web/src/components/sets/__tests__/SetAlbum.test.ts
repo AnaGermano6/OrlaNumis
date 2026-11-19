@@ -28,7 +28,8 @@ describe('SetAlbum', () => {
   it("shows how far the set is, the collection's coins with their photo and the missing ones dashed", () => {
     const wrapper = mount(SetAlbum, { props: { slots: SLOTS }, global: { stubs } })
 
-    expect(wrapper.get('[data-testid="album-progress"]').text()).toBe('Tem 2 de 4')
+    expect(wrapper.get('[data-testid="album-progress"]').text().replace(/\s+/g, ' ')).toBe('2 / 4 moedas')
+    expect(wrapper.get('[data-testid="album-percent"]').text()).toBe('50%')
     expect(wrapper.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('50')
     const slots = wrapper.findAll('[data-testid="album-slot"]')
     expect(slots.map((slot) => slot.attributes('data-owned'))).toEqual(['false', 'true', 'true', 'false'])
