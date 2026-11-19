@@ -148,13 +148,15 @@ func TestReleases_TheYearsCoinsFromNumista(t *testing.T) {
 		t.Fatalf("searched %d issuers: %v", len(client.searched), client.searched)
 	}
 
-	// The catalogue has the €2 coins too.
+	// The catalogue has the €2 coins too (as the new releases read them),
+	// and asks Numista for none of its own.
+	searched := len(client.searched)
 	catalogue := map[string]bool{}
 	for _, coin := range service.Catalogue(ctx) {
 		catalogue[coin.Country+" "+coin.Title] = true
 	}
-	if !catalogue["SM 450th Anniversary of the Death of Titian"] || !catalogue["SM 800th Anniversary of the Death of Saint Francis of Assisi"] {
-		t.Fatalf("catalogue = %v", catalogue)
+	if !catalogue["SM 450th Anniversary of the Death of Titian"] || !catalogue["SM 800th Anniversary of the Death of Saint Francis of Assisi"] || len(client.searched) != searched {
+		t.Fatalf("catalogue = %v after %d more searches", catalogue, len(client.searched)-searched)
 	}
 
 	// Read again a day later, not before.
@@ -162,6 +164,30 @@ func TestReleases_TheYearsCoinsFromNumista(t *testing.T) {
 	service.yearCoinsLoads.Wait()
 	if len(client.searched) != len(numistaEuroIssuers) {
 		t.Fatalf("asked again within the day: %d", len(client.searched))
+	}
+}
+
+func TestCatalogue_TheYearsCoinsAreTheNewReleasesToRead(t *testing.T) {
+	client := &yearNumista{year: 2026, byIssuer: map[string]string{
+		"saint-marin": `{"count": 1, "types": [{"id": 501, "title": "2 Euros (450th Anniversary of the Death of Titian)", "min_year": 2026, "max_year": 2026}]}`,
+	}}
+	service := newYearReleases(t, client)
+
+	// The catalogue alone does not ask Numista for the year's coins.
+	service.Catalogue(context.Background())
+	service.yearCoinsLoads.Wait()
+	if len(client.searched) != 0 {
+		t.Fatalf("searched %v", client.searched)
+	}
+	// Once the new releases have read them, it lists them.
+	service.Releases(context.Background())
+	service.yearCoinsLoads.Wait()
+	found := false
+	for _, coin := range service.Catalogue(context.Background()) {
+		found = found || coin.Title == "450th Anniversary of the Death of Titian"
+	}
+	if !found {
+		t.Fatal("the catalogue does not list the year's €2 coin")
 	}
 }
 

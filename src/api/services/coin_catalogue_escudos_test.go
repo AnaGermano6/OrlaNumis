@@ -137,13 +137,12 @@ func TestCoinCatalogue_PortugalEscudosFromNumista(t *testing.T) {
 	catalogue := newEscudoCatalogue(t, client)
 
 	coins := catalogue.Catalogue(context.Background())
-	catalogue.yearCoinsLoads.Wait()
 	// Every year asked once; the commemorative and collector coins kept,
 	// Numista's own word on the Expo 98 coin followed.
 	want := map[string]string{"numista:100": "commemorative", "numista:102": "collector", "numista:9002": "collector", "numista:9001": "collector"}
-	// Every year of escudos, then each euro country's three face values, and
-	// (in the background) each one's coins of this year.
-	searches := escudoLastYear - escudoFirstYear + 1 + len(numistaEuroIssuers)*len(catalogueEuroValues) + len(numistaEuroIssuers)
+	// Every year of escudos, then each euro country's three face values (the
+	// year's coins are the new releases' to read).
+	searches := escudoLastYear - escudoFirstYear + 1 + len(numistaEuroIssuers)*len(catalogueEuroValues)
 	if got := escudoIDs(coins); fmt.Sprint(got) != fmt.Sprint(want) || client.calls != searches || !catalogue.CatalogueComplete() {
 		t.Fatalf("escudos = %v after %d searches, complete %v", got, client.calls, catalogue.CatalogueComplete())
 	}

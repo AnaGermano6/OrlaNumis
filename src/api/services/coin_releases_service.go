@@ -188,10 +188,18 @@ func NewCoinReleasesService(ecb *EcbCoinPhotoService, mints ...MintReleaseSource
 // year for the countries neither lists) and the collector coins (the mints',
 // and Numista's of this year for the other countries), those to come first
 // (soonest first), then the newest. A source that cannot be read adds nothing.
+// Numista's coins of the year are read (in the background) for the page that
+// shows them.
 func (s *CoinReleasesService) Releases(ctx context.Context) []CoinReleaseGroup {
+	return s.releases(ctx, true)
+}
+
+// releases is Releases; readYearCoins starts reading Numista's coins of the
+// year when they are due, where it is false they are taken as last read.
+func (s *CoinReleasesService) releases(ctx context.Context, readYearCoins bool) []CoinReleaseGroup {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	numistaTwoEuro, numistaCollector, version := s.numistaYearCoins()
+	numistaTwoEuro, numistaCollector, version := s.numistaYearCoins(readYearCoins)
 	if s.groups == nil || s.now().Sub(s.loadedAt) >= coinReleasesLifetime || version != s.groupsYearCoinsVersion {
 		twoEuro, collector := withMintTwoEuroCoins(s.ecbReleases(ctx), s.mintReleases(ctx))
 		twoEuro.Releases = withNumistaTwoEuroCoins(twoEuro.Releases, numistaTwoEuro)
@@ -299,7 +307,8 @@ func (s *CoinReleasesService) OwnedKeys(ctx context.Context, coins []CoinPhotoQu
 // collector coin the mints sell, newest first. It is read at most every six
 // hours; each call gets its own copy.
 func (s *CoinReleasesService) Catalogue(ctx context.Context) []CoinRelease {
-	numista, _, version := s.numistaYearCoins()
+	// The year's €2 coins as the new releases last read them (the app opens on them).
+	numista, _, version := s.numistaYearCoins(false)
 	s.catalogueMu.Lock()
 	defer s.catalogueMu.Unlock()
 	if s.catalogue == nil || s.now().Sub(s.catalogueLoadedAt) >= coinCatalogueLifetime || version != s.catalogueYearCoinsVersion {
@@ -372,15 +381,16 @@ func (s *CoinReleasesService) readCatalogue(ctx context.Context, numistaTwoEuro 
 // Slovakia and Germany had issued theirs months before), and the collector
 // coins of the countries whose mint the app does not read (San Marino's
 // €5 in silver, its €3…). They are read in the background, at most once a
-// day, so that nobody waits for Numista's searches; until then, and when
-// there is no Numista, the lists are empty.
-func (s *CoinReleasesService) numistaYearCoins() (twoEuro, collector []CoinRelease, version int) {
+// day, so that nobody waits for Numista's searches, when read asks for
+// them (the new releases do; the catalogue takes what they read); until
+// then, and when there is no Numista, the lists are empty.
+func (s *CoinReleasesService) numistaYearCoins(read bool) (twoEuro, collector []CoinRelease, version int) {
 	if s.numista == nil {
 		return nil, nil, 0
 	}
 	year := s.now().Year()
 	s.yearCoinsMu.Lock()
-	start := !s.yearCoinsLoading && (s.yearCoinsYear != year || s.now().Sub(s.yearCoinsLoadedAt) >= numistaYearCoinsLifetime)
+	start := read && !s.yearCoinsLoading && (s.yearCoinsYear != year || s.now().Sub(s.yearCoinsLoadedAt) >= numistaYearCoinsLifetime)
 	if start {
 		s.yearCoinsLoading = true
 		s.yearCoinsLoads.Add(1)
